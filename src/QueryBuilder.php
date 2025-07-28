@@ -417,13 +417,10 @@ class QueryBuilder
      */
     private function execute(string $method, ?array $data = null)
     {
-        // Para pruebas, retornamos datos simulados
-        if ($this->orm instanceof VersaORM) {
-            // Si tenemos una instancia, usamos datos simulados para pruebas
-            return $this->getMockResult($method, $data);
+        if (!($this->orm instanceof VersaORM)) {
+            throw new \Exception('VersaORM instance is required for QueryBuilder execution.');
         }
 
-        // Si es configuración estática, usar el método ejecute normal
         $params = [
             'table' => $this->table,
             'select' => $this->selects,
@@ -439,7 +436,12 @@ class QueryBuilder
             $params['data'] = $data;
         }
 
-        return [];
+        // Llamar al método execute de VersaORM usando reflexión
+        $reflection = new \ReflectionClass($this->orm);
+        $executeMethod = $reflection->getMethod('execute');
+        $executeMethod->setAccessible(true);
+        
+        return $executeMethod->invoke($this->orm, 'query', $params);
     }
 
     /**

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VersaORM Test Interface</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        #results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            border-left-color: #dc3545;
+        }
+        .success {
+            color: #28a745;
+            border-left-color: #28a745;
+        }
+        .method-label {
+            font-size: 10px;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 VersaORM Complete Test Suite</h1>
+        
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Prueba todas las funcionalidades del VersaORM de alto rendimiento
+        </p>
+
+        <div class="button-grid">
+            <button class="btn-info" onclick="testAction('help')">
+                📖 Help & Documentation
+            </button>
+            
+            <button class="btn-primary" onclick="testAction('init', 'POST')">
+                🏗️ Initialize Tables <span class="method-label">POST</span>
+            </button>
+            
+            <button class="btn-success" onclick="testAction('seed', 'POST')">
+                🌱 Seed Sample Data <span class="method-label">POST</span>
+            </button>
+            
+            <button class="btn-info" onclick="testAction('users-crud')">
+                👤 Users CRUD Operations
+            </button>
+            
+            <button class="btn-info" onclick="testAction('complex-queries')">
+                🔍 Complex WHERE Queries
+            </button>
+            
+            <button class="btn-info" onclick="testAction('joins')">
+                🔗 JOIN Queries
+            </button>
+            
+            <button class="btn-info" onclick="testAction('aggregations')">
+                📊 Aggregation Functions
+            </button>
+            
+            <button class="btn-info" onclick="testAction('models')">
+                🏗️ Model Operations
+            </button>
+            
+            <button class="btn-info" onclick="testAction('schema')">
+                📋 Schema Introspection
+            </button>
+            
+            <button class="btn-info" onclick="testAction('cache')">
+                💾 Cache Operations
+            </button>
+            
+            <button class="btn-warning" onclick="testAction('cleanup', 'DELETE')">
+                🧹 Cleanup Data <span class="method-label">DELETE</span>
+            </button>
+            
+            <button class="btn-danger" onclick="testAction('drop', 'DELETE')">
+                💥 Drop Tables <span class="method-label">DELETE</span>
+            </button>
+            
+            <button class="btn-success" onclick="testAction('full-test', 'POST')" style="grid-column: 1 / -1; font-size: 16px; padding: 15px;">
+                🎯 Run Complete Test Suite <span class="method-label">POST</span>
+            </button>
+        </div>
+
+        <div id="results">
+            Click any button above to test VersaORM functionality...
+        </div>
+    </div>
+
+    <script>
+        async function testAction(action, method = 'GET') {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.className = 'loading';
+            resultsDiv.textContent = `Testing ${action}... Please wait...`;
+
+            try {
+                const response = await fetch(`crud_api.php?action=${action}`, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                resultsDiv.className = data.status === 'success' ? 'success' : 'error';
+                resultsDiv.textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                resultsDiv.className = 'error';
+                resultsDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Agregar información sobre la API al cargar la página
+        window.onload = function() {
+            testAction('help');
+        };
+    </script>
+</body>
+</html>

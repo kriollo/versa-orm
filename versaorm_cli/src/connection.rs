@@ -208,8 +208,45 @@ fn convert_sqlite_rows_to_json(rows: Vec<sqlx::sqlite::SqliteRow>) -> Vec<HashMa
 
 fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_json::Value {
     use sqlx::Row;
+    use chrono::{NaiveDateTime, NaiveDate, NaiveTime};
     
     // Intentamos obtener el valor como diferentes tipos
+    
+    // Manejar tipos de fecha/hora primero
+    if let Ok(val) = row.try_get::<Option<NaiveDateTime>, _>(column_name) {
+        return match val {
+            Some(v) => {
+                let formatted = v.format("%Y-%m-%d %H:%M:%S").to_string();
+                serde_json::Value::String(formatted)
+            },
+            None => serde_json::Value::Null,
+        };
+    }
+    
+    // Si no es datetime, intentar como string
+    if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
+        if let Some(v) = val {
+            // Si es un string que parece datetime, devolverlo tal como está
+            if v.len() >= 10 && (v.contains('-') || v.contains(':')) {
+                return serde_json::Value::String(v);
+            }
+        }
+    }
+    
+    if let Ok(val) = row.try_get::<Option<NaiveDate>, _>(column_name) {
+        return match val {
+            Some(v) => serde_json::Value::String(v.format("%Y-%m-%d").to_string()),
+            None => serde_json::Value::Null,
+        };
+    }
+    
+    if let Ok(val) = row.try_get::<Option<NaiveTime>, _>(column_name) {
+        return match val {
+            Some(v) => serde_json::Value::String(v.format("%H:%M:%S").to_string()),
+            None => serde_json::Value::Null,
+        };
+    }
+    
     if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
