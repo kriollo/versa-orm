@@ -405,6 +405,7 @@ class QueryBuilder
      */
     public function dispense(): Model
     {
+        error_log('[DEBUG] Executing SQL with QueryBuilder');
         return new Model($this->table, $this->orm);
     }
 
@@ -444,32 +445,4 @@ class QueryBuilder
         return $executeMethod->invoke($this->orm, 'query', $params);
     }
 
-    /**
-     * Devuelve resultados simulados para pruebas.
-     *
-     * @param string $method
-     * @param array|null $data
-     * @return mixed
-     */
-    private function getMockResult(string $method, ?array $data = null)
-    {
-        switch ($method) {
-            case 'get':
-                return [];
-            case 'first':
-                return null;
-            case 'count':
-                return 0;
-            case 'exists':
-                return false;
-            case 'insertGetId':
-                return 1; // Simular ID generado
-            case 'insert':
-            case 'update':
-            case 'delete':
-                return [];
-            default:
-                return null;
-        }
-    }
 }

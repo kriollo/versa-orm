@@ -73,10 +73,6 @@ class VersaORM
         // Validar parámetros de entrada
         $this->validateInput($action, $params);
 
-        // Detectar si estamos en un entorno de pruebas
-        if ($this->isTestEnvironment()) {
-            return $this->getMockData($action, $params);
-        }
 
         try {
             $payload = json_encode([
@@ -91,19 +87,13 @@ class VersaORM
             ));
         }
 
-        // Para pruebas, devolvemos datos simulados si el binario no existe
         $binaryPath = $this->binaryPath;
 
         if (!file_exists($binaryPath)) {
-            // En producción, esto sería un error crítico
-            if (!$this->isTestEnvironment()) {
-                throw new \Exception(sprintf(
-                    'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
-                    $binaryPath
-                ));
-            }
-            // Devolver datos simulados para pruebas
-            return $this->getMockData($action, $params);
+            throw new \Exception(sprintf(
+                'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
+                $binaryPath
+            ));
         }
 
         // Verificar permisos de ejecución
@@ -150,108 +140,6 @@ class VersaORM
         return $response['data'] ?? null;
     }
 
-    /**
-     * Devuelve datos simulados para pruebas.
-     *
-     * @param string $action
-     * @param array $params
-     * @return mixed
-     * @throws \Exception
-     */
-    private function getMockData(string $action, array $params)
-    {
-        // Simular errores específicos para tests
-        if ($action === 'raw' && isset($params['query'])) {
-            $query = strtolower($params['query']);
-            
-            // Simular error de tabla inexistente
-            if (strpos($query, 'tabla_que_no_existe') !== false || 
-                strpos($query, 'nonexistent_table') !== false) {
-                throw new \Exception("VersaORM Error [TABLE_NOT_FOUND]: Table 'tabla_que_no_existe' doesn't exist\n\nSuggestions:\n- Check if the table name is spelled correctly\n- Verify the table exists in the database\n- Check if you have permissions to access the table\n- Ensure you are connected to the correct database\n\nContext: Action=raw, Query=" . $params['query']);
-            }
-            
-            // Simular error de sintaxis SQL
-            if (strpos($query, 'where;') !== false || 
-                preg_match('/\bfrom\s+where\b/', $query) ||
-                preg_match('/\bwhere\s*$/', $query) ||
-                strpos($query, 'invalid sql syntax') !== false) {
-                throw new \Exception("VersaORM Error [SYNTAX_ERROR]: You have an error in your SQL syntax\n\nSuggestions:\n- Check SQL syntax for typos\n- Verify proper use of quotes and parentheses\n- Check if keywords are properly escaped\n\nContext: Action=raw, Query=" . $params['query']);
-            }
-            
-            // Simular error de conexión si la query contiene palabras específicas
-            if (strpos($query, 'connection_error') !== false) {
-                throw new \Exception("VersaORM Error [CONNECTION_ERROR]: Can't connect to MySQL server\n\nSuggestions:\n- Check database server is running\n- Verify connection parameters (host, port, credentials)\n- Check network connectivity\n- Verify firewall settings\n\nContext: Action=raw");
-            }
-        }
-        
-        // Simular errores para queries del QueryBuilder
-        if ($action === 'query' && isset($params['table'])) {
-            $table = strtolower($params['table']);
-            
-            if (strpos($table, 'tabla_que_no_existe') !== false || 
-                strpos($table, 'nonexistent_table') !== false) {
-                throw new \Exception("VersaORM Error [TABLE_NOT_FOUND]: Table '{$params['table']}' doesn't exist\n\nSuggestions:\n- Check if the table name is spelled correctly\n- Verify the table exists in the database\n- Check if you have permissions to access the table\n- Ensure you are connected to the correct database\n\nContext: Action=query");
-            }
-        }
-        
-        switch ($action) {
-            case 'query':
-                // Retornar datos simulados para consultas válidas
-                if (isset($params['table']) && $params['table'] === 'users') {
-                    // Simular comportamiento según el método
-                    if (isset($params['method'])) {
-                        switch ($params['method']) {
-                            case 'get':
-                                return [
-                                    ['id' => 1, 'name' => 'Test User', 'email' => 'test@example.com'],
-                                    ['id' => 2, 'name' => 'Another User', 'email' => 'another@example.com']
-                                ];
-                            case 'first':
-                                return null;
-                            case 'count':
-                                return 0;
-                            case 'exists':
-                                return false;
-                            case 'insertGetId':
-                                return 1;
-                            case 'insert':
-                            case 'update':
-                            case 'delete':
-                                return [];
-                        }
-                    }
-                    return [
-                        ['id' => 1, 'name' => 'Test User', 'email' => 'test@example.com'],
-                        ['id' => 2, 'name' => 'Another User', 'email' => 'another@example.com']
-                    ];
-                }
-                return [];
-                
-            case 'raw':
-                // Retornar datos simulados para consultas SQL válidas
-                if (isset($params['query'])) {
-                    $query = strtolower($params['query']);
-                    if (strpos($query, 'select 1') !== false) {
-                        return [['test' => 1]];
-                    }
-                    if (strpos($query, 'show tables') !== false) {
-                        return [
-                            ['Tables_in_test' => 'users'],
-                            ['Tables_in_test' => 'products'],
-                            ['Tables_in_test' => 'orders']
-                        ];
-                    }
-                }
-                return [];
-                
-            case 'schema':
-                return []; // Array vacío para esquema
-            case 'cache':
-                return true; // Confirmación para cache
-            default:
-                return null;
-        }
-    }
 
     /**
      * Crea un QueryBuilder para la tabla especificada.
@@ -390,18 +278,6 @@ class VersaORM
         $this->checkCircularReferences($params);
     }
 
-    /**
-     * Verifica si estamos en un entorno de pruebas.
-     *
-     * @return bool
-     */
-    private function isTestEnvironment(): bool
-    {
-        return defined('PHPUNIT_COMPOSER_INSTALL') ||
-            isset($GLOBALS['__PHPUNIT_BOOTSTRAP']) ||
-            (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'test') ||
-            (defined('PHPUNIT_VERSION') && php_sapi_name() === 'cli' && strpos($_SERVER['SCRIPT_NAME'] ?? '', 'phpunit') !== false);
-    }
 
     /**
      * Maneja errores devueltos por el binario de Rust.
@@ -599,8 +475,24 @@ class VersaORM
     private function escapeJsonForShell(string $json): string
     {
         if (PHP_OS_FAMILY === 'Windows') {
-            // En Windows, escapar comillas dobles y envolver en comillas dobles
-            $escaped = str_replace('"', '\\"', $json);
+            // En Windows, usar un enfoque más robusto con múltiples caracteres problemáticos
+            $escaped = $json;
+            
+            // Escapar caracteres problemáticos en Windows cmd
+            $problematicChars = [
+                '%' => '%%',     // Variables de entorno
+                '"' => '\\"',   // Comillas dobles
+                '^' => '^^',     // Caracter de escape
+                '&' => '^&',     // Operador AND
+                '|' => '^|',     // Operador PIPE
+                '<' => '^<',     // Redirección
+                '>' => '^>',     // Redirección
+            ];
+            
+            foreach ($problematicChars as $char => $replacement) {
+                $escaped = str_replace($char, $replacement, $escaped);
+            }
+            
             return '"' . $escaped . '"';
         } else {
             // En Unix/Linux, usar escapeshellarg que funciona correctamente

@@ -6,7 +6,7 @@ namespace VersaORM;
 
 /**
  * VersaORMModel - Clase de modelo ORM para VersaORM
- * 
+ *
  * @package VersaORM
  * @version 1.0.0
  * @author VersaORM Team
@@ -38,19 +38,23 @@ class Model
     }
 
     /**
-     * Cargar los datos del modelo desde la base de datos.
+     * Cargar los datos del modelo desde la base de datos (método de instancia).
      *
      * @param mixed $id
      * @param string $pk
      * @return self
      */
-    public function load($id, string $pk = 'id'): self
+    public function loadInstance($id, string $pk = 'id'): self
     {
-        if ($this->orm instanceof VersaORM) {
-            // Para pruebas, simular datos encontrados
-            $this->attributes = [$pk => $id, 'name' => 'Test Data'];
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new \Exception("No ORM instance available for load operation");
+        }
+
+        $data = $orm->exec("SELECT * FROM {$this->table} WHERE {$pk} = ?", [$id]);
+        if (!empty($data)) {
+            $this->attributes = $data[0];
         } else {
-            // Fallback para configuración estática (aunque no debería usarse)
             throw new \Exception("Record not found");
         }
 
@@ -60,56 +64,75 @@ class Model
     /**
      * Guardar el modelo en la base de datos.
      *
-     * @return array
+     * @return void
      */
-    public function store(): array
+    public function store(): void
     {
-        if ($this->orm instanceof VersaORM) {
-            // Para pruebas, simular guardado exitoso
-            if (!isset($this->attributes['id'])) {
-                $this->attributes['id'] = 1; // Simular ID generado
-            }
-            return ['success' => true, 'id' => $this->attributes['id']];
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new \Exception("No ORM instance available for store operation");
         }
 
-        // Si no es una instancia de VersaORM pero tenemos la instancia global
-        if (self::$ormInstance instanceof VersaORM) {
-            if (isset($this->attributes['id'])) {
-                $result = self::$ormInstance->table($this->table)->where('id', '=', $this->attributes['id'])->update($this->attributes);
-                return ['success' => $result];
-            } else {
-                $id = self::$ormInstance->table($this->table)->insertGetId($this->attributes);
-                $this->attributes['id'] = $id;
-                return ['success' => true, 'id' => $id];
+        if (isset($this->attributes['id'])) {
+            // UPDATE existente
+            $fields = [];
+            $params = [];
+            foreach ($this->attributes as $key => $value) {
+                if ($key !== 'id') {
+                    $fields[] = "{$key} = ?";
+                    $params[] = $value;
+                }
+            }
+            $params[] = $this->attributes['id'];
+            
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = ?";
+            $orm->exec($sql, $params);
+        } else {
+            // INSERT nuevo - filtrar campos que no deben insertarse manualmente
+            $filteredAttributes = $this->attributes;
+            unset($filteredAttributes['id']); // No insertar ID manualmente
+            unset($filteredAttributes['created_at']); // Dejar que MySQL lo maneje
+            unset($filteredAttributes['updated_at']); // Dejar que MySQL lo maneje
+            
+            if (empty($filteredAttributes)) {
+                throw new \Exception('No data to insert');
+            }
+            
+            $fields = array_keys($filteredAttributes);
+            $placeholders = array_fill(0, count($fields), '?');
+            
+            $sql = "INSERT INTO {$this->table} (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
+            $orm->exec($sql, array_values($filteredAttributes));
+            
+            // Obtener el último registro insertado por este modelo
+            $result = $orm->exec("SELECT * FROM {$this->table} ORDER BY id DESC LIMIT 1");
+            if (!empty($result)) {
+                $this->attributes = $result[0]; // Actualizar con todos los datos del registro
             }
         }
-
-        throw new \Exception("No ORM instance available for store operation");
     }
 
     /**
      * Eliminar el registro del modelo en la base de datos.
      *
-     * @return array
+     * @return void
      */
-    public function trash(): array
+    public function trash(): void
     {
         if (!isset($this->attributes['id'])) {
             throw new \Exception("Cannot delete without an ID");
         }
 
-        if ($this->orm instanceof VersaORM) {
-            // Para pruebas, simular eliminación exitosa
-            return ['success' => true];
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new \Exception("No ORM instance available for trash operation");
         }
 
-        // Si no es una instancia de VersaORM pero tenemos la instancia global
-        if (self::$ormInstance instanceof VersaORM) {
-            $result = self::$ormInstance->table($this->table)->where('id', '=', $this->attributes['id'])->delete();
-            return ['success' => $result];
-        }
-
-        throw new \Exception("No ORM instance available for trash operation");
+        $sql = "DELETE FROM {$this->table} WHERE id = ?";
+        $orm->exec($sql, [$this->attributes['id']]);
+        
+        // Limpiar los atributos ya que el registro fue eliminado
+        $this->attributes = [];
     }
 
     /**
@@ -187,137 +210,55 @@ class Model
     }
 
     /**
-     * Establece los datos del modelo.
-     *
-     * @param array $data
-     * @return self
-     */
-    public function setData(array $data): self
-    {
-        $this->attributes = $data;
-        return $this;
-    }
-
-    /**
-     * Establece los datos desde un array.
-     *
-     * @param array $data
-     * @return void
-     */
-    public function fromArray(array $data): void
-    {
-        $this->attributes = array_merge($this->attributes, $data);
-    }
-
-    /**
-     * Obtiene la clave primaria.
-     *
-     * @return string
-     */
-    public function getPrimaryKey(): string
-    {
-        return $this->primaryKey;
-    }
-
-    /**
-     * Establece la clave primaria.
-     *
-     * @param string $key
-     * @return void
-     */
-    public function setPrimaryKey(string $key): void
-    {
-        $this->primaryKey = $key;
-    }
-
-    // ===== MÉTODOS ESTÁTICOS =====
-
-    /**
-     * Crea un nuevo modelo vacío.
+     * Crea un nuevo modelo vacío (método estático).
      *
      * @param string $table
      * @return self
      */
     public static function dispense(string $table): self
     {
+        if (!self::$ormInstance) {
+            throw new \Exception("No ORM instance available. Call Model::setORM() first.");
+        }
         return new self($table, self::$ormInstance);
     }
 
     /**
-     * Encuentra un modelo por su clave primaria.
+     * Cargar un modelo por ID (método estático).
      *
      * @param string $table
      * @param mixed $id
      * @param string $pk
-     * @return self
-     */
-    public static function find(string $table, $id, string $pk = 'id'): self
-    {
-        $model = new self($table, self::$ormInstance);
-        return $model->load($id, $pk);
-    }
-
-    /**
-     * Encuentra todos los registros.
-     *
-     * @param string $table
-     * @return array
-     */
-    public static function findAll(string $table): array
-    {
-        if (self::$ormInstance) {
-            return self::$ormInstance->table($table)->get();
-        }
-        return [];
-    }
-
-    /**
-     * Encuentra el primer registro.
-     *
-     * @param string $table
      * @return self|null
      */
-    public static function findFirst(string $table): ?self
+    public static function load(string $table, $id, string $pk = 'id'): ?self
     {
-        if (self::$ormInstance) {
-            $data = self::$ormInstance->table($table)->first();
-            if ($data) {
-                $model = new self($table, self::$ormInstance);
-                $model->attributes = $data;
-                return $model;
+        if (!self::$ormInstance) {
+            throw new \Exception("No ORM instance available. Call Model::setORM() first.");
+        }
+        
+        try {
+            $data = self::$ormInstance->exec("SELECT * FROM {$table} WHERE {$pk} = ?", [$id]);
+            if (empty($data)) {
+                return null;
             }
+            
+            $model = new self($table, self::$ormInstance);
+            $model->attributes = $data[0];
+            return $model;
+        } catch (\Exception $e) {
+            return null;
         }
-        return null;
     }
 
     /**
-     * Encuentra registros con condición WHERE.
+     * Crea un nuevo modelo vacío (método de instancia).
      *
      * @param string $table
-     * @param string $column
-     * @param string $operator
-     * @param mixed $value
-     * @return array
+     * @return self
      */
-    public static function where(string $table, string $column, string $operator, $value): array
+    public function dispenseInstance(string $table): self
     {
-        if (self::$ormInstance) {
-            return self::$ormInstance->table($table)->where($column, $operator, $value)->get();
-        }
-        return [];
-    }
-
-    /**
-     * Cuenta los registros en una tabla.
-     *
-     * @param string $table
-     * @return int
-     */
-    public static function count(string $table): int
-    {
-        if (self::$ormInstance) {
-            return self::$ormInstance->table($table)->count();
-        }
-        return 0;
+        return new self($table, $this->orm);
     }
 }
