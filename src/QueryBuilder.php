@@ -177,6 +177,24 @@ class QueryBuilder
     }
 
     /**
+     * Añade una cláusula WHERE con SQL raw.
+     *
+     * @param string $sql
+     * @param array $bindings
+     * @return self
+     */
+    public function whereRaw(string $sql, array $bindings = []): self
+    {
+        $this->wheres[] = [
+            'column' => '',
+            'operator' => 'RAW',
+            'value' => ['sql' => $sql, 'bindings' => $bindings],
+            'type' => 'and'
+        ];
+        return $this;
+    }
+
+    /**
      * Añade una cláusula HAVING.
      *
      * @param string $column
@@ -301,23 +319,46 @@ class QueryBuilder
     }
 
     /**
-     * Ejecuta la consulta SELECT y devuelve un array de objetos.
+     * Ejecuta la consulta SELECT y devuelve un array de modelos.
+     *
+     * @return Model[]
+     */
+    public function findAll(): array
+    {
+        $results = $this->execute('get');
+        $models = [];
+        foreach ($results as $result) {
+            $model = new Model($this->table, $this->orm);
+            $model->loadInstance($result);
+            $models[] = $model;
+        }
+        return $models;
+    }
+
+    /**
+     * Ejecuta la consulta SELECT y devuelve un array de arrays de datos
      *
      * @return array
      */
-    public function get(): array
+    public function getAll(): array
     {
         return $this->execute('get');
     }
 
     /**
-     * Ejecuta la consulta y devuelve el primer objeto resultado, o null.
+     * Ejecuta la consulta y devuelve el primer objeto resultado como modelo, o null.
      *
-     * @return mixed
+     * @return Model|null
      */
-    public function first()
+    public function findOne(): ?Model
     {
-        return $this->execute('first');
+        $result = $this->execute('first');
+        if ($result) {
+            $model = new Model($this->table, $this->orm);
+            $model->loadInstance($result);
+            return $model;
+        }
+        return null;
     }
 
     /**

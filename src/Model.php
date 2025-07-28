@@ -40,20 +40,27 @@ class Model
     /**
      * Cargar los datos del modelo desde la base de datos (método de instancia).
      *
-     * @param mixed $id
+     * @param mixed $data - Puede ser un ID para buscar o un array de datos para cargar directamente
      * @param string $pk
      * @return self
      */
-    public function loadInstance($id, string $pk = 'id'): self
+    public function loadInstance($data, string $pk = 'id'): self
     {
+        // Si $data es un array, cargar directamente los datos
+        if (is_array($data)) {
+            $this->attributes = $data;
+            return $this;
+        }
+        
+        // Si es un ID, buscar en la base de datos
         $orm = $this->orm ?? self::$ormInstance;
         if (!($orm instanceof VersaORM)) {
             throw new \Exception("No ORM instance available for load operation");
         }
 
-        $data = $orm->exec("SELECT * FROM {$this->table} WHERE {$pk} = ?", [$id]);
-        if (!empty($data)) {
-            $this->attributes = $data[0];
+        $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$pk} = ?", [$data]);
+        if (!empty($result)) {
+            $this->attributes = $result[0];
         } else {
             throw new \Exception("Record not found");
         }
@@ -158,11 +165,11 @@ class Model
     }
 
     /**
-     * Convertir el modelo a un array.
+     * Exportar el modelo a un array.
      *
      * @return array
      */
-    public function toArray(): array
+    public function export(): array
     {
         return $this->attributes;
     }

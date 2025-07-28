@@ -152,6 +152,131 @@ class VersaORM
         return new QueryBuilder($this, $table);
     }
 
+    // ========== MÉTODOS ESTILO REDBEAN ==========
+
+    /**
+     * Cuenta registros en una tabla con condiciones opcionales.
+     *
+     * @param string $table
+     * @param string|null $conditions
+     * @param array $bindings
+     * @return int
+     */
+    public function count(string $table, ?string $conditions = null, array $bindings = []): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM {$table}";
+        if ($conditions) {
+            $sql .= " WHERE {$conditions}";
+        }
+        $result = $this->exec($sql, $bindings);
+        return (int) ($result[0]['count'] ?? 0);
+    }
+
+    /**
+     * Obtiene todos los registros de una tabla como array de arrays.
+     *
+     * @param string $sql
+     * @param array $bindings
+     * @return array
+     */
+    public function getAll(string $sql, array $bindings = []): array
+    {
+        return $this->exec($sql, $bindings);
+    }
+
+    /**
+     * Obtiene una sola fila como array.
+     *
+     * @param string $sql
+     * @param array $bindings
+     * @return array|null
+     */
+    public function getRow(string $sql, array $bindings = []): ?array
+    {
+        $result = $this->exec($sql, $bindings);
+        return $result[0] ?? null;
+    }
+
+    /**
+     * Obtiene un solo valor de una consulta.
+     *
+     * @param string $sql
+     * @param array $bindings
+     * @return mixed
+     */
+    public function getCell(string $sql, array $bindings = [])
+    {
+        $result = $this->exec($sql, $bindings);
+        if (!empty($result) && is_array($result[0])) {
+            return array_values($result[0])[0] ?? null;
+        }
+        return null;
+    }
+
+    /**
+     * Busca un registro por ID y lo devuelve como modelo.
+     *
+     * @param string $table
+     * @param mixed $id
+     * @param string $pk
+     * @return Model|null
+     */
+    public function findOne(string $table, $id, string $pk = 'id'): ?Model
+    {
+        return $this->table($table)->where($pk, '=', $id)->findOne();
+    }
+
+    /**
+     * Busca registros con condiciones y los devuelve como array de modelos.
+     *
+     * @param string $table
+     * @param string|null $conditions
+     * @param array $bindings
+     * @return Model[]
+     */
+    public function findAll(string $table, ?string $conditions = null, array $bindings = []): array
+    {
+        $queryBuilder = $this->table($table);
+        if ($conditions) {
+            // Agregar condiciones raw si es necesario
+            $queryBuilder->whereRaw($conditions, $bindings);
+        }
+        return $queryBuilder->findAll();
+    }
+
+    /**
+     * Crea un nuevo modelo vacío para una tabla.
+     *
+     * @param string $table
+     * @return Model
+     */
+    public function dispense(string $table): Model
+    {
+        return new Model($table, $this);
+    }
+
+    /**
+     * Guarda un modelo (alias para store).
+     *
+     * @param Model $model
+     * @return void
+     */
+    public function store(Model $model): void
+    {
+        $model->store();
+    }
+
+    /**
+     * Elimina un modelo (alias para trash).
+     *
+     * @param Model $model
+     * @return void
+     */
+    public function trash(Model $model): void
+    {
+        $model->trash();
+    }
+
     /**
      * Ejecuta una consulta SQL personalizada.
      *
