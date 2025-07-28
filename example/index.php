@@ -7,7 +7,7 @@ $config = [
         'DB_DRIVER' => 'mysql',
         'DB_HOST' => 'localhost',
         'DB_PORT' => 3306,
-        'DB_NAME' => 'versaorm_test',
+        'DB_NAME' => 'versaBOT',
         'DB_USER' => 'local',
         'DB_PASS' => 'local'
     ]

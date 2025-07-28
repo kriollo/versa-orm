@@ -14,8 +14,8 @@ namespace VersaORM;
  */
 class VersaORM
 {
-    // Ruta al binario de Rust. Debería ser configurable.
-    private string $binaryPath = __DIR__ . '/../versaorm';
+    // Ruta al binario de Rust. Se detecta automáticamente según el OS.
+    private string $binaryPath;
 
     // Configuración de instancia
     private array $config = [];
@@ -27,6 +27,7 @@ class VersaORM
      */
     public function __construct(array $config = [])
     {
+        $this->setBinaryPath();
         $this->checkRustBinary();
 
         if (!empty($config)) {
@@ -92,9 +93,6 @@ class VersaORM
 
         // Para pruebas, devolvemos datos simulados si el binario no existe
         $binaryPath = $this->binaryPath;
-        if (PHP_OS_FAMILY === 'Windows') {
-            $binaryPath .= '.exe';
-        }
 
         if (!file_exists($binaryPath)) {
             // En producción, esto sería un error crítico
@@ -611,6 +609,32 @@ class VersaORM
     }
 
     /**
+     * Establece la ruta del binario según el sistema operativo.
+     *
+     * @return void
+     */
+    private function setBinaryPath(): void
+    {
+        $binaryDir = __DIR__ . '/binary';
+        
+        switch (PHP_OS_FAMILY) {
+            case 'Windows':
+                $this->binaryPath = $binaryDir . '/versaorm_cli_windows.exe';
+                break;
+            case 'Linux':
+                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
+                break;
+            case 'Darwin': // macOS
+                $this->binaryPath = $binaryDir . '/versaorm_cli_darwin';
+                break;
+            default:
+                // Fallback para sistemas desconocidos
+                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
+                break;
+        }
+    }
+
+    /**
      * Verifica la existencia del binario de Rust.
      *
      * @return void
@@ -618,12 +642,25 @@ class VersaORM
      */
     private function checkRustBinary(): void
     {
-        $binPath = DIRECTORY_SEPARATOR === '\\'
-            ? __DIR__ . '/../versaorm_cli/target/release/versaorm_cli.exe'
-            : __DIR__ . '/../versaorm_cli/target/release/versaorm_cli';
-        if (!file_exists($binPath)) {
+        if (!file_exists($this->binaryPath)) {
+            $osName = strtolower(PHP_OS_FAMILY);
+            $expectedName = "versaorm_cli_{$osName}" . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
+            
             throw new \RuntimeException(
-                "No se encontró el binario Rust (versaorm_cli). Compílalo ejecutando: cd versaorm_cli && cargo build --release"
+                "VersaORM binary not found at: {$this->binaryPath}\n\n" .
+                "Expected binary name: {$expectedName}\n\n" .
+                "To fix this:\n" .
+                "1. Compile the binary: cd versaorm_cli && cargo build --release\n" .
+                "2. Copy to: src/binary/{$expectedName}\n\n" .
+                "For cross-compilation, see src/binary/README.md"
+            );
+        }
+        
+        // En sistemas Unix, verificar permisos de ejecución
+        if (PHP_OS_FAMILY !== 'Windows' && !is_executable($this->binaryPath)) {
+            throw new \RuntimeException(
+                "VersaORM binary exists but is not executable: {$this->binaryPath}\n\n" .
+                "Fix with: chmod +x {$this->binaryPath}"
             );
         }
     }
