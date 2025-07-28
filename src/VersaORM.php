@@ -6,7 +6,7 @@ namespace VersaORM;
 
 /**
  * VersaORM - ORM de alto rendimiento para PHP con núcleo en Rust
- * 
+ *
  * @package VersaORM
  * @version 1.0.0
  * @author VersaORM Team
@@ -27,6 +27,8 @@ class VersaORM
      */
     public function __construct(array $config = [])
     {
+        $this->checkRustBinary();
+
         if (!empty($config)) {
             $this->config = $config;
         }
@@ -123,10 +125,10 @@ class VersaORM
         if ($output === null) {
             throw new \Exception(
                 'Failed to execute the VersaORM binary. This could be due to:\n' .
-                '- Binary corruption\n' .
-                '- System resource limitations\n' .
-                '- Security restrictions\n' .
-                '- Missing system dependencies'
+                    '- Binary corruption\n' .
+                    '- System resource limitations\n' .
+                    '- Security restrictions\n' .
+                    '- Missing system dependencies'
             );
         }
 
@@ -316,10 +318,10 @@ class VersaORM
      */
     private function isTestEnvironment(): bool
     {
-        return defined('PHPUNIT_COMPOSER_INSTALL') || 
-               class_exists('PHPUnit\Framework\TestCase') || 
-               isset($GLOBALS['__PHPUNIT_BOOTSTRAP']) ||
-               (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'test');
+        return defined('PHPUNIT_COMPOSER_INSTALL') ||
+            class_exists('PHPUnit\Framework\TestCase') ||
+            isset($GLOBALS['__PHPUNIT_BOOTSTRAP']) ||
+            (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'test');
     }
 
     /**
@@ -342,11 +344,11 @@ class VersaORM
 
         // Construir mensaje de error detallado
         $detailedMessage = $this->buildDetailedErrorMessage(
-            $errorCode, 
-            $errorMessage, 
-            $errorDetails, 
-            $sqlState, 
-            $action, 
+            $errorCode,
+            $errorMessage,
+            $errorDetails,
+            $sqlState,
+            $action,
             $query
         );
 
@@ -365,11 +367,11 @@ class VersaORM
      * @return string
      */
     private function buildDetailedErrorMessage(
-        string $errorCode, 
-        string $errorMessage, 
-        array $errorDetails, 
-        ?string $sqlState, 
-        string $action, 
+        string $errorCode,
+        string $errorMessage,
+        array $errorDetails,
+        ?string $sqlState,
+        string $action,
         ?string $query
     ): string {
         $message = sprintf('VersaORM Error [%s]: %s', $errorCode, $errorMessage);
@@ -506,6 +508,24 @@ class VersaORM
                     $this->checkCircularReferences($value, $visited);
                 }
             }
+        }
+    }
+
+    /**
+     * Verifica la existencia del binario de Rust.
+     *
+     * @return void
+     * @throws \RuntimeException
+     */
+    private function checkRustBinary(): void
+    {
+        $binPath = DIRECTORY_SEPARATOR === '\\'
+            ? __DIR__ . '/../versaorm_cli/target/release/versaorm_cli.exe'
+            : __DIR__ . '/../versaorm_cli/target/release/versaorm_cli';
+        if (!file_exists($binPath)) {
+            throw new \RuntimeException(
+                "No se encontró el binario Rust (versaorm_cli). Compílalo ejecutando: cd versaorm_cli && cargo build --release"
+            );
         }
     }
 }

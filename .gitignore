@@ -43,3 +43,5 @@ yarn-error.log*
 # Archivos de ejemplo con datos reales
 example_with_real_data.php
 test_database.db
+
+.github
