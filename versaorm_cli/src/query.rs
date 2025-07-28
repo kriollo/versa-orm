@@ -55,8 +55,9 @@ impl QueryBuilder {
         self
     }
 
-    pub fn build_sql<D: Database>(self) -> String {
+    pub fn build_sql<D: Database>(self) -> (String, Vec<Value>) {
         let mut query = String::new();
+        let mut params = Vec::new();
 
         // SELECT clause
         query.push_str("SELECT ");
@@ -78,7 +79,10 @@ impl QueryBuilder {
         if !self.wheres.is_empty() {
             query.push_str(" WHERE ");
             let where_clauses: Vec<String> = self.wheres.iter()
-                .map(|(col, op, _)| format!("{} {} ?", col, op))
+                .map(|(col, op, value)| {
+                    params.push(value.clone()); // ✅ EXTRAE LOS VALORES
+                    format!("{} {} ?", col, op)
+                })
                 .collect();
             query.push_str(&where_clauses.join(" AND "));
         }
@@ -98,7 +102,7 @@ impl QueryBuilder {
             query.push_str(&format!(" OFFSET {}", offset));
         }
 
-        query
+        (query, params)
     }
 }
 

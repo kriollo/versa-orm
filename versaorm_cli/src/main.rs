@@ -200,23 +200,37 @@ async fn handle_query_action(
     }
 
     // Construir y ejecutar la consulta
-    let sql = query_builder.build_sql::<sqlx::MySql>();
+    let (sql, params) = query_builder.build_sql::<sqlx::MySql>();
+    // Debug logs temporarily disabled to avoid JSON parsing issues
+    // eprintln!("[DEBUG] Executing SQL: {}", sql);
+    // eprintln!("[DEBUG] Parameters ({} total):", params.len());
+    // for (i, param) in params.iter().enumerate() {
+    //     eprintln!("  [{}]: {:?}", i, param);
+    // }
     
     match method {
         "get" => {
-            let rows = connection.execute_raw(&sql, vec![]).await
+            let rows = connection.execute_raw(&sql, params.clone()).await
                 .map_err(|e| format!("Query execution failed: {}", e))?;
             Ok(serde_json::to_value(rows).unwrap())
         }
         "first" => {
-            let rows = connection.execute_raw(&sql, vec![]).await
+            let rows = connection.execute_raw(&sql, params.clone()).await
                 .map_err(|e| format!("Query execution failed: {}", e))?;
             let first_row = rows.into_iter().next();
             Ok(serde_json::to_value(first_row).unwrap())
         }
         "count" => {
-            let count_sql = format!("SELECT COUNT(*) as count FROM {}", table);
-            let rows = connection.execute_raw(&count_sql, vec![]).await
+            // Convertir SELECT a COUNT usando la misma lógica WHERE
+            let count_sql = sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
+            let count_sql = if count_sql.contains("ORDER BY") {
+                // Remover ORDER BY para COUNT ya que no es necesario
+                count_sql.split(" ORDER BY").next().unwrap_or(&count_sql).to_string()
+            } else {
+                count_sql
+            };
+            
+            let rows = connection.execute_raw(&count_sql, params.clone()).await
                 .map_err(|e| format!("Count query failed: {}", e))?;
             let count = rows.first()
                 .and_then(|row| row.get("count"))
@@ -233,6 +247,24 @@ async fn handle_query_action(
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
             Ok(serde_json::Value::Bool(exists))
+        }
+        "delete" => {
+            // Convertir SELECT a DELETE usando la misma lógica WHERE
+            let delete_sql = if sql.contains("WHERE") {
+                // Extraer la parte WHERE de la consulta SELECT
+                let where_part = sql.split(" WHERE ").nth(1).unwrap_or("");
+                let where_clause = where_part.split(" ORDER BY").next().unwrap_or(where_part);
+                format!("DELETE FROM {} WHERE {}", table, where_clause)
+            } else {
+                // Si no hay WHERE, eliminar toda la tabla (peligroso, pero es lo que se pide)
+                format!("DELETE FROM {}", table)
+            };
+            
+            let rows = connection.execute_raw(&delete_sql, params.clone()).await
+                .map_err(|e| format!("Delete query failed: {}", e))?;
+            
+            // Para DELETE, retornar 0 ya que no hay filas de retorno, solo filas afectadas
+            Ok(serde_json::Value::Number(serde_json::Number::from(0)))
         }
         _ => Err(format!("Unsupported method: {}", method))
     }
