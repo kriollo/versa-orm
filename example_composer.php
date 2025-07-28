@@ -7,10 +7,11 @@
 require_once 'vendor/autoload.php';
 
 use VersaORM\VersaORM;
+use VersaORM\Model;
 
 try {
     // Configuración de la base de datos
-    VersaORM::connect([
+    $orm = new VersaORM([
         'driver' => 'mysql',
         'host' => 'localhost',
         'port' => 3306,
@@ -18,6 +19,9 @@ try {
         'username' => 'root',
         'password' => 'password'
     ]);
+    
+    // Configurar la instancia global para los modelos estáticos
+    Model::setORM($orm);
 
     echo "✓ Conexión a la base de datos establecida.\n";
 
@@ -25,7 +29,7 @@ try {
     echo "\n--- Ejemplo 1: QueryBuilder ---\n";
 
     // Consulta simple
-    $users = VersaORM::table('users')
+    $users = $orm->table('users')
         ->select(['id', 'name', 'email'])
         ->where('active', '=', 1)
         ->orderBy('name', 'asc')
@@ -35,7 +39,7 @@ try {
     echo "Usuarios activos encontrados: " . count($users) . "\n";
 
     // Insertar nuevo usuario
-    $newUserId = VersaORM::table('users')->insertGetId([
+    $newUserId = $orm->table('users')->insertGetId([
         'name' => 'Juan Pérez',
         'email' => 'juan.perez@example.com',
         'active' => 1,
@@ -48,7 +52,7 @@ try {
     echo "\n--- Ejemplo 2: Modelo ORM ---\n";
 
     // Crear un nuevo usuario usando el modelo
-    $user = VersaORM::table('users')->dispense();
+    $user = $orm->table('users')->dispense();
     $user->name = 'María García';
     $user->email = 'maria.garcia@example.com';
     $user->active = 1;
@@ -59,7 +63,7 @@ try {
     echo "Usuario modelo creado con ID: " . $user->id . "\n";
 
     // Cargar y modificar usuario existente
-    $existingUser = VersaORM::table('users')->dispense();
+    $existingUser = $orm->table('users')->dispense();
     $existingUser->load($newUserId);
     $existingUser->name = 'Juan Carlos Pérez';
     $existingUser->store();
@@ -70,7 +74,7 @@ try {
     echo "\n--- Ejemplo 3: Consultas avanzadas ---\n";
 
     // JOIN con otras tablas
-    $userPosts = VersaORM::table('users')
+    $userPosts = $orm->table('users')
         ->select(['users.name', 'posts.title', 'posts.created_at'])
         ->join('posts', 'users.id', '=', 'posts.user_id')
         ->where('users.active', '=', 1)
@@ -81,8 +85,8 @@ try {
     echo "Posts de usuarios activos: " . count($userPosts) . "\n";
 
     // Agregaciones
-    $totalUsers = VersaORM::table('users')->count();
-    $activeUsers = VersaORM::table('users')->where('active', '=', 1)->count();
+    $totalUsers = $orm->table('users')->count();
+    $activeUsers = $orm->table('users')->where('active', '=', 1)->count();
 
     echo "Total de usuarios: $totalUsers\n";
     echo "Usuarios activos: $activeUsers\n";
@@ -90,7 +94,7 @@ try {
     // === EJEMPLO 4: Consultas SQL crudas ===
     echo "\n--- Ejemplo 4: Consultas SQL crudas ---\n";
 
-    $customQuery = VersaORM::exec(
+    $customQuery = $orm->exec(
         "SELECT COUNT(*) as total FROM users WHERE created_at > ?",
         [date('Y-m-d', strtotime('-30 days'))]
     );
@@ -101,22 +105,37 @@ try {
     echo "\n--- Ejemplo 5: Información del esquema ---\n";
 
     // Obtener información de la tabla
-    $tableInfo = VersaORM::schema('table', 'users');
+    $tableInfo = $orm->schema('table', 'users');
     echo "Información de la tabla 'users':\n";
     echo "Columnas: " . count($tableInfo['columns']) . "\n";
+
+    // === EJEMPLO 6: Métodos estáticos de modelos ===
+    echo "\n--- Ejemplo 6: Métodos estáticos de modelos ---\n";
+
+    // Usar métodos estáticos de Model (requieren setORM previo)
+    $userModel = Model::dispense('users');
+    $userModel->name = 'Usuario Estático';
+    $userModel->email = 'estatico@example.com';
+    $userModel->active = 1;
+    $userModel->store();
+    echo "Usuario creado con métodos estáticos: " . $userModel->id . "\n";
+
+    // Buscar usuarios con métodos estáticos
+    $foundUser = Model::find('users', $userModel->id);
+    echo "Usuario encontrado: " . $foundUser->name . "\n";
 
     // === LIMPIEZA ===
     echo "\n--- Limpieza ---\n";
 
     // Eliminar usuarios de prueba
-    VersaORM::table('users')
+    $orm->table('users')
         ->where('email', 'LIKE', '%@example.com')
         ->delete();
 
     echo "Usuarios de prueba eliminados.\n";
 
     // Cerrar conexión
-    VersaORM::disconnect();
+    $orm->disconnect();
     echo "✓ Conexión cerrada.\n";
 
 } catch (Exception $e) {

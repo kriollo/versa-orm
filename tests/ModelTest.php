@@ -60,9 +60,9 @@ class ModelTest extends TestCase
         $this->assertEquals('jane@example.com', $data['email']);
     }
 
-    public function testModelLoadMethod()
+    public function testModelFindMethod()
     {
-        $user = Model::load('users', 1);
+        $user = Model::find('users', 1);
         
         $this->assertInstanceOf(Model::class, $user);
         $this->assertEquals('users', $user->getTable());

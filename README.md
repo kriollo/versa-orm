@@ -72,322 +72,185 @@ require_once 'vendor/autoload.php';
 
 ## Uso Básico
 
-### Gestión de conexiones
+VersaORM se puede utilizar de dos maneras: estáticamente (ideal para aplicaciones simples) o mediante instancias (recomendado para gestionar múltiples conexiones o para inyección de dependencias).
 
+### Conexión a la Base de Datos
+
+**Uso estático:**
 ```php
-<?php
-// Cargar VersaORM usando Composer
-require_once 'vendor/autoload.php';
-
 use VersaORM\VersaORM;
 
-// Configurar la conexión a la base de datos
-$orm = new VersaORM();
-$orm->setConfig([
+VersaORM::connect([
     'driver' => 'mysql',
     'host' => 'localhost',
-    'port' => 3306,
     'database' => 'mi_base_datos',
     'username' => 'usuario',
-    'password' => 'contraseña',
-    'charset' => 'utf8mb4'
+    'password' => 'contraseña'
 ]);
+```
 
-// Cerrar la conexión cuando sea necesario
-$orm->disconnect();
+**Uso con instancias:**
+```php
+$orm = new VersaORM();
+$orm->setConfig([...]);
+
+// Las consultas se realizan sobre la instancia
+$users = $orm->table('users')->get();
 ```
 
 ### QueryBuilder
 
+El Query Builder de VersaORM proporciona una interfaz fluida y completa para construir y ejecutar consultas.
+
+#### Selección y Obtención de Resultados
 ```php
-// Consulta básica
+// Obtener todos los usuarios
+$users = VersaORM::table('users')->get();
+
+// Obtener columnas específicas y paginar
 $users = VersaORM::table('users')
     ->select(['id', 'name', 'email'])
-    ->where('activo', '=', true)
     ->orderBy('id', 'desc')
     ->limit(10)
+    ->offset(5)
     ->get();
 
-// Buscar un registro específico
+// Obtener el primer resultado
+$user = VersaORM::table('users')->where('id', '=', 1)->first();
+
+// Buscar por clave primaria
 $user = VersaORM::table('users')->find(1);
+```
 
-// Primer resultado
-$firstUser = VersaORM::table('users')
-    ->where('email', '=', 'test@example.com')
-    ->first();
+#### Cláusulas `WHERE`
+```php
+// WHERE con operador
+$users = VersaORM::table('users')->where('puntos', '>', 100)->get();
 
-// Contar registros
-$count = VersaORM::table('users')
-    ->where('activo', '=', true)
-    ->count();
+// OR WHERE
+$users = VersaORM::table('users')
+    ->where('puntos', '>', 100)
+    ->orWhere('rol', '=', 'admin')
+    ->get();
 
-// Verificar existencia
-$exists = VersaORM::table('users')
-    ->where('email', '=', 'test@example.com')
-    ->exists();
+// WHERE IN / WHERE NOT IN
+$users = VersaORM::table('users')->whereIn('id', [1, 2, 3])->get();
+$admins = VersaORM::table('users')->whereNotIn('rol', ['guest', 'editor'])->get();
+
+// WHERE NULL / WHERE NOT NULL
+$users = VersaORM::table('users')->whereNull('fecha_baja')->get();
+$activeUsers = VersaORM::table('users')->whereNotNull('ultimo_login')->get();
+```
+
+#### Joins
+```php
+// INNER JOIN
+$users = VersaORM::table('users')
+    ->join('pedidos', 'users.id', '=', 'pedidos.user_id')
+    ->select(['users.name', 'pedidos.total'])
+    ->get();
+
+// LEFT JOIN y RIGHT JOIN también están disponibles
+$users = VersaORM::table('users')->leftJoin('perfiles', 'users.id', '=', 'perfiles.user_id')->get();
+```
+
+#### Agregados y Agrupación
+```php
+// Contar resultados
+$count = VersaORM::table('users')->where('activo', '=', true)->count();
+
+// Verificar si un registro existe
+$exists = VersaORM::table('users')->where('email', '=', 'test@example.com')->exists();
+
+// Agrupar resultados
+$report = VersaORM::table('pedidos')
+    ->select(['estado', 'COUNT(id) as total'])
+    ->groupBy('estado')
+    ->get();
 ```
 
 ### Operaciones CRUD
-
 ```php
-// Insertar
+// INSERT
 $userId = VersaORM::table('users')->insertGetId([
     'name' => 'Juan Pérez',
-    'email' => 'juan@example.com',
-    'activo' => true
+    'email' => 'juan@example.com'
 ]);
 
-// Actualizar
+// UPDATE
 VersaORM::table('users')
     ->where('id', '=', $userId)
     ->update(['name' => 'Juan Carlos Pérez']);
 
-// Eliminar
-VersaORM::table('users')
-    ->where('id', '=', $userId)
-    ->delete();
+// DELETE
+VersaORM::table('users')->where('id', '=', $userId)->delete();
 ```
 
-### Consultas SQL crudas
-
+### Consultas SQL Crudas (Raw)
+Para consultas complejas, puedes ejecutar SQL directamente de forma segura.
 ```php
-// SELECT crudo
-$results = VersaORM::exec('SELECT * FROM users WHERE activo = ? LIMIT ?', [true, 10]);
+// SELECT crudo con bindings
+$results = VersaORM::exec('SELECT * FROM users WHERE activo = ?', [true]);
 
 // UPDATE/INSERT/DELETE crudo
 VersaORM::exec('UPDATE users SET last_login = NOW() WHERE id = ?', [1]);
 ```
+> **Nota**: El método `raw()` es un alias de `exec()` y está marcado como obsoleto. Se recomienda usar `exec()`.
 
-### Introspección de esquema
+### ORM Models (Estilo ActiveRecord)
+VersaORM permite trabajar con registros como objetos dinámicos sin necesidad de definir clases de modelo.
 
+#### Crear un nuevo modelo (dispense)
+El método `dispense()` crea un objeto de modelo vacío, listo para ser llenado con datos.
 ```php
-// Obtener todas las tablas
-$tables = VersaORM::schema('tables');
-
-// Obtener columnas de una tabla
-$columns = VersaORM::schema('columns', 'users');
-
-// Obtener clave primaria
-$primaryKey = VersaORM::schema('primaryKey', 'users');
-
-// Obtener índices
-$indexes = VersaORM::schema('indexes', 'users');
-
-// Obtener claves foráneas
-$foreignKeys = VersaORM::schema('foreignKeys', 'users');
-```
-
-### Gestión de caché
-
-```php
-// Habilitar caché
-VersaORM::cache('enable');
-
-// Deshabilitar caché
-VersaORM::cache('disable');
-
-// Limpiar caché
-VersaORM::cache('clear');
-
-// Estado del caché
-$status = VersaORM::cache('status');
-```
-
-## ORM Models (Estilo RedBeanPHP)
-
-VersaORM incluye una funcionalidad similar a RedBeanPHP que permite trabajar con modelos como objetos editables y persistentes.
-
-### Crear un nuevo modelo (dispense)
-
-```php
-// Crear un nuevo modelo de usuario vacío
+// Crear un nuevo objeto 'user'
 $user = VersaORM::table('users')->dispense();
 
-// Asignar propiedades
-$user->name = 'Juan Pérez';
-$user->email = 'juan@example.com';
-$user->active = true;
+// Asignar propiedades (usa __set)
+$user->name = 'Nuevo Usuario';
+$user->email = 'nuevo@example.com';
 
-// Guardar en base de datos
+// Guardar en la base de datos (INSERT)
 $user->store();
 
-echo "Usuario creado con ID: " . $user->id;
+echo "Usuario creado con ID: " . $user->id; // Accede a la propiedad (usa __get)
 ```
 
-### Cargar un modelo existente (load)
-
+#### Cargar y Actualizar un Modelo
+`load()` recupera un registro por su clave primaria.
 ```php
-// Cargar un usuario por ID
+// Cargar usuario con ID 1
 $user = VersaORM::table('users')->dispense();
 $user->load(1);
 
-echo "Usuario: " . $user->name . " (" . $user->email . ")";
-
-// También se puede cargar por otra clave
-$user->load('juan@example.com', 'email');
-```
-
-### Actualizar un modelo (store)
-
-```php
-// Cargar usuario existente
-$user = VersaORM::table('users')->dispense();
-$user->load(1);
-
-// Modificar propiedades
-$user->name = 'Juan Carlos Pérez';
-$user->last_login = date('Y-m-d H:i:s');
-
-// Guardar cambios
+// Modificar y guardar (UPDATE)
+$user->name = 'Nombre Actualizado';
 $user->store();
 ```
 
-### Eliminar un modelo (trash)
-
+#### Eliminar un Modelo
 ```php
-// Cargar y eliminar usuario
+// Cargar y eliminar el usuario
 $user = VersaORM::table('users')->dispense();
 $user->load(1);
 $user->trash();
-
-echo "Usuario eliminado";
 ```
 
-### Ejemplo completo de CRUD con Models
-
+### Introspección de Esquema
 ```php
-<?php
-// Usar el autoloader para cargar todas las dependencias
-require_once 'php/autoload.php';
-
-// Configurar conexión
-VersaORM::connect([
-    'driver' => 'mysql',
-    'host' => 'localhost',
-    'port' => 3306,
-    'database' => 'mi_base_datos',
-    'username' => 'usuario',
-    'password' => 'contraseña',
-    'charset' => 'utf8mb4'
-]);
-
-try {
-    // CREATE - Crear nuevo usuario
-    $user = VersaORM::table('users')->dispense();
-    $user->name = 'Ana García';
-    $user->email = 'ana@example.com';
-    $user->active = true;
-    $user->created_at = date('Y-m-d H:i:s');
-    $user->store();
-    
-    $userId = $user->id;
-    echo "Usuario creado con ID: $userId\n";
-    
-    // READ - Leer usuario
-    $loadedUser = VersaORM::table('users')->dispense();
-    $loadedUser->load($userId);
-    echo "Usuario cargado: {$loadedUser->name} ({$loadedUser->email})\n";
-    
-    // UPDATE - Actualizar usuario
-    $loadedUser->name = 'Ana María García';
-    $loadedUser->updated_at = date('Y-m-d H:i:s');
-    $loadedUser->store();
-    echo "Usuario actualizado\n";
-    
-    // Verificar cambios
-    echo "Datos del usuario: " . json_encode($loadedUser->toArray()) . "\n";
-    
-    // DELETE - Eliminar usuario
-    $loadedUser->trash();
-    echo "Usuario eliminado\n";
-    
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-}
+// Obtener todas las tablas, columnas, índices y claves foráneas
+$tables = VersaORM::schema('tables');
+$columns = VersaORM::schema('columns', 'users');
+$indexes = VersaORM::schema('indexes', 'users');
+$foreignKeys = VersaORM::schema('foreignKeys', 'users');
 ```
 
-### Métodos disponibles en VersaORMModel
-
-- `load($id, $pk = 'id')`: Carga datos desde la base de datos
-- `store()`: Guarda el modelo (INSERT si es nuevo, UPDATE si existe)
-- `trash()`: Elimina el registro de la base de datos
-- `toArray()`: Convierte el modelo a array asociativo
-- `__get($key)`: Obtiene el valor de un atributo
-- `__set($key, $value)`: Asigna valor a un atributo
-
-## Métodos del QueryBuilder
-
-### Construcción de consultas
-
-- `select(array $columns)`: Especifica las columnas a retornar
-- `where(string $column, string $operator, mixed $value)`: Añade cláusula WHERE
-- `orWhere(string $column, string $operator, mixed $value)`: Añade cláusula OR WHERE
-- `whereIn(string $column, array $values)`: Añade cláusula WHERE IN
-- `whereNotIn(string $column, array $values)`: Añade cláusula WHERE NOT IN
-- `whereNull(string $column)`: Añade cláusula WHERE IS NULL
-- `whereNotNull(string $column)`: Añade cláusula WHERE IS NOT NULL
-- `join(string $table, string $first, string $operator, string $second)`: Añade INNER JOIN
-- `leftJoin(...)`: Añade LEFT JOIN
-- `rightJoin(...)`: Añade RIGHT JOIN
-- `orderBy(string $column, string $direction = 'asc')`: Ordena resultados
-- `limit(int $count)`: Limita número de resultados
-- `offset(int $count)`: Especifica punto de inicio para paginación
-
-### Ejecución de consultas
-
-- `get()`: Ejecuta SELECT y devuelve array de objetos
-- `first()`: Ejecuta SELECT y devuelve primer resultado o null
-- `find(mixed $id, string $pk = 'id')`: Busca por clave primaria
-- `count()`: Ejecuta COUNT y devuelve número
-- `exists()`: Devuelve true si existe al menos un registro
-- `insert(array $data)`: Inserta nuevo registro
-- `insertGetId(array $data)`: Inserta y devuelve ID autoincremental
-- `update(array $data)`: Actualiza registros que coincidan con WHERE
-- `delete()`: Elimina registros que coincidan con WHERE
-- `dispense()`: Crea un nuevo modelo VersaORMModel vacío para la tabla
-
-## Configuración de Base de Datos
-
-### MySQL
-
+### Gestión de Caché
 ```php
-VersaORM::connect([
-    'driver' => 'mysql',
-    'host' => 'localhost',
-    'port' => 3306,
-    'database' => 'mi_db',
-    'username' => 'usuario',
-    'password' => 'contraseña',
-    'charset' => 'utf8mb4'
-]);
-```
-
-### PostgreSQL
-
-```php
-VersaORM::connect([
-    'driver' => 'postgres',
-    'host' => 'localhost',
-    'port' => 5432,
-    'database' => 'mi_db',
-    'username' => 'usuario',
-    'password' => 'contraseña',
-    'charset' => 'utf8'
-]);
-```
-
-### SQLite
-
-```php
-VersaORM::connect([
-    'driver' => 'sqlite',
-    'database' => '/ruta/a/base_datos.db',
-    'username' => '',
-    'password' => '',
-    'host' => '',
-    'port' => 0,
-    'charset' => ''
-]);
+// Habilitar, deshabilitar, limpiar o ver el estado del caché
+VersaORM::cache('enable');
+VersaORM::cache('clear');
+$status = VersaORM::cache('status');
 ```
 
 ## Mapeo de Tipos de Datos
