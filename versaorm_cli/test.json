@@ -1,0 +1,1 @@
+{\"config\":{\"driver\":\"sqlite\",\"database\":\":memory:\",\"host\":\"\",\"port\":0,\"username\":\"\",\"password\":\"\",\"charset\":\"\"},\"action\":\"cache\",\"params\":{\"action\":\"status\"}}

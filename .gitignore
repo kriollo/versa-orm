@@ -1,0 +1,45 @@
+# Dependencias
+/vendor/
+composer.lock
+
+# Archivos de configuración locales
+*.local
+.env
+.env.local
+.env.*.local
+
+# Cache y logs
+/coverage/
+/.phpunit.cache/
+/tests/results.xml
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+
+# Archivos de compilación Rust
+/versaorm_cli/target/
+/versaorm_cli/Cargo.lock
+
+# Archivos de testing
+phpunit.phar
+.phpunit.result.cache
+
+# Node modules (si usas herramientas de frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de ejemplo con datos reales
+example_with_real_data.php
+test_database.db
