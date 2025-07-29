@@ -72,20 +72,20 @@
                 <tbody>
                     <?php foreach ($tasks as $task): ?>
                         <tr class="border-b hover:bg-blue-50">
-                            <td class="px-3 py-2"><?= $task->id ?></td>
-                            <td class="px-3 py-2"><?= htmlspecialchars($task->title) ?></td>
-                            <td class="px-3 py-2"><?= htmlspecialchars($task->description) ?></td>
+                            <td class="px-3 py-2"><?= $task['id'] ?></td>
+                            <td class="px-3 py-2"><?= htmlspecialchars($task['title']) ?></td>
+                            <td class="px-3 py-2"><?= htmlspecialchars($task['description']) ?></td>
                             <td class="px-3 py-2">
-                                <span class="inline-block px-2 py-1 rounded text-xs <?= $task->completed ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
-                                    <?= $task->completed ? 'Sí' : 'No' ?>
+                                <span class="inline-block px-2 py-1 rounded text-xs <?= $task['completed'] ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
+                                    <?= $task['completed'] ? 'Sí' : 'No' ?>
                                 </span>
                             </td>
-                            <td class="px-3 py-2 text-xs text-gray-600"><?= $task->created_at ? date('d/m/Y H:i', strtotime($task->created_at)) : '-' ?></td>
-                            <td class="px-3 py-2 text-xs text-gray-600"><?= $task->updated_at ? date('d/m/Y H:i', strtotime($task->updated_at)) : '-' ?></td>
+                            <td class="px-3 py-2 text-xs text-gray-600"><?= $task['created_at'] ? date('d/m/Y H:i', strtotime($task['created_at'])) : '-' ?></td>
+                            <td class="px-3 py-2 text-xs text-gray-600"><?= $task['updated_at'] ? date('d/m/Y H:i', strtotime($task['updated_at'])) : '-' ?></td>
                             <td class="px-3 py-2 flex gap-2">
-                                <a href="?action=edit&id=<?= $task->id ?>"
+                                <a href="?action=edit&id=<?= $task['id'] ?>"
                                     class="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</a>
-                                <a href="?action=delete&id=<?= $task->id ?>"
+                                <a href="?action=delete&id=<?= $task['id'] ?>"
                                     class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                                     onclick="return confirm('¿Eliminar tarea?')">Eliminar</a>
                             </td>

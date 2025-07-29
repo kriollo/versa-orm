@@ -138,19 +138,9 @@ abstract class BaseModel extends VersaModel
     public static function all(): array
     {
         $instance = new static();
-        $results = $instance->db->exec(
-            "SELECT * FROM {$instance->table} ORDER BY {$instance->primaryKey} DESC"
-        );
+        $results = $instance->db->table($instance->table)->orderBy($instance->primaryKey, 'DESC')->get();
 
-        // Convertir resultados a modelos de la clase correcta
-        $models = [];
-        foreach ($results as $result) {
-            $model = new static();
-            $model->loadInstance($result);
-            $models[] = $model;
-        }
-
-        return $models;
+        return $results;
     }
 
     /**
@@ -263,21 +253,11 @@ abstract class BaseModel extends VersaModel
             $bindings[] = "%$searchLower%";
         }
 
-        $sql = "SELECT * FROM {$instance->table}
-                WHERE " . implode(' OR ', $conditions) . "
-                ORDER BY {$instance->primaryKey} DESC";
+        $result = $instance->db->table($instance->table)
+            ->whereRaw(implode(' OR ', $conditions), $bindings)
+            ->orderBy($instance->primaryKey, 'DESC')->get();
 
-        $results = $instance->db->exec($sql, $bindings);
-
-        // Convertir resultados a modelos
-        $models = [];
-        foreach ($results as $result) {
-            $model = new static();
-            $model->loadInstance($result);
-            $models[] = $model;
-        }
-
-        return $models;
+        return $result;
     }
 
     /**
@@ -288,21 +268,19 @@ abstract class BaseModel extends VersaModel
         $instance = new static();
         $offset = ($page - 1) * $perPage;
 
-        $sql = "SELECT * FROM {$instance->table} ORDER BY {$instance->primaryKey} DESC LIMIT ? OFFSET ?";
-        $results = $instance->db->exec($sql, [$perPage, $offset]);
+        // $sql = "SELECT * FROM {$instance->table} ORDER BY {$instance->primaryKey} DESC LIMIT ? OFFSET ?";
+        // $results = $instance->db->exec($sql, [$perPage, $offset]);
 
-        // Convertir resultados a modelos de la clase correcta
-        $models = [];
-        foreach ($results as $result) {
-            $model = new static();
-            $model->loadInstance($result);
-            $models[] = $model;
-        }
+        $results = $instance->db->table($instance->table)
+            ->orderBy($instance->primaryKey, 'DESC')
+            ->limit($perPage)
+            ->offset($offset)
+            ->getAll();
 
         $total = $instance->db->table($instance->table)->count();
 
         return [
-            'data' => $models,
+            'data' => $results,
             'total' => $total,
             'page' => $page,
             'per_page' => $perPage,

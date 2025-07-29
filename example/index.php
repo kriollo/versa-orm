@@ -3,6 +3,7 @@
 require_once __DIR__ . '/autoload.php';
 
 use Example\Models\Task;
+use VersaORM\VersaORMException;
 
 $config = [
     'DB' => [
@@ -105,10 +106,10 @@ if ($action === 'api' && ($_GET['format'] ?? '') === 'json') {
         }
 
         // Convertir modelos a arrays exportables usando toArray() estandarizado
-        $tasksArray = [];
-        foreach ($tasks as $task) {
-            $tasksArray[] = $task->toArray();
-        }
+        // $tasksArray = [];
+        // foreach ($tasks as $task) {
+        //     $tasksArray[] = $task->toArray();
+        // }
 
         // Establecer cabeceras HTTP para JSON
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -118,19 +119,32 @@ if ($action === 'api' && ($_GET['format'] ?? '') === 'json') {
         // Responder con JSON
         echo json_encode([
             'success' => true,
-            'count' => count($tasksArray),
+            'count' => count($tasks),
             'search' => $search,
-            'tasks' => $tasksArray
+            'tasks' => $tasks
         ]);
-    } catch (Exception $e) {
+    } catch (VersaORMException $e) {
         // Manejar errores y enviar respuesta de error
         header('HTTP/1.1 500 Internal Server Error');
         header('Content-Type: application/json');
-        echo json_encode([
+
+        // Extraer query y bindings del mensaje de error si están disponibles
+        $errorData = [
             'success' => false,
             'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
             'search' => $search ?? ''
-        ]);
+        ];
+
+        // Intentar extraer query y bindings de la excepción si están disponibles
+        if (method_exists($e, 'getQuery') && $e->getQuery()) {
+            $errorData['query'] = $e->getQuery();
+        }
+        if (method_exists($e, 'getBindings') && $e->getBindings()) {
+            $errorData['bindings'] = $e->getBindings();
+        }
+
+        echo json_encode($errorData);
     }
 
     exit;
