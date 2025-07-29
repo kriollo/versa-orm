@@ -2,8 +2,8 @@
 
 namespace Example\Models;
 
-use VersaORM\VersaModel;
 use VersaORM\Traits\VersaORMTrait;
+use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
 /**
@@ -98,6 +98,8 @@ abstract class BaseModel extends VersaModel
     public static function create(array $data): static
     {
         $instance = new static();
+        // Asegurar que el ORM estático esté configurado
+        VersaModel::setORM($instance->db);
         $model = VersaModel::dispense($instance->table);
 
         // Asignar solo campos permitidos
@@ -139,7 +141,7 @@ abstract class BaseModel extends VersaModel
         $results = $instance->db->exec(
             "SELECT * FROM {$instance->table} ORDER BY {$instance->primaryKey} DESC"
         );
-        
+
         // Convertir resultados a modelos de la clase correcta
         $models = [];
         foreach ($results as $result) {
@@ -147,14 +149,14 @@ abstract class BaseModel extends VersaModel
             $model->loadInstance($result);
             $models[] = $model;
         }
-        
+
         return $models;
     }
 
     /**
-     * Cuenta todos los registros
+     * Cuenta todos los registros de esta tabla
      */
-    public static function count(): int
+    public static function countAll(): int
     {
         $instance = new static();
         return $instance->db->table($instance->table)->count();
@@ -168,7 +170,7 @@ abstract class BaseModel extends VersaModel
         $instance = new static();
         $sql = "SELECT * FROM {$instance->table} WHERE {$column} {$operator} ? ORDER BY {$instance->primaryKey} DESC";
         $results = $instance->db->exec($sql, [$value]);
-        
+
         // Convertir resultados a modelos de la clase correcta
         $models = [];
         foreach ($results as $result) {
@@ -176,7 +178,7 @@ abstract class BaseModel extends VersaModel
             $model->loadInstance($result);
             $models[] = $model;
         }
-        
+
         return $models;
     }
 
@@ -288,7 +290,7 @@ abstract class BaseModel extends VersaModel
 
         $sql = "SELECT * FROM {$instance->table} ORDER BY {$instance->primaryKey} DESC LIMIT ? OFFSET ?";
         $results = $instance->db->exec($sql, [$perPage, $offset]);
-        
+
         // Convertir resultados a modelos de la clase correcta
         $models = [];
         foreach ($results as $result) {
