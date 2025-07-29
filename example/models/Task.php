@@ -2,92 +2,149 @@
 
 namespace Example\Models;
 
-use VersaORM\Traits\VersaORMTrait;
-
-class Task
+/**
+ * Modelo Task - Gestión de tareas
+ *
+ * Campos de la tabla 'tasks':
+ * - id: int (PK, auto_increment)
+ * - title: string (required)
+ * - description: text (optional)
+ * - completed: boolean (default: false)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ */
+class Task extends BaseModel
 {
-    use VersaORMTrait;
-    public $table = 'tasks';
-    public $id;
-    public $title;
-    public $description;
-    public $completed;
-    public $created_at;
-    public $updated_at;
+    /**
+     * Nombre de la tabla
+     */
+    protected string $table = 'tasks';
 
-    public function __construct()
-    {
-        $this->connectORM();
-    }
+    /**
+     * Campos que se pueden asignar masivamente
+     */
+    protected array $fillable = [
+        'title',
+        'description',
+        'completed'
+    ];
 
-    public function __destruct()
-    {
-        $this->disconnectORM();
-    }
+    /**
+     * Campos ocultos en la serialización (si los hubiera)
+     */
+    protected array $hidden = [];
 
-    // Crear nueva tarea
-    public function create($data)
+    /**
+     * Validación específica para tareas
+     */
+    public function validate(): array
     {
-        $task = $this->db->table($this->table)->dispense();
-        $task->title = $data['title'];
-        $task->description = $data['description'] ?? '';
-        $task->completed = $data['completed'] ?? false;
-        $task->store();
-        return $task;
-    }
+        $errors = [];
 
-    // Obtener todas las tareas
-    public static function all()
-    {
-        $instance = new self();
-        return $instance->db->table($instance->table)->orderBy('id', 'desc')->findAll();
-    }
-
-    // Exportar todas las tareas como array
-    public static function allExported()
-    {
-        $tasks = self::all();
-        return \VersaORM\Model::exportAll($tasks);
-    }
-
-    // Permitir acceso público a los atributos para la API
-    public function getAttributes(): array
-    {
-        $props = array('id', 'title', 'description', 'completed', 'created_at', 'updated_at');
-        $out = array();
-        foreach ($props as $prop) {
-            $out[$prop] = isset($this->$prop) ? $this->$prop : null;
+        // Título es requerido
+        if (empty($this->title)) {
+            $errors['title'] = 'El título es requerido';
         }
-        return $out;
-    }
 
-    // Buscar por ID
-    public function find($id)
-    {
-        return $this->db->table($this->table)->find($id);
-    }
-
-    // Actualizar tarea
-    public function update($id, $data)
-    {
-        $task = $this->find($id);
-        if ($task) {
-            foreach ($data as $k => $v) {
-                $task->$k = $v;
-            }
-            $task->store();
+        // Título no debe ser muy largo
+        if (strlen($this->title ?? '') > 255) {
+            $errors['title'] = 'El título no puede tener más de 255 caracteres';
         }
-        return $task;
+
+        // Descripción no debe ser muy larga
+        if (strlen($this->description ?? '') > 1000) {
+            $errors['description'] = 'La descripción no puede tener más de 1000 caracteres';
+        }
+
+        return $errors;
     }
 
-    // Eliminar tarea
-    public function delete($id)
+    /**
+     * Obtiene tareas completadas usando QueryBuilder
+     */
+    public static function completed(): array
     {
-        $task = $this->find($id);
-        if ($task) {
-            $task->trash();
-            return true;
+        $instance = new static();
+        return $instance->db->table($instance->table)
+            ->where('completed', '=', 1)
+            ->findAll();
+    }
+
+    /**
+     * Obtiene tareas pendientes usando QueryBuilder
+     */
+    public static function pending(): array
+    {
+        $instance = new static();
+        return $instance->db->table($instance->table)
+            ->where('completed', '=', 0)
+            ->findAll();
+    }
+
+    /**
+     * Marca una tarea como completada
+     */
+    public function markAsCompleted(): bool
+    {
+        return $this->update(['completed' => true]);
+    }
+
+    /**
+     * Marca una tarea como pendiente
+     */
+    public function markAsPending(): bool
+    {
+        return $this->update(['completed' => false]);
+    }
+
+    /**
+     * Búsqueda específica en tareas (title y description)
+     */
+    public static function searchTasks(string $term): array
+    {
+        return self::search($term, ['title', 'description']);
+    }
+
+    /**
+     * Obtiene estadísticas de tareas
+     */
+    public static function getStats(): array
+    {
+        $instance = new static();
+
+        $total = $instance->db->table($instance->table)->count();
+        $completed = $instance->db->table($instance->table)
+            ->where('completed', '=', true)->count();
+        $pending = $total - $completed;
+
+        return [
+            'total' => $total,
+            'completed' => $completed,
+            'pending' => $pending,
+            'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 2) : 0
+        ];
+    }
+
+    /**
+     * Scope para tareas recientes (últimos 7 días)
+     */
+    public static function recent(): array
+    {
+        $instance = new static();
+
+        $sql = "SELECT * FROM {$instance->table}
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY created_at DESC";
+
+        $results = $instance->db->exec($sql);
+
+        $models = [];
+        foreach ($results as $result) {
+            $model = new static();
+            $model->loadInstance($result);
+            $models[] = $model;
         }
-        return false;
+
+        return $models;
     }
 }
