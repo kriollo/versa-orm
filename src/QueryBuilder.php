@@ -5,7 +5,23 @@ declare(strict_types=1);
 namespace VersaORM;
 
 /**
- * VersaORMQueryBuilder - Clase de construcción de consultas para VersaORM
+ * QueryBuilder - Constructor de consultas para VersaORM
+ * 
+ * PROPÓSITO: Construir consultas SQL de forma fluida
+ * ARQUITECTURA CLARA:
+ * 
+ * MÉTODOS QUE DEVUELVEN ARRAYS (datos exportables para JSON/API):
+ * - get() - Array de arrays con datos
+ * - getAll() - Alias de get()
+ * - first() - Array con primer registro o null
+ * - count() - Entero
+ * - exists() - Boolean
+ * 
+ * MÉTODOS QUE DEVUELVEN OBJETOS MANIPULABLES (VersaModel):
+ * - findAll() - Array de objetos VersaModel
+ * - findOne() - Objeto VersaModel o null
+ * - find(id) - Objeto VersaModel o null  
+ * - dispense() - Nuevo objeto VersaModel vacío
  *
  * @package VersaORM
  * @version 1.0.0
@@ -318,68 +334,69 @@ class QueryBuilder
         return $this;
     }
 
+    // ========== MÉTODOS QUE DEVUELVEN OBJETOS MANIPULABLES ==========
+    
     /**
-     * Ejecuta la consulta SELECT y devuelve un array de modelos.
+     * Ejecuta la consulta SELECT y devuelve un array de objetos VersaModel manipulables
      *
-     * @return Model[]
+     * @return VersaModel[]
      */
     public function findAll(): array
     {
         $results = $this->execute('get');
         $models = [];
-        // Detectar clase de modelo llamante
-        $callerModelClass = null;
-        if (isset($this->modelClass) && class_exists($this->modelClass)) {
-            $callerModelClass = $this->modelClass;
-        }
-        // Si no, intentar deducir desde el stacktrace
-        if (!$callerModelClass) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
-            foreach ($trace as $frame) {
-                if (isset($frame['object']) && is_object($frame['object'])) {
-                    $obj = $frame['object'];
-                    if (is_subclass_of($obj, Model::class)) {
-                        $callerModelClass = get_class($obj);
-                        break;
-                    }
-                }
-            }
-        }
+        
         foreach ($results as $result) {
-            if ($callerModelClass && $callerModelClass !== Model::class) {
-                $model = new $callerModelClass();
-                foreach ($result as $k => $v) {
-                    $model->$k = $v;
-                }
-            } else {
-                $model = new Model($this->table, $this->orm);
-                $model->loadInstance($result);
-            }
+            $model = new VersaModel($this->table, $this->orm);
+            $model->loadInstance($result);
             $models[] = $model;
         }
+        
         return $models;
     }
 
+    // ========== MÉTODOS QUE DEVUELVEN ARRAYS (para JSON/API) ==========
+    
     /**
-     * Ejecuta la consulta SELECT y devuelve un array de arrays de datos
+     * Ejecuta la consulta SELECT y devuelve array de arrays de datos (para JSON/API)
+     *
+     * @return array
+     */
+    public function get(): array
+    {
+        return $this->execute('get');
+    }
+    
+    /**
+     * Alias de get() - devuelve array de arrays de datos
      *
      * @return array
      */
     public function getAll(): array
     {
-        return $this->execute('get');
+        return $this->get();
+    }
+    
+    /**
+     * Obtiene el primer registro como array (para JSON/API)
+     *
+     * @return array|null
+     */
+    public function firstArray(): ?array
+    {
+        return $this->execute('first');
     }
 
     /**
-     * Ejecuta la consulta y devuelve el primer objeto resultado como modelo, o null.
+     * Ejecuta la consulta y devuelve el primer objeto resultado como VersaModel, o null.
      *
-     * @return Model|null
+     * @return VersaModel|null
      */
-    public function findOne(): ?Model
+    public function findOne(): ?VersaModel
     {
         $result = $this->execute('first');
         if ($result) {
-            $model = new Model($this->table, $this->orm);
+            $model = new VersaModel($this->table, $this->orm);
             $model->loadInstance($result);
             return $model;
         }
@@ -400,19 +417,19 @@ class QueryBuilder
 
 
     /**
-     * Retrieves the first result from the executed query and returns it as a Model instance.
+     * Retrieves the first result from the executed query and returns it as a VersaModel instance.
      *
      * Executes the query using the 'first' mode, which is expected to return a single result.
-     * If a result is found, a new Model instance is created, loaded with the result data, and returned.
+     * If a result is found, a new VersaModel instance is created, loaded with the result data, and returned.
      * If no result is found, returns null.
      *
-     * @return Model|null The first result as a Model instance, or null if no result is found.
+     * @return VersaModel|null The first result as a VersaModel instance, or null if no result is found.
      */
-    public function first(): ?Model
+    public function first(): ?VersaModel
     {
         $result = $this->execute('first');
         if ($result) {
-            $model = new Model($this->table, $this->orm);
+            $model = new VersaModel($this->table, $this->orm);
             $model->loadInstance($result);
             return $model;
         }
@@ -488,12 +505,12 @@ class QueryBuilder
     /**
      * Crear un nuevo objeto (dispense).
      *
-     * @return Model
+     * @return VersaModel
      */
-    public function dispense(): Model
+    public function dispense(): VersaModel
     {
         error_log('[DEBUG] Executing SQL with QueryBuilder');
-        return new Model($this->table, $this->orm);
+        return new VersaModel($this->table, $this->orm);
     }
 
     /**

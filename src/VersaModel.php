@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace VersaORM;
 
 /**
- * VersaORMModel - Clase de modelo ORM para VersaORM
+ * VersaModel - Modelo base ActiveRecord para VersaORM
+ * 
+ * PROPÓSITO: Representa un registro individual de la base de datos como objeto
+ * RETORNA: Siempre objetos manipulables (store, trash, propiedades dinámicas)
+ * USO: Para operaciones CRUD individuales y manipulación de registros
  *
  * @package VersaORM
  * @version 1.0.0
  * @author VersaORM Team
  * @license MIT
  */
-class Model
+class VersaModel
 {
     private string $table;
     private $orm; // Puede ser array (config) o instancia de VersaORM
