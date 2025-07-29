@@ -56,6 +56,10 @@ struct ErrorResponse {
 struct ErrorDetails {
     code: String,
     message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    query: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bindings: Option<Vec<serde_json::Value>>,
 }
 
 #[tokio::main]
@@ -81,6 +85,8 @@ async fn main() {
             error: ErrorDetails {
                 code: "PANIC_ERROR".to_string(),
                 message: format!("Internal error: {}{}", error_msg, location),
+                query: None,
+                bindings: None,
             },
         };
         
@@ -106,13 +112,15 @@ async fn run_main() {
             
             // Intentar conectar a la base de datos
             if let Err(e) = connection_manager.connect().await {
-                let response = ErrorResponse {
-                    status: "error".to_string(),
-                    error: ErrorDetails {
-                        code: "DB_CONN_FAILED".to_string(),
-                        message: format!("Database connection failed: {}", e),
-                    },
-                };
+                    let response = ErrorResponse {
+                        status: "error".to_string(),
+                        error: ErrorDetails {
+                            code: "DB_CONN_FAILED".to_string(),
+                            message: format!("Database connection failed: {}", e),
+                            query: None,
+                            bindings: None,
+                        },
+                    };
                 eprintln!("{}", serde_json::to_string(&response).unwrap());
                 return;
             }
@@ -120,10 +128,10 @@ async fn run_main() {
             // Procesar la acción
             let result = match payload.action.as_str() {
                 "query" => handle_query_action(&connection_manager, &payload.params).await,
-                "schema" => handle_schema_action(&connection_manager, &payload.params).await,
+                "schema" => handle_schema_action(&connection_manager, &payload.params).await.map_err(|e| (e, None, None)),
                 "raw" => handle_raw_action(&connection_manager, &payload.params).await,
-                "cache" => handle_cache_action(&payload.params),
-                _ => Err(format!("Unknown action: {}", payload.action)),
+                "cache" => handle_cache_action(&payload.params).map_err(|e| (e, None, None)),
+                _ => Err((format!("Unknown action: {}", payload.action), None, None)),
             };
 
             let execution_time = start_time.elapsed().as_millis() as f64;
@@ -146,12 +154,14 @@ async fn run_main() {
                     };
                     println!("{}", serde_json::to_string(&response).unwrap());
                 }
-                Err(e) => {
+                Err((error_msg, query, bindings)) => {
                     let response = ErrorResponse {
                         status: "error".to_string(),
                         error: ErrorDetails {
                             code: "EXECUTION_ERROR".to_string(),
-                            message: e,
+                            message: error_msg,
+                            query,
+                            bindings,
                         },
                     };
                     eprintln!("{}", serde_json::to_string(&response).unwrap());
@@ -164,6 +174,8 @@ async fn run_main() {
                 error: ErrorDetails {
                     code: "INVALID_JSON".to_string(),
                     message: format!("Failed to parse JSON input: {}", e),
+                    query: None,
+                    bindings: None,
                 },
             };
             eprintln!("{}", serde_json::to_string(&response).unwrap());
@@ -175,10 +187,10 @@ async fn run_main() {
 async fn handle_query_action(
     connection: &ConnectionManager,
     params: &HashMap<String, serde_json::Value>,
-) -> Result<serde_json::Value, String> {
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let table = params.get("table")
         .and_then(|v| v.as_str())
-        .ok_or("Table name is required")?;
+        .ok_or(("Table name is required".to_string(), None, None))?;
 
     let method = params.get("method")
         .and_then(|v| v.as_str())
@@ -200,12 +212,28 @@ async fn handle_query_action(
     // Aplicar wheres
     if let Some(wheres) = params.get("where").and_then(|v| v.as_array()) {
         for where_clause in wheres {
-            if let (Some(column), Some(operator), Some(value)) = (
-                where_clause.get("column").and_then(|v| v.as_str()),
-                where_clause.get("operator").and_then(|v| v.as_str()),
-                where_clause.get("value")
-            ) {
-                query_builder = query_builder.r#where(column, operator, value.clone());
+            // Verificar si es una cláusula RAW
+            if where_clause.get("type").and_then(|v| v.as_str()) == Some("raw") {
+                // Procesar cláusula RAW
+                if let (Some(sql), Some(bindings)) = (
+                    where_clause.get("sql").and_then(|v| v.as_str()),
+                    where_clause.get("bindings").and_then(|v| v.as_array())
+                ) {
+                    let raw_value = serde_json::json!({
+                        "sql": sql,
+                        "bindings": bindings
+                    });
+                    query_builder = query_builder.r#where("", "RAW", raw_value);
+                }
+            } else {
+                // Procesar cláusula normal
+                if let (Some(column), Some(operator), Some(value)) = (
+                    where_clause.get("column").and_then(|v| v.as_str()),
+                    where_clause.get("operator").and_then(|v| v.as_str()),
+                    where_clause.get("value")
+                ) {
+                    query_builder = query_builder.r#where(column, operator, value.clone());
+                }
             }
         }
     }
@@ -244,12 +272,12 @@ async fn handle_query_action(
     match method {
         "get" => {
             let rows = connection.execute_raw(&sql, params.clone()).await
-                .map_err(|e| format!("Query execution failed: {}", e))?;
+                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.clone()), Some(params.clone())))?;
             Ok(serde_json::to_value(rows).unwrap())
         }
         "first" => {
             let rows = connection.execute_raw(&sql, params.clone()).await
-                .map_err(|e| format!("Query execution failed: {}", e))?;
+                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.clone()), Some(params.clone())))?;
             let first_row = rows.into_iter().next();
             Ok(serde_json::to_value(first_row).unwrap())
         }
@@ -264,7 +292,7 @@ async fn handle_query_action(
             };
             
             let rows = connection.execute_raw(&count_sql, params.clone()).await
-                .map_err(|e| format!("Count query failed: {}", e))?;
+                .map_err(|e| (format!("Count query failed: {}", e), Some(count_sql.clone()), Some(params.clone())))?;
             let count = rows.first()
                 .and_then(|row| row.get("count"))
                 .and_then(|v| v.as_i64())
@@ -274,7 +302,7 @@ async fn handle_query_action(
         "exists" => {
             let exists_sql = format!("SELECT EXISTS({}) as exists_result", sql);
             let rows = connection.execute_raw(&exists_sql, vec![]).await
-                .map_err(|e| format!("Exists query failed: {}", e))?;
+                .map_err(|e| (format!("Exists query failed: {}", e), Some(exists_sql.clone()), None))?;
             let exists = rows.first()
                 .and_then(|row| row.get("exists_result"))
                 .and_then(|v| v.as_bool())
@@ -294,12 +322,12 @@ async fn handle_query_action(
             };
             
             let _rows = connection.execute_raw(&delete_sql, params.clone()).await
-                .map_err(|e| format!("Delete query failed: {}", e))?;
+                .map_err(|e| (format!("Delete query failed: {}", e), Some(delete_sql.clone()), Some(params.clone())))?;
             
             // Para DELETE, retornar 0 ya que no hay filas de retorno, solo filas afectadas
             Ok(serde_json::Value::Number(serde_json::Number::from(0)))
         }
-        _ => Err(format!("Unsupported method: {}", method))
+        _ => Err((format!("Unsupported method: {}", method), Some(sql), Some(params)))
     }
 }
 
@@ -360,18 +388,18 @@ async fn handle_schema_action(
 async fn handle_raw_action(
     connection: &ConnectionManager,
     params: &HashMap<String, serde_json::Value>,
-) -> Result<serde_json::Value, String> {
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let query = params.get("query")
         .and_then(|v| v.as_str())
-        .ok_or("Query is required for raw action")?;
+        .ok_or(("Query is required for raw action".to_string(), None, None))?;
 
     let bindings = params.get("bindings")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
 
-    let rows = connection.execute_raw(query, bindings).await
-        .map_err(|e| format!("Raw query execution failed: {}", e))?;
+    let rows = connection.execute_raw(query, bindings.clone()).await
+        .map_err(|e| (format!("Raw query execution failed: {}", e), Some(query.to_string()), Some(bindings.clone())))?;
 
     Ok(serde_json::to_value(rows).unwrap())
 }

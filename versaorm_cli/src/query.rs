@@ -78,12 +78,24 @@ impl QueryBuilder {
         // WHERE clause
         if !self.wheres.is_empty() {
             query.push_str(" WHERE ");
-            let where_clauses: Vec<String> = self.wheres.iter()
-                .map(|(col, op, value)| {
-                    params.push(value.clone()); // ✅ EXTRAE LOS VALORES
-                    format!("{} {} ?", col, op)
-                })
-                .collect();
+let mut where_clauses = Vec::new();
+
+            for (col, op, value) in self.wheres.iter() {
+                if op == "RAW" {
+                    if let Some(sql) = value.get("sql").and_then(|s| s.as_str()) {
+                        if let Some(bindings) = value.get("bindings").and_then(|b| b.as_array()) {
+                            for binding in bindings {
+                                params.push(binding.clone());
+                            }
+                            where_clauses.push(format!("({})", sql));
+                        }
+                    }
+                } else {
+                    params.push(value.clone());
+                    where_clauses.push(format!("{} {} ?", col, op));
+                }
+            }
+            
             query.push_str(&where_clauses.join(" AND "));
         }
 
