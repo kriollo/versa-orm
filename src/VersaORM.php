@@ -91,6 +91,14 @@ class VersaORM
                 'action' => $action,
                 'params' => $params
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+            // If in debug mode and JSON_DUMP environment variable is set, dump and exit
+            if ($this->isDebugMode() && getenv('JSON_DUMP') === 'true') {
+                echo "=== JSON PAYLOAD DUMP ===\n";
+                echo $payload . "\n";
+                echo "========================\n";
+                exit(0);
+            }
         } catch (\JsonException $e) {
             throw new VersaORMException(sprintf(
                 'Failed to encode JSON payload: %s. Data contains invalid characters or circular references.',
@@ -310,15 +318,15 @@ class VersaORM
         $errorMessage = $error['message'] ?? 'An unknown error occurred.';
         $errorDetails = $error['details'] ?? [];
         $sqlState = $error['sql_state'] ?? null;
-        
+
         // Extraer información de la consulta desde el error de Rust (si está disponible)
         $sqlQuery = $error['query'] ?? null;
         $sqlBindings = $error['bindings'] ?? [];
-        
+
         // Crear información de consulta para el mensaje de error
         $query = null;
         $bindings = [];
-        
+
         if ($sqlQuery) {
             // Si tenemos la query SQL real desde Rust, usarla
             $query = $sqlQuery;
@@ -335,7 +343,7 @@ class VersaORM
             $where = $params['where'] ?? [];
             $orderBy = $params['orderBy'] ?? [];
             $limit = $params['limit'] ?? null;
-            
+
             $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $select);
             if (!empty($where)) {
                 $whereDesc = [];
@@ -366,7 +374,7 @@ class VersaORM
 
         // Verificar si está en modo debug
         $isDebugMode = $this->isDebugMode();
-        
+
         // Construir mensaje de error según el modo
         if ($isDebugMode) {
             $detailedMessage = $this->buildDetailedErrorMessage(
@@ -378,11 +386,11 @@ class VersaORM
                 $query,
                 $bindings
             );
-            
+
             // En modo debug, agregar stack trace
             $detailedMessage .= "\n\n=== DEBUG STACK TRACE ===\n";
             $detailedMessage .= $this->getDebugStackTrace();
-            
+
             // Log del error si está habilitado
             $this->logError($errorCode, $errorMessage, $query, $bindings, $detailedMessage);
         } else {
@@ -461,7 +469,7 @@ class VersaORM
 
         return $message;
     }
-    
+
     /**
      * Construye un mensaje de error simple para modo producción.
      *
@@ -473,7 +481,7 @@ class VersaORM
     {
         return sprintf('Database Error [%s]: %s', $errorCode, $errorMessage);
     }
-    
+
     /**
      * Verifica si está habilitado el modo debug.
      *
@@ -483,7 +491,7 @@ class VersaORM
     {
         return isset($this->config['debug']) && $this->config['debug'] === true;
     }
-    
+
     /**
      * Obtiene el stack trace para modo debug.
      *
@@ -493,21 +501,21 @@ class VersaORM
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         $traceStr = '';
-        
+
         foreach ($trace as $i => $frame) {
             if (isset($frame['file']) && isset($frame['line'])) {
                 $file = basename($frame['file']);
                 $line = $frame['line'];
                 $function = $frame['function'] ?? 'unknown';
                 $class = isset($frame['class']) ? $frame['class'] . '::' : '';
-                
+
                 $traceStr .= sprintf("#%d %s%s() at %s:%d\n", $i, $class, $function, $file, $line);
             }
         }
-        
+
         return $traceStr;
     }
-    
+
     /**
      * Registra el error en log si está en modo debug.
      *
@@ -525,18 +533,18 @@ class VersaORM
             if (!is_dir($logDir)) {
                 mkdir($logDir, 0755, true);
             }
-            
+
             $logFile = $logDir . '/versaorm_debug.log';
             $timestamp = date('Y-m-d H:i:s');
-            
+
             $logEntry = sprintf(
                 "[%s] VersaORM Debug Log\n" .
-                "Error Code: %s\n" .
-                "Error Message: %s\n" .
-                "Query: %s\n" .
-                "Bindings: %s\n" .
-                "Full Error:\n%s\n" .
-                "===================================================\n\n",
+                    "Error Code: %s\n" .
+                    "Error Message: %s\n" .
+                    "Query: %s\n" .
+                    "Bindings: %s\n" .
+                    "Full Error:\n%s\n" .
+                    "===================================================\n\n",
                 $timestamp,
                 $errorCode,
                 $errorMessage,
@@ -544,7 +552,7 @@ class VersaORM
                 json_encode($bindings),
                 $fullMessage
             );
-            
+
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
         } catch (\Throwable $e) {
             // Silenciar errores de logging para no interferir con el error principal
@@ -668,19 +676,19 @@ class VersaORM
         if ($tempFile === false) {
             throw new VersaORMException('Failed to create temporary file for binary execution.', 'TEMP_FILE_ERROR');
         }
-        
+
         try {
             // Escribir payload al archivo temporal
             if (file_put_contents($tempFile, $payload, LOCK_EX) === false) {
                 throw new VersaORMException('Failed to write to temporary file.', 'TEMP_FILE_WRITE_ERROR');
             }
-            
+
             // Construir comando usando el archivo temporal
             $command = sprintf('%s %s 2>&1', escapeshellarg($binaryPath), escapeshellarg("@$tempFile"));
-            
+
             // Ejecutar comando
             $output = shell_exec($command);
-            
+
             return $output;
         } finally {
             // Limpiar archivo temporal independientemente del resultado
@@ -689,7 +697,7 @@ class VersaORM
             }
         }
     }
-    
+
     /**
      * Escapa JSON de forma segura para el shell según el sistema operativo.
      * DEPRECATED: Usar executeBinaryWithTempFile en su lugar.
@@ -703,7 +711,7 @@ class VersaORM
         if (PHP_OS_FAMILY === 'Windows') {
             // Método mejorado de escape para Windows
             $escaped = $json;
-            
+
             // Lista completa de caracteres problemáticos en Windows CMD
             $problematicChars = [
                 '\\' => '\\\\',   // Backslash
@@ -724,11 +732,11 @@ class VersaORM
                 '=' => '^=',       // Asignación
                 ' ' => '^ ',       // Espacio
             ];
-            
+
             foreach ($problematicChars as $char => $replacement) {
                 $escaped = str_replace($char, $replacement, $escaped);
             }
-            
+
             return '"' . $escaped . '"';
         } else {
             // En Unix/Linux, usar escapeshellarg que funciona correctamente
@@ -747,7 +755,7 @@ class VersaORM
 
         switch (PHP_OS_FAMILY) {
             case 'Windows':
-                $this->binaryPath = $binaryDir . '/versaorm_cli_windows.exe';
+                $this->binaryPath = $binaryDir . '/versaorm_cli.exe';
                 break;
             case 'Linux':
                 $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
