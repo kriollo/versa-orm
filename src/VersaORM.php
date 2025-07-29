@@ -78,7 +78,7 @@ class VersaORM
     private function execute(string $action, array $params)
     {
         if (empty($this->config)) {
-            throw new \Exception('Database configuration is not set. Please call setConfig() first.');
+            throw new VersaORMException('Database configuration is not set. Please call setConfig() first.');
         }
 
         // Validar parámetros de entrada
@@ -92,27 +92,27 @@ class VersaORM
                 'params' => $params
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         } catch (\JsonException $e) {
-            throw new \Exception(sprintf(
+            throw new VersaORMException(sprintf(
                 'Failed to encode JSON payload: %s. Data contains invalid characters or circular references.',
                 $e->getMessage()
-            ));
+            ), 'JSON_ENCODE_ERROR');
         }
 
         $binaryPath = $this->binaryPath;
 
         if (!file_exists($binaryPath)) {
-            throw new \Exception(sprintf(
+            throw new VersaORMException(sprintf(
                 'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
                 $binaryPath
-            ));
+            ), 'BINARY_NOT_FOUND');
         }
 
         // Verificar permisos de ejecución
         if (!is_executable($binaryPath)) {
-            throw new \Exception(sprintf(
+            throw new VersaORMException(sprintf(
                 'VersaORM binary is not executable: %s. Please check file permissions.',
                 $binaryPath
-            ));
+            ), 'BINARY_NOT_EXECUTABLE');
         }
 
         // Escapamos el JSON para pasarlo como un solo argumento de forma segura
@@ -123,12 +123,13 @@ class VersaORM
         $output = shell_exec($command);
 
         if ($output === null) {
-            throw new \Exception(
+            throw new VersaORMException(
                 'Failed to execute the VersaORM binary. This could be due to:\n' .
                     '- Binary corruption\n' .
                     '- System resource limitations\n' .
                     '- Security restrictions\n' .
-                    '- Missing system dependencies'
+                    '- Missing system dependencies',
+                'BINARY_EXECUTION_FAILED'
             );
         }
 
@@ -136,11 +137,14 @@ class VersaORM
         try {
             $response = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new \Exception(sprintf(
-                'Failed to decode JSON response from binary: %s\nRaw output: %s',
-                $e->getMessage(),
-                substr($output, 0, 500) // Limitar la salida para evitar spam
-            ));
+            throw new VersaORMException(
+                sprintf(
+                    'Failed to decode JSON response from binary: %s\nRaw output: %s',
+                    $e->getMessage(),
+                    substr($output, 0, 500) // Limitar la salida para evitar spam
+                ),
+                'JSON_DECODE_ERROR'
+            );
         }
 
         // Manejar errores del binario
@@ -252,13 +256,13 @@ class VersaORM
     {
         // Validar que la acción no esté vacía
         if (empty($action)) {
-            throw new \Exception('Action parameter cannot be empty.');
+            throw new VersaORMException('Action parameter cannot be empty.');
         }
 
         // Validar acciones conocidas
         $validActions = ['query', 'raw', 'schema', 'cache'];
         if (!in_array($action, $validActions)) {
-            throw new \Exception(sprintf(
+            throw new VersaORMException(sprintf(
                 'Invalid action: %s. Valid actions are: %s',
                 $action,
                 implode(', ', $validActions)
@@ -269,22 +273,22 @@ class VersaORM
         switch ($action) {
             case 'raw':
                 if (!isset($params['query']) || !is_string($params['query'])) {
-                    throw new \Exception('Raw action requires a valid query string.');
+                    throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
                 }
                 if (strlen($params['query']) > 1000000) { // 1MB limit
-                    throw new \Exception('Query string exceeds maximum length (1MB).');
+                    throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
                 }
                 break;
 
             case 'schema':
                 if (!isset($params['subject']) || !is_string($params['subject'])) {
-                    throw new \Exception('Schema action requires a valid subject.');
+                    throw new VersaORMException('Schema action requires a valid subject.', 'INVALID_SCHEMA_SUBJECT');
                 }
                 break;
 
             case 'cache':
                 if (!isset($params['action']) || !is_string($params['action'])) {
-                    throw new \Exception('Cache action requires a valid action parameter.');
+                    throw new VersaORMException('Cache action requires a valid action parameter.', 'INVALID_CACHE_ACTION');
                 }
                 break;
         }
@@ -310,7 +314,59 @@ class VersaORM
         $errorMessage = $error['message'] ?? 'An unknown error occurred.';
         $errorDetails = $error['details'] ?? [];
         $sqlState = $error['sql_state'] ?? null;
-        $query = $params['query'] ?? null;
+
+        // Extraer información de la consulta desde el error de Rust (si está disponible)
+        $sqlQuery = $error['query'] ?? null;
+        $sqlBindings = $error['bindings'] ?? [];
+
+        // Crear información de consulta para el mensaje de error
+        $query = null;
+        $bindings = [];
+
+        if ($sqlQuery) {
+            // Si tenemos la query SQL real desde Rust, usarla
+            $query = $sqlQuery;
+            $bindings = $sqlBindings;
+        } elseif ($action === 'raw') {
+            // Para consultas raw, usar los parámetros originales
+            $query = $params['query'] ?? null;
+            $bindings = $params['bindings'] ?? [];
+        } elseif ($action === 'query') {
+            // Para QueryBuilder, construir una representación de la consulta como fallback
+            $table = $params['table'] ?? 'unknown';
+            $method = $params['method'] ?? 'get';
+            $select = $params['select'] ?? ['*'];
+            $where = $params['where'] ?? [];
+            $orderBy = $params['orderBy'] ?? [];
+            $limit = $params['limit'] ?? null;
+
+            $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $select);
+            if (!empty($where)) {
+                $whereDesc = [];
+                foreach ($where as $w) {
+                    if ($w['operator'] === 'RAW' && is_array($w['value'])) {
+                        // Manejo especial para whereRaw
+                        $rawSql = $w['value']['sql'] ?? 'unknown';
+                        $rawBindings = $w['value']['bindings'] ?? [];
+                        $bindingsStr = !empty($rawBindings) ? ' [bindings: ' . json_encode($rawBindings) . ']' : '';
+                        $whereDesc[] = "RAW({$rawSql}){$bindingsStr}";
+                    } elseif (is_array($w['value'])) {
+                        $value = '[' . implode(',', $w['value']) . ']';
+                        $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
+                    } else {
+                        $value = (string)$w['value'];
+                        $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
+                    }
+                }
+                $query .= ", where=[" . implode(' AND ', $whereDesc) . "]";
+            }
+            if (!empty($orderBy)) {
+                $query .= ", orderBy={$orderBy[0]['column']} {$orderBy[0]['direction']}";
+            }
+            if ($limit) {
+                $query .= ", limit={$limit}";
+            }
+        }
 
         // Construir mensaje de error detallado
         $detailedMessage = $this->buildDetailedErrorMessage(
@@ -319,10 +375,18 @@ class VersaORM
             $errorDetails,
             $sqlState,
             $action,
-            $query
+            $query,
+            $bindings
         );
 
-        throw new \Exception($detailedMessage);
+        throw new VersaORMException(
+            $detailedMessage,
+            $errorCode,
+            $query,
+            $bindings,
+            $errorDetails,
+            $sqlState
+        );
     }
 
     /**
@@ -342,9 +406,18 @@ class VersaORM
         array $errorDetails,
         ?string $sqlState,
         string $action,
-        ?string $query
+        ?string $query,
+        array $bindings = []
     ): string {
         $message = sprintf('VersaORM Error [%s]: %s', $errorCode, $errorMessage);
+
+        // Añadir la consulta y parámetros al mensaje de error si están disponibles
+        if ($query) {
+            $message .= sprintf('\n\nQuery: %s', $query);
+        }
+        if (!empty($bindings)) {
+            $message .= sprintf('\n\nBindings: %s', json_encode($bindings));
+        }
 
         if ($sqlState) {
             $message .= sprintf('\nSQL State: %s', $sqlState);
@@ -458,7 +531,7 @@ class VersaORM
         if (is_object($data)) {
             $hash = spl_object_hash($data);
             if (in_array($hash, $visited)) {
-                throw new \Exception('Circular reference detected in parameters.');
+                throw new VersaORMException('Circular reference detected in parameters.');
             }
             $visited[] = $hash;
 

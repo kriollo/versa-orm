@@ -514,6 +514,32 @@ class QueryBuilder
     }
 
     /**
+     * Procesa las cláusulas WHERE y convierte las cláusulas RAW en SQL comprendido.
+     *
+     * @return array
+     */
+    private function processWheres(): array
+    {
+        $processedWheres = [];
+
+        foreach ($this->wheres as $where) {
+            if ($where['operator'] === 'RAW') {
+                // Para whereRaw, extraer el SQL y los bindings de forma que el backend lo entienda
+                $processedWheres[] = [
+                    'type' => 'raw',
+                    'sql' => $where['value']['sql'],
+                    'bindings' => $where['value']['bindings'],
+                    'conjunction' => $where['type'] // 'and' o 'or'
+                ];
+            } else {
+                $processedWheres[] = $where;
+            }
+        }
+
+        return $processedWheres;
+    }
+
+    /**
      * Ejecuta la consulta usando la instancia de VersaORM.
      *
      * @param string $method
@@ -526,11 +552,11 @@ class QueryBuilder
             throw new \Exception('VersaORM instance is required for QueryBuilder execution.');
         }
 
-        $params = [
+$params = [
             'table' => $this->table,
             'select' => $this->selects,
             'joins' => $this->joins,
-            'where' => $this->wheres,
+            'where' => $this->processWheres(),
             'orderBy' => $this->orderBy ? [$this->orderBy] : [],
             'limit' => $this->limit,
             'offset' => $this->offset,
