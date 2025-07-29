@@ -1,31 +1,45 @@
-# Guía Completa del Usuario
+# 📚 Guía Completa del Usuario - VersaORM
 
-Esta guía proporciona una referencia detallada sobre cómo utilizar todas las funcionalidades de VersaORM-PHP.
+**Referencia completa de todos los métodos y funcionalidades de VersaORM-PHP**
 
-## Conexión a la Base de Datos
+Esta guía proporciona documentación detallada sobre cómo utilizar todas las funcionalidades de VersaORM-PHP, incluyendo ejemplos prácticos y mejores prácticas.
 
-VersaORM soporta dos modos de uso: estático y por instancia.
+## 🔌 Configuración y Conexión
 
-### Uso Estático
-Ideal para aplicaciones con una única conexión a base de datos.
+### Configuración Básica
+
 ```php
 use VersaORM\VersaORM;
+use VersaORM\Model;
 
-VersaORM::connect([
-    'driver' => 'mysql',
+// Crear instancia del ORM
+$orm = new VersaORM([
+    'driver' => 'mysql',        // mysql, postgresql, sqlite
     'host' => 'localhost',
-    'database' => 'mi_base_datos',
+    'port' => 3306,
+    'database' => 'mi_app',
     'username' => 'usuario',
-    'password' => 'contraseña'
+    'password' => 'password',
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci'
 ]);
+
+// Configurar modelos (necesario para métodos estáticos)
+Model::setORM($orm);
 ```
 
-### Uso por Instancia
-Recomendado para gestionar múltiples conexiones o para inyección de dependencias.
+### Configuración para Múltiples Bases de Datos
+
 ```php
-$orm = new VersaORM();
-$orm->setConfig([...]);
-$users = $orm->table('users')->get();
+// Base de datos principal
+$mainDb = new VersaORM($mainConfig);
+
+// Base de datos de log
+$logDb = new VersaORM($logConfig);
+
+// Usar diferentes conexiones
+$users = $mainDb->table('users')->get();
+$logs = $logDb->table('access_logs')->get();
 ```
 
 ## QueryBuilder
