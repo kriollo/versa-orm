@@ -607,7 +607,7 @@ class VersaORM
         if (PHP_OS_FAMILY === 'Windows') {
             // En Windows, usar un enfoque más robusto con múltiples caracteres problemáticos
             $escaped = $json;
-            
+
             // Escapar caracteres problemáticos en Windows cmd
             $problematicChars = [
                 '%' => '%%',     // Variables de entorno
@@ -618,11 +618,11 @@ class VersaORM
                 '<' => '^<',     // Redirección
                 '>' => '^>',     // Redirección
             ];
-            
+
             foreach ($problematicChars as $char => $replacement) {
                 $escaped = str_replace($char, $replacement, $escaped);
             }
-            
+
             return '"' . $escaped . '"';
         } else {
             // En Unix/Linux, usar escapeshellarg que funciona correctamente
@@ -638,7 +638,7 @@ class VersaORM
     private function setBinaryPath(): void
     {
         $binaryDir = __DIR__ . '/binary';
-        
+
         switch (PHP_OS_FAMILY) {
             case 'Windows':
                 $this->binaryPath = $binaryDir . '/versaorm_cli_windows.exe';
@@ -667,22 +667,22 @@ class VersaORM
         if (!file_exists($this->binaryPath)) {
             $osName = strtolower(PHP_OS_FAMILY);
             $expectedName = "versaorm_cli_{$osName}" . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
-            
+
             throw new \RuntimeException(
                 "VersaORM binary not found at: {$this->binaryPath}\n\n" .
-                "Expected binary name: {$expectedName}\n\n" .
-                "To fix this:\n" .
-                "1. Compile the binary: cd versaorm_cli && cargo build --release\n" .
-                "2. Copy to: src/binary/{$expectedName}\n\n" .
-                "For cross-compilation, see src/binary/README.md"
+                    "Expected binary name: {$expectedName}\n\n" .
+                    "To fix this:\n" .
+                    "1. Compile the binary: cd versaorm_cli && cargo build --release\n" .
+                    "2. Copy to: src/binary/{$expectedName}\n\n" .
+                    "For cross-compilation, see src/binary/README.md"
             );
         }
-        
+
         // En sistemas Unix, verificar permisos de ejecución
         if (PHP_OS_FAMILY !== 'Windows' && !is_executable($this->binaryPath)) {
             throw new \RuntimeException(
                 "VersaORM binary exists but is not executable: {$this->binaryPath}\n\n" .
-                "Fix with: chmod +x {$this->binaryPath}"
+                    "Fix with: chmod +x {$this->binaryPath}"
             );
         }
     }
