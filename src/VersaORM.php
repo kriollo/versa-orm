@@ -142,14 +142,19 @@ class VersaORM
 
 
     /**
-     * Crea un QueryBuilder para la tabla especificada.
+     * Crea un QueryBuilder para la tabla especificada y permite pasar la clase modelo.
      *
      * @param string $table
+     * @param string|null $modelClass
      * @return QueryBuilder
      */
-    public function table(string $table): QueryBuilder
+    public function table(string $table, string $modelClass = null): QueryBuilder
     {
-        return new QueryBuilder($this, $table);
+        $qb = new QueryBuilder($this, $table);
+        if ($modelClass) {
+            $qb->modelClass = $modelClass;
+        }
+        return $qb;
     }
 
     // ========== MÉTODOS ESTILO REDBEAN ==========

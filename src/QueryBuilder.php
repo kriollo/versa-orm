@@ -327,9 +327,34 @@ class QueryBuilder
     {
         $results = $this->execute('get');
         $models = [];
+        // Detectar clase de modelo llamante
+        $callerModelClass = null;
+        if (isset($this->modelClass) && class_exists($this->modelClass)) {
+            $callerModelClass = $this->modelClass;
+        }
+        // Si no, intentar deducir desde el stacktrace
+        if (!$callerModelClass) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
+            foreach ($trace as $frame) {
+                if (isset($frame['object']) && is_object($frame['object'])) {
+                    $obj = $frame['object'];
+                    if (is_subclass_of($obj, Model::class)) {
+                        $callerModelClass = get_class($obj);
+                        break;
+                    }
+                }
+            }
+        }
         foreach ($results as $result) {
-            $model = new Model($this->table, $this->orm);
-            $model->loadInstance($result);
+            if ($callerModelClass && $callerModelClass !== Model::class) {
+                $model = new $callerModelClass();
+                foreach ($result as $k => $v) {
+                    $model->$k = $v;
+                }
+            } else {
+                $model = new Model($this->table, $this->orm);
+                $model->loadInstance($result);
+            }
             $models[] = $model;
         }
         return $models;

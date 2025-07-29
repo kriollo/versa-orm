@@ -175,6 +175,23 @@ class Model
     }
 
     /**
+     * Exportar una colección de modelos a un array de arrays.
+     *
+     * @param array $models Array de instancias de Model
+     * @return array
+     */
+    public static function exportAll(array $models): array
+    {
+        return array_map(function($model) {
+            if ($model instanceof self) {
+                return $model->export();
+            }
+            // Si no es un modelo, devolver tal como está
+            return $model;
+        }, $models);
+    }
+
+    /**
      * Verificar si existe un atributo.
      *
      * @param string $key
