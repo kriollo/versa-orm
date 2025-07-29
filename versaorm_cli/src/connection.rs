@@ -11,6 +11,8 @@ pub struct DatabaseConfig {
     pub username: String,
     pub password: String,
     pub charset: Option<String>,
+    #[serde(default)]
+    pub debug: bool,
 }
 
 #[derive(Debug)]
@@ -83,6 +85,14 @@ impl ConnectionManager {
 
     pub fn get_driver(&self) -> &str {
         &self.config.driver
+    }
+    
+    pub fn is_debug_mode(&self) -> bool {
+        self.config.debug
+    }
+    
+    pub fn get_config(&self) -> &DatabaseConfig {
+        &self.config
     }
 
     pub async fn execute_raw(&self, query: &str, params: Vec<serde_json::Value>) -> Result<Vec<HashMap<String, serde_json::Value>>, sqlx::Error> {

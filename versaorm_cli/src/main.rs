@@ -60,6 +60,10 @@ struct ErrorDetails {
     query: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     bindings: Option<Vec<serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    details: Option<std::collections::HashMap<String, serde_json::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sql_state: Option<String>,
 }
 
 #[tokio::main]
@@ -87,6 +91,8 @@ async fn main() {
                 message: format!("Internal error: {}{}", error_msg, location),
                 query: None,
                 bindings: None,
+                details: None,
+                sql_state: None,
             },
         };
         
@@ -102,8 +108,35 @@ async fn run_main() {
     let cli = Cli::parse();
     let start_time = Instant::now();
 
+    // Leer entrada: ya sea directa o desde archivo temporal
+    let json_input = if cli.json_input.starts_with('@') {
+        // Leer desde archivo temporal
+        let file_path = &cli.json_input[1..]; // Remover el prefijo '@'
+        match std::fs::read_to_string(file_path) {
+            Ok(content) => content,
+            Err(e) => {
+                let response = ErrorResponse {
+                    status: "error".to_string(),
+                    error: ErrorDetails {
+                        code: "FILE_READ_ERROR".to_string(),
+                        message: format!("Failed to read temporary file '{}': {}", file_path, e),
+                        query: None,
+                        bindings: None,
+                        details: None,
+                        sql_state: None,
+                    },
+                };
+                eprintln!("{}", serde_json::to_string(&response).unwrap());
+                return;
+            }
+        }
+    } else {
+        // Usar entrada directa
+        cli.json_input
+    };
+
     // Intentamos deserializar el JSON de entrada.
-    let input_payload: Result<InputPayload, _> = serde_json::from_str(&cli.json_input);
+    let input_payload: Result<InputPayload, _> = serde_json::from_str(&json_input);
 
     match input_payload {
         Ok(payload) => {
@@ -112,15 +145,32 @@ async fn run_main() {
             
             // Intentar conectar a la base de datos
             if let Err(e) = connection_manager.connect().await {
-                    let response = ErrorResponse {
-                        status: "error".to_string(),
-                        error: ErrorDetails {
-                            code: "DB_CONN_FAILED".to_string(),
-                            message: format!("Database connection failed: {}", e),
-                            query: None,
-                            bindings: None,
-                        },
-                    };
+                let is_debug = connection_manager.is_debug_mode();
+                let message = if is_debug {
+                    format!("Database connection failed: {}", e)
+                } else {
+                    "Database connection failed".to_string()
+                };
+                
+                let mut details = None;
+                if is_debug {
+                    let mut debug_info = HashMap::new();
+                    debug_info.insert("full_error".to_string(), serde_json::Value::String(e.to_string()));
+                    debug_info.insert("config".to_string(), serde_json::to_value(connection_manager.get_config()).unwrap_or(serde_json::Value::Null));
+                    details = Some(debug_info);
+                }
+                
+                let response = ErrorResponse {
+                    status: "error".to_string(),
+                    error: ErrorDetails {
+                        code: "DB_CONN_FAILED".to_string(),
+                        message,
+                        query: None,
+                        bindings: None,
+                        details,
+                        sql_state: None,
+                    },
+                };
                 eprintln!("{}", serde_json::to_string(&response).unwrap());
                 return;
             }
@@ -155,13 +205,32 @@ async fn run_main() {
                     println!("{}", serde_json::to_string(&response).unwrap());
                 }
                 Err((error_msg, query, bindings)) => {
+                    let is_debug = connection_manager.is_debug_mode();
+                    let message = if is_debug {
+                        error_msg.clone()
+                    } else {
+                        // Mensaje simplificado para producción
+                        "Database operation failed".to_string()
+                    };
+                    
+                    let mut details = None;
+                    if is_debug {
+                        let mut debug_info = HashMap::new();
+                        debug_info.insert("full_error".to_string(), serde_json::Value::String(error_msg));
+                        debug_info.insert("action".to_string(), serde_json::Value::String(payload.action.clone()));
+                        debug_info.insert("execution_time_ms".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(execution_time).unwrap()));
+                        details = Some(debug_info);
+                    }
+                    
                     let response = ErrorResponse {
                         status: "error".to_string(),
                         error: ErrorDetails {
                             code: "EXECUTION_ERROR".to_string(),
-                            message: error_msg,
-                            query,
-                            bindings,
+                            message,
+                            query: if is_debug { query } else { None },
+                            bindings: if is_debug { bindings } else { None },
+                            details,
+                            sql_state: None,
                         },
                     };
                     eprintln!("{}", serde_json::to_string(&response).unwrap());
@@ -176,6 +245,8 @@ async fn run_main() {
                     message: format!("Failed to parse JSON input: {}", e),
                     query: None,
                     bindings: None,
+                    details: None,
+                    sql_state: None,
                 },
             };
             eprintln!("{}", serde_json::to_string(&response).unwrap());
