@@ -12,7 +12,9 @@ $config = [
         'DB_PORT' => 3306,
         'DB_NAME' => 'versaorm_test',
         'DB_USER' => 'local',
-        'DB_PASS' => 'local'
+        'DB_PASS' => 'local',
+        // Activar modo debug para errores detallados y logging
+        'debug' => true  // false para producción
     ]
 ];
 
