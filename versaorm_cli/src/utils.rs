@@ -1,9 +1,10 @@
 use serde_json::Value;
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 /// Sanitiza valores de entrada para prevenir inyección SQL
+#[allow(dead_code)]
 pub fn sanitize(input: &str) -> String {
     input
         .replace("'", "''")
@@ -15,6 +16,7 @@ pub fn sanitize(input: &str) -> String {
 }
 
 /// Aplica casting automático a los valores de una fila basándose en el tipo de dato
+#[allow(dead_code)]
 pub fn cast_types(row: &mut HashMap<String, Value>, column_types: &HashMap<String, String>) {
     for (column, value) in row.iter_mut() {
         if let Some(data_type) = column_types.get(column) {
@@ -24,6 +26,7 @@ pub fn cast_types(row: &mut HashMap<String, Value>, column_types: &HashMap<Strin
 }
 
 /// Convierte un valor a su tipo correcto basándose en el tipo de dato SQL
+#[allow(dead_code)]
 pub fn cast_value_by_type(value: Value, data_type: &str) -> Value {
     match value {
         Value::String(s) => {
@@ -71,16 +74,19 @@ pub fn cast_value_by_type(value: Value, data_type: &str) -> Value {
 }
 
 /// Genera un UUID v4
+#[allow(dead_code)]
 pub fn uuid() -> String {
     Uuid::new_v4().to_string()
 }
 
 /// Retorna la fecha y hora actual en formato ISO 8601
+#[allow(dead_code)]
 pub fn now() -> String {
     Utc::now().to_rfc3339()
 }
 
 /// Convierte un valor de PHP/JSON a un tipo compatible con SQL
+#[allow(dead_code)]
 pub fn prepare_value_for_sql(value: &Value) -> String {
     match value {
         Value::String(s) => format!("'{}'", sanitize(s)),
@@ -92,6 +98,7 @@ pub fn prepare_value_for_sql(value: &Value) -> String {
 }
 
 /// Valida si un nombre de tabla o columna es seguro
+#[allow(dead_code)]
 pub fn is_safe_identifier(identifier: &str) -> bool {
     if identifier.is_empty() {
         return false;
@@ -102,6 +109,7 @@ pub fn is_safe_identifier(identifier: &str) -> bool {
 }
 
 /// Convierte snake_case a camelCase
+#[allow(dead_code)]
 pub fn snake_to_camel(snake_str: &str) -> String {
     let mut camel = String::new();
     let mut capitalize_next = false;
@@ -121,6 +129,7 @@ pub fn snake_to_camel(snake_str: &str) -> String {
 }
 
 /// Convierte camelCase a snake_case
+#[allow(dead_code)]
 pub fn camel_to_snake(camel_str: &str) -> String {
     let mut snake = String::new();
     
@@ -135,6 +144,7 @@ pub fn camel_to_snake(camel_str: &str) -> String {
 }
 
 /// Limpia y valida un nombre de tabla
+#[allow(dead_code)]
 pub fn clean_table_name(table_name: &str) -> Result<String, String> {
     if !is_safe_identifier(table_name) {
         return Err(format!("Invalid table name: {}", table_name));
@@ -143,6 +153,7 @@ pub fn clean_table_name(table_name: &str) -> Result<String, String> {
 }
 
 /// Limpia y valida un nombre de columna
+#[allow(dead_code)]
 pub fn clean_column_name(column_name: &str) -> Result<String, String> {
     if !is_safe_identifier(column_name) {
         return Err(format!("Invalid column name: {}", column_name));
@@ -151,6 +162,7 @@ pub fn clean_column_name(column_name: &str) -> Result<String, String> {
 }
 
 /// Construye una cláusula WHERE segura
+#[allow(dead_code)]
 pub fn build_where_clause(conditions: &[(String, String, Value)]) -> (String, Vec<Value>) {
     if conditions.is_empty() {
         return (String::new(), Vec::new());

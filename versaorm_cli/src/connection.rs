@@ -71,10 +71,12 @@ impl ConnectionManager {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_pool(&self) -> Option<&DatabasePool> {
         self.pool.as_ref()
     }
 
+    #[allow(dead_code)]
     pub fn is_connected(&self) -> bool {
         self.pool.is_some()
     }
@@ -115,7 +117,7 @@ impl ConnectionManager {
 }
 
 // Helper functions para binding de parámetros
-fn bind_value_mysql(mut query: sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments>, value: serde_json::Value) -> sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments> {
+fn bind_value_mysql(query: sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments>, value: serde_json::Value) -> sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments> {
     match value {
         serde_json::Value::String(s) => query.bind(s),
         serde_json::Value::Number(n) => {
@@ -133,7 +135,7 @@ fn bind_value_mysql(mut query: sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlA
     }
 }
 
-fn bind_value_postgres(mut query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments>, value: serde_json::Value) -> sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> {
+fn bind_value_postgres(query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments>, value: serde_json::Value) -> sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> {
     match value {
         serde_json::Value::String(s) => query.bind(s),
         serde_json::Value::Number(n) => {
@@ -151,7 +153,7 @@ fn bind_value_postgres(mut query: sqlx::query::Query<'_, Postgres, sqlx::postgre
     }
 }
 
-fn bind_value_sqlite<'a>(mut query: sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>>, value: serde_json::Value) -> sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>> {
+fn bind_value_sqlite<'a>(query: sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>>, value: serde_json::Value) -> sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>> {
     match value {
         serde_json::Value::String(s) => query.bind(s),
         serde_json::Value::Number(n) => {
@@ -209,9 +211,9 @@ fn convert_sqlite_rows_to_json(rows: Vec<sqlx::sqlite::SqliteRow>) -> Vec<HashMa
 fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_json::Value {
     use sqlx::Row;
     use chrono::{NaiveDateTime, NaiveDate, NaiveTime};
-    use sqlx::{Column, TypeInfo};
-    use sqlx::mysql::MySqlTypeInfo;
+    use sqlx::Column;
     
+
     // DEBUG MODE: Mostrar información detallada sobre el tipo de columna
     if std::env::var("VERSAORM_DEBUG").is_ok() {
         let column_info = row.columns().iter()

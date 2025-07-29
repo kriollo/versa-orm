@@ -1,7 +1,8 @@
 use crate::connection::ConnectionManager;
-use std::collections::HashMap;
 use serde_json::Value;
+use std::collections::HashMap;
 
+#[allow(dead_code)]
 pub struct Model {
     pub table: String,
     pub primary_key: String,
@@ -10,6 +11,7 @@ pub struct Model {
 }
 
 impl Model {
+    #[allow(dead_code)]
     pub fn new(table: &str, primary_key: &str, connection: ConnectionManager) -> Self {
         Self {
             table: table.to_string(),
@@ -20,6 +22,7 @@ impl Model {
     }
 
     // Load data from database to model
+    #[allow(dead_code)]
     pub async fn load(&mut self, id: &Value) -> Result<(), String> {
         let query = format!("SELECT * FROM {} WHERE {} = ?", self.table, self.primary_key);
         if let Ok(rows) = self.connection.execute_raw(&query, vec![id.clone()]).await {
@@ -35,6 +38,7 @@ impl Model {
     }
 
     // Save model data to the database
+    #[allow(dead_code)]
     pub async fn save(&self) -> Result<(), String> {
         if self.attributes.is_empty() {
             return Err("No data to save".to_string());
@@ -45,12 +49,14 @@ impl Model {
     }
 
     // Convert model to JSON
+    #[allow(dead_code)]
     pub fn to_json(&self) -> Value {
         serde_json::json!(self.attributes)
     }
 }
 
 // Define relationship types
+#[allow(dead_code)]
 pub enum Relation {
     HasOne,
     HasMany,
@@ -59,6 +65,7 @@ pub enum Relation {
 }
 
 // Example association (for simplicity)
+#[allow(dead_code)]
 pub struct Association {
     pub relation: Relation,
     pub related_table: String,
@@ -66,6 +73,7 @@ pub struct Association {
     pub local_key: String,
 }
 
+#[allow(dead_code)]
 impl Association {
     pub fn new(relation: Relation, related_table: &str, foreign_key: &str, local_key: &str) -> Self {
         Self {

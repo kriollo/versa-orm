@@ -60,6 +60,39 @@ struct ErrorDetails {
 
 #[tokio::main]
 async fn main() {
+    // Configurar panic hook para capturar panics y convertirlos en errores JSON
+    std::panic::set_hook(Box::new(|panic_info| {
+        let error_msg = if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else {
+            "Unknown panic occurred".to_string()
+        };
+        
+        let location = if let Some(location) = panic_info.location() {
+            format!(" at {}:{}:{}", location.file(), location.line(), location.column())
+        } else {
+            String::new()
+        };
+        
+        let response = ErrorResponse {
+            status: "error".to_string(),
+            error: ErrorDetails {
+                code: "PANIC_ERROR".to_string(),
+                message: format!("Internal error: {}{}", error_msg, location),
+            },
+        };
+        
+        eprintln!("{}", serde_json::to_string(&response).unwrap_or_else(|_| 
+            r#"{"status":"error","error":{"code":"PANIC_ERROR","message":"Failed to serialize error response"}}"#.to_string()));
+    }));
+    
+    // Ejecutar la lógica principal directamente
+    run_main().await;
+}
+
+async fn run_main() {
     let cli = Cli::parse();
     let start_time = Instant::now();
 
@@ -260,7 +293,7 @@ async fn handle_query_action(
                 format!("DELETE FROM {}", table)
             };
             
-            let rows = connection.execute_raw(&delete_sql, params.clone()).await
+            let _rows = connection.execute_raw(&delete_sql, params.clone()).await
                 .map_err(|e| format!("Delete query failed: {}", e))?;
             
             // Para DELETE, retornar 0 ya que no hay filas de retorno, solo filas afectadas

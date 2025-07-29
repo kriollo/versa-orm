@@ -1,6 +1,5 @@
 use serde_json::Value;
-use std::collections::HashMap;
-use sqlx::{QueryBuilder as SqlxQueryBuilder, Database, MySql, Postgres, Sqlite};
+use sqlx::Database;
 
 pub struct QueryBuilder {
     pub table: String,
@@ -35,6 +34,7 @@ impl QueryBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn join(mut self, table: &str, first_col: &str, operator: &str, second_col: &str) -> Self {
         self.joins.push((table.to_string(), first_col.to_string(), operator.to_string(), second_col.to_string()));
         self

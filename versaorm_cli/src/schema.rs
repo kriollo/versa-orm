@@ -1,6 +1,5 @@
-use crate::connection::{ConnectionManager, DatabasePool};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use crate::connection::ConnectionManager;
+use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ColumnInfo {
