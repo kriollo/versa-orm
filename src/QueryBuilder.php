@@ -6,7 +6,7 @@ namespace VersaORM;
 
 /**
  * VersaORMQueryBuilder - Clase de construcción de consultas para VersaORM
- * 
+ *
  * @package VersaORM
  * @version 1.0.0
  * @author VersaORM Team
@@ -373,6 +373,27 @@ class QueryBuilder
         return $this->where($pk, '=', $id)->first();
     }
 
+
+    /**
+     * Retrieves the first result from the executed query and returns it as a Model instance.
+     *
+     * Executes the query using the 'first' mode, which is expected to return a single result.
+     * If a result is found, a new Model instance is created, loaded with the result data, and returned.
+     * If no result is found, returns null.
+     *
+     * @return Model|null The first result as a Model instance, or null if no result is found.
+     */
+    public function first(): ?Model
+    {
+        $result = $this->execute('first');
+        if ($result) {
+            $model = new Model($this->table, $this->orm);
+            $model->loadInstance($result);
+            return $model;
+        }
+        return null;
+    }
+
     /**
      * Ejecuta una consulta de conteo.
      *
@@ -482,7 +503,7 @@ class QueryBuilder
         $reflection = new \ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
-        
+
         return $executeMethod->invoke($this->orm, 'query', $params);
     }
 
