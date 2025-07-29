@@ -1,4 +1,4 @@
-use sqlx::{Pool, MySql, Postgres, Sqlite, Row, Column};
+use sqlx::{Pool, MySql, Postgres, Sqlite, Row, Column, Executor};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -93,6 +93,24 @@ impl ConnectionManager {
     
     pub fn get_config(&self) -> &DatabaseConfig {
         &self.config
+    }
+
+    pub async fn execute_unprepared(&self, query: &str) -> Result<u64, sqlx::Error> {
+        match self.pool.as_ref() {
+            Some(DatabasePool::MySql(pool)) => {
+                let result = pool.execute(query).await?;
+                Ok(result.rows_affected())
+            }
+            Some(DatabasePool::Postgres(pool)) => {
+                let result = pool.execute(query).await?;
+                Ok(result.rows_affected())
+            }
+            Some(DatabasePool::Sqlite(pool)) => {
+                let result = pool.execute(query).await?;
+                Ok(result.rows_affected())
+            }
+            None => Err(sqlx::Error::Configuration("Not connected to database".into())),
+        }
     }
 
     pub async fn execute_raw(&self, query: &str, params: Vec<serde_json::Value>) -> Result<Vec<HashMap<String, serde_json::Value>>, sqlx::Error> {

@@ -381,7 +381,34 @@ async fn handle_query_action(
                     where_clause.get("operator").and_then(|v| v.as_str()),
                     where_clause.get("value")
                 ) {
-                    query_builder = query_builder.r#where(column, operator, value.clone());
+                    let clause_type = where_clause.get("type").and_then(|v| v.as_str()).unwrap_or("and");
+                    match clause_type {
+                        "or" => query_builder = query_builder.or_where(column, operator, value.clone()),
+                        _ => query_builder = query_builder.r#where(column, operator, value.clone()),
+                    }
+                }
+            }
+        }
+    }
+
+    // Apply joins
+    if let Some(joins) = params.get("joins").and_then(|v| v.as_array()) {
+        for join_clause in joins {
+            if let (Some(table), Some(on), Some(join_type)) = (
+                join_clause.get("table").and_then(|v| v.as_str()),
+                join_clause.get("on").and_then(|v| v.as_str()),
+                join_clause.get("type").and_then(|v| v.as_str())
+            ) {
+                let parts: Vec<&str> = on.split_whitespace().collect();
+                if parts.len() == 3 {
+                    let first_col = parts[0];
+                    let operator = parts[1];
+                    let second_col = parts[2];
+                    match join_type {
+                        "inner" => query_builder = query_builder.join(table, first_col, operator, second_col),
+                        "left" => query_builder = query_builder.left_join(table, first_col, operator, second_col),
+                        _ => (),
+                    }
                 }
             }
         }
@@ -509,7 +536,16 @@ async fn handle_query_action(
                 .map_err(|e| (format!("Exists query failed: {}", e), Some(exists_sql.clone()), Some(sql_params.clone())))?;
             let exists = rows.first()
                 .and_then(|row| row.get("exists_result"))
-                .and_then(|v| v.as_bool())
+                .map(|v| {
+                    // MySQL returns 1 or 0 for EXISTS, convert to boolean
+                    if let Some(num) = v.as_i64() {
+                        num != 0
+                    } else if let Some(b) = v.as_bool() {
+                        b
+                    } else {
+                        false
+                    }
+                })
                 .unwrap_or(false);
             Ok(serde_json::Value::Bool(exists))
         }
@@ -620,6 +656,19 @@ async fn handle_schema_action(
     }
 }
 
+async fn handle_unprepared_raw_action(
+    connection: &ConnectionManager,
+    params: &HashMap<String, serde_json::Value>,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let query = params.get("query")
+        .and_then(|v| v.as_str())
+        .ok_or(("Query is required for raw action".to_string(), None, None))?;
+
+    connection.execute_unprepared(query).await
+        .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
+        .map_err(|e| (format!("Unprepared raw query execution failed: {}", e), Some(query.to_string()), None))
+}
+
 // Handler para consultas SQL raw
 async fn handle_raw_action(
     connection: &ConnectionManager,
@@ -634,10 +683,28 @@ async fn handle_raw_action(
         .cloned()
         .unwrap_or_default();
 
-    let rows = connection.execute_raw(query, bindings.clone()).await
-        .map_err(|e| (format!("Raw query execution failed: {}", e), Some(query.to_string()), Some(bindings.clone())))?;
+    // Check if this is a query that needs to be executed without prepared statements
+    let query_upper = query.trim().to_uppercase();
+    let needs_unprepared = query_upper.starts_with("START TRANSACTION")
+        || query_upper.starts_with("COMMIT")
+        || query_upper.starts_with("ROLLBACK")
+        || query_upper.starts_with("SET FOREIGN_KEY_CHECKS")
+        || query_upper.starts_with("TRUNCATE")
+        || query_upper.starts_with("DROP TABLE")
+        || query_upper.starts_with("CREATE TABLE")
+        || query_upper.starts_with("ALTER TABLE");
 
-    Ok(serde_json::to_value(rows).unwrap())
+    if needs_unprepared || bindings.is_empty() {
+        // Execute as unprepared query
+        connection.execute_unprepared(query).await
+            .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
+            .map_err(|e| (format!("Unprepared raw query execution failed: {}", e), Some(query.to_string()), None))
+    } else {
+        // Execute as prepared query with bindings
+        let rows = connection.execute_raw(query, bindings.clone()).await
+            .map_err(|e| (format!("Raw query execution failed: {}", e), Some(query.to_string()), Some(bindings.clone())))?;
+        Ok(serde_json::to_value(rows).unwrap())
+    }
 }
 
 // Handler para acciones de cache
