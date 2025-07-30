@@ -676,11 +676,7 @@ class QueryBuilder
      */
     public function update(array $data): int
     {
-        $result = $this->execute('update', $data);
-        if (is_int($result)) {
-            return $result;
-        }
-        return 0;
+        return (int) $this->execute('update', $data);
     }
 
     /**
