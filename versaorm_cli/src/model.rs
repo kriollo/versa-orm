@@ -26,7 +26,7 @@ impl Model {
     pub async fn load(&mut self, id: &Value) -> Result<(), String> {
         let query = format!("SELECT * FROM {} WHERE {} = ?", self.table, self.primary_key);
         if let Ok(rows) = self.connection.execute_raw(&query, vec![id.clone()]).await {
-            if let Some(row) = rows.get(0) {
+            if let Some(row) = rows.first() {
                 self.attributes = row.clone();
                 Ok(())
             } else {

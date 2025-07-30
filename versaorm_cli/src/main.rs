@@ -22,10 +22,8 @@ fn setup_logging(debug: bool) {
 
     // Usar la misma carpeta de logs que PHP
     let log_dir = PathBuf::from("logs");
-    if !log_dir.exists() {
-        if fs::create_dir(&log_dir).is_err() {
-            return; // Si no se puede crear, no hacer logging
-        }
+    if !log_dir.exists() && fs::create_dir(&log_dir).is_err() {
+        return; // Si no se puede crear, no hacer logging
     }
 
     // Usar el mismo formato de nombre de archivo que PHP (YYYY-MM-DD.log)
@@ -47,18 +45,16 @@ fn cleanup_old_logs(log_dir: &PathBuf) {
     let seven_days_ago = Utc::now() - Duration::days(7);
 
     if let Ok(entries) = fs::read_dir(log_dir) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_file() && path.extension().is_some_and(|ext| ext == "log") {
-                    if let Some(stem) = path.file_stem() {
-                        if let Some(stem_str) = stem.to_str() {
-                            // Solo eliminar archivos con formato YYYY-MM-DD
-                            if let Ok(date) = chrono::NaiveDate::parse_from_str(stem_str, "%Y-%m-%d") {
-                                let datetime = date.and_hms_opt(0, 0, 0).unwrap();
-                                if Utc.from_utc_datetime(&datetime) < seven_days_ago {
-                                    let _ = fs::remove_file(path);
-                                }
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "log") {
+                if let Some(stem) = path.file_stem() {
+                    if let Some(stem_str) = stem.to_str() {
+                        // Solo eliminar archivos con formato YYYY-MM-DD
+                        if let Ok(date) = chrono::NaiveDate::parse_from_str(stem_str, "%Y-%m-%d") {
+                            let datetime = date.and_hms_opt(0, 0, 0).unwrap();
+                            if Utc.from_utc_datetime(&datetime) < seven_days_ago {
+                                let _ = fs::remove_file(path);
                             }
                         }
                     }
@@ -484,7 +480,7 @@ async fn handle_query_action(
     let insert_data_ref = query_builder.insert_data.clone();
 
     // Construir y ejecutar la consulta
-    let (sql, sql_params) = query_builder.build_sql::<sqlx::MySql>();
+    let (sql, sql_params) = query_builder.build_sql();
     log_debug!("Executing SQL: {}", sql);
     log_debug!("Parameters ({} total):", sql_params.len());
     for (i, param) in sql_params.iter().enumerate() {

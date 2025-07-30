@@ -1,5 +1,4 @@
 use serde_json::Value;
-use sqlx::Database;
 use std::collections::HashMap;
 use crate::utils::{clean_table_name, clean_column_name};
 
@@ -24,7 +23,7 @@ impl QueryBuilder {
             // If table name is invalid, use a safe fallback to prevent injection
             "invalid_table".to_string()
         });
-        
+
         Self {
             table: validated_table,
             selects: Vec::new(),
@@ -220,7 +219,7 @@ impl QueryBuilder {
 
             for (i, (col, op, value, conjunction)) in self.wheres.iter().enumerate() {
                 let mut clause_text = String::new();
-                
+
                 if op == "RAW" {
                     if let Some(sql) = value.get("sql").and_then(|s| s.as_str()) {
                         if let Some(bindings) = value.get("bindings").and_then(|b| b.as_array()) {
@@ -293,7 +292,7 @@ impl QueryBuilder {
                         }
                     }
                 }
-                
+
                 // Solo agregar si tenemos texto de cláusula
                 if !clause_text.is_empty() {
                     if i == 0 {
@@ -304,7 +303,7 @@ impl QueryBuilder {
                     }
                 }
             }
-            
+
             query.push_str(&where_clauses.join(" "));
         }
 
@@ -320,7 +319,7 @@ impl QueryBuilder {
             for (i, (col, op, value, conjunction)) in self.havings.iter().enumerate() {
                 let clause_text = format!("{} {} ?", col, op);
                 params.push(value.clone());
-                
+
                 if i == 0 {
                     having_clauses.push(clause_text);
                 } else {
@@ -362,26 +361,25 @@ fn is_safe_sql_operator(operator: &str) -> bool {
 // Helper function to validate RAW SQL clauses for security
 fn is_safe_raw_sql(sql: &str) -> bool {
     let sql_upper = sql.to_uppercase();
-    
+
     // List of dangerous SQL keywords that could be used for injection
     let dangerous_keywords = [
         "UNION", "DELETE", "DROP", "INSERT", "UPDATE", "CREATE", "ALTER",
         "TRUNCATE", "EXEC", "EXECUTE", "DECLARE", "SCRIPT", "SHUTDOWN",
         "GRANT", "REVOKE", "BACKUP", "RESTORE", "--", "/*", "*/", ";"
     ];
-    
+
     // Check if the SQL contains any dangerous keywords
     for keyword in &dangerous_keywords {
         if sql_upper.contains(keyword) {
             return false;
         }
     }
-    
+
     // Additional check for suspicious patterns
     if sql_upper.contains("''") || sql_upper.contains("0X") {
         return false;
     }
-    
+
     true
 }
-
