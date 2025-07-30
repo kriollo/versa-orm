@@ -6,21 +6,21 @@ namespace VersaORM;
 
 /**
  * QueryBuilder - Constructor de consultas para VersaORM
- * 
+ *
  * PROPÓSITO: Construir consultas SQL de forma fluida
  * ARQUITECTURA CLARA:
- * 
+ *
  * MÉTODOS QUE DEVUELVEN ARRAYS (datos exportables para JSON/API):
  * - get() - Array de arrays con datos
  * - getAll() - Alias de get()
  * - first() - Array con primer registro o null
  * - count() - Entero
  * - exists() - Boolean
- * 
+ *
  * MÉTODOS QUE DEVUELVEN OBJETOS MANIPULABLES (VersaModel):
  * - findAll() - Array de objetos VersaModel
  * - findOne() - Objeto VersaModel o null
- * - find(id) - Objeto VersaModel o null  
+ * - find(id) - Objeto VersaModel o null
  * - dispense() - Nuevo objeto VersaModel vacío
  *
  * @package VersaORM
@@ -30,17 +30,28 @@ namespace VersaORM;
  */
 class QueryBuilder
 {
+    /** @var VersaORM|array|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     private string $table;
+    /** @var array<int, string> */
     private array $selects = [];
+    /** @var array<int, mixed> */
     private array $wheres = [];
+    /** @var array<int, mixed> */
     private array $joins = [];
+    /** @var array<string, string>|null */
     private ?array $orderBy = null;
     private ?int $limit = null;
     private ?int $offset = null;
+    /** @var array<int, string> */
     private array $groupBy = [];
+    /** @var array<int, mixed> */
     private array $having = [];
 
+    /**
+     * @param VersaORM|array|null $orm
+     * @param string $table
+     */
     public function __construct($orm, string $table)
     {
         $this->orm = $orm;
@@ -50,7 +61,7 @@ class QueryBuilder
     /**
      * Especifica las columnas a seleccionar.
      *
-     * @param array|null $columns
+     * @param array<int, string>|null $columns
      * @return self
      */
     public function select(?array $columns = ['*']): self
@@ -139,11 +150,38 @@ class QueryBuilder
     {
         // Lista de funciones SQL comunes permitidas
         $allowedFunctions = [
-            'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 'UPPER', 'LOWER', 'LENGTH', 
-            'SUBSTRING', 'CONCAT', 'COALESCE', 'IFNULL', 'NULLIF', 'ABS', 
-            'ROUND', 'CEIL', 'FLOOR', 'NOW', 'CURDATE', 'CURTIME', 'DATE',
-            'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'SECOND', 'TRIM',
-            'LTRIM', 'RTRIM', 'REPLACE', 'DISTINCT'
+            'COUNT',
+            'SUM',
+            'AVG',
+            'MAX',
+            'MIN',
+            'UPPER',
+            'LOWER',
+            'LENGTH',
+            'SUBSTRING',
+            'CONCAT',
+            'COALESCE',
+            'IFNULL',
+            'NULLIF',
+            'ABS',
+            'ROUND',
+            'CEIL',
+            'FLOOR',
+            'NOW',
+            'CURDATE',
+            'CURTIME',
+            'DATE',
+            'YEAR',
+            'MONTH',
+            'DAY',
+            'HOUR',
+            'MINUTE',
+            'SECOND',
+            'TRIM',
+            'LTRIM',
+            'RTRIM',
+            'REPLACE',
+            'DISTINCT'
         ];
 
         // Verificar si es una función SQL con paréntesis
@@ -164,9 +202,11 @@ class QueryBuilder
             // Permitir argumentos simples como column names, números, strings
             if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs)) {
                 // Verificar que no contenga patrones maliciosos
-                if (!str_contains($functionArgs, '--') && 
-                    !str_contains($functionArgs, '/*') && 
-                    !str_contains($functionArgs, ';')) {
+                if (
+                    !str_contains($functionArgs, '--') &&
+                    !str_contains($functionArgs, '/*') &&
+                    !str_contains($functionArgs, ';')
+                ) {
                     return true;
                 }
             }
@@ -412,13 +452,13 @@ class QueryBuilder
         if (is_string($columns)) {
             $columns = [$columns];
         }
-        
+
         foreach ($columns as $column) {
             if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name in GROUP BY: %s', $column));
             }
         }
-        
+
         $this->groupBy = $columns;
         return $this;
     }
@@ -472,7 +512,7 @@ class QueryBuilder
     }
 
     // ========== MÉTODOS QUE DEVUELVEN OBJETOS MANIPULABLES ==========
-    
+
     /**
      * Ejecuta la consulta SELECT y devuelve un array de objetos VersaModel manipulables
      *
@@ -482,18 +522,18 @@ class QueryBuilder
     {
         $results = $this->execute('get');
         $models = [];
-        
+
         foreach ($results as $result) {
             $model = new VersaModel($this->table, $this->orm);
             $model->loadInstance($result);
             $models[] = $model;
         }
-        
+
         return $models;
     }
 
     // ========== MÉTODOS QUE DEVUELVEN ARRAYS (para JSON/API) ==========
-    
+
     /**
      * Ejecuta la consulta SELECT y devuelve array de arrays de datos (para JSON/API)
      *
@@ -503,7 +543,7 @@ class QueryBuilder
     {
         return $this->execute('get');
     }
-    
+
     /**
      * Alias de get() - devuelve array de arrays de datos
      *
@@ -513,7 +553,7 @@ class QueryBuilder
     {
         return $this->get();
     }
-    
+
     /**
      * Obtiene el primer registro como array (para JSON/API)
      *
@@ -689,7 +729,7 @@ class QueryBuilder
             throw new \Exception('VersaORM instance is required for QueryBuilder execution.');
         }
 
-$params = [
+        $params = [
             'table' => $this->table,
             'select' => $this->selects,
             'joins' => $this->joins,
@@ -714,4 +754,13 @@ $params = [
         return $executeMethod->invoke($this->orm, 'query', $params);
     }
 
+    /**
+     * Obtiene el nombre de la tabla asociada a este QueryBuilder.
+     *
+     * @return string
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
 }

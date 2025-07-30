@@ -19,10 +19,17 @@ namespace VersaORM;
 class VersaModel
 {
     private string $table;
+    /** @var VersaORM|array<string, mixed>|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
+    /** @var array<string, mixed> */
     private array $attributes = [];
+    /** @var VersaORM|null */
     private static $ormInstance;
 
+    /**
+     * @param string $table
+     * @param VersaORM|array<string, mixed>|null $orm
+     */
     public function __construct(string $table, $orm)
     {
         $this->table = $table;
@@ -43,11 +50,11 @@ class VersaModel
     /**
      * Cargar los datos del modelo desde la base de datos (método de instancia).
      *
-     * @param mixed $data - Puede ser un ID para buscar o un array de datos para cargar directamente
+     * @param array<string, mixed>|int|string $data Puede ser un ID para buscar o un array de datos para cargar directamente
      * @param string $pk
      * @return self
      */
-    public function loadInstance($data, string $pk = 'id'): self
+    public function loadInstance(array|string|int $data, string $pk = 'id'): self
     {
         // Si $data es un array, cargar directamente los datos
         if (is_array($data)) {
@@ -119,7 +126,7 @@ class VersaModel
             // que coincida con los datos que acabamos de insertar
             $whereConditions = [];
             $whereParams = [];
-            
+
             // Usar campos únicos para encontrar el registro
             if (isset($filteredAttributes['email'])) {
                 $whereConditions[] = "email = ?";
@@ -134,11 +141,11 @@ class VersaModel
                     }
                 }
             }
-            
+
             if (!empty($whereConditions)) {
                 $whereClause = implode(' AND ', $whereConditions);
                 $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
-                
+
                 if (!empty($result) && isset($result[0])) {
                     $this->attributes = array_merge($this->attributes, $result[0]);
                 }
@@ -175,7 +182,7 @@ class VersaModel
      * @param string $key
      * @param mixed $value
      */
-    public function __set(string $key, $value)
+    public function __set(string $key, mixed $value): void
     {
         $this->attributes[$key] = $value;
     }
@@ -186,7 +193,18 @@ class VersaModel
      * @param string $key
      * @return mixed
      */
-    public function __get(string $key)
+    public function __get(string $key): mixed
+    {
+        return $this->attributes[$key] ?? null;
+    }
+
+    /**
+     * Obtiene el valor de un atributo del modelo.
+     *
+     * @param string $key
+     * @return mixed|null
+     */
+    public function getAttribute(string $key): mixed
     {
         return $this->attributes[$key] ?? null;
     }
@@ -194,7 +212,7 @@ class VersaModel
     /**
      * Exportar el modelo a un array.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function export(): array
     {
@@ -204,18 +222,20 @@ class VersaModel
     /**
      * Exportar una colección de modelos a un array de arrays.
      *
-     * @param array $models Array de instancias de Model
-     * @return array
+     * @param array<self> $models Array de instancias de Model
+     * @return array<int, array<string, mixed>>
      */
     public static function exportAll(array $models): array
     {
-        return array_map(function ($model) {
+        /** @var array<int, array<string, mixed>> $exported */
+        $exported = array_map(function ($model) {
             if ($model instanceof self) {
                 return $model->export();
             }
             // Si no es un modelo, devolver tal como está
             return $model;
         }, $models);
+        return $exported;
     }
 
     /**
@@ -253,7 +273,7 @@ class VersaModel
     /**
      * Obtiene todos los datos del modelo.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function getData(): array
     {
@@ -278,11 +298,11 @@ class VersaModel
      * Cargar un modelo por ID (método estático).
      *
      * @param string $table
-     * @param mixed $id
+     * @param int|string $id
      * @param string $pk
      * @return self|null
      */
-    public static function load(string $table, $id, string $pk = 'id'): ?self
+    public static function load(string $table, int|string $id, string $pk = 'id'): ?self
     {
         if (!self::$ormInstance) {
             throw new \Exception("No ORM instance available. Call Model::setORM() first.");
@@ -320,7 +340,7 @@ class VersaModel
      *
      * @param string $table
      * @param string|null $conditions
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @return int
      */
     public static function count(string $table, ?string $conditions = null, array $bindings = []): int
@@ -340,8 +360,8 @@ class VersaModel
      * Obtiene todos los registros de una tabla como array de arrays.
      *
      * @param string $sql
-     * @param array $bindings
-     * @return array
+     * @param array<int, mixed> $bindings
+     * @return array<int, array<string, mixed>>
      */
     public static function getAll(string $sql, array $bindings = []): array
     {
@@ -355,8 +375,8 @@ class VersaModel
      * Obtiene una sola fila como array.
      *
      * @param string $sql
-     * @param array $bindings
-     * @return array|null
+     * @param array<int, mixed> $bindings
+     * @return array<string, mixed>|null
      */
     public static function getRow(string $sql, array $bindings = []): ?array
     {
@@ -371,7 +391,7 @@ class VersaModel
      * Obtiene un solo valor de una consulta.
      *
      * @param string $sql
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @return mixed
      */
     public static function getCell(string $sql, array $bindings = [])
@@ -410,7 +430,7 @@ class VersaModel
      *
      * @param string $table
      * @param string|null $conditions
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @return self[]
      */
     public static function findAll(string $table, ?string $conditions = null, array $bindings = []): array
