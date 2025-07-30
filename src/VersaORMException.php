@@ -11,12 +11,24 @@ use Exception;
  */
 class VersaORMException extends Exception
 {
-    private $query;
-    private $bindings;
-    private $errorCode;
-    private $errorDetails;
-    private $sqlState;
+    private ?string $query;
+    /** @var array<int, mixed> */
+    private array $bindings;
+    private string $errorCode;
+    /** @var array<string, mixed> */
+    private array $errorDetails;
+    private ?string $sqlState;
 
+    /**
+     * @param string $message
+     * @param string $errorCode
+     * @param string|null $query
+     * @param array<int, mixed> $bindings
+     * @param array<string, mixed> $errorDetails
+     * @param string|null $sqlState
+     * @param int $code
+     * @param Exception|null $previous
+     */
     public function __construct(
         string $message,
         string $errorCode = 'UNKNOWN_ERROR',
@@ -48,7 +60,7 @@ class VersaORMException extends Exception
     /**
      * Obtiene los parámetros de la consulta SQL.
      *
-     * @return array
+     * @return array<int, mixed>
      */
     public function getBindings(): array
     {
@@ -66,9 +78,9 @@ class VersaORMException extends Exception
     }
 
     /**
-     * Obtiene los detalles adicionales del error.
+     * Obtiene el detalle de error.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function getErrorDetails(): array
     {

@@ -28,13 +28,13 @@ class VersaORM
     // Ruta al binario de Rust. Se detecta automáticamente según el OS.
     private string $binaryPath;
 
-    // Configuración de instancia
+    /** @var array<string, mixed> */
     private array $config = [];
 
     /**
      * Constructor de la clase VersaORM.
      *
-     * @param array $config Configuración de la base de datos
+     * @param array<string, mixed> $config Configuración de la base de datos
      */
     public function __construct(array $config = [])
     {
@@ -49,7 +49,7 @@ class VersaORM
     /**
      * Configura la conexión de la instancia.
      *
-     * @param array $config
+     * @param array<string, mixed> $config
      * @return void
      */
     public function setConfig(array $config): void
@@ -60,7 +60,7 @@ class VersaORM
     /**
      * Obtiene la configuración actual.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function getConfig(): array
     {
@@ -71,7 +71,7 @@ class VersaORM
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param string $action
-     * @param array $params
+     * @param array<string, mixed> $params
      * @return mixed
      * @throws \Exception
      */
@@ -543,9 +543,9 @@ class VersaORM
 
             $logEntry = sprintf(
                 "[%s] [PHP] [ERROR] [%s] %s\n" .
-                "[%s] [PHP] [QUERY] %s\n" .
-                "[%s] [PHP] [BINDINGS] %s\n" .
-                "[%s] [PHP] [FULL_ERROR] %s\n\n",
+                    "[%s] [PHP] [QUERY] %s\n" .
+                    "[%s] [PHP] [BINDINGS] %s\n" .
+                    "[%s] [PHP] [FULL_ERROR] %s\n\n",
                 $timestamp,
                 $errorCode,
                 $errorMessage,
@@ -558,7 +558,7 @@ class VersaORM
             );
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
-            
+
             // Limpiar logs antiguos (mantener solo 7 días)
             $this->cleanOldLogs($logDir);
         } catch (\Throwable $e) {
@@ -577,10 +577,10 @@ class VersaORM
         try {
             $files = glob($logDir . '/*.log');
             $sevenDaysAgo = strtotime('-7 days');
-            
+
             foreach ($files as $file) {
                 $filename = basename($file, '.log');
-                
+
                 // Si es un archivo con formato de fecha YYYY-MM-DD
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename)) {
                     $fileDate = strtotime($filename);

@@ -30,7 +30,7 @@ namespace VersaORM;
  */
 class QueryBuilder
 {
-    /** @var VersaORM|array|null */
+    /** @var VersaORM|array<string, mixed>|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     private string $table;
     /** @var array<int, string> */
@@ -49,7 +49,7 @@ class QueryBuilder
     private array $having = [];
 
     /**
-     * @param VersaORM|array|null $orm
+     * @param VersaORM|array<string, mixed>|null $orm
      * @param string $table
      */
     public function __construct($orm, string $table)
@@ -66,17 +66,18 @@ class QueryBuilder
      */
     public function select(?array $columns = ['*']): self
     {
+        if ($columns === null) {
+            $columns = ['*'];
+        }
         if ($columns === ['*']) {
             $this->selects = ['*'];
             return $this;
         }
-
         foreach ($columns as $column) {
             if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
-
         $this->selects = $columns;
         return $this;
     }
@@ -263,7 +264,7 @@ class QueryBuilder
      * Añade una cláusula WHERE IN.
      *
      * @param string $column
-     * @param array $values
+     * @param array<int, mixed> $values
      * @return self
      */
     public function whereIn(string $column, array $values): self
@@ -281,7 +282,7 @@ class QueryBuilder
      * Añade una cláusula WHERE NOT IN.
      *
      * @param string $column
-     * @param array $values
+     * @param array<int, mixed> $values
      * @return self
      */
     public function whereNotIn(string $column, array $values): self
@@ -352,7 +353,7 @@ class QueryBuilder
      * Añade una cláusula WHERE con SQL raw.
      *
      * @param string $sql
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @return self
      */
     public function whereRaw(string $sql, array $bindings = []): self
@@ -444,10 +445,10 @@ class QueryBuilder
     /**
      * Agrupa los resultados.
      *
-     * @param array|string $columns
+     * @param array<int, string>|string $columns
      * @return self
      */
-    public function groupBy($columns): self
+    public function groupBy(array|string $columns): self
     {
         if (is_string($columns)) {
             $columns = [$columns];
@@ -522,13 +523,14 @@ class QueryBuilder
     {
         $results = $this->execute('get');
         $models = [];
-
+        if (!is_array($results)) {
+            return $models;
+        }
         foreach ($results as $result) {
             $model = new VersaModel($this->table, $this->orm);
             $model->loadInstance($result);
             $models[] = $model;
         }
-
         return $models;
     }
 
@@ -537,17 +539,22 @@ class QueryBuilder
     /**
      * Ejecuta la consulta SELECT y devuelve array de arrays de datos (para JSON/API)
      *
-     * @return array
+     * @return array<int, array<string, mixed>>
      */
     public function get(): array
     {
-        return $this->execute('get');
+        $result = $this->execute('get');
+        if (!is_array($result)) {
+            return [];
+        }
+        // Forzar tipo correcto para PHPStan
+        return array_values(array_filter($result, 'is_array'));
     }
 
     /**
      * Alias de get() - devuelve array de arrays de datos
      *
-     * @return array
+     * @return array<int, array<string, mixed>>
      */
     public function getAll(): array
     {
@@ -557,11 +564,12 @@ class QueryBuilder
     /**
      * Obtiene el primer registro como array (para JSON/API)
      *
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     public function firstArray(): ?array
     {
-        return $this->execute('first');
+        $result = $this->execute('first');
+        return is_array($result) ? $result : null;
     }
 
     /**
@@ -636,7 +644,7 @@ class QueryBuilder
     /**
      * Inserta un nuevo registro.
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return self
      */
     public function insert(array $data): self
@@ -648,7 +656,7 @@ class QueryBuilder
     /**
      * Inserta un registro y devuelve su ID autoincremental.
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return mixed
      */
     public function insertGetId(array $data)
@@ -659,7 +667,7 @@ class QueryBuilder
     /**
      * Actualiza los registros que coincidan con las cláusulas WHERE.
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return self
      */
     public function update(array $data): self
@@ -693,7 +701,7 @@ class QueryBuilder
     /**
      * Procesa las cláusulas WHERE y convierte las cláusulas RAW en SQL comprendido.
      *
-     * @return array
+     * @return array<int, array<string, mixed>>
      */
     private function processWheres(): array
     {
@@ -720,7 +728,7 @@ class QueryBuilder
      * Ejecuta la consulta usando la instancia de VersaORM.
      *
      * @param string $method
-     * @param array|null $data
+     * @param array<string, mixed>|null $data
      * @return mixed
      */
     private function execute(string $method, ?array $data = null)
