@@ -23,7 +23,7 @@ fn setup_logging(debug: bool) {
     // Usar la misma carpeta de logs que PHP
     let log_dir = PathBuf::from("logs");
     if !log_dir.exists() {
-        if let Err(_) = fs::create_dir(&log_dir) {
+        if fs::create_dir(&log_dir).is_err() {
             return; // Si no se puede crear, no hacer logging
         }
     }
@@ -50,7 +50,7 @@ fn cleanup_old_logs(log_dir: &PathBuf) {
         for entry in entries {
             if let Ok(entry) = entry {
                 let path = entry.path();
-                if path.is_file() && path.extension().map_or(false, |ext| ext == "log") {
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "log") {
                     if let Some(stem) = path.file_stem() {
                         if let Some(stem_str) = stem.to_str() {
                             // Solo eliminar archivos con formato YYYY-MM-DD
@@ -456,6 +456,29 @@ async fn handle_query_action(
         query_builder = query_builder.offset(offset);
     }
 
+    // Aplicar group by
+    if let Some(group_by) = params.get("groupBy").and_then(|v| v.as_array()) {
+        if !group_by.is_empty() {
+            let cols: Vec<&str> = group_by.iter()
+                .filter_map(|v| v.as_str())
+                .collect();
+            query_builder = query_builder.group_by(cols);
+        }
+    }
+
+    // Aplicar having
+    if let Some(havings) = params.get("having").and_then(|v| v.as_array()) {
+        for having_clause in havings {
+            if let (Some(column), Some(operator), Some(value)) = (
+                having_clause.get("column").and_then(|v| v.as_str()),
+                having_clause.get("operator").and_then(|v| v.as_str()),
+                having_clause.get("value")
+            ) {
+                query_builder = query_builder.having(column, operator, value.clone());
+            }
+        }
+    }
+
     // Guardar referencia a la tabla antes de mover query_builder
     let table_name = query_builder.table.clone();
     let insert_data_ref = query_builder.insert_data.clone();
@@ -560,10 +583,8 @@ async fn handle_query_action(
                     // MySQL returns 1 or 0 for EXISTS, convert to boolean
                     if let Some(num) = v.as_i64() {
                         num != 0
-                    } else if let Some(b) = v.as_bool() {
-                        b
                     } else {
-                        false
+                        v.as_bool().unwrap_or_default()
                     }
                 })
                 .unwrap_or(false);

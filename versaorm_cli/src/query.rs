@@ -1,7 +1,7 @@
 use serde_json::Value;
 use sqlx::Database;
 use std::collections::HashMap;
-use crate::utils::{is_safe_identifier, clean_table_name, clean_column_name};
+use crate::utils::{clean_table_name, clean_column_name};
 
 pub struct QueryBuilder {
     pub table: String,
@@ -13,6 +13,8 @@ pub struct QueryBuilder {
     pub offset: Option<i64>,
     pub insert_data: Option<HashMap<String, Value>>,
     pub update_data: Option<HashMap<String, Value>>,
+    pub group_by: Vec<String>,
+    pub havings: Vec<(String, String, Value, String)>, // (column, operator, value, conjunction)
 }
 
 impl QueryBuilder {
@@ -33,6 +35,8 @@ impl QueryBuilder {
             offset: None,
             insert_data: None,
             update_data: None,
+            group_by: Vec::new(),
+            havings: Vec::new(),
         }
     }
 
@@ -134,7 +138,7 @@ impl QueryBuilder {
 
     pub fn limit(mut self, count: i64) -> Self {
         // Ensure limit is non-negative and reasonable to prevent numeric injection
-        if count >= 0 && count <= 1000000 {
+        if (0..=1000000).contains(&count) {
             self.limit = Some(count);
         }
         self
@@ -142,13 +146,31 @@ impl QueryBuilder {
 
     pub fn offset(mut self, count: i64) -> Self {
         // Ensure offset is non-negative and reasonable to prevent numeric injection
-        if count >= 0 && count <= 1000000 {
+        if (0..=1000000).contains(&count) {
             self.offset = Some(count);
         }
         self
     }
 
-    pub fn build_sql<D: Database>(self) -> (String, Vec<Value>) {
+    pub fn group_by(mut self, columns: Vec<&str>) -> Self {
+        self.group_by = columns.into_iter()
+            .filter_map(|col| clean_column_name(col).ok())
+            .collect();
+        self
+    }
+
+    pub fn having(mut self, column: &str, operator: &str, value: Value) -> Self {
+        if let Ok(clean_col) = clean_column_name(column) {
+            if is_safe_sql_operator(operator) {
+                let conjunction = if self.havings.is_empty() { "" } else { "AND" };
+                self.havings.push((clean_col, operator.to_string(), value, conjunction.to_string()));
+            }
+        }
+        self
+    }
+
+
+    pub fn build_sql(self) -> (String, Vec<Value>) {
         let mut query = String::new();
         let mut params = Vec::new();
 
@@ -181,7 +203,7 @@ impl QueryBuilder {
             if !self.selects.is_empty() {
                 query.push_str(&self.selects.join(", "));
             } else {
-                query.push_str("*");
+                query.push('*');
             }
             query.push_str(&format!(" FROM {}", self.table));
         }
@@ -226,7 +248,7 @@ impl QueryBuilder {
                                 if items_to_bind.is_empty() {
                                     // Manejar el caso de un array vacío para la cláusula IN.
                                     // Esto genera una condición que siempre es falsa para evitar errores de sintaxis SQL.
-                                    clause_text = format!("1 = 0");
+                                    clause_text = "1 = 0".to_string();
                                 } else {
                                     let placeholders = vec!["?"; items_to_bind.len()].join(", ");
                                     clause_text = format!("{} {} ({})", col, op, placeholders);
@@ -286,6 +308,29 @@ impl QueryBuilder {
             query.push_str(&where_clauses.join(" "));
         }
 
+        // GROUP BY clause
+        if !self.group_by.is_empty() {
+            query.push_str(&format!(" GROUP BY {}", self.group_by.join(", ")));
+        }
+
+        // HAVING clause
+        if !self.havings.is_empty() {
+            query.push_str(" HAVING ");
+            let mut having_clauses = Vec::new();
+            for (i, (col, op, value, conjunction)) in self.havings.iter().enumerate() {
+                let clause_text = format!("{} {} ?", col, op);
+                params.push(value.clone());
+                
+                if i == 0 {
+                    having_clauses.push(clause_text);
+                } else {
+                    let conj = if conjunction.is_empty() { "AND" } else { conjunction };
+                    having_clauses.push(format!("{} {}", conj, clause_text));
+                }
+            }
+            query.push_str(&having_clauses.join(" "));
+        }
+
         // ORDER BY clause
         if let Some((col, dir)) = self.order {
             query.push_str(&format!(" ORDER BY {} {}", col, dir));
@@ -307,14 +352,11 @@ impl QueryBuilder {
 
 // Helper function to validate SQL operators
 fn is_safe_sql_operator(operator: &str) -> bool {
-    match operator.to_uppercase().as_str() {
-        "=" | "!=" | "<>" | ">" | "<" | ">=" | "<="
+    matches!(operator.to_uppercase().as_str(), "=" | "!=" | "<>" | ">" | "<" | ">=" | "<="
         | "LIKE" | "NOT LIKE" | "ILIKE" | "NOT ILIKE"
         | "IN" | "NOT IN" | "BETWEEN" | "NOT BETWEEN"
         | "IS" | "IS NOT" | "IS NULL" | "IS NOT NULL"
-        | "RAW" => true,
-        _ => false,
-    }
+        | "RAW")
 }
 
 // Helper function to validate RAW SQL clauses for security

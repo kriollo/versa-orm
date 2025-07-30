@@ -155,10 +155,78 @@ pub fn clean_table_name(table_name: &str) -> Result<String, String> {
 /// Limpia y valida un nombre de columna
 #[allow(dead_code)]
 pub fn clean_column_name(column_name: &str) -> Result<String, String> {
-    if !is_safe_identifier(column_name) {
-        return Err(format!("Invalid column name: {}", column_name));
+    // Permitir funciones SQL como COUNT(*), SUM(), etc. y alias
+    if is_sql_function_or_alias(column_name) || is_safe_identifier(column_name) {
+        Ok(column_name.to_string())
+    } else {
+        Err(format!("Invalid column name: {}", column_name))
     }
-    Ok(column_name.to_string())
+}
+
+/// Verifica si una cadena es una función SQL válida o alias
+#[allow(dead_code)]
+pub fn is_sql_function_or_alias(column_expr: &str) -> bool {
+    // Permite patrones como:
+    // - COUNT(*)
+    // - COUNT(*) as count
+    // - SUM(column_name)
+    // - AVG(price) as average_price
+    // - column_name as alias
+    
+    // Lista de funciones SQL permitidas
+    let allowed_functions = [
+        "COUNT", "SUM", "AVG", "MAX", "MIN", "DISTINCT",
+        "UPPER", "LOWER", "LENGTH", "CONCAT"
+    ];
+    
+    let upper_expr = column_expr.to_uppercase();
+    
+    // Verificar si contiene "AS" para alias
+    if upper_expr.contains(" AS ") {
+        let parts: Vec<&str> = column_expr.split(" as ").collect();
+        if parts.len() == 2 {
+            let function_part = parts[0].trim();
+            let alias_part = parts[1].trim();
+            
+            // Verificar que el alias sea un identificador seguro
+            if !is_safe_identifier(alias_part) {
+                return false;
+            }
+            
+            // Verificar la parte de la función
+            return is_valid_sql_function(function_part, &allowed_functions);
+        }
+    } else {
+        // Sin alias, verificar si es una función directa
+        return is_valid_sql_function(column_expr, &allowed_functions);
+    }
+    
+    false
+}
+
+/// Verifica si una expresión es una función SQL válida
+#[allow(dead_code)]
+fn is_valid_sql_function(expr: &str, allowed_functions: &[&str]) -> bool {
+    let upper_expr = expr.to_uppercase();
+    
+    for func in allowed_functions {
+        if upper_expr.starts_with(&format!("{}(", func)) && upper_expr.ends_with(")") {
+            // Extraer el contenido entre paréntesis
+            let content = &expr[func.len() + 1..expr.len() - 1];
+            
+            // Para COUNT(*), SUM(*), etc., permitir asterisco
+            if content == "*" {
+                return true;
+            }
+            
+            // Para otras funciones, verificar que el contenido sea un identificador seguro
+            if is_safe_identifier(content.trim()) {
+                return true;
+            }
+        }
+    }
+    
+    false
 }
 
 /// Construye una cláusula WHERE segura
