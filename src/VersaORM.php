@@ -528,34 +528,70 @@ class VersaORM
      */
     private function logError(string $errorCode, string $errorMessage, ?string $query, array $bindings, string $fullMessage): void
     {
+        if (!$this->isDebugMode()) {
+            return;
+        }
+
         try {
             $logDir = __DIR__ . '/../logs';
             if (!is_dir($logDir)) {
                 mkdir($logDir, 0755, true);
             }
 
-            $logFile = $logDir . '/versaorm_debug.log';
+            // Usar archivo con fecha actual (YYYY-MM-DD.log)
+            $logFile = $logDir . '/' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(
-                "[%s] VersaORM Debug Log\n" .
-                    "Error Code: %s\n" .
-                    "Error Message: %s\n" .
-                    "Query: %s\n" .
-                    "Bindings: %s\n" .
-                    "Full Error:\n%s\n" .
-                    "===================================================\n\n",
+                "[%s] [PHP] [ERROR] [%s] %s\n" .
+                "[%s] [PHP] [QUERY] %s\n" .
+                "[%s] [PHP] [BINDINGS] %s\n" .
+                "[%s] [PHP] [FULL_ERROR] %s\n\n",
                 $timestamp,
                 $errorCode,
                 $errorMessage,
+                $timestamp,
                 $query ?? 'N/A',
+                $timestamp,
                 json_encode($bindings),
-                $fullMessage
+                $timestamp,
+                str_replace("\n", " | ", $fullMessage)
             );
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+            
+            // Limpiar logs antiguos (mantener solo 7 días)
+            $this->cleanOldLogs($logDir);
         } catch (\Throwable $e) {
             // Silenciar errores de logging para no interferir con el error principal
+        }
+    }
+
+    /**
+     * Limpia archivos de log antiguos (más de 7 días).
+     *
+     * @param string $logDir
+     * @return void
+     */
+    private function cleanOldLogs(string $logDir): void
+    {
+        try {
+            $files = glob($logDir . '/*.log');
+            $sevenDaysAgo = strtotime('-7 days');
+            
+            foreach ($files as $file) {
+                $filename = basename($file, '.log');
+                
+                // Si es un archivo con formato de fecha YYYY-MM-DD
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename)) {
+                    $fileDate = strtotime($filename);
+                    if ($fileDate !== false && $fileDate < $sevenDaysAgo) {
+                        unlink($file);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silenciar errores de limpieza de logs
         }
     }
 
