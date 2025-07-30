@@ -144,6 +144,17 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
+     * Obtiene todos los registros como array asociativo (no objetos)
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function allArray(): array
+    {
+        $instance = new static();
+        return $instance->db->table($instance->table)->orderBy($instance->primaryKey, 'DESC')->get();
+    }
+
+    /**
      * Cuenta todos los registros de esta tabla
      */
     public static function countAll(): int
@@ -153,7 +164,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Busca registros con condiciones
+     * Busca registros with condiciones
      */
     public static function where(string $column, string $operator, $value): array
     {
@@ -173,7 +184,20 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Actualiza el modelo actual
+     * Busca registros con condiciones y devuelve arrays asociativos (no objetos)
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function whereArray(string $column, string $operator, $value): array
+    {
+        $instance = new static();
+        $sql = "SELECT * FROM {$instance->table} WHERE {$column} {$operator} ? ORDER BY {$instance->primaryKey} DESC";
+        $results = $instance->db->exec($sql, [$value]);
+        return $results;
+    }
+
+    /**
+     * Actualiza el modelo current
      */
     public function update(array $data): bool
     {
@@ -261,6 +285,33 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
+     * Búsqueda case-insensitive en múltiples campos, devuelve arrays asociativos (no objetos)
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function searchArray(string $term, array $fields = []): array
+    {
+        $instance = new static();
+        if (empty($fields)) {
+            $fields = $instance->fillable;
+        }
+        if (empty($fields)) {
+            return [];
+        }
+        $searchLower = strtolower($term);
+        $conditions = [];
+        $bindings = [];
+        foreach ($fields as $field) {
+            $conditions[] = "LOWER($field) LIKE ?";
+            $bindings[] = "%$searchLower%";
+        }
+        $result = $instance->db->table($instance->table)
+            ->whereRaw(implode(' OR ', $conditions), $bindings)
+            ->orderBy($instance->primaryKey, 'DESC')->get();
+        return $result;
+    }
+
+    /**
      * Paginación
      */
     public static function paginate(int $page = 1, int $perPage = 10): array
@@ -285,6 +336,30 @@ abstract class BaseModel extends VersaModel
             'page' => $page,
             'per_page' => $perPage,
             'total_pages' => ceil($total / $perPage)
+        ];
+    }
+
+    /**
+     * Paginación que devuelve arrays asociativos (no objetos) en 'data'
+     *
+     * @return array{data: array<int, array<string, mixed>>, total: int, page: int, per_page: int, total_pages: int}
+     */
+    public static function paginateArray(int $page = 1, int $perPage = 10): array
+    {
+        $instance = new static();
+        $offset = ($page - 1) * $perPage;
+        $results = $instance->db->table($instance->table)
+            ->orderBy($instance->primaryKey, 'DESC')
+            ->limit($perPage)
+            ->offset($offset)
+            ->getAll();
+        $total = $instance->db->table($instance->table)->count();
+        return [
+            'data' => $results,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => (int)ceil($total / $perPage)
         ];
     }
 

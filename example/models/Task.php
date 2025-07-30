@@ -26,7 +26,8 @@ class Task extends BaseModel
     protected array $fillable = [
         'title',
         'description',
-        'completed'
+        'completed',
+        'project_id' // <-- necesario para que se guarde
     ];
 
     /**
@@ -103,6 +104,14 @@ class Task extends BaseModel
     public static function searchTasks(string $term): array
     {
         return self::search($term, ['title', 'description']);
+    }
+
+    /**
+     * Búsqueda específica en tareas (title y description) que devuelve arrays asociativos
+     */
+    public static function searchTasksArray(string $term): array
+    {
+        return self::searchArray($term, ['title', 'description']);
     }
 
     /**

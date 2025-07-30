@@ -2,6 +2,7 @@
 // index.php - Controlador principal
 require_once __DIR__ . '/autoload.php';
 
+use Example\Models\Project;
 use Example\Models\Task;
 use VersaORM\VersaORMException;
 
@@ -32,15 +33,21 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'description' => $_POST['description'],
         'completed' => isset($_POST['completed']) ? true : false
     ];
-
+    if (isset($_POST['project_id']) && is_numeric($_POST['project_id'])) {
+        $data['project_id'] = (int)$_POST['project_id'];
+    }
     try {
         $task = Task::create($data);
         if ($task) {
-            header('Location: index.php?success=created');
+            if (isset($data['project_id'])) {
+                header('Location: index.php?action=show_project&id=' . $data['project_id'] . '&success=created');
+            } else {
+                header('Location: index.php?success=created');
+            }
         } else {
             header('Location: index.php?error=create_failed');
         }
-    } catch (Exception $e) {
+    } catch (VersaORMException $e) {
         header('Location: index.php?error=' . urlencode($e->getMessage()));
     }
     exit;
@@ -68,7 +75,7 @@ if ($action === 'edit' && isset($_GET['id'])) {
             exit;
         }
         include __DIR__ . '/views/edit.php';
-    } catch (Exception $e) {
+    } catch (VersaORMException $e) {
         header('Location: index.php?error=' . urlencode($e->getMessage()));
     }
     exit;
@@ -152,6 +159,120 @@ if ($action === 'api' && ($_GET['format'] ?? '') === 'json') {
     exit;
 }
 
+// --- Módulo de Proyectos como pantalla principal ---
+// (No repetir el use Example\Models\Project; aquí, ya está declarado arriba)
+
+if (!isset($action) || $action === 'projects' || $action === 'list' || $action === '') {
+    // Listar proyectos y tareas asociadas (pantalla principal)
+    $projects = Project::allArray();
+    $tasksByProject = [];
+    foreach ($projects as $project) {
+        $tasksByProject[$project['id']] = (new Project())->find($project['id'])->tasksArray();
+    }
+    include __DIR__ . '/views/projects_list.php';
+    exit;
+}
+
+if ($action === 'show_project' && isset($_GET['id'])) {
+    $projectObj = Project::find($_GET['id']);
+    if (!$projectObj) {
+        header('Location: index.php?action=projects&error=not_found');
+        exit;
+    }
+    $project = $projectObj->toArray();
+    $tasks = $projectObj->tasksArray();
+    $user = $projectObj->userArray();
+    $completedCount = count($projectObj->completedTasksArray());
+    $totalCount = $projectObj->countTasks();
+    $cacheStatus = $projectObj->cacheStatus();
+    include __DIR__ . '/views/project_show.php';
+    exit;
+}
+
+if ($action === 'complete_all_tasks' && isset($_GET['id'])) {
+    $projectObj = Project::find($_GET['id']);
+    if ($projectObj) {
+        try {
+            $projectObj->completeAllTasks();
+            header('Location: index.php?action=show_project&id=' . $projectObj->id . '&success=all_completed');
+        } catch (Exception $e) {
+            header('Location: index.php?action=show_project&id=' . $projectObj->id . '&error=tx_failed');
+        }
+    } else {
+        header('Location: index.php?action=projects&error=not_found');
+    }
+    exit;
+}
+
+if ($action === 'export_project_json' && isset($_GET['id'])) {
+    $projectObj = Project::find($_GET['id']);
+    if ($projectObj) {
+        $data = [
+            'project' => $projectObj->toArray(),
+            'tasks' => $projectObj->tasksArray(),
+            'user' => $projectObj->userArray()
+        ];
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="project_' . $projectObj->id . '.json"');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+    header('Location: index.php?action=projects&error=not_found');
+    exit;
+}
+
+if ($action === 'edit_project' && isset($_GET['id'])) {
+    $project = Project::find($_GET['id']);
+    if (!$project) {
+        header('Location: index.php?action=projects&error=not_found');
+        exit;
+    }
+    include __DIR__ . '/views/edit_project.php';
+    exit;
+}
+
+if ($action === 'update_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = $_POST['id'];
+    $data = [
+        'name' => $_POST['name'],
+        'description' => $_POST['description']
+    ];
+    try {
+        $project = Project::find($id);
+        if ($project && $project->update($data)) {
+            header('Location: index.php?action=show_project&id=' . $id . '&success=updated');
+        } else {
+            header('Location: index.php?action=projects&error=update_failed');
+        }
+    } catch (Exception $e) {
+        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
+    }
+    exit;
+}
+
+if ($action === 'new_project') {
+    include __DIR__ . '/views/project_new.php';
+    exit;
+}
+
+if ($action === 'create_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = [
+        'name' => $_POST['name'],
+        'description' => $_POST['description'] ?? ''
+    ];
+    try {
+        $project = Project::create($data);
+        if ($project) {
+            header('Location: index.php?action=show_project&id=' . $project->id . '&success=created');
+        } else {
+            header('Location: index.php?action=projects&error=create_failed');
+        }
+    } catch (Exception $e) {
+        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
+    }
+    exit;
+}
+
 // Filtros y búsqueda avanzada
 $search = $_GET['search'] ?? '';
 $status = $_GET['status'] ?? '';
@@ -162,44 +283,40 @@ $perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
 
 // Obtener tareas usando métodos estandarizados
 if (!empty($search) && empty($status)) {
-    // Solo búsqueda de texto
-    $tasks = Task::searchTasks($search);
-    // Aplicar paginación manual para búsquedas
-    $tasks = array_slice($tasks, ($page - 1) * $perPage, $perPage);
+    // Solo búsqueda de texto (array asociativo, paginación en SQL)
+    $taskModel = new Task();
+    $searchLower = strtolower($search);
+    $sql = "SELECT * FROM {$taskModel->getTable()}\n            WHERE (LOWER(title) LIKE ? OR LOWER(description) LIKE ?)\n            ORDER BY {$order} {$dir}\n            LIMIT ? OFFSET ?";
+    $tasks = $taskModel->getORM()->exec($sql, [
+        "%$searchLower%",
+        "%$searchLower%",
+        $perPage,
+        ($page - 1) * $perPage
+    ]);
 } elseif (!empty($status) && empty($search)) {
-    // Solo filtro por estado
-    $tasks = ($status === '1') ? Task::completed() : Task::pending();
+    // Solo filtro por estado (array asociativo)
+    if ($status === '1') {
+        $tasks = Task::whereArray('completed', '=', 1);
+    } else {
+        $tasks = Task::whereArray('completed', '=', 0);
+    }
     $tasks = array_slice($tasks, ($page - 1) * $perPage, $perPage);
 } elseif (!empty($search) && !empty($status)) {
-    // Búsqueda + filtro por estado (consulta personalizada)
+    // Búsqueda + filtro por estado (consulta personalizada, array asociativo)
     $taskModel = new Task();
     $searchLower = strtolower($search);
     $completedValue = ($status === '1') ? 1 : 0;
-
-    $sql = "SELECT * FROM {$taskModel->getTable()}
-            WHERE (LOWER(title) LIKE ? OR LOWER(description) LIKE ?)
-            AND completed = ?
-            ORDER BY {$order} {$dir}
-            LIMIT ? OFFSET ?";
-
-    $results = $taskModel->getORM()->exec($sql, [
+    $sql = "SELECT * FROM {$taskModel->getTable()}\n            WHERE (LOWER(title) LIKE ? OR LOWER(description) LIKE ?)\n            AND completed = ?\n            ORDER BY {$order} {$dir}\n            LIMIT ? OFFSET ?";
+    $tasks = $taskModel->getORM()->exec($sql, [
         "%$searchLower%",
         "%$searchLower%",
         $completedValue,
         $perPage,
         ($page - 1) * $perPage
     ]);
-
-    // Convertir a modelos
-    $tasks = [];
-    foreach ($results as $result) {
-        $task = new Task();
-        $task->loadInstance($result);
-        $tasks[] = $task;
-    }
 } else {
-    // Sin filtros, usar paginación estandarizada
-    $paginationData = Task::paginate($page, $perPage);
+    // Sin filtros, usar paginación estandarizada (array asociativo)
+    $paginationData = Task::paginateArray($page, $perPage);
     $tasks = $paginationData['data'];
 }
 
