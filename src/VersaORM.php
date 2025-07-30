@@ -73,7 +73,7 @@ class VersaORM
      * @param string $action
      * @param array<string, mixed> $params
      * @return mixed
-     * @throws \Exception
+     * @throws VersaORMException
      */
     private function execute(string $action, array $params)
     {
@@ -152,11 +152,11 @@ class VersaORM
         }
 
         // Manejar errores del binario
-        if (isset($response['status']) && $response['status'] === 'error') {
+        if (is_array($response) && isset($response['status']) && $response['status'] === 'error') {
             $this->handleBinaryError($response, $action, $params);
         }
 
-        return $response['data'] ?? null;
+        return is_array($response) ? ($response['data'] ?? null) : null;
     }
 
 
@@ -168,8 +168,7 @@ class VersaORM
      */
     public function table(string $table): QueryBuilder
     {
-        $qb = new QueryBuilder($this, $table);
-        return $qb;
+        return new QueryBuilder($this, $table);
     }
 
 
@@ -178,7 +177,7 @@ class VersaORM
      * Ejecuta una consulta SQL personalizada.
      *
      * @param string $query
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @return mixed
      */
     public function exec(string $query, array $bindings = [])
@@ -190,7 +189,7 @@ class VersaORM
      * Método alias para compatibilidad con código existente.
      *
      * @param string $query
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @return mixed
      * @deprecated Usa exec() en su lugar
      */
@@ -251,9 +250,9 @@ class VersaORM
      * Valida los parámetros de entrada antes de ejecutar comandos.
      *
      * @param string $action
-     * @param array $params
+     * @param array<string, mixed> $params
      * @return void
-     * @throws \Exception
+     * @throws VersaORMException
      */
     private function validateInput(string $action, array $params): void
     {
@@ -304,23 +303,23 @@ class VersaORM
     /**
      * Maneja errores devueltos por el binario de Rust.
      *
-     * @param array $response
+     * @param array<string, mixed> $response
      * @param string $action
-     * @param array $params
+     * @param array<string, mixed> $params
      * @return void
-     * @throws \Exception
+     * @throws VersaORMException
      */
     private function handleBinaryError(array $response, string $action, array $params): void
     {
         $error = $response['error'] ?? [];
-        $errorCode = $error['code'] ?? 'UNKNOWN_ERROR';
-        $errorMessage = $error['message'] ?? 'An unknown error occurred.';
-        $errorDetails = $error['details'] ?? [];
-        $sqlState = $error['sql_state'] ?? null;
+        $errorCode = is_array($error) && isset($error['code']) && is_string($error['code']) ? $error['code'] : 'UNKNOWN_ERROR';
+        $errorMessage = is_array($error) && isset($error['message']) && is_string($error['message']) ? $error['message'] : 'An unknown error occurred.';
+        $errorDetails = is_array($error) && isset($error['details']) && is_array($error['details']) ? $error['details'] : [];
+        $sqlState = is_array($error) && isset($error['sql_state']) && is_string($error['sql_state']) ? $error['sql_state'] : null;
 
         // Extraer información de la consulta desde el error de Rust (si está disponible)
-        $sqlQuery = $error['query'] ?? null;
-        $sqlBindings = $error['bindings'] ?? [];
+        $sqlQuery = is_array($error) && isset($error['query']) && is_string($error['query']) ? $error['query'] : null;
+        $sqlBindings = is_array($error) && isset($error['bindings']) && is_array($error['bindings']) ? $error['bindings'] : [];
 
         // Crear información de consulta para el mensaje de error
         $query = null;
@@ -332,42 +331,42 @@ class VersaORM
             $bindings = $sqlBindings;
         } elseif ($action === 'raw') {
             // Para consultas raw, usar los parámetros originales
-            $query = $params['query'] ?? null;
-            $bindings = $params['bindings'] ?? [];
+            $query = isset($params['query']) && is_string($params['query']) ? $params['query'] : null;
+            $bindings = isset($params['bindings']) && is_array($params['bindings']) ? $params['bindings'] : [];
         } elseif ($action === 'query') {
             // Para QueryBuilder, construir una representación de la consulta como fallback
-            $table = $params['table'] ?? 'unknown';
-            $method = $params['method'] ?? 'get';
-            $select = $params['select'] ?? ['*'];
-            $where = $params['where'] ?? [];
-            $orderBy = $params['orderBy'] ?? [];
-            $limit = $params['limit'] ?? null;
+            $table = isset($params['table']) && is_string($params['table']) ? $params['table'] : 'unknown';
+            $method = isset($params['method']) && is_string($params['method']) ? $params['method'] : 'get';
+            $select = isset($params['select']) && is_array($params['select']) ? $params['select'] : ['*'];
+            $where = isset($params['where']) && is_array($params['where']) ? $params['where'] : [];
+            $orderBy = isset($params['orderBy']) && is_array($params['orderBy']) ? $params['orderBy'] : [];
+            $limit = isset($params['limit']) && (is_int($params['limit']) || is_string($params['limit'])) ? $params['limit'] : null;
 
             $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $select);
             if (!empty($where)) {
                 $whereDesc = [];
                 foreach ($where as $w) {
-                    if ($w['operator'] === 'RAW' && is_array($w['value'])) {
+                    if (is_array($w) && (($w['operator'] ?? null) === 'RAW') && isset($w['value']) && is_array($w['value'])) {
                         // Manejo especial para whereRaw
-                        $rawSql = $w['value']['sql'] ?? 'unknown';
-                        $rawBindings = $w['value']['bindings'] ?? [];
+                        $rawSql = isset($w['value']['sql']) && is_string($w['value']['sql']) ? $w['value']['sql'] : 'unknown';
+                        $rawBindings = isset($w['value']['bindings']) && is_array($w['value']['bindings']) ? $w['value']['bindings'] : [];
                         $bindingsStr = !empty($rawBindings) ? ' [bindings: ' . json_encode($rawBindings) . ']' : '';
                         $whereDesc[] = "RAW({$rawSql}){$bindingsStr}";
-                    } elseif (is_array($w['value'])) {
+                    } elseif (is_array($w) && isset($w['value']) && is_array($w['value'])) {
                         $value = '[' . implode(',', $w['value']) . ']';
                         $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
-                    } else {
-                        $value = (string)$w['value'];
+                    } elseif (is_array($w)) {
+                        $value = (string)($w['value'] ?? '');
                         $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
                     }
                 }
                 $query .= ", where=[" . implode(' AND ', $whereDesc) . "]";
             }
-            if (!empty($orderBy)) {
+            if (!empty($orderBy) && isset($orderBy[0]) && is_array($orderBy[0])) {
                 $query .= ", orderBy={$orderBy[0]['column']} {$orderBy[0]['direction']}";
             }
             if ($limit) {
-                $query .= ", limit={$limit}";
+                $query .= ", limit=" . strval($limit);
             }
         }
 
@@ -412,10 +411,11 @@ class VersaORM
      *
      * @param string $errorCode
      * @param string $errorMessage
-     * @param array $errorDetails
+     * @param array<string, mixed> $errorDetails
      * @param string|null $sqlState
      * @param string $action
      * @param string|null $query
+     * @param array<int, mixed> $bindings
      * @return string
      */
     private function buildDetailedErrorMessage(
@@ -454,16 +454,18 @@ class VersaORM
         if (!empty($errorDetails)) {
             $message .= '\n\nDetails:';
             foreach ($errorDetails as $key => $value) {
-                $message .= sprintf('\n- %s: %s', $key, $value);
+                $message .= sprintf('\n- %s: %s', $key, is_scalar($value) ? (string)$value : json_encode($value));
             }
         }
 
         // Agregar información de contexto
         $message .= sprintf('\n\nContext: Action=%s', $action);
-        if ($query && strlen($query) < 200) {
-            $message .= sprintf(', Query=%s', $query);
-        } elseif ($query) {
-            $message .= sprintf(', Query=%s...', substr($query, 0, 200));
+        if ($query) {
+            if (strlen($query) < 200) {
+                $message .= sprintf(', Query=%s', $query);
+            } else {
+                $message .= sprintf(', Query=%s...', substr($query, 0, 200));
+            }
         }
 
         return $message;
@@ -521,7 +523,7 @@ class VersaORM
      * @param string $errorCode
      * @param string $errorMessage
      * @param string|null $query
-     * @param array $bindings
+     * @param array<int, mixed> $bindings
      * @param string $fullMessage
      * @return void
      */
@@ -534,7 +536,9 @@ class VersaORM
         try {
             $logDir = __DIR__ . '/../logs';
             if (!is_dir($logDir)) {
-                mkdir($logDir, 0755, true);
+                if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+                }
             }
 
             // Usar archivo con fecha actual (YYYY-MM-DD.log)
@@ -576,6 +580,9 @@ class VersaORM
     {
         try {
             $files = glob($logDir . '/*.log');
+            if ($files === false) {
+                return;
+            }
             $sevenDaysAgo = strtotime('-7 days');
 
             foreach ($files as $file) {
@@ -584,7 +591,7 @@ class VersaORM
                 // Si es un archivo con formato de fecha YYYY-MM-DD
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename)) {
                     $fileDate = strtotime($filename);
-                    if ($fileDate !== false && $fileDate < $sevenDaysAgo) {
+                    if ($fileDate !== false && $sevenDaysAgo !== false && $fileDate < $sevenDaysAgo) {
                         unlink($file);
                     }
                 }
@@ -599,7 +606,7 @@ class VersaORM
      *
      * @param string $errorCode
      * @param string $errorMessage
-     * @return array
+     * @return array<int, string>
      */
     private function getErrorSuggestions(string $errorCode, string $errorMessage): array
     {
@@ -607,7 +614,7 @@ class VersaORM
         $lowerMessage = strtolower($errorMessage);
 
         // Errores de conexión
-        if (strpos($lowerMessage, 'connection') !== false || strpos($lowerMessage, 'connect') !== false) {
+        if (str_contains($lowerMessage, 'connection') || str_contains($lowerMessage, 'connect')) {
             $suggestions[] = 'Check database server is running';
             $suggestions[] = 'Verify connection parameters (host, port, credentials)';
             $suggestions[] = 'Check network connectivity';
@@ -615,7 +622,7 @@ class VersaORM
         }
 
         // Errores de tabla no encontrada
-        if (strpos($lowerMessage, 'table') !== false && strpos($lowerMessage, 'not found') !== false) {
+        if (str_contains($lowerMessage, 'table') && str_contains($lowerMessage, 'not found')) {
             $suggestions[] = 'Check if the table name is spelled correctly';
             $suggestions[] = 'Verify the table exists in the database';
             $suggestions[] = 'Check if you have permissions to access the table';
@@ -623,35 +630,35 @@ class VersaORM
         }
 
         // Errores de columna no encontrada
-        if (strpos($lowerMessage, 'column') !== false && strpos($lowerMessage, 'not found') !== false) {
+        if (str_contains($lowerMessage, 'column') && str_contains($lowerMessage, 'not found')) {
             $suggestions[] = 'Check if the column name is spelled correctly';
             $suggestions[] = 'Verify the column exists in the table';
             $suggestions[] = 'Check the table schema';
         }
 
         // Errores de sintaxis SQL
-        if (strpos($lowerMessage, 'syntax') !== false) {
+        if (str_contains($lowerMessage, 'syntax')) {
             $suggestions[] = 'Check SQL syntax for typos';
             $suggestions[] = 'Verify proper use of quotes and parentheses';
             $suggestions[] = 'Check if keywords are properly escaped';
         }
 
         // Errores de restricción/integridad
-        if (strpos($lowerMessage, 'constraint') !== false || strpos($lowerMessage, 'duplicate') !== false) {
+        if (str_contains($lowerMessage, 'constraint') || str_contains($lowerMessage, 'duplicate')) {
             $suggestions[] = 'Check for duplicate values in unique fields';
             $suggestions[] = 'Verify foreign key references are valid';
             $suggestions[] = 'Check required fields are not null';
         }
 
         // Errores de permisos
-        if (strpos($lowerMessage, 'permission') !== false || strpos($lowerMessage, 'access denied') !== false) {
+        if (str_contains($lowerMessage, 'permission') || str_contains($lowerMessage, 'access denied')) {
             $suggestions[] = 'Check database user permissions';
             $suggestions[] = 'Verify user has required privileges for the operation';
             $suggestions[] = 'Contact database administrator';
         }
 
         // Errores de tipo de datos
-        if (strpos($lowerMessage, 'type') !== false || strpos($lowerMessage, 'invalid') !== false) {
+        if (str_contains($lowerMessage, 'type') || str_contains($lowerMessage, 'invalid')) {
             $suggestions[] = 'Check data types match column definitions';
             $suggestions[] = 'Verify date/time formats are correct';
             $suggestions[] = 'Check numeric values are within valid ranges';
@@ -664,9 +671,9 @@ class VersaORM
      * Verifica referencias circulares en los parámetros.
      *
      * @param mixed $data
-     * @param array $visited
+     * @param array<int, string> $visited
      * @return void
-     * @throws \Exception
+     * @throws VersaORMException
      */
     private function checkCircularReferences($data, array &$visited = []): void
     {
@@ -724,7 +731,7 @@ class VersaORM
             // Ejecutar comando
             $output = shell_exec($command);
 
-            return $output;
+            return $output !== false ? $output : null;
         } finally {
             // Limpiar archivo temporal independientemente del resultado
             if (file_exists($tempFile)) {
@@ -770,14 +777,19 @@ class VersaORM
     {
         if (!file_exists($this->binaryPath)) {
             $osName = strtolower(PHP_OS_FAMILY);
-            $expectedName = "versaorm_cli_{$osName}" . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
+            $expectedName = "versaorm_cli_{\$osName}" . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
 
             throw new \RuntimeException(
-                "VersaORM binary not found at: {$this->binaryPath}\n\n" .
-                    "Expected binary name: {$expectedName}\n\n" .
+                "VersaORM binary not found at: {
+                $this->binaryPath}
+\n\n" .
+                    "Expected binary name: {
+                    $expectedName}
+\n\n" .
                     "To fix this:\n" .
                     "1. Compile the binary: cd versaorm_cli && cargo build --release\n" .
-                    "2. Copy to: src/binary/{$expectedName}\n\n" .
+                    "2. Copy to: src/binary/{
+                    $expectedName}\n\n" .
                     "For cross-compilation, see src/binary/README.md"
             );
         }
@@ -785,8 +797,11 @@ class VersaORM
         // En sistemas Unix, verificar permisos de ejecución
         if (PHP_OS_FAMILY !== 'Windows' && !is_executable($this->binaryPath)) {
             throw new \RuntimeException(
-                "VersaORM binary exists but is not executable: {$this->binaryPath}\n\n" .
-                    "Fix with: chmod +x {$this->binaryPath}"
+                "VersaORM binary exists but is not executable: {
+                $this->binaryPath}
+\n\n" .
+                    "Fix with: chmod +x {
+                    $this->binaryPath}"
             );
         }
     }
