@@ -103,9 +103,31 @@ class QueryBuilderTest extends TestCase
         $this->assertCount(2, $users);
     }
 
+    public function testWhereInDebug(): void
+    {
+        // Create a separate ORM instance to avoid setup data being inserted
+        global $config;
+        $orm = new \VersaORM\VersaORM([
+            'driver' => $config['DB']['DB_DRIVER'],
+            'host' => $config['DB']['DB_HOST'],
+            'port' => $config['DB']['DB_PORT'],
+            'database' => $config['DB']['DB_NAME'],
+            'username' => $config['DB']['DB_USER'],
+            'password' => $config['DB']['DB_PASS'],
+            'debug' => true
+        ]);
+
+        $query = $orm->table('users')->whereIn('id', [1, 3]);
+        // The query will be dumped and exit in execute method
+        $users = $query->findAll();
+        $this->assertCount(2, $users);
+    }
+
     public function testWhereIn(): void
     {
-        $users = self::$orm->table('users')->whereIn('id', [1, 3])->findAll();
+        $query = self::$orm->table('users')->whereIn('id', [1, 3]);
+        // The query will be dumped and exit in execute method
+        $users = $query->findAll();
         $this->assertCount(2, $users);
     }
 
@@ -155,7 +177,7 @@ class QueryBuilderTest extends TestCase
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('users.status', '=', 'active')
             ->getAll();
-        
+
         $this->assertCount(2, $posts);
         $this->assertEquals('Alice', $posts[0]['author']);
     }
@@ -200,17 +222,7 @@ class QueryBuilderTest extends TestCase
 
     public function testGroupByAndHaving(): void
     {
-        // This test is commented out as GROUP BY and HAVING are not fully implemented in the current QueryBuilder
-        // $stats = self::$orm->table('posts')
-        //     ->select(['user_id', 'COUNT(id) as post_count'])
-        //     ->groupBy('user_id')
-        //     ->having('post_count', '>', 1)
-        //     ->getAll();
-
-        // $this->assertCount(1, $stats);
-        // $this->assertEquals(1, $stats[0]['user_id']);
-        // $this->assertEquals(2, $stats[0]['post_count']);
-        $this->markTestIncomplete('GROUP BY and HAVING functionality is not yet implemented in the QueryBuilder.');
+        $this->markTestIncomplete('GROUP BY and HAVING functionality is not yet fully implemented in the QueryBuilder.');
     }
 
     //======================================================================
@@ -248,7 +260,7 @@ class QueryBuilderTest extends TestCase
         $updated = self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
             ->update(['status' => 'on_vacation']);
-        
+
         $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $updated);
 
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();

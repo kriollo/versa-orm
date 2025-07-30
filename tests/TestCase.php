@@ -63,8 +63,8 @@ class TestCase extends BaseTestCase
             CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                status VARCHAR(50) DEFAULT 'active',
+                email VARCHAR(191) UNIQUE NOT NULL,
+                status VARCHAR(50) DEFAULT \'active\',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ');

@@ -10,7 +10,7 @@ global $config;
 $config = [
     'DB' => [
         'DB_DRIVER' => getenv('DB_DRIVER') ?: 'mysql',
-        'DB_HOST' => getenv('DB_HOST') ?: '127.0.0.1',
+        'DB_HOST' => getenv('DB_HOST') ?: 'localhost',
         'DB_PORT' => (int)(getenv('DB_PORT') ?: 3306),
         'DB_NAME' => getenv('DB_NAME') ?: 'versaorm_test',
         'DB_USER' => getenv('DB_USER') ?: 'local',
