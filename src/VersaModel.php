@@ -21,7 +21,6 @@ class VersaModel
     private string $table;
     private $orm; // Puede ser array (config) o instancia de VersaORM
     private array $attributes = [];
-    private string $primaryKey = 'id';
     private static $ormInstance;
 
     public function __construct(string $table, $orm)
@@ -115,10 +114,34 @@ class VersaModel
             $sql = "INSERT INTO {$this->table} (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
             $orm->exec($sql, array_values($filteredAttributes));
 
-            // Obtener el último registro insertado por este modelo
-            $result = $orm->exec("SELECT * FROM {$this->table} ORDER BY id DESC LIMIT 1");
-            if (!empty($result)) {
-                $this->attributes = $result[0]; // Actualizar con todos los datos del registro
+            // Obtener el ID del registro recién insertado
+            // Como LAST_INSERT_ID() no funciona como esperado, buscaremos el registro más reciente
+            // que coincida con los datos que acabamos de insertar
+            $whereConditions = [];
+            $whereParams = [];
+            
+            // Usar campos únicos para encontrar el registro
+            if (isset($filteredAttributes['email'])) {
+                $whereConditions[] = "email = ?";
+                $whereParams[] = $filteredAttributes['email'];
+            } else {
+                // Si no hay email, usar otros campos como fallback
+                foreach ($filteredAttributes as $key => $value) {
+                    if (is_string($value) || is_numeric($value)) {
+                        $whereConditions[] = "{$key} = ?";
+                        $whereParams[] = $value;
+                        break; // Solo usar el primer campo válido
+                    }
+                }
+            }
+            
+            if (!empty($whereConditions)) {
+                $whereClause = implode(' AND ', $whereConditions);
+                $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
+                
+                if (!empty($result) && isset($result[0])) {
+                    $this->attributes = array_merge($this->attributes, $result[0]);
+                }
             }
         }
     }

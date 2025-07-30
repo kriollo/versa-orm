@@ -38,7 +38,7 @@ class QueryBuilder
     private ?array $orderBy = null;
     private ?int $limit = null;
     private ?int $offset = null;
-    private ?array $groupBy = null;
+    private array $groupBy = [];
     private array $having = [];
 
     public function __construct($orm, string $table)
@@ -55,8 +55,124 @@ class QueryBuilder
      */
     public function select(?array $columns = ['*']): self
     {
-        $this->selects = $columns ?? ['*'];
+        if ($columns === ['*']) {
+            $this->selects = ['*'];
+            return $this;
+        }
+
+        foreach ($columns as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            }
+        }
+
+        $this->selects = $columns;
         return $this;
+    }
+
+    /**
+     * Valida si un nombre de tabla o columna es seguro.
+     *
+     * @param string $identifier
+     * @return bool
+     */
+    private function isSafeIdentifier(string $identifier): bool
+    {
+        // Permitir asterisco para SELECT *
+        if ($identifier === '*') {
+            return true;
+        }
+
+        // Manejar alias (ej: users.name as author_name)
+        $parts = preg_split('/\s+as\s+/i', $identifier);
+        $mainIdentifier = $parts[0];
+        $alias = $parts[1] ?? null;
+
+        if ($alias !== null && !$this->isValidDatabaseIdentifier($alias)) {
+            return false; // Alias inválido
+        }
+
+        // Permitir funciones SQL comunes (COUNT, SUM, AVG, MAX, MIN, etc.)
+        if ($this->isSQLFunction($mainIdentifier)) {
+            return true;
+        }
+
+        // Manejar notación table.column
+        if (str_contains($mainIdentifier, '.')) {
+            [$table, $column] = explode('.', $mainIdentifier, 2);
+            return $this->isValidDatabaseIdentifier($table) && $this->isValidDatabaseIdentifier($column);
+        }
+
+        return $this->isValidDatabaseIdentifier($mainIdentifier);
+    }
+
+    /**
+     * Valida un identificador de base de datos individual.
+     *
+     * @param string $identifier
+     * @return bool
+     */
+    private function isValidDatabaseIdentifier(string $identifier): bool
+    {
+        // Expresión regular para validar identificadores:
+        // - Debe empezar con una letra o guion bajo.
+        // - Seguido de letras, números o guiones bajos.
+        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $identifier)) {
+            return false;
+        }
+
+        // Comprobar la existencia de patrones maliciosos
+        if (str_contains($identifier, '--') || str_contains($identifier, '/*') || str_contains($identifier, ';')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Verifica si un identificador es una función SQL válida.
+     *
+     * @param string $identifier
+     * @return bool
+     */
+    private function isSQLFunction(string $identifier): bool
+    {
+        // Lista de funciones SQL comunes permitidas
+        $allowedFunctions = [
+            'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 'UPPER', 'LOWER', 'LENGTH', 
+            'SUBSTRING', 'CONCAT', 'COALESCE', 'IFNULL', 'NULLIF', 'ABS', 
+            'ROUND', 'CEIL', 'FLOOR', 'NOW', 'CURDATE', 'CURTIME', 'DATE',
+            'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'SECOND', 'TRIM',
+            'LTRIM', 'RTRIM', 'REPLACE', 'DISTINCT'
+        ];
+
+        // Verificar si es una función SQL con paréntesis
+        if (preg_match('/^([A-Z_]+)\s*\((.*)\)$/i', $identifier, $matches)) {
+            $functionName = strtoupper($matches[1]);
+            $functionArgs = $matches[2];
+
+            // Verificar si la función está en la lista permitida
+            if (!in_array($functionName, $allowedFunctions)) {
+                return false;
+            }
+
+            // Validar argumentos básicos (permitir *, columnas simples, números y strings)
+            if ($functionArgs === '*') {
+                return true; // COUNT(*), etc.
+            }
+
+            // Permitir argumentos simples como column names, números, strings
+            if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs)) {
+                // Verificar que no contenga patrones maliciosos
+                if (!str_contains($functionArgs, '--') && 
+                    !str_contains($functionArgs, '/*') && 
+                    !str_contains($functionArgs, ';')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -293,7 +409,17 @@ class QueryBuilder
      */
     public function groupBy($columns): self
     {
-        // Implementar lógica de GROUP BY
+        if (is_string($columns)) {
+            $columns = [$columns];
+        }
+        
+        foreach ($columns as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name in GROUP BY: %s', $column));
+            }
+        }
+        
+        $this->groupBy = $columns;
         return $this;
     }
 
@@ -306,6 +432,17 @@ class QueryBuilder
      */
     public function orderBy(string $column, string $direction = 'asc'): self
     {
+        // Validate column name for security
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid or malicious column name in ORDER BY: %s', $column));
+        }
+
+        // Validate direction to prevent injection
+        $direction = strtoupper($direction);
+        if (!in_array($direction, ['ASC', 'DESC'])) {
+            throw new VersaORMException(sprintf('Invalid ORDER BY direction. Only ASC and DESC are allowed: %s', $direction));
+        }
+
         $this->orderBy = ['column' => $column, 'direction' => $direction];
         return $this;
     }
@@ -558,6 +695,8 @@ $params = [
             'joins' => $this->joins,
             'where' => $this->processWheres(),
             'orderBy' => $this->orderBy ? [$this->orderBy] : [],
+            'groupBy' => $this->groupBy,
+            'having' => $this->having,
             'limit' => $this->limit,
             'offset' => $this->offset,
             'method' => $method

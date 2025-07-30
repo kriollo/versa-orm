@@ -161,10 +161,9 @@ class VersaORM
 
 
     /**
-     * Crea un QueryBuilder para la tabla especificada y permite pasar la clase modelo.
+     * Crea un QueryBuilder para la tabla especificada.
      *
      * @param string $table
-     * @param string|null $modelClass
      * @return QueryBuilder
      */
     public function table(string $table): QueryBuilder
@@ -506,7 +505,7 @@ class VersaORM
             if (isset($frame['file']) && isset($frame['line'])) {
                 $file = basename($frame['file']);
                 $line = $frame['line'];
-                $function = $frame['function'] ?? 'unknown';
+                $function = $frame['function'];
                 $class = isset($frame['class']) ? $frame['class'] . '::' : '';
 
                 $traceStr .= sprintf("#%d %s%s() at %s:%d\n", $i, $class, $function, $file, $line);
@@ -734,51 +733,6 @@ class VersaORM
         }
     }
 
-    /**
-     * Escapa JSON de forma segura para el shell según el sistema operativo.
-     * DEPRECATED: Usar executeBinaryWithTempFile en su lugar.
-     *
-     * @param string $json
-     * @return string
-     * @deprecated
-     */
-    private function escapeJsonForShell(string $json): string
-    {
-        if (PHP_OS_FAMILY === 'Windows') {
-            // Método mejorado de escape para Windows
-            $escaped = $json;
-
-            // Lista completa de caracteres problemáticos en Windows CMD
-            $problematicChars = [
-                '\\' => '\\\\',   // Backslash
-                '"' => '\\"',     // Comillas dobles
-                '%' => '%%',       // Variables de entorno
-                '^' => '^^',       // Caracter de escape
-                '&' => '^&',       // Operador AND
-                '|' => '^|',       // Operador PIPE
-                '<' => '^<',       // Redirección input
-                '>' => '^>',       // Redirección output
-                '(' => '^(',       // Paréntesis
-                ')' => '^)',       // Paréntesis
-                '!' => '^!',       // Exclamación (expansión de historial)
-                '*' => '^*',       // Asterisco (glob)
-                '?' => '^?',       // Interrogación (glob)
-                ';' => '^;',       // Separador de comandos
-                ',' => '^,',       // Separador
-                '=' => '^=',       // Asignación
-                ' ' => '^ ',       // Espacio
-            ];
-
-            foreach ($problematicChars as $char => $replacement) {
-                $escaped = str_replace($char, $replacement, $escaped);
-            }
-
-            return '"' . $escaped . '"';
-        } else {
-            // En Unix/Linux, usar escapeshellarg que funciona correctamente
-            return escapeshellarg($json);
-        }
-    }
 
     /**
      * Establece la ruta del binario según el sistema operativo.
