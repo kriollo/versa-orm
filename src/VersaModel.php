@@ -24,7 +24,7 @@ class VersaModel
     /** @var array<string, mixed> */
     private array $attributes = [];
     /** @var VersaORM|null */
-    private static $ormInstance;
+    private static ?VersaORM $ormInstance = null;
 
     /**
      * @param string $table
@@ -54,7 +54,7 @@ class VersaModel
      * @param string $pk
      * @return self
      */
-    public function loadInstance(array|string|int $data, string $pk = 'id'): self
+    public function loadInstance($data, string $pk = 'id'): self
     {
         // Si $data es un array, cargar directamente los datos
         if (is_array($data)) {
@@ -69,14 +69,15 @@ class VersaModel
         }
 
         $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$pk} = ?", [$data]);
-        if (!empty($result)) {
+        if (is_array($result) && !empty($result) && is_array($result[0])) {
             $this->attributes = $result[0];
         } else {
-            throw new \Exception("Record not found");
+            throw new \Exception("Record not found or invalid result format");
         }
 
         return $this;
     }
+
 
     /**
      * Guardar el modelo en la base de datos.
@@ -146,7 +147,7 @@ class VersaModel
                 $whereClause = implode(' AND ', $whereConditions);
                 $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
 
-                if (!empty($result) && isset($result[0])) {
+                if (is_array($result) && !empty($result) && is_array($result[0])) {
                     $this->attributes = array_merge($this->attributes, $result[0]);
                 }
             }
@@ -182,7 +183,7 @@ class VersaModel
      * @param string $key
      * @param mixed $value
      */
-    public function __set(string $key, mixed $value): void
+    public function __set(string $key, $value): void
     {
         $this->attributes[$key] = $value;
     }
@@ -193,7 +194,7 @@ class VersaModel
      * @param string $key
      * @return mixed
      */
-    public function __get(string $key): mixed
+    public function __get(string $key)
     {
         return $this->attributes[$key] ?? null;
     }
@@ -204,7 +205,7 @@ class VersaModel
      * @param string $key
      * @return mixed|null
      */
-    public function getAttribute(string $key): mixed
+    public function getAttribute(string $key)
     {
         return $this->attributes[$key] ?? null;
     }
@@ -227,16 +228,15 @@ class VersaModel
      */
     public static function exportAll(array $models): array
     {
-        /** @var array<int, array<string, mixed>> $exported */
-        $exported = array_map(function ($model) {
+        $exported = [];
+        foreach ($models as $model) {
             if ($model instanceof self) {
-                return $model->export();
+                $exported[] = $model->export();
             }
-            // Si no es un modelo, devolver tal como está
-            return $model;
-        }, $models);
+        }
         return $exported;
     }
+
 
     /**
      * Verificar si existe un atributo.
@@ -302,7 +302,7 @@ class VersaModel
      * @param string $pk
      * @return self|null
      */
-    public static function load(string $table, int|string $id, string $pk = 'id'): ?self
+    public static function load(string $table, $id, string $pk = 'id'): ?self
     {
         if (!self::$ormInstance) {
             throw new \Exception("No ORM instance available. Call Model::setORM() first.");
@@ -310,7 +310,7 @@ class VersaModel
 
         try {
             $data = self::$ormInstance->exec("SELECT * FROM {$table} WHERE {$pk} = ?", [$id]);
-            if (empty($data)) {
+            if (!is_array($data) || empty($data) || !is_array($data[0])) {
                 return null;
             }
 
@@ -321,6 +321,7 @@ class VersaModel
             return null;
         }
     }
+
 
     /**
      * Crea un nuevo modelo vacío (método de instancia).
@@ -353,8 +354,12 @@ class VersaModel
             $sql .= " WHERE {$conditions}";
         }
         $result = self::$ormInstance->exec($sql, $bindings);
-        return (int) ($result[0]['count'] ?? 0);
+        if (is_array($result) && isset($result[0]) && is_array($result[0]) && isset($result[0]['count'])) {
+            return (int) $result[0]['count'];
+        }
+        return 0;
     }
+
 
     /**
      * Obtiene todos los registros de una tabla como array de arrays.
@@ -368,7 +373,11 @@ class VersaModel
         if (!self::$ormInstance) {
             throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
         }
-        return self::$ormInstance->exec($sql, $bindings);
+        $result = self::$ormInstance->exec($sql, $bindings);
+        if (is_array($result)) {
+            return array_filter($result, 'is_array');
+        }
+        return [];
     }
 
     /**
@@ -384,7 +393,10 @@ class VersaModel
             throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
         }
         $result = self::$ormInstance->exec($sql, $bindings);
-        return $result[0] ?? null;
+        if (is_array($result) && isset($result[0]) && is_array($result[0])) {
+            return $result[0];
+        }
+        return null;
     }
 
     /**
@@ -400,7 +412,7 @@ class VersaModel
             throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
         }
         $result = self::$ormInstance->exec($sql, $bindings);
-        if (!empty($result) && is_array($result[0])) {
+        if (is_array($result) && !empty($result) && is_array($result[0])) {
             return array_values($result[0])[0] ?? null;
         }
         return null;
@@ -431,7 +443,7 @@ class VersaModel
      * @param string $table
      * @param string|null $conditions
      * @param array<int, mixed> $bindings
-     * @return self[]
+     * @return array<int, self>
      */
     public static function findAll(string $table, ?string $conditions = null, array $bindings = []): array
     {

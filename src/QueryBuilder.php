@@ -61,18 +61,15 @@ class QueryBuilder
     /**
      * Especifica las columnas a seleccionar.
      *
-     * @param array<int, string>|null $columns
+     * @param array<int, string> $columns
      * @return self
      */
-    public function select(?array $columns = ['*']): self
+    public function select(array $columns = ['*']): self
     {
-        if ($columns === null) {
+        if (empty($columns)) {
             $columns = ['*'];
         }
-        if ($columns === ['*']) {
-            $this->selects = ['*'];
-            return $this;
-        }
+
         foreach ($columns as $column) {
             if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
@@ -97,6 +94,9 @@ class QueryBuilder
 
         // Manejar alias (ej: users.name as author_name)
         $parts = preg_split('/\s+as\s+/i', $identifier);
+        if ($parts === false) {
+            return false;
+        }
         $mainIdentifier = $parts[0];
         $alias = $parts[1] ?? null;
 
@@ -219,19 +219,13 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE.
      *
-     * @param string|null $column
-     * @param string|null $operator
+     * @param string $column
+     * @param string $operator
      * @param mixed $value
      * @return self
      */
-    public function where(?string $column, ?string $operator, $value): self
+    public function where(string $column, string $operator, $value): self
     {
-        if ($column === null) {
-            $column = '';
-        }
-        if ($operator === null) {
-            $operator = '=';
-        }
         $this->wheres[] = [
             'column' => $column,
             'operator' => $operator,
@@ -517,7 +511,7 @@ class QueryBuilder
     /**
      * Ejecuta la consulta SELECT y devuelve un array de objetos VersaModel manipulables
      *
-     * @return VersaModel[]
+     * @return array<int, VersaModel>
      */
     public function findAll(): array
     {
@@ -527,9 +521,11 @@ class QueryBuilder
             return $models;
         }
         foreach ($results as $result) {
-            $model = new VersaModel($this->table, $this->orm);
-            $model->loadInstance($result);
-            $models[] = $model;
+            if (is_array($result)) {
+                $model = new VersaModel($this->table, $this->orm);
+                $model->loadInstance($result);
+                $models[] = $model;
+            }
         }
         return $models;
     }
@@ -580,7 +576,7 @@ class QueryBuilder
     public function findOne(): ?VersaModel
     {
         $result = $this->execute('first');
-        if ($result) {
+        if (is_array($result)) {
             $model = new VersaModel($this->table, $this->orm);
             $model->loadInstance($result);
             return $model;
@@ -613,7 +609,7 @@ class QueryBuilder
     public function first(): ?VersaModel
     {
         $result = $this->execute('first');
-        if ($result) {
+        if (is_array($result)) {
             $model = new VersaModel($this->table, $this->orm);
             $model->loadInstance($result);
             return $model;
@@ -628,7 +624,11 @@ class QueryBuilder
      */
     public function count(): int
     {
-        return (int) $this->execute('count');
+        $result = $this->execute('count');
+        if (is_numeric($result)) {
+            return (int) $result;
+        }
+        return 0;
     }
 
     /**
@@ -645,46 +645,56 @@ class QueryBuilder
      * Inserta un nuevo registro.
      *
      * @param array<string, mixed> $data
-     * @return self
+     * @return bool
      */
-    public function insert(array $data): self
+    public function insert(array $data): bool
     {
-        $this->execute('insert', $data);
-        return $this;
+        $result = $this->execute('insert', $data);
+        return is_int($result) && $result > 0;
     }
 
     /**
      * Inserta un registro y devuelve su ID autoincremental.
      *
      * @param array<string, mixed> $data
-     * @return mixed
+     * @return int|string|null
      */
     public function insertGetId(array $data)
     {
-        return $this->execute('insertGetId', $data);
+        $result = $this->execute('insertGetId', $data);
+        if (is_int($result) || is_string($result)) {
+            return $result;
+        }
+        return null;
     }
 
     /**
      * Actualiza los registros que coincidan con las cláusulas WHERE.
      *
      * @param array<string, mixed> $data
-     * @return self
+     * @return int
      */
-    public function update(array $data): self
+    public function update(array $data): int
     {
-        $this->execute('update', $data);
-        return $this;
+        $result = $this->execute('update', $data);
+        if (is_int($result)) {
+            return $result;
+        }
+        return 0;
     }
 
     /**
      * Elimina los registros que coincidan con las cláusulas WHERE.
      *
-     * @return self
+     * @return int
      */
-    public function delete(): self
+    public function delete(): int
     {
-        $this->execute('delete');
-        return $this;
+        $result = $this->execute('delete');
+        if (is_int($result)) {
+            return $result;
+        }
+        return 0;
     }
 
     /**
@@ -708,13 +718,16 @@ class QueryBuilder
         $processedWheres = [];
 
         foreach ($this->wheres as $where) {
-            if ($where['operator'] === 'RAW') {
+            if (!is_array($where)) {
+                continue;
+            }
+            if (($where['operator'] ?? null) === 'RAW') {
                 // Para whereRaw, extraer el SQL y los bindings de forma que el backend lo entienda
                 $processedWheres[] = [
                     'type' => 'raw',
-                    'sql' => $where['value']['sql'],
-                    'bindings' => $where['value']['bindings'],
-                    'conjunction' => $where['type'] // 'and' o 'or'
+                    'sql' => $where['value']['sql'] ?? '',
+                    'bindings' => $where['value']['bindings'] ?? [],
+                    'conjunction' => $where['type'] ?? 'and'
                 ];
             } else {
                 $processedWheres[] = $where;
