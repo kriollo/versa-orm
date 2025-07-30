@@ -32,20 +32,19 @@ class TestCase extends BaseTestCase
         }
 
         self::createSchema();
+        self::seedData();
     }
 
     protected function setUp(): void
     {
-        self::seedData();
+        // Reiniciar la base de datos antes de cada test
+        self::tearDownAfterClass();
+        self::setUpBeforeClass();
     }
 
     protected function tearDown(): void
     {
-        self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
-        self::$orm->exec('TRUNCATE TABLE posts;');
-        self::$orm->exec('TRUNCATE TABLE users;');
-        self::$orm->exec('TRUNCATE TABLE products;');
-        self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+        self::dropSchema();
     }
 
     public static function tearDownAfterClass(): void
@@ -64,7 +63,7 @@ class TestCase extends BaseTestCase
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(191) UNIQUE NOT NULL,
-                status VARCHAR(50) DEFAULT \'active\',
+                status TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ');

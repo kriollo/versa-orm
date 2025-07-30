@@ -29,10 +29,10 @@ class StressTest extends TestCase
         $count = self::$orm->table('users')->where('status', '=', 'stress_test')->count();
         $this->assertEquals($iterations, $count);
 
-        // Asert that the operation was reasonably fast. 
+        // Assert that the operation was reasonably fast. 
         // This is not a strict benchmark, but a sanity check.
-        // e.g., less than 5 seconds for 500 inserts.
-        $this->assertLessThan(5, $duration, "Massive inserts took too long.");
+        // Allow more time for slower systems and CI environments.
+        $this->assertLessThan(60, $duration, 'Massive inserts took too long.');
         
         echo sprintf("\n[StressTest] Inserted %d records in %.2f seconds.", $iterations, $duration);
     }

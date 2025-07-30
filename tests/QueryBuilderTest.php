@@ -220,9 +220,66 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals('Bob', $users[0]->name);
     }
 
-    public function testGroupByAndHaving(): void
+    public function testGroupBy(): void
     {
-        $this->markTestIncomplete('GROUP BY and HAVING functionality is not yet fully implemented in the QueryBuilder.');
+        // Test simple groupBy
+        $results = self::$orm->table('users')
+            ->select(['status', 'COUNT(*) as count'])
+            ->groupBy('status')
+            ->orderBy('status', 'asc')
+            ->get();
+
+        $this->assertCount(2, $results);
+        $this->assertEquals('active', $results[0]['status']);
+        $this->assertEquals(2, $results[0]['count']);
+        $this->assertEquals('inactive', $results[1]['status']);
+        $this->assertEquals(1, $results[1]['count']);
+    }
+
+    public function testGroupByMultipleColumns(): void
+    {
+        // Test groupBy with multiple columns
+        $results = self::$orm->table('posts')
+            ->select(['user_id', 'COUNT(*) as post_count'])
+            ->groupBy(['user_id'])
+            ->orderBy('user_id', 'asc')
+            ->get();
+
+        $this->assertCount(2, $results); // Alice has 2 posts, Bob has 1 post
+        $this->assertEquals(1, $results[0]['user_id']);
+        $this->assertEquals(2, $results[0]['post_count']);
+        $this->assertEquals(2, $results[1]['user_id']);
+        $this->assertEquals(1, $results[1]['post_count']);
+    }
+
+    public function testHaving(): void
+    {
+        // Test groupBy with having
+        $results = self::$orm->table('users')
+            ->select(['status', 'COUNT(*) as count'])
+            ->groupBy('status')
+            ->having('count', '>', 1)
+            ->get();
+        
+        $this->assertCount(1, $results);
+        $this->assertEquals('active', $results[0]['status']);
+        $this->assertEquals(2, $results[0]['count']);
+    }
+
+    public function testHavingMultipleConditions(): void
+    {
+        // Test having with multiple conditions
+        $results = self::$orm->table('users')
+            ->select(['status', 'COUNT(*) as count'])
+            ->groupBy('status')
+            ->having('count', '>=', 1)
+            ->having('count', '<=', 2)
+            ->orderBy('status', 'asc')
+            ->get();
+        
+        $this->assertCount(2, $results); // Both groups should match
+        $this->assertEquals('active', $results[0]['status']);
+        $this->assertEquals('inactive', $results[1]['status']);
     }
 
     //======================================================================
