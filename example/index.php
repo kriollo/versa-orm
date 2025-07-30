@@ -4,6 +4,7 @@ require_once __DIR__ . '/autoload.php';
 
 use Example\Models\Project;
 use Example\Models\Task;
+use Example\Models\User;
 use VersaORM\VersaORMException;
 
 $config = [
@@ -221,13 +222,64 @@ if ($action === 'export_project_json' && isset($_GET['id'])) {
     exit;
 }
 
+if ($action === 'new_user') {
+    include __DIR__ . '/views/user_new.php';
+    exit;
+}
+
+if ($action === 'create_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = [
+        'name' => $_POST['name'],
+        'email' => $_POST['email']
+    ];
+    try {
+        $user = User::create($data);
+        if ($user) {
+            header('Location: index.php?action=projects&success=user_created');
+        } else {
+            header('Location: index.php?action=projects&error=user_create_failed');
+        }
+    } catch (Exception $e) {
+        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
+    }
+    exit;
+}
+
+if ($action === 'new_project') {
+    $users = User::allArray();
+    include __DIR__ . '/views/project_new.php';
+    exit;
+}
+
 if ($action === 'edit_project' && isset($_GET['id'])) {
     $project = Project::find($_GET['id']);
     if (!$project) {
         header('Location: index.php?action=projects&error=not_found');
         exit;
     }
+    $users = User::allArray();
     include __DIR__ . '/views/edit_project.php';
+    exit;
+}
+
+if ($action === 'create_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = [
+        'name' => $_POST['name'],
+        'description' => $_POST['description'] ?? ''
+    ];
+    if (!empty($_POST['user_id'])) {
+        $data['user_id'] = (int)$_POST['user_id'];
+    }
+    try {
+        $project = Project::create($data);
+        if ($project) {
+            header('Location: index.php?action=show_project&id=' . $project->id . '&success=created');
+        } else {
+            header('Location: index.php?action=projects&error=create_failed');
+        }
+    } catch (Exception $e) {
+        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
+    }
     exit;
 }
 
@@ -237,6 +289,9 @@ if ($action === 'update_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'name' => $_POST['name'],
         'description' => $_POST['description']
     ];
+    if (!empty($_POST['user_id'])) {
+        $data['user_id'] = (int)$_POST['user_id'];
+    }
     try {
         $project = Project::find($id);
         if ($project && $project->update($data)) {
@@ -250,26 +305,17 @@ if ($action === 'update_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-if ($action === 'new_project') {
-    include __DIR__ . '/views/project_new.php';
+// === Gestión de etiquetas ===
+if (isset($_GET['view']) && $_GET['view'] === 'labels_list') {
+    include __DIR__ . '/views/labels_list.php';
     exit;
 }
-
-if ($action === 'create_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'name' => $_POST['name'],
-        'description' => $_POST['description'] ?? ''
-    ];
-    try {
-        $project = Project::create($data);
-        if ($project) {
-            header('Location: index.php?action=show_project&id=' . $project->id . '&success=created');
-        } else {
-            header('Location: index.php?action=projects&error=create_failed');
-        }
-    } catch (Exception $e) {
-        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
-    }
+if (isset($_GET['view']) && $_GET['view'] === 'label_new') {
+    include __DIR__ . '/views/label_new.php';
+    exit;
+}
+if (isset($_GET['view']) && $_GET['view'] === 'task_labels_edit' && isset($_GET['task_id'])) {
+    include __DIR__ . '/views/task_labels_edit.php';
     exit;
 }
 

@@ -19,6 +19,7 @@
         </div>
     </nav>
     <main class="container mx-auto px-4 py-8">
+        <?php include __DIR__ . '/_nav_labels.php'; ?>
         <?php if (isset($content)) echo $content; ?>
     </main>
     <footer class="text-center text-gray-500 py-4 text-xs">

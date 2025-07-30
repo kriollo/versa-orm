@@ -21,6 +21,16 @@
                 <label class="block text-gray-700 font-semibold mb-2">Descripción:</label>
                 <textarea name="description" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"><?= htmlspecialchars(is_array($project) ? $project['description'] : $project->description) ?></textarea>
             </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Dueño del proyecto:</label>
+                <select name="user_id" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">-- Selecciona un usuario --</option>
+                    <?php foreach (($users ?? []) as $user): ?>
+                        <option value="<?= $user['id'] ?>" <?= (isset($project->user_id) && $project->user_id == $user['id']) ? 'selected' : '' ?>><?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+                <a href="?action=new_user" class="text-blue-600 hover:underline text-sm ml-2">Crear nuevo usuario</a>
+            </div>
             <div class="flex justify-end space-x-2">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Actualizar</button>
                 <a href="index.php?action=show_project&id=<?= is_array($project) ? $project['id'] : $project->id ?>" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</a>

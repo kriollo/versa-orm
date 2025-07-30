@@ -5,7 +5,7 @@ namespace Example\Models;
 /**
  * Modelo User - Gestión de usuarios (ficticio para demo avanzada)
  *
- * Campos de la tabla 'users':
+ * Campos de la tabla 'usuarios':
  * - id: int (PK, auto_increment)
  * - name: string (required)
  * - email: string (required)
@@ -14,7 +14,7 @@ namespace Example\Models;
  */
 class User extends BaseModel
 {
-    protected string $table = 'users';
+    protected string $table = 'usuarios';
     protected array $fillable = [
         'name',
         'email'

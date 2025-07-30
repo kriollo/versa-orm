@@ -6,7 +6,10 @@ ob_start();
 ?>
 <div class="flex items-center justify-between mb-6">
     <h1 class="text-3xl font-bold text-blue-800">Proyectos y Tareas</h1>
-    <a href="?action=new_project" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">Nuevo Proyecto</a>
+    <div>
+        <a href="?action=new_project" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow mr-2">Nuevo Proyecto</a>
+        <a href="?action=new_user" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Nuevo Usuario</a>
+    </div>
 </div>
 <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
     <table class="min-w-full divide-y divide-gray-200">

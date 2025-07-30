@@ -36,6 +36,10 @@
                     class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</a>
             </div>
         </form>
+        <div class="flex justify-end space-x-2 mt-4">
+            <a href="?view=task_labels_edit&task_id=<?= is_array($task) ? $task['id'] : $task->id ?>"
+                class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded">Editar etiquetas</a>
+        </div>
     </div>
 </body>
 

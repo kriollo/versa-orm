@@ -24,7 +24,8 @@ class Project extends BaseModel
      */
     protected array $fillable = [
         'name',
-        'description'
+        'description',
+        'user_id'
     ];
 
     /**

@@ -61,8 +61,16 @@ ob_start();
                         </span>
                     </td>
                     <td class="px-4 py-2">
-                        <a href="?action=edit&id=<?= $task['id'] ?>" class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded mr-2">Editar</a>
-                        <a href="?action=delete&id=<?= $task['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">Eliminar</a>
+                        <?php
+                        $taskObj = Example\Models\Task::find($task['id']);
+                        $labels = $taskObj ? $taskObj->labelsArray() : [];
+                        foreach ($labels as $label): ?>
+                            <span style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:2px;display:inline-block;">
+                                <?= htmlspecialchars($label['name']) ?>
+                            </span>
+                        <?php endforeach; ?>
+                        <a href="?view=task_labels_edit&task_id=<?= $task['id'] ?>"
+                            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded ml-2">Etiquetas</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

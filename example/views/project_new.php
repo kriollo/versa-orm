@@ -12,6 +12,16 @@ ob_start();
         <label class="block text-gray-700 font-semibold mb-2">Descripción:</label>
         <textarea name="description" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
     </div>
+    <div class="mb-4">
+        <label class="block text-gray-700 font-semibold mb-2">Dueño del proyecto:</label>
+        <select name="user_id" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <option value="">-- Selecciona un usuario --</option>
+            <?php foreach (($users ?? []) as $user): ?>
+                <option value="<?= $user['id'] ?>"><?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)</option>
+            <?php endforeach; ?>
+        </select>
+        <a href="?action=new_user" class="text-blue-600 hover:underline text-sm ml-2">Crear nuevo usuario</a>
+    </div>
     <div class="flex justify-end space-x-2">
         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">Crear Proyecto</button>
         <a href="?action=projects" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Cancelar</a>

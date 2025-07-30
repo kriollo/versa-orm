@@ -156,4 +156,58 @@ class Task extends BaseModel
 
         return $models;
     }
+
+    /**
+     * Relación: una tarea tiene muchas etiquetas (muchos a muchos)
+     * @return array<int, array<string, mixed>>
+     */
+    public function labelsArray(): array
+    {
+        $sql = "SELECT l.* FROM labels l JOIN task_label tl ON tl.label_id = l.id WHERE tl.task_id = ?";
+        return $this->db->exec($sql, [$this->id]);
+    }
+
+    /**
+     * Asigna una etiqueta a la tarea (si no existe la relación, la crea)
+     */
+    public function addLabel(int $labelId): void
+    {
+        // Verifica si ya existe
+        $exists = $this->db->exec("SELECT id FROM task_label WHERE task_id = ? AND label_id = ?", [$this->id, $labelId]);
+        if (empty($exists)) {
+            $this->db->exec("INSERT INTO task_label (task_id, label_id) VALUES (?, ?)", [$this->id, $labelId]);
+        }
+    }
+
+    /**
+     * Quita una etiqueta de la tarea
+     */
+    public function removeLabel(int $labelId): void
+    {
+        $this->db->exec("DELETE FROM task_label WHERE task_id = ? AND label_id = ?", [$this->id, $labelId]);
+    }
+
+    /**
+     * Reemplaza todas las etiquetas de la tarea por un nuevo set
+     * @param int[] $labelIds
+     */
+    public function setLabels(array $labelIds): void
+    {
+        $this->db->exec("DELETE FROM task_label WHERE task_id = ?", [$this->id]);
+        foreach ($labelIds as $labelId) {
+            $this->addLabel($labelId);
+        }
+    }
+
+    /**
+     * Obtiene todas las tareas asociadas a una etiqueta (estático)
+     * @param int $labelId
+     * @return array<int, array<string, mixed>>
+     */
+    public static function byLabel(int $labelId): array
+    {
+        $instance = new static();
+        $sql = "SELECT t.* FROM tasks t JOIN task_label tl ON tl.task_id = t.id WHERE tl.label_id = ?";
+        return $instance->db->exec($sql, [$labelId]);
+    }
 }
