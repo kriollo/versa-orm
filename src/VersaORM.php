@@ -226,6 +226,36 @@ class VersaORM
     }
 
     /**
+     * Inicia una transacción.
+     *
+     * @return void
+     */
+    public function beginTransaction(): void
+    {
+        $this->exec('BEGIN');
+    }
+
+    /**
+     * Confirma una transacción.
+     *
+     * @return void
+     */
+    public function commit(): void
+    {
+        $this->exec('COMMIT');
+    }
+
+    /**
+     * Revierte una transacción.
+     *
+     * @return void
+     */
+    public function rollBack(): void
+    {
+        $this->exec('ROLLBACK');
+    }
+
+    /**
      * Obtiene la versión actual de VersaORM.
      *
      * @return string

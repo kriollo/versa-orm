@@ -16,9 +16,13 @@ namespace VersaORM;
  * @author VersaORM Team
  * @license MIT
  */
+use VersaORM\Traits\HasRelationships;
+
 class VersaModel
 {
-    private string $table;
+    use HasRelationships;
+
+    protected string $table;
     /** @var VersaORM|array<string, mixed>|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     /** @var array<string, mixed> */
@@ -196,7 +200,19 @@ class VersaModel
      */
     public function __get(string $key)
     {
-        return $this->attributes[$key] ?? null;
+        if (isset($this->attributes[$key])) {
+            return $this->attributes[$key];
+        }
+
+        if ($this->relationLoaded($key)) {
+            return $this->relations[$key];
+        }
+
+        if (method_exists($this, $key)) {
+            return $this->getRelationshipFromMethod($key);
+        }
+
+        return null;
     }
 
     /**
@@ -258,6 +274,27 @@ class VersaModel
     public function __unset(string $key): void
     {
         unset($this->attributes[$key]);
+    }
+
+    public function getForeignKey(): string
+    {
+        return strtolower(basename(str_replace('\\', '/', get_class($this)))) . '_id';
+    }
+
+    public function getKeyName(): string
+    {
+        return 'id';
+    }
+
+    protected function getRelationName(): string
+    {
+        $class = new \ReflectionClass($this);
+        return strtolower($class->getShortName());
+    }
+
+    public function newQuery(): QueryBuilder
+    {
+        return (new VersaORM($this->orm ?? self::$ormInstance))->table($this->table);
     }
 
     /**

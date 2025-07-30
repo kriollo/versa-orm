@@ -47,6 +47,7 @@ class QueryBuilder
     private array $groupBy = [];
     /** @var array<int, mixed> */
     private array $having = [];
+    private array $with = [];
 
     /**
      * @param VersaORM|array<string, mixed>|null $orm
@@ -355,7 +356,8 @@ class QueryBuilder
         $this->wheres[] = [
             'column' => '',
             'operator' => 'RAW',
-            'value' => ['sql' => $sql, 'bindings' => $bindings],
+            'value' => $sql,
+            'bindings' => $bindings,
             'type' => 'and'
         ];
         return $this;
@@ -503,6 +505,21 @@ class QueryBuilder
     public function offset(int $count): self
     {
         $this->offset = $count;
+        return $this;
+    }
+
+    /**
+     * Especifica las relaciones a cargar.
+     *
+     * @param array|string $relations
+     * @return self
+     */
+    public function with($relations): self
+    {
+        if (is_string($relations)) {
+            $relations = [$relations];
+        }
+        $this->with = $relations;
         return $this;
     }
 
@@ -674,9 +691,10 @@ class QueryBuilder
      * @param array<string, mixed> $data
      * @return int
      */
-    public function update(array $data): int
+    public function update(array $data): self
     {
-        return (int) $this->execute('update', $data);
+        $this->execute('update', $data);
+        return $this;
     }
 
     /**
@@ -684,13 +702,10 @@ class QueryBuilder
      *
      * @return int
      */
-    public function delete(): int
+    public function delete(): self
     {
-        $result = $this->execute('delete');
-        if (is_int($result)) {
-            return $result;
-        }
-        return 0;
+        $this->execute('delete');
+        return $this;
     }
 
     /**
@@ -718,12 +733,14 @@ class QueryBuilder
                 continue;
             }
             if (($where['operator'] ?? null) === 'RAW') {
-                // Para whereRaw, extraer el SQL y los bindings de forma que el backend lo entienda
                 $processedWheres[] = [
-                    'type' => 'raw',
-                    'sql' => $where['value']['sql'] ?? '',
-                    'bindings' => $where['value']['bindings'] ?? [],
-                    'conjunction' => $where['type'] ?? 'and'
+                    'column' => '',
+                    'operator' => 'RAW',
+                    'value' => [
+                        'sql' => $where['value'],
+                        'bindings' => $where['bindings'] ?? [],
+                    ],
+                    'type' => $where['type'] ?? 'and',
                 ];
             } else {
                 $processedWheres[] = $where;
@@ -742,6 +759,7 @@ class QueryBuilder
      */
     private function execute(string $method, ?array $data = null)
     {
+        error_log('[DEBUG] Executing query from QueryBuilder...');
         if (!($this->orm instanceof VersaORM)) {
             throw new \Exception('VersaORM instance is required for QueryBuilder execution.');
         }
@@ -756,6 +774,7 @@ class QueryBuilder
             'having' => $this->having,
             'limit' => $this->limit,
             'offset' => $this->offset,
+            'with' => $this->with,
             'method' => $method
         ];
 
