@@ -20,34 +20,46 @@ fn setup_logging(debug: bool) {
         return;
     }
 
+    // Usar la misma carpeta de logs que PHP
     let log_dir = PathBuf::from("logs");
     if !log_dir.exists() {
-        fs::create_dir(&log_dir).unwrap();
+        if let Err(_) = fs::create_dir(&log_dir) {
+            return; // Si no se puede crear, no hacer logging
+        }
     }
 
+    // Usar el mismo formato de nombre de archivo que PHP (YYYY-MM-DD.log)
     let today = Local::now().format("%Y-%m-%d").to_string();
     let log_path = log_dir.join(format!("{}.log", today));
 
-    let file = fs::OpenOptions::new()
+    if let Ok(file) = fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open(log_path)
-        .unwrap();
+        .open(log_path) {
+        *LOG_FILE.lock().unwrap() = Some(file);
+    }
 
-    *LOG_FILE.lock().unwrap() = Some(file);
+    // Limpiar logs antiguos (mantener solo 7 días)
+    cleanup_old_logs(&log_dir);
+}
 
-    // Clean up old log files
-    let one_week_ago = Utc::now() - Duration::days(7);
-    for entry in fs::read_dir(log_dir).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            if let Some(stem) = path.file_stem() {
-                if let Some(stem_str) = stem.to_str() {
-                    if let Ok(date) = chrono::NaiveDate::parse_from_str(stem_str, "%Y-%m-%d") {
-                        let datetime = date.and_hms_opt(0, 0, 0).unwrap();
-                        if Utc.from_utc_datetime(&datetime) < one_week_ago {
-                            fs::remove_file(path).unwrap();
+fn cleanup_old_logs(log_dir: &PathBuf) {
+    let seven_days_ago = Utc::now() - Duration::days(7);
+
+    if let Ok(entries) = fs::read_dir(log_dir) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_file() && path.extension().map_or(false, |ext| ext == "log") {
+                    if let Some(stem) = path.file_stem() {
+                        if let Some(stem_str) = stem.to_str() {
+                            // Solo eliminar archivos con formato YYYY-MM-DD
+                            if let Ok(date) = chrono::NaiveDate::parse_from_str(stem_str, "%Y-%m-%d") {
+                                let datetime = date.and_hms_opt(0, 0, 0).unwrap();
+                                if Utc.from_utc_datetime(&datetime) < seven_days_ago {
+                                    let _ = fs::remove_file(path);
+                                }
+                            }
                         }
                     }
                 }
@@ -63,6 +75,14 @@ macro_rules! log_debug {
             writeln!(file, "[{}][DEBUG] {}", timestamp, format!($($arg)*)).unwrap();
         }
     };
+}
+
+// Public function for other modules to use
+pub fn log_debug_msg(msg: &str) {
+    if let Some(ref mut file) = *LOG_FILE.lock().unwrap() {
+        let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
+        writeln!(file, "[{}][DEBUG] {}", timestamp, msg).unwrap();
+    }
 }
 
 // Módulos del ORM
@@ -139,13 +159,13 @@ async fn main() {
         } else {
             "Unknown panic occurred".to_string()
         };
-        
+
         let location = if let Some(location) = panic_info.location() {
             format!(" at {}:{}:{}", location.file(), location.line(), location.column())
         } else {
             String::new()
         };
-        
+
         let response = ErrorResponse {
             status: "error".to_string(),
             error: ErrorDetails {
@@ -157,11 +177,11 @@ async fn main() {
                 sql_state: None,
             },
         };
-        
-        eprintln!("{}", serde_json::to_string(&response).unwrap_or_else(|_| 
+
+        eprintln!("{}", serde_json::to_string(&response).unwrap_or_else(|_|
             r#"{"status":"error","error":{"code":"PANIC_ERROR","message":"Failed to serialize error response"}}"#.to_string()));
     }));
-    
+
     // Ejecutar la lógica principal directamente
     run_main().await;
 }
@@ -207,7 +227,7 @@ async fn run_main() {
 
             // Crear el manager de conexión
             let mut connection_manager = ConnectionManager::new(payload.config);
-            
+
             // Intentar conectar a la base de datos
             if let Err(e) = connection_manager.connect().await {
                 let is_debug = connection_manager.is_debug_mode();
@@ -216,7 +236,7 @@ async fn run_main() {
                 } else {
                     "Database connection failed".to_string()
                 };
-                
+
                 let mut details = None;
                 if is_debug {
                     let mut debug_info = HashMap::new();
@@ -224,7 +244,7 @@ async fn run_main() {
                     debug_info.insert("config".to_string(), serde_json::to_value(connection_manager.get_config()).unwrap_or(serde_json::Value::Null));
                     details = Some(debug_info);
                 }
-                
+
                 let response = ErrorResponse {
                     status: "error".to_string(),
                     error: ErrorDetails {
@@ -277,7 +297,7 @@ async fn run_main() {
                         // Mensaje simplificado para producción
                         "Database operation failed".to_string()
                     };
-                    
+
                     let mut details = None;
                     if is_debug {
                         let mut debug_info = HashMap::new();
@@ -286,7 +306,7 @@ async fn run_main() {
                         debug_info.insert("execution_time_ms".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(execution_time).unwrap()));
                         details = Some(debug_info);
                     }
-                    
+
                     let response = ErrorResponse {
                         status: "error".to_string(),
                         error: ErrorDetails {
@@ -439,7 +459,7 @@ async fn handle_query_action(
     // Guardar referencia a la tabla antes de mover query_builder
     let table_name = query_builder.table.clone();
     let insert_data_ref = query_builder.insert_data.clone();
-    
+
     // Construir y ejecutar la consulta
     let (sql, sql_params) = query_builder.build_sql::<sqlx::MySql>();
     log_debug!("Executing SQL: {}", sql);
@@ -447,7 +467,7 @@ async fn handle_query_action(
     for (i, param) in sql_params.iter().enumerate() {
         log_debug!("  [{}]: {:?}", i, param);
     }
-    
+
     match method {
         "get" => {
             let rows = connection.execute_raw(&sql, sql_params.clone()).await
@@ -469,7 +489,7 @@ async fn handle_query_action(
             } else {
                 count_sql
             };
-            
+
             let rows = connection.execute_raw(&count_sql, sql_params.clone()).await
                 .map_err(|e| (format!("Count query failed: {}", e), Some(count_sql.clone()), Some(sql_params.clone())))?;
             let count = rows.first()
@@ -484,16 +504,16 @@ async fn handle_query_action(
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
                 let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
                 let insert_sql = format!("INSERT INTO {} ({}) VALUES ({})", table_name, columns.join(", "), values.join(", "));
-                
+
                 // Preparar parámetros de inserción
                 let insert_params: Vec<serde_json::Value> = columns.iter()
                     .map(|col| insert_data.get(col).unwrap().clone())
                     .collect();
-                
+
                 // Ejecutar la consulta de inserción
                 connection.execute_raw(&insert_sql, insert_params.clone()).await
                     .map_err(|e| (format!("Insert query failed: {}", e), Some(insert_sql.clone()), Some(insert_params.clone())))?;
-                
+
                 Ok(serde_json::json!({"status": "Insert successful", "rows_affected": 1}))
             } else {
                 Err(("Insert data is missing".to_string(), None, None))
@@ -505,26 +525,26 @@ async fn handle_query_action(
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
                 let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
                 let insert_sql = format!("INSERT INTO {} ({}) VALUES ({})", table_name, columns.join(", "), values.join(", "));
-                
+
                 // Preparar parámetros de inserción
                 let insert_params: Vec<serde_json::Value> = columns.iter()
                     .map(|col| insert_data.get(col).unwrap().clone())
                     .collect();
-                
+
                 // Ejecutar la consulta de inserción
                 connection.execute_raw(&insert_sql, insert_params.clone()).await
                     .map_err(|e| (format!("Insert query failed: {}", e), Some(insert_sql.clone()), Some(insert_params.clone())))?;
-                
+
                 // Obtener el último ID insertado usando MAX(id) como alternativa más confiable
                 let last_id_sql = format!("SELECT MAX(id) as id FROM {}", table_name);
                 let last_id_rows = connection.execute_raw(&last_id_sql, vec![]).await
                     .map_err(|e| (format!("Failed to get last insert ID: {}", e), Some(last_id_sql.clone()), None))?;
-                
+
                 let last_id = last_id_rows.first()
                     .and_then(|row| row.get("id"))
                     .and_then(|v| v.as_i64())
                     .unwrap_or(0);
-                
+
                 Ok(serde_json::Value::Number(serde_json::Number::from(last_id)))
             } else {
                 Err(("Insert data is missing".to_string(), None, None))
@@ -554,13 +574,13 @@ async fn handle_query_action(
             if let Some(update_data) = params.get("data").and_then(|v| v.as_object()) {
                 let mut set_clauses = Vec::new();
                 let mut update_params = Vec::new();
-                
+
                 // Construir las cláusulas SET
                 for (key, value) in update_data {
                     set_clauses.push(format!("{} = ?", key));
                     update_params.push(value.clone());
                 }
-                
+
                 // Extraer la parte WHERE de la consulta SELECT original
                 let update_sql = if sql.contains("WHERE") {
                     let where_part = sql.split(" WHERE ").nth(1).unwrap_or("");
@@ -569,13 +589,13 @@ async fn handle_query_action(
                 } else {
                     format!("UPDATE {} SET {}", table, set_clauses.join(", "))
                 };
-                
+
                 // Combinar parámetros: primero los de SET, luego los de WHERE
                 update_params.extend(sql_params.clone());
-                
+
                 let _rows = connection.execute_raw(&update_sql, update_params.clone()).await
                     .map_err(|e| (format!("Update query failed: {}", e), Some(update_sql.clone()), Some(update_params.clone())))?;
-                
+
                 Ok(serde_json::json!({"status": "Update successful", "rows_affected": 1}))
             } else {
                 Err(("Update data is missing".to_string(), None, None))
@@ -592,10 +612,10 @@ async fn handle_query_action(
                 // Si no hay WHERE, eliminar toda la tabla (peligroso, pero es lo que se pide)
                 format!("DELETE FROM {}", table)
             };
-            
+
             let _rows = connection.execute_raw(&delete_sql, sql_params.clone()).await
                 .map_err(|e| (format!("Delete query failed: {}", e), Some(delete_sql.clone()), Some(sql_params.clone())))?;
-            
+
             // Para DELETE, retornar 0 ya que no hay filas de retorno, solo filas afectadas
             Ok(serde_json::Value::Number(serde_json::Number::from(0)))
         }

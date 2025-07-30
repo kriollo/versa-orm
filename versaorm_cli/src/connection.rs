@@ -249,77 +249,64 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             .map(|col| format!("Column '{}': type_info = {:?}", col.name(), col.type_info()))
             .unwrap_or_else(|| format!("Column '{}': not found", column_name));
         
-        // Escribir debug info a archivo temporal
-        use std::fs::OpenOptions;
-        use std::io::Write;
-        if let Ok(mut file) = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("versaorm_debug.log") {
-            let _ = writeln!(file, "[DEBUG] {}", column_info);
+        // Use unified logging system
+        crate::log_debug_msg(&format!("Column info: {}", column_info));
+        
+        // Use unified logging system for debugging type extraction
+        crate::log_debug_msg(&format!("Attempting to extract '{}' as various types:", column_name));
+        
+        if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as String: {:?}", val));
+        } else {
+            crate::log_debug_msg("  as String: FAILED");
         }
         
-        // Intentar obtener el valor raw de diferentes maneras para debug
-        if let Ok(mut file) = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("versaorm_debug.log") {
-            
-            let _ = writeln!(file, "[DEBUG] Attempting to extract '{}' as various types:", column_name);
-            
-            if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as String: {:?}", val);
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as String: FAILED");
-            }
-            
-            if let Ok(val) = row.try_get::<Option<Vec<u8>>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as Vec<u8>: {:?}", val);
-                // Si es Vec<u8>, intentar convertir a string para ver el contenido
-                if let Some(bytes) = val {
-                    if let Ok(string_val) = String::from_utf8(bytes.clone()) {
-                        let _ = writeln!(file, "[DEBUG]     Vec<u8> as UTF-8 string: {:?}", string_val);
-                    } else {
-                        let _ = writeln!(file, "[DEBUG]     Vec<u8> cannot be converted to UTF-8");
-                    }
+        if let Ok(val) = row.try_get::<Option<Vec<u8>>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as Vec<u8>: {:?}", val));
+            // Si es Vec<u8>, intentar convertir a string para ver el contenido
+            if let Some(bytes) = val {
+                if let Ok(string_val) = String::from_utf8(bytes.clone()) {
+                    crate::log_debug_msg(&format!("    Vec<u8> as UTF-8 string: {:?}", string_val));
+                } else {
+                    crate::log_debug_msg("    Vec<u8> cannot be converted to UTF-8");
                 }
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as Vec<u8>: FAILED");
             }
-            
-            if let Ok(val) = row.try_get::<Option<NaiveDateTime>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as NaiveDateTime: {:?}", val);
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as NaiveDateTime: FAILED");
-            }
-            
-            if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as i64: {:?}", val);
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as i64: FAILED");
-            }
-            
-            if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as f64: {:?}", val);
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as f64: FAILED");
-            }
-            
-            // Intentar tipos time crate
-            if let Ok(val) = row.try_get::<Option<time::PrimitiveDateTime>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as time::PrimitiveDateTime: {:?}", val);
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as time::PrimitiveDateTime: FAILED");
-            }
-            
-            if let Ok(val) = row.try_get::<Option<time::OffsetDateTime>, _>(column_name) {
-                let _ = writeln!(file, "[DEBUG]   as time::OffsetDateTime: {:?}", val);
-            } else {
-                let _ = writeln!(file, "[DEBUG]   as time::OffsetDateTime: FAILED");
-            }
-            
-            let _ = writeln!(file, "[DEBUG] ---");
+        } else {
+            crate::log_debug_msg("  as Vec<u8>: FAILED");
         }
+        
+        if let Ok(val) = row.try_get::<Option<NaiveDateTime>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as NaiveDateTime: {:?}", val));
+        } else {
+            crate::log_debug_msg("  as NaiveDateTime: FAILED");
+        }
+        
+        if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as i64: {:?}", val));
+        } else {
+            crate::log_debug_msg("  as i64: FAILED");
+        }
+        
+        if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as f64: {:?}", val));
+        } else {
+            crate::log_debug_msg("  as f64: FAILED");
+        }
+        
+        // Intentar tipos time crate
+        if let Ok(val) = row.try_get::<Option<time::PrimitiveDateTime>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as time::PrimitiveDateTime: {:?}", val));
+        } else {
+            crate::log_debug_msg("  as time::PrimitiveDateTime: FAILED");
+        }
+        
+        if let Ok(val) = row.try_get::<Option<time::OffsetDateTime>, _>(column_name) {
+            crate::log_debug_msg(&format!("  as time::OffsetDateTime: {:?}", val));
+        } else {
+            crate::log_debug_msg("  as time::OffsetDateTime: FAILED");
+        }
+        
+        crate::log_debug_msg("---");
     }
     
     // Manejo específico para tipos TIMESTAMP de MySQL
@@ -329,13 +316,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
         
         // Debug: Log del tipo detectado
         if std::env::var("VERSAORM_DEBUG").is_ok() {
-            use std::io::Write;
-            if let Ok(mut file) = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("versaorm_debug.log") {
-                let _ = writeln!(file, "[DEBUG] Processing type: {:?}", type_info);
-            }
+            crate::log_debug_msg(&format!("Processing type: {:?}", type_info));
         }
         
         // Verificar si es un tipo TIMESTAMP de MySQL
@@ -346,13 +327,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             // Opción 1: Intentar con tipos time crate que sqlx podría usar internamente
             if let Ok(val) = row.try_get::<Option<time::PrimitiveDateTime>, _>(column_name) {
                 if std::env::var("VERSAORM_DEBUG").is_ok() {
-                    use std::io::Write;
-                    if let Ok(mut file) = std::fs::OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open("versaorm_debug.log") {
-                        let _ = writeln!(file, "[DEBUG] Successfully extracted TIMESTAMP as time::PrimitiveDateTime: {:?}", val);
-                    }
+                    crate::log_debug_msg(&format!("Successfully extracted TIMESTAMP as time::PrimitiveDateTime: {:?}", val));
                 }
                 return match val {
                     Some(dt) => {
@@ -369,13 +344,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             // Opción 2: Intentar con time::OffsetDateTime
             if let Ok(val) = row.try_get::<Option<time::OffsetDateTime>, _>(column_name) {
                 if std::env::var("VERSAORM_DEBUG").is_ok() {
-                    use std::io::Write;
-                    if let Ok(mut file) = std::fs::OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open("versaorm_debug.log") {
-                        let _ = writeln!(file, "[DEBUG] Successfully extracted TIMESTAMP as time::OffsetDateTime: {:?}", val);
-                    }
+                    crate::log_debug_msg(&format!("Successfully extracted TIMESTAMP as time::OffsetDateTime: {:?}", val));
                 }
                 return match val {
                     Some(dt) => {
@@ -390,13 +359,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             }
             
             if std::env::var("VERSAORM_DEBUG").is_ok() {
-                use std::io::Write;
-                if let Ok(mut file) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("versaorm_debug.log") {
-                    let _ = writeln!(file, "[DEBUG] Failed to extract TIMESTAMP with time crate types");
-                }
+                crate::log_debug_msg("Failed to extract TIMESTAMP with time crate types");
             }
         }
     }
