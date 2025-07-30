@@ -130,6 +130,33 @@ $users = $orm->table('users')
 
 ---
 
+## Carga Ansiosa (Eager Loading) con `with()`
+
+Cuando se trabaja con relaciones de modelos (ver la guía de Modelos y Objetos), es fácil caer en el "problema N+1": una consulta para el modelo principal y N consultas adicionales para cargar las relaciones de cada modelo. Esto es muy ineficiente.
+
+VersaORM soluciona esto con la **carga ansiosa** a través del método `with()`. Este método le dice al ORM que cargue las relaciones especificadas junto con la consulta principal.
+
+**Ejemplo del problema N+1 (MALO):**
+```php
+// Se ejecuta 1 consulta para obtener todos los posts
+$posts = Post::findAll();
+
+// Se ejecuta 1 consulta ADICIONAL por CADA post para obtener el autor
+foreach ($posts as $post) {
+  echo "Autor: " . $post->user->name; // <-- ¡Consulta aquí!
+}
+```
+
+**Solución con `with()` (BUENO):**
+```php
+// Se ejecutan solo 2 consultas en total, sin importar cuántos posts haya.
+$posts = $orm->table('posts')->with('user')->findAll();
+
+foreach ($posts as $post) {
+  echo "Autor: " . $post->user->name; // <-- No hay consulta aquí, los datos ya están cargados.
+}
+```
+
 ## Funciones de Agregado
 
 El Query Builder también puede realizar consultas de agregado de forma eficiente.

@@ -109,6 +109,95 @@ El `BaseModel` del ejemplo ya usa este trait, por lo que al extenderlo, tus mode
 
 ---
 
+## Definiendo Relaciones
+
+Las relaciones te permiten conectar tus modelos de una manera intuitiva. Para usarlas, asegúrate de que tus modelos usen el trait `VersaORM\Traits\HasRelationships`.
+
+### Uno a Uno: `hasOne` y `belongsTo`
+
+Imagina que un `User` tiene un `Profile`.
+
+**Modelo `User`:**
+```php
+class User extends BaseModel
+{
+    use HasRelationships;
+    protected string $table = 'users';
+
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
+    }
+}
+```
+
+**Modelo `Profile`:**
+```php
+class Profile extends BaseModel
+{
+    use HasRelationships;
+    protected string $table = 'profiles';
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+
+**Uso:**
+```php
+$user = User::find(1);
+echo $user->profile->bio; // Carga el perfil del usuario
+
+$profile = Profile::find(1);
+echo $profile->user->name; // Carga el usuario del perfil
+```
+
+### Uno a Muchos: `hasMany`
+
+Imagina que un `User` tiene muchos `Post`.
+
+**Modelo `User`:**
+```php
+class User extends BaseModel {
+    // ...
+    public function posts() {
+        return $this->hasMany(Post::class);
+    }
+}
+```
+
+**Uso:**
+```php
+$user = User::find(1);
+foreach ($user->posts as $post) {
+    echo $post->title;
+}
+```
+
+### Muchos a Muchos: `belongsToMany`
+
+Imagina que un `User` puede tener muchos `Role`, y un `Role` puede ser asignado a muchos `User`. Esto requiere una tabla intermedia (pivote), por ejemplo `role_user`.
+
+**Modelo `User`:**
+```php
+class User extends BaseModel {
+    // ...
+    public function roles() {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
+}
+```
+
+**Uso:**
+```php
+$user = User::find(1);
+foreach ($user->roles as $role) {
+    echo $role->name;
+}
+```
+
 ## Arrays vs. Objetos: ¿Cuándo Usar Cada Uno?
 
 VersaORM te da la flexibilidad de obtener resultados como **arrays puros** o como **objetos de modelo**. La elección depende de tus necesidades.
