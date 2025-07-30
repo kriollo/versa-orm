@@ -316,9 +316,9 @@ class QueryBuilder
      * @param int $count
      * @return self
      */
-    public function limit(int $count): self
+    public function limit(int|string $count): self
     {
-        $this->limit = $count;
+        $this->limit = (int)$count;
         return $this;
     }
 
