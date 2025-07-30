@@ -47,7 +47,7 @@ composer require versaorm/versaorm-php
 ### Instalación Manual
 1. Clona el repositorio:
    ```bash
-   git clone https://github.com/versaorm/versaorm-php.git
+   git clone https://github.com/kriollo/versa-orm.git
    ```
 2. Incluye el autoloader:
    ```php
@@ -115,8 +115,8 @@ $orm->trash($user);
 #### Compilación del Núcleo Rust
 ```bash
 # Clonar el repositorio completo
-git clone https://github.com/versaorm/versaorm-php.git
-cd versaorm-php/versaorm_cli
+git clone https://github.com/kriollo/versa-orm.git
+cd versa-orm/versaorm_cli
 
 # Compilar para tu plataforma
 cargo build --release
@@ -142,21 +142,6 @@ versaorm_cli/
 ├── Cargo.toml
 └── README.md
 ```
-
-### Benchmarks y Rendimiento
-
-#### Comparación de Rendimiento
-```
-Operación            VersaORM    Eloquent    Doctrine    PDO Raw
-────────────────────────────────────────────────────────────
-INSERT 1K records    0.8s        8.2s        12.1s       0.6s
-SELECT 10K records   0.3s        2.1s        3.5s        0.2s
-UPDATE 1K records    0.5s        4.8s        7.2s        0.4s
-DELETE 1K records    0.4s        3.9s        5.8s        0.3s
-Complex JOIN         0.9s        15.2s       22.1s       0.7s
-```
-
-*Benchmark realizado en: Intel i7-12700K, 32GB RAM, NVMe SSD, MySQL 8.0*
 
 ## 🛠️ Configuración
 
@@ -201,10 +186,6 @@ versaORM-PHP/
 │       ├── versaorm_cli_windows.exe
 │       ├── versaorm_cli_linux
 │       └── versaorm_cli_darwin
-├── example/               # Aplicación To-Do
-│   ├── todo.php          # Lógica principal de la app
-│   ├── index.html        # Interfaz web moderna
-│   └── README.md         # Documentación específica
 ├── composer.json         # Configuración Composer
 └── README.md            # Esta documentación
 ```
@@ -240,47 +221,23 @@ try {
     $task->title = $title;
     $task->store();
     echo "✅ Tarea creada exitosamente";
-} catch (Exception $e) {
+} catch (VersaORMException $e) {
     echo "❌ Error: " . $e->getMessage();
 }
 ```
 
-## 🎨 Interfaz Web
-
-La interfaz incluye:
-- 🎭 **Diseño moderno** con gradientes y animaciones CSS
-- 📱 **Responsive design** para móviles y escritorio
-- ⚡ **Ejecución asíncrona** con indicadores de carga
-- 🖥️ **Salida formateada** estilo terminal
-- 🔄 **Demo interactiva** en tiempo real
-
-## 🔧 Personalización
-
-Puedes extender la aplicación añadiendo:
-
-- 🏷️ **Categorías de tareas**
-- 📅 **Fechas de vencimiento**
-- 👥 **Usuarios múltiples**
-- 🔔 **Notificaciones**
-- 📊 **Reportes avanzados**
-- 🎨 **Temas personalizados**
 
 ## 🚨 Troubleshooting
 
 ### Error de conexión a la base de datos
 - Verifica las credenciales en `$config`
 - Asegúrate de que MySQL esté ejecutándose
-- La base de datos `todo_app` se crea automáticamente
+- La base de datos `tu_base` se crea automáticamente
 
 ### Binario VersaORM no encontrado
 - El binario debe estar en `src/binary/`
 - Se incluye precompilado para Windows, Linux y macOS
 - Si necesitas recompilar: `cd versaorm_cli && cargo build --release`
-
-### Errores en la interfaz web
-- Inicia servidor local: `php -S localhost:8000`
-- Verifica que `todo.php` sea accesible
-- Revisa la consola del navegador para errores JS
 
 ## 📚 Documentación
 
@@ -293,14 +250,6 @@ Puedes extender la aplicación añadiendo:
 - [🏗️ Guía del Desarrollador](docs/dev/developer-guide.md) - Contribuir al proyecto
 - [🧪 Aplicación de Ejemplo](example/README.md) - Demo completa To-Do App
 
-### 📊 Rendimiento y Benchmarks
-VersaORM está optimizado para el máximo rendimiento:
-
-| Métrica | VersaORM | Eloquent | Doctrine |
-|---------|----------|----------|-----------|
-| **Velocidad** | 10x más rápido | Baseline | 1.5x más lento |
-| **Memoria** | 50% menos uso | Baseline | 80% más uso |
-| **Concurrencia** | Nativa (Rust) | Limitada | Limitada |
 
 ## 🌟 Características Principales
 
@@ -330,7 +279,7 @@ VersaORM está optimizado para el máximo rendimiento:
 5. Abre un Pull Request
 
 ### Reportar Bugs
-- Usa el [Issue Tracker](https://github.com/versaorm/versaorm-php/issues)
+- Usa el [Issue Tracker](https://github.com/kriollo/versa-orm/issues)
 - Incluye detalles del entorno (PHP version, OS, DB)
 - Proporciona pasos para reproducir el problema
 
@@ -341,9 +290,9 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles.
 ## 💬 Soporte
 
 - **Documentación**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/versaorm/versaorm-php/issues)
-- **Discusiones**: [GitHub Discussions](https://github.com/versaorm/versaorm-php/discussions)
-- **Email**: support@versaorm.com
+- **Issues**: [GitHub Issues](https://github.com/kriollo/versa-orm/issues)
+- **Discusiones**: [GitHub Discussions](https://github.com/kriollo/versa-orm/discussions)
+- **Email**: jjara@websystem.cl
 
 ---
 
