@@ -430,7 +430,7 @@ class VersaORM
         $message = sprintf('VersaORM Error [%s]: %s', $errorCode, $errorMessage);
 
         // Añadir la consulta y parámetros al mensaje de error si están disponibles
-        if ($query) {
+        if ($query !== null) {
             $message .= sprintf('\n\nQuery: %s', $query);
         }
         if (!empty($bindings)) {
@@ -460,7 +460,7 @@ class VersaORM
 
         // Agregar información de contexto
         $message .= sprintf('\n\nContext: Action=%s', $action);
-        if ($query) {
+        if ($query !== null) {
             if (strlen($query) < 200) {
                 $message .= sprintf(', Query=%s', $query);
             } else {
