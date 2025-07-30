@@ -610,10 +610,10 @@ async fn handle_query_action(
                 // Combinar parámetros: primero los de SET, luego los de WHERE
                 update_params.extend(sql_params.clone());
 
-                let _rows = connection.execute_raw(&update_sql, update_params.clone()).await
+                let rows_affected = connection.execute_write(&update_sql, update_params.clone()).await
                     .map_err(|e| (format!("Update query failed: {}", e), Some(update_sql.clone()), Some(update_params.clone())))?;
 
-                Ok(serde_json::json!({"status": "Update successful", "rows_affected": 1}))
+                Ok(serde_json::Value::Number(serde_json::Number::from(rows_affected)))
             } else {
                 Err(("Update data is missing".to_string(), None, None))
             }
@@ -630,11 +630,10 @@ async fn handle_query_action(
                 format!("DELETE FROM {}", table)
             };
 
-            let _rows = connection.execute_raw(&delete_sql, sql_params.clone()).await
+            let rows_affected = connection.execute_write(&delete_sql, sql_params.clone()).await
                 .map_err(|e| (format!("Delete query failed: {}", e), Some(delete_sql.clone()), Some(sql_params.clone())))?;
 
-            // Para DELETE, retornar 0 ya que no hay filas de retorno, solo filas afectadas
-            Ok(serde_json::Value::Number(serde_json::Number::from(0)))
+            Ok(serde_json::Value::Number(serde_json::Number::from(rows_affected)))
         }
         _ => Err((format!("Unsupported method: {}", method), Some(sql), Some(sql_params)))
     }

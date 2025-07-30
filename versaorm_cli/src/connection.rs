@@ -142,6 +142,36 @@ impl ConnectionManager {
             None => Err(sqlx::Error::Configuration("Not connected to database".into())),
         }
     }
+
+    pub async fn execute_write(&self, query: &str, params: Vec<serde_json::Value>) -> Result<u64, sqlx::Error> {
+        match self.pool.as_ref() {
+            Some(DatabasePool::MySql(pool)) => {
+                let mut query_builder = sqlx::query(query);
+                for param in params {
+                    query_builder = bind_value_mysql(query_builder, param);
+                }
+                let result = query_builder.execute(pool).await?;
+                Ok(result.rows_affected())
+            }
+            Some(DatabasePool::Postgres(pool)) => {
+                let mut query_builder = sqlx::query(query);
+                for param in params {
+                    query_builder = bind_value_postgres(query_builder, param);
+                }
+                let result = query_builder.execute(pool).await?;
+                Ok(result.rows_affected())
+            }
+            Some(DatabasePool::Sqlite(pool)) => {
+                let mut query_builder = sqlx::query(query);
+                for param in params {
+                    query_builder = bind_value_sqlite(query_builder, param);
+                }
+                let result = query_builder.execute(pool).await?;
+                Ok(result.rows_affected())
+            }
+            None => Err(sqlx::Error::Configuration("Not connected to database".into())),
+        }
+    }
 }
 
 // Helper functions para binding de parámetros
