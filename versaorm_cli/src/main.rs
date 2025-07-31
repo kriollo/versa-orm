@@ -384,7 +384,7 @@ async fn handle_query_action(
             for (key, value) in insert_data {
                 data_map.insert(key.clone(), value.clone());
             }
-            query_builder = query_builder.insert(data_map);
+            query_builder = query_builder.insert(&data_map);
         }
     }
 
@@ -514,12 +514,12 @@ async fn handle_query_action(
     match method {
         "get" => {
             let rows = connection.execute_raw(&sql, sql_params.clone()).await
-                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.clone()), Some(sql_params.clone())))?;
+                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.to_string()), Some(sql_params.clone())))?;
             Ok(serde_json::to_value(rows).unwrap())
         }
         "first" => {
             let rows = connection.execute_raw(&sql, sql_params.clone()).await
-                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.clone()), Some(sql_params.clone())))?;
+                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.to_string()), Some(sql_params.clone())))?;
             let first_row = rows.into_iter().next();
             Ok(serde_json::to_value(first_row).unwrap())
         }
@@ -659,7 +659,7 @@ async fn handle_query_action(
 
             Ok(serde_json::Value::Number(serde_json::Number::from(rows_affected)))
         }
-        _ => Err((format!("Unsupported method: {}", method), Some(sql), Some(sql_params)))
+        _ => Err((format!("Unsupported method: {}", method), Some(sql.to_string()), Some(sql_params)))
     }
 }
 
@@ -716,7 +716,7 @@ async fn handle_schema_action(
     }
 }
 
-async fn handle_unprepared_raw_action(
+/* async fn handle_unprepared_raw_action(
     connection: &ConnectionManager,
     params: &HashMap<String, serde_json::Value>,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
@@ -727,7 +727,7 @@ async fn handle_unprepared_raw_action(
     connection.execute_unprepared(query).await
         .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
         .map_err(|e| (format!("Unprepared raw query execution failed: {}", e), Some(query.to_string()), None))
-}
+} */
 
 // Handler para consultas SQL raw
 async fn handle_raw_action(

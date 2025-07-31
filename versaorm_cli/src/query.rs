@@ -1,5 +1,7 @@
 use crate::utils::{clean_table_name, clean_column_name};
-use crate::main::RelationMetadata; // Import the new struct
+// use crate::RelationMetadata; // Import the new struct
+use serde_json::Value;
+use std::collections::HashMap;
 
 pub struct QueryBuilder {
     pub table: String,
@@ -13,7 +15,7 @@ pub struct QueryBuilder {
     pub update_data: Option<HashMap<String, Value>>,
     pub group_by: Vec<String>,
     pub havings: Vec<(String, String, Value, String)>, // (column, operator, value, conjunction)
-    pub with: Vec<RelationMetadata>, // Change type to Vec<RelationMetadata>
+    // pub with: Vec<RelationMetadata>, // Change type to Vec<RelationMetadata>
 }
 
 impl QueryBuilder {
@@ -36,23 +38,23 @@ impl QueryBuilder {
             update_data: None,
             group_by: Vec::new(),
             havings: Vec::new(),
-            with: Vec::new(), // Initialize with empty Vec<RelationMetadata>
+            // with: Vec::new(), // Initialize with empty Vec<RelationMetadata>
         }
     }
 
     // ... (existing methods) ...
 
-    pub fn with_relations(mut self, relations: Vec<RelationMetadata>) -> Self { // Change parameter type
+    /* pub fn with_relations(mut self, relations: Vec<RelationMetadata>) -> Self { // Change parameter type
         self.with = relations;
         self
-    }
+    } */
 
-    pub fn insert(mut self, data: HashMap<String, Value>) -> Self {
+    pub fn insert(mut self, data: &HashMap<String, Value>) -> Self {
         // Validate all column names for security
         let mut safe_data = HashMap::new();
         for (key, value) in data {
-            if let Ok(clean_key) = clean_column_name(&key) {
-                safe_data.insert(clean_key, value);
+            if let Ok(clean_key) = clean_column_name(key) {
+                safe_data.insert(clean_key, value.clone());
             }
         }
         self.insert_data = Some(safe_data);
@@ -67,17 +69,17 @@ impl QueryBuilder {
         self
     }
 
-    pub fn update(mut self, data: HashMap<String, Value>) -> Self {
+    /* pub fn update(mut self, data: &HashMap<String, Value>) -> Self {
         // Validate all column names for security
         let mut safe_data = HashMap::new();
         for (key, value) in data {
-            if let Ok(clean_key) = clean_column_name(&key) {
-                safe_data.insert(clean_key, value);
+            if let Ok(clean_key) = clean_column_name(key) {
+                safe_data.insert(clean_key, value.clone());
             }
         }
         self.update_data = Some(safe_data);
         self
-    }
+    } */
 
     pub fn r#where(mut self, column: &str, operator: &str, value: Value) -> Self {
         // Validate column name and operator for security - values are safely parameterized
