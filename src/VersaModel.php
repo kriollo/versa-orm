@@ -502,10 +502,21 @@ class VersaModel
         }
 
         $queryBuilder = self::$ormInstance->table($table);
+
         if ($conditions) {
-            // Agregar condiciones raw si es necesario
-            $queryBuilder->whereRaw($conditions, $bindings);
+            // Intenta analizar condiciones simples como "columna operador ?"
+            // Esto evita usar whereRaw para casos simples, lo que es más seguro y predecible.
+            $simpleConditionPattern = '/^\s*([a-zA-Z0-9_\.]+)\s*(=|!=|<>|>|<|>=|<=|LIKE)\s*\?\s*$/';
+            if (count($bindings) === 1 && preg_match($simpleConditionPattern, $conditions, $matches)) {
+                $column = $matches[1];
+                $operator = $matches[2];
+                $queryBuilder->where($column, $operator, $bindings[0]);
+            } else {
+                // Si no es una condición simple, recurre a whereRaw como antes.
+                $queryBuilder->whereRaw($conditions, $bindings);
+            }
         }
+
         return $queryBuilder->findAll();
     }
 

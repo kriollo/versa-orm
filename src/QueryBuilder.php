@@ -360,8 +360,7 @@ class QueryBuilder
         $this->wheres[] = [
             'column' => '',
             'operator' => 'RAW',
-            'value' => $sql,
-            'bindings' => $bindings,
+            'value' => ['sql' => $sql, 'bindings' => $bindings],
             'type' => 'and'
         ];
         return $this;
@@ -399,7 +398,9 @@ class QueryBuilder
         $this->joins[] = [
             'type' => 'inner',
             'table' => $table,
-            'on' => "$firstCol $operator $secondCol"
+            'first_col' => $firstCol,
+            'operator' => $operator,
+            'second_col' => $secondCol
         ];
         return $this;
     }
@@ -418,7 +419,9 @@ class QueryBuilder
         $this->joins[] = [
             'type' => 'left',
             'table' => $table,
-            'on' => "$firstCol $operator $secondCol"
+            'first_col' => $firstCol,
+            'operator' => $operator,
+            'second_col' => $secondCol
         ];
         return $this;
     }
@@ -437,7 +440,9 @@ class QueryBuilder
         $this->joins[] = [
             'type' => 'right',
             'table' => $table,
-            'on' => "$firstCol $operator $secondCol"
+            'first_col' => $firstCol,
+            'operator' => $operator,
+            'second_col' => $secondCol
         ];
         return $this;
     }
@@ -562,7 +567,7 @@ class QueryBuilder
                 case 'BelongsTo':
                     /** @var \VersaORM\Relations\BelongsTo $relationInstance */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['owner_key'] = $relationInstance->ownerKey;
+                    $relationData['local_key'] = $relationInstance->ownerKey; // ownerKey es el local_key en BelongsTo
                     break;
                 case 'BelongsToMany':
                     /** @var \VersaORM\Relations\BelongsToMany $relationInstance */
@@ -783,28 +788,11 @@ class QueryBuilder
      */
     private function processWheres(): array
     {
-        $processedWheres = [];
-
-        foreach ($this->wheres as $where) {
-            if (!is_array($where)) {
-                continue;
-            }
-            if (($where['operator'] ?? null) === 'RAW') {
-                $processedWheres[] = [
-                    'column' => '',
-                    'operator' => 'RAW',
-                    'value' => [
-                        'sql' => $where['value'],
-                        'bindings' => $where['bindings'] ?? [],
-                    ],
-                    'type' => $where['type'] ?? 'and',
-                ];
-            } else {
-                $processedWheres[] = $where;
-            }
-        }
-
-        return $processedWheres;
+        // Esta función ahora es más simple.
+        // Simplemente devuelve el array de wheres.
+        // La lógica de procesamiento se ha movido a donde se construye el payload,
+        // o se ha determinado que no es necesaria si la estructura es correcta desde el principio.
+        return $this->wheres;
     }
 
     /**
@@ -821,6 +809,18 @@ class QueryBuilder
             throw new \Exception('VersaORM instance is required for QueryBuilder execution.');
         }
 
+        $params = $this->buildPayload($method, $data);
+
+        // Llamar al método execute de VersaORM usando reflexión
+        $reflection = new \ReflectionClass($this->orm);
+        $executeMethod = $reflection->getMethod('execute');
+        $executeMethod->setAccessible(true);
+
+        return $executeMethod->invoke($this->orm, 'query', $params);
+    }
+
+    private function buildPayload(string $method, ?array $data = null): array
+    {
         $params = [
             'table' => $this->table,
             'select' => $this->selects,
@@ -839,12 +839,7 @@ class QueryBuilder
             $params['data'] = $data;
         }
 
-        // Llamar al método execute de VersaORM usando reflexión
-        $reflection = new \ReflectionClass($this->orm);
-        $executeMethod = $reflection->getMethod('execute');
-        $executeMethod->setAccessible(true);
-
-        return $executeMethod->invoke($this->orm, 'query', $params);
+        return $params;
     }
 
     /**

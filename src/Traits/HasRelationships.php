@@ -26,9 +26,11 @@ trait HasRelationships
         $foreignKey = $foreignKey ?: $this->getForeignKey();
         $localKey = $localKey ?: $this->getKeyName();
 
-        // Instanciar con un valor dummy para obtener el nombre de la tabla real
-        $probe = new $related('dummy', $this->orm);
-        $table = $probe->getTable();
+        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
+        $reflection = new \ReflectionClass($related);
+        $defaultProperties = $reflection->getDefaultProperties();
+        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+
         $instance = new $related($table, $this->orm);
 
         return new HasOne($instance->newQuery(), $this, $foreignKey, $localKey);
@@ -45,9 +47,11 @@ trait HasRelationships
         $foreignKey = $foreignKey ?: $this->getForeignKey();
         $localKey = $localKey ?: $this->getKeyName();
 
-        // Instanciar con un valor dummy para obtener el nombre de la tabla real
-        $probe = new $related('dummy', $this->orm);
-        $table = $probe->getTable();
+        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
+        $reflection = new \ReflectionClass($related);
+        $defaultProperties = $reflection->getDefaultProperties();
+        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+
         $instance = new $related($table, $this->orm);
 
         return new HasMany($instance->newQuery(), $this, $foreignKey, $localKey);
@@ -65,9 +69,11 @@ trait HasRelationships
         $relation = $relation ?: $this->getRelationName();
         $foreignKey = $foreignKey ?: $relation . '_id';
         
-        // Instanciar con un valor dummy para obtener el nombre de la tabla real
-        $probe = new $related('dummy', $this->orm);
-        $table = $probe->getTable();
+        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
+        $reflection = new \ReflectionClass($related);
+        $defaultProperties = $reflection->getDefaultProperties();
+        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+
         $instance = new $related($table, $this->orm);
         $ownerKey = $ownerKey ?: $instance->getKeyName();
 
