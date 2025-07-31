@@ -1,7 +1,7 @@
+use chrono::Utc;
 use serde_json::Value;
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono::Utc;
 
 /// Sanitiza valores de entrada para prevenir inyección SQL
 #[allow(dead_code)]
@@ -35,16 +35,19 @@ pub fn cast_value_by_type(value: Value, data_type: &str) -> Value {
                 "int" | "integer" | "bigint" | "smallint" | "tinyint" => {
                     s.parse::<i64>().map(Value::from).unwrap_or(Value::Null)
                 }
-                "float" | "double" | "decimal" | "numeric" | "real" => {
-                    s.parse::<f64>().map(|f| Value::Number(serde_json::Number::from_f64(f).unwrap_or(serde_json::Number::from(0)))).unwrap_or(Value::Null)
-                }
-                "boolean" | "bool" | "bit" => {
-                    match s_lower.as_str() {
-                        "true" | "1" | "yes" | "on" => Value::Bool(true),
-                        "false" | "0" | "no" | "off" => Value::Bool(false),
-                        _ => Value::Bool(!s.is_empty())
-                    }
-                }
+                "float" | "double" | "decimal" | "numeric" | "real" => s
+                    .parse::<f64>()
+                    .map(|f| {
+                        Value::Number(
+                            serde_json::Number::from_f64(f).unwrap_or(serde_json::Number::from(0)),
+                        )
+                    })
+                    .unwrap_or(Value::Null),
+                "boolean" | "bool" | "bit" => match s_lower.as_str() {
+                    "true" | "1" | "yes" | "on" => Value::Bool(true),
+                    "false" | "0" | "no" | "off" => Value::Bool(false),
+                    _ => Value::Bool(!s.is_empty()),
+                },
                 "date" | "datetime" | "timestamp" | "time" => {
                     if s.is_empty() {
                         Value::Null
@@ -52,24 +55,22 @@ pub fn cast_value_by_type(value: Value, data_type: &str) -> Value {
                         Value::String(s)
                     }
                 }
-                _ => Value::String(s)
+                _ => Value::String(s),
             }
         }
-        Value::Number(n) => {
-            match data_type.to_lowercase().as_str() {
-                "boolean" | "bool" | "bit" => {
-                    if let Some(i) = n.as_i64() {
-                        Value::Bool(i != 0)
-                    } else if let Some(f) = n.as_f64() {
-                        Value::Bool(f != 0.0)
-                    } else {
-                        Value::Bool(false)
-                    }
+        Value::Number(n) => match data_type.to_lowercase().as_str() {
+            "boolean" | "bool" | "bit" => {
+                if let Some(i) = n.as_i64() {
+                    Value::Bool(i != 0)
+                } else if let Some(f) = n.as_f64() {
+                    Value::Bool(f != 0.0)
+                } else {
+                    Value::Bool(false)
                 }
-                _ => Value::Number(n)
             }
-        }
-        _ => value
+            _ => Value::Number(n),
+        },
+        _ => value,
     }
 }
 
@@ -91,7 +92,13 @@ pub fn prepare_value_for_sql(value: &Value) -> String {
     match value {
         Value::String(s) => format!("'{}'", sanitize(s)),
         Value::Number(n) => n.to_string(),
-        Value::Bool(b) => if *b { "1".to_string() } else { "0".to_string() },
+        Value::Bool(b) => {
+            if *b {
+                "1".to_string()
+            } else {
+                "0".to_string()
+            }
+        }
         Value::Null => "NULL".to_string(),
         _ => format!("'{}'", sanitize(&value.to_string())),
     }
@@ -132,7 +139,7 @@ pub fn snake_to_camel(snake_str: &str) -> String {
 #[allow(dead_code)]
 pub fn camel_to_snake(camel_str: &str) -> String {
     let mut snake = String::new();
-    
+
     for (i, c) in camel_str.chars().enumerate() {
         if c.is_uppercase() && i > 0 {
             snake.push('_');
@@ -172,27 +179,26 @@ pub fn is_sql_function_or_alias(column_expr: &str) -> bool {
     // - SUM(column_name)
     // - AVG(price) as average_price
     // - column_name as alias
-    
+
     // Lista de funciones SQL permitidas
     let allowed_functions = [
-        "COUNT", "SUM", "AVG", "MAX", "MIN", "DISTINCT",
-        "UPPER", "LOWER", "LENGTH", "CONCAT"
+        "COUNT", "SUM", "AVG", "MAX", "MIN", "DISTINCT", "UPPER", "LOWER", "LENGTH", "CONCAT",
     ];
-    
+
     let upper_expr = column_expr.to_uppercase();
-    
+
     // Verificar si contiene "AS" para alias
     if upper_expr.contains(" AS ") {
         let parts: Vec<&str> = column_expr.split(" as ").collect();
         if parts.len() == 2 {
             let function_part = parts[0].trim();
             let alias_part = parts[1].trim();
-            
+
             // Verificar que el alias sea un identificador seguro
             if !is_safe_identifier(alias_part) {
                 return false;
             }
-            
+
             // Verificar la parte de la función
             return is_valid_sql_function(function_part, &allowed_functions);
         }
@@ -200,7 +206,7 @@ pub fn is_sql_function_or_alias(column_expr: &str) -> bool {
         // Sin alias, verificar si es una función directa
         return is_valid_sql_function(column_expr, &allowed_functions);
     }
-    
+
     false
 }
 
@@ -208,24 +214,24 @@ pub fn is_sql_function_or_alias(column_expr: &str) -> bool {
 #[allow(dead_code)]
 fn is_valid_sql_function(expr: &str, allowed_functions: &[&str]) -> bool {
     let upper_expr = expr.to_uppercase();
-    
+
     for func in allowed_functions {
         if upper_expr.starts_with(&format!("{}(", func)) && upper_expr.ends_with(")") {
             // Extraer el contenido entre paréntesis
             let content = &expr[func.len() + 1..expr.len() - 1];
-            
+
             // Para COUNT(*), SUM(*), etc., permitir asterisco
             if content == "*" {
                 return true;
             }
-            
+
             // Para otras funciones, verificar que el contenido sea un identificador seguro
             if is_safe_identifier(content.trim()) {
                 return true;
             }
         }
     }
-    
+
     false
 }
 
@@ -306,7 +312,10 @@ mod tests {
         // Test UNION-based SQL injection
         let union_attack = "1' UNION SELECT password FROM admin_users WHERE '1'='1";
         let sanitized = sanitize(union_attack);
-        assert_eq!(sanitized, "1'' UNION SELECT password FROM admin_users WHERE ''1''=''1");
+        assert_eq!(
+            sanitized,
+            "1'' UNION SELECT password FROM admin_users WHERE ''1''=''1"
+        );
     }
 
     #[test]
@@ -317,7 +326,7 @@ mod tests {
             "admin'/*comment*/OR 1=1",
             "'; DELETE FROM users; /*",
         ];
-        
+
         for attack in comment_attacks {
             let sanitized = sanitize(attack);
             assert!(!sanitized.contains("'--") || (sanitized.contains("''--")));
@@ -333,7 +342,7 @@ mod tests {
             "' OR true--",
             "admin' AND 1=1#",
         ];
-        
+
         for attack in boolean_attacks {
             let sanitized = sanitize(attack);
             // Verify single quotes are escaped, preventing boolean injection
@@ -349,7 +358,7 @@ mod tests {
             "'; UPDATE users SET role='admin' WHERE id=1; --",
             "'; CREATE TABLE malicious (data TEXT); --",
         ];
-        
+
         for attack in stacked_attacks {
             let sanitized = sanitize(attack);
             assert!(sanitized.contains("'';"));
@@ -361,7 +370,7 @@ mod tests {
         // Test various special characters that could be used in attacks
         let special_chars = "test\x00\n\r\t\"\\value";
         let sanitized = sanitize(special_chars);
-        
+
         // Verify newlines, tabs, and other control characters are escaped
         assert!(sanitized.contains("\\n"));
         assert!(sanitized.contains("\\r"));
@@ -383,10 +392,13 @@ mod tests {
             "<script>alert('xss')</script>",
             "$(rm -rf /)",
         ];
-        
+
         for identifier in dangerous_identifiers {
-            assert!(!is_safe_identifier(identifier), 
-                "Dangerous identifier '{}' should be rejected", identifier);
+            assert!(
+                !is_safe_identifier(identifier),
+                "Dangerous identifier '{}' should be rejected",
+                identifier
+            );
         }
     }
 
@@ -402,10 +414,13 @@ mod tests {
             "created_at",
             "order_items",
         ];
-        
+
         for identifier in safe_identifiers {
-            assert!(is_safe_identifier(identifier), 
-                "Safe identifier '{}' should be accepted", identifier);
+            assert!(
+                is_safe_identifier(identifier),
+                "Safe identifier '{}' should be accepted",
+                identifier
+            );
         }
     }
 
@@ -413,14 +428,17 @@ mod tests {
     fn test_prepare_value_for_sql_security() {
         // Test that values are properly prepared for SQL to prevent injection
         let test_cases = vec![
-            (json!("'; DROP TABLE users; --"), "'''; DROP TABLE users; --'"),
+            (
+                json!("'; DROP TABLE users; --"),
+                "'''; DROP TABLE users; --'",
+            ),
             (json!("admin' OR '1'='1"), "'admin'' OR ''1''=''1'"),
             (json!(123), "123"),
             (json!(true), "1"),
             (json!(false), "0"),
             (json!(null), "NULL"),
         ];
-        
+
         for (input, expected) in test_cases {
             let result = prepare_value_for_sql(&input);
             assert_eq!(result, expected, "Failed for input: {:?}", input);
@@ -431,19 +449,23 @@ mod tests {
     fn test_where_clause_security() {
         // Test that WHERE clauses are built securely
         let conditions = vec![
-            ("username".to_string(), "=".to_string(), json!("'; DROP TABLE users; --")),
+            (
+                "username".to_string(),
+                "=".to_string(),
+                json!("'; DROP TABLE users; --"),
+            ),
             ("age".to_string(), ">=".to_string(), json!(18)),
             ("active".to_string(), "=".to_string(), json!(true)),
         ];
-        
+
         let (clause, params) = build_where_clause(&conditions);
-        
+
         // Verify the clause structure is safe
         assert!(clause.contains("username = ?"));
         assert!(clause.contains("age >= ?"));
         assert!(clause.contains("active = ?"));
         assert!(clause.contains(" AND "));
-        
+
         // Verify parameters are properly escaped
         assert_eq!(params.len(), 3);
         assert_eq!(params[0], json!("'; DROP TABLE users; --"));
@@ -461,12 +483,18 @@ mod tests {
             "field/**/",
             "name WITH (NOLOCK)",
         ];
-        
+
         for name in &malicious_names {
-            assert!(clean_table_name(name).is_err(), 
-                "Malicious table name '{}' should be rejected", name);
-            assert!(clean_column_name(name).is_err(), 
-                "Malicious column name '{}' should be rejected", name);
+            assert!(
+                clean_table_name(name).is_err(),
+                "Malicious table name '{}' should be rejected",
+                name
+            );
+            assert!(
+                clean_column_name(name).is_err(),
+                "Malicious column name '{}' should be rejected",
+                name
+            );
         }
     }
 
@@ -479,7 +507,7 @@ mod tests {
             "<img src=x onerror=alert('xss')>",
             "'; alert('xss'); --",
         ];
-        
+
         for xss in xss_attempts {
             let sanitized = sanitize(xss);
             if xss.contains("'") {
@@ -494,20 +522,23 @@ mod tests {
         let mut test_row = HashMap::new();
         test_row.insert("id".to_string(), json!("'; DROP TABLE users; --"));
         test_row.insert("active".to_string(), json!("true'; DROP TABLE test; --"));
-        test_row.insert("count".to_string(), json!("123'; SELECT * FROM passwords; --"));
-        
+        test_row.insert(
+            "count".to_string(),
+            json!("123'; SELECT * FROM passwords; --"),
+        );
+
         let mut column_types = HashMap::new();
         column_types.insert("id".to_string(), "integer".to_string());
         column_types.insert("active".to_string(), "boolean".to_string());
         column_types.insert("count".to_string(), "integer".to_string());
-        
+
         cast_types(&mut test_row, &column_types);
-        
+
         // Verify that malicious strings are either converted to safe types or nullified
         // Integer conversion should fail and result in null for malicious input
         assert_eq!(test_row["id"], json!(null));
         assert_eq!(test_row["count"], json!(null));
-        
+
         // Boolean conversion should be safe
         assert_eq!(test_row["active"], json!(true)); // "true" part gets converted
     }
@@ -516,20 +547,20 @@ mod tests {
     fn test_edge_cases_security() {
         // Test edge cases that might be overlooked
         let edge_cases = vec![
-            "".to_string(), // Empty string
-            "\x00".to_string(), // Null byte
-            "''".to_string(), // Already escaped quote
-            "\\".to_string(), // Backslash
+            "".to_string(),       // Empty string
+            "\x00".to_string(),   // Null byte
+            "''".to_string(),     // Already escaped quote
+            "\\".to_string(),     // Backslash
             "\n\r\t".to_string(), // Various whitespace
             "🔥💻🚀".to_string(), // Unicode characters
-            "a".repeat(10000), // Very long string
+            "a".repeat(10000),    // Very long string
         ];
-        
+
         for case in edge_cases {
             // Should not panic or cause errors
             let sanitized = sanitize(&case);
             let sql_value = prepare_value_for_sql(&json!(case));
-            
+
             // Basic validation that output is reasonable
             assert!(sanitized.len() >= case.len()); // Should not lose data inappropriately
             assert!(sql_value.starts_with("'") && sql_value.ends_with("'") || sql_value == "NULL");
@@ -545,11 +576,11 @@ mod tests {
             "1' UNION SELECT",
             "0x41414141",
         ];
-        
+
         for attack in numeric_attacks {
             let value = json!(attack);
             let prepared = prepare_value_for_sql(&value);
-            
+
             // Should be wrapped in quotes and sanitized
             assert!(prepared.starts_with("'"));
             assert!(prepared.ends_with("'"));

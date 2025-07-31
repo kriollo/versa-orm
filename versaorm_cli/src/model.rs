@@ -24,7 +24,10 @@ impl Model {
     // Load data from database to model
     #[allow(dead_code)]
     pub async fn load(&mut self, id: &Value) -> Result<(), String> {
-        let query = format!("SELECT * FROM {} WHERE {} = ?", self.table, self.primary_key);
+        let query = format!(
+            "SELECT * FROM {} WHERE {} = ?",
+            self.table, self.primary_key
+        );
         if let Ok(rows) = self.connection.execute_raw(&query, vec![id.clone()]).await {
             if let Some(row) = rows.first() {
                 self.attributes = row.clone();
@@ -75,7 +78,12 @@ pub struct Association {
 
 #[allow(dead_code)]
 impl Association {
-    pub fn new(relation: Relation, related_table: &str, foreign_key: &str, local_key: &str) -> Self {
+    pub fn new(
+        relation: Relation,
+        related_table: &str,
+        foreign_key: &str,
+        local_key: &str,
+    ) -> Self {
         Self {
             relation,
             related_table: related_table.to_string(),
@@ -84,4 +92,3 @@ impl Association {
         }
     }
 }
-

@@ -93,6 +93,30 @@ use connection::{ConnectionManager, DatabaseConfig};
 use schema::SchemaInspector;
 use query::QueryBuilder;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RelationMetadata {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub relation_type: String, // HasOne, HasMany, BelongsTo, BelongsToMany
+    pub related_table: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub foreign_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub local_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub owner_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pivot_table: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub foreign_pivot_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub related_pivot_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub related_key: Option<String>,
+}
+
 // Definimos la estructura para los argumentos de la línea de comandos.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

@@ -1,6 +1,5 @@
-use serde_json::Value;
-use std::collections::HashMap;
 use crate::utils::{clean_table_name, clean_column_name};
+use crate::main::RelationMetadata; // Import the new struct
 
 pub struct QueryBuilder {
     pub table: String,
@@ -14,6 +13,7 @@ pub struct QueryBuilder {
     pub update_data: Option<HashMap<String, Value>>,
     pub group_by: Vec<String>,
     pub havings: Vec<(String, String, Value, String)>, // (column, operator, value, conjunction)
+    pub with: Vec<RelationMetadata>, // Change type to Vec<RelationMetadata>
 }
 
 impl QueryBuilder {
@@ -36,7 +36,15 @@ impl QueryBuilder {
             update_data: None,
             group_by: Vec::new(),
             havings: Vec::new(),
+            with: Vec::new(), // Initialize with empty Vec<RelationMetadata>
         }
+    }
+
+    // ... (existing methods) ...
+
+    pub fn with_relations(mut self, relations: Vec<RelationMetadata>) -> Self { // Change parameter type
+        self.with = relations;
+        self
     }
 
     pub fn insert(mut self, data: HashMap<String, Value>) -> Self {
@@ -221,14 +229,15 @@ impl QueryBuilder {
                 let mut clause_text = String::new();
 
                 if op == "RAW" {
-                    if let Some(sql) = value.get("sql").and_then(|s| s.as_str()) {
-                        if let Some(bindings) = value.get("bindings").and_then(|b| b.as_array()) {
-                            // Basic security check for RAW SQL - reject dangerous keywords
-                            if is_safe_raw_sql(sql) {
-                                for binding in bindings {
-                                    params.push(binding.clone());
+                    if let Some(value_obj) = value.as_object() {
+                        if let Some(sql) = value_obj.get("sql").and_then(|s| s.as_str()) {
+                            if let Some(bindings) = value_obj.get("bindings").and_then(|b| b.as_array()) {
+                                if is_safe_raw_sql(sql) {
+                                    for binding in bindings {
+                                        params.push(binding.clone());
+                                    }
+                                    clause_text = format!("({})", sql);
                                 }
-                                clause_text = format!("({})", sql);
                             }
                         }
                     }

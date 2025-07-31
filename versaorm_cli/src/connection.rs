@@ -1,5 +1,5 @@
-use sqlx::{Pool, MySql, Postgres, Sqlite, Row, Column, Executor};
 use serde::{Deserialize, Serialize};
+use sqlx::{Column, Executor, MySql, Pool, Postgres, Row, Sqlite};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -29,10 +29,7 @@ pub struct ConnectionManager {
 
 impl ConnectionManager {
     pub fn new(config: DatabaseConfig) -> Self {
-        Self {
-            config,
-            pool: None,
-        }
+        Self { config, pool: None }
     }
 
     pub async fn connect(&mut self) -> Result<(), sqlx::Error> {
@@ -66,7 +63,11 @@ impl ConnectionManager {
                 let pool = sqlx::SqlitePool::connect(&url).await?;
                 DatabasePool::Sqlite(pool)
             }
-            _ => return Err(sqlx::Error::Configuration("Unsupported database driver".into())),
+            _ => {
+                return Err(sqlx::Error::Configuration(
+                    "Unsupported database driver".into(),
+                ))
+            }
         };
 
         self.pool = Some(pool);
@@ -86,11 +87,11 @@ impl ConnectionManager {
     pub fn get_driver(&self) -> &str {
         &self.config.driver
     }
-    
+
     pub fn is_debug_mode(&self) -> bool {
         self.config.debug
     }
-    
+
     pub fn get_config(&self) -> &DatabaseConfig {
         &self.config
     }
@@ -109,11 +110,17 @@ impl ConnectionManager {
                 let result = pool.execute(query).await?;
                 Ok(result.rows_affected())
             }
-            None => Err(sqlx::Error::Configuration("Not connected to database".into())),
+            None => Err(sqlx::Error::Configuration(
+                "Not connected to database".into(),
+            )),
         }
     }
 
-    pub async fn execute_raw(&self, query: &str, params: Vec<serde_json::Value>) -> Result<Vec<HashMap<String, serde_json::Value>>, sqlx::Error> {
+    pub async fn execute_raw(
+        &self,
+        query: &str,
+        params: Vec<serde_json::Value>,
+    ) -> Result<Vec<HashMap<String, serde_json::Value>>, sqlx::Error> {
         match self.pool.as_ref() {
             Some(DatabasePool::MySql(pool)) => {
                 let mut query_builder = sqlx::query(query);
@@ -139,11 +146,17 @@ impl ConnectionManager {
                 let rows = query_builder.fetch_all(pool).await?;
                 Ok(convert_sqlite_rows_to_json(rows))
             }
-            None => Err(sqlx::Error::Configuration("Not connected to database".into())),
+            None => Err(sqlx::Error::Configuration(
+                "Not connected to database".into(),
+            )),
         }
     }
 
-    pub async fn execute_write(&self, query: &str, params: Vec<serde_json::Value>) -> Result<u64, sqlx::Error> {
+    pub async fn execute_write(
+        &self,
+        query: &str,
+        params: Vec<serde_json::Value>,
+    ) -> Result<u64, sqlx::Error> {
         match self.pool.as_ref() {
             Some(DatabasePool::MySql(pool)) => {
                 let mut query_builder = sqlx::query(query);
@@ -169,13 +182,18 @@ impl ConnectionManager {
                 let result = query_builder.execute(pool).await?;
                 Ok(result.rows_affected())
             }
-            None => Err(sqlx::Error::Configuration("Not connected to database".into())),
+            None => Err(sqlx::Error::Configuration(
+                "Not connected to database".into(),
+            )),
         }
     }
 }
 
 // Helper functions para binding de parámetros
-fn bind_value_mysql(query: sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments>, value: serde_json::Value) -> sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments> {
+fn bind_value_mysql(
+    query: sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments>,
+    value: serde_json::Value,
+) -> sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArguments> {
     match value {
         serde_json::Value::String(s) => query.bind(s),
         serde_json::Value::Number(n) => {
@@ -193,7 +211,10 @@ fn bind_value_mysql(query: sqlx::query::Query<'_, MySql, sqlx::mysql::MySqlArgum
     }
 }
 
-fn bind_value_postgres(query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments>, value: serde_json::Value) -> sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> {
+fn bind_value_postgres(
+    query: sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments>,
+    value: serde_json::Value,
+) -> sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> {
     match value {
         serde_json::Value::String(s) => query.bind(s),
         serde_json::Value::Number(n) => {
@@ -211,7 +232,10 @@ fn bind_value_postgres(query: sqlx::query::Query<'_, Postgres, sqlx::postgres::P
     }
 }
 
-fn bind_value_sqlite<'a>(query: sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>>, value: serde_json::Value) -> sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>> {
+fn bind_value_sqlite<'a>(
+    query: sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>>,
+    value: serde_json::Value,
+) -> sqlx::query::Query<'a, Sqlite, sqlx::sqlite::SqliteArguments<'a>> {
     match value {
         serde_json::Value::String(s) => query.bind(s),
         serde_json::Value::Number(n) => {
@@ -230,67 +254,83 @@ fn bind_value_sqlite<'a>(query: sqlx::query::Query<'a, Sqlite, sqlx::sqlite::Sql
 }
 
 // Helper functions para conversión de rows a JSON
-fn convert_mysql_rows_to_json(rows: Vec<sqlx::mysql::MySqlRow>) -> Vec<HashMap<String, serde_json::Value>> {
-    rows.into_iter().map(|row| {
-        let mut map = HashMap::new();
-        for column in row.columns() {
-            let column_name = column.name().to_string();
-            let value = mysql_value_to_json(&row, column_name.as_str());
-            map.insert(column_name, value);
-        }
-        map
-    }).collect()
+fn convert_mysql_rows_to_json(
+    rows: Vec<sqlx::mysql::MySqlRow>,
+) -> Vec<HashMap<String, serde_json::Value>> {
+    rows.into_iter()
+        .map(|row| {
+            let mut map = HashMap::new();
+            for column in row.columns() {
+                let column_name = column.name().to_string();
+                let value = mysql_value_to_json(&row, column_name.as_str());
+                map.insert(column_name, value);
+            }
+            map
+        })
+        .collect()
 }
 
-fn convert_postgres_rows_to_json(rows: Vec<sqlx::postgres::PgRow>) -> Vec<HashMap<String, serde_json::Value>> {
-    rows.into_iter().map(|row| {
-        let mut map = HashMap::new();
-        for column in row.columns() {
-            let column_name = column.name().to_string();
-            let value = postgres_value_to_json(&row, column_name.as_str());
-            map.insert(column_name, value);
-        }
-        map
-    }).collect()
+fn convert_postgres_rows_to_json(
+    rows: Vec<sqlx::postgres::PgRow>,
+) -> Vec<HashMap<String, serde_json::Value>> {
+    rows.into_iter()
+        .map(|row| {
+            let mut map = HashMap::new();
+            for column in row.columns() {
+                let column_name = column.name().to_string();
+                let value = postgres_value_to_json(&row, column_name.as_str());
+                map.insert(column_name, value);
+            }
+            map
+        })
+        .collect()
 }
 
-fn convert_sqlite_rows_to_json(rows: Vec<sqlx::sqlite::SqliteRow>) -> Vec<HashMap<String, serde_json::Value>> {
-    rows.into_iter().map(|row| {
-        let mut map = HashMap::new();
-        for column in row.columns() {
-            let column_name = column.name().to_string();
-            let value = sqlite_value_to_json(&row, column_name.as_str());
-            map.insert(column_name, value);
-        }
-        map
-    }).collect()
+fn convert_sqlite_rows_to_json(
+    rows: Vec<sqlx::sqlite::SqliteRow>,
+) -> Vec<HashMap<String, serde_json::Value>> {
+    rows.into_iter()
+        .map(|row| {
+            let mut map = HashMap::new();
+            for column in row.columns() {
+                let column_name = column.name().to_string();
+                let value = sqlite_value_to_json(&row, column_name.as_str());
+                map.insert(column_name, value);
+            }
+            map
+        })
+        .collect()
 }
 
 fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_json::Value {
-    use sqlx::Row;
-    use chrono::{NaiveDateTime, NaiveDate, NaiveTime};
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
     use sqlx::Column;
-    
+    use sqlx::Row;
 
     // DEBUG MODE: Mostrar información detallada sobre el tipo de columna
     if std::env::var("VERSAORM_DEBUG").is_ok() {
-        let column_info = row.columns().iter()
+        let column_info = row
+            .columns()
+            .iter()
             .find(|col| col.name() == column_name)
             .map(|col| format!("Column '{}': type_info = {:?}", col.name(), col.type_info()))
             .unwrap_or_else(|| format!("Column '{}': not found", column_name));
-        
+
         // Use unified logging system
         crate::log_debug_msg(&format!("Column info: {}", column_info));
-        
+
         // Use unified logging system for debugging type extraction
-        crate::log_debug_msg(&format!("Attempting to extract '{}' as various types:", column_name));
-        
+        crate::log_debug_msg(&format!(
+            "Attempting to extract '{}' as various types:",
+            column_name
+        ));
+
         if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
             crate::log_debug_msg(&format!("  as String: {:?}", val));
         } else {
             crate::log_debug_msg("  as String: FAILED");
         }
-        
+
         if let Ok(val) = row.try_get::<Option<Vec<u8>>, _>(column_name) {
             crate::log_debug_msg(&format!("  as Vec<u8>: {:?}", val));
             // Si es Vec<u8>, intentar convertir a string para ver el contenido
@@ -304,98 +344,116 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
         } else {
             crate::log_debug_msg("  as Vec<u8>: FAILED");
         }
-        
+
         if let Ok(val) = row.try_get::<Option<NaiveDateTime>, _>(column_name) {
             crate::log_debug_msg(&format!("  as NaiveDateTime: {:?}", val));
         } else {
             crate::log_debug_msg("  as NaiveDateTime: FAILED");
         }
-        
+
         if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
             crate::log_debug_msg(&format!("  as i64: {:?}", val));
         } else {
             crate::log_debug_msg("  as i64: FAILED");
         }
-        
+
         if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
             crate::log_debug_msg(&format!("  as f64: {:?}", val));
         } else {
             crate::log_debug_msg("  as f64: FAILED");
         }
-        
+
         // Intentar tipos time crate
         if let Ok(val) = row.try_get::<Option<time::PrimitiveDateTime>, _>(column_name) {
             crate::log_debug_msg(&format!("  as time::PrimitiveDateTime: {:?}", val));
         } else {
             crate::log_debug_msg("  as time::PrimitiveDateTime: FAILED");
         }
-        
+
         if let Ok(val) = row.try_get::<Option<time::OffsetDateTime>, _>(column_name) {
             crate::log_debug_msg(&format!("  as time::OffsetDateTime: {:?}", val));
         } else {
             crate::log_debug_msg("  as time::OffsetDateTime: FAILED");
         }
-        
+
         crate::log_debug_msg("---");
     }
-    
+
     // Manejo específico para tipos TIMESTAMP de MySQL
     // Identificar el tipo de columna para manejo específico
     if let Some(column) = row.columns().iter().find(|col| col.name() == column_name) {
         let type_info = column.type_info();
-        
+
         // Debug: Log del tipo detectado
         if std::env::var("VERSAORM_DEBUG").is_ok() {
             crate::log_debug_msg(&format!("Processing type: {:?}", type_info));
         }
-        
+
         // Verificar si es un tipo TIMESTAMP de MySQL
         let type_name = format!("{:?}", type_info);
         if type_name.contains("Timestamp") {
             // Para tipos TIMESTAMP, intentar diferentes aproximaciones
-            
+
             // Opción 1: Intentar con tipos time crate que sqlx podría usar internamente
             if let Ok(val) = row.try_get::<Option<time::PrimitiveDateTime>, _>(column_name) {
                 if std::env::var("VERSAORM_DEBUG").is_ok() {
-                    crate::log_debug_msg(&format!("Successfully extracted TIMESTAMP as time::PrimitiveDateTime: {:?}", val));
+                    crate::log_debug_msg(&format!(
+                        "Successfully extracted TIMESTAMP as time::PrimitiveDateTime: {:?}",
+                        val
+                    ));
                 }
                 return match val {
                     Some(dt) => {
                         // Convertir time::PrimitiveDateTime a string
-                        let formatted = format!("{}-{:02}-{:02} {:02}:{:02}:{:02}",
-                            dt.year(), dt.month() as u8, dt.day(),
-                            dt.hour(), dt.minute(), dt.second());
+                        let formatted = format!(
+                            "{}-{:02}-{:02} {:02}:{:02}:{:02}",
+                            dt.year(),
+                            dt.month() as u8,
+                            dt.day(),
+                            dt.hour(),
+                            dt.minute(),
+                            dt.second()
+                        );
                         serde_json::Value::String(formatted)
-                    },
+                    }
                     None => serde_json::Value::Null,
                 };
             }
-            
+
             // Opción 2: Intentar con time::OffsetDateTime
             if let Ok(val) = row.try_get::<Option<time::OffsetDateTime>, _>(column_name) {
                 if std::env::var("VERSAORM_DEBUG").is_ok() {
-                    crate::log_debug_msg(&format!("Successfully extracted TIMESTAMP as time::OffsetDateTime: {:?}", val));
+                    crate::log_debug_msg(&format!(
+                        "Successfully extracted TIMESTAMP as time::OffsetDateTime: {:?}",
+                        val
+                    ));
                 }
                 return match val {
                     Some(dt) => {
                         // Convertir time::OffsetDateTime a string
-                        let formatted = format!("{}-{:02}-{:02} {:02}:{:02}:{:02}",
-                            dt.year(), dt.month() as u8, dt.day(),
-                            dt.hour(), dt.minute(), dt.second());
+                        let formatted = format!(
+                            "{}-{:02}-{:02} {:02}:{:02}:{:02}",
+                            dt.year(),
+                            dt.month() as u8,
+                            dt.day(),
+                            dt.hour(),
+                            dt.minute(),
+                            dt.second()
+                        );
                         serde_json::Value::String(formatted)
-                    },
+                    }
                     None => serde_json::Value::Null,
                 };
             }
-            
+
             if std::env::var("VERSAORM_DEBUG").is_ok() {
                 crate::log_debug_msg("Failed to extract TIMESTAMP with time crate types");
             }
         }
     }
-    
+
     // Lógica original de conversión de tipos
-    
+
     // Intentar obtener como String (para otros tipos de columnas)
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
         return match val {
@@ -403,127 +461,133 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             None => serde_json::Value::Null,
         };
     }
-    
+
     // Manejar tipos de fecha/hora chrono (fallback)
     if let Ok(val) = row.try_get::<Option<NaiveDateTime>, _>(column_name) {
         return match val {
             Some(v) => {
                 let formatted = v.format("%Y-%m-%d %H:%M:%S").to_string();
                 serde_json::Value::String(formatted)
-            },
+            }
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<NaiveDate>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::String(v.format("%Y-%m-%d").to_string()),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<NaiveTime>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::String(v.format("%H:%M:%S").to_string()),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
         return match val {
-            Some(v) => serde_json::Number::from_f64(v).map(serde_json::Value::Number).unwrap_or(serde_json::Value::Null),
+            Some(v) => serde_json::Number::from_f64(v)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<bool>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Bool(v),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::String(v),
             None => serde_json::Value::Null,
         };
     }
-    
+
     serde_json::Value::Null
 }
 
 fn postgres_value_to_json(row: &sqlx::postgres::PgRow, column_name: &str) -> serde_json::Value {
     use sqlx::Row;
-    
+
     if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
         return match val {
-            Some(v) => serde_json::Number::from_f64(v).map(serde_json::Value::Number).unwrap_or(serde_json::Value::Null),
+            Some(v) => serde_json::Number::from_f64(v)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<bool>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Bool(v),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::String(v),
             None => serde_json::Value::Null,
         };
     }
-    
+
     serde_json::Value::Null
 }
 
 fn sqlite_value_to_json(row: &sqlx::sqlite::SqliteRow, column_name: &str) -> serde_json::Value {
     use sqlx::Row;
-    
+
     if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
         return match val {
-            Some(v) => serde_json::Number::from_f64(v).map(serde_json::Value::Number).unwrap_or(serde_json::Value::Null),
+            Some(v) => serde_json::Number::from_f64(v)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<bool>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Bool(v),
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::String(v),
             None => serde_json::Value::Null,
         };
     }
-    
+
     serde_json::Value::Null
 }
