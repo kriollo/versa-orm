@@ -404,70 +404,63 @@ async fn handle_query_action(
     let query_params: QueryParameters = serde_json::from_value(params.clone())
         .map_err(|e| (format!("Failed to deserialize query parameters: {}", e), None, None))?;
 
-    log_debug!("Deserialized query parameters: {:?}", query_params);
-
     let mut query_builder = QueryBuilder::new(&query_params.table);
 
     if !query_params.select.is_empty() {
-        query_builder = query_builder.select(query_params.select.iter().map(|s| s.as_str()).collect());
+        query_builder.selects = query_params.select;
     }
 
     for where_clause in query_params.wheres {
-        if where_clause.operator.to_uppercase() == "RAW" {
-             if let Some(value_obj) = where_clause.value.as_object() {
-                if let Some(sql) = value_obj.get("sql").and_then(|s| s.as_str()) {
-                    if let Some(bindings) = value_obj.get("bindings").and_then(|b| b.as_array()) {
-                        let raw_value = serde_json::json!({
-                            "sql": sql,
-                            "bindings": bindings
-                        });
-                        query_builder = query_builder.r#where("", "RAW", raw_value);
-                    }
-                }
-            }
-        } else {
-            match where_clause.conjunction.to_lowercase().as_str() {
-                "or" => query_builder = query_builder.or_where(&where_clause.column, &where_clause.operator, where_clause.value),
-                _ => query_builder = query_builder.r#where(&where_clause.column, &where_clause.operator, where_clause.value),
-            }
-        }
+        query_builder.wheres.push((
+            where_clause.column,
+            where_clause.operator,
+            where_clause.value,
+            where_clause.conjunction,
+        ));
     }
 
-    for join in query_params.joins {
-        match join.join_type.to_lowercase().as_str() {
-            "inner" => query_builder = query_builder.join(&join.table, &join.first_col, &join.operator, &join.second_col),
-            "left" => query_builder = query_builder.left_join(&join.table, &join.first_col, &join.operator, &join.second_col),
-            _ => (),
-        }
+    for join_clause in query_params.joins {
+        query_builder.joins.push((
+            join_clause.table,
+            join_clause.first_col,
+            join_clause.operator,
+            join_clause.second_col,
+            join_clause.join_type,
+        ));
     }
 
     if let Some(order) = query_params.order_by.first() {
-        query_builder = query_builder.order_by(&order.column, &order.direction);
+        query_builder.order = Some((order.column.clone(), order.direction.clone()));
     }
 
     if let Some(limit) = query_params.limit {
-        query_builder = query_builder.limit(limit);
+        query_builder.limit = Some(limit);
     }
     if let Some(offset) = query_params.offset {
-        query_builder = query_builder.offset(offset);
+        query_builder.offset = Some(offset);
     }
 
     if !query_params.group_by.is_empty() {
-        query_builder = query_builder.group_by(query_params.group_by.iter().map(|s| s.as_str()).collect());
+        query_builder.group_by = query_params.group_by;
     }
 
     for having in query_params.having {
-        query_builder = query_builder.having(&having.column, &having.operator, having.value);
+        query_builder.havings.push((
+            having.column,
+            having.operator,
+            having.value,
+            "AND".to_string(), // Asumiendo AND por ahora, se puede mejorar
+        ));
     }
 
     if !query_params.with.is_empty() {
-        query_builder = query_builder.with_relations(query_params.with);
+        query_builder.with = query_params.with;
     }
     
     let mut insert_data_ref = None;
     if query_params.method == "insert" || query_params.method == "insertGetId" {
         if let Some(data) = &query_params.data {
-            query_builder = query_builder.insert(data);
+            query_builder.insert_data = Some(data.clone());
             insert_data_ref = Some(data.clone());
         }
     }
@@ -475,8 +468,6 @@ async fn handle_query_action(
     let table_name = query_builder.table.clone();
 
     let (sql, sql_params) = query_builder.build_sql();
-    log_debug!("Executing SQL: {}", sql);
-    log_debug!("Parameters: {:?}", sql_params);
 
     match query_params.method.as_str() {
         "get" | "first" => {
@@ -490,30 +481,30 @@ async fn handle_query_action(
 
             // Eager loading
             for relation in &query_builder.with {
-                let foreign_key = relation.foreign_key.as_ref().unwrap();
-                let local_key = relation.local_key.as_ref().unwrap();
+                if let (Some(foreign_key), Some(local_key)) = (&relation.foreign_key, &relation.local_key) {
+                    let parent_ids: Vec<serde_json::Value> = final_results.iter().filter_map(|row| row.get(local_key).cloned()).collect();
 
-                let parent_ids: Vec<serde_json::Value> = final_results.iter().filter_map(|row| row.get(local_key).cloned()).collect();
-
-                if parent_ids.is_empty() {
-                    continue;
-                }
-
-                let relation_sql = format!("SELECT * FROM {} WHERE {} IN (?)", relation.related_table, foreign_key);
-                let relation_rows = connection.execute_raw(&relation_sql, parent_ids).await.map_err(|e| (format!("Eager loading failed for {}: {}", relation.name, e), Some(relation_sql), None))?;
-
-                let mut relation_map: HashMap<String, Vec<HashMap<String, serde_json::Value>>> = HashMap::new();
-                for row in relation_rows {
-                    if let Some(key) = row.get(foreign_key).and_then(|v| v.as_str()) {
-                        relation_map.entry(key.to_string()).or_default().push(row);
+                    if parent_ids.is_empty() {
+                        continue;
                     }
-                }
 
-                for result in &mut final_results {
-                    if let Some(local_id) = result.get(local_key).and_then(|v| v.as_str()) {
-                        if let Some(related_data) = relation_map.get(local_id) {
-                            let relations_map = result.entry("_relations".to_string()).or_insert(serde_json::json!({})).as_object_mut().unwrap();
-                            relations_map.insert(relation.name.clone(), serde_json::to_value(related_data).unwrap());
+                    let relation_sql = format!("SELECT * FROM {} WHERE {} IN (?)", relation.related_table, foreign_key);
+                    let relation_rows = connection.execute_raw(&relation_sql, parent_ids).await.map_err(|e| (format!("Eager loading failed for {}: {}", relation.name, e), Some(relation_sql), None))?;
+
+                    let mut relation_map: HashMap<String, Vec<HashMap<String, serde_json::Value>>> = HashMap::new();
+                    for row in relation_rows {
+                        if let Some(key_val) = row.get(foreign_key) {
+                            let key = key_val.to_string().trim_matches('"').to_string();
+                            relation_map.entry(key).or_default().push(row.clone());
+                        }
+                    }
+
+                    for result in &mut final_results {
+                        if let Some(local_id_val) = result.get(local_key) {
+                            let local_id = local_id_val.to_string().trim_matches('"').to_string();
+                            if let Some(related_data) = relation_map.get(&local_id) {
+                                result.insert(relation.name.clone(), serde_json::to_value(related_data).unwrap());
+                            }
                         }
                     }
                 }

@@ -235,10 +235,12 @@ impl QueryBuilder {
                         if let Some(sql) = value_obj.get("sql").and_then(|s| s.as_str()) {
                             if let Some(bindings) = value_obj.get("bindings").and_then(|b| b.as_array()) {
                                 if is_safe_raw_sql(sql) {
+                                    let mut temp_sql = sql.to_string();
                                     for binding in bindings {
                                         params.push(binding.clone());
+                                        // No reemplazar los `?` aquí, se manejarán como parámetros preparados
                                     }
-                                    clause_text = format!("({})", sql);
+                                    clause_text = format!("({})", temp_sql);
                                 }
                             }
                         }
@@ -393,4 +395,148 @@ fn is_safe_raw_sql(sql: &str) -> bool {
     }
 
     true
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_build_sql_select_all() {
+        let builder = QueryBuilder::new("users");
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn test_build_sql_select_columns() {
+        let builder = QueryBuilder::new("users").select(vec!["id", "name"]);
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT id, name FROM users");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn test_build_sql_where() {
+        let builder = QueryBuilder::new("users").r#where("id", "=", json!(1));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users WHERE id = ?");
+        assert_eq!(params, vec![json!(1)]);
+    }
+
+    #[test]
+    fn test_build_sql_where_in() {
+        let builder = QueryBuilder::new("users").r#where("id", "IN", json!([1, 2, 3]));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users WHERE id IN (?, ?, ?)");
+        assert_eq!(params, vec![json!(1), json!(2), json!(3)]);
+    }
+
+    #[test]
+    fn test_build_sql_where_in_empty() {
+        let builder = QueryBuilder::new("users").r#where("id", "IN", json!([]));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users WHERE 1 = 0");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn test_build_sql_where_between() {
+        let builder = QueryBuilder::new("users").r#where("age", "BETWEEN", json!([18, 30]));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users WHERE age BETWEEN ? AND ?");
+        assert_eq!(params, vec![json!(18), json!(30)]);
+    }
+
+    #[test]
+    fn test_build_sql_where_is_null() {
+        let builder = QueryBuilder::new("users").r#where("deleted_at", "IS NULL", json!(null));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users WHERE deleted_at IS NULL");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn test_build_sql_where_raw() {
+        let builder = QueryBuilder::new("users").r#where(
+            "",
+            "RAW",
+            json!({
+                "sql": "LOWER(name) = ?",
+                "bindings": ["alice"]
+            }),
+        );
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users WHERE (LOWER(name) = ?)");
+        assert_eq!(params, vec![json!("alice")]);
+    }
+
+    #[test]
+    fn test_build_sql_order_by() {
+        let builder = QueryBuilder::new("users").order_by("name", "desc");
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users ORDER BY name DESC");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn test_build_sql_limit_offset() {
+        let builder = QueryBuilder::new("users").limit(10).offset(20);
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT * FROM users LIMIT 10 OFFSET 20");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn test_build_sql_group_by_having() {
+        let builder = QueryBuilder::new("users")
+            .select(vec!["status", "COUNT(*) as count"])
+            .group_by(vec!["status"])
+            .having("count", ">", json!(1));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "SELECT status, COUNT(*) as count FROM users GROUP BY status HAVING count > ?");
+        assert_eq!(params, vec![json!(1)]);
+    }
+
+    #[test]
+    fn test_build_sql_insert() {
+        let mut data = HashMap::new();
+        data.insert("name".to_string(), json!("John Doe"));
+        data.insert("email".to_string(), json!("john@example.com"));
+        let builder = QueryBuilder::new("users").insert(&data);
+        let (sql, params) = builder.build_sql();
+        // Note: The order of columns in the generated SQL might vary due to HashMap's nature.
+        // A more robust test would parse the SQL or check for key components.
+        assert!(sql.starts_with("INSERT INTO users"));
+        assert!(sql.contains("(name, email)") || sql.contains("(email, name)"));
+        assert!(sql.contains("VALUES (?, ?)"));
+        assert_eq!(params.len(), 2);
+    }
+
+    #[test]
+    fn test_build_sql_update() {
+        let mut data = HashMap::new();
+        data.insert("status".to_string(), json!("inactive"));
+        let builder = QueryBuilder::new("users")
+            .update(&data)
+            .r#where("id", "=", json!(1));
+        let (sql, params) = builder.build_sql();
+        assert_eq!(sql, "UPDATE users SET status = ? WHERE id = ?");
+        assert_eq!(params, vec![json!("inactive"), json!(1)]);
+    }
+
+    #[test]
+    fn test_build_sql_delete() {
+        let builder = QueryBuilder::new("users").r#where("id", "=", json!(1));
+        let (sql, params) = builder.build_sql();
+        // This test is tricky because there's no explicit "delete" method in the builder.
+        // The current implementation would generate a SELECT.
+        // To test DELETE, we'd need a `delete()` method in the builder.
+        // For now, we'll assert the SELECT behavior.
+        assert_eq!(sql, "SELECT * FROM users WHERE id = ?");
+        assert_eq!(params, vec![json!(1)]);
+    }
 }
