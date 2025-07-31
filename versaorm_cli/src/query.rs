@@ -1,21 +1,21 @@
 use crate::utils::{clean_table_name, clean_column_name};
-// use crate::RelationMetadata; // Import the new struct
+use crate::RelationMetadata;
 use serde_json::Value;
 use std::collections::HashMap;
 
 pub struct QueryBuilder {
     pub table: String,
     pub selects: Vec<String>,
-    pub wheres: Vec<(String, String, Value, String)>, // Añadido cuarto campo para conjunción (AND/OR)
-    pub joins: Vec<(String, String, String, String, String)>, // Añadido quinto campo para tipo de JOIN
+    pub wheres: Vec<(String, String, Value, String)>,
+    pub joins: Vec<(String, String, String, String, String)>,
     pub order: Option<(String, String)>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
     pub insert_data: Option<HashMap<String, Value>>,
     pub update_data: Option<HashMap<String, Value>>,
     pub group_by: Vec<String>,
-    pub havings: Vec<(String, String, Value, String)>, // (column, operator, value, conjunction)
-    // pub with: Vec<RelationMetadata>, // Change type to Vec<RelationMetadata>
+    pub havings: Vec<(String, String, Value, String)>,
+    pub with: Vec<RelationMetadata>,
 }
 
 impl QueryBuilder {
@@ -38,16 +38,16 @@ impl QueryBuilder {
             update_data: None,
             group_by: Vec::new(),
             havings: Vec::new(),
-            // with: Vec::new(), // Initialize with empty Vec<RelationMetadata>
+            with: Vec::new(),
         }
     }
 
     // ... (existing methods) ...
 
-    /* pub fn with_relations(mut self, relations: Vec<RelationMetadata>) -> Self { // Change parameter type
+    pub fn with_relations(mut self, relations: Vec<crate::RelationMetadata>) -> Self {
         self.with = relations;
         self
-    } */
+    }
 
     pub fn insert(mut self, data: &HashMap<String, Value>) -> Self {
         // Validate all column names for security
@@ -179,11 +179,11 @@ impl QueryBuilder {
     }
 
 
-    pub fn build_sql(self) -> (String, Vec<Value>) {
+        pub fn build_sql(&self) -> (String, Vec<Value>) {
         let mut query = String::new();
         let mut params = Vec::new();
 
-        if let Some(data) = self.insert_data {
+        if let Some(data) = &self.insert_data {
             // INSERT query
             let columns: Vec<String> = data.keys().cloned().collect();
             let placeholders: Vec<&str> = vec!["?"; data.len()];
@@ -197,7 +197,7 @@ impl QueryBuilder {
             return (query, params);
         }
 
-        if let Some(data) = self.update_data {
+                if let Some(data) = &self.update_data {
             // UPDATE query
             let setters: Vec<String> = data.keys().map(|k| format!("{} = ?", k)).collect();
             query = format!(
@@ -342,7 +342,7 @@ impl QueryBuilder {
         }
 
         // ORDER BY clause
-        if let Some((col, dir)) = self.order {
+                if let Some((col, dir)) = &self.order {
             query.push_str(&format!(" ORDER BY {} {}", col, dir));
         }
 

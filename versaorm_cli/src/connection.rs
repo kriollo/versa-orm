@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Column, Executor, MySql, Pool, Postgres, Row, Sqlite};
 use std::collections::HashMap;
-use std::io::Write;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DatabaseConfig {

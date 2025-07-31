@@ -459,6 +459,10 @@ async fn handle_query_action(
     for having in query_params.having {
         query_builder = query_builder.having(&having.column, &having.operator, having.value);
     }
+
+    if !query_params.with.is_empty() {
+        query_builder = query_builder.with_relations(query_params.with);
+    }
     
     let mut insert_data_ref = None;
     if query_params.method == "insert" || query_params.method == "insertGetId" {
