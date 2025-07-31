@@ -9,11 +9,11 @@ use VersaORM\VersaModel;
 
 class BelongsToMany extends Relation
 {
-    protected string $pivotTable;
-    protected string $foreignPivotKey;
-    protected string $relatedPivotKey;
-    protected string $parentKey;
-    protected string $relatedKey;
+    public string $pivotTable;
+    public string $foreignPivotKey;
+    public string $relatedPivotKey;
+    public string $parentKey;
+    public string $relatedKey;
 
     public function __construct(
         QueryBuilder $query,

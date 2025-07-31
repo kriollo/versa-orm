@@ -12,7 +12,7 @@ abstract class Relation
     /**
      * The query builder instance for the related model.
      */
-    protected QueryBuilder $query;
+    public QueryBuilder $query;
 
     /**
      * The parent model instance.

@@ -9,9 +9,9 @@ use VersaORM\VersaModel;
 
 class BelongsTo extends Relation
 {
-    protected string $foreignKey;
-    protected string $ownerKey;
-    protected string $relationName;
+    public string $foreignKey;
+    public string $ownerKey;
+    public string $relationName;
 
     public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $ownerKey, string $relationName)
     {

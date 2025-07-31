@@ -9,8 +9,8 @@ use VersaORM\VersaModel;
 
 class HasOne extends Relation
 {
-    protected string $foreignKey;
-    protected string $localKey;
+    public string $foreignKey;
+    public string $localKey;
 
     public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $localKey)
     {
