@@ -113,19 +113,23 @@ ob_start();
                 . (isset($_GET['label_id']) ? '&label_id=' . (int)$_GET['label_id'] : '')
                 . (isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : '')
                 . (isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '');
+            $range = 2; // Cuántos botones a la izquierda y derecha
+            $start = max(1, $page - $range);
+            $end = min($totalPages, $page + $range);
             ?>
-            <a href="<?= $baseUrl . '&page=' . $prevPage ?>" class="px-3 py-1 border rounded-l <?= $page == 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&laquo; Anterior</a>
-            <form method="get" class="inline-block mx-2">
-                <input type="hidden" name="action" value="list">
-                <?php if (isset($_GET['perPage'])): ?><input type="hidden" name="perPage" value="<?= (int)$_GET['perPage'] ?>"><?php endif; ?>
-                <?php if (isset($_GET['project_id'])): ?><input type="hidden" name="project_id" value="<?= (int)$_GET['project_id'] ?>"><?php endif; ?>
-                <?php if (isset($_GET['label_id'])): ?><input type="hidden" name="label_id" value="<?= (int)$_GET['label_id'] ?>"><?php endif; ?>
-                <?php if (isset($_GET['status'])): ?><input type="hidden" name="status" value="<?= htmlspecialchars($_GET['status']) ?>"><?php endif; ?>
-                <?php if (isset($_GET['search'])): ?><input type="hidden" name="search" value="<?= htmlspecialchars($_GET['search']) ?>"><?php endif; ?>
-                <input type="number" min="1" max="<?= $totalPages ?>" name="page" value="<?= $page ?>" class="w-16 border rounded px-2 py-1 text-center" style="width:60px;">
-                <button type="submit" class="ml-1 px-2 py-1 bg-blue-500 text-white rounded">Ir</button>
-            </form>
-            <a href="<?= $baseUrl . '&page=' . $nextPage ?>" class="px-3 py-1 border rounded-r <?= $page == $totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">Siguiente &raquo;</a>
+            <a href="<?= $baseUrl . '&page=' . $prevPage ?>" class="px-3 py-1 border rounded-l <?= $page == 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&laquo;</a>
+            <?php if ($start > 1): ?>
+                <a href="<?= $baseUrl . '&page=1' ?>" class="px-3 py-1 border bg-white text-blue-700 hover:bg-blue-100 mx-1 rounded">1</a>
+                <?php if ($start > 2): ?><span class="px-2">...</span><?php endif; ?>
+            <?php endif; ?>
+            <?php for ($i = $start; $i <= $end; $i++): ?>
+                <a href="<?= $baseUrl . '&page=' . $i ?>" class="px-3 py-1 border mx-1 rounded <?= $i == $page ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 hover:bg-blue-100' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+            <?php if ($end < $totalPages): ?>
+                <?php if ($end < $totalPages - 1): ?><span class="px-2">...</span><?php endif; ?>
+                <a href="<?= $baseUrl . '&page=' . $totalPages ?>" class="px-3 py-1 border bg-white text-blue-700 hover:bg-blue-100 mx-1 rounded"><?= $totalPages ?></a>
+            <?php endif; ?>
+            <a href="<?= $baseUrl . '&page=' . $nextPage ?>" class="px-3 py-1 border rounded-r <?= $page == $totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&raquo;</a>
         </nav>
     </div>
 <?php endif; ?>

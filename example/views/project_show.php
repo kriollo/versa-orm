@@ -131,6 +131,37 @@ ob_start();
         </tbody>
     </table>
 </div>
+<?php if ($totalPages > 1): ?>
+    <div class="flex justify-center mt-4">
+        <nav class="inline-flex rounded-md shadow-sm items-center" aria-label="Paginación">
+            <?php
+            $prevPage = max(1, $page - 1);
+            $nextPage = min($totalPages, $page + 1);
+            $baseUrl = '?action=show_project&id=' . (int)$_GET['id']
+                . (isset($_GET['perPage']) ? '&perPage=' . (int)$_GET['perPage'] : '')
+                . (isset($_GET['label_id']) ? '&label_id=' . (int)$_GET['label_id'] : '')
+                . (isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : '')
+                . (isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '');
+            $range = 2;
+            $start = max(1, $page - $range);
+            $end = min($totalPages, $page + $range);
+            ?>
+            <a href="<?= $baseUrl . '&page=' . $prevPage ?>" class="px-3 py-1 border rounded-l <?= $page == 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&laquo;</a>
+            <?php if ($start > 1): ?>
+                <a href="<?= $baseUrl . '&page=1' ?>" class="px-3 py-1 border bg-white text-blue-700 hover:bg-blue-100 mx-1 rounded">1</a>
+                <?php if ($start > 2): ?><span class="px-2">...</span><?php endif; ?>
+            <?php endif; ?>
+            <?php for ($i = $start; $i <= $end; $i++): ?>
+                <a href="<?= $baseUrl . '&page=' . $i ?>" class="px-3 py-1 border mx-1 rounded <?= $i == $page ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 hover:bg-blue-100' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+            <?php if ($end < $totalPages): ?>
+                <?php if ($end < $totalPages - 1): ?><span class="px-2">...</span><?php endif; ?>
+                <a href="<?= $baseUrl . '&page=' . $totalPages ?>" class="px-3 py-1 border bg-white text-blue-700 hover:bg-blue-100 mx-1 rounded"><?= $totalPages ?></a>
+            <?php endif; ?>
+            <a href="<?= $baseUrl . '&page=' . $nextPage ?>" class="px-3 py-1 border rounded-r <?= $page == $totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&raquo;</a>
+        </nav>
+    </div>
+<?php endif; ?>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/layout.php';
