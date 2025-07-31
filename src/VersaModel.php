@@ -294,7 +294,7 @@ class VersaModel
 
     public function newQuery(): QueryBuilder
     {
-        return (new VersaORM($this->orm ?? self::$ormInstance))->table($this->table);
+        return (new VersaORM($this->orm ?? self::$ormInstance))->table($this->table, static::class);
     }
 
     /**

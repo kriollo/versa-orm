@@ -48,15 +48,18 @@ class QueryBuilder
     /** @var array<int, mixed> */
     private array $having = [];
     private array $with = [];
+    private ?string $modelClass = null;
 
     /**
      * @param VersaORM|array<string, mixed>|null $orm
      * @param string $table
+     * @param string|null $modelClass
      */
-    public function __construct($orm, string $table)
+    public function __construct($orm, string $table, ?string $modelClass = null)
     {
         $this->orm = $orm;
         $this->table = $table;
+        $this->modelClass = $modelClass;
     }
 
     /**
@@ -519,7 +522,57 @@ class QueryBuilder
         if (is_string($relations)) {
             $relations = [$relations];
         }
-        $this->with = $relations;
+
+        if (!$this->modelClass || !class_exists($this->modelClass)) {
+            throw new \Exception("Cannot eager load relations without a valid model class.");
+        }
+
+        $resolvedRelations = [];
+        foreach ($relations as $relationName) {
+            if (!method_exists($this->modelClass, $relationName)) {
+                throw new \Exception(sprintf("Relation method '%s' not found in model '%s'.", $relationName, $this->modelClass));
+            }
+
+            // Crear una instancia temporal del modelo para llamar al método de relación
+            // Para evitar problemas con el ORM en la instancia temporal, pasamos null
+            $tempModel = new $this->modelClass($this->table, null);
+
+            $relationInstance = $tempModel->$relationName();
+
+            if (!$relationInstance instanceof \VersaORM\Relations\Relation) {
+                throw new \Exception(sprintf("Method '%s' in model '%s' does not return a valid Relation instance.", $relationName, $this->modelClass));
+            }
+
+            $relationType = (new \ReflectionClass($relationInstance))->getShortName();
+            $relationData = [
+                'name' => $relationName,
+                'type' => $relationType,
+                'related_table' => $relationInstance->query->getTable(),
+            ];
+
+            // Extraer claves específicas según el tipo de relación
+            switch ($relationType) {
+                case 'HasOne':
+                case 'HasMany':
+                    $relationData['foreign_key'] = $relationInstance->foreignKey;
+                    $relationData['local_key'] = $relationInstance->localKey;
+                    break;
+                case 'BelongsTo':
+                    $relationData['foreign_key'] = $relationInstance->foreignKey; // Clave en el modelo actual
+                    $relationData['owner_key'] = $relationInstance->ownerKey;     // Clave primaria en el modelo relacionado
+                    break;
+                case 'BelongsToMany':
+                    $relationData['pivot_table'] = $relationInstance->pivotTable;
+                    $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
+                    $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
+                    $relationData['parent_key'] = $relationInstance->parentKey;
+                    $relationData['related_key'] = $relationInstance->relatedKey;
+                    break;
+            }
+            $resolvedRelations[] = $relationData;
+        }
+
+        $this->with = $resolvedRelations;
         return $this;
     }
 

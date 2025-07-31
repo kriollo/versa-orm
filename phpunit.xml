@@ -7,6 +7,12 @@
         <testsuite name="VersaORM Test Suite">
             <directory>./tests</directory>
         </testsuite>
+        <testsuite name="Security Tests">
+            <file>./tests/SecurityTest.php</file>
+        </testsuite>
+        <!-- <testsuite name="Stress Tests">
+            <file>./tests/StressTest.php</file>
+        </testsuite> -->
     </testsuites>
     <coverage processUncoveredFiles="true">
         <include>

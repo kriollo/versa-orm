@@ -166,9 +166,9 @@ class VersaORM
      * @param string $table
      * @return QueryBuilder
      */
-    public function table(string $table): QueryBuilder
+    public function table(string $table, ?string $modelClass = null): QueryBuilder
     {
-        return new QueryBuilder($this, $table);
+        return new QueryBuilder($this, $table, $modelClass);
     }
 
 

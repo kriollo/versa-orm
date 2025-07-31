@@ -45,3 +45,5 @@ example_with_real_data.php
 test_database.db
 
 .github
+logs/
+src/binary/
