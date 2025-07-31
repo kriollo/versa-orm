@@ -294,7 +294,20 @@ class VersaModel
 
     public function newQuery(): QueryBuilder
     {
-        return (new VersaORM($this->orm ?? self::$ormInstance))->table($this->table, static::class);
+        $ormInstance = $this->orm ?? self::$ormInstance;
+        $config = null;
+
+        if ($ormInstance instanceof VersaORM) {
+            $config = $ormInstance->getConfig();
+        } elseif (is_array($ormInstance)) {
+            $config = $ormInstance;
+        }
+
+        if ($config === null) {
+            throw new \Exception('ORM configuration not found.');
+        }
+
+        return (new VersaORM($config))->table($this->table, static::class);
     }
 
     /**

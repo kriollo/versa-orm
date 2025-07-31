@@ -4,52 +4,85 @@ declare(strict_types=1);
 
 namespace VersaORM\Traits;
 
-use VersaORM\QueryBuilder;
 use VersaORM\Relations\BelongsTo;
 use VersaORM\Relations\HasMany;
 use VersaORM\Relations\HasOne;
+use VersaORM\Relations\Relation;
 use VersaORM\VersaModel;
-use VersaORM\VersaORM;
 
 trait HasRelationships
 {
+    /** @var array<string, mixed> */
     protected array $relations = [];
 
+    /**
+     * @param class-string<VersaModel> $related
+     * @param string|null $foreignKey
+     * @param string|null $localKey
+     * @return HasOne
+     */
     public function hasOne(string $related, string $foreignKey = null, string $localKey = null): HasOne
     {
         $foreignKey = $foreignKey ?: $this->getForeignKey();
         $localKey = $localKey ?: $this->getKeyName();
 
-        /** @var VersaModel $instance */
-        $instance = new $related();
+        // Instanciar con un valor dummy para obtener el nombre de la tabla real
+        $probe = new $related('dummy', $this->orm);
+        $table = $probe->getTable();
+        $instance = new $related($table, $this->orm);
 
         return new HasOne($instance->newQuery(), $this, $foreignKey, $localKey);
     }
 
+    /**
+     * @param class-string<VersaModel> $related
+     * @param string|null $foreignKey
+     * @param string|null $localKey
+     * @return HasMany
+     */
     public function hasMany(string $related, string $foreignKey = null, string $localKey = null): HasMany
     {
         $foreignKey = $foreignKey ?: $this->getForeignKey();
         $localKey = $localKey ?: $this->getKeyName();
 
-        /** @var VersaModel $instance */
-        $instance = new $related();
+        // Instanciar con un valor dummy para obtener el nombre de la tabla real
+        $probe = new $related('dummy', $this->orm);
+        $table = $probe->getTable();
+        $instance = new $related($table, $this->orm);
 
         return new HasMany($instance->newQuery(), $this, $foreignKey, $localKey);
     }
 
+    /**
+     * @param class-string<VersaModel> $related
+     * @param string|null $foreignKey
+     * @param string|null $ownerKey
+     * @param string|null $relation
+     * @return BelongsTo
+     */
     public function belongsTo(string $related, string $foreignKey = null, string $ownerKey = null, string $relation = null): BelongsTo
     {
         $relation = $relation ?: $this->getRelationName();
         $foreignKey = $foreignKey ?: $relation . '_id';
-        $ownerKey = $ownerKey ?: (new $related())->getKeyName();
-
-        /** @var VersaModel $instance */
-        $instance = new $related();
+        
+        // Instanciar con un valor dummy para obtener el nombre de la tabla real
+        $probe = new $related('dummy', $this->orm);
+        $table = $probe->getTable();
+        $instance = new $related($table, $this->orm);
+        $ownerKey = $ownerKey ?: $instance->getKeyName();
 
         return new BelongsTo($instance->newQuery(), $this, $foreignKey, $ownerKey, $relation);
     }
 
-    public function getRelationValue(string $key)
+    /**
+     * @return array<string, mixed>
+     */
+    public function getRelations(): array
+    {
+        return $this->relations;
+    }
+
+    public function getRelationValue(string $key): mixed
     {
         if ($this->relationLoaded($key)) {
             return $this->relations[$key];
@@ -58,6 +91,8 @@ trait HasRelationships
         if (method_exists($this, $key)) {
             return $this->getRelationshipFromMethod($key);
         }
+
+        return null;
     }
 
     public function relationLoaded(string $key): bool
@@ -65,7 +100,7 @@ trait HasRelationships
         return array_key_exists($key, $this->relations);
     }
 
-    protected function getRelationshipFromMethod(string $method)
+    protected function getRelationshipFromMethod(string $method): mixed
     {
         $relation = $this->$method();
 
@@ -76,7 +111,7 @@ trait HasRelationships
         return $this->relations[$method] = $relation->getResults();
     }
 
-    public function setRelation(string $relation, $value): void
+    public function setRelation(string $relation, mixed $value): void
     {
         $this->relations[$relation] = $value;
     }

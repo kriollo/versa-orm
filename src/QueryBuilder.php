@@ -47,6 +47,7 @@ class QueryBuilder
     private array $groupBy = [];
     /** @var array<int, mixed> */
     private array $having = [];
+    /** @var array<int, array<string, mixed>> */
     private array $with = [];
     private ?string $modelClass = null;
 
@@ -514,7 +515,7 @@ class QueryBuilder
     /**
      * Especifica las relaciones a cargar.
      *
-     * @param array|string $relations
+     * @param array<int, string>|string $relations
      * @return self
      */
     public function with($relations): self
@@ -554,14 +555,17 @@ class QueryBuilder
             switch ($relationType) {
                 case 'HasOne':
                 case 'HasMany':
+                    /** @var \VersaORM\Relations\HasOne|\VersaORM\Relations\HasMany $relationInstance */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
                     $relationData['local_key'] = $relationInstance->localKey;
                     break;
                 case 'BelongsTo':
-                    $relationData['foreign_key'] = $relationInstance->foreignKey; // Clave en el modelo actual
-                    $relationData['owner_key'] = $relationInstance->ownerKey;     // Clave primaria en el modelo relacionado
+                    /** @var \VersaORM\Relations\BelongsTo $relationInstance */
+                    $relationData['foreign_key'] = $relationInstance->foreignKey;
+                    $relationData['owner_key'] = $relationInstance->ownerKey;
                     break;
                 case 'BelongsToMany':
+                    /** @var \VersaORM\Relations\BelongsToMany $relationInstance */
                     $relationData['pivot_table'] = $relationInstance->pivotTable;
                     $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
                     $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
@@ -742,7 +746,7 @@ class QueryBuilder
      * Actualiza los registros que coincidan con las cláusulas WHERE.
      *
      * @param array<string, mixed> $data
-     * @return int
+     * @return self
      */
     public function update(array $data): self
     {
@@ -753,7 +757,7 @@ class QueryBuilder
     /**
      * Elimina los registros que coincidan con las cláusulas WHERE.
      *
-     * @return int
+     * @return self
      */
     public function delete(): self
     {
