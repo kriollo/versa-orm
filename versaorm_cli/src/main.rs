@@ -20,13 +20,11 @@ fn setup_logging(debug: bool) {
         return;
     }
 
-    // Usar la misma carpeta de logs que PHP
     let log_dir = PathBuf::from("logs");
     if !log_dir.exists() && fs::create_dir(&log_dir).is_err() {
-        return; // Si no se puede crear, no hacer logging
+        return;
     }
 
-    // Usar el mismo formato de nombre de archivo que PHP (YYYY-MM-DD.log)
     let today = Local::now().format("%Y-%m-%d").to_string();
     let log_path = log_dir.join(format!("{}.log", today));
 
@@ -37,7 +35,6 @@ fn setup_logging(debug: bool) {
         *LOG_FILE.lock().unwrap() = Some(file);
     }
 
-    // Limpiar logs antiguos (mantener solo 7 días)
     cleanup_old_logs(&log_dir);
 }
 
@@ -50,7 +47,6 @@ fn cleanup_old_logs(log_dir: &PathBuf) {
             if path.is_file() && path.extension().is_some_and(|ext| ext == "log") {
                 if let Some(stem) = path.file_stem() {
                     if let Some(stem_str) = stem.to_str() {
-                        // Solo eliminar archivos con formato YYYY-MM-DD
                         if let Ok(date) = chrono::NaiveDate::parse_from_str(stem_str, "%Y-%m-%d") {
                             let datetime = date.and_hms_opt(0, 0, 0).unwrap();
                             if Utc.from_utc_datetime(&datetime) < seven_days_ago {
@@ -97,7 +93,7 @@ use query::QueryBuilder;
 pub struct RelationMetadata {
     pub name: String,
     #[serde(rename = "type")]
-    pub relation_type: String, // HasOne, HasMany, BelongsTo, BelongsToMany
+    pub relation_type: String,
     pub related_table: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub foreign_key: Option<String>,
@@ -117,24 +113,20 @@ pub struct RelationMetadata {
     pub related_key: Option<String>,
 }
 
-// Definimos la estructura para los argumentos de la línea de comandos.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// La carga útil (payload) en formato JSON como una cadena.
     #[arg(value_name = "JSON_INPUT")]
     json_input: String,
 }
 
-// Estructuras para el JSON de entrada (Input)
 #[derive(Serialize, Deserialize, Debug)]
 struct InputPayload {
     config: DatabaseConfig,
     action: String,
-    params: HashMap<String, serde_json::Value>,
+    params: serde_json::Value,
 }
 
-// Estructuras para el JSON de salida (Output)
 #[derive(Serialize, Debug)]
 struct SuccessResponse<T> {
     status: String,
@@ -168,9 +160,65 @@ struct ErrorDetails {
     sql_state: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct QueryParameters {
+    table: String,
+    method: String,
+    #[serde(default)]
+    select: Vec<String>,
+    #[serde(default)]
+    joins: Vec<JoinClause>,
+    #[serde(default, rename = "where")]
+    wheres: Vec<WhereClause>,
+    #[serde(default, rename = "orderBy")]
+    order_by: Vec<OrderByClause>,
+    #[serde(default, rename = "groupBy")]
+    group_by: Vec<String>,
+    #[serde(default)]
+    having: Vec<HavingClause>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+    #[serde(default)]
+    with: Vec<RelationMetadata>,
+    data: Option<HashMap<String, serde_json::Value>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct JoinClause {
+    #[serde(rename = "type")]
+    join_type: String,
+    table: String,
+    first_col: String,
+    operator: String,
+    second_col: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct WhereClause {
+    column: String,
+    operator: String,
+    value: serde_json::Value,
+    #[serde(rename = "type")]
+    conjunction: String,
+    #[serde(default)]
+    bindings: Vec<serde_json::Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct OrderByClause {
+    column: String,
+    direction: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct HavingClause {
+    column: String,
+    operator: String,
+    value: serde_json::Value,
+}
+
 #[tokio::main]
 async fn main() {
-    // Configurar panic hook para capturar panics y convertirlos en errores JSON
     std::panic::set_hook(Box::new(|panic_info| {
         let error_msg = if let Some(s) = panic_info.payload().downcast_ref::<String>() {
             s.clone()
@@ -202,7 +250,6 @@ async fn main() {
             r#"{"status":"error","error":{"code":"PANIC_ERROR","message":"Failed to serialize error response"}}"#.to_string()));
     }));
 
-    // Ejecutar la lógica principal directamente
     run_main().await;
 }
 
@@ -210,10 +257,8 @@ async fn run_main() {
     let cli = Cli::parse();
     let start_time = Instant::now();
 
-    // Leer entrada: ya sea directa o desde archivo temporal
     let json_input = if cli.json_input.starts_with('@') {
-        // Leer desde archivo temporal
-        let file_path = &cli.json_input[1..]; // Remover el prefijo '@'
+        let file_path = &cli.json_input[1..];
         match std::fs::read_to_string(file_path) {
             Ok(content) => content,
             Err(e) => {
@@ -233,22 +278,17 @@ async fn run_main() {
             }
         }
     } else {
-        // Usar entrada directa
         cli.json_input
     };
 
-    // Intentamos deserializar el JSON de entrada.
     let input_payload: Result<InputPayload, _> = serde_json::from_str(&json_input);
 
     match input_payload {
         Ok(payload) => {
-            // Setup logging
             setup_logging(payload.config.debug);
 
-            // Crear el manager de conexión
             let mut connection_manager = ConnectionManager::new(payload.config);
 
-            // Intentar conectar a la base de datos
             if let Err(e) = connection_manager.connect().await {
                 let is_debug = connection_manager.is_debug_mode();
                 let message = if is_debug {
@@ -280,7 +320,6 @@ async fn run_main() {
                 return;
             }
 
-            // Procesar la acción
             let result = match payload.action.as_str() {
                 "query" => handle_query_action(&connection_manager, &payload.params).await,
                 "schema" => handle_schema_action(&connection_manager, &payload.params).await.map_err(|e| (e, None, None)),
@@ -314,7 +353,6 @@ async fn run_main() {
                     let message = if is_debug {
                         error_msg.clone()
                     } else {
-                        // Mensaje simplificado para producción
                         "Database operation failed".to_string()
                     };
 
@@ -359,175 +397,133 @@ async fn run_main() {
     }
 }
 
-// Handler para acciones de query
 async fn handle_query_action(
     connection: &ConnectionManager,
-    params: &HashMap<String, serde_json::Value>,
+    params: &serde_json::Value,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
-    let table = params.get("table")
-        .and_then(|v| v.as_str())
-        .ok_or(("Table name is required".to_string(), None, None))?;
+    let query_params: QueryParameters = serde_json::from_value(params.clone())
+        .map_err(|e| (format!("Failed to deserialize query parameters: {}", e), None, None))?;
 
-    let method = params.get("method")
-        .and_then(|v| v.as_str())
-        .unwrap_or("get");
+    log_debug!("Deserialized query parameters: {:?}", query_params);
 
-    log_debug!("Received where clauses: {:?}", params.get("where"));
+    let mut query_builder = QueryBuilder::new(&query_params.table);
 
-    // Construir la consulta SQL usando QueryBuilder
-    let mut query_builder = QueryBuilder::new(table);
-
-    // Manejar datos de inserción si existen
-    if method == "insert" || method == "insertGetId" {
-        if let Some(insert_data) = params.get("data").and_then(|v| v.as_object()) {
-            let mut data_map = HashMap::new();
-            for (key, value) in insert_data {
-                data_map.insert(key.clone(), value.clone());
-            }
-            query_builder = query_builder.insert(&data_map);
-        }
+    if !query_params.select.is_empty() {
+        query_builder = query_builder.select(query_params.select.iter().map(|s| s.as_str()).collect());
     }
 
-    // Aplicar selects
-    if let Some(selects) = params.get("select").and_then(|v| v.as_array()) {
-        if !selects.is_empty() {
-            let cols: Vec<&str> = selects.iter()
-                .filter_map(|v| v.as_str())
-                .collect();
-            query_builder = query_builder.select(cols);
-        }
-    }
-
-    // Aplicar wheres
-    if let Some(wheres) = params.get("where").and_then(|v| v.as_array()) {
-        for where_clause in wheres {
-            // Verificar si es una cláusula RAW
-            if where_clause.get("type").and_then(|v| v.as_str()) == Some("raw") {
-                // Procesar cláusula RAW
-                if let (Some(sql), Some(bindings)) = (
-                    where_clause.get("sql").and_then(|v| v.as_str()),
-                    where_clause.get("bindings").and_then(|v| v.as_array())
-                ) {
-                    let raw_value = serde_json::json!({
-                        "sql": sql,
-                        "bindings": bindings
-                    });
-                    query_builder = query_builder.r#where("", "RAW", raw_value);
-                }
-            } else {
-                // Procesar cláusula normal
-                if let (Some(column), Some(operator), Some(value)) = (
-                    where_clause.get("column").and_then(|v| v.as_str()),
-                    where_clause.get("operator").and_then(|v| v.as_str()),
-                    where_clause.get("value")
-                ) {
-                    let clause_type = where_clause.get("type").and_then(|v| v.as_str()).unwrap_or("and");
-                    match clause_type {
-                        "or" => query_builder = query_builder.or_where(column, operator, value.clone()),
-                        _ => query_builder = query_builder.r#where(column, operator, value.clone()),
+    for where_clause in query_params.wheres {
+        if where_clause.operator.to_uppercase() == "RAW" {
+             if let Some(value_obj) = where_clause.value.as_object() {
+                if let Some(sql) = value_obj.get("sql").and_then(|s| s.as_str()) {
+                    if let Some(bindings) = value_obj.get("bindings").and_then(|b| b.as_array()) {
+                        let raw_value = serde_json::json!({
+                            "sql": sql,
+                            "bindings": bindings
+                        });
+                        query_builder = query_builder.r#where("", "RAW", raw_value);
                     }
                 }
             }
-        }
-    }
-
-    // Apply joins
-    if let Some(joins) = params.get("joins").and_then(|v| v.as_array()) {
-        for join_clause in joins {
-            if let (Some(table), Some(on), Some(join_type)) = (
-                join_clause.get("table").and_then(|v| v.as_str()),
-                join_clause.get("on").and_then(|v| v.as_str()),
-                join_clause.get("type").and_then(|v| v.as_str())
-            ) {
-                let parts: Vec<&str> = on.split_whitespace().collect();
-                if parts.len() == 3 {
-                    let first_col = parts[0];
-                    let operator = parts[1];
-                    let second_col = parts[2];
-                    match join_type {
-                        "inner" => query_builder = query_builder.join(table, first_col, operator, second_col),
-                        "left" => query_builder = query_builder.left_join(table, first_col, operator, second_col),
-                        _ => (),
-                    }
-                }
+        } else {
+            match where_clause.conjunction.to_lowercase().as_str() {
+                "or" => query_builder = query_builder.or_where(&where_clause.column, &where_clause.operator, where_clause.value),
+                _ => query_builder = query_builder.r#where(&where_clause.column, &where_clause.operator, where_clause.value),
             }
         }
     }
 
-    // Aplicar order by
-    if let Some(order_by) = params.get("orderBy").and_then(|v| v.as_array()) {
-        if let Some(order) = order_by.first() {
-            if let (Some(column), Some(direction)) = (
-                order.get("column").and_then(|v| v.as_str()),
-                order.get("direction").and_then(|v| v.as_str())
-            ) {
-                query_builder = query_builder.order_by(column, direction);
-            }
+    for join in query_params.joins {
+        match join.join_type.to_lowercase().as_str() {
+            "inner" => query_builder = query_builder.join(&join.table, &join.first_col, &join.operator, &join.second_col),
+            "left" => query_builder = query_builder.left_join(&join.table, &join.first_col, &join.operator, &join.second_col),
+            _ => (),
         }
     }
 
-    // Aplicar limit
-    if let Some(limit) = params.get("limit").and_then(|v| v.as_i64()) {
+    if let Some(order) = query_params.order_by.first() {
+        query_builder = query_builder.order_by(&order.column, &order.direction);
+    }
+
+    if let Some(limit) = query_params.limit {
         query_builder = query_builder.limit(limit);
     }
-
-    // Aplicar offset
-    if let Some(offset) = params.get("offset").and_then(|v| v.as_i64()) {
+    if let Some(offset) = query_params.offset {
         query_builder = query_builder.offset(offset);
     }
 
-    // Aplicar group by
-    if let Some(group_by) = params.get("groupBy").and_then(|v| v.as_array()) {
-        if !group_by.is_empty() {
-            let cols: Vec<&str> = group_by.iter()
-                .filter_map(|v| v.as_str())
-                .collect();
-            query_builder = query_builder.group_by(cols);
-        }
+    if !query_params.group_by.is_empty() {
+        query_builder = query_builder.group_by(query_params.group_by.iter().map(|s| s.as_str()).collect());
     }
 
-    // Aplicar having
-    if let Some(havings) = params.get("having").and_then(|v| v.as_array()) {
-        for having_clause in havings {
-            if let (Some(column), Some(operator), Some(value)) = (
-                having_clause.get("column").and_then(|v| v.as_str()),
-                having_clause.get("operator").and_then(|v| v.as_str()),
-                having_clause.get("value")
-            ) {
-                query_builder = query_builder.having(column, operator, value.clone());
-            }
+    for having in query_params.having {
+        query_builder = query_builder.having(&having.column, &having.operator, having.value);
+    }
+    
+    let mut insert_data_ref = None;
+    if query_params.method == "insert" || query_params.method == "insertGetId" {
+        if let Some(data) = &query_params.data {
+            query_builder = query_builder.insert(data);
+            insert_data_ref = Some(data.clone());
         }
     }
-
-    // Guardar referencia a la tabla antes de mover query_builder
+    
     let table_name = query_builder.table.clone();
-    let insert_data_ref = query_builder.insert_data.clone();
 
-    // Construir y ejecutar la consulta
     let (sql, sql_params) = query_builder.build_sql();
     log_debug!("Executing SQL: {}", sql);
-    log_debug!("Parameters ({} total):", sql_params.len());
-    for (i, param) in sql_params.iter().enumerate() {
-        log_debug!("  [{}]: {:?}", i, param);
-    }
+    log_debug!("Parameters: {:?}", sql_params);
 
-    match method {
-        "get" => {
-            let rows = connection.execute_raw(&sql, sql_params.clone()).await
-                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.to_string()), Some(sql_params.clone())))?;
-            Ok(serde_json::to_value(rows).unwrap())
-        }
-        "first" => {
-            let rows = connection.execute_raw(&sql, sql_params.clone()).await
-                .map_err(|e| (format!("Query execution failed: {}", e), Some(sql.to_string()), Some(sql_params.clone())))?;
-            let first_row = rows.into_iter().next();
-            Ok(serde_json::to_value(first_row).unwrap())
+    match query_params.method.as_str() {
+        "get" | "first" => {
+            let main_results = connection.execute_raw(&sql, sql_params.clone()).await.map_err(|e| (format!("Query execution failed: {}", e), Some(sql.to_string()), Some(sql_params.clone())))?;
+
+            if main_results.is_empty() {
+                return Ok(serde_json::to_value(main_results).unwrap());
+            }
+
+            let mut final_results = main_results.clone();
+
+            // Eager loading
+            for relation in &query_builder.with {
+                let foreign_key = relation.foreign_key.as_ref().unwrap();
+                let local_key = relation.local_key.as_ref().unwrap();
+
+                let parent_ids: Vec<serde_json::Value> = final_results.iter().filter_map(|row| row.get(local_key).cloned()).collect();
+
+                if parent_ids.is_empty() {
+                    continue;
+                }
+
+                let relation_sql = format!("SELECT * FROM {} WHERE {} IN (?)", relation.related_table, foreign_key);
+                let relation_rows = connection.execute_raw(&relation_sql, parent_ids).await.map_err(|e| (format!("Eager loading failed for {}: {}", relation.name, e), Some(relation_sql), None))?;
+
+                let mut relation_map: HashMap<String, Vec<HashMap<String, serde_json::Value>>> = HashMap::new();
+                for row in relation_rows {
+                    if let Some(key) = row.get(foreign_key).and_then(|v| v.as_str()) {
+                        relation_map.entry(key.to_string()).or_default().push(row);
+                    }
+                }
+
+                for result in &mut final_results {
+                    if let Some(local_id) = result.get(local_key).and_then(|v| v.as_str()) {
+                        if let Some(related_data) = relation_map.get(local_id) {
+                            let relations_map = result.entry("_relations".to_string()).or_insert(serde_json::json!({})).as_object_mut().unwrap();
+                            relations_map.insert(relation.name.clone(), serde_json::to_value(related_data).unwrap());
+                        }
+                    }
+                }
+            }
+
+            if query_params.method == "first" {
+                Ok(serde_json::to_value(final_results.into_iter().next()).unwrap())
+            } else {
+                Ok(serde_json::to_value(final_results).unwrap())
+            }
         }
         "count" => {
-            // Convertir SELECT a COUNT usando la misma lógica WHERE
             let count_sql = sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
             let count_sql = if count_sql.contains("ORDER BY") {
-                // Remover ORDER BY para COUNT ya que no es necesario
                 count_sql.split(" ORDER BY").next().unwrap_or(&count_sql).to_string()
             } else {
                 count_sql
@@ -541,19 +537,16 @@ async fn handle_query_action(
                 .unwrap_or(0);
             Ok(serde_json::Value::Number(serde_json::Number::from(count)))
         }
-"insert" => {
-            // Construir el SQL de inserción
+        "insert" => {
             if let Some(insert_data) = insert_data_ref {
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
                 let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
                 let insert_sql = format!("INSERT INTO {} ({}) VALUES ({})", table_name, columns.join(", "), values.join(", "));
 
-                // Preparar parámetros de inserción
                 let insert_params: Vec<serde_json::Value> = columns.iter()
                     .map(|col| insert_data.get(col).unwrap().clone())
                     .collect();
 
-                // Ejecutar la consulta de inserción
                 connection.execute_raw(&insert_sql, insert_params.clone()).await
                     .map_err(|e| (format!("Insert query failed: {}", e), Some(insert_sql.clone()), Some(insert_params.clone())))?;
 
@@ -563,22 +556,18 @@ async fn handle_query_action(
             }
         }
         "insertGetId" => {
-            // Construir el SQL de inserción y obtener el ID generado
             if let Some(insert_data) = insert_data_ref {
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
                 let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
                 let insert_sql = format!("INSERT INTO {} ({}) VALUES ({})", table_name, columns.join(", "), values.join(", "));
 
-                // Preparar parámetros de inserción
                 let insert_params: Vec<serde_json::Value> = columns.iter()
                     .map(|col| insert_data.get(col).unwrap().clone())
                     .collect();
 
-                // Ejecutar la consulta de inserción
                 connection.execute_raw(&insert_sql, insert_params.clone()).await
                     .map_err(|e| (format!("Insert query failed: {}", e), Some(insert_sql.clone()), Some(insert_params.clone())))?;
 
-                // Obtener el último ID insertado usando MAX(id) como alternativa más confiable
                 let last_id_sql = format!("SELECT MAX(id) as id FROM {}", table_name);
                 let last_id_rows = connection.execute_raw(&last_id_sql, vec![]).await
                     .map_err(|e| (format!("Failed to get last insert ID: {}", e), Some(last_id_sql.clone()), None))?;
@@ -600,7 +589,6 @@ async fn handle_query_action(
             let exists = rows.first()
                 .and_then(|row| row.get("exists_result"))
                 .map(|v| {
-                    // MySQL returns 1 or 0 for EXISTS, convert to boolean
                     if let Some(num) = v.as_i64() {
                         num != 0
                     } else {
@@ -611,27 +599,23 @@ async fn handle_query_action(
             Ok(serde_json::Value::Bool(exists))
         }
         "update" => {
-            // Construir el SQL de UPDATE
-            if let Some(update_data) = params.get("data").and_then(|v| v.as_object()) {
+            if let Some(update_data) = query_params.data {
                 let mut set_clauses = Vec::new();
                 let mut update_params = Vec::new();
 
-                // Construir las cláusulas SET
                 for (key, value) in update_data {
                     set_clauses.push(format!("{} = ?", key));
                     update_params.push(value.clone());
                 }
 
-                // Extraer la parte WHERE de la consulta SELECT original
                 let update_sql = if sql.contains("WHERE") {
                     let where_part = sql.split(" WHERE ").nth(1).unwrap_or("");
                     let where_clause = where_part.split(" ORDER BY").next().unwrap_or(where_part);
-                    format!("UPDATE {} SET {} WHERE {}", table, set_clauses.join(", "), where_clause)
+                    format!("UPDATE {} SET {} WHERE {}", table_name, set_clauses.join(", "), where_clause)
                 } else {
-                    format!("UPDATE {} SET {}", table, set_clauses.join(", "))
+                    format!("UPDATE {} SET {}", table_name, set_clauses.join(", "))
                 };
 
-                // Combinar parámetros: primero los de SET, luego los de WHERE
                 update_params.extend(sql_params.clone());
 
                 let rows_affected = connection.execute_write(&update_sql, update_params.clone()).await
@@ -643,15 +627,12 @@ async fn handle_query_action(
             }
         }
         "delete" => {
-            // Convertir SELECT a DELETE usando la misma lógica WHERE
             let delete_sql = if sql.contains("WHERE") {
-                // Extraer la parte WHERE de la consulta SELECT
                 let where_part = sql.split(" WHERE ").nth(1).unwrap_or("");
                 let where_clause = where_part.split(" ORDER BY").next().unwrap_or(where_part);
-                format!("DELETE FROM {} WHERE {}", table, where_clause)
+                format!("DELETE FROM {} WHERE {}", table_name, where_clause)
             } else {
-                // Si no hay WHERE, eliminar toda la tabla (peligroso, pero es lo que se pide)
-                format!("DELETE FROM {}", table)
+                format!("DELETE FROM {}", table_name)
             };
 
             let rows_affected = connection.execute_write(&delete_sql, sql_params.clone()).await
@@ -659,14 +640,13 @@ async fn handle_query_action(
 
             Ok(serde_json::Value::Number(serde_json::Number::from(rows_affected)))
         }
-        _ => Err((format!("Unsupported method: {}", method), Some(sql.to_string()), Some(sql_params)))
+        _ => Err((format!("Unsupported method: {}", query_params.method), Some(sql.to_string()), Some(sql_params)))
     }
 }
 
-// Handler para acciones de schema
 async fn handle_schema_action(
     connection: &ConnectionManager,
-    params: &HashMap<String, serde_json::Value>,
+    params: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let subject = params.get("subject")
         .and_then(|v| v.as_str())
@@ -716,23 +696,9 @@ async fn handle_schema_action(
     }
 }
 
-/* async fn handle_unprepared_raw_action(
-    connection: &ConnectionManager,
-    params: &HashMap<String, serde_json::Value>,
-) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
-    let query = params.get("query")
-        .and_then(|v| v.as_str())
-        .ok_or(("Query is required for raw action".to_string(), None, None))?;
-
-    connection.execute_unprepared(query).await
-        .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
-        .map_err(|e| (format!("Unprepared raw query execution failed: {}", e), Some(query.to_string()), None))
-} */
-
-// Handler para consultas SQL raw
 async fn handle_raw_action(
     connection: &ConnectionManager,
-    params: &HashMap<String, serde_json::Value>,
+    params: &serde_json::Value,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let query = params.get("query")
         .and_then(|v| v.as_str())
@@ -743,7 +709,6 @@ async fn handle_raw_action(
         .cloned()
         .unwrap_or_default();
 
-    // Check if this is a query that needs to be executed without prepared statements
     let query_upper = query.trim().to_uppercase();
     let needs_unprepared = query_upper.starts_with("START TRANSACTION")
         || query_upper.starts_with("COMMIT")
@@ -755,21 +720,18 @@ async fn handle_raw_action(
         || query_upper.starts_with("ALTER TABLE");
 
     if needs_unprepared || bindings.is_empty() {
-        // Execute as unprepared query
         connection.execute_unprepared(query).await
             .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
             .map_err(|e| (format!("Unprepared raw query execution failed: {}", e), Some(query.to_string()), None))
     } else {
-        // Execute as prepared query with bindings
         let rows = connection.execute_raw(query, bindings.clone()).await
             .map_err(|e| (format!("Raw query execution failed: {}", e), Some(query.to_string()), Some(bindings.clone())))?;
         Ok(serde_json::to_value(rows).unwrap())
     }
 }
 
-// Handler para acciones de cache
 fn handle_cache_action(
-    params: &HashMap<String, serde_json::Value>,
+    params: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let action = params.get("action")
         .and_then(|v| v.as_str())
