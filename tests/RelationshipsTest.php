@@ -105,7 +105,7 @@ class RelationshipsTest extends TestCase
         $this->assertNotNull($user);
         $this->assertArrayHasKey('posts', $user->getRelations());
         $this->assertCount(2, $user->getRelations()['posts']);
-        $this->assertEquals('Post 1', $user->getRelations()['posts'][0]->title);
+        $this->assertEquals('Alice Post 1', $user->getRelations()['posts'][0]->title);
     }
 
     public function testEagerLoadingWithBelongsTo()

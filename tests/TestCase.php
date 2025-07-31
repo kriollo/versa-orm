@@ -31,22 +31,24 @@ class TestCase extends BaseTestCase
             self::$orm = new VersaORM($dbConfig);
             VersaModel::setORM(self::$orm);
         }
-
-        if (!self::$schemaCreated) {
-            self::createSchema();
-            self::seedData();
-            self::$schemaCreated = true;
-        }
     }
 
     protected function setUp(): void
     {
-        self::$orm->beginTransaction();
+        // Reinicia el esquema y los datos antes de cada test para asegurar el aislamiento.
+        self::createSchema();
+        self::seedData();
     }
 
     protected function tearDown(): void
     {
-        self::$orm->rollBack();
+        // No es necesario hacer rollback si el esquema se recrea cada vez.
+        self::$orm->exec('DROP TABLE IF EXISTS posts;');
+        self::$orm->exec('DROP TABLE IF EXISTS profiles;');
+        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
+        self::$orm->exec('DROP TABLE IF EXISTS roles;');
+        self::$orm->exec('DROP TABLE IF EXISTS users;');
+        self::$orm->exec('DROP TABLE IF EXISTS products;');
     }
 
     public static function tearDownAfterClass(): void
