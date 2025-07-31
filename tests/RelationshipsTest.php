@@ -101,27 +101,20 @@ class RelationshipsTest extends TestCase
 
     public function testEagerLoadingWithHasMany()
     {
-        // Mocking is complex, so we'll test the outcome.
-        // In a real scenario, you'd also use a query logger to assert query counts.
-        $user = parent::$orm->table('users')->with('posts')->findOne();
-
+        $user = parent::$orm->table('users', UserTestModel::class)->with('posts')->findOne();
         $this->assertNotNull($user);
-
-        // The 'relations' array should be populated without needing a lazy load call.
-        $this->assertArrayHasKey('posts', $user->relations);
-        $this->assertCount(2, $user->relations['posts']);
-        $this->assertEquals('Post 1', $user->relations['posts'][0]->title);
+        $this->assertArrayHasKey('posts', $user->getRelations());
+        $this->assertCount(2, $user->getRelations()['posts']);
+        $this->assertEquals('Post 1', $user->getRelations()['posts'][0]->title);
     }
 
     public function testEagerLoadingWithBelongsTo()
     {
-        $post = parent::$orm->table('posts')->with('user')->findOne();
-
+        $post = parent::$orm->table('posts', PostTestModel::class)->with('user')->findOne();
         $this->assertNotNull($post);
-
-        $this->assertArrayHasKey('user', $post->relations);
-        $this->assertInstanceOf(UserTestModel::class, $post->relations['user']);
-        $this->assertEquals('John Doe', $post->relations['user']->name);
+        $this->assertArrayHasKey('user', $post->getRelations());
+        $this->assertInstanceOf(UserTestModel::class, $post->getRelations()['user']);
+        $this->assertEquals('John Doe', $post->getRelations()['user']->name);
     }
 
     public function testDatabaseTransactionsCommit()

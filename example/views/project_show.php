@@ -1,5 +1,17 @@
 <?php
-// Vista: Detalle de proyecto y gestión de tareas asociadas (avanzada)
+// Contraste para etiquetas en la tabla de tareas
+if (!function_exists('isDark')) {
+    function isDark($hex)
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) === 3) $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        return ($r * 0.299 + $g * 0.587 + $b * 0.114) < 150;
+    }
+}
+
 /** @var array<string, mixed> $project */
 /** @var array<int, array<string, mixed>> $tasks */
 /** @var array<string, mixed>|null $user */
@@ -38,6 +50,43 @@ ob_start();
     <h3 class="text-xl font-bold text-blue-700">Tareas de este proyecto</h3>
     <a href="?action=new&project_id=<?= $project['id'] ?>" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">Nueva Tarea</a>
 </div>
+<form method="get" class="flex flex-wrap gap-2 mb-4 items-end bg-blue-50 p-4 rounded shadow">
+    <input type="hidden" name="action" value="show_project">
+    <input type="hidden" name="id" value="<?= $project['id'] ?>">
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Etiqueta</label>
+        <select name="label_id" class="border rounded px-2 py-1">
+            <option value="">Todas</option>
+            <?php foreach (\Example\Models\Label::all() as $label): ?>
+                <option value="<?= is_object($label) ? $label->id : $label['id'] ?>" <?= isset($_GET['label_id']) && $_GET['label_id'] == (is_object($label) ? $label->id : $label['id']) ? 'selected' : '' ?>><?= htmlspecialchars(is_object($label) ? $label->name : $label['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Estado</label>
+        <select name="status" class="border rounded px-2 py-1">
+            <option value="">Todos</option>
+            <option value="1" <?= isset($_GET['status']) && $_GET['status'] === '1' ? 'selected' : '' ?>>Completadas</option>
+            <option value="0" <?= isset($_GET['status']) && $_GET['status'] === '0' ? 'selected' : '' ?>>Pendientes</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Buscar</label>
+        <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="border rounded px-2 py-1" placeholder="Título o descripción...">
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Por página</label>
+        <select name="perPage" class="border rounded px-2 py-1">
+            <option value="1" <?= (isset($_GET['perPage']) && $_GET['perPage'] == 1) ? 'selected' : '' ?>>1</option>
+            <?php foreach ([5, 10, 20, 50, 100] as $n): ?>
+                <option value="<?= $n ?>" <?= (isset($_GET['perPage']) && $_GET['perPage'] == $n) ? 'selected' : '' ?>><?= $n ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Filtrar</button>
+    </div>
+</form>
 <div class="bg-white shadow rounded-lg overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-blue-100">
@@ -50,7 +99,7 @@ ob_start();
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
-            <?php foreach ($tasks as $task): ?>
+            <?php foreach ($tasksData as $task): ?>
                 <tr>
                     <td class="px-4 py-2 font-mono text-sm text-gray-700">#<?= $task['id'] ?></td>
                     <td class="px-4 py-2 font-semibold text-blue-900"><?= htmlspecialchars($task['title']) ?></td>
@@ -65,12 +114,17 @@ ob_start();
                         $taskObj = Example\Models\Task::find($task['id']);
                         $labels = $taskObj ? $taskObj->labelsArray() : [];
                         foreach ($labels as $label): ?>
-                            <span style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:2px;display:inline-block;">
+                            <?php
+                            $labelColor = $label['color'] ?? '#eee';
+                            $textColor = isDark($labelColor) ? '#fff' : '#222';
+                            ?>
+                            <span style="background:<?= htmlspecialchars($labelColor) ?>;color:<?= htmlspecialchars($textColor) ?>;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:2px;display:inline-block;">
                                 <?= htmlspecialchars($label['name']) ?>
                             </span>
                         <?php endforeach; ?>
-                        <a href="?view=task_labels_edit&task_id=<?= $task['id'] ?>"
-                            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded ml-2">Etiquetas</a>
+                        <a href="?view=task_labels_edit&task_id=<?= $task['id'] ?>" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded ml-2">Etiquetas</a>
+                        <a href="?action=edit&id=<?= $task['id'] ?>" class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded ml-2">Editar</a>
+                        <a href="?action=delete&id=<?= $task['id'] ?>" onclick="return confirm('¿Seguro que deseas eliminar esta tarea?');" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded ml-2">Eliminar</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

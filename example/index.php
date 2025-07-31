@@ -2,6 +2,7 @@
 // index.php - Controlador principal
 require_once __DIR__ . '/autoload.php';
 
+use Example\Models\Label;
 use Example\Models\Project;
 use Example\Models\Task;
 use Example\Models\User;
@@ -19,6 +20,26 @@ $config = [
         'debug' => true  // false para producción
     ]
 ];
+
+// --- PRIORIDAD: Si hay parámetro view, mostrar la vista correspondiente y salir ---
+if (isset($_GET['view'])) {
+    if ($_GET['view'] === 'labels_list') {
+        include __DIR__ . '/views/labels_list.php';
+        exit;
+    }
+    if ($_GET['view'] === 'label_new') {
+        include __DIR__ . '/views/label_new.php';
+        exit;
+    }
+    if ($_GET['view'] === 'task_labels_edit' && isset($_GET['task_id'])) {
+        include __DIR__ . '/views/task_labels_edit.php';
+        exit;
+    }
+    if ($_GET['view'] === 'label_edit' && isset($_GET['id'])) {
+        include __DIR__ . '/views/label_edit.php';
+        exit;
+    }
+}
 
 // Manejo de acciones básicas
 $action = $_GET['action'] ?? 'list';
@@ -181,11 +202,62 @@ if ($action === 'show_project' && isset($_GET['id'])) {
         exit;
     }
     $project = $projectObj->toArray();
-    $tasks = $projectObj->tasksArray();
     $user = $projectObj->userArray();
     $completedCount = count($projectObj->completedTasksArray());
     $totalCount = $projectObj->countTasks();
     $cacheStatus = $projectObj->cacheStatus();
+
+    // --- Filtros y paginación para tareas de este proyecto ---
+    $search = $_GET['search'] ?? '';
+    $status = $_GET['status'] ?? '';
+    $labelId = isset($_GET['label_id']) ? (int)$_GET['label_id'] : null;
+    $order = $_GET['order'] ?? 'id';
+    $dir = $_GET['dir'] ?? 'desc';
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
+
+    // Obtener todas las etiquetas para el filtro
+    $allLabels = Label::all();
+
+    // Construir consulta usando solo métodos del ORM
+    $filters = [['project_id', '=', $projectObj->id]];
+    if ($status !== '') {
+        $filters[] = ['completed', '=', $status === '1' ? 1 : 0];
+    }
+    if ($labelId) {
+        $taskIds = array_column(Task::byLabel($labelId), 'id');
+        if ($taskIds) {
+            $filters[] = ['id', 'IN', $taskIds];
+        } else {
+            $filters[] = ['id', 'IN', [0]];
+        }
+    }
+    $tasksData = [];
+    $total = 0;
+    $totalPages = 1;
+
+    // 1. Obtener tareas filtradas por ORM (proyecto, estado, etiqueta)
+    $tasksQuery = new Task();
+    $orm = $tasksQuery->getORM();
+    $query = $orm->table($tasksQuery->getTable());
+    foreach ($filters as $f) {
+        [$col, $op, $val] = $f;
+        $query = $op === 'IN' ? $query->whereIn($col, $val) : $query->where($col, $op, $val);
+    }
+    $query = $query->orderBy($order, $dir);
+    $allFiltered = $query->getAll();
+
+    // 2. Si hay búsqueda, filtrar sobre ese subconjunto
+    if ($search !== '') {
+        $searchLower = mb_strtolower($search);
+        $allFiltered = array_filter($allFiltered, function ($t) use ($searchLower) {
+            return mb_strpos(mb_strtolower($t['title']), $searchLower) !== false || mb_strpos(mb_strtolower($t['description']), $searchLower) !== false;
+        });
+    }
+    $total = count($allFiltered);
+    $totalPages = max(1, ceil($total / $perPage));
+    $tasksData = array_slice(array_values($allFiltered), ($page - 1) * $perPage, $perPage);
+
     include __DIR__ . '/views/project_show.php';
     exit;
 }
@@ -305,17 +377,74 @@ if ($action === 'update_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// === Gestión de etiquetas ===
-if (isset($_GET['view']) && $_GET['view'] === 'labels_list') {
-    include __DIR__ . '/views/labels_list.php';
-    exit;
-}
-if (isset($_GET['view']) && $_GET['view'] === 'label_new') {
-    include __DIR__ . '/views/label_new.php';
-    exit;
-}
-if (isset($_GET['view']) && $_GET['view'] === 'task_labels_edit' && isset($_GET['task_id'])) {
-    include __DIR__ . '/views/task_labels_edit.php';
+// --- Filtros y búsqueda avanzada para listado general de tareas ---
+if ($action === 'list' || $action === 'tasks' || $action === '') {
+    $search = $_GET['search'] ?? '';
+    $status = $_GET['status'] ?? '';
+    $labelId = isset($_GET['label_id']) ? (int)$_GET['label_id'] : null;
+    $projectId = isset($_GET['project_id']) ? (int)$_GET['project_id'] : null;
+    $order = $_GET['order'] ?? 'id';
+    $dir = $_GET['dir'] ?? 'desc';
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
+
+    // Para selects
+    $allProjects = Project::allArray();
+    $allLabels = Label::all();
+
+    // Construir consulta usando solo métodos del ORM
+    $tasksQuery = new Task();
+    $filters = [];
+    if ($projectId) {
+        $filters[] = ['project_id', '=', $projectId];
+    }
+    if ($status !== '') {
+        $filters[] = ['completed', '=', $status === '1' ? 1 : 0];
+    }
+    // Filtro por etiqueta (muchos a muchos)
+    if ($labelId) {
+        $taskIds = array_column(Task::byLabel($labelId), 'id');
+        if ($taskIds) {
+            $filters[] = ['id', 'IN', $taskIds];
+        } else {
+            $filters[] = ['id', 'IN', [0]]; // No hay tareas con esa etiqueta
+        }
+    }
+    // Filtro por búsqueda
+    $tasksData = [];
+    $total = 0;
+    $totalPages = 1;
+    if ($search !== '') {
+        $results = Task::searchArray($search, ['title', 'description']);
+        // Aplicar filtros adicionales
+        foreach ($filters as $f) {
+            $results = array_filter($results, function ($t) use ($f) {
+                [$col, $op, $val] = $f;
+                if ($op === 'IN') return in_array($t[$col], (array)$val);
+                return $t[$col] == $val;
+            });
+        }
+        $total = count($results);
+        $totalPages = max(1, ceil($total / $perPage));
+        $tasksData = array_slice(array_values($results), ($page - 1) * $perPage, $perPage);
+    } else {
+        // Sin búsqueda, usar paginación ORM
+        $query = $tasksQuery->db->table($tasksQuery->getTable());
+        foreach ($filters as $f) {
+            [$col, $op, $val] = $f;
+            $query = $op === 'IN' ? $query->whereIn($col, $val) : $query->where($col, $op, $val);
+        }
+        $query = $query->orderBy($order, $dir)->limit($perPage)->offset(($page - 1) * $perPage);
+        $tasksData = $query->getAll();
+        $total = $tasksQuery->db->table($tasksQuery->getTable());
+        foreach ($filters as $f) {
+            [$col, $op, $val] = $f;
+            $total = $op === 'IN' ? $total->whereIn($col, $val) : $total->where($col, $op, $val);
+        }
+        $total = $total->count();
+        $totalPages = max(1, ceil($total / $perPage));
+    }
+    include __DIR__ . '/views/list.php';
     exit;
 }
 

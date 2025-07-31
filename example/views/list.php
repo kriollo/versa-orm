@@ -9,6 +9,52 @@ ob_start();
     <a href="?action=new" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">Nueva Tarea
     </a>
 </div>
+<!-- Filtros y paginación para listado de tareas -->
+<form method="get" class="flex flex-wrap gap-2 mb-4 items-end bg-blue-50 p-4 rounded shadow">
+    <input type="hidden" name="action" value="list">
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Proyecto</label>
+        <select name="project_id" class="border rounded px-2 py-1">
+            <option value="">Todos</option>
+            <?php foreach ($allProjects as $proj): ?>
+                <option value="<?= $proj['id'] ?>" <?= isset($_GET['project_id']) && $_GET['project_id'] == $proj['id'] ? 'selected' : '' ?>><?= htmlspecialchars($proj['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Etiqueta</label>
+        <select name="label_id" class="border rounded px-2 py-1">
+            <option value="">Todas</option>
+            <?php foreach ($allLabels as $label): ?>
+                <option value="<?= is_object($label) ? $label->id : $label['id'] ?>" <?= isset($_GET['label_id']) && $_GET['label_id'] == (is_object($label) ? $label->id : $label['id']) ? 'selected' : '' ?>><?= htmlspecialchars(is_object($label) ? $label->name : $label['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Estado</label>
+        <select name="status" class="border rounded px-2 py-1">
+            <option value="">Todos</option>
+            <option value="1" <?= isset($_GET['status']) && $_GET['status'] === '1' ? 'selected' : '' ?>>Completadas</option>
+            <option value="0" <?= isset($_GET['status']) && $_GET['status'] === '0' ? 'selected' : '' ?>>Pendientes</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Buscar</label>
+        <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="border rounded px-2 py-1" placeholder="Título o descripción...">
+    </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Por página</label>
+        <select name="perPage" class="border rounded px-2 py-1">
+            <option value="1" <?= (isset($_GET['perPage']) && $_GET['perPage'] == 1) ? 'selected' : '' ?>>1</option>
+            <?php foreach ([5, 10, 20, 50, 100] as $n): ?>
+                <option value="<?= $n ?>" <?= (isset($_GET['perPage']) && $_GET['perPage'] == $n) ? 'selected' : '' ?>><?= $n ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Filtrar</button>
+    </div>
+</form>
 <div class="bg-white shadow rounded-lg overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-blue-100">
@@ -55,6 +101,34 @@ ob_start();
         </tbody>
     </table>
 </div>
+<?php if ($totalPages > 1): ?>
+    <div class="flex justify-center mt-4">
+        <nav class="inline-flex rounded-md shadow-sm items-center" aria-label="Paginación">
+            <?php
+            $prevPage = max(1, $page - 1);
+            $nextPage = min($totalPages, $page + 1);
+            $baseUrl = '?action=list'
+                . (isset($_GET['perPage']) ? '&perPage=' . (int)$_GET['perPage'] : '')
+                . (isset($_GET['project_id']) ? '&project_id=' . (int)$_GET['project_id'] : '')
+                . (isset($_GET['label_id']) ? '&label_id=' . (int)$_GET['label_id'] : '')
+                . (isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : '')
+                . (isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '');
+            ?>
+            <a href="<?= $baseUrl . '&page=' . $prevPage ?>" class="px-3 py-1 border rounded-l <?= $page == 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&laquo; Anterior</a>
+            <form method="get" class="inline-block mx-2">
+                <input type="hidden" name="action" value="list">
+                <?php if (isset($_GET['perPage'])): ?><input type="hidden" name="perPage" value="<?= (int)$_GET['perPage'] ?>"><?php endif; ?>
+                <?php if (isset($_GET['project_id'])): ?><input type="hidden" name="project_id" value="<?= (int)$_GET['project_id'] ?>"><?php endif; ?>
+                <?php if (isset($_GET['label_id'])): ?><input type="hidden" name="label_id" value="<?= (int)$_GET['label_id'] ?>"><?php endif; ?>
+                <?php if (isset($_GET['status'])): ?><input type="hidden" name="status" value="<?= htmlspecialchars($_GET['status']) ?>"><?php endif; ?>
+                <?php if (isset($_GET['search'])): ?><input type="hidden" name="search" value="<?= htmlspecialchars($_GET['search']) ?>"><?php endif; ?>
+                <input type="number" min="1" max="<?= $totalPages ?>" name="page" value="<?= $page ?>" class="w-16 border rounded px-2 py-1 text-center" style="width:60px;">
+                <button type="submit" class="ml-1 px-2 py-1 bg-blue-500 text-white rounded">Ir</button>
+            </form>
+            <a href="<?= $baseUrl . '&page=' . $nextPage ?>" class="px-3 py-1 border rounded-r <?= $page == $totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">Siguiente &raquo;</a>
+        </nav>
+    </div>
+<?php endif; ?>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/layout.php';
