@@ -1,10 +1,48 @@
-# Uso Básico (Operaciones CRUD)
+# 📚 Uso Básico (Operaciones CRUD)
 
-Una vez que hayas [configurado VersaORM](.../getting-started/configuration.md), puedes empezar a realizar operaciones básicas de base de datos: Crear, Leer, Actualizar y Eliminar (CRUD).
+¡Bienvenido al mundo sin SQL! Una vez que hayas [configurado VersaORM](../getting-started/configuration.md), puedes realizar todas las operaciones de base de datos usando código PHP natural.
 
-La forma más sencilla de interactuar con tus tablas es a través de `VersaModel`, que implementa el patrón **Active Record**. Esto significa que cada objeto de `VersaModel` corresponde a una fila en tu base de datos.
+## 🤔 ¿Por qué VersaORM es mejor que SQL?
 
-**Requisito previo:** Asegúrate de haber configurado la instancia global del ORM como se explica en la guía de configuración:
+**VersaORM** implementa el patrón **Active Record**, donde cada objeto representa una fila de tu base de datos. Esto significa que trabajas con **objetos PHP familiares** en lugar de escribir SQL complicado.
+
+### 🔄 La Gran Diferencia
+
+**❌ ANTES (SQL tradicional - complicado y peligroso):**
+```sql
+-- Propenso a errores de sintaxis
+INSERT INTO users (name, email, status) VALUES ('Juan Pérez', 'juan@email.com', 'active');
+SELECT * FROM users WHERE id = 1;
+UPDATE users SET name = 'Juan Carlos', status = 'inactive' WHERE id = 1;
+DELETE FROM users WHERE id = 1;
+
+-- Vulnerable a inyección SQL
+$sql = "SELECT * FROM users WHERE name = '" . $_POST['name'] . "'";
+```
+
+**✅ DESPUÉS (VersaORM - fácil y seguro):**
+```php
+// Código PHP natural y seguro
+$user = VersaModel::dispense('users');
+$user->name = 'Juan Pérez';
+$user->email = 'juan@email.com';
+$user->status = 'active';
+$user->store(); // ¡Listo!
+
+$user = VersaModel::load('users', 1);
+$user->name = 'Juan Carlos';
+$user->status = 'inactive';
+$user->store();
+
+$user->trash(); // Eliminado
+
+// Automáticamente protegido contra inyección SQL
+$users = VersaModel::findAll('users', 'name = ?', [$_POST['name']]);
+```
+
+## ⚙️ Configuración Previa
+
+**Asegúrate de haber configurado VersaORM** como se explica en la guía de configuración:
 
 ```php
 // En tu archivo de arranque (p. ej., index.php)
@@ -12,120 +50,232 @@ use VersaORM\VersaORM;
 use VersaORM\VersaModel;
 
 $orm = new VersaORM($config);
-VersaModel::setORM($orm); // ¡Importante para los ejemplos de esta página!
+VersaModel::setORM($orm); // ¡Importante para todos los ejemplos!
 ```
 
 ---
 
-## 1. Crear Registros (Create)
+## 1. 📝 Crear Registros (Create)
 
-Para crear un nuevo registro, primero "dispensas" un nuevo objeto `VersaModel` para la tabla deseada. Luego, asignas sus propiedades y finalmente lo guardas con el método `store()`.
-
-Supongamos que tienes una tabla `users` con las columnas `name`, `email` y `status`.
-
+### ❌ Forma Tradicional (SQL)
 ```php
-// 1. Dispensa un nuevo modelo para la tabla 'users'
-$user = VersaModel::dispense('users');
+// Complicado y propenso a errores
+$stmt = $pdo->prepare(
+    "INSERT INTO users (name, email, status, created_at) VALUES (?, ?, ?, NOW())"
+);
+$stmt->execute(['Juan Pérez', 'juan.perez@example.com', 'active']);
+$userId = $pdo->lastInsertId();
 
-// 2. Asigna valores a sus propiedades
+echo "Usuario creado con ID: " . $userId;
+
+// Problemas:
+// ❌ SQL manual propenso a errores de sintaxis
+// ❌ Tienes que manejar prepared statements manualmente
+// ❌ No hay validación automática
+// ❌ Tienes que obtener el ID manualmente
+```
+
+### ✅ Forma VersaORM (Súper Fácil)
+```php
+// Simple, seguro y automático
+$user = VersaModel::dispense('users');
 $user->name = 'Juan Pérez';
 $user->email = 'juan.perez@example.com';
 $user->status = 'active';
-
-// 3. Guarda el registro en la base de datos
 $user->store();
 
-// Después de guardar, el objeto se actualiza con el ID y otros valores por defecto
 echo "Usuario creado con ID: " . $user->id;
+
+// Ventajas:
+// ✅ Código PHP natural y fácil de leer
+// ✅ Protección automática contra inyección SQL
+// ✅ El ID se asigna automáticamente
+// ✅ created_at se añade automáticamente
+// ✅ Validación integrada (si usas modelos personalizados)
 ```
 
-`store()` ejecutará una consulta `INSERT` y automáticamente poblará el objeto `$user` con el `id` asignado por la base de datos y cualquier otro valor predeterminado (como `created_at`).
+### 🔍 ¿Qué hace `store()` automáticamente?
+- 🛡️ **Seguridad**: Usa prepared statements automáticamente
+- 🔄 **Detección inteligente**: Sabe si es INSERT o UPDATE
+- 🆔 **Auto-ID**: Asigna el ID generado al objeto
+- 📅 **Timestamps**: Añade created_at/updated_at si existen
+- ⚡ **Optimización**: Ejecuta solo si hay cambios
 
 ---
 
-## 2. Leer Registros (Read)
+## 2. 🔍 Leer Registros (Read)
 
-VersaORM ofrece varios métodos para leer datos.
-
-### Leer un solo registro por ID
-
-El método `load()` te permite obtener un registro específico por su clave primaria.
-
+### ❌ Forma Tradicional (SQL)
 ```php
-// Carga el usuario con ID = 1
-$user = VersaModel::load('users', 1);
+// Leer un registro por ID
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([1]);
+$userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($user) {
-    echo "Nombre: " . $user->name;    // "Juan Pérez"
-    echo "Email: " . $user->email;   // "juan.perez@example.com"
+if ($userData) {
+    echo "Nombre: " . $userData['name'];
+    echo "Email: " . $userData['email'];
 } else {
     echo "Usuario no encontrado.";
 }
+
+// Leer múltiples registros
+$stmt = $pdo->prepare("SELECT * FROM users WHERE status = ?");
+$stmt->execute(['active']);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo "Usuarios activos: " . count($users);
+
+// Problemas:
+// ❌ Siempre trabajas con arrays, no objetos
+// ❌ Tienes que escribir SQL para cada consulta
+// ❌ No hay protección automática
+// ❌ Código repetitivo y verbose
 ```
-`load()` devuelve un objeto `VersaModel` si lo encuentra, o `null` si no existe ningún registro con ese ID.
 
-### Leer múltiples registros
-
-Para obtener una colección de registros, puedes usar `findAll()`.
-
+### ✅ Forma VersaORM (Súper Fácil)
 ```php
-// Obtener todos los usuarios
-$allUsers = VersaModel::findAll('users');
+// Leer un registro por ID
+$user = VersaModel::load('users', 1);
 
-foreach ($allUsers as $user) {
-    echo $user->name . "\n";
+if ($user) {
+    echo "Nombre: " . $user->name;    // Acceso como objeto
+    echo "Email: " . $user->email;   // Más natural
+} else {
+    echo "Usuario no encontrado.";
 }
 
-// También puedes añadir condiciones WHERE simples
+// Leer múltiples registros
 $activeUsers = VersaModel::findAll('users', 'status = ?', ['active']);
 
-echo "Hay " . count($activeUsers) . " usuarios activos.";
+echo "Usuarios activos: " . count($activeUsers);
+
+foreach ($activeUsers as $user) {
+    echo $user->name . "\n"; // Cada elemento es un objeto
+}
+
+// Ventajas:
+// ✅ Trabajas con objetos familiares
+// ✅ Sin SQL manual
+// ✅ Protección automática contra inyección SQL
+// ✅ Código limpio y expresivo
 ```
-`findAll()` devuelve un array de objetos `VersaModel`. Para consultas más complejas, deberías usar el [Query Builder](02-query-builder.md).
+
+### 🔥 Métodos de Lectura Disponibles
+```php
+// Cargar un registro por ID
+$user = VersaModel::load('users', 1);
+
+// Encontrar todos los registros
+$users = VersaModel::findAll('users');
+
+// Encontrar con condiciones simples
+$activeUsers = VersaModel::findAll('users', 'status = ?', ['active']);
+
+// Para consultas complejas, usa Query Builder
+$users = $orm->table('users')
+    ->where('age', '>=', 18)
+    ->where('status', '=', 'active')
+    ->orderBy('created_at', 'desc')
+    ->findAll();
+```
 
 ---
 
-## 3. Actualizar Registros (Update)
+## 3. ✏️ Actualizar Registros (Update)
 
-Para actualizar un registro, primero cárgalo, luego modifica sus propiedades y finalmente vuelve a llamar a `store()`.
-
+### ❌ Forma Tradicional (SQL)
 ```php
-// 1. Carga el registro que quieres modificar
+// Actualizar requiere múltiples pasos manuales
+$stmt = $pdo->prepare("UPDATE users SET name = ?, status = ?, updated_at = NOW() WHERE id = ?");
+$stmt->execute(['Juan Carlos Pérez', 'inactive', 1]);
+
+if ($stmt->rowCount() > 0) {
+    echo "Usuario actualizado.";
+} else {
+    echo "Usuario no encontrado o sin cambios.";
+}
+
+// Problemas:
+// ❌ Tienes que escribir el SQL UPDATE manualmente
+// ❌ Manejas updated_at manualmente
+// ❌ No sabes qué campos cambiaron realmente
+// ❌ Vulnerable a errores de sintaxis
+```
+
+### ✅ Forma VersaORM (Súper Fácil)
+```php
+// Actualizar es tan simple como modificar propiedades
 $user = VersaModel::load('users', 1);
 
 if ($user) {
-    // 2. Modifica las propiedades
     $user->name = 'Juan Carlos Pérez';
     $user->status = 'inactive';
-
-    // 3. Guarda los cambios
-    $user->store();
-
+    $user->store(); // ¡Eso es todo!
+    
     echo "Usuario actualizado.";
 }
+
+// Ventajas:
+// ✅ Código natural como asignación de variables
+// ✅ updated_at se actualiza automáticamente
+// ✅ Solo actualiza los campos que realmente cambiaron
+// ✅ Detección inteligente de cambios
 ```
 
-VersaORM es lo suficientemente inteligente como para saber que el objeto ya tiene un `id`, por lo que `store()` ejecutará una consulta `UPDATE` en lugar de un `INSERT`.
+### 🧠 Inteligencia de `store()` para Updates
+- 🔍 **Detección automática**: Sabe que es UPDATE porque ya tiene ID
+- ⚡ **Solo cambios**: Actualiza únicamente los campos modificados
+- 📅 **Timestamps**: Actualiza `updated_at` automáticamente
+- 🛡️ **Seguridad**: Siempre usa prepared statements
 
 ---
 
-## 4. Eliminar Registros (Delete)
+## 4. 🗑️ Eliminar Registros (Delete)
 
-Para eliminar un registro, cárgalo y luego usa el método `trash()`.
-
+### ❌ Forma Tradicional (SQL)
 ```php
-// 1. Carga el registro que quieres eliminar
+// Eliminación manual con verificación
+$stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+$stmt->execute([1]);
+
+if ($stmt->rowCount() > 0) {
+    echo "Usuario eliminado.";
+} else {
+    echo "Usuario no encontrado.";
+}
+
+// Problemas:
+// ❌ SQL manual para cada eliminación
+// ❌ Tienes que verificar si se eliminó algo
+// ❌ No hay verificación de existencia previa
+// ❌ Posibles errores de sintaxis
+```
+
+### ✅ Forma VersaORM (Súper Fácil)
+```php
+// Eliminación intuitiva y segura
 $user = VersaModel::load('users', 1);
 
 if ($user) {
-    // 2. Elimina el registro de la base de datos
-    $user->trash();
-
+    $user->trash(); // ¡Simple y directo!
     echo "Usuario eliminado.";
+} else {
+    echo "Usuario no encontrado.";
 }
+
+// Ventajas:
+// ✅ Método intuitivo y expresivo
+// ✅ Verificación automática de existencia
+// ✅ El objeto se limpia automáticamente
+// ✅ Protección contra eliminaciones accidentales
 ```
 
-Después de llamar a `trash()`, el objeto `$user` quedará vacío, ya que el registro correspondiente ya no existe en la base de datos.
+### 🗑️ ¿Qué hace `trash()` automáticamente?
+- 🛡️ **Verificación**: Confirma que el registro existe
+- 💫 **Limpieza**: Vacía el objeto después de eliminar
+- ⚡ **Eficiencia**: Usa la clave primaria para eliminación rápida
+- 📝 **Logging**: Registra la operación para auditoría
 
 ---
 

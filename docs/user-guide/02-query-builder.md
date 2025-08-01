@@ -1,8 +1,66 @@
-# Guía del Query Builder
+# 🛠️ Guía del Query Builder
 
-El Query Builder (Constructor de Consultas) de VersaORM es una de sus herramientas más potentes. Te permite construir consultas SQL complejas de una manera fluida, programática y segura, sin tener que escribir SQL a mano. Es ideal para reportes, búsquedas complejas y cualquier situación que vaya más allá de un simple CRUD.
+¡Bienvenido al Query Builder de VersaORM! Esta es la herramienta que convierte consultas SQL complejas en código PHP fácil de leer y mantener.
 
-Para empezar a construir una consulta, utiliza el método `table()` de tu instancia de ORM:
+## 🤔 ¿Qué es el Query Builder?
+
+El **Query Builder** es como un "traductor inteligente" que te permite escribir consultas complejas usando métodos PHP encadenados en lugar de SQL complicado.
+
+### 🔄 La Diferencia es Abismal
+
+**❌ ANTES (SQL tradicional - complicado y peligroso):**
+```sql
+-- Consulta compleja manual
+SELECT users.name, users.email, profiles.bio, COUNT(posts.id) as post_count
+FROM users 
+LEFT JOIN profiles ON users.id = profiles.user_id
+LEFT JOIN posts ON users.id = posts.user_id 
+WHERE users.status = 'active' 
+  AND users.age >= 18 
+  AND (users.name LIKE '%john%' OR users.email LIKE '%john%')
+GROUP BY users.id, users.name, users.email, profiles.bio
+HAVING COUNT(posts.id) > 5
+ORDER BY users.created_at DESC, users.name ASC
+LIMIT 10 OFFSET 20;
+
+-- Problemas:
+-- ❌ Propenso a errores de sintaxis
+-- ❌ Difícil de leer y mantener
+-- ❌ Vulnerable a inyección SQL
+-- ❌ No reutilizable
+```
+
+**✅ DESPUÉS (VersaORM Query Builder - fácil y seguro):**
+```php
+// La misma consulta, pero fácil de leer
+$users = $orm->table('users')
+    ->select(['users.name', 'users.email', 'profiles.bio', 'COUNT(posts.id) as post_count'])
+    ->leftJoin('profiles', 'users.id', '=', 'profiles.user_id')
+    ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
+    ->where('users.status', '=', 'active')
+    ->where('users.age', '>=', 18)
+    ->where(function($query) {
+        $query->where('users.name', 'LIKE', '%john%')
+              ->orWhere('users.email', 'LIKE', '%john%');
+    })
+    ->groupBy(['users.id', 'users.name', 'users.email', 'profiles.bio'])
+    ->having('COUNT(posts.id)', '>', 5)
+    ->orderBy('users.created_at', 'desc')
+    ->orderBy('users.name', 'asc')
+    ->limit(10)
+    ->offset(20)
+    ->getAll();
+
+// Ventajas:
+// ✅ Código PHP natural y legible
+// ✅ Protección automática contra inyección SQL
+// ✅ Métodos reutilizables y modulares
+// ✅ IDE con autocomplete y verificación de tipos
+```
+
+## 🚀 Comenzando con el Query Builder
+
+**Para empezar**, utiliza el método `table()` de tu instancia de ORM:
 
 ```php
 $query = $orm->table('users'); // ¡Este es el punto de partida!
@@ -49,14 +107,36 @@ $products = $orm->table('products')
 
 ### `where()` - Cláusulas WHERE
 
-El método `where()` es la forma más común de filtrar resultados. Por defecto, las condiciones se unen con `AND`.
-
+#### ❌ Forma Tradicional (SQL)
 ```php
-// WHERE status = 'active' AND age >= 18
-$users = $orm->table('users')
+// Múltiples consultas manuales
+$stmt = $pdo->prepare("SELECT * FROM users WHERE status = ? AND age >= ?");
+$stmt->execute(['active', 18]);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Cada condición nueva = reescribir toda la consulta
+$stmt = $pdo->prepare("SELECT * FROM users WHERE status = ? AND age >= ? AND city = ?");
+$stmt->execute(['active', 18, 'Madrid']);
+$moreUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+```
+
+#### ✅ Forma VersaORM Query Builder
+```php
+// Encadenamiento natural y reutilizable
+$query = $orm->table('users')
     ->where('status', '=', 'active')
-    ->where('age', '>=', 18)
-    ->findAll();
+    ->where('age', '>=', 18);
+
+// Fácil agregar más condiciones
+$query->where('city', '=', 'Madrid');
+
+$users = $query->findAll();
+
+// Ventajas:
+// ✅ Reutilizable y modular
+// ✅ Sin reescribir consultas
+// ✅ Protección automática SQL
+// ✅ Código legible
 ```
 
 #### `orWhere()`
