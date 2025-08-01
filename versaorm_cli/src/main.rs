@@ -61,6 +61,7 @@ fn cleanup_old_logs(log_dir: &PathBuf) {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! log_debug {
     ($($arg:tt)*) => {
         if let Some(ref mut file) = *LOG_FILE.lock().unwrap() {

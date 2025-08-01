@@ -18,6 +18,7 @@ pub struct QueryBuilder {
     pub with: Vec<RelationMetadata>,
 }
 
+#[allow(dead_code)]
 impl QueryBuilder {
     pub fn new(table: &str) -> Self {
         // Validate table name for security
@@ -273,7 +274,7 @@ impl QueryBuilder {
                                 value_obj.get("bindings").and_then(|b| b.as_array())
                             {
                                 if is_safe_raw_sql(sql) {
-                                    let mut temp_sql = sql.to_string();
+                                    let temp_sql = sql.to_string();
                                     for binding in bindings {
                                         params.push(binding.clone());
                                         // No reemplazar los `?` aquí, se manejarán como parámetros preparados
