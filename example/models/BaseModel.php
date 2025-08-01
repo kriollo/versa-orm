@@ -124,8 +124,16 @@ abstract class BaseModel extends VersaModel
             ->findOne();
 
         if ($result) {
+            // Si $result es instancia de VersaModel, usar export()
+            if (method_exists($result, 'export')) {
+                $attributes = $result->export();
+            } elseif (is_array($result)) {
+                $attributes = $result;
+            } else {
+                $attributes = [];
+            }
             $model = new static();
-            $model->loadInstance($result->export());
+            $model->loadInstance($attributes);
             return $model;
         }
 
