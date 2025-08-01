@@ -54,10 +54,10 @@ pub struct ColumnInfo {
     pub is_auto_increment: bool,
     pub character_maximum_length: Option<i64>,
     // Nuevos campos para validación
-    pub is_required: bool,  // Basado en is_nullable y default_value
-    pub max_length: Option<i64>,  // Para validación de longitud
-    pub numeric_precision: Option<u32>,  // Para campos numéricos
-    pub numeric_scale: Option<u32>,  // Para campos decimales
+    pub is_required: bool,              // Basado en is_nullable y default_value
+    pub max_length: Option<i64>,        // Para validación de longitud
+    pub numeric_precision: Option<u32>, // Para campos numéricos
+    pub numeric_scale: Option<u32>,     // Para campos decimales
     pub validation_rules: Vec<String>,  // Reglas automáticas derivadas del esquema
 }
 
@@ -206,13 +206,9 @@ impl<'a> SchemaInspector<'a> {
                         .unwrap_or(&serde_json::Value::Null)
                         .as_str()
                         .unwrap_or("NO")
-                        .eq("YES") && row
-                        .get("default_value")
-                        .and_then(|v| v.as_str())
-                        .is_none(),
-                    max_length: row
-                        .get("character_maximum_length")
-                        .and_then(|v| v.as_i64()),
+                        .eq("YES")
+                        && row.get("default_value").and_then(|v| v.as_str()).is_none(),
+                    max_length: row.get("character_maximum_length").and_then(|v| v.as_i64()),
                     numeric_precision: row
                         .get("numeric_precision")
                         .and_then(|v| v.as_u64())
@@ -235,8 +231,7 @@ impl<'a> SchemaInspector<'a> {
                         &row.get("default_value")
                             .and_then(|v| v.as_str())
                             .map(|s| s.to_string()),
-                        row.get("character_maximum_length")
-                            .and_then(|v| v.as_i64())
+                        row.get("character_maximum_length").and_then(|v| v.as_i64()),
                     ),
                 },
                 "postgres" | "postgresql" => ColumnInfo {
@@ -278,13 +273,9 @@ impl<'a> SchemaInspector<'a> {
                         .unwrap_or(&serde_json::Value::Null)
                         .as_str()
                         .unwrap_or("NO")
-                        .eq("YES") && row
-                        .get("column_default")
-                        .and_then(|v| v.as_str())
-                        .is_none(),
-                    max_length: row
-                        .get("character_maximum_length")
-                        .and_then(|v| v.as_i64()),
+                        .eq("YES")
+                        && row.get("column_default").and_then(|v| v.as_str()).is_none(),
+                    max_length: row.get("character_maximum_length").and_then(|v| v.as_i64()),
                     numeric_precision: row
                         .get("numeric_precision")
                         .and_then(|v| v.as_u64())
@@ -307,8 +298,7 @@ impl<'a> SchemaInspector<'a> {
                         &row.get("column_default")
                             .and_then(|v| v.as_str())
                             .map(|s| s.to_string()),
-                        row.get("character_maximum_length")
-                            .and_then(|v| v.as_i64())
+                        row.get("character_maximum_length").and_then(|v| v.as_i64()),
                     ),
                 },
                 "sqlite" => ColumnInfo {
