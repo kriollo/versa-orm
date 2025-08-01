@@ -109,26 +109,23 @@ class VersaORMTest extends TestCase
         $hasNameColumn = false;
         $hasEmailColumn = false;
         
-        // Check if it's an associative array with column info
-        if (is_array($columns) && !empty($columns)) {
-            // Try to find columns either as keys or values
-            foreach ($columns as $key => $value) {
-                if (is_string($key)) {
-                    // Column names as keys
-                    if (strtolower($key) === 'id') $hasIdColumn = true;
-                    if (strtolower($key) === 'name') $hasNameColumn = true;
-                    if (strtolower($key) === 'email') $hasEmailColumn = true;
-                } elseif (is_string($value)) {
-                    // Column names as values
-                    if (strtolower($value) === 'id') $hasIdColumn = true;
-                    if (strtolower($value) === 'name') $hasNameColumn = true;
-                    if (strtolower($value) === 'email') $hasEmailColumn = true;
-                } elseif (is_array($value) && isset($value['name'])) {
-                    // Column info in array format
-                    if (strtolower($value['name']) === 'id') $hasIdColumn = true;
-                    if (strtolower($value['name']) === 'name') $hasNameColumn = true;
-                    if (strtolower($value['name']) === 'email') $hasEmailColumn = true;
-                }
+        // Try to find columns either as keys or values
+        foreach ($columns as $key => $value) {
+            if (is_string($key)) {
+                // Column names as keys
+                if (strtolower($key) === 'id') $hasIdColumn = true;
+                if (strtolower($key) === 'name') $hasNameColumn = true;
+                if (strtolower($key) === 'email') $hasEmailColumn = true;
+            } elseif (is_string($value)) {
+                // Column names as values
+                if (strtolower($value) === 'id') $hasIdColumn = true;
+                if (strtolower($value) === 'name') $hasNameColumn = true;
+                if (strtolower($value) === 'email') $hasEmailColumn = true;
+            } elseif (is_array($value) && isset($value['name'])) {
+                // Column info in array format
+                if (strtolower($value['name']) === 'id') $hasIdColumn = true;
+                if (strtolower($value['name']) === 'name') $hasNameColumn = true;
+                if (strtolower($value['name']) === 'email') $hasEmailColumn = true;
             }
         }
         

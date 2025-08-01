@@ -17,19 +17,9 @@ class ValidationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        self::$orm = new VersaORM([
-            'driver' => 'sqlite',
-            'host' => '',
-            'port' => 0,
-            'database' => ':memory:',
-            'username' => '',
-            'password' => '',
-            'binary_path' => __DIR__ . '/../src/binary/versaorm_cli.exe'
-        ]);
-        VersaModel::setORM(self::$orm);
-
-        // Crear tabla de prueba
-        self::$orm->exec("CREATE TABLE test_users (
+        
+        // Crear tabla de prueba para ValidationTest
+        self::$orm->exec("CREATE TABLE IF NOT EXISTS test_users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
