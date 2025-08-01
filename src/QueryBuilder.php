@@ -816,7 +816,17 @@ class QueryBuilder
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
-        return $executeMethod->invoke($this->orm, 'query', $params);
+        // Determinar la acción principal. Para operaciones de escritura, es el método mismo.
+        // Para lectura, es 'query'.
+        $action = in_array($method, ['insert', 'insertGetId', 'update', 'delete']) ? $method : 'query';
+
+        // Para 'update' y 'delete', la acción principal ya está definida.
+        // Para 'query', el método específico (get, first, etc.) va dentro de los params.
+        if ($action === 'query') {
+            $params['method'] = $method;
+        }
+
+        return $executeMethod->invoke($this->orm, $action, $params);
     }
 
     private function buildPayload(string $method, ?array $data = null): array
