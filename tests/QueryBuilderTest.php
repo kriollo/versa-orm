@@ -328,7 +328,7 @@ class QueryBuilderTest extends TestCase
             ->where('email', '=', 'bob@example.com')
             ->delete();
 
-        $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $deleted);
+        $this->assertNull($deleted);
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
         $this->assertNull($bob);
     }

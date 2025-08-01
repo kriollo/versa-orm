@@ -152,6 +152,7 @@ class TestCase extends BaseTestCase
         self::$orm->table('roles')->insert(['id' => 1, 'name' => 'Admin']);
         self::$orm->table('roles')->insert(['id' => 2, 'name' => 'Editor']);
         self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 1]);
+        self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 2]);
         self::$orm->table('role_user')->insert(['user_id' => 2, 'role_id' => 2]);
     }
 }
