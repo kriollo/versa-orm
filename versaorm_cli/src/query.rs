@@ -1,4 +1,4 @@
-use crate::utils::{clean_table_name, clean_column_name};
+use crate::utils::{clean_column_name, clean_table_name};
 use crate::RelationMetadata;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -63,7 +63,8 @@ impl QueryBuilder {
 
     pub fn select(mut self, columns: Vec<&str>) -> Self {
         // Validate all column names for security
-        self.selects = columns.into_iter()
+        self.selects = columns
+            .into_iter()
             .filter_map(|col| clean_column_name(col).ok())
             .collect();
         self
@@ -86,7 +87,12 @@ impl QueryBuilder {
         if let Ok(clean_col) = clean_column_name(column) {
             if is_safe_sql_operator(operator) {
                 let conjunction = if self.wheres.is_empty() { "" } else { "AND" };
-                self.wheres.push((clean_col, operator.to_string(), value, conjunction.to_string()));
+                self.wheres.push((
+                    clean_col,
+                    operator.to_string(),
+                    value,
+                    conjunction.to_string(),
+                ));
             }
         }
         self
@@ -97,7 +103,12 @@ impl QueryBuilder {
         if let Ok(clean_col) = clean_column_name(column) {
             if is_safe_sql_operator(operator) {
                 let conjunction = if self.wheres.is_empty() { "" } else { "OR" };
-                self.wheres.push((clean_col, operator.to_string(), value, conjunction.to_string()));
+                self.wheres.push((
+                    clean_col,
+                    operator.to_string(),
+                    value,
+                    conjunction.to_string(),
+                ));
             }
         }
         self
@@ -109,25 +120,43 @@ impl QueryBuilder {
         if let (Ok(clean_table), Ok(clean_first_col), Ok(clean_second_col)) = (
             clean_table_name(table),
             clean_column_name(first_col),
-            clean_column_name(second_col)
+            clean_column_name(second_col),
         ) {
             if is_safe_sql_operator(operator) {
-                self.joins.push((clean_table, clean_first_col, operator.to_string(), clean_second_col, "INNER".to_string()));
+                self.joins.push((
+                    clean_table,
+                    clean_first_col,
+                    operator.to_string(),
+                    clean_second_col,
+                    "INNER".to_string(),
+                ));
             }
         }
         self
     }
 
     #[allow(dead_code)]
-    pub fn left_join(mut self, table: &str, first_col: &str, operator: &str, second_col: &str) -> Self {
+    pub fn left_join(
+        mut self,
+        table: &str,
+        first_col: &str,
+        operator: &str,
+        second_col: &str,
+    ) -> Self {
         // Validate all join components for security
         if let (Ok(clean_table), Ok(clean_first_col), Ok(clean_second_col)) = (
             clean_table_name(table),
             clean_column_name(first_col),
-            clean_column_name(second_col)
+            clean_column_name(second_col),
         ) {
             if is_safe_sql_operator(operator) {
-                self.joins.push((clean_table, clean_first_col, operator.to_string(), clean_second_col, "LEFT".to_string()));
+                self.joins.push((
+                    clean_table,
+                    clean_first_col,
+                    operator.to_string(),
+                    clean_second_col,
+                    "LEFT".to_string(),
+                ));
             }
         }
         self
@@ -138,7 +167,7 @@ impl QueryBuilder {
         if let Ok(clean_col) = clean_column_name(column) {
             let safe_direction = match direction.to_uppercase().as_str() {
                 "ASC" | "DESC" => direction.to_uppercase(),
-                _ => "ASC".to_string() // Default to ASC if invalid
+                _ => "ASC".to_string(), // Default to ASC if invalid
             };
             self.order = Some((clean_col, safe_direction));
         }
@@ -162,7 +191,8 @@ impl QueryBuilder {
     }
 
     pub fn group_by(mut self, columns: Vec<&str>) -> Self {
-        self.group_by = columns.into_iter()
+        self.group_by = columns
+            .into_iter()
             .filter_map(|col| clean_column_name(col).ok())
             .collect();
         self
@@ -172,14 +202,18 @@ impl QueryBuilder {
         if let Ok(clean_col) = clean_column_name(column) {
             if is_safe_sql_operator(operator) {
                 let conjunction = if self.havings.is_empty() { "" } else { "AND" };
-                self.havings.push((clean_col, operator.to_string(), value, conjunction.to_string()));
+                self.havings.push((
+                    clean_col,
+                    operator.to_string(),
+                    value,
+                    conjunction.to_string(),
+                ));
             }
         }
         self
     }
 
-
-        pub fn build_sql(&self) -> (String, Vec<Value>) {
+    pub fn build_sql(&self) -> (String, Vec<Value>) {
         let mut query = String::new();
         let mut params = Vec::new();
 
@@ -195,19 +229,13 @@ impl QueryBuilder {
             );
             params = data.values().cloned().collect();
             return (query, params);
-        }
-
-                if let Some(data) = &self.update_data {
+        } else if let Some(data) = &self.update_data {
             // UPDATE query
             let setters: Vec<String> = data.keys().map(|k| format!("{} = ?", k)).collect();
-            query = format!(
-                "UPDATE {} SET {}",
-                self.table,
-                setters.join(", ")
-            );
+            query = format!("UPDATE {} SET {}", self.table, setters.join(", "));
             params = data.values().cloned().collect();
         } else {
-            // SELECT query
+            // SELECT query (default for reads)
             query.push_str("SELECT ");
             if !self.selects.is_empty() {
                 query.push_str(&self.selects.join(", "));
@@ -215,11 +243,12 @@ impl QueryBuilder {
                 query.push('*');
             }
             query.push_str(&format!(" FROM {}", self.table));
-        }
-
-        // JOIN clause
+        } // JOIN clause
         for (table, first_col, operator, second_col, join_type) in self.joins.iter() {
-            query.push_str(&format!(" {} JOIN {} ON {} {} {}", join_type, table, first_col, operator, second_col));
+            query.push_str(&format!(
+                " {} JOIN {} ON {} {} {}",
+                join_type, table, first_col, operator, second_col
+            ));
         }
 
         // WHERE clause
@@ -233,7 +262,9 @@ impl QueryBuilder {
                 if op == "RAW" {
                     if let Some(value_obj) = value.as_object() {
                         if let Some(sql) = value_obj.get("sql").and_then(|s| s.as_str()) {
-                            if let Some(bindings) = value_obj.get("bindings").and_then(|b| b.as_array()) {
+                            if let Some(bindings) =
+                                value_obj.get("bindings").and_then(|b| b.as_array())
+                            {
                                 if is_safe_raw_sql(sql) {
                                     let mut temp_sql = sql.to_string();
                                     for binding in bindings {
@@ -311,7 +342,11 @@ impl QueryBuilder {
                     if i == 0 {
                         where_clauses.push(clause_text);
                     } else {
-                        let conj = if conjunction.is_empty() { "AND" } else { conjunction };
+                        let conj = if conjunction.is_empty() {
+                            "AND"
+                        } else {
+                            conjunction
+                        };
                         where_clauses.push(format!("{} {}", conj, clause_text));
                     }
                 }
@@ -336,7 +371,11 @@ impl QueryBuilder {
                 if i == 0 {
                     having_clauses.push(clause_text);
                 } else {
-                    let conj = if conjunction.is_empty() { "AND" } else { conjunction };
+                    let conj = if conjunction.is_empty() {
+                        "AND"
+                    } else {
+                        conjunction
+                    };
                     having_clauses.push(format!("{} {}", conj, clause_text));
                 }
             }
@@ -344,7 +383,7 @@ impl QueryBuilder {
         }
 
         // ORDER BY clause
-                if let Some((col, dir)) = &self.order {
+        if let Some((col, dir)) = &self.order {
             query.push_str(&format!(" ORDER BY {} {}", col, dir));
         }
 
@@ -364,11 +403,28 @@ impl QueryBuilder {
 
 // Helper function to validate SQL operators
 fn is_safe_sql_operator(operator: &str) -> bool {
-    matches!(operator.to_uppercase().as_str(), "=" | "!=" | "<>" | ">" | "<" | ">=" | "<="
-        | "LIKE" | "NOT LIKE" | "ILIKE" | "NOT ILIKE"
-        | "IN" | "NOT IN" | "BETWEEN" | "NOT BETWEEN"
-        | "IS" | "IS NOT" | "IS NULL" | "IS NOT NULL"
-        | "RAW")
+    matches!(
+        operator.to_uppercase().as_str(),
+        "=" | "!="
+            | "<>"
+            | ">"
+            | "<"
+            | ">="
+            | "<="
+            | "LIKE"
+            | "NOT LIKE"
+            | "ILIKE"
+            | "NOT ILIKE"
+            | "IN"
+            | "NOT IN"
+            | "BETWEEN"
+            | "NOT BETWEEN"
+            | "IS"
+            | "IS NOT"
+            | "IS NULL"
+            | "IS NOT NULL"
+            | "RAW"
+    )
 }
 
 // Helper function to validate RAW SQL clauses for security
@@ -377,9 +433,9 @@ fn is_safe_raw_sql(sql: &str) -> bool {
 
     // List of dangerous SQL keywords that could be used for injection
     let dangerous_keywords = [
-        "UNION", "DELETE", "DROP", "INSERT", "UPDATE", "CREATE", "ALTER",
-        "TRUNCATE", "EXEC", "EXECUTE", "DECLARE", "SCRIPT", "SHUTDOWN",
-        "GRANT", "REVOKE", "BACKUP", "RESTORE", "--", "/*", "*/", ";"
+        "UNION", "DELETE", "DROP", "INSERT", "UPDATE", "CREATE", "ALTER", "TRUNCATE", "EXEC",
+        "EXECUTE", "DECLARE", "SCRIPT", "SHUTDOWN", "GRANT", "REVOKE", "BACKUP", "RESTORE", "--",
+        "/*", "*/", ";",
     ];
 
     // Check if the SQL contains any dangerous keywords
@@ -396,7 +452,6 @@ fn is_safe_raw_sql(sql: &str) -> bool {
 
     true
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -497,7 +552,10 @@ mod tests {
             .group_by(vec!["status"])
             .having("count", ">", json!(1));
         let (sql, params) = builder.build_sql();
-        assert_eq!(sql, "SELECT status, COUNT(*) as count FROM users GROUP BY status HAVING count > ?");
+        assert_eq!(
+            sql,
+            "SELECT status, COUNT(*) as count FROM users GROUP BY status HAVING count > ?"
+        );
         assert_eq!(params, vec![json!(1)]);
     }
 

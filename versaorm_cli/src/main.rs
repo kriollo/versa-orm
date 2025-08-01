@@ -1,12 +1,12 @@
+use chrono::{Duration, Local, TimeZone, Utc};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::Instant;
 use std::fs::{self, File};
-use std::path::PathBuf;
-use chrono::{Local, Duration, Utc, TimeZone};
 use std::io::Write;
+use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::Instant;
 
 #[macro_use]
 extern crate lazy_static;
@@ -31,7 +31,8 @@ fn setup_logging(debug: bool) {
     if let Ok(file) = fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open(log_path) {
+        .open(log_path)
+    {
         *LOG_FILE.lock().unwrap() = Some(file);
     }
 
@@ -78,16 +79,16 @@ pub fn log_debug_msg(msg: &str) {
 }
 
 // Módulos del ORM
+mod cache;
 mod connection;
-mod query;
 mod model;
+mod query;
 mod schema;
 mod utils;
-mod cache;
 
 use connection::{ConnectionManager, DatabaseConfig};
-use schema::SchemaInspector;
 use query::QueryBuilder;
+use schema::SchemaInspector;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RelationMetadata {
@@ -229,7 +230,12 @@ async fn main() {
         };
 
         let location = if let Some(location) = panic_info.location() {
-            format!(" at {}:{}:{}", location.file(), location.line(), location.column())
+            format!(
+                " at {}:{}:{}",
+                location.file(),
+                location.line(),
+                location.column()
+            )
         } else {
             String::new()
         };
@@ -300,8 +306,15 @@ async fn run_main() {
                 let mut details = None;
                 if is_debug {
                     let mut debug_info = HashMap::new();
-                    debug_info.insert("full_error".to_string(), serde_json::Value::String(e.to_string()));
-                    debug_info.insert("config".to_string(), serde_json::to_value(connection_manager.get_config()).unwrap_or(serde_json::Value::Null));
+                    debug_info.insert(
+                        "full_error".to_string(),
+                        serde_json::Value::String(e.to_string()),
+                    );
+                    debug_info.insert(
+                        "config".to_string(),
+                        serde_json::to_value(connection_manager.get_config())
+                            .unwrap_or(serde_json::Value::Null),
+                    );
                     details = Some(debug_info);
                 }
 
@@ -321,8 +334,12 @@ async fn run_main() {
             }
 
             let result = match payload.action.as_str() {
-                "query" => handle_query_action(&connection_manager, &payload.params).await,
-                "schema" => handle_schema_action(&connection_manager, &payload.params).await.map_err(|e| (e, None, None)),
+                "query" | "insert" | "insertGetId" | "update" | "delete" => {
+                    handle_query_action(&connection_manager, &payload.params).await
+                }
+                "schema" => handle_schema_action(&connection_manager, &payload.params)
+                    .await
+                    .map_err(|e| (e, None, None)),
                 "raw" => handle_raw_action(&connection_manager, &payload.params).await,
                 "cache" => handle_cache_action(&payload.params).map_err(|e| (e, None, None)),
                 _ => Err((format!("Unknown action: {}", payload.action), None, None)),
@@ -359,9 +376,20 @@ async fn run_main() {
                     let mut details = None;
                     if is_debug {
                         let mut debug_info = HashMap::new();
-                        debug_info.insert("full_error".to_string(), serde_json::Value::String(error_msg));
-                        debug_info.insert("action".to_string(), serde_json::Value::String(payload.action.clone()));
-                        debug_info.insert("execution_time_ms".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(execution_time).unwrap()));
+                        debug_info.insert(
+                            "full_error".to_string(),
+                            serde_json::Value::String(error_msg),
+                        );
+                        debug_info.insert(
+                            "action".to_string(),
+                            serde_json::Value::String(payload.action.clone()),
+                        );
+                        debug_info.insert(
+                            "execution_time_ms".to_string(),
+                            serde_json::Value::Number(
+                                serde_json::Number::from_f64(execution_time).unwrap(),
+                            ),
+                        );
                         details = Some(debug_info);
                     }
 
@@ -401,8 +429,21 @@ async fn handle_query_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
-    let query_params: QueryParameters = serde_json::from_value(params.clone())
-        .map_err(|e| (format!("Failed to deserialize query parameters: {}", e), None, None))?;
+    let mut query_params: QueryParameters =
+        serde_json::from_value(params.clone()).map_err(|e| {
+            (
+                format!("Failed to deserialize query parameters: {}", e),
+                None,
+                None,
+            )
+        })?;
+
+    // If the action is one of the write operations, set it as the method.
+    if let Some(action_str) = params.get("action").and_then(|a| a.as_str()) {
+        if ["insert", "insertGetId", "update", "delete"].contains(&action_str) {
+            query_params.method = action_str.to_string();
+        }
+    }
 
     let mut query_builder = QueryBuilder::new(&query_params.table);
 
@@ -411,6 +452,13 @@ async fn handle_query_action(
     }
 
     for where_clause in query_params.wheres {
+        log_debug_msg(&format!(
+            "WHERE clause: column={}, operator={}, value={:?}, conjunction={}",
+            where_clause.column,
+            where_clause.operator,
+            where_clause.value,
+            where_clause.conjunction
+        ));
         query_builder.wheres.push((
             where_clause.column,
             where_clause.operator,
@@ -456,7 +504,7 @@ async fn handle_query_action(
     if !query_params.with.is_empty() {
         query_builder.with = query_params.with;
     }
-    
+
     let mut insert_data_ref = None;
     if query_params.method == "insert" || query_params.method == "insertGetId" {
         if let Some(data) = &query_params.data {
@@ -464,14 +512,34 @@ async fn handle_query_action(
             insert_data_ref = Some(data.clone());
         }
     }
-    
+
     let table_name = query_builder.table.clone();
 
     let (sql, sql_params) = query_builder.build_sql();
 
+    // Debug SQL y parámetros
+    log_debug_msg(&format!("METHOD: {}", query_params.method));
+    log_debug_msg(&format!("Generated SQL: {}", sql));
+    log_debug_msg(&format!("SQL Parameters: {:?}", sql_params));
+
     match query_params.method.as_str() {
         "get" | "first" => {
-            let main_results = connection.execute_raw(&sql, sql_params.clone()).await.map_err(|e| (format!("Query execution failed: {}", e), Some(sql.to_string()), Some(sql_params.clone())))?;
+            let main_results = connection
+                .execute_raw(&sql, sql_params.clone())
+                .await
+                .map_err(|e| {
+                    (
+                        format!("Query execution failed: {}", e),
+                        Some(sql.to_string()),
+                        Some(sql_params.clone()),
+                    )
+                })?;
+
+            // Debug resultados
+            log_debug_msg(&format!("Query results count: {}", main_results.len()));
+            if !main_results.is_empty() {
+                log_debug_msg(&format!("First result: {:?}", main_results[0]));
+            }
 
             if main_results.is_empty() {
                 return Ok(serde_json::to_value(main_results).unwrap());
@@ -481,17 +549,84 @@ async fn handle_query_action(
 
             // Eager loading
             for relation in &query_builder.with {
-                if let (Some(foreign_key), Some(local_key)) = (&relation.foreign_key, &relation.local_key) {
-                    let parent_ids: Vec<serde_json::Value> = final_results.iter().filter_map(|row| row.get(local_key).cloned()).collect();
+                if let (Some(foreign_key), Some(owner_key)) =
+                    (&relation.foreign_key, &relation.owner_key)
+                {
+                    // Para BelongsTo: obtener los valores de foreign_key de los resultados principales
+                    // y buscar en la tabla relacionada por owner_key (normalmente 'id')
+                    let parent_ids: Vec<serde_json::Value> = final_results
+                        .iter()
+                        .filter_map(|row| row.get(foreign_key).cloned())
+                        .collect();
 
                     if parent_ids.is_empty() {
                         continue;
                     }
 
-                    let relation_sql = format!("SELECT * FROM {} WHERE {} IN (?)", relation.related_table, foreign_key);
-                    let relation_rows = connection.execute_raw(&relation_sql, parent_ids).await.map_err(|e| (format!("Eager loading failed for {}: {}", relation.name, e), Some(relation_sql), None))?;
+                    let relation_sql = format!(
+                        "SELECT * FROM {} WHERE {} IN (?)",
+                        relation.related_table, owner_key
+                    );
+                    let relation_rows = connection
+                        .execute_raw(&relation_sql, parent_ids)
+                        .await
+                        .map_err(|e| {
+                            (
+                                format!("Eager loading failed for {}: {}", relation.name, e),
+                                Some(relation_sql),
+                                None,
+                            )
+                        })?;
 
-                    let mut relation_map: HashMap<String, Vec<HashMap<String, serde_json::Value>>> = HashMap::new();
+                    let mut relation_map: HashMap<String, Vec<HashMap<String, serde_json::Value>>> =
+                        HashMap::new();
+                    for row in relation_rows {
+                        if let Some(key_val) = row.get(owner_key) {
+                            let key = key_val.to_string().trim_matches('"').to_string();
+                            relation_map.entry(key).or_default().push(row.clone());
+                        }
+                    }
+
+                    for result in &mut final_results {
+                        if let Some(local_id_val) = result.get(foreign_key) {
+                            let local_id = local_id_val.to_string().trim_matches('"').to_string();
+                            if let Some(related_data) = relation_map.get(&local_id) {
+                                result.insert(
+                                    relation.name.clone(),
+                                    serde_json::to_value(related_data.first()).unwrap(),
+                                );
+                            }
+                        }
+                    }
+                } else if let (Some(foreign_key), Some(local_key)) =
+                    (&relation.foreign_key, &relation.local_key)
+                {
+                    let parent_ids: Vec<serde_json::Value> = final_results
+                        .iter()
+                        .filter_map(|row| row.get(local_key).cloned())
+                        .collect();
+
+                    if parent_ids.is_empty() {
+                        continue;
+                    }
+
+                    let relation_sql = format!(
+                        "SELECT * FROM {} WHERE {} IN (?)",
+                        relation.related_table, foreign_key
+                    );
+                    let relation_rows = connection
+                        .execute_raw(&relation_sql, parent_ids)
+                        .await
+                        .map_err(|e| {
+                            (
+                                format!("Eager loading failed for {}: {}", relation.name, e),
+                                Some(relation_sql),
+                                None,
+                            )
+                        })?;
+
+                    let mut relation_map: HashMap<String, Vec<HashMap<String, serde_json::Value>>> =
+                        HashMap::new();
                     for row in relation_rows {
                         if let Some(key_val) = row.get(foreign_key) {
                             let key = key_val.to_string().trim_matches('"').to_string();
@@ -503,7 +638,10 @@ async fn handle_query_action(
                         if let Some(local_id_val) = result.get(local_key) {
                             let local_id = local_id_val.to_string().trim_matches('"').to_string();
                             if let Some(related_data) = relation_map.get(&local_id) {
-                                result.insert(relation.name.clone(), serde_json::to_value(related_data).unwrap());
+                                result.insert(
+                                    relation.name.clone(),
+                                    serde_json::to_value(related_data).unwrap(),
+                                );
                             }
                         }
                     }
@@ -519,14 +657,27 @@ async fn handle_query_action(
         "count" => {
             let count_sql = sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
             let count_sql = if count_sql.contains("ORDER BY") {
-                count_sql.split(" ORDER BY").next().unwrap_or(&count_sql).to_string()
+                count_sql
+                    .split(" ORDER BY")
+                    .next()
+                    .unwrap_or(&count_sql)
+                    .to_string()
             } else {
                 count_sql
             };
 
-            let rows = connection.execute_raw(&count_sql, sql_params.clone()).await
-                .map_err(|e| (format!("Count query failed: {}", e), Some(count_sql.clone()), Some(sql_params.clone())))?;
-            let count = rows.first()
+            let rows = connection
+                .execute_raw(&count_sql, sql_params.clone())
+                .await
+                .map_err(|e| {
+                    (
+                        format!("Count query failed: {}", e),
+                        Some(count_sql.clone()),
+                        Some(sql_params.clone()),
+                    )
+                })?;
+            let count = rows
+                .first()
                 .and_then(|row| row.get("count"))
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
@@ -536,14 +687,28 @@ async fn handle_query_action(
             if let Some(insert_data) = insert_data_ref {
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
                 let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
-                let insert_sql = format!("INSERT INTO {} ({}) VALUES ({})", table_name, columns.join(", "), values.join(", "));
+                let insert_sql = format!(
+                    "INSERT INTO {} ({}) VALUES ({})",
+                    table_name,
+                    columns.join(", "),
+                    values.join(", ")
+                );
 
-                let insert_params: Vec<serde_json::Value> = columns.iter()
+                let insert_params: Vec<serde_json::Value> = columns
+                    .iter()
                     .map(|col| insert_data.get(col).unwrap().clone())
                     .collect();
 
-                connection.execute_raw(&insert_sql, insert_params.clone()).await
-                    .map_err(|e| (format!("Insert query failed: {}", e), Some(insert_sql.clone()), Some(insert_params.clone())))?;
+                connection
+                    .execute_raw(&insert_sql, insert_params.clone())
+                    .await
+                    .map_err(|e| {
+                        (
+                            format!("Insert query failed: {}", e),
+                            Some(insert_sql.clone()),
+                            Some(insert_params.clone()),
+                        )
+                    })?;
 
                 Ok(serde_json::json!({"status": "Insert successful", "rows_affected": 1}))
             } else {
@@ -554,20 +719,44 @@ async fn handle_query_action(
             if let Some(insert_data) = insert_data_ref {
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
                 let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
-                let insert_sql = format!("INSERT INTO {} ({}) VALUES ({})", table_name, columns.join(", "), values.join(", "));
+                let insert_sql = format!(
+                    "INSERT INTO {} ({}) VALUES ({})",
+                    table_name,
+                    columns.join(", "),
+                    values.join(", ")
+                );
 
-                let insert_params: Vec<serde_json::Value> = columns.iter()
+                let insert_params: Vec<serde_json::Value> = columns
+                    .iter()
                     .map(|col| insert_data.get(col).unwrap().clone())
                     .collect();
 
-                connection.execute_raw(&insert_sql, insert_params.clone()).await
-                    .map_err(|e| (format!("Insert query failed: {}", e), Some(insert_sql.clone()), Some(insert_params.clone())))?;
+                connection
+                    .execute_raw(&insert_sql, insert_params.clone())
+                    .await
+                    .map_err(|e| {
+                        (
+                            format!("Insert query failed: {}", e),
+                            Some(insert_sql.clone()),
+                            Some(insert_params.clone()),
+                        )
+                    })?;
 
                 let last_id_sql = format!("SELECT MAX(id) as id FROM {}", table_name);
-                let last_id_rows = connection.execute_raw(&last_id_sql, vec![]).await
-                    .map_err(|e| (format!("Failed to get last insert ID: {}", e), Some(last_id_sql.clone()), None))?;
+                let last_id_rows =
+                    connection
+                        .execute_raw(&last_id_sql, vec![])
+                        .await
+                        .map_err(|e| {
+                            (
+                                format!("Failed to get last insert ID: {}", e),
+                                Some(last_id_sql.clone()),
+                                None,
+                            )
+                        })?;
 
-                let last_id = last_id_rows.first()
+                let last_id = last_id_rows
+                    .first()
                     .and_then(|row| row.get("id"))
                     .and_then(|v| v.as_i64())
                     .unwrap_or(0);
@@ -579,9 +768,18 @@ async fn handle_query_action(
         }
         "exists" => {
             let exists_sql = format!("SELECT EXISTS({}) as exists_result", sql);
-            let rows = connection.execute_raw(&exists_sql, sql_params.clone()).await
-                .map_err(|e| (format!("Exists query failed: {}", e), Some(exists_sql.clone()), Some(sql_params.clone())))?;
-            let exists = rows.first()
+            let rows = connection
+                .execute_raw(&exists_sql, sql_params.clone())
+                .await
+                .map_err(|e| {
+                    (
+                        format!("Exists query failed: {}", e),
+                        Some(exists_sql.clone()),
+                        Some(sql_params.clone()),
+                    )
+                })?;
+            let exists = rows
+                .first()
                 .and_then(|row| row.get("exists_result"))
                 .map(|v| {
                     if let Some(num) = v.as_i64() {
@@ -606,17 +804,32 @@ async fn handle_query_action(
                 let update_sql = if sql.contains("WHERE") {
                     let where_part = sql.split(" WHERE ").nth(1).unwrap_or("");
                     let where_clause = where_part.split(" ORDER BY").next().unwrap_or(where_part);
-                    format!("UPDATE {} SET {} WHERE {}", table_name, set_clauses.join(", "), where_clause)
+                    format!(
+                        "UPDATE {} SET {} WHERE {}",
+                        table_name,
+                        set_clauses.join(", "),
+                        where_clause
+                    )
                 } else {
                     format!("UPDATE {} SET {}", table_name, set_clauses.join(", "))
                 };
 
                 update_params.extend(sql_params.clone());
 
-                let rows_affected = connection.execute_write(&update_sql, update_params.clone()).await
-                    .map_err(|e| (format!("Update query failed: {}", e), Some(update_sql.clone()), Some(update_params.clone())))?;
+                let rows_affected = connection
+                    .execute_write(&update_sql, update_params.clone())
+                    .await
+                    .map_err(|e| {
+                        (
+                            format!("Update query failed: {}", e),
+                            Some(update_sql.clone()),
+                            Some(update_params.clone()),
+                        )
+                    })?;
 
-                Ok(serde_json::Value::Number(serde_json::Number::from(rows_affected)))
+                Ok(serde_json::Value::Number(serde_json::Number::from(
+                    rows_affected,
+                )))
             } else {
                 Err(("Update data is missing".to_string(), None, None))
             }
@@ -630,12 +843,26 @@ async fn handle_query_action(
                 format!("DELETE FROM {}", table_name)
             };
 
-            let rows_affected = connection.execute_write(&delete_sql, sql_params.clone()).await
-                .map_err(|e| (format!("Delete query failed: {}", e), Some(delete_sql.clone()), Some(sql_params.clone())))?;
+            let rows_affected = connection
+                .execute_write(&delete_sql, sql_params.clone())
+                .await
+                .map_err(|e| {
+                    (
+                        format!("Delete query failed: {}", e),
+                        Some(delete_sql.clone()),
+                        Some(sql_params.clone()),
+                    )
+                })?;
 
-            Ok(serde_json::Value::Number(serde_json::Number::from(rows_affected)))
+            Ok(serde_json::Value::Number(serde_json::Number::from(
+                rows_affected,
+            )))
         }
-        _ => Err((format!("Unsupported method: {}", query_params.method), Some(sql.to_string()), Some(sql_params)))
+        _ => Err((
+            format!("Unsupported method: {}", query_params.method),
+            Some(sql.to_string()),
+            Some(sql_params),
+        )),
     }
 }
 
@@ -643,7 +870,8 @@ async fn handle_schema_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let subject = params.get("subject")
+    let subject = params
+        .get("subject")
         .and_then(|v| v.as_str())
         .ok_or("Subject is required for schema action")?;
 
@@ -651,43 +879,57 @@ async fn handle_schema_action(
 
     match subject {
         "tables" => {
-            let tables = inspector.get_tables().await
+            let tables = inspector
+                .get_tables()
+                .await
                 .map_err(|e| format!("Failed to get tables: {}", e))?;
             Ok(serde_json::to_value(tables).unwrap())
         }
         "columns" => {
-            let table_name = params.get("table_name")
+            let table_name = params
+                .get("table_name")
                 .and_then(|v| v.as_str())
                 .ok_or("Table name is required for columns subject")?;
-            let columns = inspector.get_columns(table_name).await
+            let columns = inspector
+                .get_columns(table_name)
+                .await
                 .map_err(|e| format!("Failed to get columns: {}", e))?;
             Ok(serde_json::to_value(columns).unwrap())
         }
         "primaryKey" => {
-            let table_name = params.get("table_name")
+            let table_name = params
+                .get("table_name")
                 .and_then(|v| v.as_str())
                 .ok_or("Table name is required for primaryKey subject")?;
-            let pk = inspector.get_primary_key(table_name).await
+            let pk = inspector
+                .get_primary_key(table_name)
+                .await
                 .map_err(|e| format!("Failed to get primary key: {}", e))?;
             Ok(serde_json::to_value(pk).unwrap())
         }
         "indexes" => {
-            let table_name = params.get("table_name")
+            let table_name = params
+                .get("table_name")
                 .and_then(|v| v.as_str())
                 .ok_or("Table name is required for indexes subject")?;
-            let indexes = inspector.get_indexes(table_name).await
+            let indexes = inspector
+                .get_indexes(table_name)
+                .await
                 .map_err(|e| format!("Failed to get indexes: {}", e))?;
             Ok(serde_json::to_value(indexes).unwrap())
         }
         "foreignKeys" => {
-            let table_name = params.get("table_name")
+            let table_name = params
+                .get("table_name")
                 .and_then(|v| v.as_str())
                 .ok_or("Table name is required for foreignKeys subject")?;
-            let fks = inspector.get_foreign_keys(table_name).await
+            let fks = inspector
+                .get_foreign_keys(table_name)
+                .await
                 .map_err(|e| format!("Failed to get foreign keys: {}", e))?;
             Ok(serde_json::to_value(fks).unwrap())
         }
-        _ => Err(format!("Unknown schema subject: {}", subject))
+        _ => Err(format!("Unknown schema subject: {}", subject)),
     }
 }
 
@@ -695,11 +937,14 @@ async fn handle_raw_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
-    let query = params.get("query")
-        .and_then(|v| v.as_str())
-        .ok_or(("Query is required for raw action".to_string(), None, None))?;
+    let query = params.get("query").and_then(|v| v.as_str()).ok_or((
+        "Query is required for raw action".to_string(),
+        None,
+        None,
+    ))?;
 
-    let bindings = params.get("bindings")
+    let bindings = params
+        .get("bindings")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
@@ -715,20 +960,35 @@ async fn handle_raw_action(
         || query_upper.starts_with("ALTER TABLE");
 
     if needs_unprepared || bindings.is_empty() {
-        connection.execute_unprepared(query).await
+        connection
+            .execute_unprepared(query)
+            .await
             .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
-            .map_err(|e| (format!("Unprepared raw query execution failed: {}", e), Some(query.to_string()), None))
+            .map_err(|e| {
+                (
+                    format!("Unprepared raw query execution failed: {}", e),
+                    Some(query.to_string()),
+                    None,
+                )
+            })
     } else {
-        let rows = connection.execute_raw(query, bindings.clone()).await
-            .map_err(|e| (format!("Raw query execution failed: {}", e), Some(query.to_string()), Some(bindings.clone())))?;
+        let rows = connection
+            .execute_raw(query, bindings.clone())
+            .await
+            .map_err(|e| {
+                (
+                    format!("Raw query execution failed: {}", e),
+                    Some(query.to_string()),
+                    Some(bindings.clone()),
+                )
+            })?;
         Ok(serde_json::to_value(rows).unwrap())
     }
 }
 
-fn handle_cache_action(
-    params: &serde_json::Value,
-) -> Result<serde_json::Value, String> {
-    let action = params.get("action")
+fn handle_cache_action(params: &serde_json::Value) -> Result<serde_json::Value, String> {
+    let action = params
+        .get("action")
         .and_then(|v| v.as_str())
         .ok_or("Action is required for cache")?;
 
@@ -749,6 +1009,6 @@ fn handle_cache_action(
             let status = cache::cache_status();
             Ok(serde_json::Value::Number(serde_json::Number::from(status)))
         }
-        _ => Err(format!("Unknown cache action: {}", action))
+        _ => Err(format!("Unknown cache action: {}", action)),
     }
 }
