@@ -24,6 +24,28 @@ class VersaModel
     use HasRelationships;
 
     protected string $table;
+
+    /**
+     * Campos que pueden ser asignados masivamente.
+     * Si está vacío, se usa $guarded para determinar campos protegidos.
+     * @var array<string>
+     */
+    protected array $fillable = [];
+
+    /**
+     * Campos protegidos contra asignación masiva.
+     * Por defecto protege todos los campos ('*').
+     * @var array<string>
+     */
+    protected array $guarded = ['*'];
+
+    /**
+     * Reglas de validación personalizadas del modelo.
+     * Pueden ser sobrescritas por modelos específicos.
+     * @var array<string, array<string>>
+     */
+    protected array $rules = [];
+
     /** @var VersaORM|array<string, mixed>|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     /** @var array<string, mixed> */
@@ -53,6 +75,211 @@ class VersaModel
     }
 
     /**
+     * Rellena el modelo con un array de atributos respetando Mass Assignment.
+     *
+     * @param array<string, mixed> $attributes
+     * @return self
+     * @throws VersaORMException
+     */
+    public function fill(array $attributes): self
+    {
+        $fillableAttributes = $this->filterFillableAttributes($attributes);
+
+        foreach ($fillableAttributes as $key => $value) {
+            $this->attributes[$key] = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Filtra atributos basándose en las reglas de Mass Assignment.
+     *
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
+     * @throws VersaORMException
+     */
+    protected function filterFillableAttributes(array $attributes): array
+    {
+        // Si $fillable está definido y no está vacío, usar solo esos campos
+        if (!empty($this->fillable)) {
+            $filtered = [];
+            foreach ($attributes as $key => $value) {
+                if (in_array($key, $this->fillable, true)) {
+                    $filtered[$key] = $value;
+                } else {
+                    throw new VersaORMException(
+                        "Field '{$key}' is not fillable. Add it to the \$fillable array in your model or remove it from mass assignment.",
+                        'MASS_ASSIGNMENT_ERROR',
+                        null,
+                        [],
+                        ['field' => $key, 'fillable' => $this->fillable]
+                    );
+                }
+            }
+            return $filtered;
+        }
+
+        // Si $fillable está vacío, usar $guarded para excluir campos
+        if (in_array('*', $this->guarded, true)) {
+            // Si guarded contiene '*', todos los campos están protegidos por defecto
+            throw new VersaORMException(
+                "Mass assignment is not allowed. Define \$fillable fields in your model or remove '*' from \$guarded.",
+                'MASS_ASSIGNMENT_BLOCKED',
+                null,
+                [],
+                ['guarded' => $this->guarded, 'attempted_fields' => array_keys($attributes)]
+            );
+        }
+
+        // Filtrar campos que no están en $guarded
+        $filtered = [];
+        foreach ($attributes as $key => $value) {
+            if (!in_array($key, $this->guarded, true)) {
+                $filtered[$key] = $value;
+            } else {
+                throw new VersaORMException(
+                    "Field '{$key}' is guarded against mass assignment.",
+                    'GUARDED_FIELD_ERROR',
+                    null,
+                    [],
+                    ['field' => $key, 'guarded' => $this->guarded]
+                );
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Valida los datos del modelo según las reglas definidas y el esquema de la base de datos.
+     *
+     * @return array<string> Array de errores de validación (vacío si es válido)
+     * @throws VersaORMException
+     */
+    public function validate(): array
+    {
+        $errors = [];
+
+        // Validaciones automáticas desde esquema (se implementará con metadata del CLI Rust)
+        $schemaValidationErrors = $this->validateAgainstSchema();
+        $errors = array_merge($errors, $schemaValidationErrors);
+
+        // Validaciones personalizadas del modelo
+        $customValidationErrors = $this->validateCustomRules();
+        $errors = array_merge($errors, $customValidationErrors);
+
+        return $errors;
+    }
+
+    /**
+     * Valida contra el esquema de la base de datos (usando metadatos del CLI Rust).
+     *
+     * @return array<string>
+     */
+    protected function validateAgainstSchema(): array
+    {
+        $errors = [];
+
+        // TODO: Implementar cuando tengamos metadatos del esquema desde Rust
+        // Por ahora implementamos validaciones básicas
+
+        foreach ($this->attributes as $field => $value) {
+            // Validación básica de campos vacío vs NULL
+            if ($value === '' || $value === null) {
+                // TODO: Consultar metadatos de esquema para ver si el campo es NOT NULL
+                // Por ahora, asumimos que 'id' puede ser null (auto-increment)
+                if ($field !== 'id' && $field !== 'created_at' && $field !== 'updated_at') {
+                    // Esta validación se mejorará cuando tengamos acceso a metadatos del esquema
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida usando reglas personalizadas definidas en el modelo.
+     *
+     * @return array<string>
+     */
+    protected function validateCustomRules(): array
+    {
+        $errors = [];
+
+        foreach ($this->rules as $field => $rules) {
+            if (!isset($this->attributes[$field])) {
+                continue;
+            }
+
+            $value = $this->attributes[$field];
+
+            foreach ($rules as $rule) {
+                $error = $this->validateSingleRule($field, $value, $rule);
+                if ($error !== null) {
+                    $errors[] = $error;
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Valida una sola regla contra un campo.
+     *
+     * @param string $field
+     * @param mixed $value
+     * @param string $rule
+     * @return string|null
+     */
+    protected function validateSingleRule(string $field, $value, string $rule): ?string
+    {
+        switch ($rule) {
+            case 'required':
+                if (empty($value)) {
+                    return "The {$field} field is required.";
+                }
+                break;
+
+            case 'email':
+                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    return "The {$field} must be a valid email address.";
+                }
+                break;
+
+            case 'numeric':
+                if (!is_numeric($value)) {
+                    return "The {$field} must be numeric.";
+                }
+                break;
+
+            default:
+                // Reglas con parámetros (ej: 'max:255', 'min:3')
+                if (strpos($rule, ':') !== false) {
+                    [$ruleName, $parameter] = explode(':', $rule, 2);
+
+                    switch ($ruleName) {
+                        case 'max':
+                            if (is_string($value) && strlen($value) > (int)$parameter) {
+                                return "The {$field} may not be greater than {$parameter} characters.";
+                            }
+                            break;
+
+                        case 'min':
+                            if (is_string($value) && strlen($value) < (int)$parameter) {
+                                return "The {$field} must be at least {$parameter} characters.";
+                            }
+                            break;
+                    }
+                }
+                break;
+        }
+
+        return null;
+    }
+
+    /**
      * Cargar los datos del modelo desde la base de datos (método de instancia).
      *
      * @param array<string, mixed>|int|string $data Puede ser un ID para buscar o un array de datos para cargar directamente
@@ -66,7 +293,7 @@ class VersaModel
             // Separar los datos normales de las relaciones
             $relations = [];
             $attributes = [];
-            
+
             foreach ($data as $key => $value) {
                 // Si la clave corresponde a una relación (es un array u objeto)
                 if (method_exists($this, $key) && (is_array($value) || is_object($value))) {
@@ -75,23 +302,25 @@ class VersaModel
                     $attributes[$key] = $value;
                 }
             }
-            
+
             $this->attributes = $attributes;
-            
+
             // Cargar las relaciones encontradas
             foreach ($relations as $relationName => $relationData) {
                 // Convertir los datos de la relación en instancias de modelo apropiadas
                 if (method_exists($this, $relationName)) {
                     $relationInstance = $this->$relationName();
-                    
-                    if ($relationInstance instanceof \VersaORM\Relations\HasMany || 
-                        $relationInstance instanceof \VersaORM\Relations\BelongsToMany) {
+
+                    if (
+                        $relationInstance instanceof \VersaORM\Relations\HasMany ||
+                        $relationInstance instanceof \VersaORM\Relations\BelongsToMany
+                    ) {
                         // Para relaciones "many", convertir cada elemento del array en un modelo
                         $modelInstances = [];
                         if (is_array($relationData)) {
                             $relatedModelClass = get_class($relationInstance->query->getModelInstance());
                             $relatedTable = $relationInstance->query->getTable();
-                            
+
                             foreach ($relationData as $relatedRecord) {
                                 if (is_array($relatedRecord)) {
                                     $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
@@ -106,7 +335,7 @@ class VersaModel
                         if (is_array($relationData)) {
                             $relatedModelClass = get_class($relationInstance->query->getModelInstance());
                             $relatedTable = $relationInstance->query->getTable();
-                            
+
                             $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
                             $relatedModel->loadInstance($relationData);
                             $this->relations[$relationName] = $relatedModel;
@@ -119,7 +348,7 @@ class VersaModel
                     $this->relations[$relationName] = $relationData;
                 }
             }
-            
+
             return $this;
         }
 
@@ -142,14 +371,31 @@ class VersaModel
 
     /**
      * Guardar el modelo en la base de datos.
+     * Ejecuta validación antes de guardar.
      *
      * @return void
+     * @throws VersaORMException
      */
     public function store(): void
     {
+        // Ejecutar validación antes de guardar
+        $validationErrors = $this->validate();
+        if (!empty($validationErrors)) {
+            throw new VersaORMException(
+                "Validation failed: " . implode(', ', $validationErrors),
+                'VALIDATION_ERROR',
+                null,
+                [],
+                ['errors' => $validationErrors, 'attributes' => $this->attributes]
+            );
+        }
+
         $orm = $this->orm ?? self::$ormInstance;
         if (!($orm instanceof VersaORM)) {
-            throw new \Exception("No ORM instance available for store operation");
+            throw new VersaORMException(
+                "No ORM instance available for store operation",
+                'NO_ORM_INSTANCE'
+            );
         }
 
         if (isset($this->attributes['id'])) {
@@ -174,7 +420,10 @@ class VersaModel
             unset($filteredAttributes['updated_at']); // Dejar que MySQL lo maneje
 
             if (empty($filteredAttributes)) {
-                throw new \Exception('No data to insert');
+                throw new VersaORMException(
+                    'No data to insert',
+                    'NO_DATA_TO_INSERT'
+                );
             }
 
             $fields = array_keys($filteredAttributes);
@@ -240,6 +489,7 @@ class VersaModel
 
     /**
      * Asignar valor a un atributo.
+     * Nota: Para mass assignment seguro, usar fill() en su lugar.
      *
      * @param string $key
      * @param mixed $value
@@ -247,6 +497,84 @@ class VersaModel
     public function __set(string $key, $value): void
     {
         $this->attributes[$key] = $value;
+    }
+
+    /**
+     * Crear una nueva instancia del modelo y rellenarla con atributos seguros.
+     *
+     * @param array<string, mixed> $attributes
+     * @return static
+     */
+    public static function create(array $attributes): self
+    {
+        $instance = new static('', self::$ormInstance);
+        return $instance->fill($attributes);
+    }
+
+    /**
+     * Actualizar el modelo con nuevos atributos respetando Mass Assignment.
+     *
+     * @param array<string, mixed> $attributes
+     * @return self
+     * @throws VersaORMException
+     */
+    public function update(array $attributes): self
+    {
+        $this->fill($attributes);
+        $this->store();
+        return $this;
+    }
+
+    /**
+     * Obtener todos los atributos que pueden ser rellenados masivamente.
+     *
+     * @return array<string>
+     */
+    public function getFillable(): array
+    {
+        return $this->fillable;
+    }
+
+    /**
+     * Obtener todos los atributos protegidos contra mass assignment.
+     *
+     * @return array<string>
+     */
+    public function getGuarded(): array
+    {
+        return $this->guarded;
+    }
+
+    /**
+     * Determinar si un atributo puede ser rellenado masivamente.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function isFillable(string $key): bool
+    {
+        // Si fillable tiene valores, solo esos campos son permitidos
+        if (!empty($this->fillable)) {
+            return in_array($key, $this->fillable, true);
+        }
+
+        // Si fillable está vacío, verificar que no esté en guarded
+        if (in_array('*', $this->guarded, true)) {
+            return false; // Todos están protegidos
+        }
+
+        return !in_array($key, $this->guarded, true);
+    }
+
+    /**
+     * Determinar si un atributo está protegido contra mass assignment.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function isGuarded(string $key): bool
+    {
+        return !$this->isFillable($key);
     }
 
     /**

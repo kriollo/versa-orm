@@ -83,7 +83,7 @@ class VersaORM
 
         // Validar parámetros de entrada
         $this->validateInput($action, $params);
-        
+
         // Log de la acción ejecutada
         $this->logDebug("Executing action: {$action}", ['params' => $params]);
 
@@ -593,7 +593,7 @@ class VersaORM
             // Silenciar errores de logging para no interferir con la ejecución principal
         }
     }
-    
+
     /**
      * Registra el error en log si está en modo debug.
      *
