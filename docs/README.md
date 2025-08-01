@@ -19,6 +19,7 @@ Esta documentación está dividida en dos secciones principales:
   - [Query Builder](user-guide/02-query-builder.md)
   - [Modelos y Objetos (VersaModel)](user-guide/03-models-and-objects.md)
   - [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
+  - [🔒 Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
 
 ## Guía del Contribuidor
 

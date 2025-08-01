@@ -41,19 +41,14 @@ class User extends BaseModel
     ];
 
     /**
-     * Lógica de validación personalizada.
+     * Reglas de validación personalizadas.
+     * @var array
      */
-    public function validate(): array
-    {
-        $errors = [];
-        if (empty($this->name)) {
-            $errors['name'] = 'El nombre es requerido.';
-        }
-        if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'El formato del email no es válido.';
-        }
-        return $errors;
-    }
+    protected array $rules = [
+        'name' => ['required', 'min:2', 'max:50'],
+        'email' => ['required', 'email'],
+        'password' => ['required', 'min:8']
+    ];
 
     /**
      * Un método de ejemplo para la lógica de negocio.
@@ -78,23 +73,39 @@ class User extends BaseModel
 
 ### Uso del Modelo Personalizado
 
-Ahora puedes usar tu modelo `User` de forma mucho más expresiva:
+Ahora puedes usar tu modelo `User` de forma mucho más expresiva y segura:
 
 ```php
-// Crear un nuevo usuario
+// Crear un nuevo usuario con Mass Assignment seguro
 $user = new User();
-$user->name = 'Marta';
-$user->email = 'marta@example.com';
-$user->store(); // El método store() viene del BaseModel
+$user->fill([
+    'name' => 'Marta',
+    'email' => 'marta@example.com',
+    'password' => 'secreto123'
+]); // Solo campos $fillable son asignados
+
+// Validación automática al guardar
+try {
+    $user->store(); // Valida automáticamente antes de guardar
+    echo "Usuario creado exitosamente";
+} catch (VersaORMException $e) {
+    echo "Error de validación: " . $e->getMessage();
+}
 
 // Encontrar un usuario y usar sus métodos
 $foundUser = User::find(1);
-if ($foundUser->isActive()) {
+if ($foundUser && $foundUser->isActive()) {
     echo $foundUser->name . " está activo.";
 }
 
 // Usar el scope de consulta personalizado
 $activeUsers = User::findActive();
+
+// Actualización segura con validación
+$user->update([
+    'name' => 'Marta García',
+    'email' => 'marta.garcia@example.com'
+]); // fill() + validate() + store() en una sola llamada
 ```
 
 ## El `VersaORMTrait`
@@ -274,4 +285,6 @@ Usa objetos (`VersaModel` o tus modelos personalizados) cuando trabajas con la *
 
 ## Siguientes Pasos
 
-Para los desarrolladores que deseen ir un paso más allá, la siguiente sección cubre el uso de la **[Herramienta de Línea de Comandos (CLI)](04-cli-tool.md)** que viene con VersaORM.
+Con los modelos personalizados tienes una base sólida para construir aplicaciones robustas. Para aprender sobre **validación avanzada y protección Mass Assignment**, consulta la [Guía de Validación](05-validation-mass-assignment.md).
+
+Para los desarrolladores que deseen ir un paso más allá, la [Herramienta de Línea de Comandos (CLI)](04-cli-tool.md) te permite aprovechar el potente núcleo Rust de VersaORM.

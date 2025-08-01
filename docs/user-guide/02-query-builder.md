@@ -234,4 +234,10 @@ $orm->table('logs')
 
 ## Siguientes Pasos
 
-Ahora que sabes cómo construir todo tipo de consultas, aprende más sobre cómo trabajar con los resultados como objetos en la guía de **[Modelos y Objetos (VersaModel)](03-models-and-objects.md)**.
+Ahora que sabes cómo construir todo tipo de consultas, tienes varias opciones para profundizar:
+
+- **[Modelos y Objetos](03-models-and-objects.md)** - Trabaja con los resultados como objetos con lógica de negocio
+- **[Validación y Mass Assignment](05-validation-mass-assignment.md)** - Protege tus datos al usar `update()` con el Query Builder
+- **[Herramienta CLI](04-cli-tool.md)** - Aprovecha el poder del núcleo Rust para operaciones avanzadas
+
+> **💡 Tip:** Cuando uses el Query Builder para operaciones de escritura (`insert`, `update`), considera combinar tu lógica con modelos personalizados que incluyan validación automática para mayor seguridad.

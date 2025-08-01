@@ -161,6 +161,12 @@ echo json_encode($usersData);
 
 ## Siguientes Pasos
 
-Ahora que dominas las operaciones básicas, es hora de aprender a construir consultas más complejas con el **[Query Builder](02-query-builder.md)**.
+Ahora que dominas las operaciones básicas, tienes varias opciones para continuar:
+
+- **[Query Builder](02-query-builder.md)** - Construye consultas más complejas con sintaxis fluida
+- **[Modelos y Objetos](03-models-and-objects.md)** - Crea modelos personalizados con lógica de negocio
+- **[Validación y Mass Assignment](05-validation-mass-assignment.md)** - Protege tu aplicación con validación automática
+
+> **💡 Tip de Seguridad:** Para aplicaciones en producción, siempre considera usar **modelos personalizados con validación** en lugar de VersaModel genérico. Esto te protege contra vulnerabilidades de seguridad y mantiene la integridad de tus datos.
 
 ```
