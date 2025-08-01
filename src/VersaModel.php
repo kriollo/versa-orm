@@ -63,7 +63,63 @@ class VersaModel
     {
         // Si $data es un array, cargar directamente los datos
         if (is_array($data)) {
-            $this->attributes = $data;
+            // Separar los datos normales de las relaciones
+            $relations = [];
+            $attributes = [];
+            
+            foreach ($data as $key => $value) {
+                // Si la clave corresponde a una relación (es un array u objeto)
+                if (method_exists($this, $key) && (is_array($value) || is_object($value))) {
+                    $relations[$key] = $value;
+                } else {
+                    $attributes[$key] = $value;
+                }
+            }
+            
+            $this->attributes = $attributes;
+            
+            // Cargar las relaciones encontradas
+            foreach ($relations as $relationName => $relationData) {
+                // Convertir los datos de la relación en instancias de modelo apropiadas
+                if (method_exists($this, $relationName)) {
+                    $relationInstance = $this->$relationName();
+                    
+                    if ($relationInstance instanceof \VersaORM\Relations\HasMany || 
+                        $relationInstance instanceof \VersaORM\Relations\BelongsToMany) {
+                        // Para relaciones "many", convertir cada elemento del array en un modelo
+                        $modelInstances = [];
+                        if (is_array($relationData)) {
+                            $relatedModelClass = get_class($relationInstance->query->getModelInstance());
+                            $relatedTable = $relationInstance->query->getTable();
+                            
+                            foreach ($relationData as $relatedRecord) {
+                                if (is_array($relatedRecord)) {
+                                    $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
+                                    $relatedModel->loadInstance($relatedRecord);
+                                    $modelInstances[] = $relatedModel;
+                                }
+                            }
+                        }
+                        $this->relations[$relationName] = $modelInstances;
+                    } else {
+                        // Para relaciones "one", convertir el único registro en un modelo
+                        if (is_array($relationData)) {
+                            $relatedModelClass = get_class($relationInstance->query->getModelInstance());
+                            $relatedTable = $relationInstance->query->getTable();
+                            
+                            $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
+                            $relatedModel->loadInstance($relationData);
+                            $this->relations[$relationName] = $relatedModel;
+                        } else {
+                            $this->relations[$relationName] = $relationData;
+                        }
+                    }
+                } else {
+                    // Si no hay método de relación, almacenar como está
+                    $this->relations[$relationName] = $relationData;
+                }
+            }
+            
             return $this;
         }
 
@@ -485,7 +541,15 @@ class VersaModel
         if (!self::$ormInstance) {
             throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
         }
-        return self::$ormInstance->table($table, static::class)->where($pk, '=', $id)->findOne();
+        $result = self::$ormInstance->table($table, static::class)->where($pk, '=', $id)->findOne();
+        // Si el resultado es instancia de modelo pero no tiene atributos, intentar cargar los datos manualmente
+        if ($result instanceof self && (empty($result->getData()) || !isset($result->getData()['id']))) {
+            $data = self::$ormInstance->exec("SELECT * FROM {$table} WHERE {$pk} = ?", [$id]);
+            if (is_array($data) && !empty($data) && is_array($data[0])) {
+                $result->loadInstance($data[0]);
+            }
+        }
+        return $result;
     }
 
     /**

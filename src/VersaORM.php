@@ -83,6 +83,9 @@ class VersaORM
 
         // Validar parámetros de entrada
         $this->validateInput($action, $params);
+        
+        // Log de la acción ejecutada
+        $this->logDebug("Executing action: {$action}", ['params' => $params]);
 
 
         try {
@@ -547,6 +550,50 @@ class VersaORM
         return $traceStr;
     }
 
+    /**
+     * Registra información de debug en log.
+     *
+     * @param string $message
+     * @param array<string, mixed> $context
+     * @return void
+     */
+    private function logDebug(string $message, array $context = []): void
+    {
+        if (!$this->isDebugMode()) {
+            return;
+        }
+
+        try {
+            $logDir = __DIR__ . '/../logs';
+            if (!is_dir($logDir)) {
+                if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+                }
+            }
+
+            $logFile = $logDir . '/' . date('Y-m-d') . '.log';
+            $timestamp = date('Y-m-d H:i:s');
+
+            $logEntry = sprintf(
+                "[%s] [PHP] [DEBUG] %s\n",
+                $timestamp,
+                $message
+            );
+
+            if (!empty($context)) {
+                $logEntry .= sprintf(
+                    "[%s] [PHP] [CONTEXT] %s\n",
+                    $timestamp,
+                    json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+                );
+            }
+
+            file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+        } catch (\Throwable $e) {
+            // Silenciar errores de logging para no interferir con la ejecución principal
+        }
+    }
+    
     /**
      * Registra el error en log si está en modo debug.
      *

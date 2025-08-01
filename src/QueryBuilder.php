@@ -656,7 +656,7 @@ class QueryBuilder
     public function findOne(): ?VersaModel
     {
         $result = $this->execute('first');
-        if (is_array($result)) {
+        if (is_array($result) && !empty($result)) {
             $modelClass = $this->modelClass ?: VersaModel::class;
             $model = new $modelClass($this->table, $this->orm);
             $model->loadInstance($result);
@@ -690,7 +690,7 @@ class QueryBuilder
     public function first(): ?VersaModel
     {
         $result = $this->execute('first');
-        if (is_array($result)) {
+        if (is_array($result) && !empty($result)) {
             $modelClass = $this->modelClass ?: VersaModel::class;
             $model = new $modelClass($this->table, $this->orm);
             $model->loadInstance($result);
@@ -765,12 +765,12 @@ class QueryBuilder
     /**
      * Elimina los registros que coincidan con las cláusulas WHERE.
      *
-     * @return self
+     * @return null
      */
-    public function delete(): self
+    public function delete(): ?VersaModel
     {
         $this->execute('delete');
-        return $this;
+        return null;
     }
 
     /**
@@ -863,5 +863,16 @@ class QueryBuilder
     public function getTable(): string
     {
         return $this->table;
+    }
+
+    /**
+     * Obtiene una instancia del modelo asociado a este QueryBuilder.
+     *
+     * @return VersaModel
+     */
+    public function getModelInstance(): VersaModel
+    {
+        $modelClass = $this->modelClass ?: VersaModel::class;
+        return new $modelClass($this->table, $this->orm);
     }
 }
