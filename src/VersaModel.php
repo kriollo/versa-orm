@@ -16,6 +16,7 @@ namespace VersaORM;
  * @author VersaORM Team
  * @license MIT
  */
+
 use VersaORM\Traits\HasRelationships;
 
 class VersaModel
@@ -484,7 +485,7 @@ class VersaModel
         if (!self::$ormInstance) {
             throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
         }
-        return self::$ormInstance->table($table)->where($pk, '=', $id)->findOne();
+        return self::$ormInstance->table($table, static::class)->where($pk, '=', $id)->findOne();
     }
 
     /**
@@ -501,7 +502,7 @@ class VersaModel
             throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
         }
 
-        $queryBuilder = self::$ormInstance->table($table);
+        $queryBuilder = self::$ormInstance->table($table, static::class);
 
         if ($conditions) {
             // Intenta analizar condiciones simples como "columna operador ?"

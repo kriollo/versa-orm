@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VersaORM\Traits;
 
 use VersaORM\Relations\BelongsTo;
+use VersaORM\Relations\BelongsToMany;
 use VersaORM\Relations\HasMany;
 use VersaORM\Relations\HasOne;
 use VersaORM\Relations\Relation;
@@ -68,7 +69,7 @@ trait HasRelationships
     {
         $relation = $relation ?: $this->getRelationName();
         $foreignKey = $foreignKey ?: $relation . '_id';
-        
+
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
@@ -78,6 +79,32 @@ trait HasRelationships
         $ownerKey = $ownerKey ?: $instance->getKeyName();
 
         return new BelongsTo($instance->newQuery(), $this, $foreignKey, $ownerKey, $relation);
+    }
+
+    /**
+     * @param class-string<VersaModel> $related
+     * @param string $pivotTable
+     * @param string|null $foreignPivotKey
+     * @param string|null $relatedPivotKey
+     * @param string|null $parentKey
+     * @param string|null $relatedKey
+     * @return BelongsToMany
+     */
+    public function belongsToMany(string $related, string $pivotTable, string $foreignPivotKey = null, string $relatedPivotKey = null, string $parentKey = null, string $relatedKey = null): BelongsToMany
+    {
+        $foreignPivotKey = $foreignPivotKey ?: $this->getForeignKey();
+        $relatedPivotKey = $relatedPivotKey ?: (new $related('dummy', $this->orm))->getForeignKey();
+        $parentKey = $parentKey ?: $this->getKeyName();
+
+        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
+        $reflection = new \ReflectionClass($related);
+        $defaultProperties = $reflection->getDefaultProperties();
+        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+
+        $instance = new $related($table, $this->orm);
+        $relatedKey = $relatedKey ?: $instance->getKeyName();
+
+        return new BelongsToMany($instance->newQuery(), $this, $pivotTable, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey);
     }
 
     /**
@@ -114,7 +141,9 @@ trait HasRelationships
             throw new \Exception('Relationship method must return an object of type Relation.');
         }
 
-        return $this->relations[$method] = $relation->getResults();
+        $result = $relation->getResults();
+        $this->relations[$method] = $result;
+        return $result;
     }
 
     public function setRelation(string $relation, mixed $value): void

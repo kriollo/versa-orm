@@ -567,7 +567,7 @@ class QueryBuilder
                 case 'BelongsTo':
                     /** @var \VersaORM\Relations\BelongsTo $relationInstance */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['local_key'] = $relationInstance->ownerKey; // ownerKey es el local_key en BelongsTo
+                    $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
                     break;
                 case 'BelongsToMany':
                     /** @var \VersaORM\Relations\BelongsToMany $relationInstance */
@@ -599,9 +599,10 @@ class QueryBuilder
         if (!is_array($results)) {
             return $models;
         }
+        $modelClass = $this->modelClass ?: VersaModel::class;
         foreach ($results as $result) {
             if (is_array($result)) {
-                $model = new VersaModel($this->table, $this->orm);
+                $model = new $modelClass($this->table, $this->orm);
                 $model->loadInstance($result);
                 $models[] = $model;
             }
@@ -656,7 +657,8 @@ class QueryBuilder
     {
         $result = $this->execute('first');
         if (is_array($result)) {
-            $model = new VersaModel($this->table, $this->orm);
+            $modelClass = $this->modelClass ?: VersaModel::class;
+            $model = new $modelClass($this->table, $this->orm);
             $model->loadInstance($result);
             return $model;
         }
@@ -689,7 +691,8 @@ class QueryBuilder
     {
         $result = $this->execute('first');
         if (is_array($result)) {
-            $model = new VersaModel($this->table, $this->orm);
+            $modelClass = $this->modelClass ?: VersaModel::class;
+            $model = new $modelClass($this->table, $this->orm);
             $model->loadInstance($result);
             return $model;
         }
