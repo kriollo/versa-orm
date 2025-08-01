@@ -797,6 +797,12 @@ mod tests {
             is_primary_key: true,
             is_auto_increment: true,
             character_maximum_length: None,
+            // Nuevos campos de validación
+            is_required: false, // AUTO_INCREMENT no es requerido
+            max_length: None,
+            numeric_precision: None,
+            numeric_scale: None,
+            validation_rules: vec![],
         };
 
         assert_eq!(column.name, "id");
@@ -820,6 +826,12 @@ mod tests {
             is_primary_key: true,
             is_auto_increment: true,
             character_maximum_length: None,
+            // Nuevos campos de validación
+            is_required: true, // Sin default_value, es requerido
+            max_length: None,
+            numeric_precision: None,
+            numeric_scale: None,
+            validation_rules: vec!["required".to_string()],
         };
 
         let table = TableInfo {

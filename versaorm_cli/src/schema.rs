@@ -1,6 +1,49 @@
 use crate::connection::ConnectionManager;
 use serde::{Deserialize, Serialize};
 
+/// Deriva reglas de validación automáticas basándose en el esquema de la base de datos.
+fn derive_validation_rules(
+    data_type: &str,
+    is_nullable: bool,
+    default_value: &Option<String>,
+    max_length: Option<i64>,
+) -> Vec<String> {
+    let mut rules = Vec::new();
+
+    // Campo requerido si no es nullable y no tiene valor por defecto
+    if !is_nullable && default_value.is_none() {
+        rules.push("required".to_string());
+    }
+
+    // Validaciones basadas en tipo de dato
+    let data_type_lower = data_type.to_lowercase();
+
+    if data_type_lower.contains("varchar") || data_type_lower.contains("char") {
+        if let Some(max_len) = max_length {
+            rules.push(format!("max:{}", max_len));
+        }
+    }
+
+    if data_type_lower.contains("email") || data_type_lower == "email" {
+        rules.push("email".to_string());
+    }
+
+    if data_type_lower.contains("int")
+        || data_type_lower.contains("decimal")
+        || data_type_lower.contains("float")
+        || data_type_lower.contains("double")
+        || data_type_lower.contains("numeric")
+    {
+        rules.push("numeric".to_string());
+    }
+
+    if data_type_lower.contains("text") && data_type_lower.contains("tiny") {
+        rules.push("max:255".to_string());
+    }
+
+    rules
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ColumnInfo {
     pub name: String,
@@ -10,6 +53,12 @@ pub struct ColumnInfo {
     pub is_primary_key: bool,
     pub is_auto_increment: bool,
     pub character_maximum_length: Option<i64>,
+    // Nuevos campos para validación
+    pub is_required: bool,  // Basado en is_nullable y default_value
+    pub max_length: Option<i64>,  // Para validación de longitud
+    pub numeric_precision: Option<u32>,  // Para campos numéricos
+    pub numeric_scale: Option<u32>,  // Para campos decimales
+    pub validation_rules: Vec<String>,  // Reglas automáticas derivadas del esquema
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -151,6 +200,44 @@ impl<'a> SchemaInspector<'a> {
                     character_maximum_length: row
                         .get("character_maximum_length")
                         .and_then(|v| v.as_i64()),
+                    // Nuevos campos de validación para MySQL
+                    is_required: !row
+                        .get("is_nullable")
+                        .unwrap_or(&serde_json::Value::Null)
+                        .as_str()
+                        .unwrap_or("NO")
+                        .eq("YES") && row
+                        .get("default_value")
+                        .and_then(|v| v.as_str())
+                        .is_none(),
+                    max_length: row
+                        .get("character_maximum_length")
+                        .and_then(|v| v.as_i64()),
+                    numeric_precision: row
+                        .get("numeric_precision")
+                        .and_then(|v| v.as_u64())
+                        .map(|v| v as u32),
+                    numeric_scale: row
+                        .get("numeric_scale")
+                        .and_then(|v| v.as_u64())
+                        .map(|v| v as u32),
+                    validation_rules: derive_validation_rules(
+                        &row.get("data_type")
+                            .unwrap_or(&serde_json::Value::Null)
+                            .as_str()
+                            .unwrap_or("")
+                            .to_string(),
+                        row.get("is_nullable")
+                            .unwrap_or(&serde_json::Value::Null)
+                            .as_str()
+                            .unwrap_or("NO")
+                            .eq("YES"),
+                        &row.get("default_value")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
+                        row.get("character_maximum_length")
+                            .and_then(|v| v.as_i64())
+                    ),
                 },
                 "postgres" | "postgresql" => ColumnInfo {
                     name: row
@@ -185,6 +272,44 @@ impl<'a> SchemaInspector<'a> {
                     character_maximum_length: row
                         .get("character_maximum_length")
                         .and_then(|v| v.as_i64()),
+                    // Nuevos campos de validación para PostgreSQL
+                    is_required: !row
+                        .get("is_nullable")
+                        .unwrap_or(&serde_json::Value::Null)
+                        .as_str()
+                        .unwrap_or("NO")
+                        .eq("YES") && row
+                        .get("column_default")
+                        .and_then(|v| v.as_str())
+                        .is_none(),
+                    max_length: row
+                        .get("character_maximum_length")
+                        .and_then(|v| v.as_i64()),
+                    numeric_precision: row
+                        .get("numeric_precision")
+                        .and_then(|v| v.as_u64())
+                        .map(|v| v as u32),
+                    numeric_scale: row
+                        .get("numeric_scale")
+                        .and_then(|v| v.as_u64())
+                        .map(|v| v as u32),
+                    validation_rules: derive_validation_rules(
+                        &row.get("data_type")
+                            .unwrap_or(&serde_json::Value::Null)
+                            .as_str()
+                            .unwrap_or("")
+                            .to_string(),
+                        row.get("is_nullable")
+                            .unwrap_or(&serde_json::Value::Null)
+                            .as_str()
+                            .unwrap_or("NO")
+                            .eq("YES"),
+                        &row.get("column_default")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
+                        row.get("character_maximum_length")
+                            .and_then(|v| v.as_i64())
+                    ),
                 },
                 "sqlite" => ColumnInfo {
                     name: row
@@ -217,10 +342,32 @@ impl<'a> SchemaInspector<'a> {
                         == 1,
                     is_auto_increment: false, // SQLite handles this differently
                     character_maximum_length: None,
+                    // Nuevos campos de validación para SQLite
+                    is_required: row
+                        .get("notnull")
+                        .unwrap_or(&serde_json::Value::Null)
+                        .as_i64()
+                        .unwrap_or(0)
+                        == 1
+                        && row.get("dflt_value").is_none(),
+                    max_length: None, // Se calculará en base a la longitud máxima permitida
+                    numeric_precision: None, // Se puede agregar lógica para precisión numérica
+                    numeric_scale: None, // Se puede agregar lógica para escala numérica
+                    validation_rules: Vec::new(), // Se llenará con reglas derivadas
                 },
                 _ => continue,
             };
             columns.push(column);
+        }
+
+        // Calcular reglas de validación después de obtener todas las columnas
+        for column in &mut columns {
+            column.validation_rules = derive_validation_rules(
+                &column.data_type,
+                column.is_nullable,
+                &column.default_value,
+                column.max_length,
+            );
         }
 
         Ok(columns)

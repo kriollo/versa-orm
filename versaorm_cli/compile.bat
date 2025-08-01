@@ -3,7 +3,7 @@ setlocal
 
 set PROJECT_DIR=%~dp0
 set BINARY_NAME=versaorm_cli
-set OUTPUT_DIR=%PROJECT_DIR%src\binary
+set OUTPUT_DIR=src\binary
 
 echo ---------------------------------------
 echo Compilando para Windows (x86_64-pc-windows-msvc)...
