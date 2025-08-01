@@ -516,7 +516,7 @@ async fn handle_query_action(
 
     let table_name = query_builder.table.clone();
 
-    let (sql, sql_params) = query_builder.build_sql();
+    let (sql, sql_params) = query_builder.build_sql_with_method(&query_params.method);
 
     // Debug SQL y parámetros
     log_debug_msg(&format!("METHOD: {}", query_params.method));
@@ -564,9 +564,11 @@ async fn handle_query_action(
                         continue;
                     }
 
+                    // Create placeholders for IN clause
+                    let placeholders = vec!["?"; parent_ids.len()].join(", ");
                     let relation_sql = format!(
-                        "SELECT * FROM {} WHERE {} IN (?)",
-                        relation.related_table, owner_key
+                        "SELECT * FROM {} WHERE {} IN ({})",
+                        relation.related_table, owner_key, placeholders
                     );
                     let relation_rows = connection
                         .execute_raw(&relation_sql, parent_ids)
@@ -611,9 +613,11 @@ async fn handle_query_action(
                         continue;
                     }
 
+                    // Create placeholders for IN clause
+                    let placeholders = vec!["?"; parent_ids.len()].join(", ");
                     let relation_sql = format!(
-                        "SELECT * FROM {} WHERE {} IN (?)",
-                        relation.related_table, foreign_key
+                        "SELECT * FROM {} WHERE {} IN ({})",
+                        relation.related_table, foreign_key, placeholders
                     );
                     let relation_rows = connection
                         .execute_raw(&relation_sql, parent_ids)
@@ -951,39 +955,87 @@ async fn handle_raw_action(
         .unwrap_or_default();
 
     let query_upper = query.trim().to_uppercase();
-    let needs_unprepared = query_upper.starts_with("START TRANSACTION")
-        || query_upper.starts_with("COMMIT")
-        || query_upper.starts_with("ROLLBACK")
-        || query_upper.starts_with("SET FOREIGN_KEY_CHECKS")
-        || query_upper.starts_with("TRUNCATE")
-        || query_upper.starts_with("DROP TABLE")
-        || query_upper.starts_with("CREATE TABLE")
-        || query_upper.starts_with("ALTER TABLE");
-
-    if needs_unprepared || bindings.is_empty() {
+    
+    // Para transacciones, necesitamos manejar el estado de autocommit
+    if query_upper.starts_with("BEGIN") || query_upper.starts_with("START TRANSACTION") {
+        // Primero, deshabilitar autocommit
+        if let Err(e) = connection.execute_unprepared("SET autocommit = 0").await {
+            return Err((
+                format!("Failed to disable autocommit: {}", e),
+                Some("SET autocommit = 0".to_string()),
+                None,
+            ));
+        }
+        // Luego iniciar la transacción
         connection
-            .execute_unprepared(query)
+            .execute_unprepared("START TRANSACTION")
             .await
             .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
             .map_err(|e| {
                 (
-                    format!("Unprepared raw query execution failed: {}", e),
-                    Some(query.to_string()),
+                    format!("Transaction start failed: {}", e),
+                    Some("START TRANSACTION".to_string()),
+                    None,
+                )
+            })
+    } else if query_upper.starts_with("COMMIT") {
+        // Hacer commit y rehabilitar autocommit
+        let commit_result = connection.execute_unprepared("COMMIT").await;
+        let _ = connection.execute_unprepared("SET autocommit = 1").await; // Siempre rehabilitar
+        commit_result
+            .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
+            .map_err(|e| {
+                (
+                    format!("Transaction commit failed: {}", e),
+                    Some("COMMIT".to_string()),
+                    None,
+                )
+            })
+    } else if query_upper.starts_with("ROLLBACK") {
+        // Hacer rollback y rehabilitar autocommit
+        let rollback_result = connection.execute_unprepared("ROLLBACK").await;
+        let _ = connection.execute_unprepared("SET autocommit = 1").await; // Siempre rehabilitar
+        rollback_result
+            .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
+            .map_err(|e| {
+                (
+                    format!("Transaction rollback failed: {}", e),
+                    Some("ROLLBACK".to_string()),
                     None,
                 )
             })
     } else {
-        let rows = connection
-            .execute_raw(query, bindings.clone())
-            .await
-            .map_err(|e| {
-                (
-                    format!("Raw query execution failed: {}", e),
-                    Some(query.to_string()),
-                    Some(bindings.clone()),
-                )
-            })?;
-        Ok(serde_json::to_value(rows).unwrap())
+        let needs_unprepared = query_upper.starts_with("SET FOREIGN_KEY_CHECKS")
+            || query_upper.starts_with("TRUNCATE")
+            || query_upper.starts_with("DROP TABLE")
+            || query_upper.starts_with("CREATE TABLE")
+            || query_upper.starts_with("ALTER TABLE");
+
+        if needs_unprepared || bindings.is_empty() {
+            connection
+                .execute_unprepared(query)
+                .await
+                .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
+                .map_err(|e| {
+                    (
+                        format!("Unprepared raw query execution failed: {}", e),
+                        Some(query.to_string()),
+                        None,
+                    )
+                })
+        } else {
+            let rows = connection
+                .execute_raw(query, bindings.clone())
+                .await
+                .map_err(|e| {
+                    (
+                        format!("Raw query execution failed: {}", e),
+                        Some(query.to_string()),
+                        Some(bindings.clone()),
+                    )
+                })?;
+            Ok(serde_json::to_value(rows).unwrap())
+        }
     }
 }
 

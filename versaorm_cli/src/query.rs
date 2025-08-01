@@ -214,6 +214,10 @@ impl QueryBuilder {
     }
 
     pub fn build_sql(&self) -> (String, Vec<Value>) {
+        self.build_sql_with_method("get")
+    }
+
+    pub fn build_sql_with_method(&self, method: &str) -> (String, Vec<Value>) {
         let mut query = String::new();
         let mut params = Vec::new();
 
@@ -234,6 +238,9 @@ impl QueryBuilder {
             let setters: Vec<String> = data.keys().map(|k| format!("{} = ?", k)).collect();
             query = format!("UPDATE {} SET {}", self.table, setters.join(", "));
             params = data.values().cloned().collect();
+        } else if method == "delete" {
+            // DELETE query
+            query = format!("DELETE FROM {}", self.table);
         } else {
             // SELECT query (default for reads)
             query.push_str("SELECT ");
@@ -243,7 +250,7 @@ impl QueryBuilder {
                 query.push('*');
             }
             query.push_str(&format!(" FROM {}", self.table));
-        } // JOIN clause
+        }
         for (table, first_col, operator, second_col, join_type) in self.joins.iter() {
             query.push_str(&format!(
                 " {} JOIN {} ON {} {} {}",
