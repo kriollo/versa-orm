@@ -32,7 +32,7 @@ trait HasRelationships
         $defaultProperties = $reflection->getDefaultProperties();
         $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
-        $instance = new $related($table, $this->orm);
+        $instance = new $related($table, $this->getOrm());
 
         return new HasOne($instance->newQuery(), $this, $foreignKey, $localKey);
     }
@@ -53,7 +53,7 @@ trait HasRelationships
         $defaultProperties = $reflection->getDefaultProperties();
         $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
-        $instance = new $related($table, $this->orm);
+        $instance = new $related($table, $this->getOrm());
 
         return new HasMany($instance->newQuery(), $this, $foreignKey, $localKey);
     }
@@ -75,7 +75,7 @@ trait HasRelationships
         $defaultProperties = $reflection->getDefaultProperties();
         $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
-        $instance = new $related($table, $this->orm);
+        $instance = new $related($table, $this->getOrm());
         $ownerKey = $ownerKey ?: $instance->getKeyName();
 
         return new BelongsTo($instance->newQuery(), $this, $foreignKey, $ownerKey, $relation);
@@ -93,7 +93,7 @@ trait HasRelationships
     public function belongsToMany(string $related, string $pivotTable, string $foreignPivotKey = null, string $relatedPivotKey = null, string $parentKey = null, string $relatedKey = null): BelongsToMany
     {
         $foreignPivotKey = $foreignPivotKey ?: $this->getForeignKey();
-        $relatedPivotKey = $relatedPivotKey ?: (new $related('dummy', $this->orm))->getForeignKey();
+        $relatedPivotKey = $relatedPivotKey ?: (new $related('dummy', $this->getOrm()))->getForeignKey();
         $parentKey = $parentKey ?: $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
@@ -101,7 +101,7 @@ trait HasRelationships
         $defaultProperties = $reflection->getDefaultProperties();
         $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
-        $instance = new $related($table, $this->orm);
+        $instance = new $related($table, $this->getOrm());
         $relatedKey = $relatedKey ?: $instance->getKeyName();
 
         return new BelongsToMany($instance->newQuery(), $this, $pivotTable, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey);

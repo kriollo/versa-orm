@@ -75,6 +75,16 @@ class VersaModel
     }
 
     /**
+     * Obtiene la instancia del ORM para uso en traits.
+     *
+     * @return VersaORM|array<string, mixed>|null
+     */
+    protected function getOrm()
+    {
+        return $this->orm;
+    }
+
+    /**
      * Rellena el modelo con un array de atributos respetando Mass Assignment.
      *
      * @param array<string, mixed> $attributes
@@ -505,8 +515,9 @@ class VersaModel
      * @param array<string, mixed> $attributes
      * @return static
      */
-    public static function create(array $attributes): self
+    public static function create(array $attributes): static
     {
+        /** @var static $instance */
         $instance = new static('', self::$ormInstance);
         return $instance->fill($attributes);
     }
