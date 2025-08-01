@@ -83,7 +83,9 @@ $orm = new VersaORM([
 Model::setORM($orm);
 ```
 
-### 2. Primer Ejemplo
+### 2. Ejemplos de Uso
+
+#### CRUD Básico
 ```php
 // Crear un nuevo registro
 $user = $orm->dispense('users');
@@ -101,6 +103,33 @@ $orm->store($user);
 
 // Eliminar
 $orm->trash($user);
+```
+
+#### Modelos con Validación (Nuevo!)
+```php
+class User extends BaseModel {
+    protected string $table = 'users';
+
+    // Protección Mass Assignment
+    protected array $fillable = ['name', 'email'];
+
+    // Validación automática
+    protected array $rules = [
+        'name' => ['required', 'min:2'],
+        'email' => ['required', 'email']
+    ];
+}
+
+// Uso seguro con validación
+try {
+    $user = new User();
+    $user->fill($_POST); // Solo campos $fillable
+    $user->store(); // Validación automática
+    echo "Usuario creado exitosamente";
+} catch (VersaORMException $e) {
+    echo "Error: " . $e->getMessage();
+}
+```
 ```
 
 ## 🔧 Desarrollador
@@ -260,6 +289,8 @@ try {
 
 ### 🛡️ Seguridad Avanzada
 - **Consultas preparadas**: Protección contra inyección SQL por defecto
+- **Mass Assignment Protection**: Sistema de `$fillable` y `$guarded` integrado
+- **Validación automática**: Reglas de validación por modelo con excepciones descriptivas
 - **Validación de tipos**: Sistema de tipos estricto en Rust
 - **Sanitización automática**: Limpieza de datos de entrada
 
