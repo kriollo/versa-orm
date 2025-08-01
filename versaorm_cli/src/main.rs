@@ -84,6 +84,7 @@ mod connection;
 mod model;
 mod query;
 mod schema;
+mod tests;
 mod utils;
 
 use connection::{ConnectionManager, DatabaseConfig};
