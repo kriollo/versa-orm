@@ -223,42 +223,51 @@ ob_start();
             </div>
         </form>
     </div>
-    <th class="px-4 py-2 text-left">Descripción</th>
-    <th class="px-4 py-2 text-left">Completada</th>
-    <th class="px-4 py-2 text-left">Acciones</th>
-    </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-100">
-        <?php foreach ($tasksData as $task): ?>
-            <tr>
-                <td class="px-4 py-2 font-mono text-sm text-gray-700">#<?= $task['id'] ?></td>
-                <td class="px-4 py-2 font-semibold text-blue-900"><?= htmlspecialchars($task['title']) ?></td>
-                <td class="px-4 py-2 text-gray-700"><?= htmlspecialchars($task['description']) ?></td>
-                <td class="px-4 py-2">
-                    <span class="inline-block px-2 py-1 rounded text-xs <?= $task['completed'] ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
-                        <?= $task['completed'] ? 'Sí' : 'No' ?>
-                    </span>
-                </td>
-                <td class="px-4 py-2">
-                    <?php
-                    $taskObj = Example\Models\Task::find($task['id']);
-                    $labels = $taskObj ? $taskObj->labelsArray() : [];
-                    foreach ($labels as $label): ?>
-                        <?php
-                        $labelColor = $label['color'] ?? '#eee';
-                        $textColor = isDark($labelColor) ? '#fff' : '#222';
-                        ?>
-                        <span style="background:<?= htmlspecialchars($labelColor) ?>;color:<?= htmlspecialchars($textColor) ?>;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:2px;display:inline-block;">
-                            <?= htmlspecialchars($label['name']) ?>
+    <table class="min-w-full divide-y divide-gray-200">
+        <tr>
+            <th class="px-4 py-2 text-left">ID</th>
+            <th class="px-4 py-2 text-left">Título</th>
+            <th class="px-4 py-2 text-left">Descripción</th>
+            <th class="px-4 py-2 text-left">Completada</th>
+            <th class="px-4 py-2 text-left">Etiquetas</th>
+            <th class="px-4 py-2 text-left">Acciones</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+            <?php foreach ($tasksData as $task): ?>
+                <tr>
+                    <td class="px-4 py-2 font-mono text-sm text-gray-700">#<?= $task['id'] ?></td>
+                    <td class="px-4 py-2 font-semibold text-blue-900"><?= htmlspecialchars($task['title']) ?></td>
+                    <td class="px-4 py-2 text-gray-700"><?= htmlspecialchars($task['description']) ?></td>
+                    <td class="px-4 py-2">
+                        <span class="inline-block px-2 py-1 rounded text-xs <?= $task['completed'] ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
+                            <?= $task['completed'] ? 'Sí' : 'No' ?>
                         </span>
-                    <?php endforeach; ?>
-                    <a href="?view=task_labels_edit&task_id=<?= $task['id'] ?>" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded ml-2">Etiquetas</a>
-                    <a href="?action=edit&id=<?= $task['id'] ?>" class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded ml-2">Editar</a>
-                    <a href="?action=delete&id=<?= $task['id'] ?>" onclick="return confirm('¿Seguro que deseas eliminar esta tarea?');" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded ml-2">Eliminar</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </tbody>
+                    </td>
+                    <td class="px-4 py-2 flex">
+                        <div>
+                        <?php
+                        $taskObj = Example\Models\Task::find($task['id']);
+                        $labels = $taskObj ? $taskObj->labelsArray() : [];
+                        foreach ($labels as $label): ?>
+                            <?php
+                            $labelColor = $label['color'] ?? '#eee';
+                            $textColor = isDark($labelColor) ? '#fff' : '#222';
+                            ?>
+                            <span style="background:<?= htmlspecialchars($labelColor) ?>;color:<?= htmlspecialchars($textColor) ?>;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:2px;display:inline-block;">
+                                <?= htmlspecialchars($label['name']) ?>
+                            </span>
+                        <?php endforeach; ?>
+                        </div>
+                        <a href="?view=task_labels_edit&task_id=<?= $task['id'] ?>" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded ml-2">Etiquetas</a>
+                    </td>
+                    <td class="px-4 py-2">
+                        <a href="?action=edit&id=<?= $task['id'] ?>" class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded ml-2">Editar</a>
+                        <a href="?action=delete&id=<?= $task['id'] ?>" onclick="return confirm('¿Seguro que deseas eliminar esta tarea?');" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded ml-2">Eliminar</a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
     </table>
 </div>
 <?php if ($totalPages > 1): ?>

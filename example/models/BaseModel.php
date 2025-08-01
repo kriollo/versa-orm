@@ -205,18 +205,14 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Actualiza el modelo current
+     * Actualiza el modelo current de manera segura
+     * Sobrescribe el método padre para mantener compatibilidad
+     * pero usa la implementación estándar de VersaModel
      */
-    public function update(array $data): bool
+    public function updateSafe(array $data): bool
     {
-        foreach ($data as $key => $value) {
-            if (empty($this->fillable) || in_array($key, $this->fillable)) {
-                $this->$key = $value;
-            }
-        }
-
         try {
-            $this->store();
+            $this->update($data); // Usa el método padre que retorna self
             return true;
         } catch (\Exception $e) {
             return false;

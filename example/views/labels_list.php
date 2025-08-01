@@ -96,7 +96,8 @@ ob_start();
                             $labelId = is_object($label) ? $label->id : ($label['id'] ?? null);
                             $labelName = is_object($label) ? $label->name : ($label['name'] ?? '');
                             $labelColor = is_object($label) ? ($label->color ?? '#8B5CF6') : ($label['color'] ?? '#8B5CF6');
-                            $taskCount = rand(0, 15); // Placeholder - en una implementación real calcularías esto
+                            // Obtener conteo real de tareas asociadas
+                            $taskCount = $labelId ? Label::getTaskCount((int)$labelId) : 0;
                             ?>
                             <?php if ($labelId !== null): ?>
                                 <tr class="hover:bg-gray-50 transition duration-150">

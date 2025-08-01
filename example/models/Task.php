@@ -22,46 +22,56 @@ class Task extends BaseModel
 
     /**
      * Campos que se pueden asignar masivamente
+     * @var array<string>
      */
     protected array $fillable = [
         'title',
         'description',
         'completed',
-        'project_id' // <-- necesario para que se guarde
+        'project_id'
+    ];
+
+    /**
+     * Reglas de validación personalizadas
+     * @var array<string, array<string>>
+     */
+    protected array $rules = [
+        'title' => ['required', 'min:3', 'max:100'],
+        'description' => ['max:500'],
+        'project_id' => ['required', 'numeric']
     ];
 
     /**
      * Campos ocultos en la serialización (si los hubiera)
+     * @var array<string>
      */
     protected array $hidden = [];
 
     /**
-     * Validación específica para tareas
+     * Método de negocio: marcar tarea como completada
+     * @return bool
      */
-    public function validate(): array
+    public function markAsCompleted(): bool
     {
-        $errors = [];
-
-        // Título es requerido
-        if (empty($this->title)) {
-            $errors['title'] = 'El título es requerido';
-        }
-
-        // Título no debe ser muy largo
-        if (strlen($this->title ?? '') > 255) {
-            $errors['title'] = 'El título no puede tener más de 255 caracteres';
-        }
-
-        // Descripción no debe ser muy larga
-        if (strlen($this->description ?? '') > 1000) {
-            $errors['description'] = 'La descripción no puede tener más de 1000 caracteres';
-        }
-
-        return $errors;
+        $this->completed = 1;
+        $this->store();
+        return true;
     }
 
     /**
-     * Obtiene tareas completadas usando QueryBuilder
+     * Método de negocio: marcar tarea como pendiente
+     * @return bool
+     */
+    public function markAsPending(): bool
+    {
+        $this->completed = 0;
+        $this->store();
+        return true;
+    }
+
+    /**
+     * Scope: obtener tareas completadas
+     * @return array<int, static>
      */
     public static function completed(): array
     {
@@ -72,7 +82,8 @@ class Task extends BaseModel
     }
 
     /**
-     * Obtiene tareas pendientes usando QueryBuilder
+     * Scope: obtener tareas pendientes
+     * @return array<int, static>
      */
     public static function pending(): array
     {
@@ -83,48 +94,46 @@ class Task extends BaseModel
     }
 
     /**
-     * Marca una tarea como completada
+     * Scope: obtener tareas por etiqueta (many-to-many)
+     * @param int $labelId ID de la etiqueta
+     * @return array<int, array<string, mixed>>
      */
-    public function markAsCompleted(): bool
+    public static function byLabel(int $labelId): array
     {
-        return $this->update(['completed' => true]);
+        $instance = new static();
+        $sql = "SELECT t.* FROM tasks t
+                JOIN task_label tl ON tl.task_id = t.id
+                WHERE tl.label_id = ?
+                ORDER BY t.id DESC";
+        return $instance->db->exec($sql, [$labelId]);
     }
 
     /**
-     * Marca una tarea como pendiente
-     */
-    public function markAsPending(): bool
-    {
-        return $this->update(['completed' => false]);
-    }
-
-    /**
-     * Búsqueda específica en tareas (title y description)
+     * Buscar tareas por título o descripción
+     * @param string $term
+     * @return array<int, static>
      */
     public static function searchTasks(string $term): array
     {
-        return self::search($term, ['title', 'description']);
+        $instance = new static();
+        return $instance->db->table($instance->table)
+            ->where('title', 'LIKE', "%{$term}%")
+            ->orWhere('description', 'LIKE', "%{$term}%")
+            ->findAll();
     }
 
     /**
-     * Búsqueda específica en tareas (title y description) que devuelve arrays asociativos
-     */
-    public static function searchTasksArray(string $term): array
-    {
-        return self::searchArray($term, ['title', 'description']);
-    }
-
-    /**
-     * Obtiene estadísticas de tareas
+     * Obtener estadísticas de tareas
+     * @return array<string, mixed>
      */
     public static function getStats(): array
     {
         $instance = new static();
+        $db = $instance->db;
 
-        $total = $instance->db->table($instance->table)->count();
-        $completed = $instance->db->table($instance->table)
-            ->where('completed', '=', true)->count();
-        $pending = $total - $completed;
+        $total = $db->table($instance->table)->count();
+        $completed = $db->table($instance->table)->where('completed', '=', 1)->count();
+        $pending = $db->table($instance->table)->where('completed', '=', 0)->count();
 
         return [
             'total' => $total,
@@ -135,79 +144,143 @@ class Task extends BaseModel
     }
 
     /**
-     * Scope para tareas recientes (últimos 7 días)
+     * Obtener tareas recientes
+     * @param int $limit
+     * @return array<int, static>
      */
-    public static function recent(): array
+    public static function recent(int $limit = 10): array
     {
         $instance = new static();
-
-        $sql = "SELECT * FROM {$instance->table}
-                WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                ORDER BY created_at DESC";
-
-        $results = $instance->db->exec($sql);
-
-        $models = [];
-        foreach ($results as $result) {
-            $model = new static();
-            $model->loadInstance($result);
-            $models[] = $model;
-        }
-
-        return $models;
+        return $instance->db->table($instance->table)
+            ->orderBy('created_at', 'DESC')
+            ->limit($limit)
+            ->findAll();
     }
 
     /**
-     * Relación: una tarea tiene muchas etiquetas (muchos a muchos)
+     * Relación: obtener las etiquetas de esta tarea (many-to-many)
      * @return array<int, array<string, mixed>>
      */
     public function labelsArray(): array
     {
-        $sql = "SELECT l.* FROM labels l JOIN task_label tl ON tl.label_id = l.id WHERE tl.task_id = ?";
-        return $this->db->exec($sql, [$this->id]);
+        return $this->db->table('labels')
+            ->join('task_label', 'labels.id', '=', 'task_label.label_id')
+            ->where('task_label.task_id', '=', $this->id)
+            ->get();
     }
 
     /**
-     * Asigna una etiqueta a la tarea (si no existe la relación, la crea)
-     */
-    public function addLabel(int $labelId): void
-    {
-        // Verifica si ya existe
-        $exists = $this->db->exec("SELECT id FROM task_label WHERE task_id = ? AND label_id = ?", [$this->id, $labelId]);
-        if (empty($exists)) {
-            $this->db->exec("INSERT INTO task_label (task_id, label_id) VALUES (?, ?)", [$this->id, $labelId]);
-        }
-    }
-
-    /**
-     * Quita una etiqueta de la tarea
-     */
-    public function removeLabel(int $labelId): void
-    {
-        $this->db->exec("DELETE FROM task_label WHERE task_id = ? AND label_id = ?", [$this->id, $labelId]);
-    }
-
-    /**
-     * Reemplaza todas las etiquetas de la tarea por un nuevo set
-     * @param int[] $labelIds
+     * Asignar etiquetas a esta tarea (many-to-many)
+     * @param array<int> $labelIds IDs de las etiquetas a asignar
+     * @return void
      */
     public function setLabels(array $labelIds): void
     {
+        if (!$this->id) {
+            throw new \Exception('La tarea debe estar guardada antes de asignar etiquetas');
+        }
+
+        // Eliminar todas las etiquetas actuales
         $this->db->exec("DELETE FROM task_label WHERE task_id = ?", [$this->id]);
+
+        // Asignar las nuevas etiquetas
         foreach ($labelIds as $labelId) {
-            $this->addLabel($labelId);
+            if (!empty($labelId)) {
+                $this->db->exec(
+                    "INSERT INTO task_label (task_id, label_id) VALUES (?, ?)",
+                    [$this->id, $labelId]
+                );
+            }
         }
     }
 
     /**
-     * Obtiene todas las tareas asociadas a una etiqueta (estático)
-     * @param int $labelId
-     * @return array<int, array<string, mixed>>
+     * Agregar una etiqueta a esta tarea
+     * @param int $labelId ID de la etiqueta a agregar
+     * @return void
      */
-    public static function byLabel(int $labelId): array
+    public function addLabel(int $labelId): void
     {
-        $instance = new static();
-        $sql = "SELECT t.* FROM tasks t JOIN task_label tl ON tl.task_id = t.id WHERE tl.label_id = ?";
-        return $instance->db->exec($sql, [$labelId]);
+        if (!$this->id) {
+            throw new \Exception('La tarea debe estar guardada antes de agregar etiquetas');
+        }
+
+        // Verificar si la relación ya existe
+        $exists = $this->db->exec(
+            "SELECT COUNT(*) as count FROM task_label WHERE task_id = ? AND label_id = ?",
+            [$this->id, $labelId]
+        );
+
+        if ($exists[0]['count'] == 0) {
+            $this->db->exec(
+                "INSERT INTO task_label (task_id, label_id) VALUES (?, ?)",
+                [$this->id, $labelId]
+            );
+        }
+    }
+
+    /**
+     * Remover una etiqueta de esta tarea
+     * @param int $labelId ID de la etiqueta a remover
+     * @return void
+     */
+    public function removeLabel(int $labelId): void
+    {
+        if (!$this->id) {
+            return;
+        }
+
+        $this->db->exec(
+            "DELETE FROM task_label WHERE task_id = ? AND label_id = ?",
+            [$this->id, $labelId]
+        );
+    }
+
+
+    /**
+     * Relación: obtener el proyecto al que pertenece esta tarea
+     * @return array<string, mixed>|null
+     */
+    public function projectArray(): ?array
+    {
+        if (!$this->project_id) {
+            return null;
+        }
+
+        $result = $this->db->table('projects')
+            ->where('id', '=', $this->project_id)
+            ->first();
+
+        return is_array($result) ? $result : null;
+    }
+
+    /**
+     * Método de utilidad: verificar si la tarea está completada
+     * @return bool
+     */
+    public function isCompleted(): bool
+    {
+        return (bool) $this->completed;
+    }
+
+    /**
+     * Método de utilidad: verificar si la tarea está pendiente
+     * @return bool
+     */
+    public function isPending(): bool
+    {
+        return !$this->isCompleted();
+    }
+
+    /**
+     * Método de utilidad: obtener resumen de la tarea
+     * @return string
+     */
+    public function getSummary(): string
+    {
+        $status = $this->isCompleted() ? 'Completada' : 'Pendiente';
+        $description = $this->description ? substr($this->description, 0, 50) . '...' : 'Sin descripción';
+
+        return "{$this->title} - {$status} - {$description}";
     }
 }
