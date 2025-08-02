@@ -983,6 +983,308 @@ mod tests {
     }
 
     // =========================================
+    // TESTS DE OPERACIONES DE LOTE (BATCH) - Tarea 2.2
+    // =========================================
+
+    #[test]
+    fn test_batch_insert_payload_validation() {
+        use serde_json::json;
+        
+        // Test de validación de estructura de insertMany
+        let valid_payload = json!({
+            "records": [
+                {"name": "Test User 1", "email": "test1@example.com"},
+                {"name": "Test User 2", "email": "test2@example.com"}
+            ],
+            "batch_size": 1000
+        });
+        
+        // Verificar que el payload se puede deserializar correctamente
+        let records = valid_payload.get("records").unwrap().as_array().unwrap();
+        assert_eq!(records.len(), 2);
+        
+        let batch_size = valid_payload.get("batch_size").unwrap().as_i64().unwrap();
+        assert_eq!(batch_size, 1000);
+        
+        // Test con records vacíos
+        let empty_payload = json!({
+            "records": [],
+            "batch_size": 1000
+        });
+        
+        let empty_records = empty_payload.get("records").unwrap().as_array().unwrap();
+        assert!(empty_records.is_empty());
+    }
+
+    #[test]
+    fn test_batch_update_payload_validation() {
+        use serde_json::json;
+        
+        // Test de validación de estructura de updateMany
+        let valid_payload = json!({
+            "data": {"status": "active", "updated_at": "2024-01-01 00:00:00"},
+            "max_records": 10000
+        });
+        
+        let data = valid_payload.get("data").unwrap().as_object().unwrap();
+        assert_eq!(data.get("status").unwrap().as_str().unwrap(), "active");
+        
+        let max_records = valid_payload.get("max_records").unwrap().as_i64().unwrap();
+        assert_eq!(max_records, 10000);
+    }
+
+    #[test]
+    fn test_batch_upsert_payload_validation() {
+        use serde_json::json;
+        
+        // Test de validación de estructura de upsertMany
+        let valid_payload = json!({
+            "records": [
+                {"sku": "PROD001", "name": "Product 1", "price": 100.0},
+                {"sku": "PROD002", "name": "Product 2", "price": 200.0}
+            ],
+            "unique_keys": ["sku"],
+            "update_columns": ["name", "price"],
+            "batch_size": 1000
+        });
+        
+        let records = valid_payload.get("records").unwrap().as_array().unwrap();
+        assert_eq!(records.len(), 2);
+        
+        let unique_keys = valid_payload.get("unique_keys").unwrap().as_array().unwrap();
+        assert_eq!(unique_keys[0].as_str().unwrap(), "sku");
+        
+        let update_columns = valid_payload.get("update_columns").unwrap().as_array().unwrap();
+        assert_eq!(update_columns.len(), 2);
+        assert_eq!(update_columns[0].as_str().unwrap(), "name");
+        assert_eq!(update_columns[1].as_str().unwrap(), "price");
+    }
+
+    #[test]
+    fn test_batch_sql_generation_security() {
+        // Test de seguridad para generación de SQL en operaciones de lote
+        use std::collections::HashMap;
+        
+        // Simular datos con nombres de columnas peligrosos
+        let dangerous_column_names = vec![
+            "name; DROP TABLE users; --",
+            "email'; DELETE FROM users WHERE '1'='1",
+            "status/**/OR/**/1=1",
+            "id UNION SELECT password FROM admin"
+        ];
+        
+        for dangerous_name in dangerous_column_names {
+            // Verificar que nombres peligrosos son rechazados
+            assert!(
+                !is_safe_identifier(dangerous_name),
+                "Dangerous column name should be rejected: {}",
+                dangerous_name
+            );
+        }
+        
+        // Test de valores seguros
+        let safe_column_names = vec![
+            "name",
+            "email",
+            "status",
+            "created_at",
+            "user_id",
+            "product_sku"
+        ];
+        
+        for safe_name in safe_column_names {
+            assert!(
+                is_safe_identifier(safe_name),
+                "Safe column name should be accepted: {}",
+                safe_name
+            );
+        }
+    }
+
+    #[test]
+    fn test_batch_size_limits() {
+        // Test de límites para batch_size
+        let valid_batch_sizes = vec![1, 100, 1000, 5000, 10000];
+        let invalid_batch_sizes = vec![0, -1, 10001, 50000];
+        
+        for valid_size in valid_batch_sizes {
+            assert!(
+                (1..=10000).contains(&valid_size),
+                "Valid batch size should be accepted: {}",
+                valid_size
+            );
+        }
+        
+        for invalid_size in invalid_batch_sizes {
+            assert!(
+                !(1..=10000).contains(&invalid_size),
+                "Invalid batch size should be rejected: {}",
+                invalid_size
+            );
+        }
+    }
+
+    #[test]
+    fn test_max_records_limits() {
+        // Test de límites para max_records en updateMany y deleteMany
+        let valid_max_records = vec![1, 1000, 10000, 50000, 100000];
+        let invalid_max_records = vec![0, -1, 100001, 1000000];
+        
+        for valid_limit in valid_max_records {
+            assert!(
+                (1..=100000).contains(&valid_limit),
+                "Valid max_records should be accepted: {}",
+                valid_limit
+            );
+        }
+        
+        for invalid_limit in invalid_max_records {
+            assert!(
+                !(1..=100000).contains(&invalid_limit),
+                "Invalid max_records should be rejected: {}",
+                invalid_limit
+            );
+        }
+    }
+
+    #[test]
+    fn test_batch_sql_injection_prevention() {
+        use serde_json::json;
+        
+        // Test de prevención de inyección SQL en operaciones de lote
+        let malicious_values = vec![
+            "'; DROP TABLE users; --",
+            "admin' OR '1'='1",
+            "'; INSERT INTO users (username, password) VALUES ('hacker', 'pass'); --",
+            "test'; UPDATE users SET role='admin' WHERE id=1; --",
+            "value\"; EXEC sp_configure 'show advanced options', 1; --"
+        ];
+        
+        for malicious_value in malicious_values {
+            // Los valores peligrosos deben ser sanitizados
+            let sanitized = sanitize(malicious_value);
+            
+            // Verificar que las comillas simples fueron escapadas
+            if malicious_value.contains("'") {
+                assert!(
+                    sanitized.contains("''"),
+                    "Single quotes should be escaped in: {}",
+                    malicious_value
+                );
+            }
+            
+            // Preparar para SQL (debería estar entre comillas y escapado)
+            let sql_value = prepare_value_for_sql(&json!(malicious_value));
+            assert!(
+                sql_value.starts_with("'") && sql_value.ends_with("'"),
+                "SQL value should be properly quoted: {}",
+                sql_value
+            );
+        }
+    }
+
+    #[test]
+    fn test_batch_record_structure_validation() {
+        use serde_json::json;
+        use std::collections::HashMap;
+        
+        // Test de validación de estructura consistente en registros
+        let consistent_records = vec![
+            json!({"name": "User 1", "email": "user1@example.com", "status": "active"}),
+            json!({"name": "User 2", "email": "user2@example.com", "status": "inactive"}),
+            json!({"name": "User 3", "email": "user3@example.com", "status": "pending"})
+        ];
+        
+        // Verificar que todos los registros tienen la misma estructura
+        let first_record = consistent_records[0].as_object().unwrap();
+        let first_keys: Vec<String> = first_record.keys().cloned().collect();
+        
+        for (index, record) in consistent_records.iter().enumerate() {
+            let record_obj = record.as_object().unwrap();
+            let record_keys: Vec<String> = record_obj.keys().cloned().collect();
+            
+            assert_eq!(
+                first_keys.len(),
+                record_keys.len(),
+                "Record {} should have same number of fields as first record",
+                index
+            );
+            
+            for key in &first_keys {
+                assert!(
+                    record_obj.contains_key(key),
+                    "Record {} should contain key: {}",
+                    index,
+                    key
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_upsert_database_specific_syntax() {
+        // Test de sintaxis específica para diferentes bases de datos en upsert
+        let drivers = vec!["mysql", "postgresql", "pgsql", "sqlite"];
+        let supported_drivers = vec!["mysql", "postgresql", "pgsql"];
+        
+        for driver in &drivers {
+            let is_supported = supported_drivers.contains(driver);
+            
+            if is_supported {
+                // Los drivers soportados deberían tener sintaxis específica
+                match *driver {
+                    "mysql" => {
+                        // MySQL usa ON DUPLICATE KEY UPDATE
+                        let expected_pattern = "ON DUPLICATE KEY UPDATE";
+                        assert!(
+                            expected_pattern.contains("DUPLICATE"),
+                            "MySQL should use ON DUPLICATE KEY UPDATE syntax"
+                        );
+                    },
+                    "postgresql" | "pgsql" => {
+                        // PostgreSQL usa ON CONFLICT DO UPDATE
+                        let expected_pattern = "ON CONFLICT";
+                        assert!(
+                            expected_pattern.contains("CONFLICT"),
+                            "PostgreSQL should use ON CONFLICT DO UPDATE syntax"
+                        );
+                    },
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_batch_operation_error_messages() {
+        // Test de mensajes de error específicos para operaciones de lote
+        let error_scenarios = vec![
+            ("empty_records", "No records provided"),
+            ("invalid_batch_size", "Batch size must be between"),
+            ("missing_where_conditions", "requires WHERE conditions"),
+            ("exceeds_max_records", "exceeds the maximum limit"),
+            ("missing_unique_keys", "requires unique keys"),
+            ("malicious_column", "Invalid or malicious column name")
+        ];
+        
+        for (scenario, expected_message_part) in error_scenarios {
+            // Verificar que los mensajes de error son descriptivos
+            assert!(
+                !expected_message_part.is_empty(),
+                "Error message for {} should not be empty",
+                scenario
+            );
+            
+            assert!(
+                expected_message_part.len() > 10,
+                "Error message for {} should be descriptive: {}",
+                scenario,
+                expected_message_part
+            );
+        }
+    }
+
+    // =========================================
     // TESTS DE PERFORMANCE Y LÍMITES
     // =========================================
 

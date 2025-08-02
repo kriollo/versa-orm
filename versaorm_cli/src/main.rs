@@ -530,6 +530,76 @@ async fn handle_query_action(
     log_debug_msg(&format!("SQL Parameters: {:?}", sql_params));
 
     match query_params.method.as_str() {
+        "insertMany" => {
+            let records = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("records"))
+                .and_then(|r| r.as_array())
+                .ok_or(("insertMany requires records array".to_string(), None, None))?;
+
+            let batch_size = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("batch_size"))
+                .and_then(|b| b.as_i64())
+                .unwrap_or(1000) as usize;
+
+            handle_insert_many(connection, &table_name, records, batch_size).await
+        }
+        "updateMany" => {
+            let update_data = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("data"))
+                .and_then(|d| d.as_object())
+                .ok_or(("updateMany requires data object".to_string(), None, None))?;
+
+            let max_records = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("max_records"))
+                .and_then(|m| m.as_i64())
+                .unwrap_or(10000);
+
+            handle_update_many(connection, &query_builder, update_data, max_records).await
+        }
+        "deleteMany" => {
+            let max_records = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("max_records"))
+                .and_then(|m| m.as_i64())
+                .unwrap_or(10000);
+
+            handle_delete_many(connection, &query_builder, max_records).await
+        }
+        "upsertMany" => {
+            let records = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("records"))
+                .and_then(|r| r.as_array())
+                .ok_or(("upsertMany requires records array".to_string(), None, None))?;
+
+            let unique_keys = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("unique_keys"))
+                .and_then(|k| k.as_array())
+                .ok_or(("upsertMany requires unique_keys array".to_string(), None, None))?;
+
+            let update_columns = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("update_columns"))
+                .and_then(|c| c.as_array())
+                .unwrap_or(&vec![])
+                .iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            let batch_size = query_params.data
+                .as_ref()
+                .and_then(|d| d.get("batch_size"))
+                .and_then(|b| b.as_i64())
+                .unwrap_or(1000) as usize;
+
+            handle_upsert_many(connection, &table_name, records, unique_keys, update_columns, batch_size).await
+        }
         "get" | "first" => {
             let main_results = connection
                 .execute_raw(&sql, sql_params.clone())
@@ -1070,4 +1140,552 @@ fn handle_cache_action(params: &serde_json::Value) -> Result<serde_json::Value, 
         }
         _ => Err(format!("Unknown cache action: {}", action)),
     }
+}
+
+//======================================================================
+// BATCH OPERATIONS HANDLERS - Tarea 2.2
+//======================================================================
+
+/**
+ * Manejo de insertMany - Inserta múltiples registros en lotes optimizados
+ */
+async fn handle_insert_many(
+    connection: &ConnectionManager,
+    table_name: &str,
+    records: &Vec<serde_json::Value>,
+    batch_size: usize,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if records.is_empty() {
+        return Err(("No records provided for insertion".to_string(), None, None));
+    }
+
+    // Validar la estructura del primer registro para obtener las columnas
+    let first_record = records.first().unwrap();
+    let first_obj = first_record.as_object().ok_or((
+        "First record must be an object".to_string(),
+        None,
+        None,
+    ))?;
+
+    if first_obj.is_empty() {
+        return Err(("Records cannot be empty".to_string(), None, None));
+    }
+
+    let columns: Vec<String> = first_obj.keys().cloned().collect();
+    let mut total_inserted = 0;
+    let mut batches_processed = 0;
+    let mut errors = Vec::new();
+
+    // Procesar en lotes
+    for chunk in records.chunks(batch_size) {
+        // Construir el SQL de inserción múltiple
+        let values_placeholders: Vec<String> = chunk
+            .iter()
+            .map(|_| format!("({})", vec!["?"; columns.len()].join(", ")))
+            .collect();
+
+        let insert_sql = format!(
+            "INSERT INTO {} ({}) VALUES {}",
+            table_name,
+            columns.join(", "),
+            values_placeholders.join(", ")
+        );
+
+        // Preparar parámetros en el orden correcto
+        let mut params = Vec::new();
+        for record in chunk {
+            let record_obj = record.as_object().ok_or((
+                "All records must be objects".to_string(),
+                Some(insert_sql.clone()),
+                None,
+            ))?;
+
+            // Validar que el registro tenga las mismas columnas
+            let record_keys: Vec<String> = record_obj.keys().cloned().collect();
+            if record_keys != columns {
+                return Err((
+                    format!(
+                        "Record structure mismatch. Expected: [{}], Got: [{}]",
+                        columns.join(", "),
+                        record_keys.join(", ")
+                    ),
+                    Some(insert_sql.clone()),
+                    None,
+                ));
+            }
+
+            for column in &columns {
+                params.push(record_obj.get(column).unwrap().clone());
+            }
+        }
+
+        // Ejecutar el lote
+        match connection.execute_raw(&insert_sql, params.clone()).await {
+            Ok(_) => {
+                total_inserted += chunk.len();
+                batches_processed += 1;
+                log_debug_msg(&format!(
+                    "Batch {} completed: {} records inserted",
+                    batches_processed,
+                    chunk.len()
+                ));
+            }
+            Err(e) => {
+                let error_msg = format!("Batch {} failed: {}", batches_processed + 1, e);
+                errors.push(error_msg.clone());
+                log_debug_msg(&error_msg);
+
+                // En caso de error, podemos decidir si continuar o abortar
+                // Por ahora, abortamos para mantener la consistencia
+                return Err((
+                    format!(
+                        "insertMany failed at batch {}: {}. Total inserted before failure: {}",
+                        batches_processed + 1,
+                        e,
+                        total_inserted
+                    ),
+                    Some(insert_sql),
+                    Some(params),
+                ));
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "total_inserted": total_inserted,
+        "batches_processed": batches_processed,
+        "batch_size": batch_size,
+        "total_records": records.len(),
+        "status": "success",
+        "errors": errors
+    }))
+}
+
+/**
+ * Manejo de updateMany - Actualiza múltiples registros con condiciones WHERE
+ */
+async fn handle_update_many(
+    connection: &ConnectionManager,
+    query_builder: &QueryBuilder,
+    update_data: &serde_json::Map<String, serde_json::Value>,
+    max_records: i64,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if update_data.is_empty() {
+        return Err(("No data provided for update".to_string(), None, None));
+    }
+
+    if query_builder.wheres.is_empty() {
+        return Err((
+            "updateMany requires WHERE conditions to prevent accidental mass updates".to_string(),
+            None,
+            None,
+        ));
+    }
+
+    // Primero, contar cuántos registros serían afectados
+    let (count_sql, count_params) = query_builder.build_sql_with_method("count");
+    let count_sql = count_sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
+    
+    let count_rows = connection
+        .execute_raw(&count_sql, count_params.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("Failed to count records for updateMany: {}", e),
+                Some(count_sql.clone()),
+                Some(count_params.clone()),
+            )
+        })?;
+
+    let affected_count = count_rows
+        .first()
+        .and_then(|row| row.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+
+    // Verificar límite de seguridad
+    if affected_count > max_records {
+        return Err((
+            format!(
+                "updateMany would affect {} records, which exceeds the maximum limit of {}. Use a more restrictive WHERE clause or increase max_records.",
+                affected_count, max_records
+            ),
+            Some(count_sql),
+            Some(count_params),
+        ));
+    }
+
+    if affected_count == 0 {
+        return Ok(serde_json::json!({
+            "rows_affected": 0,
+            "status": "success",
+            "message": "No records matched the WHERE conditions"
+        }));
+    }
+
+    // Construir la consulta UPDATE
+    let (select_sql, where_params) = query_builder.build_sql_with_method("get");
+    
+    let mut set_clauses = Vec::new();
+    let mut update_params = Vec::new();
+
+    for (key, value) in update_data {
+        set_clauses.push(format!("{} = ?", key));
+        update_params.push(value.clone());
+    }
+
+    // Extraer la cláusula WHERE del SQL de selección
+    let where_clause = if select_sql.contains(" WHERE ") {
+        let where_part = select_sql.split(" WHERE ").nth(1).unwrap_or("");
+        where_part.split(" ORDER BY").next().unwrap_or(where_part)
+    } else {
+        ""
+    };
+
+    let update_sql = if !where_clause.is_empty() {
+        format!(
+            "UPDATE {} SET {} WHERE {}",
+            query_builder.table,
+            set_clauses.join(", "),
+            where_clause
+        )
+    } else {
+        return Err((
+            "Unable to construct WHERE clause for updateMany".to_string(),
+            None,
+            None,
+        ));
+    };
+
+    // Combinar parámetros: primero los de SET, luego los de WHERE
+    update_params.extend(where_params);
+
+    // Ejecutar la actualización
+    let rows_affected = connection
+        .execute_write(&update_sql, update_params.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("updateMany execution failed: {}", e),
+                Some(update_sql.clone()),
+                Some(update_params.clone()),
+            )
+        })?;
+
+    log_debug_msg(&format!(
+        "updateMany completed: {} rows affected",
+        rows_affected
+    ));
+
+    Ok(serde_json::json!({
+        "rows_affected": rows_affected,
+        "expected_count": affected_count,
+        "status": "success",
+        "update_data": update_data
+    }))
+}
+
+/**
+ * Manejo de deleteMany - Elimina múltiples registros con condiciones WHERE
+ */
+async fn handle_delete_many(
+    connection: &ConnectionManager,
+    query_builder: &QueryBuilder,
+    max_records: i64,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if query_builder.wheres.is_empty() {
+        return Err((
+            "deleteMany requires WHERE conditions to prevent accidental mass deletions".to_string(),
+            None,
+            None,
+        ));
+    }
+
+    // Primero, contar cuántos registros serían eliminados
+    let (count_sql, count_params) = query_builder.build_sql_with_method("count");
+    let count_sql = count_sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
+    
+    let count_rows = connection
+        .execute_raw(&count_sql, count_params.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("Failed to count records for deleteMany: {}", e),
+                Some(count_sql.clone()),
+                Some(count_params.clone()),
+            )
+        })?;
+
+    let affected_count = count_rows
+        .first()
+        .and_then(|row| row.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+
+    // Verificar límite de seguridad
+    if affected_count > max_records {
+        return Err((
+            format!(
+                "deleteMany would affect {} records, which exceeds the maximum limit of {}. Use a more restrictive WHERE clause or increase max_records.",
+                affected_count, max_records
+            ),
+            Some(count_sql),
+            Some(count_params),
+        ));
+    }
+
+    if affected_count == 0 {
+        return Ok(serde_json::json!({
+            "rows_affected": 0,
+            "status": "success",
+            "message": "No records matched the WHERE conditions"
+        }));
+    }
+
+    // Construir la consulta DELETE
+    let (select_sql, delete_params) = query_builder.build_sql_with_method("get");
+    
+    // Extraer la cláusula WHERE del SQL de selección
+    let where_clause = if select_sql.contains(" WHERE ") {
+        let where_part = select_sql.split(" WHERE ").nth(1).unwrap_or("");
+        where_part.split(" ORDER BY").next().unwrap_or(where_part)
+    } else {
+        ""
+    };
+
+    let delete_sql = if !where_clause.is_empty() {
+        format!("DELETE FROM {} WHERE {}", query_builder.table, where_clause)
+    } else {
+        return Err((
+            "Unable to construct WHERE clause for deleteMany".to_string(),
+            None,
+            None,
+        ));
+    };
+
+    // Ejecutar la eliminación
+    let rows_affected = connection
+        .execute_write(&delete_sql, delete_params.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("deleteMany execution failed: {}", e),
+                Some(delete_sql.clone()),
+                Some(delete_params.clone()),
+            )
+        })?;
+
+    log_debug_msg(&format!(
+        "deleteMany completed: {} rows affected",
+        rows_affected
+    ));
+
+    Ok(serde_json::json!({
+        "rows_affected": rows_affected,
+        "expected_count": affected_count,
+        "status": "success"
+    }))
+}
+
+/**
+ * Manejo de upsertMany - INSERT ... ON DUPLICATE KEY UPDATE para múltiples registros
+ */
+async fn handle_upsert_many(
+    connection: &ConnectionManager,
+    table_name: &str,
+    records: &Vec<serde_json::Value>,
+    unique_keys: &Vec<serde_json::Value>,
+    update_columns: Vec<String>,
+    batch_size: usize,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if records.is_empty() {
+        return Err(("No records provided for upsert".to_string(), None, None));
+    }
+
+    if unique_keys.is_empty() {
+        return Err(("No unique keys provided for upsert".to_string(), None, None));
+    }
+
+    // Convertir unique_keys a strings
+    let unique_key_names: Vec<String> = unique_keys
+        .iter()
+        .filter_map(|v| v.as_str())
+        .map(|s| s.to_string())
+        .collect();
+
+    if unique_key_names.is_empty() {
+        return Err(("Invalid unique keys format".to_string(), None, None));
+    }
+
+    // Obtener el driver de base de datos para determinar la sintaxis correcta
+    let driver = connection.get_driver();
+    
+    // Validar la estructura del primer registro
+    let first_record = records.first().unwrap();
+    let first_obj = first_record.as_object().ok_or((
+        "First record must be an object".to_string(),
+        None,
+        None,
+    ))?;
+
+    let columns: Vec<String> = first_obj.keys().cloned().collect();
+    let mut total_processed = 0;
+    let mut batches_processed = 0;
+    let mut errors = Vec::new();
+
+    // Procesar en lotes
+    for chunk in records.chunks(batch_size) {
+        let upsert_sql = match driver {
+            "mysql" => {
+                // MySQL: INSERT ... ON DUPLICATE KEY UPDATE
+                let values_placeholders: Vec<String> = chunk
+                    .iter()
+                    .map(|_| format!("({})", vec!["?"; columns.len()].join(", ")))
+                    .collect();
+
+                let update_clause = if update_columns.is_empty() {
+                    // Si no se especifican columnas, actualizar todas excepto las únicas
+                    columns
+                        .iter()
+                        .filter(|col| !unique_key_names.contains(col))
+                        .map(|col| format!("{} = VALUES({})", col, col))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                } else {
+                    update_columns
+                        .iter()
+                        .map(|col| format!("{} = VALUES({})", col, col))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                };
+
+                if update_clause.is_empty() {
+                    return Err((
+                        "No columns available for update in upsert operation".to_string(),
+                        None,
+                        None,
+                    ));
+                }
+
+                format!(
+                    "INSERT INTO {} ({}) VALUES {} ON DUPLICATE KEY UPDATE {}",
+                    table_name,
+                    columns.join(", "),
+                    values_placeholders.join(", "),
+                    update_clause
+                )
+            },
+            "pgsql" | "postgresql" => {
+                // PostgreSQL: INSERT ... ON CONFLICT DO UPDATE
+                let values_placeholders: Vec<String> = chunk
+                    .iter()
+                    .map(|_| format!("({})", vec!["?"; columns.len()].join(", ")))
+                    .collect();
+
+                let update_clause = if update_columns.is_empty() {
+                    columns
+                        .iter()
+                        .filter(|col| !unique_key_names.contains(col))
+                        .map(|col| format!("{} = EXCLUDED.{}", col, col))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                } else {
+                    update_columns
+                        .iter()
+                        .map(|col| format!("{} = EXCLUDED.{}", col, col))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                };
+
+                if update_clause.is_empty() {
+                    return Err((
+                        "No columns available for update in upsert operation".to_string(),
+                        None,
+                        None,
+                    ));
+                }
+
+                format!(
+                    "INSERT INTO {} ({}) VALUES {} ON CONFLICT ({}) DO UPDATE SET {}",
+                    table_name,
+                    columns.join(", "),
+                    values_placeholders.join(", "),
+                    unique_key_names.join(", "),
+                    update_clause
+                )
+            },
+            _ => {
+                return Err((
+                    format!("Upsert operations not supported for driver: {}", driver),
+                    None,
+                    None,
+                ));
+            }
+        };
+
+        // Preparar parámetros
+        let mut params = Vec::new();
+        for record in chunk {
+            let record_obj = record.as_object().ok_or((
+                "All records must be objects".to_string(),
+                Some(upsert_sql.clone()),
+                None,
+            ))?;
+
+            // Validar que todas las claves únicas estén presentes
+            for unique_key in &unique_key_names {
+                if !record_obj.contains_key(unique_key) {
+                    return Err((
+                        format!("Record missing unique key: {}", unique_key),
+                        Some(upsert_sql.clone()),
+                        None,
+                    ));
+                }
+            }
+
+            for column in &columns {
+                params.push(record_obj.get(column).unwrap().clone());
+            }
+        }
+
+        // Ejecutar el lote
+        match connection.execute_raw(&upsert_sql, params.clone()).await {
+            Ok(_) => {
+                total_processed += chunk.len();
+                batches_processed += 1;
+                log_debug_msg(&format!(
+                    "Upsert batch {} completed: {} records processed",
+                    batches_processed,
+                    chunk.len()
+                ));
+            }
+            Err(e) => {
+                let error_msg = format!("Upsert batch {} failed: {}", batches_processed + 1, e);
+                errors.push(error_msg.clone());
+                log_debug_msg(&error_msg);
+
+                return Err((
+                    format!(
+                        "upsertMany failed at batch {}: {}. Total processed before failure: {}",
+                        batches_processed + 1,
+                        e,
+                        total_processed
+                    ),
+                    Some(upsert_sql),
+                    Some(params),
+                ));
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "total_processed": total_processed,
+        "batches_processed": batches_processed,
+        "batch_size": batch_size,
+        "total_records": records.len(),
+        "unique_keys": unique_key_names,
+        "update_columns": update_columns,
+        "status": "success",
+        "errors": errors
+    }))
 }
