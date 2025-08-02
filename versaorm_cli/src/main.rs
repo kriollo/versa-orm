@@ -1506,7 +1506,7 @@ async fn handle_upsert_many(
         return Err(("No unique keys provided for upsert".to_string(), None, None));
     }
 
-    // Convertir unique_keys a strings
+    // Convertir unique_keys a strings y validar nombres de columnas
     let unique_key_names: Vec<String> = unique_keys
         .iter()
         .filter_map(|v| v.as_str())
@@ -1515,6 +1515,28 @@ async fn handle_upsert_many(
 
     if unique_key_names.is_empty() {
         return Err(("Invalid unique keys format".to_string(), None, None));
+    }
+
+    // Validar que los nombres de unique keys sean seguros
+    for unique_key in &unique_key_names {
+        if let Err(_) = utils::clean_column_name(unique_key) {
+            return Err((
+                "Invalid unique key name detected".to_string(),
+                None,
+                None,
+            ));
+        }
+    }
+
+    // Validar que los nombres de update_columns sean seguros
+    for update_col in &update_columns {
+        if let Err(_) = utils::clean_column_name(update_col) {
+            return Err((
+                "Invalid update column name detected".to_string(),
+                None,
+                None,
+            ));
+        }
     }
 
     // Obtener el driver de base de datos para determinar la sintaxis correcta
@@ -1636,7 +1658,9 @@ async fn handle_upsert_many(
             for unique_key in &unique_key_names {
                 if !record_obj.contains_key(unique_key) {
                     return Err((
-                        format!("Record missing unique key: {}", unique_key),
+                        format!("Record at index {} is missing unique key: {}", 
+                                chunk.iter().position(|r| r == record).unwrap_or(0), 
+                                unique_key),
                         Some(upsert_sql.clone()),
                         None,
                     ));

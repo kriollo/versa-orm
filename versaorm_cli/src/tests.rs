@@ -3,9 +3,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::query::{is_safe_raw_sql, is_safe_sql_operator};
+    // Tests de validación de SQL safety están en otros módulos
     use crate::utils::*;
-    use serde_json::{json, Value};
+    use serde_json::json;
     use std::collections::HashMap;
 
     // ========== UTILIDADES Y SEGURIDAD ==========
@@ -719,9 +719,9 @@ mod tests {
         use crate::cache::*;
 
         // Test cache status inicial
-        let initial_status = cache_status();
+        let _initial_status = cache_status();
         // El status puede ser 0 o cualquier número, solo verificamos que funcione
-        assert!(initial_status >= 0);
+        // Cache status siempre es no-negativo por definición del tipo
 
         // Test habilitar/deshabilitar cache (no fallan)
         enable_cache();
@@ -1063,7 +1063,7 @@ mod tests {
     #[test]
     fn test_batch_sql_generation_security() {
         // Test de seguridad para generación de SQL en operaciones de lote
-        use std::collections::HashMap;
+        // HashMap importado dinámicamente donde se necesite
         
         // Simular datos con nombres de columnas peligrosos
         let dangerous_column_names = vec![
@@ -1186,7 +1186,7 @@ mod tests {
     #[test]
     fn test_batch_record_structure_validation() {
         use serde_json::json;
-        use std::collections::HashMap;
+        // HashMap importado dinámicamente donde se necesite
         
         // Test de validación de estructura consistente en registros
         let consistent_records = vec![
@@ -1353,13 +1353,13 @@ mod tests {
             cache_query(&format!("key_{}", i), &format!("result_{}", i));
         }
 
-        let status = cache_status();
+        let _status = cache_status();
         // Solo verificamos que el cache funciona
-        assert!(status >= 0);
+        // Cache status siempre es no-negativo por definición del tipo
 
         clear_cache();
         // Después de limpiar, debería funcionar correctamente
-        let status_after_clear = cache_status();
-        assert!(status_after_clear >= 0);
+        let _status_after_clear = cache_status();
+        // Cache status siempre es no-negativo por definición del tipo
     }
 }
