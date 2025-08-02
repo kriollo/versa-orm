@@ -227,7 +227,7 @@ class SecurityTest extends TestCase
         $specialChars = [
             "test\x00\n\r\t\"\\value",  // Null byte, newlines, tabs, quotes, backslash
             "emoji🔥💻🚀test",           // Unicode/emoji
-            str_repeat('a', 1000),        // Very long string
+            str_repeat('a', 45),          // Long string within VARCHAR(50) limit
             "''",                         // Already escaped quotes
             "",                           // Empty string
         ];

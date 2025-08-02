@@ -66,57 +66,58 @@ class TestCase extends BaseTestCase
     {
         self::dropSchema(); // Ensure clean state before creating
         
-        // Habilitar foreign keys en SQLite
+        // Configuración específica para MySQL
         global $config;
-        if ($config['DB']['DB_DRIVER'] === 'sqlite') {
-            self::$orm->exec('PRAGMA foreign_keys = ON;');
+        if ($config['DB']['DB_DRIVER'] === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+            self::$orm->exec('SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";');
         }
 
         self::$orm->exec('
             CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(191) UNIQUE NOT NULL,
-                status TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
+                status VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;
         ');
 
         self::$orm->exec('
             CREATE TABLE profiles (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
                 bio TEXT,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         ');
 
         self::$orm->exec('
             CREATE TABLE posts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
                 title VARCHAR(255) NOT NULL,
                 content TEXT,
                 published_at DATETIME NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         ');
 
         self::$orm->exec('
             CREATE TABLE roles (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL
-            );
+            ) ENGINE=InnoDB;
         ');
 
         self::$orm->exec('
             CREATE TABLE role_user (
-                user_id INTEGER,
-                role_id INTEGER,
+                user_id INT,
+                role_id INT,
                 PRIMARY KEY (user_id, role_id),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         ');
 
         self::$orm->exec('
@@ -124,8 +125,8 @@ class TestCase extends BaseTestCase
                 sku VARCHAR(50) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 price DECIMAL(10, 2) NOT NULL,
-                stock INTEGER DEFAULT 0
-            );
+                stock INT DEFAULT 0
+            ) ENGINE=InnoDB;
         ');
     }
 

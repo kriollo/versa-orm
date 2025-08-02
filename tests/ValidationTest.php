@@ -20,12 +20,12 @@ class ValidationTest extends TestCase
         
         // Crear tabla de prueba para ValidationTest
         self::$orm->exec("CREATE TABLE IF NOT EXISTS test_users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
-            age INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )");
+            age INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB");
     }
 
     public function testFillableAttributesAllowMassAssignment(): void
