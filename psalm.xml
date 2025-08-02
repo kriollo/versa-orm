@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<psalm
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    errorLevel="3"
+    cacheDirectory="vendor/cache/psalm"
+    ensureArrayStringOffsetsExist="true"
+    findUnusedVariablesAndParams="true"
+    findUnusedCode="true"
+    strictBinaryOperands="true"
+    reportMixedIssues="true"
+>
+    <projectFiles>
+        <directory name="src" />
+        <ignoreFiles>
+            <directory name="vendor" />
+            <directory name="src/binary" />
+        </ignoreFiles>
+    </projectFiles>
+
+    <plugins>
+        <pluginClass class="Psalm\PluginRegistrationSocket\SecurityPlugin" />
+    </plugins>
+
+    <issueHandlers>
+        <!-- Security issues should be treated as errors -->
+        <TaintedInput errorLevel="error" />
+        <TaintedSql errorLevel="error" />
+        <TaintedShell errorLevel="error" />
+        <TaintedFile errorLevel="error" />
+        <TaintedHtml errorLevel="error" />
+        <TaintedCookie errorLevel="error" />
+        <TaintedHeader errorLevel="error" />
+        
+        <!-- Allow mixed types in some cases -->
+        <MixedAssignment errorLevel="info" />
+        <MixedArgument errorLevel="info" />
+        <MixedArrayOffset errorLevel="info" />
+        <MixedMethodCall errorLevel="info" />
+        <MixedPropertyFetch errorLevel="info" />
+        
+        <!-- Strict type checking -->
+        <RedundantCondition errorLevel="error" />
+        <UnresolvableInclude errorLevel="error" />
+        <InvalidDocblock errorLevel="error" />
+        
+        <!-- Allow some flexibility for dynamic features -->
+        <UndefinedMagicMethod errorLevel="info" />
+        <UndefinedMagicPropertyFetch errorLevel="info" />
+        <UndefinedMagicPropertyAssignment errorLevel="info" />
+    </issueHandlers>
+</psalm>
