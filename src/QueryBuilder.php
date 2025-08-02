@@ -602,7 +602,9 @@ class QueryBuilder
         $modelClass = $this->modelClass ?: VersaModel::class;
         foreach ($results as $result) {
             if (is_array($result)) {
+                /** @var VersaModel $model */
                 $model = new $modelClass($this->table, $this->orm);
+                assert($model instanceof VersaModel);
                 $model->loadInstance($result);
                 $models[] = $model;
             }
@@ -658,7 +660,9 @@ class QueryBuilder
         $result = $this->execute('first');
         if (is_array($result) && !empty($result)) {
             $modelClass = $this->modelClass ?: VersaModel::class;
+            /** @var VersaModel $model */
             $model = new $modelClass($this->table, $this->orm);
+            assert($model instanceof VersaModel);
             $model->loadInstance($result);
             return $model;
         }
@@ -692,7 +696,9 @@ class QueryBuilder
         $result = $this->execute('first');
         if (is_array($result) && !empty($result)) {
             $modelClass = $this->modelClass ?: VersaModel::class;
+            /** @var VersaModel $model */
             $model = new $modelClass($this->table, $this->orm);
+            assert($model instanceof VersaModel);
             $model->loadInstance($result);
             return $model;
         }
@@ -832,6 +838,11 @@ class QueryBuilder
         return $executeMethod->invoke($this->orm, $action, $params);
     }
 
+    /**
+     * @param string $method
+     * @param array<string, mixed>|null $data
+     * @return array<string, mixed>
+     */
     private function buildPayload(string $method, ?array $data = null): array
     {
         $params = [
@@ -873,6 +884,9 @@ class QueryBuilder
     public function getModelInstance(): VersaModel
     {
         $modelClass = $this->modelClass ?: VersaModel::class;
-        return new $modelClass($this->table, $this->orm);
+        /** @var VersaModel $model */
+        $model = new $modelClass($this->table, $this->orm);
+        assert($model instanceof VersaModel);
+        return $model;
     }
 }

@@ -519,7 +519,9 @@ class VersaModel
     {
         /** @var static $instance */
         $instance = new static('', self::$ormInstance);
-        return $instance->fill($attributes);
+        assert($instance instanceof static);
+        $instance->fill($attributes);
+        return $instance;
     }
 
     /**
