@@ -1,0 +1,7 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    ignoreErrors:
+        # Permitir new static() en factory methods
+        - '#Unsafe usage of new static\(\)#'
