@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace VersaORM\Tests;
 
 /**
- * Stress tests for VersaORM performance and stability
- * 
+ * Stress tests for VersaORM performance and stability.
+ *
  * These tests are designed to verify the ORM behavior under
  * high load conditions and stress scenarios.
  */

@@ -81,7 +81,6 @@ class QueryBuilderTest extends TestCase
     }
 
     /** @only */
-
     public function testWhere(): void
     {
         $users = self::$orm->table('users')->where('status', '=', 'inactive')->findAll();
@@ -112,7 +111,7 @@ class QueryBuilderTest extends TestCase
             'database' => $config['DB']['DB_NAME'],
             'username' => $config['DB']['DB_USER'],
             'password' => $config['DB']['DB_PASS'],
-            'debug' => true
+            'debug' => true,
         ]);
 
         $query = $orm->table('users')->whereIn('id', [1, 3]);
@@ -258,7 +257,7 @@ class QueryBuilderTest extends TestCase
             ->groupBy('status')
             ->having('count', '>', 1)
             ->get();
-        
+
         $this->assertCount(1, $results);
         $this->assertEquals('active', $results[0]['status']);
         $this->assertEquals(2, $results[0]['count']);
@@ -274,7 +273,7 @@ class QueryBuilderTest extends TestCase
             ->having('count', '<=', 2)
             ->orderBy('status', 'asc')
             ->get();
-        
+
         $this->assertCount(2, $results); // Both groups should match
         $this->assertEquals('active', $results[0]['status']);
         $this->assertEquals('inactive', $results[1]['status']);
@@ -289,7 +288,7 @@ class QueryBuilderTest extends TestCase
         self::$orm->table('users')->insert([
             'name' => 'Frank',
             'email' => 'frank@example.com',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $frank = self::$orm->table('users')->where('email', '=', 'frank@example.com')->findOne();
@@ -302,7 +301,7 @@ class QueryBuilderTest extends TestCase
         $id = self::$orm->table('users')->insertGetId([
             'name' => 'Grace',
             'email' => 'grace@example.com',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $this->assertIsNumeric($id);

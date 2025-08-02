@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // tests/bootstrap.php
 
 // Cargar el autoloader de Composer

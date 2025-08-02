@@ -18,7 +18,7 @@ class VersaModelTest extends TestCase
         $user->status = 'active';
         $user->store();
 
-        $this->assertNotNull($user->id, "ID should be set after storing.");
+        $this->assertNotNull($user->id, 'ID should be set after storing.');
 
         $dbUser = VersaModel::load('users', $user->id);
         $this->assertEquals('Heidi', $dbUser->name);

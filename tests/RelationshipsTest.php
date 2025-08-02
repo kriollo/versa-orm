@@ -6,7 +6,6 @@ namespace VersaORM\Tests;
 
 use VersaORM\Traits\HasRelationships;
 use VersaORM\VersaModel;
-use VersaORM\VersaORM;
 
 // --- Test Models Definition ---
 
@@ -67,21 +66,21 @@ class RoleTestModel extends VersaModel
 
 class RelationshipsTest extends TestCase
 {
-    public function testHasOneRelationship()
+    public function testHasOneRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
         $this->assertInstanceOf(ProfileTestModel::class, $user->profile);
         $this->assertEquals('Alice bio', $user->profile->bio);
     }
 
-    public function testBelongsToRelationship()
+    public function testBelongsToRelationship(): void
     {
         $profile = ProfileTestModel::findOne('profiles', 1);
         $this->assertInstanceOf(UserTestModel::class, $profile->user);
         $this->assertEquals('Alice', $profile->user->name);
     }
 
-    public function testHasManyRelationship()
+    public function testHasManyRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
         $this->assertIsArray($user->posts);
@@ -90,7 +89,7 @@ class RelationshipsTest extends TestCase
         $this->assertEquals('Alice Post 1', $user->posts[0]->title);
     }
 
-    public function testBelongsToManyRelationship()
+    public function testBelongsToManyRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
         $this->assertIsArray($user->roles);
@@ -99,7 +98,7 @@ class RelationshipsTest extends TestCase
         $this->assertEquals('Admin', $user->roles[0]->name);
     }
 
-    public function testEagerLoadingWithHasMany()
+    public function testEagerLoadingWithHasMany(): void
     {
         $user = parent::$orm->table('users', UserTestModel::class)->with('posts')->findOne();
         $this->assertNotNull($user);
@@ -108,7 +107,7 @@ class RelationshipsTest extends TestCase
         $this->assertEquals('Alice Post 1', $user->getRelations()['posts'][0]->title);
     }
 
-    public function testEagerLoadingWithBelongsTo()
+    public function testEagerLoadingWithBelongsTo(): void
     {
         $post = parent::$orm->table('posts', PostTestModel::class)->with('user')->findOne();
         $this->assertNotNull($post);
@@ -117,7 +116,7 @@ class RelationshipsTest extends TestCase
         $this->assertEquals('Alice', $post->getRelations()['user']->name);
     }
 
-    public function testDatabaseTransactionsCommit()
+    public function testDatabaseTransactionsCommit(): void
     {
         parent::$orm->beginTransaction();
         parent::$orm->table('users')->insert(['name' => 'Test Commit']);

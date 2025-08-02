@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace VersaORM\Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
-use VersaORM\VersaORM;
 use VersaORM\VersaModel;
+use VersaORM\VersaORM;
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -28,7 +28,7 @@ class TestCase extends BaseTestCase
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];
-            
+
             self::$orm = new VersaORM($dbConfig);
             VersaModel::setORM(self::$orm);
         }
@@ -65,7 +65,7 @@ class TestCase extends BaseTestCase
     protected static function createSchema(): void
     {
         self::dropSchema(); // Ensure clean state before creating
-        
+
         // Configuración específica para MySQL
         global $config;
         if ($config['DB']['DB_DRIVER'] === 'mysql') {
