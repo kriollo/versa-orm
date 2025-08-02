@@ -1,3 +1,8 @@
+// Permitir estos warnings de Clippy temporalmente mientras refactorizamos
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::unnecessary_to_owned)]
+#![allow(clippy::unnecessary_get_then_check)]
+
 use chrono::{Duration, Local, TimeZone, Utc};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
