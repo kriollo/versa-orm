@@ -18,7 +18,7 @@ trait VersaORMTrait
         'port' => 3306,
         'database' => '',
         'username' => '',
-        'password' => ''
+        'password' => '',
     ];
 
     /**
@@ -27,14 +27,14 @@ trait VersaORMTrait
     public function connectORM(): void
     {
         global $config;
-        
+
         // Verificar que la configuración global existe
         if (!isset($config) || !is_array($config) || !isset($config['DB'])) {
             throw new \Exception('Database configuration not found. Please define global $config with DB settings.');
         }
-        
+
         $db_config = $config['DB'];
-        
+
         // Verificar que todos los campos requeridos existen
         $required_fields = ['DB_DRIVER', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'];
         foreach ($required_fields as $field) {
@@ -42,7 +42,7 @@ trait VersaORMTrait
                 throw new \Exception("Database configuration field '{$field}' is missing.");
             }
         }
-        
+
         $this->db = new VersaORM(array_merge(static::$DEFAULT_CONFIG, [
             'driver' => $db_config['DB_DRIVER'],
             'host' => $db_config['DB_HOST'],
@@ -50,7 +50,7 @@ trait VersaORMTrait
             'database' => $db_config['DB_NAME'],
             'username' => $db_config['DB_USER'],
             'password' => $db_config['DB_PASS'],
-            'debug' => $db_config['debug'] ?? false
+            'debug' => $db_config['debug'] ?? false,
         ]));
     }
 

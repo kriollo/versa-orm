@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace VersaORM;
 
 /**
- * QueryBuilder - Constructor de consultas para VersaORM
+ * QueryBuilder - Constructor de consultas para VersaORM.
  *
  * PROPÓSITO: Construir consultas SQL de forma fluida
  * ARQUITECTURA CLARA:
@@ -187,7 +187,7 @@ class QueryBuilder
             'LTRIM',
             'RTRIM',
             'REPLACE',
-            'DISTINCT'
+            'DISTINCT',
         ];
 
         // Verificar si es una función SQL con paréntesis
@@ -235,7 +235,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => $operator,
             'value' => $value,
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -254,7 +254,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => $operator,
             'value' => $value,
-            'type' => 'or'
+            'type' => 'or',
         ];
         return $this;
     }
@@ -272,7 +272,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => 'IN',
             'value' => $values,
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -290,7 +290,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => 'NOT IN',
             'value' => $values,
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -307,7 +307,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => 'IS NULL',
             'value' => null,
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -324,7 +324,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => 'IS NOT NULL',
             'value' => null,
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -343,7 +343,7 @@ class QueryBuilder
             'column' => $column,
             'operator' => 'BETWEEN',
             'value' => [$min, $max],
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -361,7 +361,7 @@ class QueryBuilder
             'column' => '',
             'operator' => 'RAW',
             'value' => ['sql' => $sql, 'bindings' => $bindings],
-            'type' => 'and'
+            'type' => 'and',
         ];
         return $this;
     }
@@ -379,7 +379,7 @@ class QueryBuilder
         $this->having[] = [
             'column' => $column,
             'operator' => $operator,
-            'value' => $value
+            'value' => $value,
         ];
         return $this;
     }
@@ -400,7 +400,7 @@ class QueryBuilder
             'table' => $table,
             'first_col' => $firstCol,
             'operator' => $operator,
-            'second_col' => $secondCol
+            'second_col' => $secondCol,
         ];
         return $this;
     }
@@ -421,7 +421,7 @@ class QueryBuilder
             'table' => $table,
             'first_col' => $firstCol,
             'operator' => $operator,
-            'second_col' => $secondCol
+            'second_col' => $secondCol,
         ];
         return $this;
     }
@@ -442,7 +442,7 @@ class QueryBuilder
             'table' => $table,
             'first_col' => $firstCol,
             'operator' => $operator,
-            'second_col' => $secondCol
+            'second_col' => $secondCol,
         ];
         return $this;
     }
@@ -501,7 +501,7 @@ class QueryBuilder
      */
     public function limit(int|string $count): self
     {
-        $this->limit = (int)$count;
+        $this->limit = (int) $count;
         return $this;
     }
 
@@ -530,7 +530,7 @@ class QueryBuilder
         }
 
         if (!$this->modelClass || !class_exists($this->modelClass)) {
-            throw new \Exception("Cannot eager load relations without a valid model class.");
+            throw new \Exception('Cannot eager load relations without a valid model class.');
         }
 
         $resolvedRelations = [];
@@ -543,7 +543,7 @@ class QueryBuilder
             // Para evitar problemas con el ORM en la instancia temporal, pasamos null
             $tempModel = new $this->modelClass($this->table, null);
 
-            $relationInstance = $tempModel->$relationName();
+            $relationInstance = $tempModel->{$relationName}();
 
             if (!$relationInstance instanceof \VersaORM\Relations\Relation) {
                 throw new \Exception(sprintf("Method '%s' in model '%s' does not return a valid Relation instance.", $relationName, $this->modelClass));
@@ -588,7 +588,7 @@ class QueryBuilder
     // ========== MÉTODOS QUE DEVUELVEN OBJETOS MANIPULABLES ==========
 
     /**
-     * Ejecuta la consulta SELECT y devuelve un array de objetos VersaModel manipulables
+     * Ejecuta la consulta SELECT y devuelve un array de objetos VersaModel manipulables.
      *
      * @return array<int, VersaModel>
      */
@@ -615,7 +615,7 @@ class QueryBuilder
     // ========== MÉTODOS QUE DEVUELVEN ARRAYS (para JSON/API) ==========
 
     /**
-     * Ejecuta la consulta SELECT y devuelve array de arrays de datos (para JSON/API)
+     * Ejecuta la consulta SELECT y devuelve array de arrays de datos (para JSON/API).
      *
      * @return array<int, array<string, mixed>>
      */
@@ -630,7 +630,7 @@ class QueryBuilder
     }
 
     /**
-     * Alias de get() - devuelve array de arrays de datos
+     * Alias de get() - devuelve array de arrays de datos.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -640,7 +640,7 @@ class QueryBuilder
     }
 
     /**
-     * Obtiene el primer registro como array (para JSON/API)
+     * Obtiene el primer registro como array (para JSON/API).
      *
      * @return array<string, mixed>|null
      */
@@ -829,7 +829,7 @@ class QueryBuilder
         // Para lectura, es 'query'.
         $batchMethods = ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'];
         $writeMethods = ['insert', 'insertGetId', 'update', 'delete'];
-        
+
         if (in_array($method, $batchMethods)) {
             // Las operaciones de lote van como 'query' con el método específico en params
             $action = 'query';
@@ -864,7 +864,7 @@ class QueryBuilder
             'limit' => $this->limit,
             'offset' => $this->offset,
             'with' => $this->with,
-            'method' => $method
+            'method' => $method,
         ];
 
         if ($data !== null) {
@@ -923,7 +923,7 @@ class QueryBuilder
             if (!is_array($record) || empty($record)) {
                 throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
             }
-            
+
             $currentKeys = array_keys($record);
             if ($currentKeys !== $firstKeys) {
                 throw new VersaORMException(sprintf(
@@ -949,7 +949,7 @@ class QueryBuilder
 
         $params = [
             'records' => $records,
-            'batch_size' => $batchSize
+            'batch_size' => $batchSize,
         ];
 
         return $this->execute('insertMany', $params);
@@ -988,7 +988,7 @@ class QueryBuilder
 
         $params = [
             'data' => $data,
-            'max_records' => $maxRecords
+            'max_records' => $maxRecords,
         ];
 
         return $this->execute('updateMany', $params);
@@ -1014,7 +1014,7 @@ class QueryBuilder
         }
 
         $params = [
-            'max_records' => $maxRecords
+            'max_records' => $maxRecords,
         ];
 
         return $this->execute('deleteMany', $params);
@@ -1073,7 +1073,7 @@ class QueryBuilder
             'records' => $records,
             'unique_keys' => $uniqueKeys,
             'update_columns' => $updateColumns,
-            'batch_size' => $batchSize
+            'batch_size' => $batchSize,
         ];
 
         return $this->execute('upsertMany', $params);

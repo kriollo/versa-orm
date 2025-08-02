@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace VersaORM;
 
 /**
- * VersaModel - Modelo base ActiveRecord para VersaORM
+ * VersaModel - Modelo base ActiveRecord para VersaORM.
  *
  * PROPÓSITO: Representa un registro individual de la base de datos como objeto
  * RETORNA: Siempre objetos manipulables (store, trash, propiedades dinámicas)
@@ -271,13 +271,13 @@ class VersaModel
 
                     switch ($ruleName) {
                         case 'max':
-                            if (is_string($value) && strlen($value) > (int)$parameter) {
+                            if (is_string($value) && strlen($value) > (int) $parameter) {
                                 return "The {$field} may not be greater than {$parameter} characters.";
                             }
                             break;
 
                         case 'min':
-                            if (is_string($value) && strlen($value) < (int)$parameter) {
+                            if (is_string($value) && strlen($value) < (int) $parameter) {
                                 return "The {$field} must be at least {$parameter} characters.";
                             }
                             break;
@@ -319,7 +319,7 @@ class VersaModel
             foreach ($relations as $relationName => $relationData) {
                 // Convertir los datos de la relación en instancias de modelo apropiadas
                 if (method_exists($this, $relationName)) {
-                    $relationInstance = $this->$relationName();
+                    $relationInstance = $this->{$relationName}();
 
                     if (
                         $relationInstance instanceof \VersaORM\Relations\HasMany ||
@@ -365,14 +365,14 @@ class VersaModel
         // Si es un ID, buscar en la base de datos
         $orm = $this->orm ?? self::$ormInstance;
         if (!($orm instanceof VersaORM)) {
-            throw new \Exception("No ORM instance available for load operation");
+            throw new \Exception('No ORM instance available for load operation');
         }
 
         $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$pk} = ?", [$data]);
         if (is_array($result) && !empty($result) && is_array($result[0])) {
             $this->attributes = $result[0];
         } else {
-            throw new \Exception("Record not found or invalid result format");
+            throw new \Exception('Record not found or invalid result format');
         }
 
         return $this;
@@ -392,7 +392,7 @@ class VersaModel
         $validationErrors = $this->validate();
         if (!empty($validationErrors)) {
             throw new VersaORMException(
-                "Validation failed: " . implode(', ', $validationErrors),
+                'Validation failed: ' . implode(', ', $validationErrors),
                 'VALIDATION_ERROR',
                 null,
                 [],
@@ -403,7 +403,7 @@ class VersaModel
         $orm = $this->orm ?? self::$ormInstance;
         if (!($orm instanceof VersaORM)) {
             throw new VersaORMException(
-                "No ORM instance available for store operation",
+                'No ORM instance available for store operation',
                 'NO_ORM_INSTANCE'
             );
         }
@@ -420,7 +420,7 @@ class VersaModel
             }
             $params[] = $this->attributes['id'];
 
-            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = ?";
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . ' WHERE id = ?';
             $orm->exec($sql, $params);
         } else {
             // INSERT nuevo - filtrar campos que no deben insertarse manualmente
@@ -439,7 +439,7 @@ class VersaModel
             $fields = array_keys($filteredAttributes);
             $placeholders = array_fill(0, count($fields), '?');
 
-            $sql = "INSERT INTO {$this->table} (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
+            $sql = "INSERT INTO {$this->table} (" . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
             $orm->exec($sql, array_values($filteredAttributes));
 
             // Obtener el ID del registro recién insertado
@@ -450,7 +450,7 @@ class VersaModel
 
             // Usar campos únicos para encontrar el registro
             if (isset($filteredAttributes['email'])) {
-                $whereConditions[] = "email = ?";
+                $whereConditions[] = 'email = ?';
                 $whereParams[] = $filteredAttributes['email'];
             } else {
                 // Si no hay email, usar otros campos como fallback
@@ -482,12 +482,12 @@ class VersaModel
     public function trash(): void
     {
         if (!isset($this->attributes['id'])) {
-            throw new \Exception("Cannot delete without an ID");
+            throw new \Exception('Cannot delete without an ID');
         }
 
         $orm = $this->orm ?? self::$ormInstance;
         if (!($orm instanceof VersaORM)) {
-            throw new \Exception("No ORM instance available for trash operation");
+            throw new \Exception('No ORM instance available for trash operation');
         }
 
         $sql = "DELETE FROM {$this->table} WHERE id = ?";
@@ -737,7 +737,7 @@ class VersaModel
     public static function dispense(string $table): self
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call Model::setORM() first.");
+            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
         }
         return new self($table, self::$ormInstance);
     }
@@ -753,7 +753,7 @@ class VersaModel
     public static function load(string $table, $id, string $pk = 'id'): ?self
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call Model::setORM() first.");
+            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
         }
 
         try {
@@ -795,7 +795,7 @@ class VersaModel
     public static function count(string $table, ?string $conditions = null, array $bindings = []): int
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
         $sql = "SELECT COUNT(*) as count FROM {$table}";
         if ($conditions) {
@@ -819,7 +819,7 @@ class VersaModel
     public static function getAll(string $sql, array $bindings = []): array
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
         $result = self::$ormInstance->exec($sql, $bindings);
         if (is_array($result)) {
@@ -838,7 +838,7 @@ class VersaModel
     public static function getRow(string $sql, array $bindings = []): ?array
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
         $result = self::$ormInstance->exec($sql, $bindings);
         if (is_array($result) && isset($result[0]) && is_array($result[0])) {
@@ -857,7 +857,7 @@ class VersaModel
     public static function getCell(string $sql, array $bindings = [])
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
         $result = self::$ormInstance->exec($sql, $bindings);
         if (is_array($result) && !empty($result) && is_array($result[0])) {
@@ -880,7 +880,7 @@ class VersaModel
     public static function findOne(string $table, $id, string $pk = 'id'): ?self
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
         $result = self::$ormInstance->table($table, static::class)->where($pk, '=', $id)->findOne();
         // Si el resultado es instancia de modelo pero no tiene atributos, intentar cargar los datos manualmente
@@ -904,7 +904,7 @@ class VersaModel
     public static function findAll(string $table, ?string $conditions = null, array $bindings = []): array
     {
         if (!self::$ormInstance) {
-            throw new \Exception("No ORM instance available. Call VersaModel::setORM() first.");
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
 
         $queryBuilder = self::$ormInstance->table($table, static::class);

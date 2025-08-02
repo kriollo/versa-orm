@@ -22,7 +22,7 @@ trait HasRelationships
      * @param string|null $localKey
      * @return HasOne
      */
-    public function hasOne(string $related, string $foreignKey = null, string $localKey = null): HasOne
+    public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
     {
         $foreignKey = $foreignKey ?: $this->getForeignKey();
         $localKey = $localKey ?: $this->getKeyName();
@@ -43,7 +43,7 @@ trait HasRelationships
      * @param string|null $localKey
      * @return HasMany
      */
-    public function hasMany(string $related, string $foreignKey = null, string $localKey = null): HasMany
+    public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): HasMany
     {
         $foreignKey = $foreignKey ?: $this->getForeignKey();
         $localKey = $localKey ?: $this->getKeyName();
@@ -65,7 +65,7 @@ trait HasRelationships
      * @param string|null $relation
      * @return BelongsTo
      */
-    public function belongsTo(string $related, string $foreignKey = null, string $ownerKey = null, string $relation = null): BelongsTo
+    public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null, ?string $relation = null): BelongsTo
     {
         $relation = $relation ?: $this->getRelationName();
         $foreignKey = $foreignKey ?: $relation . '_id';
@@ -90,7 +90,7 @@ trait HasRelationships
      * @param string|null $relatedKey
      * @return BelongsToMany
      */
-    public function belongsToMany(string $related, string $pivotTable, string $foreignPivotKey = null, string $relatedPivotKey = null, string $parentKey = null, string $relatedKey = null): BelongsToMany
+    public function belongsToMany(string $related, string $pivotTable, ?string $foreignPivotKey = null, ?string $relatedPivotKey = null, ?string $parentKey = null, ?string $relatedKey = null): BelongsToMany
     {
         $foreignPivotKey = $foreignPivotKey ?: $this->getForeignKey();
         $relatedPivotKey = $relatedPivotKey ?: (new $related('dummy', $this->getOrm()))->getForeignKey();
@@ -135,7 +135,7 @@ trait HasRelationships
 
     protected function getRelationshipFromMethod(string $method): mixed
     {
-        $relation = $this->$method();
+        $relation = $this->{$method}();
 
         if (!$relation instanceof Relation) {
             throw new \Exception('Relationship method must return an object of type Relation.');

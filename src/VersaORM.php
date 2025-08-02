@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace VersaORM;
 
 /**
- * VersaORM - ORM de alto rendimiento para PHP con núcleo en Rust
+ * VersaORM - ORM de alto rendimiento para PHP con núcleo en Rust.
  *
  * PROPÓSITO: Configuración general del ORM y acceso al motor SQL
  * FUNCIONALIDAD:
@@ -92,7 +92,7 @@ class VersaORM
             $payload = json_encode([
                 'config' => $this->config,
                 'action' => $action,
-                'params' => $params
+                'params' => $params,
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
             // If in debug mode and JSON_DUMP environment variable is set, dump and exit
@@ -389,17 +389,17 @@ class VersaORM
                         $value = '[' . implode(',', $w['value']) . ']';
                         $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
                     } elseif (is_array($w)) {
-                        $value = (string)($w['value'] ?? '');
+                        $value = (string) ($w['value'] ?? '');
                         $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
                     }
                 }
-                $query .= ", where=[" . implode(' AND ', $whereDesc) . "]";
+                $query .= ', where=[' . implode(' AND ', $whereDesc) . ']';
             }
             if (!empty($orderBy) && isset($orderBy[0]) && is_array($orderBy[0])) {
                 $query .= ", orderBy={$orderBy[0]['column']} {$orderBy[0]['direction']}";
             }
             if ($limit) {
-                $query .= ", limit=" . strval($limit);
+                $query .= ', limit=' . strval($limit);
             }
         }
 
@@ -487,7 +487,7 @@ class VersaORM
         if (!empty($errorDetails)) {
             $message .= '\n\nDetails:';
             foreach ($errorDetails as $key => $value) {
-                $message .= sprintf('\n- %s: %s', $key, is_scalar($value) ? (string)$value : json_encode($value));
+                $message .= sprintf('\n- %s: %s', $key, is_scalar($value) ? (string) $value : json_encode($value));
             }
         }
 
@@ -635,7 +635,7 @@ class VersaORM
                 $timestamp,
                 json_encode($bindings),
                 $timestamp,
-                str_replace("\n", " | ", $fullMessage)
+                str_replace("\n", ' | ', $fullMessage)
             );
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
@@ -803,7 +803,7 @@ class VersaORM
             }
 
             // Construir comando usando el archivo temporal
-            $command = sprintf('%s %s 2>&1', escapeshellarg($binaryPath), escapeshellarg("@$tempFile"));
+            $command = sprintf('%s %s 2>&1', escapeshellarg($binaryPath), escapeshellarg("@{$tempFile}"));
 
             // Ejecutar comando
             $output = shell_exec($command);
@@ -854,20 +854,20 @@ class VersaORM
     {
         if (!file_exists($this->binaryPath)) {
             $osName = strtolower(PHP_OS_FAMILY);
-            $expectedName = "versaorm_cli_{\$osName}" . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
+            $expectedName = 'versaorm_cli_{$osName}' . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
 
             throw new \RuntimeException(
                 "VersaORM binary not found at: {
-                $this->binaryPath}
+                {$this->binaryPath}}
 \n\n" .
                     "Expected binary name: {
-                    $expectedName}
+                    {$expectedName}}
 \n\n" .
                     "To fix this:\n" .
                     "1. Compile the binary: cd versaorm_cli && cargo build --release\n" .
                     "2. Copy to: src/binary/{
-                    $expectedName}\n\n" .
-                    "For cross-compilation, see src/binary/README.md"
+                    {$expectedName}}\n\n" .
+                    'For cross-compilation, see src/binary/README.md'
             );
         }
 
@@ -875,10 +875,10 @@ class VersaORM
         if (PHP_OS_FAMILY !== 'Windows' && !is_executable($this->binaryPath)) {
             throw new \RuntimeException(
                 "VersaORM binary exists but is not executable: {
-                $this->binaryPath}
+                {$this->binaryPath}}
 \n\n" .
                     "Fix with: chmod +x {
-                    $this->binaryPath}"
+                    {$this->binaryPath}}"
             );
         }
     }
