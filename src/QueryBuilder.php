@@ -827,11 +827,19 @@ class QueryBuilder
 
         // Determinar la acción principal. Para operaciones de escritura, es el método mismo.
         // Para lectura, es 'query'.
-        $action = in_array($method, ['insert', 'insertGetId', 'update', 'delete']) ? $method : 'query';
-
-        // Para 'update' y 'delete', la acción principal ya está definida.
-        // Para 'query', el método específico (get, first, etc.) va dentro de los params.
-        if ($action === 'query') {
+        $batchMethods = ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'];
+        $writeMethods = ['insert', 'insertGetId', 'update', 'delete'];
+        
+        if (in_array($method, $batchMethods)) {
+            // Las operaciones de lote van como 'query' con el método específico en params
+            $action = 'query';
+            $params['method'] = $method;
+        } elseif (in_array($method, $writeMethods)) {
+            // Las operaciones de escritura normales van como su propio método
+            $action = $method;
+        } else {
+            // Las operaciones de lectura van como 'query'
+            $action = 'query';
             $params['method'] = $method;
         }
 
@@ -888,5 +896,186 @@ class QueryBuilder
         $model = new $modelClass($this->table, $this->orm);
         assert($model instanceof VersaModel);
         return $model;
+    }
+
+    //======================================================================
+    // BATCH OPERATIONS (LOTE) - Tarea 2.2
+    //======================================================================
+
+    /**
+     * Inserta múltiples registros en una sola operación batch optimizada.
+     * Utiliza INSERT INTO table (cols) VALUES (val1), (val2), ... para máximo rendimiento.
+     *
+     * @param array<int, array<string, mixed>> $records Array de arrays asociativos con los datos a insertar
+     * @param int $batchSize Tamaño del lote para operaciones muy grandes (default: 1000)
+     * @return array<string, mixed> Información sobre la operación: total_inserted, batches_processed, etc.
+     * @throws VersaORMException Si los datos son inválidos o la operación falla
+     */
+    public function insertMany(array $records, int $batchSize = 1000): array
+    {
+        if (empty($records)) {
+            throw new VersaORMException('insertMany requires at least one record to insert');
+        }
+
+        // Validar que todos los registros tengan la misma estructura
+        $firstKeys = array_keys($records[0]);
+        foreach ($records as $index => $record) {
+            if (!is_array($record) || empty($record)) {
+                throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
+            }
+            
+            $currentKeys = array_keys($record);
+            if ($currentKeys !== $firstKeys) {
+                throw new VersaORMException(sprintf(
+                    'Record at index %d has different columns. Expected: [%s], Got: [%s]',
+                    $index,
+                    implode(', ', $firstKeys),
+                    implode(', ', $currentKeys)
+                ));
+            }
+
+            // Validar nombres de columnas por seguridad
+            foreach ($currentKeys as $column) {
+                if (!$this->isSafeIdentifier($column)) {
+                    throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+                }
+            }
+        }
+
+        // Validar tamaño de lote
+        if ($batchSize <= 0 || $batchSize > 10000) {
+            throw new VersaORMException('Batch size must be between 1 and 10000');
+        }
+
+        $params = [
+            'records' => $records,
+            'batch_size' => $batchSize
+        ];
+
+        return $this->execute('insertMany', $params);
+    }
+
+    /**
+     * Actualiza múltiples registros que coincidan con las condiciones WHERE.
+     * Utiliza transacciones y consultas optimizadas según la base de datos.
+     *
+     * @param array<string, mixed> $data Datos a actualizar
+     * @param int $maxRecords Límite máximo de registros a actualizar por seguridad (default: 10000)
+     * @return array<string, mixed> Información sobre la operación: rows_affected, etc.
+     * @throws VersaORMException Si no hay condiciones WHERE o la operación falla
+     */
+    public function updateMany(array $data, int $maxRecords = 10000): array
+    {
+        if (empty($data)) {
+            throw new VersaORMException('updateMany requires data to update');
+        }
+
+        if (empty($this->wheres)) {
+            throw new VersaORMException('updateMany requires WHERE conditions to prevent accidental mass updates');
+        }
+
+        // Validar nombres de columnas por seguridad
+        foreach (array_keys($data) as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            }
+        }
+
+        // Validar límite máximo por seguridad
+        if ($maxRecords <= 0 || $maxRecords > 100000) {
+            throw new VersaORMException('Max records limit must be between 1 and 100000');
+        }
+
+        $params = [
+            'data' => $data,
+            'max_records' => $maxRecords
+        ];
+
+        return $this->execute('updateMany', $params);
+    }
+
+    /**
+     * Elimina múltiples registros que coincidan con las condiciones WHERE.
+     * Utiliza DELETE optimizado con límites de seguridad.
+     *
+     * @param int $maxRecords Límite máximo de registros a eliminar por seguridad (default: 10000)
+     * @return array<string, mixed> Información sobre la operación: rows_affected, etc.
+     * @throws VersaORMException Si no hay condiciones WHERE o la operación falla
+     */
+    public function deleteMany(int $maxRecords = 10000): array
+    {
+        if (empty($this->wheres)) {
+            throw new VersaORMException('deleteMany requires WHERE conditions to prevent accidental mass deletions');
+        }
+
+        // Validar límite máximo por seguridad
+        if ($maxRecords <= 0 || $maxRecords > 100000) {
+            throw new VersaORMException('Max records limit must be between 1 and 100000');
+        }
+
+        $params = [
+            'max_records' => $maxRecords
+        ];
+
+        return $this->execute('deleteMany', $params);
+    }
+
+    /**
+     * Upsert (INSERT ... ON DUPLICATE KEY UPDATE) para múltiples registros.
+     * Inserta registros nuevos o actualiza los existentes basado en claves únicas.
+     *
+     * @param array<int, array<string, mixed>> $records Array de registros
+     * @param array<int, string> $uniqueKeys Columnas que determinan duplicados
+     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @param int $batchSize Tamaño del lote (default: 1000)
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function upsertMany(
+        array $records,
+        array $uniqueKeys,
+        array $updateColumns = [],
+        int $batchSize = 1000
+    ): array {
+        if (empty($records)) {
+            throw new VersaORMException('upsertMany requires at least one record');
+        }
+
+        if (empty($uniqueKeys)) {
+            throw new VersaORMException('upsertMany requires unique keys to detect duplicates');
+        }
+
+        // Validar que las claves únicas existen en todos los registros
+        foreach ($records as $index => $record) {
+            foreach ($uniqueKeys as $key) {
+                if (!array_key_exists($key, $record)) {
+                    throw new VersaORMException(
+                        sprintf('Record at index %d is missing unique key: %s', $index, $key)
+                    );
+                }
+            }
+        }
+
+        // Validar identificadores por seguridad
+        foreach ($uniqueKeys as $key) {
+            if (!$this->isSafeIdentifier($key)) {
+                throw new VersaORMException(sprintf('Invalid unique key name: %s', $key));
+            }
+        }
+
+        foreach ($updateColumns as $col) {
+            if (!$this->isSafeIdentifier($col)) {
+                throw new VersaORMException(sprintf('Invalid update column name: %s', $col));
+            }
+        }
+
+        $params = [
+            'records' => $records,
+            'unique_keys' => $uniqueKeys,
+            'update_columns' => $updateColumns,
+            'batch_size' => $batchSize
+        ];
+
+        return $this->execute('upsertMany', $params);
     }
 }
