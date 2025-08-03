@@ -48,9 +48,12 @@ class Label extends BaseModel
      */
     public static function getTaskCount(int $labelId): int
     {
-        $instance = new static();
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('No ORM instance available.');
+        }
         $sql = "SELECT COUNT(*) as total FROM task_label WHERE label_id = ?";
-        $result = $instance->db->exec($sql, [$labelId]);
+        $result = $orm->exec($sql, [$labelId]);
         return (int)($result[0]['total'] ?? 0);
     }
 }

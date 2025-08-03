@@ -45,25 +45,20 @@ abstract class BaseModel extends VersaModel
     protected array $hidden = [];
 
     /**
-     * Instancia de ORM compartida (singleton por clase)
-     * @var array<string, VersaORM>
+     * Constructor
      */
-    private static array $ormInstances = [];
-
     public function __construct()
     {
-        // Obtener instancia de ORM reutilizable por clase
-        $className = static::class;
-        if (!isset(self::$ormInstances[$className])) {
-            $this->connectORM();
-            self::$ormInstances[$className] = $this->db;
-        } else {
-            $this->db = self::$ormInstances[$className];
-        }
+        // Usar la tabla definida en la clase o inferir del nombre de la clase
+        $tableName = $this->table ?? strtolower(basename(str_replace('\\', '/', static::class))) . 's';
 
-        // Inicializar el modelo base con la tabla y ORM
-        if (!empty($this->table)) {
-            parent::__construct($this->table, $this->db);
+        // Usar la instancia global del ORM
+        $orm = parent::getGlobalORM();
+        if ($orm) {
+            parent::__construct($tableName, $orm);
+        } else {
+            // Si no hay ORM, solo inicializar las propiedades básicas
+            $this->table = $tableName;
         }
     }
 
@@ -88,7 +83,7 @@ abstract class BaseModel extends VersaModel
      */
     public function getORM(): VersaORM
     {
-        return $this->db;
+        return $this->getOrm();
     }
 
     /**
@@ -97,9 +92,16 @@ abstract class BaseModel extends VersaModel
      */
     public static function create(array $data): static
     {
-        $instance = new static();
+        // Usar el ORM global directamente
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('No ORM instance available. Make sure VersaORM is initialized.');
+        }
+
         // Asegurar que el ORM estático esté configurado
-        VersaModel::setORM($instance->db);
+        VersaModel::setORM($orm);
+
+        $instance = new static();
         $model = VersaModel::dispense($instance->table);
 
         // Asignar solo campos permitidos
@@ -119,8 +121,16 @@ abstract class BaseModel extends VersaModel
     public static function find($id): ?static
     {
         $instance = new static();
-        $result = $instance->db->table($instance->table)
-            ->where($instance->primaryKey, '=', $id)
+        $tableName = $instance->getTableName();
+        $primaryKey = $instance->getPrimaryKey();
+
+        $orm = parent::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
+        }
+
+        $result = $orm->table($tableName)
+            ->where($primaryKey, '=', $id)
             ->findOne();
 
         if ($result) {
@@ -146,9 +156,15 @@ abstract class BaseModel extends VersaModel
     public static function all(): array
     {
         $instance = new static();
-        $results = $instance->db->table($instance->table)->orderBy($instance->primaryKey, 'DESC')->get();
+        $tableName = $instance->getTableName();
+        $primaryKey = $instance->getPrimaryKey();
 
-        return $results;
+        $orm = parent::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
+        }
+
+        return $orm->table($tableName)->orderBy($primaryKey, 'DESC')->get();
     }
 
     /**
@@ -159,7 +175,23 @@ abstract class BaseModel extends VersaModel
     public static function allArray(): array
     {
         $instance = new static();
-        return $instance->db->table($instance->table)->orderBy($instance->primaryKey, 'DESC')->get();
+        $tableName = $instance->getTableName();
+        $primaryKey = $instance->getPrimaryKey();
+
+        $orm = parent::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
+        }
+
+        return $orm->table($tableName)->orderBy($primaryKey, 'DESC')->get();
+    }
+
+    /**
+     * Obtiene el nombre de tabla de la clase sin instanciar
+     */
+    private function getTableName(): string
+    {
+        return $this->table ?? strtolower(basename(str_replace('\\', '/', static::class))) . 's';
     }
 
     /**
@@ -177,8 +209,12 @@ abstract class BaseModel extends VersaModel
     public static function where(string $column, string $operator, $value): array
     {
         $instance = new static();
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('No ORM instance available.');
+        }
         $sql = "SELECT * FROM {$instance->table} WHERE {$column} {$operator} ? ORDER BY {$instance->primaryKey} DESC";
-        $results = $instance->db->exec($sql, [$value]);
+        $results = $orm->exec($sql, [$value]);
 
         // Convertir resultados a modelos de la clase correcta
         $models = [];
@@ -199,9 +235,16 @@ abstract class BaseModel extends VersaModel
     public static function whereArray(string $column, string $operator, $value): array
     {
         $instance = new static();
-        $sql = "SELECT * FROM {$instance->table} WHERE {$column} {$operator} ? ORDER BY {$instance->primaryKey} DESC";
-        $results = $instance->db->exec($sql, [$value]);
-        return $results;
+        $tableName = $instance->getTableName();
+        $primaryKey = $instance->getPrimaryKey();
+
+        $orm = parent::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
+        }
+
+        $sql = "SELECT * FROM {$tableName} WHERE {$column} {$operator} ? ORDER BY {$primaryKey} DESC";
+        return $orm->exec($sql, [$value]);
     }
 
     /**
@@ -373,16 +416,5 @@ abstract class BaseModel extends VersaModel
     public function validate(): array
     {
         return []; // Retorna array vacío si no hay errores
-    }
-
-    /**
-     * Limpieza al final del ciclo de vida de la clase
-     */
-    public static function closeConnections(): void
-    {
-        foreach (self::$ormInstances as $orm) {
-            $orm->disconnect();
-        }
-        self::$ormInstances = [];
     }
 }

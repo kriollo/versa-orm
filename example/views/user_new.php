@@ -1,6 +1,5 @@
 <?php
 // Vista: Crear nuevo usuario
-ob_start();
 ?>
 <!-- Navegación de regreso -->
 <div class="mb-6">

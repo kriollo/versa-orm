@@ -1,7 +1,6 @@
 <?php
 // Vista: Editar proyecto
 /** @var array<string, mixed> $project */
-ob_start();
 ?>
 <h1 class="text-2xl font-bold text-blue-800 mb-6">Editar Proyecto</h1>
 <form method="post" action="?action=update_project" class="bg-white shadow rounded-lg p-6 max-w-lg mx-auto">

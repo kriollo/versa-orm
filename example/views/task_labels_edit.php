@@ -22,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $task) {
 ?>
 <?php if ($task): ?>
     <?php
-    ob_start();
     ?>
     <h2 class="text-xl font-bold mb-4">Asignar etiquetas a la tarea: <?= htmlspecialchars(is_object($task) ? $task->title : ($task['title'] ?? '')) ?></h2>
     <form method="post" class="bg-white p-6 rounded shadow max-w-md mx-auto">

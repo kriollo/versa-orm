@@ -1,138 +1,88 @@
-<!-- views/list.php: Listado de tareas -->
+<!-- views/list.php: Listado de tareas estilo Trello -->
 <?php
-// Vista: Listado de tareas (modernizada con TailwindCSS)
 /** @var array<int, array<string, mixed>> $tasks */
-ob_start();
+// Agrupar tareas por estado
+$pendientes = array_filter($tasks, fn($t) => !isset($t['completed']) || !$t['completed']);
+$completadas = array_filter($tasks, fn($t) => isset($t['completed']) && $t['completed']);
 ?>
 <div class="flex items-center justify-between mb-6">
-    <h1 class="text-3xl font-bold text-blue-800">Tareas</h1>
+    <h1 class="text-3xl font-bold text-blue-800">Tablero de Tareas (Trello Style)</h1>
     <a href="?action=new" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">Nueva Tarea
     </a>
 </div>
-<!-- Filtros y paginación para listado de tareas -->
-<form method="get" class="flex flex-wrap gap-2 mb-4 items-end bg-blue-50 p-4 rounded shadow">
-    <input type="hidden" name="action" value="list">
-    <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Proyecto</label>
-        <select name="project_id" class="border rounded px-2 py-1">
-            <option value="">Todos</option>
-            <?php foreach ($allProjects as $proj): ?>
-                <option value="<?= $proj['id'] ?>" <?= isset($_GET['project_id']) && $_GET['project_id'] == $proj['id'] ? 'selected' : '' ?>><?= htmlspecialchars($proj['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
+<div class="overflow-x-auto pb-8">
+    <div class="flex space-x-8 min-w-full">
+        <!-- Columna Pendientes -->
+        <div class="bg-white rounded-lg shadow-lg min-w-[320px] w-96 flex-shrink-0 flex flex-col">
+            <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 px-4 py-3 rounded-t-lg">
+                <h2 class="text-white text-lg font-semibold">Pendientes</h2>
+            </div>
+            <div class="p-4 flex-1 flex flex-col gap-3">
+                <?php if (empty($pendientes)): ?>
+                    <div class="text-gray-400 text-center py-8">Sin tareas pendientes</div>
+                <?php else: ?>
+                    <?php foreach ($pendientes as $task): ?>
+                        <div class="bg-gray-50 rounded shadow p-4 flex flex-col gap-2 border-l-4 border-yellow-400">
+                            <span class="font-semibold text-gray-800 text-base"> <?= htmlspecialchars($task['title']) ?> </span>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <?php if (!empty($task['labels'])): ?>
+                                    <?php foreach ($task['labels'] as $label): ?>
+                                        <span class="px-2 py-1 rounded text-xs font-semibold"
+                                            style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;">
+                                            <?= htmlspecialchars($label['name']) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <?php if (!empty($task['user'])): ?>
+                                    <span class="ml-2 text-xs text-blue-700 font-medium">👤 <?= htmlspecialchars($task['user']['name']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex justify-end gap-2 mt-2">
+                                <a href="?action=edit&id=<?= $task['id'] ?>" class="text-indigo-600 hover:underline text-xs">Editar</a>
+                                <a href="?action=trash&id=<?= $task['id'] ?>" class="text-red-500 hover:underline text-xs">Eliminar</a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <div class="bg-gray-100 px-4 py-2 rounded-b-lg text-right">
+                <a href="?action=new" class="text-blue-600 hover:underline text-xs font-semibold">+ Añadir tarea</a>
+            </div>
+        </div>
+        <!-- Columna Completadas -->
+        <div class="bg-white rounded-lg shadow-lg min-w-[320px] w-96 flex-shrink-0 flex flex-col">
+            <div class="bg-gradient-to-r from-green-400 to-green-600 px-4 py-3 rounded-t-lg">
+                <h2 class="text-white text-lg font-semibold">Completadas</h2>
+            </div>
+            <div class="p-4 flex-1 flex flex-col gap-3">
+                <?php if (empty($completadas)): ?>
+                    <div class="text-gray-400 text-center py-8">Sin tareas completadas</div>
+                <?php else: ?>
+                    <?php foreach ($completadas as $task): ?>
+                        <div class="bg-gray-50 rounded shadow p-4 flex flex-col gap-2 border-l-4 border-green-400">
+                            <span class="font-semibold text-gray-800 text-base"> <?= htmlspecialchars($task['title']) ?> </span>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <?php if (!empty($task['labels'])): ?>
+                                    <?php foreach ($task['labels'] as $label): ?>
+                                        <span class="px-2 py-1 rounded text-xs font-semibold"
+                                            style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;">
+                                            <?= htmlspecialchars($label['name']) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <?php if (!empty($task['user'])): ?>
+                                    <span class="ml-2 text-xs text-blue-700 font-medium">👤 <?= htmlspecialchars($task['user']['name']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex justify-end gap-2 mt-2">
+                                <a href="?action=edit&id=<?= $task['id'] ?>" class="text-indigo-600 hover:underline text-xs">Editar</a>
+                                <a href="?action=trash&id=<?= $task['id'] ?>" class="text-red-500 hover:underline text-xs">Eliminar</a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
-    <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Etiqueta</label>
-        <select name="label_id" class="border rounded px-2 py-1">
-            <option value="">Todas</option>
-            <?php foreach ($allLabels as $label): ?>
-                <option value="<?= is_object($label) ? $label->id : $label['id'] ?>" <?= isset($_GET['label_id']) && $_GET['label_id'] == (is_object($label) ? $label->id : $label['id']) ? 'selected' : '' ?>><?= htmlspecialchars(is_object($label) ? $label->name : $label['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Estado</label>
-        <select name="status" class="border rounded px-2 py-1">
-            <option value="">Todos</option>
-            <option value="1" <?= isset($_GET['status']) && $_GET['status'] === '1' ? 'selected' : '' ?>>Completadas</option>
-            <option value="0" <?= isset($_GET['status']) && $_GET['status'] === '0' ? 'selected' : '' ?>>Pendientes</option>
-        </select>
-    </div>
-    <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Buscar</label>
-        <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" class="border rounded px-2 py-1" placeholder="Título o descripción...">
-    </div>
-    <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Por página</label>
-        <select name="perPage" class="border rounded px-2 py-1">
-            <option value="1" <?= (isset($_GET['perPage']) && $_GET['perPage'] == 1) ? 'selected' : '' ?>>1</option>
-            <?php foreach ([5, 10, 20, 50, 100] as $n): ?>
-                <option value="<?= $n ?>" <?= (isset($_GET['perPage']) && $_GET['perPage'] == $n) ? 'selected' : '' ?>><?= $n ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <div>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Filtrar</button>
-    </div>
-</form>
-<div class="bg-white shadow rounded-lg overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-blue-100">
-            <tr>
-                <th class="px-4 py-2 text-left">ID</th>
-                <th class="px-4 py-2 text-left">Título</th>
-                <th class="px-4 py-2 text-left">Descripción</th>
-                <th class="px-4 py-2 text-left">Completada</th>
-                <th class="px-4 py-2 text-left">Creación</th>
-                <th class="px-4 py-2 text-left">Actualización</th>
-                <th class="px-4 py-2 text-left">Acciones</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-100">
-            <?php foreach ($tasks as $task): ?>
-                <tr>
-                    <td class="px-4 py-2 font-mono text-sm text-gray-700">#<?= $task['id'] ?></td>
-                    <td class="px-4 py-2 font-semibold text-blue-900"><?= htmlspecialchars($task['title']) ?></td>
-                    <td class="px-4 py-2 text-gray-700"><?= htmlspecialchars($task['description']) ?></td>
-                    <td class="px-4 py-2">
-                        <span class="inline-block px-2 py-1 rounded text-xs <?= $task['completed'] ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
-                            <?= $task['completed'] ? 'Sí' : 'No' ?>
-                        </span>
-                    </td>
-                    <td class="px-4 py-2 text-xs text-gray-500"><?= $task['created_at'] ?? '' ?></td>
-                    <td class="px-4 py-2 text-xs text-gray-500"><?= $task['updated_at'] ?? '' ?></td>
-                    <td class="px-4 py-2">
-                        <?php
-                        // Mostrar etiquetas de la tarea
-                        $taskObj = Example\Models\Task::find($task['id']);
-                        $labels = $taskObj ? $taskObj->labelsArray() : [];
-                        foreach ($labels as $label): ?>
-                            <span style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:2px;display:inline-block;">
-                                <?= htmlspecialchars($label['name']) ?>
-                            </span>
-                        <?php endforeach; ?>
-                        <a href="?action=edit&id=<?= $task['id'] ?>"
-                            class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded mr-2">Editar</a>
-                        <a href="?view=task_labels_edit&task_id=<?= $task['id'] ?>"
-                            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded">Etiquetas</a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
 </div>
-<?php if ($totalPages > 1): ?>
-    <div class="flex justify-center mt-4">
-        <nav class="inline-flex rounded-md shadow-sm items-center" aria-label="Paginación">
-            <?php
-            $prevPage = max(1, $page - 1);
-            $nextPage = min($totalPages, $page + 1);
-            $baseUrl = '?action=list'
-                . (isset($_GET['perPage']) ? '&perPage=' . (int)$_GET['perPage'] : '')
-                . (isset($_GET['project_id']) ? '&project_id=' . (int)$_GET['project_id'] : '')
-                . (isset($_GET['label_id']) ? '&label_id=' . (int)$_GET['label_id'] : '')
-                . (isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : '')
-                . (isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '');
-            $range = 2; // Cuántos botones a la izquierda y derecha
-            $start = max(1, $page - $range);
-            $end = min($totalPages, $page + $range);
-            ?>
-            <a href="<?= $baseUrl . '&page=' . $prevPage ?>" class="px-3 py-1 border rounded-l <?= $page == 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&laquo;</a>
-            <?php if ($start > 1): ?>
-                <a href="<?= $baseUrl . '&page=1' ?>" class="px-3 py-1 border bg-white text-blue-700 hover:bg-blue-100 mx-1 rounded">1</a>
-                <?php if ($start > 2): ?><span class="px-2">...</span><?php endif; ?>
-            <?php endif; ?>
-            <?php for ($i = $start; $i <= $end; $i++): ?>
-                <a href="<?= $baseUrl . '&page=' . $i ?>" class="px-3 py-1 border mx-1 rounded <?= $i == $page ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 hover:bg-blue-100' ?>"><?= $i ?></a>
-            <?php endfor; ?>
-            <?php if ($end < $totalPages): ?>
-                <?php if ($end < $totalPages - 1): ?><span class="px-2">...</span><?php endif; ?>
-                <a href="<?= $baseUrl . '&page=' . $totalPages ?>" class="px-3 py-1 border bg-white text-blue-700 hover:bg-blue-100 mx-1 rounded"><?= $totalPages ?></a>
-            <?php endif; ?>
-            <a href="<?= $baseUrl . '&page=' . $nextPage ?>" class="px-3 py-1 border rounded-r <?= $page == $totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-blue-700 hover:bg-blue-100' ?>">&raquo;</a>
-        </nav>
-    </div>
-<?php endif; ?>
-<?php
-$content = ob_get_clean();
-include __DIR__ . '/layout.php';
+<?php $content = ob_get_clean(); ?>

@@ -18,7 +18,6 @@ if (!function_exists('isDark')) {
 /** @var int $completedCount */
 /** @var int $totalCount */
 /** @var mixed $cacheStatus */
-ob_start();
 ?>
 <!-- Navegación de regreso -->
 <div class="mb-6">

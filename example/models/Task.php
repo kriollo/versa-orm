@@ -100,12 +100,15 @@ class Task extends BaseModel
      */
     public static function byLabel(int $labelId): array
     {
-        $instance = new static();
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('No ORM instance available.');
+        }
         $sql = "SELECT t.* FROM tasks t
                 JOIN task_label tl ON tl.task_id = t.id
                 WHERE tl.label_id = ?
                 ORDER BY t.id DESC";
-        return $instance->db->exec($sql, [$labelId]);
+        return $orm->exec($sql, [$labelId]);
     }
 
     /**
