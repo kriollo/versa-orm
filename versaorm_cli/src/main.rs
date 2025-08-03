@@ -1128,6 +1128,38 @@ async fn handle_schema_action(
                 .map_err(|e| format!("Failed to get foreign keys: {}", e))?;
             Ok(serde_json::to_value(fks).unwrap())
         }
+        "validationSchema" => {
+            let table_name = params
+                .get("table_name")
+                .and_then(|v| v.as_str())
+                .ok_or("Table name is required for validationSchema subject")?;
+            let columns = inspector
+                .get_columns(table_name)
+                .await
+                .map_err(|e| format!("Failed to get validation schema: {}", e))?;
+            
+            // Crear el esquema de validación con solo la información relevante
+            let validation_schema: std::collections::HashMap<String, serde_json::Value> = columns
+                .into_iter()
+                .map(|col| {
+                    (
+                        col.name.clone(),
+                        serde_json::json!({
+                            "data_type": col.data_type,
+                            "is_required": col.is_required,
+                            "is_nullable": col.is_nullable,
+                            "max_length": col.max_length,
+                            "validation_rules": col.validation_rules,
+                            "is_primary_key": col.is_primary_key,
+                            "is_auto_increment": col.is_auto_increment,
+                            "default_value": col.default_value
+                        })
+                    )
+                })
+                .collect();
+            
+            Ok(serde_json::to_value(validation_schema).unwrap())
+        }
         _ => Err(format!("Unknown schema subject: {}", subject)),
     }
 }
