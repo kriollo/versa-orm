@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -25,20 +25,38 @@ fn setup_logging(debug: bool) {
         return;
     }
 
-    let log_dir = PathBuf::from("logs");
-    if !log_dir.exists() && fs::create_dir(&log_dir).is_err() {
-        return;
+    // Intentar obtener el directorio padre del binario (donde debería estar el proyecto PHP)
+    let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
+    let project_dir = current_exe.parent().and_then(|p| p.parent()).unwrap_or_else(|| Path::new("."));
+    let log_dir = project_dir.join("logs");
+    
+    // Imprimir a stderr para debugging antes de configurar el archivo de log
+    eprintln!("[DEBUG] Setting up logging in directory: {:?}", log_dir);
+    
+    if !log_dir.exists() {
+        if let Err(e) = fs::create_dir_all(&log_dir) {
+            eprintln!("Failed to create logs directory {:?}: {}", log_dir, e);
+            return;
+        }
     }
 
     let today = Local::now().format("%Y-%m-%d").to_string();
-    let log_path = log_dir.join(format!("{}.log", today));
+    let log_path = log_dir.join(format!("rust-{}.log", today));
+    
+    eprintln!("[DEBUG] Log file path: {:?}", log_path);
 
     if let Ok(file) = fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open(log_path)
+        .open(&log_path)
     {
         *LOG_FILE.lock().unwrap() = Some(file);
+        // Ahora que el archivo está configurado, escribir los mensajes de log
+        log_info_msg(&format!("=== VersaORM Rust CLI Session Started at {} ===", Local::now().format("%Y-%m-%d %H:%M:%S")));
+        log_debug_msg(&format!("Logging configured in directory: {:?}", log_dir));
+        log_debug_msg(&format!("Log file path: {:?}", log_path));
+    } else {
+        eprintln!("Failed to open log file: {:?}", log_path);
     }
 
     cleanup_old_logs(&log_dir);
@@ -78,9 +96,37 @@ macro_rules! log_debug {
 
 // Public function for other modules to use
 pub fn log_debug_msg(msg: &str) {
-    if let Some(ref mut file) = *LOG_FILE.lock().unwrap() {
-        let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-        writeln!(file, "[{}][DEBUG] {}", timestamp, msg).unwrap();
+    if let Ok(mut lock) = LOG_FILE.lock() {
+        if let Some(ref mut file) = *lock {
+            let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
+            if let Ok(_) = writeln!(file, "[{}][RUST][DEBUG] {}", timestamp, msg) {
+                let _ = file.flush(); // Asegurar que se escriba inmediatamente
+            }
+        }
+    }
+}
+
+// Función adicional para logs de información
+pub fn log_info_msg(msg: &str) {
+    if let Ok(mut lock) = LOG_FILE.lock() {
+        if let Some(ref mut file) = *lock {
+            let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
+            if let Ok(_) = writeln!(file, "[{}][RUST][INFO] {}", timestamp, msg) {
+                let _ = file.flush();
+            }
+        }
+    }
+}
+
+// Función adicional para logs de error
+pub fn log_error_msg(msg: &str) {
+    if let Ok(mut lock) = LOG_FILE.lock() {
+        if let Some(ref mut file) = *lock {
+            let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
+            if let Ok(_) = writeln!(file, "[{}][RUST][ERROR] {}", timestamp, msg) {
+                let _ = file.flush();
+            }
+        }
     }
 }
 
@@ -531,72 +577,144 @@ async fn handle_query_action(
 
     match query_params.method.as_str() {
         "insertMany" => {
-            let records = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("records"))
-                .and_then(|r| r.as_array())
-                .ok_or(("insertMany requires records array".to_string(), None, None))?;
+            // Debug: Log the entire params structure
+            log_debug_msg(&format!("insertMany - Full params: {}", serde_json::to_string_pretty(params).unwrap_or("Failed to serialize".to_string())));
+            
+            // First try to get records from the root level (new batch format)
+            let records = if let Some(records_value) = params.get("records") {
+                log_debug_msg(&format!("insertMany - Found records at root level, type: {}", if records_value.is_array() { "array" } else { "not array" }));
+                records_value.as_array()
+                    .ok_or(("insertMany requires records array".to_string(), None, None))?
+            } else {
+                log_debug_msg("insertMany - Records not found at root level, trying fallback");
+                // Fallback to old format if not found at root
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("records"))
+                    .and_then(|r| r.as_array())
+                    .ok_or(("insertMany requires records array".to_string(), None, None))?
+            };
 
-            let batch_size = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("batch_size"))
-                .and_then(|b| b.as_i64())
-                .unwrap_or(1000) as usize;
+            let batch_size = if let Some(batch_size_value) = params.get("batch_size") {
+                batch_size_value.as_i64().unwrap_or(1000) as usize
+            } else {
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("batch_size"))
+                    .and_then(|b| b.as_i64())
+                    .unwrap_or(1000) as usize
+            };
 
             handle_insert_many(connection, &table_name, records, batch_size).await
         }
         "updateMany" => {
-            let update_data = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("data"))
-                .and_then(|d| d.as_object())
-                .ok_or(("updateMany requires data object".to_string(), None, None))?;
+            // First try to get data from the root level (new batch format)
+            let update_data = if let Some(data_value) = params.get("data") {
+                data_value.as_object()
+                    .ok_or(("updateMany requires data object".to_string(), None, None))?
+            } else {
+                // Fallback to old format if not found at root
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("data"))
+                    .and_then(|d| d.as_object())
+                    .ok_or(("updateMany requires data object".to_string(), None, None))?
+            };
 
-            let max_records = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("max_records"))
-                .and_then(|m| m.as_i64())
-                .unwrap_or(10000);
+            let max_records = if let Some(max_records_value) = params.get("max_records") {
+                max_records_value.as_i64().unwrap_or(10000)
+            } else {
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("max_records"))
+                    .and_then(|m| m.as_i64())
+                    .unwrap_or(10000)
+            };
 
             handle_update_many(connection, &query_builder, update_data, max_records).await
         }
         "deleteMany" => {
-            let max_records = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("max_records"))
-                .and_then(|m| m.as_i64())
-                .unwrap_or(10000);
+            let max_records = if let Some(max_records_value) = params.get("max_records") {
+                max_records_value.as_i64().unwrap_or(10000)
+            } else {
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("max_records"))
+                    .and_then(|m| m.as_i64())
+                    .unwrap_or(10000)
+            };
 
             handle_delete_many(connection, &query_builder, max_records).await
         }
         "upsertMany" => {
-            let records = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("records"))
-                .and_then(|r| r.as_array())
-                .ok_or(("upsertMany requires records array".to_string(), None, None))?;
+            // First try to get records from the root level (new batch format)
+            let records = if let Some(records_value) = params.get("records") {
+                records_value.as_array()
+                    .ok_or(("upsertMany requires records array".to_string(), None, None))?
+            } else {
+                // Fallback to old format if not found at root
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("records"))
+                    .and_then(|r| r.as_array())
+                    .ok_or(("upsertMany requires records array".to_string(), None, None))?
+            };
 
-            let unique_keys = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("unique_keys"))
-                .and_then(|k| k.as_array())
-                .ok_or(("upsertMany requires unique_keys array".to_string(), None, None))?;
+            let unique_keys = if let Some(unique_keys_value) = params.get("unique_keys") {
+                unique_keys_value.as_array()
+                    .ok_or(("upsertMany requires unique_keys array".to_string(), None, None))?
+            } else {
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("unique_keys"))
+                    .and_then(|k| k.as_array())
+                    .ok_or(("upsertMany requires unique_keys array".to_string(), None, None))?
+            };
 
-            let update_columns = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("update_columns"))
-                .and_then(|c| c.as_array())
-                .unwrap_or(&vec![])
-                .iter()
-                .filter_map(|v| v.as_str())
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
+            // Validar unique_keys antes de continuar
+            for unique_key_value in unique_keys {
+                if let Some(unique_key_str) = unique_key_value.as_str() {
+                    if let Err(_) = utils::clean_column_name(unique_key_str) {
+                        return Err(("Invalid unique key name detected".to_string(), None, None));
+                    }
+                }
+            }
 
-            let batch_size = query_params.data
-                .as_ref()
-                .and_then(|d| d.get("batch_size"))
-                .and_then(|b| b.as_i64())
-                .unwrap_or(1000) as usize;
+            let update_columns = if let Some(update_columns_value) = params.get("update_columns") {
+                update_columns_value.as_array()
+                    .unwrap_or(&vec![])
+                    .iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+            } else {
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("update_columns"))
+                    .and_then(|c| c.as_array())
+                    .unwrap_or(&vec![])
+                    .iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+            };
+
+            // Validar update_columns antes de continuar
+            for update_col in &update_columns {
+                if let Err(_) = utils::clean_column_name(update_col) {
+                    return Err(("Invalid update column name detected".to_string(), None, None));
+                }
+            }
+
+            let batch_size = if let Some(batch_size_value) = params.get("batch_size") {
+                batch_size_value.as_i64().unwrap_or(1000) as usize
+            } else {
+                query_params.data
+                    .as_ref()
+                    .and_then(|d| d.get("batch_size"))
+                    .and_then(|b| b.as_i64())
+                    .unwrap_or(1000) as usize
+            };
 
             handle_upsert_many(connection, &table_name, records, unique_keys, update_columns, batch_size).await
         }
@@ -1161,6 +1279,8 @@ async fn handle_insert_many(
 
     // Validar la estructura del primer registro para obtener las columnas
     let first_record = records.first().unwrap();
+    log_debug_msg(&format!("insertMany - First record: {:?}", first_record));
+    
     let first_obj = first_record.as_object().ok_or((
         "First record must be an object".to_string(),
         None,
@@ -1519,13 +1639,16 @@ async fn handle_upsert_many(
 
     // Validar que los nombres de unique keys sean seguros
     for unique_key in &unique_key_names {
-        if let Err(_) = utils::clean_column_name(unique_key) {
+        log_debug_msg(&format!("Validating unique key name: '{}'", unique_key));
+        if let Err(err) = utils::clean_column_name(unique_key) {
+            log_debug_msg(&format!("Unique key '{}' failed validation: {}", unique_key, err));
             return Err((
                 "Invalid unique key name detected".to_string(),
                 None,
                 None,
             ));
         }
+        log_debug_msg(&format!("Unique key '{}' passed validation", unique_key));
     }
 
     // Validar que los nombres de update_columns sean seguros
@@ -1673,6 +1796,9 @@ async fn handle_upsert_many(
         }
 
         // Ejecutar el lote
+        log_debug_msg(&format!("Executing upsert SQL: {}", upsert_sql));
+        log_debug_msg(&format!("Parameters: {:?}", params));
+        
         match connection.execute_raw(&upsert_sql, params.clone()).await {
             Ok(_) => {
                 total_processed += chunk.len();

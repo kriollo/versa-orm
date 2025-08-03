@@ -2,6 +2,10 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Column, Executor, MySql, Pool, Postgres, Row, Sqlite};
 use std::collections::HashMap;
 
+// Importar tipos para DECIMAL
+use rust_decimal::Decimal;
+use bigdecimal::BigDecimal;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DatabaseConfig {
     pub driver: String,
@@ -453,11 +457,62 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
     }
 
     // Lógica original de conversión de tipos
+    
+    // Primero intentar tipos DECIMAL específicos
+    if let Ok(val) = row.try_get::<Option<Decimal>, _>(column_name) {
+        return match val {
+            Some(v) => {
+                let f_val = v.to_string().parse::<f64>().unwrap_or(0.0);
+                serde_json::Number::from_f64(f_val)
+                    .map(serde_json::Value::Number)
+                    .unwrap_or(serde_json::Value::String(v.to_string()))
+            },
+            None => serde_json::Value::Null,
+        };
+    }
+    
+    if let Ok(val) = row.try_get::<Option<BigDecimal>, _>(column_name) {
+        return match val {
+            Some(v) => {
+                let f_val = v.to_string().parse::<f64>().unwrap_or(0.0);
+                serde_json::Number::from_f64(f_val)
+                    .map(serde_json::Value::Number)
+                    .unwrap_or(serde_json::Value::String(v.to_string()))
+            },
+            None => serde_json::Value::Null,
+        };
+    }
 
-    // Intentar obtener como String (para otros tipos de columnas)
+    // Luego intentar tipos numéricos básicos
+    if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
+        return match val {
+            Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
+            None => serde_json::Value::Null,
+        };
+    }
+
+    if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
+        return match val {
+            Some(v) => serde_json::Number::from_f64(v)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
+            None => serde_json::Value::Null,
+        };
+    }
+    
+    // Intentar obtener tipos DECIMAL como String y luego convertir a número
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
         return match val {
-            Some(v) => serde_json::Value::String(v),
+            Some(v) => {
+                // Intentar parsear como número si parece ser un decimal
+                if let Ok(f_val) = v.parse::<f64>() {
+                    serde_json::Number::from_f64(f_val)
+                        .map(serde_json::Value::Number)
+                        .unwrap_or(serde_json::Value::String(v))
+                } else {
+                    serde_json::Value::String(v)
+                }
+            },
             None => serde_json::Value::Null,
         };
     }
@@ -487,32 +542,9 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
         };
     }
 
-    if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
-        return match val {
-            Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
-            None => serde_json::Value::Null,
-        };
-    }
-
-    if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
-        return match val {
-            Some(v) => serde_json::Number::from_f64(v)
-                .map(serde_json::Value::Number)
-                .unwrap_or(serde_json::Value::Null),
-            None => serde_json::Value::Null,
-        };
-    }
-
     if let Ok(val) = row.try_get::<Option<bool>, _>(column_name) {
         return match val {
             Some(v) => serde_json::Value::Bool(v),
-            None => serde_json::Value::Null,
-        };
-    }
-
-    if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
-        return match val {
-            Some(v) => serde_json::Value::String(v),
             None => serde_json::Value::Null,
         };
     }
