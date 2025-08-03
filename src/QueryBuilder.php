@@ -868,7 +868,17 @@ class QueryBuilder
         ];
 
         if ($data !== null) {
-            $params['data'] = $data;
+            // For batch operations, params go directly at the root
+            $batchMethods = ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'];
+            if (in_array($method, $batchMethods)) {
+                // Merge batch parameters directly into params rather than nesting under 'data'
+                $params = array_merge($params, $data);
+                // Debug: Log the final merged params
+                error_log('[DEBUG] buildPayload - Final merged params for ' . $method . ': ' . json_encode($params));
+            } else {
+                // For normal operations, keep existing behavior
+                $params['data'] = $data;
+            }
         }
 
         return $params;
@@ -951,6 +961,10 @@ class QueryBuilder
             'records' => $records,
             'batch_size' => $batchSize,
         ];
+
+        // Debug: Log what we're sending
+        error_log('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null));
+        error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
 
         return $this->execute('insertMany', $params);
     }
@@ -1045,6 +1059,19 @@ class QueryBuilder
             throw new VersaORMException('upsertMany requires unique keys to detect duplicates');
         }
 
+        // Validar identificadores por seguridad PRIMERO
+        foreach ($uniqueKeys as $key) {
+            if (!$this->isSafeIdentifier($key)) {
+                throw new VersaORMException('Invalid unique key name detected');
+            }
+        }
+
+        foreach ($updateColumns as $col) {
+            if (!$this->isSafeIdentifier($col)) {
+                throw new VersaORMException('Invalid update column name detected');
+            }
+        }
+
         // Validar que las claves únicas existen en todos los registros
         foreach ($records as $index => $record) {
             foreach ($uniqueKeys as $key) {
@@ -1053,19 +1080,6 @@ class QueryBuilder
                         sprintf('Record at index %d is missing unique key: %s', $index, $key)
                     );
                 }
-            }
-        }
-
-        // Validar identificadores por seguridad
-        foreach ($uniqueKeys as $key) {
-            if (!$this->isSafeIdentifier($key)) {
-                throw new VersaORMException(sprintf('Invalid unique key name: %s', $key));
-            }
-        }
-
-        foreach ($updateColumns as $col) {
-            if (!$this->isSafeIdentifier($col)) {
-                throw new VersaORMException(sprintf('Invalid update column name: %s', $col));
             }
         }
 

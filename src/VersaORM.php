@@ -95,6 +95,9 @@ class VersaORM
                 'params' => $params,
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
+            // Debug: Log the JSON payload being sent to Rust
+            error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
+
             // If in debug mode and JSON_DUMP environment variable is set, dump and exit
             if ($this->isDebugMode() && getenv('JSON_DUMP') === 'true') {
                 echo "=== JSON PAYLOAD DUMP ===\n";
@@ -142,7 +145,9 @@ class VersaORM
 
         // Intentar decodificar la respuesta JSON
         try {
-            $response = json_decode($output, true, 512, JSON_THROW_ON_ERROR);
+            // Limpiar la salida de logs de debug del binario Rust
+            $cleanOutput = $this->cleanRustDebugOutput($output);
+            $response = json_decode($cleanOutput, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new VersaORMException(
                 sprintf(
@@ -881,5 +886,62 @@ class VersaORM
                     {$this->binaryPath}}"
             );
         }
+    }
+
+    /**
+     * Limpia la salida del binario Rust eliminando logs de debug
+     * para extraer solo el JSON válido
+     *
+     * @param string $output Salida cruda del binario
+     * @return string JSON limpio
+     */
+    private function cleanRustDebugOutput(string $output): string
+    {
+        // Si ya es JSON válido, devolverlo sin modificar
+        if (json_decode($output) !== null) {
+            return $output;
+        }
+
+        // Buscar el inicio del JSON válido (primera llave de apertura)
+        $jsonStart = strpos($output, '{');
+        if ($jsonStart === false) {
+            // Si no hay JSON, devolver la salida original
+            return $output;
+        }
+
+        // Extraer desde la primera llave hasta el final
+        $jsonCandidate = substr($output, $jsonStart);
+
+        // Buscar el final del JSON válido (última llave de cierre balanceada)
+        $braceCount = 0;
+        $jsonEnd = -1;
+        $length = strlen($jsonCandidate);
+
+        for ($i = 0; $i < $length; $i++) {
+            if ($jsonCandidate[$i] === '{') {
+                $braceCount++;
+            } elseif ($jsonCandidate[$i] === '}') {
+                $braceCount--;
+                if ($braceCount === 0) {
+                    $jsonEnd = $i;
+                    break;
+                }
+            }
+        }
+
+        if ($jsonEnd === -1) {
+            // Si no se pudo balancear, devolver desde el primer '{'
+            return $jsonCandidate;
+        }
+
+        // Devolver solo el JSON válido
+        $cleanJson = substr($jsonCandidate, 0, $jsonEnd + 1);
+
+        // Log de debug si está habilitado
+        if ($this->config['debug'] ?? false) {
+            error_log("[VersaORM] Cleaned Rust debug output. Original length: " . strlen($output) . ", Clean length: " . strlen($cleanJson));
+        }
+
+        return $cleanJson;
     }
 }

@@ -75,6 +75,16 @@ class VersaModel
     }
 
     /**
+     * Obtiene la instancia global del ORM.
+     *
+     * @return VersaORM|null
+     */
+    public static function getGlobalORM(): ?VersaORM
+    {
+        return self::$ormInstance;
+    }
+
+    /**
      * Obtiene la instancia del ORM para uso en traits.
      *
      * @return VersaORM|array<string, mixed>|null
