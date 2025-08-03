@@ -1,59 +1,121 @@
 <?php
 
-namespace Example\Models;
+namespace App\Models;
 
 /**
- * Modelo Label - Etiquetas para tareas (estilo Gmail)
- *
- * Campos de la tabla 'labels':
- * - id: int (PK, auto_increment)
- * - name: string (required, único)
- * - color: string (opcional)
- * - created_at: timestamp
- * - updated_at: timestamp
+ * Modelo Label
+ * Gestiona etiquetas del sistema
  */
 class Label extends BaseModel
 {
     protected string $table = 'labels';
+
     protected array $fillable = [
         'name',
-        'color'
+        'color',
+        'description'
+    ];
+
+    protected array $guarded = [];
+
+    protected array $rules = [
+        'name' => ['required', 'min:1', 'max:50'],
+        'color' => ['required']
     ];
 
     /**
-     * Relación: una etiqueta tiene muchas tareas (muchos a muchos)
-     * @return array<int, array<string, mixed>>
+     * Buscar por ID
      */
-    public function tasksArray(): array
+    public static function find(int $id): ?self
     {
-        $sql = "SELECT t.* FROM tasks t JOIN task_label tl ON tl.task_id = t.id WHERE tl.label_id = ?";
-        return $this->db->exec($sql, [$this->id]);
+        return static::findOne('labels', $id);
     }
 
     /**
-     * Cuenta las tareas asociadas a esta etiqueta
-     * @return int
+     * Obtener todas las etiquetas
      */
-    public function countTasks(): int
+    public static function all(): array
     {
-        $sql = "SELECT COUNT(*) as total FROM task_label WHERE label_id = ?";
-        $result = $this->db->exec($sql, [$this->id]);
-        return (int)($result[0]['total'] ?? 0);
+        return static::findAll('labels');
     }
 
     /**
-     * Método estático para obtener el conteo de tareas por etiqueta
-     * @param int $labelId
-     * @return int
+     * Crear nueva etiqueta
      */
-    public static function getTaskCount(int $labelId): int
+    public static function create(array $attributes): static
     {
-        $orm = static::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('No ORM instance available.');
+        // Aplicar valores por defecto
+        if (!isset($attributes['color'])) {
+            $attributes['color'] = static::generateRandomColor();
         }
-        $sql = "SELECT COUNT(*) as total FROM task_label WHERE label_id = ?";
-        $result = $orm->exec($sql, [$labelId]);
-        return (int)($result[0]['total'] ?? 0);
+
+        // Validar antes de crear
+        $errors = [];
+        if (empty($attributes['name'])) $errors[] = 'El nombre es requerido';
+
+        if (!empty($errors)) {
+            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
+        }
+
+        // Crear instancia correctamente con el nombre de tabla
+        $ormInstance = static::getGlobalORM();
+        if (!$ormInstance) {
+            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
+        }
+        $label = new static('labels', $ormInstance);
+        $label->fill($attributes);
+        $label->store();
+        return $label;
+    }
+
+    /**
+     * Generar color aleatorio para etiqueta
+     */
+    private static function generateRandomColor(): string
+    {
+        $colors = [
+            '#e74c3c',
+            '#3498db',
+            '#2ecc71',
+            '#f39c12',
+            '#9b59b6',
+            '#1abc9c',
+            '#e67e22',
+            '#34495e',
+            '#95a5a6',
+            '#16a085',
+            '#f1c40f',
+            '#e91e63',
+            '#673ab7',
+            '#00bcd4',
+            '#4caf50'
+        ];
+        return $colors[array_rand($colors)];
+    }
+
+    /**
+     * Obtener tareas con esta etiqueta
+     */
+    public function tasks(): array
+    {
+        return static::getAll(
+            "SELECT t.* FROM tasks t
+             INNER JOIN task_labels tl ON t.id = tl.task_id
+             WHERE tl.label_id = ?
+             ORDER BY t.created_at DESC",
+            [$this->id]
+        );
+    }
+
+    /**
+     * Contar tareas con esta etiqueta
+     */
+    public function tasksCount(): int
+    {
+        $result = static::getRow(
+            "SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?",
+            [$this->id]
+        );
+        return (int) ($result['count'] ?? 0);
     }
 }

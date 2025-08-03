@@ -1,601 +1,392 @@
 <?php
-// index.php - Controlador principal
-require_once __DIR__ . '/autoload.php';
 
-use VersaORM\VersaORM;
-use VersaORM\VersaModel;
-use VersaORM\VersaORMException;
-use Example\Models\Project;
-use Example\Models\Task;
-use Example\Models\Label;
-use Example\Models\User;
+/**
+ * VersaORM Trello Demo
+ * Aplicación de demostración tipo Trello para mostrar las capacidades de VersaORM
+ */
 
-$config = [
-    'DB' => [
-        'driver' => 'mysql',
-        'host' => 'localhost',
-        'port' => 3306,
-        'database' => 'versaorm_test',
-        'username' => 'local',
-        'password' => 'local',
-        // Activar modo debug para errores detallados y logging
-        'debug' => true  // false para producción
-    ]
-];
+require_once __DIR__ . '/bootstrap.php';
 
-$orm = new VersaORM($config['DB']);
-VersaModel::setORM($orm);
+use App\Models\Label;
+use App\Models\Project;
+use App\Models\Task;
+use App\Models\User;
 
-function render_view($view, $vars = [])
-{
-    extract($vars);
-    ob_start();
-    include __DIR__ . "/views/$view.php";
-    $content = ob_get_clean();
-    include __DIR__ . '/views/layout.php';
-}
+// Obtener la acción y parámetros de la URL
+$action = $_GET['action'] ?? 'dashboard';
+$id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
-// --- PRIORIDAD: Si hay parámetro view, mostrar la vista correspondiente ---
-if (isset($_GET['view'])) {
-    if ($_GET['view'] === 'labels_list') {
-        $labels = Label::all();
-        $selectedLabelId = $_GET['label_id'] ?? null;
-        $tareas = $selectedLabelId ? Task::byLabel((int)$selectedLabelId) : [];
+try {
+    switch ($action) {
 
-        // Preparar tareas por etiqueta para evitar consultas en la vista
-        $tareasPorEtiqueta = [];
-        foreach ($labels as $label) {
-            $labelId = is_object($label) ? $label->id : $label['id'];
-            try {
-                $tareasPorEtiqueta[$labelId] = Task::byLabel($labelId);
-            } catch (Exception $e) {
-                $tareasPorEtiqueta[$labelId] = [];
-            }
-        }
+        // ======================
+        // DASHBOARD
+        // ======================
+        case 'dashboard':
+            $totalProjects = count(Project::all());
+            $totalTasks = count(Task::all());
+            $totalUsers = count(User::all());
+            $totalLabels = count(Label::all());
 
-        render_view('labels_list', compact('labels', 'selectedLabelId', 'tareas', 'tareasPorEtiqueta'));
-        return;
-    }
-    if ($_GET['view'] === 'label_new') {
-        render_view('label_new');
-        return;
-    }
-    if ($_GET['view'] === 'task_labels_edit' && isset($_GET['task_id'])) {
-        $task_id = (int)$_GET['task_id'];
-        render_view('task_labels_edit', compact('task_id'));
-        return;
-    }
-    if ($_GET['view'] === 'label_edit' && isset($_GET['id'])) {
-        $id = (int)$_GET['id'];
-        render_view('label_edit', compact('id'));
-        return;
-    }
-}
-
-$action = $_GET['action'] ?? 'projects';
-
-if ($action === 'new') {
-    render_view('new');
-    return;
-}
-
-if ($action === 'edit' && isset($_GET['id'])) {
-    try {
-        $task = Task::find($_GET['id']);
-        if (!$task) {
-            render_view('error', ['message' => 'Tarea no encontrada']);
-            return;
-        }
-        $allLabels = Label::all();
-        $allProjects = Project::allArray();
-        $allUsers = User::allArray();
-        render_view('edit', compact('task', 'allLabels', 'allProjects', 'allUsers'));
-    } catch (VersaORMException $e) {
-        render_view('error', ['message' => $e->getMessage()]);
-    }
-    return;
-}
-
-if ($action === 'new_user') {
-    render_view('user_new');
-    return;
-}
-
-if ($action === 'new_project') {
-    $users = User::allArray();
-    render_view('project_new', compact('users'));
-    return;
-}
-
-if ($action === 'edit_project' && isset($_GET['id'])) {
-    $project = Project::find($_GET['id']);
-    if (!$project) {
-        render_view('error', ['message' => 'Proyecto no encontrado']);
-        return;
-    }
-    $users = User::allArray();
-    render_view('edit_project', compact('project', 'users'));
-    return;
-}
-
-if ($action === 'projects' || $action === '' || !isset($action)) {
-    $projects = Project::allArray();
-    $tasksByProject = [];
-    foreach ($projects as $project) {
-        $tasksByProject[$project['id']] = (new Project())->find($project['id'])->tasksArray();
-    }
-    render_view('projects_list', compact('projects', 'tasksByProject'));
-    return;
-}
-
-if ($action === 'tasks') {
-    $search = $_GET['search'] ?? '';
-    $status = $_GET['status'] ?? '';
-    $labelId = isset($_GET['label_id']) ? (int)$_GET['label_id'] : null;
-    $projectId = isset($_GET['project_id']) ? (int)$_GET['project_id'] : null;
-    $order = $_GET['order'] ?? 'id';
-    $dir = $_GET['dir'] ?? 'desc';
-    $page = max(1, (int)($_GET['page'] ?? 1));
-    $perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
-    $allProjects = Project::allArray();
-    $allLabels = Label::all();
-    $filters = [];
-    if ($projectId) $filters[] = ['project_id', '=', $projectId];
-    if ($status !== '') $filters[] = ['completed', '=', $status === '1' ? 1 : 0];
-    if ($labelId) {
-        $taskIds = array_column(Task::byLabel($labelId), 'id');
-        $filters[] = $taskIds ? ['id', 'IN', $taskIds] : ['id', 'IN', [0]];
-    }
-    $tasksData = [];
-    $total = 0;
-    $totalPages = 1;
-    if ($search !== '') {
-        $results = Task::searchArray($search, ['title', 'description']);
-        foreach ($filters as $f) {
-            $results = array_filter($results, function ($t) use ($f) {
-                [$col, $op, $val] = $f;
-                if ($op === 'IN') return in_array($t[$col], (array)$val);
-                return $t[$col] == $val;
+            // Obtener las tareas recientes usando find para obtener objetos
+            $allTasks = Task::all();
+            // Ordenar por fecha de creación y tomar las 5 más recientes
+            usort($allTasks, function ($a, $b) {
+                return strtotime($b->created_at) - strtotime($a->created_at);
             });
-        }
-        $total = count($results);
-        $totalPages = max(1, ceil($total / $perPage));
-        $tasksData = array_slice(array_values($results), ($page - 1) * $perPage, $perPage);
-    } else {
-        $orm = VersaModel::getGlobalORM();
-        $query = $orm->table('tasks');
-        foreach ($filters as $f) {
-            [$col, $op, $val] = $f;
-            $query = $op === 'IN' ? $query->whereIn($col, $val) : $query->where($col, $op, $val);
-        }
-        $query = $query->orderBy($order, $dir)->limit($perPage)->offset(($page - 1) * $perPage);
-        $tasksData = $query->getAll();
-        $total = $orm->table('tasks');
-        foreach ($filters as $f) {
-            [$col, $op, $val] = $f;
-            $total = $op === 'IN' ? $total->whereIn($col, $val) : $total->where($col, $op, $val);
-        }
-        $total = $total->count();
-        $totalPages = max(1, ceil($total / $perPage));
-    }
-    render_view('list', compact('tasksData', 'allProjects', 'allLabels', 'search', 'status', 'labelId', 'projectId', 'order', 'dir', 'page', 'perPage', 'total', 'totalPages') + ['tasks' => $tasksData]);
-    return;
-}
+            $recentTasks = array_slice($allTasks, 0, 5);
 
-// Manejo de acciones básicas
-if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'title' => $_POST['title'],
-        'description' => $_POST['description'],
-        'completed' => isset($_POST['completed']) ? true : false
-    ];
-    if (isset($_POST['project_id']) && is_numeric($_POST['project_id'])) {
-        $data['project_id'] = (int)$_POST['project_id'];
-    }
-    try {
-        $task = Task::create($data);
-        if ($task) {
-            if (isset($data['project_id'])) {
-                header('Location: index.php?action=show_project&id=' . $data['project_id'] . '&success=created');
+            render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
+            break;
+
+        // ======================
+        // PROYECTOS
+        // ======================
+        case 'projects':
+            $projects = Project::all();
+            $users = User::all();
+            render('projects/index', compact('projects', 'users'));
+            break;
+
+        case 'project_show':
+            if (!$id) {
+                flash('error', 'ID de proyecto requerido');
+                redirect('?action=projects');
+            }
+
+            $project = Project::find($id);
+            if (!$project) {
+                flash('error', 'Proyecto no encontrado');
+                redirect('?action=projects');
+            }
+
+            $tasks = Task::getAll("SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC", [$id]);
+            $members = $project->members();
+            $owner = User::findArray($project->owner_id);
+
+            render('projects/show', compact('project', 'tasks', 'members', 'owner'));
+            break;
+
+        case 'project_create':
+            if ($_POST) {
+                try {
+                    $project = Project::create($_POST);
+                    flash('success', 'Proyecto creado exitosamente');
+                    redirect('?action=project_show&id=' . $project->id);
+                } catch (Exception $e) {
+                    flash('error', 'Error al crear proyecto: ' . $e->getMessage());
+                }
+            }
+
+            $users = User::all();
+            render('projects/create', compact('users'));
+            break;
+
+        case 'project_edit':
+            if (!$id) {
+                flash('error', 'ID de proyecto requerido');
+                redirect('?action=projects');
+            }
+
+            $project = Project::find($id);
+            if (!$project) {
+                flash('error', 'Proyecto no encontrado');
+                redirect('?action=projects');
+            }
+
+            if ($_POST) {
+                try {
+                    $project->fill($_POST);
+                    $project->store();
+                    flash('success', 'Proyecto actualizado exitosamente');
+                    redirect('?action=project_show&id=' . $project->id);
+                } catch (Exception $e) {
+                    flash('error', 'Error al actualizar proyecto: ' . $e->getMessage());
+                }
+            }
+
+            $users = User::all();
+            render('projects/edit', compact('project', 'users'));
+            break;
+
+        case 'project_delete':
+            if (!$id) {
+                flash('error', 'ID de proyecto requerido');
+                redirect('?action=projects');
+            }
+
+            $project = Project::find($id);
+            if ($project) {
+                $project->trash();
+                flash('success', 'Proyecto eliminado exitosamente');
             } else {
-                header('Location: index.php?success=created');
+                flash('error', 'Proyecto no encontrado');
             }
-        } else {
-            header('Location: index.php?error=create_failed');
-        }
-    } catch (VersaORMException $e) {
-        header('Location: index.php?error=' . urlencode($e->getMessage()));
+            redirect('?action=projects');
+            break;
+
+        // ======================
+        // TAREAS
+        // ======================
+        case 'tasks':
+            $tasks = Task::getAll("
+                SELECT t.*, p.name as project_name, u.name as user_name
+                FROM tasks t
+                LEFT JOIN projects p ON t.project_id = p.id
+                LEFT JOIN users u ON t.user_id = u.id
+                ORDER BY t.created_at DESC
+            ");
+            render('tasks/index', compact('tasks'));
+            break;
+
+        case 'task_create':
+            if ($_POST) {
+                try {
+                    // Extraer las etiquetas del POST antes de crear la tarea
+                    $labels = isset($_POST['labels']) ? $_POST['labels'] : [];
+                    $taskData = $_POST;
+                    unset($taskData['labels']); // Remover labels del array de datos
+
+                    $task = Task::create($taskData);
+
+                    // Asignar etiquetas si se enviaron
+                    if (!empty($labels) && is_array($labels)) {
+                        $task->setLabels($labels);
+                    }
+
+                    flash('success', 'Tarea creada exitosamente');
+                    redirect('?action=project_show&id=' . $task->project_id);
+                } catch (Exception $e) {
+                    flash('error', 'Error al crear tarea: ' . $e->getMessage());
+                }
+            }
+
+            $projects = Project::all();
+            $users = User::all();
+            $labels = Label::all();
+            render('tasks/create', compact('projects', 'users', 'labels'));
+            break;
+
+        case 'task_edit':
+            if (!$id) {
+                flash('error', 'ID de tarea requerido');
+                redirect('?action=tasks');
+            }
+
+            $task = Task::find($id);
+            if (!$task) {
+                flash('error', 'Tarea no encontrada');
+                redirect('?action=tasks');
+            }
+
+            if ($_POST) {
+                try {
+                    // Extraer las etiquetas del POST antes de actualizar la tarea
+                    $labels = isset($_POST['labels']) ? $_POST['labels'] : [];
+                    $taskData = $_POST;
+                    unset($taskData['labels']); // Remover labels del array de datos
+
+                    $task->fill($taskData);
+                    $task->store();
+
+                    // Actualizar etiquetas
+                    if (!empty($labels) && is_array($labels)) {
+                        $task->setLabels($labels);
+                    } else {
+                        $task->setLabels([]);
+                    }
+
+                    flash('success', 'Tarea actualizada exitosamente');
+                    redirect('?action=project_show&id=' . $task->project_id);
+                } catch (Exception $e) {
+                    flash('error', 'Error al actualizar tarea: ' . $e->getMessage());
+                }
+            }
+
+            $projects = Project::all();
+            $users = User::all();
+            $labels = Label::all();
+            $taskLabels = $task->getLabelIds();
+            render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
+            break;
+
+        case 'task_delete':
+            if (!$id) {
+                flash('error', 'ID de tarea requerido');
+                redirect('?action=tasks');
+            }
+
+            $task = Task::find($id);
+            if ($task) {
+                $projectId = $task->project_id;
+                $task->trash();
+                flash('success', 'Tarea eliminada exitosamente');
+                redirect('?action=project_show&id=' . $projectId);
+            } else {
+                flash('error', 'Tarea no encontrada');
+                redirect('?action=tasks');
+            }
+            break;
+
+        case 'task_change_status':
+            if (!$id || empty($_POST['status'])) {
+                flash('error', 'Datos incompletos');
+                redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
+            }
+
+            $task = Task::find($id);
+            if ($task) {
+                try {
+                    $task->changeStatus($_POST['status']);
+                    flash('success', 'Estado de tarea actualizado');
+                } catch (Exception $e) {
+                    flash('error', 'Error al cambiar estado: ' . $e->getMessage());
+                }
+            } else {
+                flash('error', 'Tarea no encontrada');
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
+            break;
+
+        // ======================
+        // USUARIOS
+        // ======================
+        case 'users':
+            $users = User::all();
+            render('users/index', compact('users'));
+            break;
+
+        case 'user_create':
+            if ($_POST) {
+                try {
+                    $user = User::create($_POST);
+                    flash('success', 'Usuario creado exitosamente');
+                    redirect('?action=users');
+                } catch (Exception $e) {
+                    flash('error', 'Error al crear usuario: ' . $e->getMessage());
+                }
+            }
+
+            render('users/create');
+            break;
+
+        case 'user_edit':
+            if (!$id) {
+                flash('error', 'ID de usuario requerido');
+                redirect('?action=users');
+            }
+
+            $user = User::find($id);
+            if (!$user) {
+                flash('error', 'Usuario no encontrado');
+                redirect('?action=users');
+            }
+
+            if ($_POST) {
+                try {
+                    $user->fill($_POST);
+                    $user->store();
+                    flash('success', 'Usuario actualizado exitosamente');
+                    redirect('?action=users');
+                } catch (Exception $e) {
+                    flash('error', 'Error al actualizar usuario: ' . $e->getMessage());
+                }
+            }
+
+            render('users/edit', compact('user'));
+            break;
+
+        case 'user_delete':
+            if (!$id) {
+                flash('error', 'ID de usuario requerido');
+                redirect('?action=users');
+            }
+
+            $user = User::find($id);
+            if ($user) {
+                $user->trash();
+                flash('success', 'Usuario eliminado exitosamente');
+            } else {
+                flash('error', 'Usuario no encontrado');
+            }
+            redirect('?action=users');
+            break;
+
+        // ======================
+        // ETIQUETAS
+        // ======================
+        case 'labels':
+            $labels = Label::all();
+            // Agregar conteo de tareas para cada etiqueta
+            foreach ($labels as &$label) {
+                $count = Label::getAll("SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?", [$label->id]);
+                $label->tasks_count = $count[0]['count'] ?? 0;
+            }
+            render('labels/index', compact('labels'));
+            break;
+
+        case 'label_create':
+            if ($_POST) {
+                try {
+                    $label = Label::create($_POST);
+                    flash('success', 'Etiqueta creada exitosamente');
+                    redirect('?action=labels');
+                } catch (Exception $e) {
+                    flash('error', 'Error al crear etiqueta: ' . $e->getMessage());
+                }
+            }
+
+            render('labels/create');
+            break;
+
+        case 'label_edit':
+            if (!$id) {
+                flash('error', 'ID de etiqueta requerido');
+                redirect('?action=labels');
+            }
+
+            $label = Label::find($id);
+            if (!$label) {
+                flash('error', 'Etiqueta no encontrada');
+                redirect('?action=labels');
+            }
+
+            if ($_POST) {
+                try {
+                    $label->fill($_POST);
+                    $label->store();
+                    flash('success', 'Etiqueta actualizada exitosamente');
+                    redirect('?action=labels');
+                } catch (Exception $e) {
+                    flash('error', 'Error al actualizar etiqueta: ' . $e->getMessage());
+                }
+            }
+
+            render('labels/edit', compact('label'));
+            break;
+
+        case 'label_delete':
+            if (!$id) {
+                flash('error', 'ID de etiqueta requerido');
+                redirect('?action=labels');
+            }
+
+            $label = Label::find($id);
+            if ($label) {
+                $label->trash();
+                flash('success', 'Etiqueta eliminada exitosamente');
+            } else {
+                flash('error', 'Etiqueta no encontrada');
+            }
+            redirect('?action=labels');
+            break;
+
+        default:
+            flash('error', 'Acción no encontrada');
+            redirect('?action=dashboard');
+            break;
     }
-    exit;
+} catch (Exception $e) {
+    flash('error', 'Error del sistema: ' . $e->getMessage());
+    render('error', ['message' => $e->getMessage()]);
 }
-
-if ($action === 'delete' && isset($_GET['id'])) {
-    try {
-        $task = Task::find($_GET['id']);
-        if ($task && $task->delete()) {
-            header('Location: index.php?success=deleted');
-        } else {
-            header('Location: index.php?error=delete_failed');
-        }
-    } catch (Exception $e) {
-        header('Location: index.php?error=' . urlencode($e->getMessage()));
-    }
-    exit;
-}
-
-if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $_POST['id'];
-    $data = [
-        'title' => $_POST['title'],
-        'description' => $_POST['description'],
-        'completed' => isset($_POST['completed']) ? true : false
-    ];
-
-    try {
-        $task = Task::find($id);
-        if ($task && $task->update($data)) {
-            header('Location: index.php?success=updated');
-        } else {
-            header('Location: index.php?error=update_failed');
-        }
-    } catch (Exception $e) {
-        header('Location: index.php?error=' . urlencode($e->getMessage()));
-    }
-    exit;
-}
-
-if ($action === 'api' && ($_GET['format'] ?? '') === 'json') {
-    $search = $_GET['search'] ?? '';
-
-    try {
-        if (empty($search)) {
-            // Si no hay búsqueda, obtener todas las tareas
-            $tasks = Task::all();
-        } else {
-            // Usar búsqueda case-insensitive estandarizada
-            $tasks = Task::searchTasks($search);
-        }
-
-        // Convertir modelos a arrays exportables usando toArray() estandarizado
-        // $tasksArray = [];
-        // foreach ($tasks as $task) {
-        //     $tasksArray[] = $task->toArray();
-        // }
-
-        // Establecer cabeceras HTTP para JSON
-        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-        header('Pragma: no-cache');
-        header('Content-Type: application/json');
-
-        // Responder con JSON
-        echo json_encode([
-            'success' => true,
-            'count' => count($tasks),
-            'search' => $search,
-            'tasks' => $tasks
-        ]);
-    } catch (VersaORMException $e) {
-        // Manejar errores y enviar respuesta de error
-        header('HTTP/1.1 500 Internal Server Error');
-        header('Content-Type: application/json');
-
-        // Extraer query y bindings del mensaje de error si están disponibles
-        $errorData = [
-            'success' => false,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'search' => $search ?? ''
-        ];
-
-        // Intentar extraer query y bindings de la excepción si están disponibles
-        if (method_exists($e, 'getQuery') && $e->getQuery()) {
-            $errorData['query'] = $e->getQuery();
-        }
-        if (method_exists($e, 'getBindings') && $e->getBindings()) {
-            $errorData['bindings'] = $e->getBindings();
-        }
-
-        echo json_encode($errorData);
-    }
-
-    exit;
-}
-
-// --- Módulo de Proyectos como pantalla principal ---
-// (No repetir el use Example\Models\Project; aquí, ya está declarado arriba)
-
-if (!isset($action) || $action === 'projects' || $action === '' || !isset($action)) {
-    // Listar proyectos y tareas asociadas (pantalla principal)
-    $projects = Project::allArray();
-    $tasksByProject = [];
-    foreach ($projects as $project) {
-        $tasksByProject[$project['id']] = (new Project())->find($project['id'])->tasksArray();
-    }
-    render_view('projects_list', compact('projects', 'tasksByProject'));
-    return;
-}
-
-if ($action === 'show_project' && isset($_GET['id'])) {
-    $projectObj = Project::find($_GET['id']);
-    if (!$projectObj) {
-        header('Location: index.php?action=projects&error=not_found');
-        exit;
-    }
-    $project = $projectObj->toArray();
-    $user = $projectObj->userArray();
-    $completedCount = count($projectObj->completedTasksArray());
-    $totalCount = $projectObj->countTasks();
-    $cacheStatus = $projectObj->cacheStatus();
-
-    // --- Filtros y paginación para tareas de este proyecto ---
-    $search = $_GET['search'] ?? '';
-    $status = $_GET['status'] ?? '';
-    $labelId = isset($_GET['label_id']) ? (int)$_GET['label_id'] : null;
-    $order = $_GET['order'] ?? 'id';
-    $dir = $_GET['dir'] ?? 'desc';
-    $page = max(1, (int)($_GET['page'] ?? 1));
-    $perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
-
-    // Obtener todas las etiquetas para el filtro
-    $allLabels = Label::all();
-
-    // Construir consulta usando solo métodos del ORM
-    $filters = [['project_id', '=', $projectObj->id]];
-    if ($status !== '') {
-        $filters[] = ['completed', '=', $status === '1' ? 1 : 0];
-    }
-    if ($labelId) {
-        $taskIds = array_column(Task::byLabel($labelId), 'id');
-        if ($taskIds) {
-            $filters[] = ['id', 'IN', $taskIds];
-        } else {
-            $filters[] = ['id', 'IN', [0]];
-        }
-    }
-    $tasksData = [];
-    $total = 0;
-    $totalPages = 1;
-
-    // 1. Obtener tareas filtradas por ORM (proyecto, estado, etiqueta)
-    $orm = VersaModel::getGlobalORM();
-    $query = $orm->table('tasks');
-    foreach ($filters as $f) {
-        [$col, $op, $val] = $f;
-        $query = $op === 'IN' ? $query->whereIn($col, $val) : $query->where($col, $op, $val);
-    }
-    $query = $query->orderBy($order, $dir);
-    $allFiltered = $query->getAll();
-
-    // 2. Si hay búsqueda, filtrar sobre ese subconjunto
-    if ($search !== '') {
-        $searchLower = mb_strtolower($search);
-        $allFiltered = array_filter($allFiltered, function ($t) use ($searchLower) {
-            return mb_strpos(mb_strtolower($t['title']), $searchLower) !== false || mb_strpos(mb_strtolower($t['description']), $searchLower) !== false;
-        });
-    }
-    $total = count($allFiltered);
-    $totalPages = max(1, ceil($total / $perPage));
-    $tasksData = array_slice(array_values($allFiltered), ($page - 1) * $perPage, $perPage);
-
-    render_view('project_show', compact('project', 'user', 'completedCount', 'totalCount', 'cacheStatus', 'tasksData', 'allLabels', 'search', 'status', 'labelId', 'order', 'dir', 'page', 'perPage', 'total', 'totalPages'));
-    return;
-}
-
-if ($action === 'complete_all_tasks' && isset($_GET['id'])) {
-    $projectObj = Project::find($_GET['id']);
-    if ($projectObj) {
-        try {
-            $projectObj->completeAllTasks();
-            header('Location: index.php?action=show_project&id=' . $projectObj->id . '&success=all_completed');
-        } catch (Exception $e) {
-            header('Location: index.php?action=show_project&id=' . $projectObj->id . '&error=tx_failed');
-        }
-    } else {
-        header('Location: index.php?action=projects&error=not_found');
-    }
-    exit;
-}
-
-if ($action === 'export_project_json' && isset($_GET['id'])) {
-    $projectObj = Project::find($_GET['id']);
-    if ($projectObj) {
-        $data = [
-            'project' => $projectObj->toArray(),
-            'tasks' => $projectObj->tasksArray(),
-            'user' => $projectObj->userArray()
-        ];
-        header('Content-Type: application/json');
-        header('Content-Disposition: attachment; filename="project_' . $projectObj->id . '.json"');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        exit;
-    }
-    header('Location: index.php?action=projects&error=not_found');
-    exit;
-}
-
-if ($action === 'create_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'name' => $_POST['name'],
-        'email' => $_POST['email']
-    ];
-    try {
-        $user = User::create($data);
-        if ($user) {
-            header('Location: index.php?action=projects&success=user_created');
-        } else {
-            header('Location: index.php?action=projects&error=user_create_failed');
-        }
-    } catch (Exception $e) {
-        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
-    }
-    return;
-}
-
-if ($action === 'create_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'name' => $_POST['name'],
-        'description' => $_POST['description'] ?? ''
-    ];
-    if (!empty($_POST['user_id'])) {
-        $data['user_id'] = (int)$_POST['user_id'];
-    }
-    try {
-        $project = Project::create($data);
-        if ($project) {
-            header('Location: index.php?action=show_project&id=' . $project->id . '&success=created');
-        } else {
-            header('Location: index.php?action=projects&error=create_failed');
-        }
-    } catch (Exception $e) {
-        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
-    }
-    exit;
-}
-
-if ($action === 'update_project' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $_POST['id'];
-    $data = [
-        'name' => $_POST['name'],
-        'description' => $_POST['description']
-    ];
-    if (!empty($_POST['user_id'])) {
-        $data['user_id'] = (int)$_POST['user_id'];
-    }
-    try {
-        $project = Project::find($id);
-        if ($project && $project->update($data)) {
-            header('Location: index.php?action=show_project&id=' . $id . '&success=updated');
-        } else {
-            header('Location: index.php?action=projects&error=update_failed');
-        }
-    } catch (Exception $e) {
-        header('Location: index.php?action=projects&error=' . urlencode($e->getMessage()));
-    }
-    exit;
-}
-
-// --- Filtros y búsqueda avanzada para listado general de tareas ---
-if ($action === 'list' || $action === 'tasks' || $action === '') {
-    $search = $_GET['search'] ?? '';
-    $status = $_GET['status'] ?? '';
-    $labelId = isset($_GET['label_id']) ? (int)$_GET['label_id'] : null;
-    $projectId = isset($_GET['project_id']) ? (int)$_GET['project_id'] : null;
-    $order = $_GET['order'] ?? 'id';
-    $dir = $_GET['dir'] ?? 'desc';
-    $page = max(1, (int)($_GET['page'] ?? 1));
-    $perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
-
-    // Para selects
-    $allProjects = Project::allArray();
-    $allLabels = Label::all();
-
-    // Construir consulta usando solo métodos del ORM
-    $filters = [];
-    if ($projectId) {
-        $filters[] = ['project_id', '=', $projectId];
-    }
-    if ($status !== '') {
-        $filters[] = ['completed', '=', $status === '1' ? 1 : 0];
-    }
-    // Filtro por etiqueta (muchos a muchos)
-    if ($labelId) {
-        $taskIds = array_column(Task::byLabel($labelId), 'id');
-        if ($taskIds) {
-            $filters[] = ['id', 'IN', $taskIds];
-        } else {
-            $filters[] = ['id', 'IN', [0]]; // No hay tareas con esa etiqueta
-        }
-    }
-    // Filtro por búsqueda
-    $tasksData = [];
-    $total = 0;
-    $totalPages = 1;
-    if ($search !== '') {
-        $results = Task::searchArray($search, ['title', 'description']);
-        // Aplicar filtros adicionales
-        foreach ($filters as $f) {
-            $results = array_filter($results, function ($t) use ($f) {
-                [$col, $op, $val] = $f;
-                if ($op === 'IN') return in_array($t[$col], (array)$val);
-                return $t[$col] == $val;
-            });
-        }
-        $total = count($results);
-        $totalPages = max(1, ceil($total / $perPage));
-        $tasksData = array_slice(array_values($results), ($page - 1) * $perPage, $perPage);
-    } else {
-        // Sin búsqueda, usar paginación ORM
-        $orm = VersaModel::getGlobalORM();
-        $query = $orm->table('tasks');
-        foreach ($filters as $f) {
-            [$col, $op, $val] = $f;
-            $query = $op === 'IN' ? $query->whereIn($col, $val) : $query->where($col, $op, $val);
-        }
-        $query = $query->orderBy($order, $dir)->limit($perPage)->offset(($page - 1) * $perPage);
-        $tasksData = $query->getAll();
-        $total = $orm->table('tasks');
-        foreach ($filters as $f) {
-            [$col, $op, $val] = $f;
-            $total = $op === 'IN' ? $total->whereIn($col, $val) : $total->where($col, $op, $val);
-        }
-        $total = $total->count();
-        $totalPages = max(1, ceil($total / $perPage));
-    }
-    render_view('list', compact('tasksData', 'allProjects', 'allLabels', 'search', 'status', 'labelId', 'projectId', 'order', 'dir', 'page', 'perPage', 'total', 'totalPages') + ['tasks' => $tasksData]);
-    return;
-}
-
-// Filtros y búsqueda avanzada
-$search = $_GET['search'] ?? '';
-$status = $_GET['status'] ?? '';
-$order = $_GET['order'] ?? 'id';
-$dir = $_GET['dir'] ?? 'desc';
-$page = max(1, (int)($_GET['page'] ?? 1));
-$perPage = isset($_GET['perPage']) ? max(1, (int)$_GET['perPage']) : 10;
-
-// Obtener tareas usando métodos estandarizados
-if (!empty($search) && empty($status)) {
-    // Solo búsqueda de texto (array asociativo, paginación en SQL)
-    $taskModel = new Task();
-    $searchLower = strtolower($search);
-    $sql = "SELECT * FROM {$taskModel->getTable()} WHERE (LOWER(title) LIKE ? OR LOWER(description) LIKE ?) ORDER BY {$order} {$dir} LIMIT ? OFFSET ?";
-    $tasks = VersaModel::getGlobalORM()->exec($sql, [
-        "%$searchLower%",
-        "%$searchLower%",
-        $perPage,
-        ($page - 1) * $perPage
-    ]);
-} elseif (!empty($status) && empty($search)) {
-    // Solo filtro por estado (array asociativo)
-    if ($status === '1') {
-        $tasks = Task::whereArray('completed', '=', 1);
-    } else {
-        $tasks = Task::whereArray('completed', '=', 0);
-    }
-    $tasks = array_slice($tasks, ($page - 1) * $perPage, $perPage);
-} elseif (!empty($search) && !empty($status)) {
-    // Búsqueda + filtro por estado (consulta personalizada, array asociativo)
-    $taskModel = new Task();
-    $searchLower = strtolower($search);
-    $completedValue = ($status === '1') ? 1 : 0;
-    $sql = "SELECT * FROM {$taskModel->getTable()} WHERE (LOWER(title) LIKE ? OR LOWER(description) LIKE ?) AND completed = ? ORDER BY {$order} {$dir} LIMIT ? OFFSET ?";
-    $tasks = VersaModel::getGlobalORM()->exec($sql, [
-        "%$searchLower%",
-        "%$searchLower%",
-        $completedValue,
-        $perPage,
-        ($page - 1) * $perPage
-    ]);
-} else {
-    $paginationData = Task::paginateArray($page, $perPage);
-    $tasks = $paginationData['data'];
-}
-
-// Estadísticas usando métodos estandarizados
-$stats = Task::getStats();
-$total = $stats['total'];
-$completed = $stats['completed'];
-$pending = $stats['pending'];
-
-// Listar tareas
-include __DIR__ . '/views/list.php';

@@ -1,196 +1,153 @@
 <?php
 
-namespace Example\Models;
+namespace App\Models;
 
 /**
- * Modelo Task - Gestión de tareas
- *
- * Campos de la tabla 'tasks':
- * - id: int (PK, auto_increment)
- * - title: string (required)
- * - description: text (optional)
- * - completed: boolean (default: false)
- * - created_at: timestamp
- * - updated_at: timestamp
+ * Modelo Task
+ * Gestiona tareas del sistema
  */
 class Task extends BaseModel
 {
-    /**
-     * Nombre de la tabla
-     */
     protected string $table = 'tasks';
 
-    /**
-     * Campos que se pueden asignar masivamente
-     * @var array<string>
-     */
     protected array $fillable = [
         'title',
         'description',
-        'completed',
-        'project_id'
+        'status',
+        'priority',
+        'due_date',
+        'project_id',
+        'user_id'
     ];
 
-    /**
-     * Reglas de validación personalizadas
-     * @var array<string, array<string>>
-     */
+    protected array $guarded = [];
+
     protected array $rules = [
-        'title' => ['required', 'min:3', 'max:100'],
-        'description' => ['max:500'],
-        'project_id' => ['required', 'numeric']
+        'title' => ['required', 'min:3', 'max:200'],
+        'project_id' => ['required']
     ];
 
     /**
-     * Campos ocultos en la serialización (si los hubiera)
-     * @var array<string>
+     * Estados disponibles para las tareas
      */
-    protected array $hidden = [];
+    const STATUS_TODO = 'todo';
+    const STATUS_IN_PROGRESS = 'in_progress';
+    const STATUS_DONE = 'done';
 
     /**
-     * Método de negocio: marcar tarea como completada
-     * @return bool
+     * Prioridades disponibles
      */
-    public function markAsCompleted(): bool
+    const PRIORITY_LOW = 'low';
+    const PRIORITY_MEDIUM = 'medium';
+    const PRIORITY_HIGH = 'high';
+    const PRIORITY_URGENT = 'urgent';
+
+    /**
+     * Buscar por ID
+     */
+    public static function find(int $id): ?self
     {
-        $this->completed = 1;
-        $this->store();
-        return true;
+        return static::findOne('tasks', $id);
     }
 
     /**
-     * Método de negocio: marcar tarea como pendiente
-     * @return bool
+     * Obtener todas las tareas
      */
-    public function markAsPending(): bool
+    public static function all(): array
     {
-        $this->completed = 0;
-        $this->store();
-        return true;
+        return static::findAll('tasks');
     }
 
     /**
-     * Scope: obtener tareas completadas
-     * @return array<int, static>
+     * Crear nueva tarea
      */
-    public static function completed(): array
+    public static function create(array $attributes): static
     {
-        $instance = new static();
-        return $instance->db->table($instance->table)
-            ->where('completed', '=', 1)
-            ->findAll();
-    }
-
-    /**
-     * Scope: obtener tareas pendientes
-     * @return array<int, static>
-     */
-    public static function pending(): array
-    {
-        $instance = new static();
-        return $instance->db->table($instance->table)
-            ->where('completed', '=', 0)
-            ->findAll();
-    }
-
-    /**
-     * Scope: obtener tareas por etiqueta (many-to-many)
-     * @param int $labelId ID de la etiqueta
-     * @return array<int, array<string, mixed>>
-     */
-    public static function byLabel(int $labelId): array
-    {
-        $orm = static::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('No ORM instance available.');
+        // Aplicar valores por defecto
+        if (!isset($attributes['status'])) {
+            $attributes['status'] = self::STATUS_TODO;
         }
-        $sql = "SELECT t.* FROM tasks t
-                JOIN task_label tl ON tl.task_id = t.id
-                WHERE tl.label_id = ?
-                ORDER BY t.id DESC";
-        return $orm->exec($sql, [$labelId]);
+        if (!isset($attributes['priority'])) {
+            $attributes['priority'] = self::PRIORITY_MEDIUM;
+        }
+
+        // Validar antes de crear
+        $errors = [];
+        if (empty($attributes['title'])) $errors[] = 'El título es requerido';
+        if (empty($attributes['project_id'])) $errors[] = 'El proyecto es requerido';
+
+        if (!empty($errors)) {
+            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
+        }
+
+        // Crear instancia correctamente con el nombre de tabla
+        $ormInstance = static::getGlobalORM();
+        if (!$ormInstance) {
+            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
+        }
+        $task = new static('tasks', $ormInstance);
+        $task->fill($attributes);
+        $task->store();
+        return $task;
     }
 
     /**
-     * Buscar tareas por título o descripción
-     * @param string $term
-     * @return array<int, static>
+     * Obtener proyecto de la tarea
      */
-    public static function searchTasks(string $term): array
+    public function project(): ?array
     {
-        $instance = new static();
-        return $instance->db->table($instance->table)
-            ->where('title', 'LIKE', "%{$term}%")
-            ->orWhere('description', 'LIKE', "%{$term}%")
-            ->findAll();
+        $result = static::getAll("SELECT * FROM projects WHERE id = ?", [$this->project_id]);
+        return $result ? $result[0] : null;
     }
 
     /**
-     * Obtener estadísticas de tareas
-     * @return array<string, mixed>
+     * Obtener usuario asignado
      */
-    public static function getStats(): array
+    public function user(): ?array
     {
-        $instance = new static();
-        $db = $instance->db;
-
-        $total = $db->table($instance->table)->count();
-        $completed = $db->table($instance->table)->where('completed', '=', 1)->count();
-        $pending = $db->table($instance->table)->where('completed', '=', 0)->count();
-
-        return [
-            'total' => $total,
-            'completed' => $completed,
-            'pending' => $pending,
-            'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 2) : 0
-        ];
+        if (!$this->user_id) return null;
+        $result = static::getAll("SELECT * FROM users WHERE id = ?", [$this->user_id]);
+        return $result ? $result[0] : null;
     }
 
     /**
-     * Obtener tareas recientes
-     * @param int $limit
-     * @return array<int, static>
+     * Obtener etiquetas de la tarea
      */
-    public static function recent(int $limit = 10): array
+    public function labels(): array
     {
-        $instance = new static();
-        return $instance->db->table($instance->table)
-            ->orderBy('created_at', 'DESC')
-            ->limit($limit)
-            ->findAll();
+        return static::getAll(
+            "SELECT l.* FROM labels l
+             INNER JOIN task_labels tl ON l.id = tl.label_id
+             WHERE tl.task_id = ?",
+            [$this->id]
+        );
     }
 
     /**
-     * Relación: obtener las etiquetas de esta tarea (many-to-many)
-     * @return array<int, array<string, mixed>>
+     * Obtener IDs de etiquetas de la tarea
      */
-    public function labelsArray(): array
+    public function getLabelIds(): array
     {
-        return $this->db->table('labels')
-            ->join('task_label', 'labels.id', '=', 'task_label.label_id')
-            ->where('task_label.task_id', '=', $this->id)
-            ->get();
+        $results = static::getAll(
+            "SELECT label_id FROM task_labels WHERE task_id = ?",
+            [$this->id]
+        );
+        return array_column($results, 'label_id');
     }
 
     /**
-     * Asignar etiquetas a esta tarea (many-to-many)
-     * @param array<int> $labelIds IDs de las etiquetas a asignar
-     * @return void
+     * Asignar etiquetas a la tarea
      */
     public function setLabels(array $labelIds): void
     {
-        if (!$this->id) {
-            throw new \Exception('La tarea debe estar guardada antes de asignar etiquetas');
-        }
+        // Eliminar etiquetas actuales
+        static::execSql("DELETE FROM task_labels WHERE task_id = ?", [$this->id]);
 
-        // Eliminar todas las etiquetas actuales
-        $this->db->exec("DELETE FROM task_label WHERE task_id = ?", [$this->id]);
-
-        // Asignar las nuevas etiquetas
+        // Asignar nuevas etiquetas
         foreach ($labelIds as $labelId) {
             if (!empty($labelId)) {
-                $this->db->exec(
-                    "INSERT INTO task_label (task_id, label_id) VALUES (?, ?)",
+                static::execSql(
+                    "INSERT INTO task_labels (task_id, label_id) VALUES (?, ?)",
                     [$this->id, $labelId]
                 );
             }
@@ -198,92 +155,79 @@ class Task extends BaseModel
     }
 
     /**
-     * Agregar una etiqueta a esta tarea
-     * @param int $labelId ID de la etiqueta a agregar
-     * @return void
+     * Cambiar estado de la tarea
      */
-    public function addLabel(int $labelId): void
+    public function changeStatus(string $status): void
     {
-        if (!$this->id) {
-            throw new \Exception('La tarea debe estar guardada antes de agregar etiquetas');
+        $validStatuses = [self::STATUS_TODO, self::STATUS_IN_PROGRESS, self::STATUS_DONE];
+        if (!in_array($status, $validStatuses)) {
+            throw new \Exception('Estado inválido');
         }
 
-        // Verificar si la relación ya existe
-        $exists = $this->db->exec(
-            "SELECT COUNT(*) as count FROM task_label WHERE task_id = ? AND label_id = ?",
-            [$this->id, $labelId]
-        );
+        $this->status = $status;
+        $this->store();
+    }
 
-        if ($exists[0]['count'] == 0) {
-            $this->db->exec(
-                "INSERT INTO task_label (task_id, label_id) VALUES (?, ?)",
-                [$this->id, $labelId]
-            );
+    /**
+     * Asignar usuario a la tarea
+     */
+    public function assignUser(int $userId): void
+    {
+        $this->user_id = $userId;
+        $this->store();
+    }
+
+    /**
+     * Desasignar usuario de la tarea
+     */
+    public function unassignUser(): void
+    {
+        $this->user_id = null;
+        $this->store();
+    }
+
+    /**
+     * Verificar si la tarea está vencida
+     */
+    public function isOverdue(): bool
+    {
+        if (!$this->due_date) return false;
+        return strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
+    }
+
+    /**
+     * Obtener clase CSS para prioridad
+     */
+    public function getPriorityClass(): string
+    {
+        switch ($this->priority) {
+            case self::PRIORITY_URGENT:
+                return 'bg-red-100 text-red-800 border-red-200';
+            case self::PRIORITY_HIGH:
+                return 'bg-orange-100 text-orange-800 border-orange-200';
+            case self::PRIORITY_MEDIUM:
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case self::PRIORITY_LOW:
+                return 'bg-green-100 text-green-800 border-green-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     }
 
     /**
-     * Remover una etiqueta de esta tarea
-     * @param int $labelId ID de la etiqueta a remover
-     * @return void
+     * Obtener clase CSS para estado
      */
-    public function removeLabel(int $labelId): void
+    public function getStatusClass(): string
     {
-        if (!$this->id) {
-            return;
+        switch ($this->status) {
+            case self::STATUS_TODO:
+                return 'bg-gray-100 text-gray-800';
+            case self::STATUS_IN_PROGRESS:
+                return 'bg-blue-100 text-blue-800';
+            case self::STATUS_DONE:
+                return 'bg-green-100 text-green-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
-
-        $this->db->exec(
-            "DELETE FROM task_label WHERE task_id = ? AND label_id = ?",
-            [$this->id, $labelId]
-        );
-    }
-
-
-    /**
-     * Relación: obtener el proyecto al que pertenece esta tarea
-     * @return array<string, mixed>|null
-     */
-    public function projectArray(): ?array
-    {
-        if (!$this->project_id) {
-            return null;
-        }
-
-        $result = $this->db->table('projects')
-            ->where('id', '=', $this->project_id)
-            ->first();
-
-        return is_array($result) ? $result : null;
-    }
-
-    /**
-     * Método de utilidad: verificar si la tarea está completada
-     * @return bool
-     */
-    public function isCompleted(): bool
-    {
-        return (bool) $this->completed;
-    }
-
-    /**
-     * Método de utilidad: verificar si la tarea está pendiente
-     * @return bool
-     */
-    public function isPending(): bool
-    {
-        return !$this->isCompleted();
-    }
-
-    /**
-     * Método de utilidad: obtener resumen de la tarea
-     * @return string
-     */
-    public function getSummary(): string
-    {
-        $status = $this->isCompleted() ? 'Completada' : 'Pendiente';
-        $description = $this->description ? substr($this->description, 0, 50) . '...' : 'Sin descripción';
-
-        return "{$this->title} - {$status} - {$description}";
     }
 }

@@ -1,420 +1,175 @@
 <?php
 
-namespace Example\Models;
+namespace App\Models;
 
-use VersaORM\Traits\VersaORMTrait;
 use VersaORM\VersaModel;
-use VersaORM\VersaORM;
 
 /**
- * Clase base estándar para todos los modelos del proyecto
- *
- * PROPÓSITO: Proporciona funcionalidad común y estandarizada
- * ARQUITECTURA:
- * - Extiende VersaModel (base ActiveRecord del ORM)
- * - Proporciona métodos estáticos de conveniencia para consultas comunes
- * - Maneja instancias singleton de ORM por clase para eficiencia
- * - Funcionalidad común: validación, serialización, búsqueda, paginación
+ * Modelo base para la aplicación
  */
 abstract class BaseModel extends VersaModel
 {
-    use VersaORMTrait;
-
     /**
-     * Nombre de la tabla (debe ser definido en cada modelo hijo)
-     * @var string
+     * Timestamps automáticos
      */
-    protected string $table;
+    protected bool $timestamps = true;
 
     /**
-     * Clave primaria (por defecto 'id')
-     * @var string
+     * Campos de timestamp
      */
-    protected string $primaryKey = 'id';
+    protected array $dateFields = ['created_at', 'updated_at'];
 
     /**
-     * Campos que se pueden asignar masivamente
-     * @var array
+     * Campos protegidos (permitir asignación masiva por defecto)
      */
-    protected array $fillable = [];
+    protected array $guarded = [];
 
     /**
-     * Campos que están ocultos en la serialización
-     * @var array
-     */
-    protected array $hidden = [];
-
-    /**
-     * Constructor
-     */
-    public function __construct()
-    {
-        // Usar la tabla definida en la clase o inferir del nombre de la clase
-        $tableName = $this->table ?? strtolower(basename(str_replace('\\', '/', static::class))) . 's';
-
-        // Usar la instancia global del ORM
-        $orm = parent::getGlobalORM();
-        if ($orm) {
-            parent::__construct($tableName, $orm);
-        } else {
-            // Si no hay ORM, solo inicializar las propiedades básicas
-            $this->table = $tableName;
-        }
-    }
-
-    /**
-     * Obtiene el nombre de la tabla
-     */
-    public function getTable(): string
-    {
-        return $this->table;
-    }
-
-    /**
-     * Obtiene la clave primaria
-     */
-    public function getPrimaryKey(): string
-    {
-        return $this->primaryKey;
-    }
-
-    /**
-     * Obtiene la instancia del ORM
-     */
-    public function getORM(): VersaORM
-    {
-        return $this->getOrm();
-    }
-
-    /**
-     * Crea un nuevo modelo (factory method)
-     * Utiliza VersaModel::dispense() para crear instancias manipulables
-     */
-    public static function create(array $data): static
-    {
-        // Usar el ORM global directamente
-        $orm = static::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('No ORM instance available. Make sure VersaORM is initialized.');
-        }
-
-        // Asegurar que el ORM estático esté configurado
-        VersaModel::setORM($orm);
-
-        $instance = new static();
-        $model = VersaModel::dispense($instance->table);
-
-        // Asignar solo campos permitidos
-        foreach ($data as $key => $value) {
-            if (empty($instance->fillable) || in_array($key, $instance->fillable)) {
-                $model->$key = $value;
-            }
-        }
-
-        $model->store();
-        return self::find($model->id);
-    }
-
-    /**
-     * Busca un modelo por ID
-     */
-    public static function find($id): ?static
-    {
-        $instance = new static();
-        $tableName = $instance->getTableName();
-        $primaryKey = $instance->getPrimaryKey();
-
-        $orm = parent::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
-        }
-
-        $result = $orm->table($tableName)
-            ->where($primaryKey, '=', $id)
-            ->findOne();
-
-        if ($result) {
-            // Si $result es instancia de VersaModel, usar export()
-            if (method_exists($result, 'export')) {
-                $attributes = $result->export();
-            } elseif (is_array($result)) {
-                $attributes = $result;
-            } else {
-                $attributes = [];
-            }
-            $model = new static();
-            $model->loadInstance($attributes);
-            return $model;
-        }
-
-        return null;
-    }
-
-    /**
-     * Obtiene todos los registros
-     */
-    public static function all(): array
-    {
-        $instance = new static();
-        $tableName = $instance->getTableName();
-        $primaryKey = $instance->getPrimaryKey();
-
-        $orm = parent::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
-        }
-
-        return $orm->table($tableName)->orderBy($primaryKey, 'DESC')->get();
-    }
-
-    /**
-     * Obtiene todos los registros como array asociativo (no objetos)
-     *
-     * @return array<int, array<string, mixed>>
+     * Obtener todos los registros como array
      */
     public static function allArray(): array
     {
-        $instance = new static();
-        $tableName = $instance->getTableName();
-        $primaryKey = $instance->getPrimaryKey();
-
-        $orm = parent::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
-        }
-
-        return $orm->table($tableName)->orderBy($primaryKey, 'DESC')->get();
+        return static::findAll(static::getTableName());
     }
 
     /**
-     * Obtiene el nombre de tabla de la clase sin instanciar
+     * Obtener todos los registros como objetos VersaModel
      */
-    private function getTableName(): string
+    public static function all(): array
     {
-        return $this->table ?? strtolower(basename(str_replace('\\', '/', static::class))) . 's';
-    }
+        $tableName = static::getTableName();
+        $records = static::findAll($tableName);
+        $objects = [];
 
-    /**
-     * Cuenta todos los registros de esta tabla
-     */
-    public static function countAll(): int
-    {
-        $instance = new static();
-        return $instance->db->table($instance->table)->count();
-    }
-
-    /**
-     * Busca registros with condiciones
-     */
-    public static function where(string $column, string $operator, $value): array
-    {
-        $instance = new static();
-        $orm = static::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('No ORM instance available.');
-        }
-        $sql = "SELECT * FROM {$instance->table} WHERE {$column} {$operator} ? ORDER BY {$instance->primaryKey} DESC";
-        $results = $orm->exec($sql, [$value]);
-
-        // Convertir resultados a modelos de la clase correcta
-        $models = [];
-        foreach ($results as $result) {
-            $model = new static();
-            $model->loadInstance($result);
-            $models[] = $model;
-        }
-
-        return $models;
-    }
-
-    /**
-     * Busca registros con condiciones y devuelve arrays asociativos (no objetos)
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function whereArray(string $column, string $operator, $value): array
-    {
-        $instance = new static();
-        $tableName = $instance->getTableName();
-        $primaryKey = $instance->getPrimaryKey();
-
-        $orm = parent::getGlobalORM();
-        if (!$orm) {
-            throw new \Exception('ORM instance not initialized. Call VersaModel::setORM() first.');
-        }
-
-        $sql = "SELECT * FROM {$tableName} WHERE {$column} {$operator} ? ORDER BY {$primaryKey} DESC";
-        return $orm->exec($sql, [$value]);
-    }
-
-    /**
-     * Actualiza el modelo current de manera segura
-     * Sobrescribe el método padre para mantener compatibilidad
-     * pero usa la implementación estándar de VersaModel
-     */
-    public function updateSafe(array $data): bool
-    {
-        try {
-            $this->update($data); // Usa el método padre que retorna self
-            return true;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Elimina el modelo actual
-     */
-    public function delete(): bool
-    {
-        try {
-            $this->trash();
-            return true;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Exporta el modelo excluyendo campos ocultos
-     */
-    public function toArray(): array
-    {
-        $data = $this->export();
-
-        if (!empty($this->hidden)) {
-            foreach ($this->hidden as $field) {
-                unset($data[$field]);
+        foreach ($records as $record) {
+            $obj = VersaModel::dispense($tableName);
+            foreach ($record as $key => $value) {
+                $obj->$key = $value;
             }
+            $objects[] = $obj;
         }
 
-        return $data;
+        return $objects;
     }
 
     /**
-     * Convierte a JSON
+     * Buscar por ID y devolver array
      */
-    public function toJson(): string
+    public static function findArray(int $id): ?array
     {
-        return json_encode($this->toArray(), JSON_UNESCAPED_UNICODE);
+        $tableName = static::getTableName();
+        $result = static::getAll("SELECT * FROM {$tableName} WHERE id = ?", [$id]);
+        return $result ? $result[0] : null;
     }
 
     /**
-     * Búsqueda case-insensitive en múltiples campos
-     */
-    public static function search(string $term, array $fields = []): array
-    {
-        $instance = new static();
-
-        if (empty($fields)) {
-            // Si no se especifican campos, buscar en todos los fillable
-            $fields = $instance->fillable;
-        }
-
-        if (empty($fields)) {
-            return [];
-        }
-
-        $searchLower = strtolower($term);
-        $conditions = [];
-        $bindings = [];
-
-        foreach ($fields as $field) {
-            $conditions[] = "LOWER($field) LIKE ?";
-            $bindings[] = "%$searchLower%";
-        }
-
-        $result = $instance->db->table($instance->table)
-            ->whereRaw(implode(' OR ', $conditions), $bindings)
-            ->orderBy($instance->primaryKey, 'DESC')->get();
-
-        return $result;
-    }
-
-    /**
-     * Búsqueda case-insensitive en múltiples campos, devuelve arrays asociativos (no objetos)
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function searchArray(string $term, array $fields = []): array
-    {
-        $instance = new static();
-        if (empty($fields)) {
-            $fields = $instance->fillable;
-        }
-        if (empty($fields)) {
-            return [];
-        }
-        $searchLower = strtolower($term);
-        $conditions = [];
-        $bindings = [];
-        foreach ($fields as $field) {
-            $conditions[] = "LOWER($field) LIKE ?";
-            $bindings[] = "%$searchLower%";
-        }
-        $result = $instance->db->table($instance->table)
-            ->whereRaw(implode(' OR ', $conditions), $bindings)
-            ->orderBy($instance->primaryKey, 'DESC')->get();
-        return $result;
-    }
-
-    /**
-     * Paginación
+     * Paginación simple
      */
     public static function paginate(int $page = 1, int $perPage = 10): array
     {
-        $instance = new static();
+        $tableName = static::getTableName();
         $offset = ($page - 1) * $perPage;
 
-        // $sql = "SELECT * FROM {$instance->table} ORDER BY {$instance->primaryKey} DESC LIMIT ? OFFSET ?";
-        // $results = $instance->db->exec($sql, [$perPage, $offset]);
+        $items = static::getAll(
+            "SELECT * FROM {$tableName} LIMIT ? OFFSET ?",
+            [$perPage, $offset]
+        );
 
-        $results = $instance->db->table($instance->table)
-            ->orderBy($instance->primaryKey, 'DESC')
-            ->limit($perPage)
-            ->offset($offset)
-            ->getAll();
-
-        $total = $instance->db->table($instance->table)->count();
+        $totalResult = static::getAll("SELECT COUNT(*) as count FROM {$tableName}");
+        $total = $totalResult[0]['count'] ?? 0;
 
         return [
-            'data' => $results,
+            'items' => $items,
             'total' => $total,
             'page' => $page,
-            'per_page' => $perPage,
-            'total_pages' => ceil($total / $perPage)
+            'perPage' => $perPage,
+            'totalPages' => ceil($total / $perPage)
         ];
     }
 
     /**
-     * Paginación que devuelve arrays asociativos (no objetos) en 'data'
-     *
-     * @return array{data: array<int, array<string, mixed>>, total: int, page: int, per_page: int, total_pages: int}
+     * Obtener nombre de tabla del modelo
      */
-    public static function paginateArray(int $page = 1, int $perPage = 10): array
+    protected static function getTableName(): string
     {
-        $instance = new static();
-        $offset = ($page - 1) * $perPage;
-        $results = $instance->db->table($instance->table)
-            ->orderBy($instance->primaryKey, 'DESC')
-            ->limit($perPage)
-            ->offset($offset)
-            ->getAll();
-        $total = $instance->db->table($instance->table)->count();
-        return [
-            'data' => $results,
-            'total' => $total,
-            'page' => $page,
-            'per_page' => $perPage,
-            'total_pages' => (int)ceil($total / $perPage)
-        ];
+        // Crear una instancia temporal solo para obtener el nombre de tabla
+        $reflection = new \ReflectionClass(static::class);
+        $instance = $reflection->newInstanceWithoutConstructor();
+
+        // Acceder a la propiedad protegida $table
+        $tableProperty = $reflection->getProperty('table');
+        $tableProperty->setAccessible(true);
+
+        return $tableProperty->getValue($instance);
     }
 
     /**
-     * Validación básica (debe ser implementada en cada modelo)
+     * Ejecutar comando SQL estático
+     */
+    protected static function execSql(string $sql, array $bindings = []): mixed
+    {
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            throw new \Exception('No ORM instance available. Call VersaModel::setORM() first.');
+        }
+        return $orm->exec($sql, $bindings);
+    }
+
+    /**
+     * Validaciones básicas
      */
     public function validate(): array
     {
-        return []; // Retorna array vacío si no hay errores
+        $errors = [];
+
+        if (isset($this->rules)) {
+            foreach ($this->rules as $field => $rules) {
+                $value = $this->getAttribute($field);
+
+                foreach ($rules as $rule) {
+                    if ($rule === 'required' && empty($value)) {
+                        $errors[$field][] = "El campo $field es requerido";
+                    }
+
+                    if (strpos($rule, 'min:') === 0) {
+                        $min = (int) substr($rule, 4);
+                        if (strlen($value) < $min) {
+                            $errors[$field][] = "El campo $field debe tener al menos $min caracteres";
+                        }
+                    }
+
+                    if (strpos($rule, 'max:') === 0) {
+                        $max = (int) substr($rule, 4);
+                        if (strlen($value) > $max) {
+                            $errors[$field][] = "El campo $field no debe exceder $max caracteres";
+                        }
+                    }
+
+                    if ($rule === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                        $errors[$field][] = "El campo $field debe ser un email válido";
+                    }
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Guardar con validación
+     */
+    public function save(): bool
+    {
+        $errors = $this->validate();
+        if (!empty($errors)) {
+            throw new \Exception('Errores de validación: ' . json_encode($errors));
+        }
+
+        try {
+            $this->store();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

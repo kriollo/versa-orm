@@ -35,7 +35,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Proyecto</label>
                     <select name="project_id" class="w-full border rounded px-2 py-2">
                         <?php foreach ($allProjects as $proj): ?>
-                            <option value="<?= $proj['id'] ?>" <?= $proj['id'] == $task['project_id'] ? 'selected' : '' ?>><?= htmlspecialchars($proj['name']) ?></option>
+                            <option value="<?= $proj['id'] ?>" <?= $proj['id'] == (is_array($task) ? $task['project_id'] : $task->project_id) ? 'selected' : '' ?>><?= htmlspecialchars($proj['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -44,7 +44,7 @@
                     <select name="user_id" class="w-full border rounded px-2 py-2">
                         <option value="">Sin asignar</option>
                         <?php foreach ($allUsers as $user): ?>
-                            <option value="<?= $user['id'] ?>" <?= $user['id'] == $task['user_id'] ? 'selected' : '' ?>><?= htmlspecialchars($user['name']) ?></option>
+                            <option value="<?= $user['id'] ?>" <?= $user['id'] == (is_array($task) ? $task['user_id'] : $task->user_id) ? 'selected' : '' ?>><?= htmlspecialchars($user['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -54,7 +54,7 @@
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($allLabels as $label): ?>
                         <label class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold" style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;">
-                            <input type="checkbox" name="labels[]" value="<?= $label['id'] ?>" <?= in_array($label['id'], $task['label_ids'] ?? []) ? 'checked' : '' ?> />
+                            <input type="checkbox" name="labels[]" value="<?= $label['id'] ?>" <?= in_array($label['id'], is_array($task) ? ($task['label_ids'] ?? []) : $task->getLabelIds()) ? 'checked' : '' ?> />
                             <?= htmlspecialchars($label['name']) ?>
                         </label>
                     <?php endforeach; ?>
@@ -62,7 +62,7 @@
             </div>
             <div class="flex items-center gap-4">
                 <label class="flex items-center gap-2">
-                    <input type="checkbox" name="completed" value="1" <?= isset($task['completed']) && $task['completed'] ? 'checked' : '' ?> />
+                    <input type="checkbox" name="completed" value="1" <?= (is_array($task) ? (isset($task['completed']) && $task['completed']) : (isset($task->completed) && $task->completed)) ? 'checked' : '' ?> />
                     <span class="text-sm">Completada</span>
                 </label>
                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow font-bold">Guardar cambios</button>

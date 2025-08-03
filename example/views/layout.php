@@ -1,73 +1,113 @@
-| Gestión de Proyectos</title>
-<script src="https://cdn.tailwindcss.com/"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    'trello-blue': '#0079bf',
-                    'trello-green': '#61bd4f',
-                    'trello-orange': '#ffab4a',
-                    'trello-red': '#eb5a46',
-                    'trello-purple': '#c377e0',
-                }
-            }
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?? 'VersaORM Trello Demo' ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .kanban-column {
+            min-height: 400px;
         }
-    }
-</script>
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
-    <nav class="bg-gradient-to-r from-trello-blue to-indigo-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between h-16">
-                <a href="index.php" class="flex items-center space-x-3 group">
-                    <div class="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <rect x="3" y="3" width="7" height="18" rx="2" fill="currentColor" opacity="0.7" />
-                            <rect x="14" y="3" width="7" height="18" rx="2" fill="currentColor" opacity="0.5" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-bold">VersaORM Trello</h1>
-                        <p class="text-xs text-blue-200">Gestión de Proyectos</p>
-                    </div>
-                </a>
-
-                <div class="hidden md:flex items-center space-x-1">
-                    <a href="index.php" class="px-4 py-2 rounded-lg hover:bg-white/20 transition-colors font-medium">
-                        <span class="mr-2">🏠</span>Proyectos
-                    </a>
-                    <a href="?action=tasks" class="px-4 py-2 rounded-lg hover:bg-white/20 transition-colors font-medium">
-                        <span class="mr-2">📋</span>Tareas
-                    </a>
-                    <a href="?view=labels_list" class="px-4 py-2 rounded-lg hover:bg-white/20 transition-colors font-medium">
-                        <span class="mr-2">🏷️</span>Etiquetas
+<body class="bg-gray-50">
+    <!-- Navegación -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2">
+                        <i class="fas fa-tasks text-2xl text-blue-600"></i>
+                        <span class="text-xl font-bold text-gray-900">VersaORM Trello</span>
                     </a>
                 </div>
 
-                <div class="flex items-center space-x-3">
-                    <a href="?action=new_project"
-                        class="bg-trello-green hover:bg-green-600 px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
-                        <span class="mr-2">➕</span>Nuevo Proyecto
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-home mr-1"></i> Inicio
+                    </a>
+                    <a href="/projects" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-folder mr-1"></i> Proyectos
+                    </a>
+                    <a href="/tasks" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-tasks mr-1"></i> Tareas
+                    </a>
+                    <a href="/labels" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-tags mr-1"></i> Etiquetas
+                    </a>
+                    <a href="/users" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-users mr-1"></i> Usuarios
                     </a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8">
+    <!-- Mensajes Flash -->
+    <?php $flash = getFlash(); ?>
+    <?php if ($flash): ?>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            <div class="alert alert-<?= $flash['type'] ?> p-4 rounded-md <?= $flash['type'] === 'success' ? 'bg-green-100 border border-green-200 text-green-800' : 'bg-red-100 border border-red-200 text-red-800' ?>">
+                <i class="fas fa-<?= $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle' ?> mr-2"></i>
+                <?= htmlspecialchars($flash['message']) ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Contenido principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <?= $content ?>
     </main>
 
-    <footer class="bg-white/70 backdrop-blur-sm border-t border-gray-200 mt-16">
-        <div class="container mx-auto px-4 py-6 text-center">
-            <p class="text-gray-600 text-sm">
-                VersaORM-PHP &copy; <?= date('Y') ?> ||
-                <a href="https://github.com/kriollo/versa-orm" class="text-trello-blue hover:underline">GitHub</a>
-            </p>
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-gray-500">
+                <p>&copy; 2025 VersaORM Trello Demo. Demostrando las capacidades de VersaORM-PHP.</p>
+            </div>
         </div>
     </footer>
+
+    <script>
+        // Helper functions
+        function getAvatarInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        // Auto-hide flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => alert.remove(), 500);
+                }, 5000);
+            });
+        });
+    </script>
 </body>
 
 </html>

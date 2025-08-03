@@ -1,113 +1,162 @@
 <?php
 
-namespace Example\Models;
+namespace App\Models;
 
 /**
- * Modelo Project - Gestión de proyectos
- *
- * Campos de la tabla 'projects':
- * - id: int (PK, auto_increment)
- * - name: string (required)
- * - description: text (optional)
- * - created_at: timestamp
- * - updated_at: timestamp
+ * Modelo Project
+ * Gestiona proyectos del sistema
  */
 class Project extends BaseModel
 {
-    /**
-     * Nombre de la tabla
-     */
     protected string $table = 'projects';
 
-    /**
-     * Campos que se pueden asignar masivamente
-     */
     protected array $fillable = [
         'name',
         'description',
-        'user_id'
+        'color',
+        'owner_id'
+    ];
+
+    protected array $guarded = [];
+
+    protected array $rules = [
+        'name' => ['required', 'min:2', 'max:100'],
+        'owner_id' => ['required']
     ];
 
     /**
-     * Relación: un proyecto tiene muchas tareas
-     * @return array<int, array<string, mixed>>
+     * Buscar por ID
      */
-    public function tasksArray(): array
+    public static function find(int $id): ?self
     {
-        return Task::whereArray('project_id', '=', $this->id);
+        return static::findOne('projects', $id);
     }
 
     /**
-     * Relación: un proyecto tiene muchas tareas (objetos)
-     * @return Task[]
+     * Obtener todos los proyectos
+     */
+    public static function all(): array
+    {
+        return static::findAll('projects');
+    }
+
+    /**
+     * Crear nuevo proyecto
+     */
+    public static function create(array $attributes): static
+    {
+        // Aplicar valores por defecto
+        if (!isset($attributes['color'])) {
+            $attributes['color'] = static::generateRandomColor();
+        }
+
+        // Validar antes de crear
+        $errors = [];
+        if (empty($attributes['name'])) $errors[] = 'El nombre es requerido';
+        if (empty($attributes['owner_id'])) $errors[] = 'El propietario es requerido';
+
+        if (!empty($errors)) {
+            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
+        }
+
+        // Crear instancia correctamente con el nombre de tabla
+        $ormInstance = static::getGlobalORM();
+        if (!$ormInstance) {
+            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
+        }
+        $project = new static('projects', $ormInstance);
+        $project->fill($attributes);
+        $project->store();
+
+        // Añadir el propietario como miembro del proyecto
+        static::execSql(
+            "INSERT INTO project_users (project_id, user_id) VALUES (?, ?)",
+            [$project->id, $attributes['owner_id']]
+        );
+
+        return $project;
+    }
+
+    /**
+     * Generar color aleatorio para proyecto
+     */
+    private static function generateRandomColor(): string
+    {
+        $colors = [
+            '#e74c3c',
+            '#3498db',
+            '#2ecc71',
+            '#f39c12',
+            '#9b59b6',
+            '#1abc9c',
+            '#e67e22',
+            '#34495e',
+            '#95a5a6',
+            '#16a085'
+        ];
+        return $colors[array_rand($colors)];
+    }
+
+    /**
+     * Obtener propietario del proyecto
+     */
+    public function owner(): ?array
+    {
+        $result = static::getAll("SELECT * FROM users WHERE id = ?", [$this->owner_id]);
+        return $result ? $result[0] : null;
+    }
+
+    /**
+     * Obtener miembros del proyecto
+     */
+    public function members(): array
+    {
+        return static::getAll(
+            "SELECT u.* FROM users u
+             INNER JOIN project_users pu ON u.id = pu.user_id
+             WHERE pu.project_id = ?",
+            [$this->id]
+        );
+    }
+
+    /**
+     * Obtener tareas del proyecto
      */
     public function tasks(): array
     {
-        return Task::where('project_id', '=', $this->id);
+        return static::getAll(
+            "SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at DESC",
+            [$this->id]
+        );
     }
 
     /**
-     * Relación: un proyecto pertenece a un usuario
-     * @return array<string, mixed>|null
+     * Añadir miembro al proyecto
      */
-    public function userArray(): ?array
+    public function addMember(int $userId): void
     {
-        if (empty($this->user_id)) return null;
-        return User::whereArray('id', '=', $this->user_id)[0] ?? null;
-    }
+        // Verificar si ya es miembro
+        $exists = static::getAll(
+            "SELECT 1 FROM project_users WHERE project_id = ? AND user_id = ?",
+            [$this->id, $userId]
+        );
 
-    /**
-     * Relación: un proyecto tiene muchas tareas (belongsToMany ficticio)
-     * @return array<int, array<string, mixed>>
-     */
-    public function tasksManyToManyArray(): array
-    {
-        // Ejemplo de belongsToMany usando SQL crudo
-        $sql = "SELECT t.* FROM tasks t JOIN project_task pt ON pt.task_id = t.id WHERE pt.project_id = ?";
-        return $this->db->exec($sql, [$this->id]);
-    }
-
-    /**
-     * Ejemplo de uso de QueryBuilder avanzado: tareas completadas de este proyecto
-     * @return array<int, array<string, mixed>>
-     */
-    public function completedTasksArray(): array
-    {
-        return $this->db->table('tasks')
-            ->where('project_id', '=', $this->id)
-            ->where('completed', '=', 1)
-            ->orderBy('created_at', 'DESC')
-            ->get();
-    }
-
-    /**
-     * Ejemplo de agregados: contar tareas
-     */
-    public function countTasks(): int
-    {
-        return $this->db->table('tasks')->where('project_id', '=', $this->id)->count();
-    }
-
-    /**
-     * Ejemplo de uso de caché
-     */
-    public function cacheStatus(): mixed
-    {
-        return $this->db->cache('status');
-    }
-
-    /**
-     * Ejemplo de transacción: marcar todas las tareas como completadas
-     */
-    public function completeAllTasks(): void
-    {
-        $this->db->exec('START TRANSACTION');
-        try {
-            $this->db->exec('UPDATE tasks SET completed = 1 WHERE project_id = ?', [$this->id]);
-            $this->db->exec('COMMIT');
-        } catch (\Exception $e) {
-            $this->db->exec('ROLLBACK');
-            throw $e;
+        if (empty($exists)) {
+            static::execSql(
+                "INSERT INTO project_users (project_id, user_id) VALUES (?, ?)",
+                [$this->id, $userId]
+            );
         }
+    }
+
+    /**
+     * Remover miembro del proyecto
+     */
+    public function removeMember(int $userId): void
+    {
+        static::execSql(
+            "DELETE FROM project_users WHERE project_id = ? AND user_id = ?",
+            [$this->id, $userId]
+        );
     }
 }

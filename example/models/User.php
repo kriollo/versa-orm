@@ -1,73 +1,122 @@
 <?php
 
-namespace Example\Models;
+namespace App\Models;
 
 /**
- * Modelo User - Gestión de usuarios (ficticio para demo avanzada)
- *
- * Campos de la tabla 'usuarios':
- * - id: int (PK, auto_increment)
- * - name: string (required)
- * - email: string (required)
- * - created_at: timestamp
- * - updated_at: timestamp
+ * Modelo User
+ * Gestiona usuarios del sistema
  */
 class User extends BaseModel
 {
-    protected string $table = 'usuarios';
+    protected string $table = 'users';
 
-    /**
-     * Campos permitidos para Mass Assignment
-     * @var array<string>
-     */
     protected array $fillable = [
         'name',
-        'email'
+        'email',
+        'avatar_color',
+        'active'
     ];
 
-    /**
-     * Reglas de validación personalizadas
-     * @var array<string, array<string>>
-     */
+    protected array $guarded = [];
+
     protected array $rules = [
-        'name' => ['required', 'min:2', 'max:50'],
-        'email' => ['required', 'email']
+        'name' => ['required', 'min:2', 'max:100'],
+        'email' => ['required', 'email', 'max:150']
     ];
 
     /**
-     * Método de negocio: verificar si el usuario tiene proyectos activos
-     * @return bool
+     * Buscar por ID
      */
-    public function hasActiveProjects(): bool
+    public static function find(int $id): ?self
     {
-        $activeProjects = $this->db->table('projects')
-            ->where('user_id', '=', $this->id)
-            ->where('status', '=', 'active')
-            ->count();
-
-        return $activeProjects > 0;
+        return static::findOne('users', $id);
     }
 
     /**
-     * Relación: un usuario tiene muchos proyectos
-     * @return array<int, array<string, mixed>>
+     * Obtener todos los usuarios
      */
-    public function projectsArray(): array
+    public static function all(): array
     {
-        return Project::whereArray('user_id', '=', $this->id);
+        return static::findAll('users');
     }
 
     /**
-     * Relación: un usuario tiene muchas tareas (a través de proyectos)
-     * @return array<int, array<string, mixed>>
+     * Crear nuevo usuario
      */
-    public function tasksArray(): array
+    public static function create(array $attributes): static
     {
-        // Ejemplo de join avanzado con QueryBuilder
-        $instance = new static();
-        return $instance->db->table('tasks')
-            ->join('projects', 'tasks.project_id', '=', 'projects.id')
-            ->where('projects.user_id', '=', $this->id)
-            ->get();
+        // Aplicar valores por defecto
+        if (!isset($attributes['avatar_color'])) {
+            $attributes['avatar_color'] = static::generateRandomColor();
+        }
+
+        // Validar antes de crear
+        $errors = [];
+        if (empty($attributes['name'])) $errors[] = 'El nombre es requerido';
+        if (empty($attributes['email'])) $errors[] = 'El email es requerido';
+        if (!filter_var($attributes['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Email inválido';
+
+        if (!empty($errors)) {
+            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
+        }
+
+        // Crear instancia correctamente con el nombre de tabla
+        $ormInstance = static::getGlobalORM();
+        if (!$ormInstance) {
+            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
+        }
+        $user = new static('users', $ormInstance);
+        $user->fill($attributes);
+        $user->store();
+        return $user;
+    }
+
+    /**
+     * Generar color aleatorio para avatar
+     */
+    private static function generateRandomColor(): string
+    {
+        $colors = [
+            '#ff6b6b',
+            '#4ecdc4',
+            '#45b7d1',
+            '#96ceb4',
+            '#ffeaa7',
+            '#dda0dd',
+            '#98d8c8',
+            '#fdcb6e',
+            '#6c5ce7',
+            '#fd79a8',
+            '#e17055',
+            '#00b894',
+            '#0984e3',
+            '#a29bfe',
+            '#fd79a8'
+        ];
+        return $colors[array_rand($colors)];
+    }
+
+    /**
+     * Obtener proyectos del usuario
+     */
+    public function projects(): array
+    {
+        return static::getAll(
+            "SELECT p.* FROM projects p
+             INNER JOIN project_users pu ON p.id = pu.project_id
+             WHERE pu.user_id = ?",
+            [$this->id]
+        );
+    }
+
+    /**
+     * Obtener tareas asignadas al usuario
+     */
+    public function tasks(): array
+    {
+        return static::getAll(
+            "SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC",
+            [$this->id]
+        );
     }
 }
