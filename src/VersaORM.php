@@ -890,7 +890,7 @@ class VersaORM
 
     /**
      * Limpia la salida del binario Rust eliminando logs de debug
-     * para extraer solo el JSON válido
+     * para extraer solo el JSON válido.
      *
      * @param string $output Salida cruda del binario
      * @return string JSON limpio
@@ -939,7 +939,7 @@ class VersaORM
 
         // Log de debug si está habilitado
         if ($this->config['debug'] ?? false) {
-            error_log("[VersaORM] Cleaned Rust debug output. Original length: " . strlen($output) . ", Clean length: " . strlen($cleanJson));
+            error_log('[VersaORM] Cleaned Rust debug output. Original length: ' . strlen($output) . ', Clean length: ' . strlen($cleanJson));
         }
 
         return $cleanJson;

@@ -23,7 +23,27 @@ Las **Operaciones de Lote** te permiten realizar operaciones masivas de inserci�
 
 Inserta múltiples registros usando la sintaxis SQL más eficiente: `INSERT INTO table (cols) VALUES (val1), (val2), ...`
 
-#### Sintaxis Básica
+#### Ejemplo SQL vs VersaORM
+```sql
+-- SQL
+INSERT INTO users (name, email, status) VALUES
+('Juan Pérez', 'juan@example.com', 'active'),
+('María García', 'maria@example.com', 'active'),
+('Carlos López', 'carlos@example.com', 'inactive');
+```
+
+```php
+// VersaORM
+$users = [
+    ['name' => 'Juan Pérez', 'email' => 'juan@example.com', 'status' => 'active'],
+    ['name' => 'María García', 'email' => 'maria@example.com', 'status' => 'active'],
+    ['name' => 'Carlos López', 'email' => 'carlos@example.com', 'status' => 'inactive'],
+];
+
+$result = $orm->table('users')->insertMany($users, 1000);
+```
+
+### Sintaxis Básica
 ```php
 $result = $orm->table('users')->insertMany($records, $batchSize);
 ```
@@ -56,6 +76,24 @@ $result = $orm->table('products')->insertMany($products, 500);
 
 // Máximo batch_size permitido: 10,000
 // Mínimo batch_size permitido: 1
+```
+
+#### Ejemplo SQL vs VersaORM
+```sql
+-- SQL
+UPDATE users SET status = 'active', updated_at = '2024-01-01 10:30:00'
+WHERE status = 'inactive' AND created_at > '2024-01-01';
+```
+
+```php
+// VersaORM
+$result = $orm->table('users')
+    ->where('status', '=', 'inactive')
+    ->where('created_at', '>', '2024-01-01')
+    ->updateMany([
+        'status' => 'active',
+        'updated_at' => date('Y-m-d H:i:s')
+    ], 5000); // Máximo 5000 registros
 ```
 
 ### 2. **updateMany()** - Actualización Masiva Segura
@@ -94,6 +132,21 @@ $result = $orm->table('users')
 - **Límite máximo de registros** configurable por seguridad
 - **Conteo previo** para verificar cuántos registros serán afectados
 
+#### Ejemplo SQL vs VersaORM
+```sql
+-- SQL
+DELETE FROM application_logs
+WHERE level = 'debug' AND created_at < '2023-01-01';
+```
+
+```php
+// VersaORM
+$result = $orm->table('application_logs')
+    ->where('level', '=', 'debug')
+    ->where('created_at', '<', date('Y-m-d', strtotime('-30 days')))
+    ->deleteMany(10000); // Máximo 10,000 registros
+```
+
 ### 3. **deleteMany()** - Eliminación Masiva Controlada
 
 Elimina múltiples registros con las mismas garantías de seguridad que `updateMany()`.
@@ -125,6 +178,32 @@ $result = $orm->table('application_logs')
 - **Condiciones WHERE obligatorias** para prevenir eliminaciones accidentales
 - **Límite de seguridad** para operaciones masivas
 - **Verificación previa** del número de registros a eliminar
+
+#### Ejemplo SQL vs VersaORM
+```sql
+-- SQL (MySQL)
+INSERT INTO products (sku, name, price, stock) VALUES
+('PROD001', 'Laptop Pro', 1500.00, 10),
+('PROD002', 'Mouse Inalámbrico', 25.99, 50),
+('PROD003', 'Teclado Mecánico', 89.99, 30)
+ON DUPLICATE KEY UPDATE name=VALUES(name), price=VALUES(price), stock=VALUES(stock);
+```
+
+```php
+// VersaORM
+$products = [
+    ['sku' => 'PROD001', 'name' => 'Laptop Pro', 'price' => 1500.00, 'stock' => 10],
+    ['sku' => 'PROD002', 'name' => 'Mouse Inalámbrico', 'price' => 25.99, 'stock' => 50],
+    ['sku' => 'PROD003', 'name' => 'Teclado Mecánico', 'price' => 89.99, 'stock' => 30]
+];
+
+$result = $orm->table('products')->upsertMany(
+    $products,
+    ['sku'], // Clave única para detectar duplicados
+    ['name', 'price', 'stock'], // Columnas a actualizar si existe
+    1000 // Tamaño de lote
+);
+```
 
 ### 4. **upsertMany()** - Inserción/Actualización Inteligente
 

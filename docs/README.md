@@ -70,6 +70,7 @@ Esta documentación está organizada para llevarte paso a paso desde cero hasta 
 - **[📖 Guía de Uso](user-guide/README.md)**
   - [Uso Básico](user-guide/01-basic-usage.md)
   - [Query Builder](user-guide/02-query-builder.md)
+  - [🚀 Operaciones de Lote (Batch)](user-guide/03-batch-operations.md)
   - [Modelos y Objetos (VersaModel)](user-guide/03-models-and-objects.md)
   - [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
   - [🔒 Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)

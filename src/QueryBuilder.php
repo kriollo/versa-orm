@@ -33,17 +33,17 @@ class QueryBuilder
     /** @var VersaORM|array<string, mixed>|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     private string $table;
-    /** @var array<int, string> */
+    /** @var array<int, string|array<string, mixed>> */
     private array $selects = [];
     /** @var array<int, mixed> */
     private array $wheres = [];
     /** @var array<int, mixed> */
     private array $joins = [];
-    /** @var array<string, string>|null */
+    /** @var array<string, string|array<string|mixed>>|null */
     private ?array $orderBy = null;
     private ?int $limit = null;
     private ?int $offset = null;
-    /** @var array<int, string> */
+    /** @var array<int, string>|array<string, mixed> */
     private array $groupBy = [];
     /** @var array<int, mixed> */
     private array $having = [];
@@ -64,6 +64,21 @@ class QueryBuilder
     }
 
     /**
+     * Especifica la tabla de origen para la consulta.
+     *
+     * @param string $table
+     * @return self
+     */
+    public function from(string $table): self
+    {
+        if (!$this->isSafeIdentifier($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
+        $this->table = $table;
+        return $this;
+    }
+
+    /**
      * Especifica las columnas a seleccionar.
      *
      * @param array<int, string> $columns
@@ -81,6 +96,56 @@ class QueryBuilder
             }
         }
         $this->selects = $columns;
+        return $this;
+    }
+
+    /**
+     * Especifica una expresión SQL raw para el SELECT.
+     * ADVERTENCIA: Use con precaución para evitar inyección SQL.
+     *
+     * @param string $expression
+     * @param array<int, mixed> $bindings
+     * @return self
+     */
+    public function selectRaw(string $expression, array $bindings = []): self
+    {
+        if (empty(trim($expression))) {
+            throw new VersaORMException('selectRaw expression cannot be empty');
+        }
+
+        // Validación básica de seguridad
+        if (!$this->isSafeRawExpression($expression)) {
+            throw new VersaORMException('Potentially unsafe SQL expression detected in selectRaw');
+        }
+
+        $this->selects[] = [
+            'type' => 'raw',
+            'expression' => $expression,
+            'bindings' => $bindings,
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade una subconsulta al SELECT con alias.
+     *
+     * @param \Closure|QueryBuilder $callback
+     * @param string $alias
+     * @return self
+     */
+    public function selectSubQuery($callback, string $alias): self
+    {
+        if (!$this->isSafeIdentifier($alias)) {
+            throw new VersaORMException(sprintf('Invalid alias name in selectSubQuery: %s', $alias));
+        }
+
+        $subQuery = $this->buildSubQuery($callback);
+
+        $this->selects[] = [
+            'type' => 'subquery',
+            'subquery' => $subQuery,
+            'alias' => $alias,
+        ];
         return $this;
     }
 
@@ -222,6 +287,53 @@ class QueryBuilder
     }
 
     /**
+     * Valida si una expresión SQL raw es relativamente segura.
+     * NOTA: Esta es una validación básica, no una garantía completa de seguridad.
+     *
+     * @param string $expression
+     * @return bool
+     */
+    private function isSafeRawExpression(string $expression): bool
+    {
+        // Lista de patrones peligrosos comunes
+        $dangerousPatterns = [
+            '/--/',                  // Comentarios SQL
+            '/\/\*/',               // Comentarios de bloque
+            '/;\s*(?:drop|delete|insert|update|create|alter|truncate)/i', // Comandos peligrosos después de ;
+            '/union\s+select/i',     // UNION attacks
+            '/\bexec\s*\(/i',       // Ejecución de funciones
+            '/\bsp_/i',            // Stored procedures
+            '/xp_/i',              // Extended stored procedures
+            '/into\s+outfile/i',   // Escritura de archivos
+            '/load_file/i',        // Lectura de archivos
+            '/benchmark/i',        // Ataques de timing
+            '/sleep/i',            // Ataques de timing
+            '/waitfor/i',          // Ataques de timing
+        ];
+
+        foreach ($dangerousPatterns as $pattern) {
+            if (preg_match($pattern, $expression)) {
+                return false;
+            }
+        }
+
+        // Verificar que la expresión no sea demasiado compleja
+        // (como medida básica contra inyecciones complejas)
+        if (strlen($expression) > 500) {
+            return false;
+        }
+
+        // Contar paréntesis balanceados
+        $openParens = substr_count($expression, '(');
+        $closeParens = substr_count($expression, ')');
+        if ($openParens !== $closeParens) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Añade una cláusula WHERE.
      *
      * @param string $column
@@ -357,6 +469,10 @@ class QueryBuilder
      */
     public function whereRaw(string $sql, array $bindings = []): self
     {
+        if (!$this->isSafeRawExpression($sql)) {
+            throw new VersaORMException('Potentially unsafe SQL expression detected in whereRaw');
+        }
+
         $this->wheres[] = [
             'column' => '',
             'operator' => 'RAW',
@@ -364,6 +480,124 @@ class QueryBuilder
             'type' => 'and',
         ];
         return $this;
+    }
+
+    /**
+     * Añade una subconsulta en WHERE.
+     *
+     * @param string $column
+     * @param string $operator
+     * @param \Closure|QueryBuilder $callback
+     * @return self
+     */
+    public function whereSubQuery(string $column, string $operator, $callback): self
+    {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid column name in whereSubQuery: %s', $column));
+        }
+
+        $validOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS'];
+        if (!in_array(strtoupper($operator), $validOperators)) {
+            throw new VersaORMException(sprintf('Invalid operator in whereSubQuery: %s', $operator));
+        }
+
+        $subQuery = $this->buildSubQuery($callback);
+
+        $this->wheres[] = [
+            'column' => $column,
+            'operator' => strtoupper($operator),
+            'value' => $subQuery,
+            'type' => 'and',
+            'subquery' => true,
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade una subconsulta EXISTS en WHERE.
+     *
+     * @param \Closure|QueryBuilder $callback
+     * @return self
+     */
+    public function whereExists($callback): self
+    {
+        $subQuery = $this->buildSubQuery($callback);
+
+        $this->wheres[] = [
+            'column' => '',
+            'operator' => 'EXISTS',
+            'value' => $subQuery,
+            'type' => 'and',
+            'subquery' => true,
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade una subconsulta NOT EXISTS en WHERE.
+     *
+     * @param \Closure|QueryBuilder $callback
+     * @return self
+     */
+    public function whereNotExists($callback): self
+    {
+        $subQuery = $this->buildSubQuery($callback);
+
+        $this->wheres[] = [
+            'column' => '',
+            'operator' => 'NOT EXISTS',
+            'value' => $subQuery,
+            'type' => 'and',
+            'subquery' => true,
+        ];
+        return $this;
+    }
+
+    /**
+     * Construye una subconsulta desde un callback o QueryBuilder.
+     *
+     * @param \Closure|QueryBuilder $callback
+     * @return array<string, mixed>
+     */
+    private function buildSubQuery($callback): array
+    {
+        if ($callback instanceof \Closure) {
+            // Crear una nueva instancia de QueryBuilder para la subconsulta
+            $subQueryBuilder = new self($this->orm, $this->table, $this->modelClass);
+            $callback($subQueryBuilder);
+
+            // Construir el payload de la subconsulta
+            return [
+                'type' => 'subquery',
+                'table' => $subQueryBuilder->getTable(),
+                'select' => $subQueryBuilder->selects ?: ['*'],
+                'where' => $subQueryBuilder->processWheres(),
+                'joins' => $subQueryBuilder->joins,
+                'orderBy' => $subQueryBuilder->orderBy ? [$subQueryBuilder->orderBy] : [],
+                'groupBy' => $subQueryBuilder->groupBy,
+                'having' => $subQueryBuilder->having,
+                'limit' => $subQueryBuilder->limit,
+                'offset' => $subQueryBuilder->offset,
+            ];
+        }
+
+        if ($callback instanceof self) {
+            // Si ya es un QueryBuilder, usar directamente
+            return [
+                'type' => 'subquery',
+                'table' => $callback->getTable(),
+                'select' => $callback->selects ?: ['*'],
+                'where' => $callback->processWheres(),
+                'joins' => $callback->joins,
+                'orderBy' => $callback->orderBy ? [$callback->orderBy] : [],
+                'groupBy' => $callback->groupBy,
+                'having' => $callback->having,
+                'limit' => $callback->limit,
+                'offset' => $callback->offset,
+            ];
+        }
+
+        throw new VersaORMException('Subquery callback must be a Closure or QueryBuilder instance');
     }
 
     /**
@@ -470,6 +704,33 @@ class QueryBuilder
     }
 
     /**
+     * Especifica una expresión SQL raw para GROUP BY.
+     * ADVERTENCIA: Use con precaución para evitar inyección SQL.
+     *
+     * @param string $expression
+     * @param array<int, mixed> $bindings
+     * @return self
+     */
+    public function groupByRaw(string $expression, array $bindings = []): self
+    {
+        if (empty(trim($expression))) {
+            throw new VersaORMException('groupByRaw expression cannot be empty');
+        }
+
+        // Validación básica de seguridad
+        if (!$this->isSafeRawExpression($expression)) {
+            throw new VersaORMException('Potentially unsafe SQL expression detected in groupByRaw');
+        }
+
+        $this->groupBy = [
+            'type' => 'raw',
+            'expression' => $expression,
+            'bindings' => $bindings,
+        ];
+        return $this;
+    }
+
+    /**
      * Ordena los resultados.
      *
      * @param string $column
@@ -490,6 +751,33 @@ class QueryBuilder
         }
 
         $this->orderBy = ['column' => $column, 'direction' => $direction];
+        return $this;
+    }
+
+    /**
+     * Especifica una expresión SQL raw para ORDER BY.
+     * ADVERTENCIA: Use con precaución para evitar inyección SQL.
+     *
+     * @param string $expression
+     * @param array<int, mixed> $bindings
+     * @return self
+     */
+    public function orderByRaw(string $expression, array $bindings = []): self
+    {
+        if (empty(trim($expression))) {
+            throw new VersaORMException('orderByRaw expression cannot be empty');
+        }
+
+        // Validación básica de seguridad
+        if (!$this->isSafeRawExpression($expression)) {
+            throw new VersaORMException('Potentially unsafe SQL expression detected in orderByRaw');
+        }
+
+        $this->orderBy = [
+            'type' => 'raw',
+            'expression' => $expression,
+            'bindings' => $bindings,
+        ];
         return $this;
     }
 
