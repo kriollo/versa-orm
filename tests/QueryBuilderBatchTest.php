@@ -288,7 +288,7 @@ class QueryBuilderBatchTest extends TestCase
             ['sku' => 'UPSERT002', 'name' => 'Original Product 2', 'price' => 200.0],
         ]);
         echo "\nDebug - Insert result: " . json_encode($insertResult) . "\n";
-        
+
         // Verificar que se insertaron correctamente
         $originalProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
         echo "\nDebug - Original Product 1 after insert: " . json_encode($originalProduct) . "\n";
@@ -311,12 +311,12 @@ class QueryBuilderBatchTest extends TestCase
 
         // Verificar que los registros se actualizaron/crearon correctamente
         $updatedProduct1 = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
-        
+
         // Debug: Imprimir el producto completo
         echo "\nDebug - Updated Product 1: " . json_encode($updatedProduct1) . "\n";
-        echo "Price value: " . var_export($updatedProduct1['price'], true) . "\n";
-        echo "Price type: " . gettype($updatedProduct1['price']) . "\n";
-        
+        echo 'Price value: ' . var_export($updatedProduct1['price'], true) . "\n";
+        echo 'Price type: ' . gettype($updatedProduct1['price']) . "\n";
+
         $this->assertEquals('Updated Product 1', $updatedProduct1['name']);
         $this->assertEquals(150.0, (float) $updatedProduct1['price'], 'Updated price should be 150.0', 0.01);
 

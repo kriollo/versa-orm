@@ -119,12 +119,13 @@ class RelationshipsTest extends TestCase
     public function testDatabaseTransactionsCommit(): void
     {
         parent::$orm->beginTransaction();
-        parent::$orm->table('users')->insert(['name' => 'Test Commit']);
+        parent::$orm->table('users')->insert(['name' => 'Test Commit', 'email' => 'test.commit@example.com']);
         parent::$orm->commit();
 
         $user = parent::$orm->table('users')->where('name', '=', 'Test Commit')->findOne();
         $this->assertNotNull($user);
         $this->assertEquals('Test Commit', $user->name);
+        $this->assertEquals('test.commit@example.com', $user->email);
     }
 
     // TODO: Comentado temporalmente - requiere mejoras en conexión CLI para transacciones

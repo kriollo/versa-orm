@@ -77,7 +77,7 @@ class TestCase extends BaseTestCase
             CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                email VARCHAR(191) UNIQUE NOT NULL,
+                email VARCHAR(191) UNIQUE NOT NULL DEFAULT "",
                 status VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB;
