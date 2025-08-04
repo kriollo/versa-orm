@@ -1192,11 +1192,9 @@ mod tests {
         // HashMap importado dinámicamente donde se necesite
         
         // Test de validación de estructura consistente en registros
-        let consistent_records = vec![
-            json!({"name": "User 1", "email": "user1@example.com", "status": "active"}),
+        let consistent_records = [json!({"name": "User 1", "email": "user1@example.com", "status": "active"}),
             json!({"name": "User 2", "email": "user2@example.com", "status": "inactive"}),
-            json!({"name": "User 3", "email": "user3@example.com", "status": "pending"})
-        ];
+            json!({"name": "User 3", "email": "user3@example.com", "status": "pending"})];
         
         // Verificar que todos los registros tienen la misma estructura
         let first_record = consistent_records[0].as_object().unwrap();
@@ -1228,7 +1226,7 @@ mod tests {
     fn test_upsert_database_specific_syntax() {
         // Test de sintaxis específica para diferentes bases de datos en upsert
         let drivers = vec!["mysql", "postgresql", "pgsql", "sqlite"];
-        let supported_drivers = vec!["mysql", "postgresql", "pgsql"];
+        let supported_drivers = ["mysql", "postgresql", "pgsql"];
         
         for driver in &drivers {
             let is_supported = supported_drivers.contains(driver);
@@ -1364,5 +1362,270 @@ mod tests {
         // Después de limpiar, debería funcionar correctamente
         let _status_after_clear = cache_status();
         // Cache status siempre es no-negativo por definición del tipo
+    }
+
+    // =========================================
+    // TESTS PARA NUEVOS TIPOS DE JOIN - Tarea 11.2
+    // =========================================
+
+    #[test]
+    fn test_right_join_sql_generation() {
+        let builder = crate::query::QueryBuilder::new("users")
+            .select(vec!["users.name", "posts.title"])
+            .right_join("posts", "users.id", "=", "posts.user_id");
+        
+        let (sql, _params) = builder.build_sql();
+        
+        println!("Right JOIN SQL: {}", sql);
+        
+        assert!(sql.contains("SELECT users.name, posts.title"));
+        assert!(sql.contains("FROM users"));
+        assert!(sql.contains("RIGHT JOIN posts ON users.id = posts.user_id"));
+    }
+
+    #[test]
+    fn test_full_outer_join_sql_generation() {
+        let builder = crate::query::QueryBuilder::new("users")
+            .select(vec!["users.name", "posts.title"])
+            .full_outer_join("posts", "users.id", "=", "posts.user_id");
+        
+        let (sql, _params) = builder.build_sql();
+        
+        println!("Full Outer JOIN SQL: {}", sql);
+        
+        assert!(sql.contains("SELECT users.name, posts.title"));
+        assert!(sql.contains("FROM users"));
+        // MySQL doesn't support FULL OUTER JOIN, so it's converted to LEFT JOIN
+        assert!(sql.contains("LEFT JOIN posts ON users.id = posts.user_id"));
+    }
+
+    #[test]
+    fn test_cross_join_sql_generation() {
+        let builder = crate::query::QueryBuilder::new("categories")
+            .select(vec!["categories.name", "products.name"])
+            .cross_join("products");
+        
+        let (sql, _params) = builder.build_sql();
+        
+        println!("Cross JOIN SQL: {}", sql);
+        
+        assert!(sql.contains("SELECT categories.name, products.name"));
+        assert!(sql.contains("FROM categories"));
+        assert!(sql.contains("CROSS JOIN products"));
+        // CROSS JOIN no debe tener condición ON
+        assert!(!sql.contains(" ON "));
+    }
+
+    #[test]
+    fn test_multiple_different_joins() {
+        let builder = crate::query::QueryBuilder::new("posts")
+            .select(vec!["posts.title", "users.name", "categories.name", "tags.name"])
+            .join("users", "posts.user_id", "=", "users.id")
+            .left_join("categories", "posts.category_id", "=", "categories.id")
+            .right_join("post_tags", "posts.id", "=", "post_tags.post_id")
+            .full_outer_join("tags", "post_tags.tag_id", "=", "tags.id");
+        
+        let (sql, _params) = builder.build_sql();
+        
+        println!("Multiple different JOINs SQL: {}", sql);
+        
+        assert!(sql.contains("FROM posts"));
+        assert!(sql.contains("JOIN users ON"));
+        assert!(sql.contains("LEFT JOIN categories ON"));
+        assert!(sql.contains("RIGHT JOIN post_tags ON"));
+        // MySQL doesn't support FULL OUTER JOIN, so it's converted to LEFT JOIN
+        assert!(sql.contains("LEFT JOIN tags ON"));
+    }
+
+    #[test]
+    fn test_join_with_security_validation() {
+        // Test RIGHT JOIN con nombres de tabla seguros
+        let builder = crate::query::QueryBuilder::new("users")
+            .right_join("posts", "users.id", "=", "posts.user_id");
+        
+        let (sql, _params) = builder.build_sql();
+        assert!(sql.contains("RIGHT JOIN posts"));
+        assert!(!sql.contains("DROP"));
+        assert!(!sql.contains("--"));
+        
+        // Test FULL OUTER JOIN con validación de columnas
+        let builder2 = crate::query::QueryBuilder::new("users")
+            .full_outer_join("profiles", "users.id", "=", "profiles.user_id");
+        
+        let (sql2, _params2) = builder2.build_sql();
+        // MySQL doesn't support FULL OUTER JOIN, so it's converted to LEFT JOIN
+        assert!(sql2.contains("LEFT JOIN profiles"));
+        assert!(!sql2.contains("UNION"));
+        assert!(!sql2.contains("INSERT"));
+    }
+
+    #[test]
+    fn test_join_type_validation() {
+        // Test que los tipos de JOIN son validados correctamente
+        use crate::query::is_valid_join_type;
+        
+        // Tipos válidos
+        assert!(is_valid_join_type("INNER"));
+        assert!(is_valid_join_type("LEFT"));
+        assert!(is_valid_join_type("RIGHT"));
+        assert!(is_valid_join_type("FULL OUTER"));
+        assert!(is_valid_join_type("CROSS"));
+        assert!(is_valid_join_type("NATURAL"));
+        
+        // Validar case insensitive
+        assert!(is_valid_join_type("inner"));
+        assert!(is_valid_join_type("left"));
+        assert!(is_valid_join_type("natural"));
+        
+        // Tipos inválidos o peligrosos
+        assert!(!is_valid_join_type("UNION"));
+        assert!(!is_valid_join_type("DROP"));
+        assert!(!is_valid_join_type("SELECT"));
+        assert!(!is_valid_join_type("INVALID"));
+        assert!(!is_valid_join_type(""));
+    }
+
+    #[test]
+    fn test_join_with_complex_conditions() {
+        let builder = crate::query::QueryBuilder::new("users")
+            .select(vec!["users.name", "posts.title"])
+            .right_join("posts", "users.id", "=", "posts.user_id")
+            .r#where("users.status", "=", json!("active"))
+            .r#where("posts.published", "=", json!(true));
+        
+        let (sql, params) = builder.build_sql();
+        
+        assert!(sql.contains("RIGHT JOIN posts ON users.id = posts.user_id"));
+        assert!(sql.contains("WHERE users.status = ?"));
+        assert!(sql.contains("AND posts.published = ?"));
+        assert_eq!(params.len(), 2);
+        assert_eq!(params[0], json!("active"));
+        assert_eq!(params[1], json!(true));
+    }
+
+    #[test]
+    fn test_cross_join_with_conditions() {
+        // CROSS JOIN no debe tener condiciones ON, pero puede tener WHERE
+        let builder = crate::query::QueryBuilder::new("categories")
+            .select(vec!["categories.name", "products.name"])
+            .cross_join("products")
+            .r#where("categories.active", "=", json!(true))
+            .r#where("products.in_stock", ">", json!(0));
+        
+        let (sql, params) = builder.build_sql();
+        
+        assert!(sql.contains("CROSS JOIN products"));
+        assert!(!sql.contains("CROSS JOIN products ON")); // No debe tener ON
+        assert!(sql.contains("WHERE categories.active = ?"));
+        assert!(sql.contains("AND products.in_stock > ?"));
+        assert_eq!(params.len(), 2);
+    }
+
+    #[test]
+    fn test_join_operator_validation() {
+        // Test validación de operadores en JOINs
+        use crate::query::is_safe_sql_operator;
+        
+        // Operadores seguros para JOINs
+        let safe_join_operators = vec!["=", "!=", "<>", ">", "<", ">=", "<="];
+        
+        for op in safe_join_operators {
+            assert!(is_safe_sql_operator(op), "JOIN operator '{}' should be safe", op);
+        }
+        
+        // Operadores peligrosos
+        let unsafe_operators = vec!["DROP", "UNION", "--", "/*", "INSERT", "DELETE"];
+        
+        for op in unsafe_operators {
+            assert!(!is_safe_sql_operator(op), "Operator '{}' should be unsafe for JOINs", op);
+        }
+    }
+
+    #[test]
+    fn test_join_table_column_security() {
+        // Test seguridad en nombres de tablas y columnas para JOINs
+        let dangerous_table_names = vec![
+            "users; DROP TABLE posts",
+            "posts'; DELETE FROM users WHERE '1'='1",
+            "categories/*comment*/",
+            "products UNION SELECT * FROM passwords"
+        ];
+        
+        for dangerous_name in dangerous_table_names {
+            assert!(
+                !is_safe_identifier(dangerous_name),
+                "Dangerous table name in JOIN should be rejected: {}",
+                dangerous_name
+            );
+        }
+        
+        let dangerous_column_names = vec![
+            "id; DROP TABLE users",
+            "user_id'; INSERT INTO admin VALUES ('hacker')",
+            "post_id--",
+            "category_id/**/OR/**/1=1"
+        ];
+        
+        for dangerous_name in dangerous_column_names {
+            assert!(
+                !is_safe_identifier(dangerous_name),
+                "Dangerous column name in JOIN should be rejected: {}",
+                dangerous_name
+            );
+        }
+    }
+
+    #[test]
+    fn test_join_edge_cases() {
+        // Test casos límite para JOINs
+        
+        // JOIN con mismo nombre de tabla (self-join)
+        let builder = crate::query::QueryBuilder::new("users")
+            .left_join("users as managers", "users.manager_id", "=", "managers.id");
+        
+        let (sql, _params) = builder.build_sql();
+        // Esto puede no estar completamente soportado, pero no debe fallar
+        assert!(!sql.is_empty());
+        
+        // JOIN con múltiples condiciones ON (si está soportado)
+        let builder2 = crate::query::QueryBuilder::new("users")
+            .join("posts", "users.id", "=", "posts.user_id");
+        
+        let (sql2, _params2) = builder2.build_sql();
+        assert!(sql2.contains("FROM users"));
+    }
+
+    #[test]
+    fn test_join_sql_structure() {
+        // Test que la estructura del SQL generado es correcta
+        let builder = crate::query::QueryBuilder::new("orders")
+            .select(vec!["orders.id", "customers.name", "products.name"])
+            .join("customers", "orders.customer_id", "=", "customers.id")
+            .left_join("order_items", "orders.id", "=", "order_items.order_id")
+            .right_join("products", "order_items.product_id", "=", "products.id")
+            .full_outer_join("categories", "products.category_id", "=", "categories.id")
+            .cross_join("promotions")
+            .r#where("orders.status", "=", json!("completed"))
+            .order_by("orders.created_at", "DESC")
+            .limit(100);
+        
+        let (sql, params) = builder.build_sql();
+        
+        println!("Complex JOIN structure SQL: {}", sql);
+        
+        // Verificar orden correcto de cláusulas SQL
+        let select_pos = sql.find("SELECT").unwrap_or(0);
+        let from_pos = sql.find("FROM").unwrap_or(0);
+        let where_pos = sql.find("WHERE").unwrap_or(sql.len());
+        let order_pos = sql.find("ORDER BY").unwrap_or(sql.len());
+        let limit_pos = sql.find("LIMIT").unwrap_or(sql.len());
+        
+        assert!(select_pos < from_pos, "SELECT should come before FROM");
+        assert!(from_pos < where_pos, "FROM should come before WHERE");
+        assert!(where_pos <= order_pos, "WHERE should come before ORDER BY");
+        assert!(order_pos <= limit_pos, "ORDER BY should come before LIMIT");
+        
+        assert_eq!(params.len(), 1);
+        assert_eq!(params[0], json!("completed"));
     }
 }

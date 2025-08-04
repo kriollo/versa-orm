@@ -1,7 +1,7 @@
 [package]
 name = "versaorm_cli"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 sqlx = { version = "0.7", features = [ "runtime-tokio-rustls", "mysql", "postgres", "sqlite", "chrono", "time", "bigdecimal", "rust_decimal" ] }

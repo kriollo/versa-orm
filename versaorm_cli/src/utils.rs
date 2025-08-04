@@ -111,8 +111,8 @@ pub fn is_safe_identifier(identifier: &str) -> bool {
         return false;
     }
 
-    // Solo permite caracteres alfanuméricos y guiones bajos
-    identifier.chars().all(|c| c.is_alphanumeric() || c == '_')
+    // Permite caracteres alfanuméricos, guiones bajos y puntos (para columnas calificadas como table.column)
+    identifier.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.')
 }
 
 /// Convierte snake_case a camelCase

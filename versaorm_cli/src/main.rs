@@ -99,7 +99,7 @@ pub fn log_debug_msg(msg: &str) {
     if let Ok(mut lock) = LOG_FILE.lock() {
         if let Some(ref mut file) = *lock {
             let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-            if let Ok(_) = writeln!(file, "[{}][RUST][DEBUG] {}", timestamp, msg) {
+            if writeln!(file, "[{}][RUST][DEBUG] {}", timestamp, msg).is_ok() {
                 let _ = file.flush(); // Asegurar que se escriba inmediatamente
             }
         }
@@ -111,7 +111,7 @@ pub fn log_info_msg(msg: &str) {
     if let Ok(mut lock) = LOG_FILE.lock() {
         if let Some(ref mut file) = *lock {
             let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-            if let Ok(_) = writeln!(file, "[{}][RUST][INFO] {}", timestamp, msg) {
+            if writeln!(file, "[{}][RUST][INFO] {}", timestamp, msg).is_ok() {
                 let _ = file.flush();
             }
         }
@@ -123,7 +123,7 @@ pub fn log_error_msg(msg: &str) {
     if let Ok(mut lock) = LOG_FILE.lock() {
         if let Some(ref mut file) = *lock {
             let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-            if let Ok(_) = writeln!(file, "[{}][RUST][ERROR] {}", timestamp, msg) {
+            if writeln!(file, "[{}][RUST][ERROR] {}", timestamp, msg).is_ok() {
                 let _ = file.flush();
             }
         }
@@ -521,12 +521,22 @@ async fn handle_query_action(
     }
 
     for join_clause in query_params.joins {
+        // Map PHP join types to Rust join types
+        let rust_join_type = match join_clause.join_type.to_lowercase().as_str() {
+            "inner" => "INNER",
+            "left" => "LEFT",
+            "right" => "RIGHT",
+            "full_outer" => "FULL OUTER",
+            "cross" => "CROSS",
+            _ => "INNER", // Default to INNER for unknown types
+        };
+        
         query_builder.joins.push((
             join_clause.table,
             join_clause.first_col,
             join_clause.operator,
             join_clause.second_col,
-            join_clause.join_type,
+            rust_join_type.to_string(),
         ));
     }
 
@@ -674,7 +684,7 @@ async fn handle_query_action(
             // Validar unique_keys antes de continuar
             for unique_key_value in unique_keys {
                 if let Some(unique_key_str) = unique_key_value.as_str() {
-                    if let Err(_) = utils::clean_column_name(unique_key_str) {
+                    if utils::clean_column_name(unique_key_str).is_err() {
                         return Err(("Invalid unique key name detected".to_string(), None, None));
                     }
                 }
@@ -701,7 +711,7 @@ async fn handle_query_action(
 
             // Validar update_columns antes de continuar
             for update_col in &update_columns {
-                if let Err(_) = utils::clean_column_name(update_col) {
+                if utils::clean_column_name(update_col).is_err() {
                     return Err(("Invalid update column name detected".to_string(), None, None));
                 }
             }
@@ -1364,7 +1374,7 @@ fn handle_cache_action(params: &serde_json::Value) -> Result<serde_json::Value, 
 async fn handle_insert_many(
     connection: &ConnectionManager,
     table_name: &str,
-    records: &Vec<serde_json::Value>,
+    records: &[serde_json::Value],
     batch_size: usize,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     if records.is_empty() {
@@ -1707,8 +1717,8 @@ async fn handle_delete_many(
 async fn handle_upsert_many(
     connection: &ConnectionManager,
     table_name: &str,
-    records: &Vec<serde_json::Value>,
-    unique_keys: &Vec<serde_json::Value>,
+    records: &[serde_json::Value],
+    unique_keys: &[serde_json::Value],
     update_columns: Vec<String>,
     batch_size: usize,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
@@ -1747,7 +1757,7 @@ async fn handle_upsert_many(
 
     // Validar que los nombres de update_columns sean seguros
     for update_col in &update_columns {
-        if let Err(_) = utils::clean_column_name(update_col) {
+        if utils::clean_column_name(update_col).is_err() {
             return Err((
                 "Invalid update column name detected".to_string(),
                 None,
