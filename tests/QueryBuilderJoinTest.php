@@ -203,9 +203,6 @@ class QueryBuilderJoinTest extends TestCase
 
     public function testJoinWithSubquery(): void
     {
-        // TODO: Implement subquery JOIN support in Rust engine
-        $this->markTestSkipped('joinSub functionality requires Rust engine support for subqueries in JOINs');
-
         // This tests the integration between JOINs and subqueries
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
@@ -217,7 +214,12 @@ class QueryBuilderJoinTest extends TestCase
             ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
             ->getAll();
 
+        // The test should work now with Rust engine support
+        $this->assertIsArray($results);
+
         foreach ($results as $result) {
+            $this->assertArrayHasKey('name', $result);
+            $this->assertArrayHasKey('post_count', $result);
             $this->assertGreaterThan(1, $result['post_count']);
         }
     }
