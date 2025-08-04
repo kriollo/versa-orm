@@ -572,6 +572,7 @@ pub fn is_safe_raw_sql(sql: &str) -> bool {
 }
 
 // Helper function to validate JOIN types
+#[allow(dead_code)]
 pub fn is_valid_join_type(join_type: &str) -> bool {
     matches!(
         join_type.to_uppercase().as_str(),

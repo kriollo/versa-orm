@@ -38,6 +38,7 @@ struct CacheConfig {
     enabled: bool,
     max_size: usize,
     default_ttl: Duration,
+    #[allow(dead_code)]
     cleanup_interval: Duration,
 }
 
