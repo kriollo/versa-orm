@@ -5,6 +5,7 @@ declare(strict_types=1);
 $finder = PhpCsFixer\Finder::create()
     ->in(__DIR__ . '/src')
     ->in(__DIR__ . '/tests')
+    ->in(__DIR__ . '/example')
     ->name('*.php')
     ->exclude(['vendor', 'binary'])
     ->notPath('src/binary');
