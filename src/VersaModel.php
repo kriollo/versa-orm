@@ -224,9 +224,9 @@ class VersaModel
             // Validar campos requeridos que no están presentes
             foreach ($validationSchema as $fieldName => $columnSchema) {
                 if (
-                    $columnSchema['is_required'] &&
+                    ($columnSchema['is_required'] ?? false) &&
                     !isset($this->attributes[$fieldName]) &&
-                    !$columnSchema['is_auto_increment']
+                    !($columnSchema['is_auto_increment'] ?? false)
                 ) {
                     $errors[] = "The {$fieldName} field is required.";
                 }
@@ -298,25 +298,25 @@ class VersaModel
         $errors = [];
 
         // Validar si el campo es requerido
-        if ($columnSchema['is_required'] && ($value === null || $value === '')) {
+        if (($columnSchema['is_required'] ?? false) && ($value === null || $value === '')) {
             $errors[] = "The {$field} field is required.";
             return $errors; // No validar más si está vacío y es requerido
         }
 
         // Si el valor es null y la columna lo permite, no validar más
-        if ($value === null && $columnSchema['is_nullable']) {
+        if ($value === null && ($columnSchema['is_nullable'] ?? false)) {
             return $errors;
         }
 
         // Validar longitud máxima
-        if ($columnSchema['max_length'] && is_string($value)) {
+        if (($columnSchema['max_length'] ?? 0) && is_string($value)) {
             if (strlen($value) > $columnSchema['max_length']) {
                 $errors[] = "The {$field} may not be greater than {$columnSchema['max_length']} characters.";
             }
         }
 
         // Validar tipo de datos
-        $dataType = strtolower($columnSchema['data_type']);
+        $dataType = strtolower($columnSchema['data_type'] ?? '');
         if (strpos($dataType, 'int') !== false) {
             if (!is_numeric($value) || (string) (int) $value !== (string) $value) {
                 $errors[] = "The {$field} must be an integer.";
