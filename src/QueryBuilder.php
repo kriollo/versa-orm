@@ -758,7 +758,8 @@ class QueryBuilder
             throw new VersaORMException('Invalid column names in joinSub');
         }
 
-        $subQuery = $this->buildSubQuery($subquery);
+        // Convert the subquery to SQL string for the Rust engine
+        $subquerySql = $this->convertSubqueryToSql($subquery);
 
         $this->joins[] = [
             'type' => 'inner',
@@ -766,10 +767,108 @@ class QueryBuilder
             'first_col' => $firstCol,
             'operator' => $operator,
             'second_col' => $secondCol,
-            'subquery' => $subQuery,
+            'subquery' => $subquerySql,
             'alias' => $alias,
         ];
         return $this;
+    }
+
+    /**
+     * Converts a subquery (QueryBuilder or Closure) to a SQL string.
+     *
+     * @param \Closure|QueryBuilder $subquery
+     * @return string
+     */
+    private function convertSubqueryToSql($subquery): string
+    {
+        if ($subquery instanceof self) {
+            // If it's already a QueryBuilder, build the SQL directly
+            return $this->buildSubquerySql($subquery);
+        } elseif ($subquery instanceof \Closure) {
+            // Create a new QueryBuilder instance for the closure
+            $subQueryBuilder = new self($this->orm, $this->table, $this->modelClass);
+            $subquery($subQueryBuilder);
+            return $this->buildSubquerySql($subQueryBuilder);
+        }
+        // @phpstan-ignore-next-line unreachable
+        throw new VersaORMException('Subquery must be a Closure or QueryBuilder instance');
+    }
+
+    /**
+     * Builds SQL string from a QueryBuilder instance.
+     *
+     * @param QueryBuilder $builder
+     * @return string
+     */
+    private function buildSubquerySql(self $builder): string
+    {
+        $sql = 'SELECT ';
+
+        // Handle SELECT columns
+        if (!empty($builder->selects)) {
+            $selectColumns = [];
+            foreach ($builder->selects as $select) {
+                if (is_string($select)) {
+                    $selectColumns[] = $select;
+                } elseif (is_array($select) && isset($select['expression'])) {
+                    $selectColumns[] = $select['expression'];
+                }
+            }
+            $sql .= implode(', ', $selectColumns);
+        } else {
+            $sql .= '*';
+        }
+
+        // FROM clause
+        $sql .= ' FROM ' . $builder->table;
+
+        // WHERE clauses (simplified - for production would need full WHERE processing)
+        if (!empty($builder->wheres)) {
+            $wheresParts = [];
+            foreach ($builder->wheres as $where) {
+                if (is_array($where) && isset($where['column'], $where['operator'])) {
+                    $wheresParts[] = $where['column'] . ' ' . $where['operator'] . ' ?';
+                }
+            }
+            if (!empty($wheresParts)) {
+                $sql .= ' WHERE ' . implode(' AND ', $wheresParts);
+            }
+        }
+
+        // GROUP BY
+        if (!empty($builder->groupBy)) {
+            if (is_array($builder->groupBy)) {
+                $sql .= ' GROUP BY ' . implode(', ', $builder->groupBy);
+            }
+        }
+
+        // HAVING
+        if (!empty($builder->having) && is_array($builder->having)) {
+            $havingParts = [];
+            foreach ($builder->having as $having) {
+                if (is_array($having) && isset($having['column'], $having['operator'])) {
+                    $havingParts[] = $having['column'] . ' ' . $having['operator'] . ' ?';
+                }
+            }
+            if (!empty($havingParts)) {
+                $sql .= ' HAVING ' . implode(' AND ', $havingParts);
+            }
+        }
+
+        // ORDER BY
+        if ($builder->orderBy && is_array($builder->orderBy)) {
+            if (isset($builder->orderBy['column'], $builder->orderBy['direction']) &&
+                is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])) {
+                $sql .= ' ORDER BY ' . $builder->orderBy['column'] . ' ' . $builder->orderBy['direction'];
+            }
+        }
+
+        // LIMIT
+        if ($builder->limit) {
+            $sql .= ' LIMIT ' . $builder->limit;
+        }
+
+        return $sql;
     }
 
     /**

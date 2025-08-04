@@ -252,37 +252,82 @@ class VersaModel
             throw new VersaORMException('No ORM instance available for schema validation');
         }
 
-        // TODO: Implementar correctamente la obtención del esquema desde Rust
-        // Por ahora, retornamos un array vacío para evitar errores
-        // Cuando el binario Rust soporte correctamente la consulta de esquema,
-        // se debe implementar la llamada correcta
-
-        // Temporalmente deshabilitado para evitar errores SQL
-        /*
         try {
-            $result = $orm->exec('schema', [
-                'subject' => 'validationSchema',
-                'table_name' => $this->table
-            ]);
+            // Llamar al esquema del CLI de Rust para obtener metadatos de la tabla
+            $result = $orm->schema('columns', $this->table);
 
-            if (is_array($result)) {
-                return $result;
+            if (is_array($result) && !empty($result)) {
+                return $this->processSchemaToValidationRules($result);
             }
         } catch (\Exception $e) {
-            throw new VersaORMException(
-                "Failed to get validation schema: {$e->getMessage()}",
-                'SCHEMA_VALIDATION_ERROR',
-                null,
-                [],
-                [],
-                null,
-                0,
-                $e
-            );
+            // Si hay error al obtener el esquema, usar validación básica en silencio
+            // Esto permite que la aplicación funcione incluso si el CLI Rust no está disponible
+            return [];
         }
-        */
 
         return [];
+    }
+
+    /**
+     * Procesa el esquema de columnas de Rust y lo convierte a reglas de validación.
+     *
+     * @param array<array<string, mixed>> $schemaColumns
+     * @return array<string, array<string, mixed>>
+     */
+    protected function processSchemaToValidationRules(array $schemaColumns): array
+    {
+        $validationSchema = [];
+
+        foreach ($schemaColumns as $column) {
+            if (!isset($column['column_name'])) {
+                continue;
+            }
+
+            $columnName = $column['column_name'];
+            $dataType = strtolower($column['data_type'] ?? '');
+            $isNullable = ($column['is_nullable'] ?? 'YES') === 'YES';
+            $maxLength = $column['character_maximum_length'] ?? null;
+            $isAutoIncrement = ($column['extra'] ?? '') === 'auto_increment';
+            $isRequired = !$isNullable && ($column['column_default'] === null) && !$isAutoIncrement;
+
+            $validationRules = [];
+
+            // Reglas basadas en el tipo de datos
+            if (strpos($dataType, 'varchar') !== false || strpos($dataType, 'char') !== false) {
+                if ($maxLength) {
+                    $validationRules[] = "max:{$maxLength}";
+                }
+            }
+
+            if (strpos($dataType, 'int') !== false) {
+                $validationRules[] = 'numeric';
+            }
+
+            if (strpos($dataType, 'decimal') !== false || strpos($dataType, 'float') !== false || strpos($dataType, 'double') !== false) {
+                $validationRules[] = 'numeric';
+            }
+
+            // Agregar validación de email para campos que contienen 'email' en el nombre
+            if (strpos($columnName, 'email') !== false) {
+                $validationRules[] = 'email';
+            }
+
+            // Si es requerido, agregar la regla required
+            if ($isRequired) {
+                $validationRules[] = 'required';
+            }
+
+            $validationSchema[$columnName] = [
+                'is_required' => $isRequired,
+                'is_nullable' => $isNullable,
+                'is_auto_increment' => $isAutoIncrement,
+                'max_length' => $maxLength,
+                'data_type' => $dataType,
+                'validation_rules' => $validationRules,
+            ];
+        }
+
+        return $validationSchema;
     }
 
     /**
