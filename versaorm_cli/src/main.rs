@@ -245,6 +245,13 @@ struct JoinClause {
     first_col: String,
     operator: String,
     second_col: String,
+    // Optional fields for subquery joins
+    #[serde(skip_serializing_if = "Option::is_none")]
+    subquery: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    alias: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    subquery_bindings: Option<Vec<serde_json::Value>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -531,13 +538,35 @@ async fn handle_query_action(
             _ => "INNER", // Default to INNER for unknown types
         };
         
-        query_builder.joins.push((
-            join_clause.table,
-            join_clause.first_col,
-            join_clause.operator,
-            join_clause.second_col,
-            rust_join_type.to_string(),
-        ));
+        // Check if this is a subquery join
+        if let Some(subquery_sql) = join_clause.subquery {
+            if let Some(alias) = join_clause.alias {
+                // Use the join_sub method for subquery joins
+                let subquery_bindings = join_clause.subquery_bindings.unwrap_or_default();
+                query_builder = query_builder.join_sub(
+                    (subquery_sql, subquery_bindings),
+                    &alias,
+                    &join_clause.first_col,
+                    &join_clause.operator,
+                    &join_clause.second_col,
+                );
+            } else {
+                return Err((
+                    "Subquery joins require an alias".to_string(),
+                    None,
+                    None,
+                ));
+            }
+        } else {
+            // Regular table join
+            query_builder.joins.push((
+                join_clause.table,
+                join_clause.first_col,
+                join_clause.operator,
+                join_clause.second_col,
+                rust_join_type.to_string(),
+            ));
+        }
     }
 
     if let Some(order) = query_params.order_by.first() {

@@ -241,6 +241,28 @@ impl QueryBuilder {
         self
     }
 
+    pub fn join_sub(mut self, subquery: (String, Vec<Value>), alias: &str, first_col: &str, operator: &str, second_col: &str) -> Self {
+        // Validate the alias and columns for security
+        if let (Ok(clean_alias), Ok(clean_first_col), Ok(clean_second_col)) = (
+            clean_table_name(alias),
+            clean_column_name(first_col),
+            clean_column_name(second_col),
+        ) {
+            if is_safe_sql_operator(operator) {
+                // Format the subquery with its alias
+                let subquery_sql = format!("({}) AS {}", subquery.0, clean_alias);
+                self.joins.push((
+                    subquery_sql,
+                    clean_first_col,
+                    operator.to_string(),
+                    clean_second_col,
+                    "INNER".to_string(),  // Default to INNER JOIN for subqueries
+                ));
+            }
+        }
+        self
+    }
+
     pub fn order_by(mut self, column: &str, direction: &str) -> Self {
         // Validate column name and direction for security
         if let Ok(clean_col) = clean_column_name(column) {

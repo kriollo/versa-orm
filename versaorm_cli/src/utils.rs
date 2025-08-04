@@ -2,6 +2,10 @@ use chrono::Utc;
 use serde_json::Value;
 use std::collections::HashMap;
 use uuid::Uuid;
+use rust_decimal::Decimal;
+use std::str::FromStr;
+use base64::{Engine as _, engine::general_purpose};
+use regex::Regex;
 
 /// Sanitiza valores de entrada para prevenir inyección SQL
 #[allow(dead_code)]
@@ -54,6 +58,29 @@ pub fn cast_value_by_type(value: Value, data_type: &str) -> Value {
                     } else {
                         Value::String(s)
                     }
+                }
+                // Tipos avanzados
+                "json" | "jsonb" => {
+                    cast_json_type(s)
+                }
+                "uuid" => {
+                    cast_uuid_type(s)
+                }
+                "inet" | "cidr" => {
+                    cast_inet_type(s)
+                }
+                "enum" => {
+                    cast_enum_type(s)
+                }
+                "set" => {
+                    cast_set_type(s)
+                }
+                "blob" | "varbinary" | "binary" => {
+                    cast_binary_type(s)
+                }
+                // Arrays PostgreSQL
+                t if t.ends_with("[]") => {
+                    cast_postgresql_array(s, t)
                 }
                 _ => Value::String(s),
             }
@@ -255,6 +282,226 @@ pub fn build_where_clause(conditions: &[(String, String, Value)]) -> (String, Ve
 
     clause.push_str(&parts.join(" AND "));
     (clause, params)
+}
+
+// ========== FUNCIONES PARA TIPOS AVANZADOS ==========
+
+/// Convierte un string JSON a un Value JSON parseado
+#[allow(dead_code)]
+pub fn cast_json_type(s: String) -> Value {
+    match serde_json::from_str(&s) {
+        Ok(json_value) => json_value,
+        Err(_) => Value::String(s), // Si no se puede parsear, devolver como string
+    }
+}
+
+/// Valida y convierte un UUID
+#[allow(dead_code)]
+pub fn cast_uuid_type(s: String) -> Value {
+    match Uuid::parse_str(&s) {
+        Ok(_) => Value::String(s), // UUID válido
+        Err(_) => Value::Null, // UUID inválido
+    }
+}
+
+/// Valida direcciones IP (INET/CIDR)
+#[allow(dead_code)]
+pub fn cast_inet_type(s: String) -> Value {
+    // Regex básica para validar IPv4 y IPv6
+    let ipv4_regex = Regex::new(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:/[0-9]{1,2})?$").unwrap();
+    let ipv6_regex = Regex::new(r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?:/[0-9]{1,3})?$").unwrap();
+    
+    if ipv4_regex.is_match(&s) || ipv6_regex.is_match(&s) {
+        Value::String(s)
+    } else {
+        Value::Null
+    }
+}
+
+/// Maneja tipos ENUM (simplemente valida que sea string)
+#[allow(dead_code)]
+pub fn cast_enum_type(s: String) -> Value {
+    if s.is_empty() {
+        Value::Null
+    } else {
+        Value::String(s)
+    }
+}
+
+/// Maneja tipos SET de MySQL (convierte a array)
+#[allow(dead_code)]
+pub fn cast_set_type(s: String) -> Value {
+    if s.is_empty() {
+        Value::Array(vec![])
+    } else {
+        let values: Vec<Value> = s.split(',').map(|v| Value::String(v.trim().to_string())).collect();
+        Value::Array(values)
+    }
+}
+
+/// Maneja tipos binarios (BLOB, VARBINARY) - convierte a base64
+#[allow(dead_code)]
+pub fn cast_binary_type(s: String) -> Value {
+    // Si ya parece ser base64, devolverlo como está
+    if is_base64(&s) {
+        Value::String(s)
+    } else {
+        // Si es texto, convertir a base64
+        let encoded = general_purpose::STANDARD.encode(s.as_bytes());
+        Value::String(encoded)
+    }
+}
+
+/// Maneja arrays de PostgreSQL
+#[allow(dead_code)]
+pub fn cast_postgresql_array(s: String, data_type: &str) -> Value {
+    // Extraer el tipo base del array (e.g., "integer[]" -> "integer")
+    let base_type = data_type.trim_end_matches("[]");
+    
+    // Los arrays de PostgreSQL vienen en formato {val1,val2,val3}
+    if s.starts_with('{') && s.ends_with('}') {
+        let content = &s[1..s.len()-1]; // Quitar { }
+        
+        if content.is_empty() {
+            return Value::Array(vec![]);
+        }
+        
+        let values: Vec<Value> = content
+            .split(',')
+            .map(|v| {
+                let trimmed = v.trim();
+                // Quitar comillas si las tiene
+                let cleaned = if trimmed.starts_with('"') && trimmed.ends_with('"') {
+                    &trimmed[1..trimmed.len()-1]
+                } else {
+                    trimmed
+                };
+                
+                // Aplicar casting según el tipo base
+                cast_value_by_type(Value::String(cleaned.to_string()), base_type)
+            })
+            .collect();
+            
+        Value::Array(values)
+    } else {
+        // Si no es un array válido, devolver como string
+        Value::String(s)
+    }
+}
+
+/// Verifica si un string es base64 válido
+#[allow(dead_code)]
+fn is_base64(s: &str) -> bool {
+    // Regex básica para base64
+    let base64_regex = Regex::new(r"^[A-Za-z0-9+/]*={0,2}$").unwrap();
+    base64_regex.is_match(s) && s.len() % 4 == 0
+}
+
+/// Estructura para configuración de mapeos personalizados
+#[derive(Debug, Clone)]
+pub struct TypeMapping {
+    pub from_type: String,
+    pub to_type: String,
+    pub custom_cast: Option<String>,
+}
+
+/// Carga configuración de mapeos desde JSON
+#[allow(dead_code)]
+pub fn load_type_mappings(json_config: &str) -> Result<Vec<TypeMapping>, String> {
+    match serde_json::from_str::<Value>(json_config) {
+        Ok(config) => {
+            let mut mappings = Vec::new();
+            
+            if let Some(mappings_array) = config.get("type_mappings").and_then(|v| v.as_array()) {
+                for mapping in mappings_array {
+                    if let (Some(from), Some(to)) = (
+                        mapping.get("from").and_then(|v| v.as_str()),
+                        mapping.get("to").and_then(|v| v.as_str()),
+                    ) {
+                        let custom_cast = mapping.get("custom_cast").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        
+                        mappings.push(TypeMapping {
+                            from_type: from.to_string(),
+                            to_type: to.to_string(),
+                            custom_cast,
+                        });
+                    }
+                }
+            }
+            
+            Ok(mappings)
+        }
+        Err(e) => Err(format!("Error parsing type mappings config: {}", e))
+    }
+}
+
+/// Aplica mapeos personalizados a un tipo
+#[allow(dead_code)]
+pub fn apply_custom_mapping(value: Value, original_type: &str, mappings: &[TypeMapping]) -> Value {
+    for mapping in mappings {
+        if mapping.from_type.to_lowercase() == original_type.to_lowercase() {
+            // Si hay casting personalizado, aplicarlo
+            if let Some(_custom_cast) = &mapping.custom_cast {
+                // Aquí se podría implementar lógica de casting personalizada
+                // Por ahora, aplicamos el casting estándar al tipo destino
+                return cast_value_by_type(value, &mapping.to_type);
+            } else {
+                // Aplicar casting estándar al tipo destino
+                return cast_value_by_type(value, &mapping.to_type);
+            }
+        }
+    }
+    
+    // Si no hay mapeo personalizado, devolver el valor original
+    value
+}
+
+/// Valida que un valor sea compatible con el tipo de datos esperado
+#[allow(dead_code)]
+pub fn validate_type_compatibility(value: &Value, expected_type: &str) -> Result<(), String> {
+    match expected_type.to_lowercase().as_str() {
+        "int" | "integer" | "bigint" | "smallint" | "tinyint" => {
+            if !value.is_number() && !value.is_null() {
+                return Err(format!("Expected integer type, got: {:?}", value));
+            }
+        }
+        "float" | "double" | "decimal" | "numeric" | "real" => {
+            if !value.is_number() && !value.is_null() {
+                return Err(format!("Expected numeric type, got: {:?}", value));
+            }
+        }
+        "boolean" | "bool" | "bit" => {
+            if !value.is_boolean() && !value.is_null() {
+                return Err(format!("Expected boolean type, got: {:?}", value));
+            }
+        }
+        "string" | "varchar" | "text" | "char" => {
+            if !value.is_string() && !value.is_null() {
+                return Err(format!("Expected string type, got: {:?}", value));
+            }
+        }
+        "json" | "jsonb" => {
+            // JSON puede ser cualquier tipo válido de JSON
+            if value.is_null() {
+                return Ok(());
+            }
+            // Si no es null, debe ser un JSON válido (object, array, string, number, boolean)
+        }
+        "uuid" => {
+            if let Some(s) = value.as_str() {
+                if Uuid::parse_str(s).is_err() {
+                    return Err(format!("Invalid UUID format: {}", s));
+                }
+            } else if !value.is_null() {
+                return Err(format!("Expected UUID string, got: {:?}", value));
+            }
+        }
+        _ => {
+            // Para tipos no reconocidos, permitir cualquier valor
+        }
+    }
+    
+    Ok(())
 }
 
 // mod tests { ... } // Todos los tests han sido movidos a tests.rs
