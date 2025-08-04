@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para listar todas las tareas
+ * Vista para listar todas las tareas.
  */
 ?>
 
@@ -65,10 +65,10 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <?php
         $totalTasks = count($tasks);
-        $todoTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'todo'));
-        $inProgressTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'in_progress'));
-        $doneTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'done'));
-        ?>
+$todoTasks = count(array_filter($tasks, fn ($t) => $t['status'] === 'todo'));
+$inProgressTasks = count(array_filter($tasks, fn ($t) => $t['status'] === 'in_progress'));
+$doneTasks = count(array_filter($tasks, fn ($t) => $t['status'] === 'done'));
+?>
 
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex items-center">
@@ -138,13 +138,13 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         <?php foreach ($tasks as $task): ?>
                             <?php
-                            // Buscar información del proyecto y usuario
-                            $taskProject = array_filter($projects, fn($p) => $p['id'] == $task['project_id']);
+                    // Buscar información del proyecto y usuario
+                    $taskProject = array_filter($projects, fn ($p) => $p['id'] == $task['project_id']);
                             $taskProject = !empty($taskProject) ? array_values($taskProject)[0] : null;
 
                             $taskUser = null;
                             if ($task['user_id']) {
-                                $taskUser = array_filter($users, fn($u) => $u['id'] == $task['user_id']);
+                                $taskUser = array_filter($users, fn ($u) => $u['id'] == $task['user_id']);
                                 $taskUser = !empty($taskUser) ? array_values($taskUser)[0] : null;
                             }
                             ?>
@@ -184,33 +184,33 @@
                                     $statusClasses = [
                                         'todo' => 'bg-gray-100 text-gray-800',
                                         'in_progress' => 'bg-blue-100 text-blue-800',
-                                        'done' => 'bg-green-100 text-green-800'
+                                        'done' => 'bg-green-100 text-green-800',
                                     ];
-                                    $statusNames = [
-                                        'todo' => 'Por Hacer',
-                                        'in_progress' => 'En Progreso',
-                                        'done' => 'Completada'
-                                    ];
-                                    ?>
+                            $statusNames = [
+                                'todo' => 'Por Hacer',
+                                'in_progress' => 'En Progreso',
+                                'done' => 'Completada',
+                            ];
+                            ?>
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $statusClasses[$task['status']] ?>">
                                         <?= $statusNames[$task['status']] ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <?php
-                                    $priorityClasses = [
-                                        'urgent' => 'bg-red-100 text-red-800',
-                                        'high' => 'bg-orange-100 text-orange-800',
-                                        'medium' => 'bg-yellow-100 text-yellow-800',
-                                        'low' => 'bg-green-100 text-green-800'
-                                    ];
-                                    $priorityNames = [
-                                        'urgent' => 'Urgente',
-                                        'high' => 'Alta',
-                                        'medium' => 'Media',
-                                        'low' => 'Baja'
-                                    ];
-                                    ?>
+                            $priorityClasses = [
+                                'urgent' => 'bg-red-100 text-red-800',
+                                'high' => 'bg-orange-100 text-orange-800',
+                                'medium' => 'bg-yellow-100 text-yellow-800',
+                                'low' => 'bg-green-100 text-green-800',
+                            ];
+                            $priorityNames = [
+                                'urgent' => 'Urgente',
+                                'high' => 'Alta',
+                                'medium' => 'Media',
+                                'low' => 'Baja',
+                            ];
+                            ?>
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $priorityClasses[$task['priority']] ?>">
                                         <?= $priorityNames[$task['priority']] ?>
                                     </span>
@@ -218,7 +218,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     <?php if ($task['due_date']): ?>
                                         <?php
-                                        $dueDate = new DateTime($task['due_date']);
+                                $dueDate = new DateTime($task['due_date']);
                                         $today = new DateTime();
                                         $diff = $today->diff($dueDate);
                                         $isOverdue = $today > $dueDate;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para crear una nueva tarea
+ * Vista para crear una nueva tarea.
  */
 ?>
 

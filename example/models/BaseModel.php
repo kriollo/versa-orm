@@ -1,31 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use VersaORM\VersaModel;
 
 /**
- * Modelo base para la aplicación
+ * Modelo base para la aplicación.
  */
 abstract class BaseModel extends VersaModel
 {
     /**
-     * Timestamps automáticos
+     * Timestamps automáticos.
      */
     protected bool $timestamps = true;
 
     /**
-     * Campos de timestamp
+     * Campos de timestamp.
      */
     protected array $dateFields = ['created_at', 'updated_at'];
 
     /**
-     * Campos protegidos (permitir asignación masiva por defecto)
+     * Campos protegidos (permitir asignación masiva por defecto).
      */
     protected array $guarded = [];
 
     /**
-     * Obtener todos los registros como array
+     * Obtener todos los registros como array.
      */
     public static function allArray(): array
     {
@@ -33,7 +35,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Obtener todos los registros como objetos VersaModel
+     * Obtener todos los registros como objetos VersaModel.
      */
     public static function all(): array
     {
@@ -44,7 +46,7 @@ abstract class BaseModel extends VersaModel
         foreach ($records as $record) {
             $obj = VersaModel::dispense($tableName);
             foreach ($record as $key => $value) {
-                $obj->$key = $value;
+                $obj->{$key} = $value;
             }
             $objects[] = $obj;
         }
@@ -53,7 +55,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Buscar por ID y devolver array
+     * Buscar por ID y devolver array.
      */
     public static function findArray(int $id): ?array
     {
@@ -63,7 +65,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Paginación simple
+     * Paginación simple.
      */
     public static function paginate(int $page = 1, int $perPage = 10): array
     {
@@ -83,12 +85,12 @@ abstract class BaseModel extends VersaModel
             'total' => $total,
             'page' => $page,
             'perPage' => $perPage,
-            'totalPages' => ceil($total / $perPage)
+            'totalPages' => ceil($total / $perPage),
         ];
     }
 
     /**
-     * Obtener nombre de tabla del modelo
+     * Obtener nombre de tabla del modelo.
      */
     protected static function getTableName(): string
     {
@@ -104,7 +106,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Ejecutar comando SQL estático
+     * Ejecutar comando SQL estático.
      */
     protected static function execSql(string $sql, array $bindings = []): mixed
     {
@@ -116,7 +118,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Validaciones básicas
+     * Validaciones básicas.
      */
     public function validate(): array
     {
@@ -128,25 +130,25 @@ abstract class BaseModel extends VersaModel
 
                 foreach ($rules as $rule) {
                     if ($rule === 'required' && empty($value)) {
-                        $errors[$field][] = "El campo $field es requerido";
+                        $errors[$field][] = "El campo {$field} es requerido";
                     }
 
                     if (strpos($rule, 'min:') === 0) {
                         $min = (int) substr($rule, 4);
                         if (strlen($value) < $min) {
-                            $errors[$field][] = "El campo $field debe tener al menos $min caracteres";
+                            $errors[$field][] = "El campo {$field} debe tener al menos {$min} caracteres";
                         }
                     }
 
                     if (strpos($rule, 'max:') === 0) {
                         $max = (int) substr($rule, 4);
                         if (strlen($value) > $max) {
-                            $errors[$field][] = "El campo $field no debe exceder $max caracteres";
+                            $errors[$field][] = "El campo {$field} no debe exceder {$max} caracteres";
                         }
                     }
 
                     if ($rule === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                        $errors[$field][] = "El campo $field debe ser un email válido";
+                        $errors[$field][] = "El campo {$field} debe ser un email válido";
                     }
                 }
             }
@@ -156,7 +158,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Guardar con validación
+     * Guardar con validación.
      */
     public function save(): bool
     {

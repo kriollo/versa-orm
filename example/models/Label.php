@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 /**
  * Modelo Label
- * Gestiona etiquetas del sistema
+ * Gestiona etiquetas del sistema.
  */
 class Label extends BaseModel
 {
@@ -13,26 +15,26 @@ class Label extends BaseModel
     protected array $fillable = [
         'name',
         'color',
-        'description'
+        'description',
     ];
 
     protected array $guarded = [];
 
     protected array $rules = [
         'name' => ['required', 'min:1', 'max:50'],
-        'color' => ['required']
+        'color' => ['required'],
     ];
 
     /**
-     * Buscar por ID
+     * Buscar por ID.
      */
-    public static function find(int $id): ?self
+    public static function find($id): ?self
     {
-        return static::findOne('labels', $id);
+        return static::findOne('labels', (int)$id);
     }
 
     /**
-     * Obtener todas las etiquetas
+     * Obtener todas las etiquetas.
      */
     public static function all(): array
     {
@@ -40,7 +42,7 @@ class Label extends BaseModel
     }
 
     /**
-     * Crear nueva etiqueta
+     * Crear nueva etiqueta.
      */
     public static function create(array $attributes): static
     {
@@ -51,7 +53,9 @@ class Label extends BaseModel
 
         // Validar antes de crear
         $errors = [];
-        if (empty($attributes['name'])) $errors[] = 'El nombre es requerido';
+        if (empty($attributes['name'])) {
+            $errors[] = 'El nombre es requerido';
+        }
 
         if (!empty($errors)) {
             throw new \Exception('Errores de validación: ' . implode(', ', $errors));
@@ -69,7 +73,7 @@ class Label extends BaseModel
     }
 
     /**
-     * Generar color aleatorio para etiqueta
+     * Generar color aleatorio para etiqueta.
      */
     private static function generateRandomColor(): string
     {
@@ -88,32 +92,32 @@ class Label extends BaseModel
             '#e91e63',
             '#673ab7',
             '#00bcd4',
-            '#4caf50'
+            '#4caf50',
         ];
         return $colors[array_rand($colors)];
     }
 
     /**
-     * Obtener tareas con esta etiqueta
+     * Obtener tareas con esta etiqueta.
      */
     public function tasks(): array
     {
         return static::getAll(
-            "SELECT t.* FROM tasks t
+            'SELECT t.* FROM tasks t
              INNER JOIN task_labels tl ON t.id = tl.task_id
              WHERE tl.label_id = ?
-             ORDER BY t.created_at DESC",
+             ORDER BY t.created_at DESC',
             [$this->id]
         );
     }
 
     /**
-     * Contar tareas con esta etiqueta
+     * Contar tareas con esta etiqueta.
      */
     public function tasksCount(): int
     {
         $result = static::getRow(
-            "SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?",
+            'SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?',
             [$this->id]
         );
         return (int) ($result['count'] ?? 0);

@@ -154,10 +154,10 @@
                                 $statusColors = [
                                     'todo' => 'bg-gray-100 text-gray-800',
                                     'in_progress' => 'bg-blue-100 text-blue-800',
-                                    'done' => 'bg-green-100 text-green-800'
+                                    'done' => 'bg-green-100 text-green-800',
                                 ];
-                                $statusColor = $statusColors[$task->status] ?? 'bg-gray-100 text-gray-800';
-                                ?>
+                $statusColor = $statusColors[$task->status] ?? 'bg-gray-100 text-gray-800';
+                ?>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColor ?>">
                                     <?= ucfirst(str_replace('_', ' ', $task->status)) ?>
                                 </span>
@@ -172,13 +172,13 @@
                         <div class="flex items-center space-x-2">
                             <?php
                             $priorityColors = [
-                                'low' => 'bg-green-100 text-green-800',
-                                'medium' => 'bg-yellow-100 text-yellow-800',
-                                'high' => 'bg-orange-100 text-orange-800',
-                                'urgent' => 'bg-red-100 text-red-800'
+                'low' => 'bg-green-100 text-green-800',
+                'medium' => 'bg-yellow-100 text-yellow-800',
+                'high' => 'bg-orange-100 text-orange-800',
+                'urgent' => 'bg-red-100 text-red-800',
                             ];
-                            $priorityColor = $priorityColors[$task->priority] ?? 'bg-gray-100 text-gray-800';
-                            ?>
+                $priorityColor = $priorityColors[$task->priority] ?? 'bg-gray-100 text-gray-800';
+                ?>
                             <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <?= $priorityColor ?>">
                                 <?= ucfirst($task->priority) ?>
                             </span>

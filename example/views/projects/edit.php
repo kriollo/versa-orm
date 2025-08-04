@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para editar un proyecto existente
+ * Vista para editar un proyecto existente.
  */
 ?>
 
@@ -59,8 +59,8 @@
                             <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?= $project->color ?>' }">
                                 <?php
                                 $colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#f1c40f'];
-                                foreach ($colors as $color):
-                                ?>
+foreach ($colors as $color):
+    ?>
                                     <label class="cursor-pointer">
                                         <input type="radio"
                                             name="color"
@@ -113,9 +113,9 @@
                                 <div class="text-sm text-gray-500 space-y-2">
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
                                         <?php
-                                        $owner = array_filter($users, fn($u) => $u->id == $project->owner_id);
-                                        echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
-                                        ?>
+            $owner = array_filter($users, fn ($u) => $u->id == $project->owner_id);
+echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
+?>
                                     </p>
                                     <p><i class="fas fa-calendar mr-2"></i>Creado: <?= date('d/m/Y', strtotime($project->created_at)) ?></p>
                                 </div>

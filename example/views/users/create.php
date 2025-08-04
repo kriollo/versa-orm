@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para crear un nuevo usuario
+ * Vista para crear un nuevo usuario.
  */
 ?>
 
@@ -89,9 +89,9 @@
                             '#f1c40f',
                             '#e91e63',
                             '#8e44ad',
-                            '#16a085'
+                            '#16a085',
                         ];
-                        foreach ($predefinedColors as $color): ?>
+foreach ($predefinedColors as $color): ?>
                             <button type="button"
                                 class="color-option w-8 h-8 rounded-full border-2 border-gray-300 hover:border-gray-400 transition-colors"
                                 style="background-color: <?= $color ?>"

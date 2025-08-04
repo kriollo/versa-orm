@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para crear una nueva etiqueta
+ * Vista para crear una nueva etiqueta.
  */
 ?>
 
@@ -92,9 +92,9 @@
                             '#fd7e14',
                             '#20c997',
                             '#6f42c1',
-                            '#dc3545'
+                            '#dc3545',
                         ];
-                        foreach ($predefinedColors as $color): ?>
+foreach ($predefinedColors as $color): ?>
                             <button type="button"
                                 class="color-option w-8 h-8 rounded-full border-2 border-gray-300 hover:border-gray-400 transition-colors"
                                 style="background-color: <?= $color ?>"

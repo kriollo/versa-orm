@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 /**
  * Modelo Task
- * Gestiona tareas del sistema
+ * Gestiona tareas del sistema.
  */
 class Task extends BaseModel
 {
@@ -17,41 +19,41 @@ class Task extends BaseModel
         'priority',
         'due_date',
         'project_id',
-        'user_id'
+        'user_id',
     ];
 
     protected array $guarded = [];
 
     protected array $rules = [
         'title' => ['required', 'min:3', 'max:200'],
-        'project_id' => ['required']
+        'project_id' => ['required'],
     ];
 
     /**
-     * Estados disponibles para las tareas
+     * Estados disponibles para las tareas.
      */
-    const STATUS_TODO = 'todo';
-    const STATUS_IN_PROGRESS = 'in_progress';
-    const STATUS_DONE = 'done';
+    public const STATUS_TODO = 'todo';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_DONE = 'done';
 
     /**
-     * Prioridades disponibles
+     * Prioridades disponibles.
      */
-    const PRIORITY_LOW = 'low';
-    const PRIORITY_MEDIUM = 'medium';
-    const PRIORITY_HIGH = 'high';
-    const PRIORITY_URGENT = 'urgent';
+    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_MEDIUM = 'medium';
+    public const PRIORITY_HIGH = 'high';
+    public const PRIORITY_URGENT = 'urgent';
 
     /**
-     * Buscar por ID
+     * Buscar por ID.
      */
-    public static function find(int $id): ?self
+    public static function find($id): ?self
     {
-        return static::findOne('tasks', $id);
+        return static::findOne('tasks', (int)$id);
     }
 
     /**
-     * Obtener todas las tareas
+     * Obtener todas las tareas.
      */
     public static function all(): array
     {
@@ -59,7 +61,7 @@ class Task extends BaseModel
     }
 
     /**
-     * Crear nueva tarea
+     * Crear nueva tarea.
      */
     public static function create(array $attributes): static
     {
@@ -73,8 +75,12 @@ class Task extends BaseModel
 
         // Validar antes de crear
         $errors = [];
-        if (empty($attributes['title'])) $errors[] = 'El título es requerido';
-        if (empty($attributes['project_id'])) $errors[] = 'El proyecto es requerido';
+        if (empty($attributes['title'])) {
+            $errors[] = 'El título es requerido';
+        }
+        if (empty($attributes['project_id'])) {
+            $errors[] = 'El proyecto es requerido';
+        }
 
         if (!empty($errors)) {
             throw new \Exception('Errores de validación: ' . implode(', ', $errors));
@@ -92,62 +98,64 @@ class Task extends BaseModel
     }
 
     /**
-     * Obtener proyecto de la tarea
+     * Obtener proyecto de la tarea.
      */
     public function project(): ?array
     {
-        $result = static::getAll("SELECT * FROM projects WHERE id = ?", [$this->project_id]);
+        $result = static::getAll('SELECT * FROM projects WHERE id = ?', [$this->project_id]);
         return $result ? $result[0] : null;
     }
 
     /**
-     * Obtener usuario asignado
+     * Obtener usuario asignado.
      */
     public function user(): ?array
     {
-        if (!$this->user_id) return null;
-        $result = static::getAll("SELECT * FROM users WHERE id = ?", [$this->user_id]);
+        if (!$this->user_id) {
+            return null;
+        }
+        $result = static::getAll('SELECT * FROM users WHERE id = ?', [$this->user_id]);
         return $result ? $result[0] : null;
     }
 
     /**
-     * Obtener etiquetas de la tarea
+     * Obtener etiquetas de la tarea.
      */
     public function labels(): array
     {
         return static::getAll(
-            "SELECT l.* FROM labels l
+            'SELECT l.* FROM labels l
              INNER JOIN task_labels tl ON l.id = tl.label_id
-             WHERE tl.task_id = ?",
+             WHERE tl.task_id = ?',
             [$this->id]
         );
     }
 
     /**
-     * Obtener IDs de etiquetas de la tarea
+     * Obtener IDs de etiquetas de la tarea.
      */
     public function getLabelIds(): array
     {
         $results = static::getAll(
-            "SELECT label_id FROM task_labels WHERE task_id = ?",
+            'SELECT label_id FROM task_labels WHERE task_id = ?',
             [$this->id]
         );
         return array_column($results, 'label_id');
     }
 
     /**
-     * Asignar etiquetas a la tarea
+     * Asignar etiquetas a la tarea.
      */
     public function setLabels(array $labelIds): void
     {
         // Eliminar etiquetas actuales
-        static::execSql("DELETE FROM task_labels WHERE task_id = ?", [$this->id]);
+        static::execSql('DELETE FROM task_labels WHERE task_id = ?', [$this->id]);
 
         // Asignar nuevas etiquetas
         foreach ($labelIds as $labelId) {
             if (!empty($labelId)) {
                 static::execSql(
-                    "INSERT INTO task_labels (task_id, label_id) VALUES (?, ?)",
+                    'INSERT INTO task_labels (task_id, label_id) VALUES (?, ?)',
                     [$this->id, $labelId]
                 );
             }
@@ -155,7 +163,7 @@ class Task extends BaseModel
     }
 
     /**
-     * Cambiar estado de la tarea
+     * Cambiar estado de la tarea.
      */
     public function changeStatus(string $status): void
     {
@@ -169,7 +177,7 @@ class Task extends BaseModel
     }
 
     /**
-     * Asignar usuario a la tarea
+     * Asignar usuario a la tarea.
      */
     public function assignUser(int $userId): void
     {
@@ -178,7 +186,7 @@ class Task extends BaseModel
     }
 
     /**
-     * Desasignar usuario de la tarea
+     * Desasignar usuario de la tarea.
      */
     public function unassignUser(): void
     {
@@ -187,16 +195,18 @@ class Task extends BaseModel
     }
 
     /**
-     * Verificar si la tarea está vencida
+     * Verificar si la tarea está vencida.
      */
     public function isOverdue(): bool
     {
-        if (!$this->due_date) return false;
+        if (!$this->due_date) {
+            return false;
+        }
         return strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
     }
 
     /**
-     * Obtener clase CSS para prioridad
+     * Obtener clase CSS para prioridad.
      */
     public function getPriorityClass(): string
     {
@@ -215,7 +225,7 @@ class Task extends BaseModel
     }
 
     /**
-     * Obtener clase CSS para estado
+     * Obtener clase CSS para estado.
      */
     public function getStatusClass(): string
     {

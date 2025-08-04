@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para editar un usuario existente
+ * Vista para editar un usuario existente.
  */
 ?>
 

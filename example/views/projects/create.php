@@ -56,9 +56,9 @@
                         '#e67e22' => 'Naranja oscuro',
                         '#34495e' => 'Gris oscuro',
                         '#95a5a6' => 'Gris',
-                        '#16a085' => 'Verde mar'
+                        '#16a085' => 'Verde mar',
                     ];
-                    ?>
+?>
                     <?php foreach ($colors as $color => $name): ?>
                         <label class="flex items-center cursor-pointer">
                             <input type="radio"

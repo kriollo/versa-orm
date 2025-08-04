@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * VersaORM Trello Demo
- * Aplicación de demostración tipo Trello para mostrar las capacidades de VersaORM
+ * Aplicación de demostración tipo Trello para mostrar las capacidades de VersaORM.
  */
 
 require_once __DIR__ . '/bootstrap.php';
@@ -60,11 +62,26 @@ try {
                 redirect('?action=projects');
             }
 
-            $tasks = Task::getAll("SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC", [$id]);
+            $tasks = Task::getAll('SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC', [$id]);
             $members = $project->members();
             $owner = User::findArray($project->owner_id);
 
-            render('projects/show', compact('project', 'tasks', 'members', 'owner'));
+            // Obtener todos los usuarios primero
+            $allUsers = User::all();
+
+            // Obtener IDs de miembros actuales
+            $memberIds = array_column($members, 'id');
+            $memberIds[] = $project->owner_id; // Excluir también al propietario
+
+            // Filtrar usuarios disponibles
+            $availableUsers = [];
+            foreach ($allUsers as $user) {
+                if (!in_array($user->id, $memberIds)) {
+                    $availableUsers[] = $user;
+                }
+            }
+
+            render('projects/show', compact('project', 'tasks', 'members', 'owner', 'availableUsers'));
             break;
 
         case 'project_create':
@@ -109,6 +126,81 @@ try {
             render('projects/edit', compact('project', 'users'));
             break;
 
+        case 'project_add_member':
+            if ($_POST && isset($_POST['project_id']) && isset($_POST['user_id'])) {
+                try {
+                    $project = Project::find($_POST['project_id']);
+                    if (!$project) {
+                        flash('error', 'Proyecto no encontrado');
+                        redirect('?action=projects');
+                        break;
+                    }
+
+                    $user = User::find($_POST['user_id']);
+                    if (!$user) {
+                        flash('error', 'Usuario no encontrado');
+                        redirect('?action=project_show&id=' . $_POST['project_id']);
+                        break;
+                    }
+
+                    // Verificar que el usuario no sea ya miembro
+                    $existing = Project::getAll(
+                        'SELECT * FROM project_users WHERE project_id = ? AND user_id = ? LIMIT 1',
+                        [$_POST['project_id'], $_POST['user_id']]
+                    );
+
+                    if (!empty($existing)) {
+                        flash('warning', 'El usuario ya es miembro del proyecto');
+                    } else {
+                        // Agregar el miembro usando el ORM global
+                        $orm = Project::getGlobalORM();
+                        $orm->exec(
+                            'INSERT INTO project_users (project_id, user_id, created_at) VALUES (?, ?, NOW())',
+                            [$_POST['project_id'], $_POST['user_id']]
+                        );
+                        flash('success', 'Miembro agregado exitosamente');
+                    }
+
+                    redirect('?action=project_show&id=' . $_POST['project_id']);
+                } catch (Exception $e) {
+                    flash('error', 'Error al agregar miembro: ' . $e->getMessage());
+                    redirect('?action=project_show&id=' . $_POST['project_id']);
+                }
+            } else {
+                flash('error', 'Datos inválidos');
+                redirect('?action=projects');
+            }
+            break;
+
+        case 'project_remove_member':
+            if ($_POST && isset($_POST['project_id']) && isset($_POST['user_id'])) {
+                try {
+                    $project = Project::find($_POST['project_id']);
+                    if (!$project) {
+                        flash('error', 'Proyecto no encontrado');
+                        redirect('?action=projects');
+                        break;
+                    }
+
+                    // Remover el miembro usando el ORM global
+                    $orm = Project::getGlobalORM();
+                    $orm->exec(
+                        'DELETE FROM project_users WHERE project_id = ? AND user_id = ?',
+                        [$_POST['project_id'], $_POST['user_id']]
+                    );
+
+                    flash('success', 'Miembro removido exitosamente');
+                    redirect('?action=project_show&id=' . $_POST['project_id']);
+                } catch (Exception $e) {
+                    flash('error', 'Error al remover miembro: ' . $e->getMessage());
+                    redirect('?action=project_show&id=' . $_POST['project_id']);
+                }
+            } else {
+                flash('error', 'Datos inválidos');
+                redirect('?action=projects');
+            }
+            break;
+
         case 'project_delete':
             if (!$id) {
                 flash('error', 'ID de proyecto requerido');
@@ -129,13 +221,13 @@ try {
         // TAREAS
         // ======================
         case 'tasks':
-            $tasks = Task::getAll("
+            $tasks = Task::getAll('
                 SELECT t.*, p.name as project_name, u.name as user_name
                 FROM tasks t
                 LEFT JOIN projects p ON t.project_id = p.id
                 LEFT JOIN users u ON t.user_id = u.id
                 ORDER BY t.created_at DESC
-            ");
+            ');
             render('tasks/index', compact('tasks'));
             break;
 
@@ -319,7 +411,7 @@ try {
             $labels = Label::all();
             // Agregar conteo de tareas para cada etiqueta
             foreach ($labels as &$label) {
-                $count = Label::getAll("SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?", [$label->id]);
+                $count = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
                 $label->tasks_count = $count[0]['count'] ?? 0;
             }
             render('labels/index', compact('labels'));

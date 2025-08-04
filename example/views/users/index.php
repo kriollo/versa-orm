@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para listar todos los usuarios
+ * Vista para listar todos los usuarios.
  */
 ?>
 
@@ -51,8 +51,8 @@
                 </div>
                 <div>
                     <p class="text-2xl font-semibold"><?= count(array_filter($users, function ($u) {
-                                                            return strtotime($u->created_at) > strtotime('-30 days');
-                                                        })) ?></p>
+                        return strtotime($u->created_at) > strtotime('-30 days');
+                    })) ?></p>
                     <p class="text-gray-600 text-sm">Nuevos (30 días)</p>
                 </div>
             </div>

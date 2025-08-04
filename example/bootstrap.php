@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- * Autoloader para la aplicación demo
+ * Autoloader para la aplicación demo.
  */
 
 // Cargar Composer autoloader
@@ -14,18 +16,18 @@ date_default_timezone_set('America/Mexico_City');
 $config = require_once __DIR__ . '/config.php';
 
 // Inicializar VersaORM
-use VersaORM\VersaORM;
 use VersaORM\VersaModel;
+use VersaORM\VersaORM;
 
 try {
     $orm = new VersaORM($config['versaorm'] + $config['database']);
     VersaModel::setORM($orm);
 } catch (Exception $e) {
-    die("Error al inicializar VersaORM: " . $e->getMessage());
+    die('Error al inicializar VersaORM: ' . $e->getMessage());
 }
 
 // Autoloader para modelos
-spl_autoload_register(function ($class) {
+spl_autoload_register(function ($class): void {
     if (strpos($class, 'App\\Models\\') === 0) {
         $className = str_replace('App\\Models\\', '', $class);
         $file = __DIR__ . '/models/' . $className . '.php';
@@ -36,14 +38,14 @@ spl_autoload_register(function ($class) {
 });
 
 // Función helper para renderizar vistas
-function render($view, $data = [])
+function render($view, $data = []): void
 {
     global $config;
     extract($data);
     $viewFile = __DIR__ . '/views/' . $view . '.php';
 
     if (!file_exists($viewFile)) {
-        die("Vista no encontrada: $view");
+        die("Vista no encontrada: {$view}");
     }
 
     ob_start();
@@ -59,14 +61,14 @@ function render($view, $data = [])
 }
 
 // Función helper para redireccionar
-function redirect($url)
+function redirect($url): void
 {
-    header("Location: $url");
+    header("Location: {$url}");
     exit;
 }
 
 // Función helper para mostrar mensajes flash
-function flash($type, $message)
+function flash($type, $message): void
 {
     $_SESSION['flash'] = ['type' => $type, 'message' => $message];
 }

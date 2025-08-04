@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Vista para mostrar detalles de un proyecto
+ * Vista para mostrar detalles de un proyecto.
  */
 ?>
 
@@ -67,7 +67,7 @@
             <div class="bg-white shadow rounded-lg p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold">Miembros (<?= count($members) ?>)</h3>
-                    <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <button id="addMemberBtn" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                         <i class="fas fa-plus mr-1"></i>
                         Agregar
                     </button>
@@ -86,9 +86,13 @@
                                         <p class="text-sm text-gray-500"><?= htmlspecialchars($member['email']) ?></p>
                                     </div>
                                 </div>
-                                <button class="text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                                <form method="POST" action="?action=project_remove_member" class="inline">
+                                    <input type="hidden" name="project_id" value="<?= $project->id ?>">
+                                    <input type="hidden" name="user_id" value="<?= $member['id'] ?>">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity" onclick="return confirm('¿Estás seguro de que quieres eliminar este miembro?')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -131,17 +135,17 @@
                 $tasksByStatus = [
                     'todo' => array_filter($tasks, fn($t) => $t['status'] === 'todo'),
                     'in_progress' => array_filter($tasks, fn($t) => $t['status'] === 'in_progress'),
-                    'done' => array_filter($tasks, fn($t) => $t['status'] === 'done')
+                    'done' => array_filter($tasks, fn($t) => $t['status'] === 'done'),
                 ];
                 $statusNames = [
                     'todo' => 'Por Hacer',
                     'in_progress' => 'En Progreso',
-                    'done' => 'Completadas'
+                    'done' => 'Completadas',
                 ];
                 $statusColors = [
                     'todo' => 'bg-gray-100 text-gray-800',
                     'in_progress' => 'bg-blue-100 text-blue-800',
-                    'done' => 'bg-green-100 text-green-800'
+                    'done' => 'bg-green-100 text-green-800',
                 ];
                 ?>
 
@@ -210,3 +214,88 @@ function getPriorityClass($priority)
     }
 }
 ?>
+
+<!-- Modal para agregar miembros -->
+<div id="addMemberModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Agregar Miembro</h3>
+                <button id="closeMemberModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form method="POST" action="?action=project_add_member">
+                <input type="hidden" name="project_id" value="<?= $project->id ?>">
+
+                <div class="mb-4">
+                    <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Seleccionar Usuario
+                    </label>
+                    <select name="user_id" id="user_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Selecciona un usuario</option>
+                        <?php if (isset($availableUsers) && is_array($availableUsers)): ?>
+                            <?php foreach ($availableUsers as $user): ?>
+                                <option value="<?= $user->id ?>">
+                                    <?= htmlspecialchars($user->name) ?> (<?= htmlspecialchars($user->email) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="">No hay usuarios disponibles</option>
+                        <?php endif; ?>
+                    </select>
+
+                    <!-- Debug temporal -->
+                    <?php if (isset($_GET['debug'])): ?>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <p>Debug info:</p>
+                            <p>Available users count: <?= isset($availableUsers) ? count($availableUsers) : 'undefined' ?></p>
+                            <p>Members count: <?= count($members) ?></p>
+                            <p>Owner ID: <?= $project->owner_id ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3">
+                    <button type="button" id="cancelAddMember" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+                        Agregar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Funcionalidad del modal para agregar miembros
+    document.addEventListener('DOMContentLoaded', function() {
+        const addMemberBtn = document.getElementById('addMemberBtn');
+        const modal = document.getElementById('addMemberModal');
+        const closeModal = document.getElementById('closeMemberModal');
+        const cancelBtn = document.getElementById('cancelAddMember');
+
+        // Abrir modal
+        addMemberBtn?.addEventListener('click', function() {
+            modal.classList.remove('hidden');
+        });
+
+        // Cerrar modal
+        function closeModalFunc() {
+            modal.classList.add('hidden');
+        }
+
+        closeModal?.addEventListener('click', closeModalFunc);
+        cancelBtn?.addEventListener('click', closeModalFunc);
+
+        // Cerrar modal al hacer click fuera
+        modal?.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModalFunc();
+            }
+        });
+    });
+</script>

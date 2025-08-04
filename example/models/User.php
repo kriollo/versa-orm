@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 /**
  * Modelo User
- * Gestiona usuarios del sistema
+ * Gestiona usuarios del sistema.
  */
 class User extends BaseModel
 {
@@ -14,26 +16,26 @@ class User extends BaseModel
         'name',
         'email',
         'avatar_color',
-        'active'
+        'active',
     ];
 
     protected array $guarded = [];
 
     protected array $rules = [
         'name' => ['required', 'min:2', 'max:100'],
-        'email' => ['required', 'email', 'max:150']
+        'email' => ['required', 'email', 'max:150'],
     ];
 
     /**
-     * Buscar por ID
+     * Buscar por ID.
      */
-    public static function find(int $id): ?self
+    public static function find($id): ?self
     {
-        return static::findOne('users', $id);
+        return static::findOne('users', (int)$id);
     }
 
     /**
-     * Obtener todos los usuarios
+     * Obtener todos los usuarios.
      */
     public static function all(): array
     {
@@ -41,7 +43,7 @@ class User extends BaseModel
     }
 
     /**
-     * Crear nuevo usuario
+     * Crear nuevo usuario.
      */
     public static function create(array $attributes): static
     {
@@ -52,9 +54,15 @@ class User extends BaseModel
 
         // Validar antes de crear
         $errors = [];
-        if (empty($attributes['name'])) $errors[] = 'El nombre es requerido';
-        if (empty($attributes['email'])) $errors[] = 'El email es requerido';
-        if (!filter_var($attributes['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Email inválido';
+        if (empty($attributes['name'])) {
+            $errors[] = 'El nombre es requerido';
+        }
+        if (empty($attributes['email'])) {
+            $errors[] = 'El email es requerido';
+        }
+        if (!filter_var($attributes['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Email inválido';
+        }
 
         if (!empty($errors)) {
             throw new \Exception('Errores de validación: ' . implode(', ', $errors));
@@ -72,7 +80,7 @@ class User extends BaseModel
     }
 
     /**
-     * Generar color aleatorio para avatar
+     * Generar color aleatorio para avatar.
      */
     private static function generateRandomColor(): string
     {
@@ -91,31 +99,31 @@ class User extends BaseModel
             '#00b894',
             '#0984e3',
             '#a29bfe',
-            '#fd79a8'
+            '#fd79a8',
         ];
         return $colors[array_rand($colors)];
     }
 
     /**
-     * Obtener proyectos del usuario
+     * Obtener proyectos del usuario.
      */
     public function projects(): array
     {
         return static::getAll(
-            "SELECT p.* FROM projects p
+            'SELECT p.* FROM projects p
              INNER JOIN project_users pu ON p.id = pu.project_id
-             WHERE pu.user_id = ?",
+             WHERE pu.user_id = ?',
             [$this->id]
         );
     }
 
     /**
-     * Obtener tareas asignadas al usuario
+     * Obtener tareas asignadas al usuario.
      */
     public function tasks(): array
     {
         return static::getAll(
-            "SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC",
+            'SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC',
             [$this->id]
         );
     }

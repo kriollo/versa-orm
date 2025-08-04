@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 /**
  * Modelo Project
- * Gestiona proyectos del sistema
+ * Gestiona proyectos del sistema.
  */
 class Project extends BaseModel
 {
@@ -14,26 +16,26 @@ class Project extends BaseModel
         'name',
         'description',
         'color',
-        'owner_id'
+        'owner_id',
     ];
 
     protected array $guarded = [];
 
     protected array $rules = [
         'name' => ['required', 'min:2', 'max:100'],
-        'owner_id' => ['required']
+        'owner_id' => ['required'],
     ];
 
     /**
-     * Buscar por ID
+     * Buscar por ID.
      */
-    public static function find(int $id): ?self
+    public static function find($id): ?self
     {
-        return static::findOne('projects', $id);
+        return static::findOne('projects', (int)$id);
     }
 
     /**
-     * Obtener todos los proyectos
+     * Obtener todos los proyectos.
      */
     public static function all(): array
     {
@@ -41,7 +43,7 @@ class Project extends BaseModel
     }
 
     /**
-     * Crear nuevo proyecto
+     * Crear nuevo proyecto.
      */
     public static function create(array $attributes): static
     {
@@ -52,8 +54,12 @@ class Project extends BaseModel
 
         // Validar antes de crear
         $errors = [];
-        if (empty($attributes['name'])) $errors[] = 'El nombre es requerido';
-        if (empty($attributes['owner_id'])) $errors[] = 'El propietario es requerido';
+        if (empty($attributes['name'])) {
+            $errors[] = 'El nombre es requerido';
+        }
+        if (empty($attributes['owner_id'])) {
+            $errors[] = 'El propietario es requerido';
+        }
 
         if (!empty($errors)) {
             throw new \Exception('Errores de validación: ' . implode(', ', $errors));
@@ -70,7 +76,7 @@ class Project extends BaseModel
 
         // Añadir el propietario como miembro del proyecto
         static::execSql(
-            "INSERT INTO project_users (project_id, user_id) VALUES (?, ?)",
+            'INSERT INTO project_users (project_id, user_id) VALUES (?, ?)',
             [$project->id, $attributes['owner_id']]
         );
 
@@ -78,7 +84,7 @@ class Project extends BaseModel
     }
 
     /**
-     * Generar color aleatorio para proyecto
+     * Generar color aleatorio para proyecto.
      */
     private static function generateRandomColor(): string
     {
@@ -92,70 +98,70 @@ class Project extends BaseModel
             '#e67e22',
             '#34495e',
             '#95a5a6',
-            '#16a085'
+            '#16a085',
         ];
         return $colors[array_rand($colors)];
     }
 
     /**
-     * Obtener propietario del proyecto
+     * Obtener propietario del proyecto.
      */
     public function owner(): ?array
     {
-        $result = static::getAll("SELECT * FROM users WHERE id = ?", [$this->owner_id]);
+        $result = static::getAll('SELECT * FROM users WHERE id = ?', [$this->owner_id]);
         return $result ? $result[0] : null;
     }
 
     /**
-     * Obtener miembros del proyecto
+     * Obtener miembros del proyecto.
      */
     public function members(): array
     {
         return static::getAll(
-            "SELECT u.* FROM users u
+            'SELECT u.* FROM users u
              INNER JOIN project_users pu ON u.id = pu.user_id
-             WHERE pu.project_id = ?",
+             WHERE pu.project_id = ?',
             [$this->id]
         );
     }
 
     /**
-     * Obtener tareas del proyecto
+     * Obtener tareas del proyecto.
      */
     public function tasks(): array
     {
         return static::getAll(
-            "SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at DESC",
+            'SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at DESC',
             [$this->id]
         );
     }
 
     /**
-     * Añadir miembro al proyecto
+     * Añadir miembro al proyecto.
      */
     public function addMember(int $userId): void
     {
         // Verificar si ya es miembro
         $exists = static::getAll(
-            "SELECT 1 FROM project_users WHERE project_id = ? AND user_id = ?",
+            'SELECT 1 FROM project_users WHERE project_id = ? AND user_id = ?',
             [$this->id, $userId]
         );
 
         if (empty($exists)) {
             static::execSql(
-                "INSERT INTO project_users (project_id, user_id) VALUES (?, ?)",
+                'INSERT INTO project_users (project_id, user_id) VALUES (?, ?)',
                 [$this->id, $userId]
             );
         }
     }
 
     /**
-     * Remover miembro del proyecto
+     * Remover miembro del proyecto.
      */
     public function removeMember(int $userId): void
     {
         static::execSql(
-            "DELETE FROM project_users WHERE project_id = ? AND user_id = ?",
+            'DELETE FROM project_users WHERE project_id = ? AND user_id = ?',
             [$this->id, $userId]
         );
     }

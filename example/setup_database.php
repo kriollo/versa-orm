@@ -1,18 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Script para crear la base de datos y tablas usando VersaORM
- * Ejecutar desde línea de comandos: php setup_database.php
+ * Ejecutar desde línea de comandos: php setup_database.php.
  */
 
 require_once __DIR__ . '/bootstrap.php';
 
-use VersaORM\VersaORM;
-use VersaORM\VersaModel;
-use App\Models\User;
+use App\Models\Label;
 use App\Models\Project;
 use App\Models\Task;
-use App\Models\Label;
+use App\Models\User;
+use VersaORM\VersaModel;
+use VersaORM\VersaORM;
 
 try {
     echo "🚀 Configurando base de datos con VersaORM...\n\n";
@@ -50,7 +52,7 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
         // Tabla relación usuarios-proyectos
-        "CREATE TABLE IF NOT EXISTS project_users (
+        'CREATE TABLE IF NOT EXISTS project_users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             project_id INT NOT NULL,
             user_id INT NOT NULL,
@@ -58,7 +60,7 @@ try {
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             UNIQUE KEY unique_project_user (project_id, user_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
 
         // Tabla etiquetas
         "CREATE TABLE IF NOT EXISTS labels (
@@ -87,7 +89,7 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
         // Tabla relación tareas-etiquetas
-        "CREATE TABLE IF NOT EXISTS task_labels (
+        'CREATE TABLE IF NOT EXISTS task_labels (
             id INT AUTO_INCREMENT PRIMARY KEY,
             task_id INT NOT NULL,
             label_id INT NOT NULL,
@@ -95,23 +97,23 @@ try {
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
             FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE,
             UNIQUE KEY unique_task_label (task_id, label_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
     ];
 
     // Crear tablas
     foreach ($tables as $i => $sql) {
         try {
             $orm->exec($sql);
-            echo "✓ Tabla " . ($i + 1) . " creada correctamente\n";
+            echo '✓ Tabla ' . ($i + 1) . " creada correctamente\n";
         } catch (Exception $e) {
-            echo "⚠ Error creando tabla " . ($i + 1) . ": " . $e->getMessage() . "\n";
+            echo '⚠ Error creando tabla ' . ($i + 1) . ': ' . $e->getMessage() . "\n";
         }
     }
 
     echo "\n📝 Creando datos de ejemplo...\n";
 
     // Verificar si ya hay datos
-    $existingUsers = $orm->exec("SELECT COUNT(*) as count FROM users", []);
+    $existingUsers = $orm->exec('SELECT COUNT(*) as count FROM users', []);
     if ($existingUsers && count($existingUsers) > 0 && $existingUsers[0]['count'] > 0) {
         echo "⚠ Ya existen datos en la base de datos. Saltando inserción de datos de ejemplo.\n";
     } else {
@@ -120,7 +122,7 @@ try {
             ['name' => 'Juan Pérez', 'email' => 'juan@example.com', 'avatar_color' => '#e74c3c'],
             ['name' => 'María García', 'email' => 'maria@example.com', 'avatar_color' => '#3498db'],
             ['name' => 'Carlos López', 'email' => 'carlos@example.com', 'avatar_color' => '#2ecc71'],
-            ['name' => 'Ana Martínez', 'email' => 'ana@example.com', 'avatar_color' => '#f39c12']
+            ['name' => 'Ana Martínez', 'email' => 'ana@example.com', 'avatar_color' => '#f39c12'],
         ];
 
         foreach ($users as $userData) {
@@ -142,7 +144,7 @@ try {
             ['name' => 'Feature', 'color' => '#3498db', 'description' => 'Nuevas funcionalidades'],
             ['name' => 'Urgent', 'color' => '#e67e22', 'description' => 'Tareas urgentes'],
             ['name' => 'Design', 'color' => '#9b59b6', 'description' => 'Tareas relacionadas con diseño'],
-            ['name' => 'Documentation', 'color' => '#2ecc71', 'description' => 'Documentación y manuales']
+            ['name' => 'Documentation', 'color' => '#2ecc71', 'description' => 'Documentación y manuales'],
         ];
 
         foreach ($labels as $labelData) {
@@ -162,7 +164,7 @@ try {
         $projects = [
             ['name' => 'VersaORM Demo', 'description' => 'Proyecto de demostración de VersaORM', 'color' => '#3498db', 'owner_id' => 1],
             ['name' => 'Sistema de Inventario', 'description' => 'Gestión de inventarios y productos', 'color' => '#e74c3c', 'owner_id' => 2],
-            ['name' => 'App Móvil', 'description' => 'Desarrollo de aplicación móvil', 'color' => '#2ecc71', 'owner_id' => 1]
+            ['name' => 'App Móvil', 'description' => 'Desarrollo de aplicación móvil', 'color' => '#2ecc71', 'owner_id' => 1],
         ];
 
         foreach ($projects as $projectData) {
@@ -185,7 +187,7 @@ try {
             ['title' => 'Implementar modelos', 'description' => 'Crear modelos con VersaORM', 'status' => 'in_progress', 'priority' => 'high', 'project_id' => 1, 'user_id' => 2, 'due_date' => '2025-08-05'],
             ['title' => 'Diseñar interfaz', 'description' => 'Crear mockups y diseños', 'status' => 'todo', 'priority' => 'medium', 'project_id' => 1, 'user_id' => 3, 'due_date' => '2025-08-10'],
             ['title' => 'Gestión de productos', 'description' => 'CRUD de productos', 'status' => 'todo', 'priority' => 'high', 'project_id' => 2, 'user_id' => 2, 'due_date' => '2025-08-15'],
-            ['title' => 'Login y autenticación', 'description' => 'Sistema de usuarios', 'status' => 'in_progress', 'priority' => 'urgent', 'project_id' => 3, 'user_id' => 1, 'due_date' => '2025-08-08']
+            ['title' => 'Login y autenticación', 'description' => 'Sistema de usuarios', 'status' => 'in_progress', 'priority' => 'urgent', 'project_id' => 3, 'user_id' => 1, 'due_date' => '2025-08-08'],
         ];
 
         foreach ($tasks as $taskData) {
@@ -217,15 +219,15 @@ try {
             [3, 4],         // Tarea 3 con etiqueta 4
             [4, 2],         // Tarea 4 con etiqueta 2
             [5, 2],
-            [5, 3]  // Tarea 5 con etiquetas 2 y 3
+            [5, 3],  // Tarea 5 con etiquetas 2 y 3
         ];
 
         foreach ($taskLabelRelations as $relation) {
             try {
-                $orm->exec("INSERT IGNORE INTO task_labels (task_id, label_id) VALUES (?, ?)", $relation);
+                $orm->exec('INSERT IGNORE INTO task_labels (task_id, label_id) VALUES (?, ?)', $relation);
                 echo "✓ Relación tarea-etiqueta {$relation[0]}-{$relation[1]} creada\n";
             } catch (Exception $e) {
-                echo "⚠ Error creando relación tarea-etiqueta: " . $e->getMessage() . "\n";
+                echo '⚠ Error creando relación tarea-etiqueta: ' . $e->getMessage() . "\n";
             }
         }
 
@@ -238,28 +240,28 @@ try {
             [2, 4],         // Proyecto 2 con usuarios 2, 4
             [3, 1],
             [3, 3],
-            [3, 4]  // Proyecto 3 con usuarios 1, 3, 4
+            [3, 4],  // Proyecto 3 con usuarios 1, 3, 4
         ];
 
         foreach ($projectUserRelations as $relation) {
             try {
-                $orm->exec("INSERT IGNORE INTO project_users (project_id, user_id) VALUES (?, ?)", $relation);
+                $orm->exec('INSERT IGNORE INTO project_users (project_id, user_id) VALUES (?, ?)', $relation);
                 echo "✓ Relación proyecto-usuario {$relation[0]}-{$relation[1]} creada\n";
             } catch (Exception $e) {
-                echo "⚠ Error creando relación proyecto-usuario: " . $e->getMessage() . "\n";
+                echo '⚠ Error creando relación proyecto-usuario: ' . $e->getMessage() . "\n";
             }
         }
     }
 
     echo "\n🎉 ¡Base de datos configurada exitosamente con VersaORM!\n";
     echo "📊 Estadísticas:\n";
-    echo "   - Usuarios: " . count(User::allArray()) . "\n";
-    echo "   - Proyectos: " . count(Project::allArray()) . "\n";
-    echo "   - Tareas: " . count(Task::allArray()) . "\n";
-    echo "   - Etiquetas: " . count(Label::allArray()) . "\n";
+    echo '   - Usuarios: ' . count(User::allArray()) . "\n";
+    echo '   - Proyectos: ' . count(Project::allArray()) . "\n";
+    echo '   - Tareas: ' . count(Task::allArray()) . "\n";
+    echo '   - Etiquetas: ' . count(Label::allArray()) . "\n";
     echo "\n🌐 Puedes acceder a la aplicación en: http://localhost:8080\n";
 } catch (Exception $e) {
-    echo "❌ Error: " . $e->getMessage() . "\n";
+    echo '❌ Error: ' . $e->getMessage() . "\n";
     echo "\nVerifica:\n";
     echo "1. Que MySQL esté ejecutándose\n";
     echo "2. Que las credenciales en config.php sean correctas\n";

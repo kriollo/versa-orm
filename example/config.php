@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Configuración de la aplicación Trello
- * VersaORM-PHP Demo Application
+ * VersaORM-PHP Demo Application.
  */
 
 return [
@@ -30,5 +32,5 @@ return [
         'logging' => true,
         'binary_path' => __DIR__ . '/../src/binary/versaorm_cli.exe',
         'log_path' => __DIR__ . '/../logs/',
-    ]
+    ],
 ];
