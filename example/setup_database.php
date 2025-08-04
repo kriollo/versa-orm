@@ -14,7 +14,6 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use VersaORM\VersaModel;
-use VersaORM\VersaORM;
 
 try {
     echo "🚀 Configurando base de datos con VersaORM...\n\n";
@@ -29,6 +28,15 @@ try {
 
     // Crear tablas usando SQL raw
     $tables = [
+        // Drop tables if they exist
+        'DROP TABLE IF EXISTS task_labels',
+        'DROP TABLE IF EXISTS project_users',
+        'DROP TABLE IF EXISTS tasks',
+        'DROP TABLE IF EXISTS labels',
+        'DROP TABLE IF EXISTS projects',
+        'DROP TABLE IF EXISTS users',
+
+
         // Tabla usuarios
         "CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -114,7 +122,13 @@ try {
 
     // Verificar si ya hay datos
     $existingUsers = $orm->exec('SELECT COUNT(*) as count FROM users', []);
-    if ($existingUsers && count($existingUsers) > 0 && $existingUsers[0]['count'] > 0) {
+    $userCount = 0;
+    
+    if ($existingUsers && is_array($existingUsers) && count($existingUsers) > 0 && isset($existingUsers[0]['count'])) {
+        $userCount = (int)$existingUsers[0]['count'];
+    }
+    
+    if ($userCount > 0) {
         echo "⚠ Ya existen datos en la base de datos. Saltando inserción de datos de ejemplo.\n";
     } else {
         // Crear usuarios de ejemplo
