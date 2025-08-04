@@ -65,22 +65,33 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 <?php foreach ($users as $user): ?>
                     <?php
-                    // Obtener estadísticas del usuario de forma simple
-                    $userProjects = []; // Se podría implementar después
-                    $userTasks = []; // Se podría implementar después
-                    $completedTasks = [];
+                    // Obtener estadísticas reales del usuario usando el método optimizado
+                    $stats = $user->getStats();
+
+                    // Extraer datos para facilitar el uso en la vista
+                    $userProjects = [];
+                    $userTasks = $stats['tasks'];
+                    $completedTasks = $stats['completed_tasks'];
+
+                    // Procesar proyectos para mostrar en badges
+                    foreach ($stats['projects'] as $project) {
+                        $userProjects[] = [
+                            'name' => isset($project['name']) ? $project['name'] : 'Sin nombre',
+                            'color' => isset($project['color']) ? $project['color'] : '#6c5ce7',
+                        ];
+                    }
                     ?>
                     <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
                         <!-- Avatar y información básica -->
                         <div class="flex items-center mb-4">
-                            <div class="avatar-lg mr-4" style="background-color: <?= htmlspecialchars($user->avatar_color) ?>">
-                                <?= strtoupper(substr($user->name, 0, 2)) ?>
+                            <div class="avatar-lg mr-4" style="background-color: <?= htmlspecialchars($user->avatar_color ?? '#6c5ce7') ?>">
+                                <?= strtoupper(substr($user->name ?? 'NN', 0, 2)) ?>
                             </div>
                             <div class="flex-1">
-                                <h3 class="font-semibold text-lg text-gray-900"><?= htmlspecialchars($user->name) ?></h3>
-                                <p class="text-gray-600 text-sm"><?= htmlspecialchars($user->email) ?></p>
+                                <h3 class="font-semibold text-lg text-gray-900"><?= htmlspecialchars($user->name ?? 'Sin nombre') ?></h3>
+                                <p class="text-gray-600 text-sm"><?= htmlspecialchars($user->email ?? 'Sin email') ?></p>
                                 <p class="text-gray-500 text-xs mt-1">
-                                    Miembro desde <?= date('M Y', strtotime($user->created_at)) ?>
+                                    Miembro desde <?= isset($user->created_at) ? date('M Y', strtotime($user->created_at)) : 'Fecha desconocida' ?>
                                 </p>
                             </div>
                         </div>
@@ -139,16 +150,16 @@
                             <div class="flex items-center space-x-2 text-xs text-gray-500">
                                 <span class="flex items-center">
                                     <i class="fas fa-clock mr-1"></i>
-                                    <?= date('d/m/Y', strtotime($user->updated_at)) ?>
+                                    <?= isset($user->updated_at) ? date('d/m/Y', strtotime($user->updated_at)) : 'Sin fecha' ?>
                                 </span>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <a href="?action=user_edit&id=<?= $user->id ?>"
+                                <a href="?action=user_edit&id=<?= $user->id ?? 0 ?>"
                                     class="text-yellow-600 hover:text-yellow-800"
                                     title="Editar usuario">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="?action=user_delete&id=<?= $user->id ?>"
+                                <a href="?action=user_delete&id=<?= $user->id ?? 0 ?>"
                                     onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?')"
                                     class="text-red-600 hover:text-red-800"
                                     title="Eliminar usuario">

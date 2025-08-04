@@ -125,7 +125,7 @@ try {
     $userCount = 0;
 
     if ($existingUsers && is_array($existingUsers) && count($existingUsers) > 0 && isset($existingUsers[0]['count'])) {
-        $userCount = (int)$existingUsers[0]['count'];
+        $userCount = (int) $existingUsers[0]['count'];
     }
 
     if ($userCount > 0) {

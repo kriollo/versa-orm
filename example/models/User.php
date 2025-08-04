@@ -105,16 +105,62 @@ class User extends BaseModel
     }
 
     /**
-     * Obtener proyectos del usuario.
+     * Obtener proyectos del usuario (donde es miembro o propietario).
      */
     public function projects(): array
     {
-        return static::getAll(
-            'SELECT p.* FROM projects p
-             INNER JOIN project_users pu ON p.id = pu.project_id
-             WHERE pu.user_id = ?',
-            [$this->id]
-        );
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            return [];
+        }
+
+        try {
+            $allProjects = [];
+
+            // Proyectos donde es propietario
+            $ownedProjects = $orm->table('projects')
+                ->where('owner_id', '=', $this->id)
+                ->get();
+
+            if ($ownedProjects) {
+                $allProjects = array_merge($allProjects, $ownedProjects);
+            }
+
+            // Proyectos donde es miembro
+            $memberProjects = $orm->table('projects')
+                ->join('project_users', 'projects.id', '=', 'project_users.project_id')
+                ->where('project_users.user_id', '=', $this->id)
+                ->select(['projects.*'])
+                ->get();
+
+            if ($memberProjects) {
+                $allProjects = array_merge($allProjects, $memberProjects);
+            }
+
+            // Eliminar duplicados basado en ID
+            $uniqueProjects = [];
+            $seenIds = [];
+
+            foreach ($allProjects as $project) {
+                $projectId = isset($project['id']) ? $project['id'] : null;
+                if ($projectId && !in_array($projectId, $seenIds)) {
+                    $uniqueProjects[] = $project;
+                    $seenIds[] = $projectId;
+                }
+            }
+
+            return $uniqueProjects;
+        } catch (\Exception $e) {
+            // Si falla el join, intentar solo los proyectos propios
+            try {
+                $projects = $orm->table('projects')
+                    ->where('owner_id', '=', $this->id)
+                    ->get();
+                return $projects ?: [];
+            } catch (\Exception $e2) {
+                return [];
+            }
+        }
     }
 
     /**
@@ -122,9 +168,54 @@ class User extends BaseModel
      */
     public function tasks(): array
     {
-        return static::getAll(
-            'SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC',
-            [$this->id]
-        );
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            return [];
+        }
+
+        try {
+            $tasks = $orm->table('tasks')
+                ->where('user_id', '=', $this->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return $tasks ?: [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Obtener estadísticas del usuario.
+     */
+    public function getStats(): array
+    {
+        try {
+            $projects = $this->projects();
+            $tasks = $this->tasks();
+            $completedTasks = array_filter($tasks, function ($task) {
+                return isset($task['status']) && $task['status'] === 'done';
+            });
+
+            return [
+                'projects_count' => count($projects),
+                'tasks_count' => count($tasks),
+                'completed_tasks_count' => count($completedTasks),
+                'completion_rate' => count($tasks) > 0 ? (count($completedTasks) / count($tasks)) * 100 : 0,
+                'projects' => $projects,
+                'tasks' => $tasks,
+                'completed_tasks' => $completedTasks,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'projects_count' => 0,
+                'tasks_count' => 0,
+                'completed_tasks_count' => 0,
+                'completion_rate' => 0,
+                'projects' => [],
+                'tasks' => [],
+                'completed_tasks' => [],
+            ];
+        }
     }
 }

@@ -48,16 +48,16 @@
                     <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-home mr-1"></i> Inicio
                     </a>
-                    <a href="/projects" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/projects?action=projects" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-folder mr-1"></i> Proyectos
                     </a>
-                    <a href="/tasks" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/tasks?action=tasks" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-tasks mr-1"></i> Tareas
                     </a>
-                    <a href="/labels" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/labels?action=labels" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-tags mr-1"></i> Etiquetas
                     </a>
-                    <a href="/users" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/users?action=users" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-users mr-1"></i> Usuarios
                     </a>
                 </div>
