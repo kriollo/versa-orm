@@ -49,7 +49,7 @@ class Task extends BaseModel
      */
     public static function find($id): ?self
     {
-        return static::findOne('tasks', (int)$id);
+        return static::findOne('tasks', (int) $id);
     }
 
     /**

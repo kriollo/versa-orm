@@ -30,7 +30,7 @@ class Label extends BaseModel
      */
     public static function find($id): ?self
     {
-        return static::findOne('labels', (int)$id);
+        return static::findOne('labels', (int) $id);
     }
 
     /**

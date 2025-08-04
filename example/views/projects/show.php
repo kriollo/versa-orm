@@ -119,7 +119,7 @@
                 <!-- Progreso general -->
                 <?php if (count($tasks) > 0): ?>
                     <?php
-                    $completedTasks = array_filter($tasks, fn($t) => $t['status'] === 'done');
+                    $completedTasks = array_filter($tasks, fn ($t) => $t['status'] === 'done');
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
                     <div class="mb-6">
@@ -136,21 +136,21 @@
                 <!-- Lista de tareas por estado -->
                 <?php
                 $tasksByStatus = [
-                    'todo' => array_filter($tasks, fn($t) => $t['status'] === 'todo'),
-                    'in_progress' => array_filter($tasks, fn($t) => $t['status'] === 'in_progress'),
-                    'done' => array_filter($tasks, fn($t) => $t['status'] === 'done'),
+                    'todo' => array_filter($tasks, fn ($t) => $t['status'] === 'todo'),
+                    'in_progress' => array_filter($tasks, fn ($t) => $t['status'] === 'in_progress'),
+                    'done' => array_filter($tasks, fn ($t) => $t['status'] === 'done'),
                 ];
-                $statusNames = [
-                    'todo' => 'Por Hacer',
-                    'in_progress' => 'En Progreso',
-                    'done' => 'Completadas',
-                ];
-                $statusColors = [
-                    'todo' => 'bg-gray-100 text-gray-800',
-                    'in_progress' => 'bg-blue-100 text-blue-800',
-                    'done' => 'bg-green-100 text-green-800',
-                ];
-                ?>
+$statusNames = [
+    'todo' => 'Por Hacer',
+    'in_progress' => 'En Progreso',
+    'done' => 'Completadas',
+];
+$statusColors = [
+    'todo' => 'bg-gray-100 text-gray-800',
+    'in_progress' => 'bg-blue-100 text-blue-800',
+    'done' => 'bg-green-100 text-green-800',
+];
+?>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <?php foreach ($tasksByStatus as $status => $statusTasks): ?>

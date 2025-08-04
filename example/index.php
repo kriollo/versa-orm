@@ -41,9 +41,9 @@ try {
             render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
             break;
 
-        // ======================
-        // PROYECTOS
-        // ======================
+            // ======================
+            // PROYECTOS
+            // ======================
         case 'projects':
             $projects = Project::all();
             $users = User::all();
@@ -217,9 +217,9 @@ try {
             redirect('?action=projects');
             break;
 
-        // ======================
-        // TAREAS
-        // ======================
+            // ======================
+            // TAREAS
+            // ======================
         case 'tasks':
             $tasks = Task::getAll('
                 SELECT t.*, p.name as project_name, u.name as user_name
@@ -340,9 +340,9 @@ try {
             redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             break;
 
-        // ======================
-        // USUARIOS
-        // ======================
+            // ======================
+            // USUARIOS
+            // ======================
         case 'users':
             $users = User::all();
             render('users/index', compact('users'));
@@ -404,9 +404,9 @@ try {
             redirect('?action=users');
             break;
 
-        // ======================
-        // ETIQUETAS
-        // ======================
+            // ======================
+            // ETIQUETAS
+            // ======================
         case 'labels':
             $labels = Label::all();
             // Agregar conteo de tareas para cada etiqueta

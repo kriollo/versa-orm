@@ -31,7 +31,7 @@ class Project extends BaseModel
      */
     public static function find($id): ?self
     {
-        return static::findOne('projects', (int)$id);
+        return static::findOne('projects', (int) $id);
     }
 
     /**

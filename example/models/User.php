@@ -31,7 +31,7 @@ class User extends BaseModel
      */
     public static function find($id): ?self
     {
-        return static::findOne('users', (int)$id);
+        return static::findOne('users', (int) $id);
     }
 
     /**
