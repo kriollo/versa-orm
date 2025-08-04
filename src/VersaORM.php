@@ -226,11 +226,18 @@ class VersaORM
      * Administra el caché interno.
      *
      * @param string $action
-     * @return mixed
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
      */
-    public function cache(string $action)
+    public function cache(string $action, array $params = []): array
     {
-        return $this->execute('cache', ['action' => $action]);
+        $cacheParams = ['action' => $action] + $params;
+        $result = $this->execute('cache', $cacheParams);
+        
+        return [
+            'status' => 'success',
+            'data' => $result
+        ];
     }
 
     /**
