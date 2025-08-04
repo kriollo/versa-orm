@@ -579,9 +579,7 @@ class QueryBuilder
                 'limit' => $subQueryBuilder->limit,
                 'offset' => $subQueryBuilder->offset,
             ];
-        }
-
-        if ($callback instanceof self) {
+        } elseif ($callback instanceof self) {
             // Si ya es un QueryBuilder, usar directamente
             return [
                 'type' => 'subquery',
@@ -597,6 +595,7 @@ class QueryBuilder
             ];
         }
 
+        // @phpstan-ignore-next-line
         throw new VersaORMException('Subquery callback must be a Closure or QueryBuilder instance');
     }
 
@@ -677,6 +676,98 @@ class QueryBuilder
             'first_col' => $firstCol,
             'operator' => $operator,
             'second_col' => $secondCol,
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade un FULL OUTER JOIN.
+     *
+     * @param string $table
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
+     * @return self
+     */
+    public function fullOuterJoin(string $table, string $firstCol, string $operator, string $secondCol): self
+    {
+        $this->joins[] = [
+            'type' => 'full_outer',
+            'table' => $table,
+            'first_col' => $firstCol,
+            'operator' => $operator,
+            'second_col' => $secondCol,
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade un CROSS JOIN.
+     *
+     * @param string $table
+     * @return self
+     */
+    public function crossJoin(string $table): self
+    {
+        $this->joins[] = [
+            'type' => 'cross',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '',
+            'second_col' => '',
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade un NATURAL JOIN.
+     * NATURAL JOIN automáticamente une tablas basado en columnas con el mismo nombre.
+     *
+     * @param string $table
+     * @return self
+     */
+    public function naturalJoin(string $table): self
+    {
+        $this->joins[] = [
+            'type' => 'natural',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '',
+            'second_col' => '',
+        ];
+        return $this;
+    }
+
+    /**
+     * Añade un JOIN con una subconsulta.
+     *
+     * @param \Closure|QueryBuilder $subquery
+     * @param string $alias
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
+     * @return self
+     */
+    public function joinSub($subquery, string $alias, string $firstCol, string $operator, string $secondCol): self
+    {
+        if (!$this->isSafeIdentifier($alias)) {
+            throw new VersaORMException(sprintf('Invalid alias name in joinSub: %s', $alias));
+        }
+
+        if (!$this->isSafeIdentifier($firstCol) || !$this->isSafeIdentifier($secondCol)) {
+            throw new VersaORMException('Invalid column names in joinSub');
+        }
+
+        $subQuery = $this->buildSubQuery($subquery);
+
+        $this->joins[] = [
+            'type' => 'inner',
+            'table' => $alias,
+            'first_col' => $firstCol,
+            'operator' => $operator,
+            'second_col' => $secondCol,
+            'subquery' => $subQuery,
+            'alias' => $alias,
         ];
         return $this;
     }

@@ -14,7 +14,7 @@ class CacheTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
-        
+
         // Usar la misma configuración que TestCase base
         global $config;
         self::$orm = new VersaORM([
@@ -55,7 +55,7 @@ class CacheTest extends TestCase
     {
         // Primero habilitar caché
         self::$orm->cache('enable');
-        
+
         // Limpiar caché
         $result = self::$orm->cache('clear');
         $this->assertIsArray($result);
@@ -76,7 +76,7 @@ class CacheTest extends TestCase
     {
         // Solo probar las acciones básicas disponibles
         self::$orm->cache('enable');
-        
+
         $result = self::$orm->cache('status');
         $this->assertIsArray($result);
         $this->assertEquals('success', $result['status']);
@@ -95,16 +95,16 @@ class CacheTest extends TestCase
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
         self::$orm->cache('enable');
-        
+
         // Primera consulta (debería ir a la base de datos)
         $users1 = self::$orm->table('users')->where('status', '=', 'active')->get();
-        
+
         // Segunda consulta idéntica (debería venir del caché)
         $users2 = self::$orm->table('users')->where('status', '=', 'active')->get();
-        
+
         // Los resultados deberían ser idénticos
         $this->assertEquals($users1, $users2);
-        
+
         // Verificar que el caché está activo
         $status = self::$orm->cache('status');
         $this->assertEquals('success', $status['status']);
@@ -115,25 +115,25 @@ class CacheTest extends TestCase
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
         self::$orm->cache('enable');
-        
+
         // Hacer una consulta para poblar caché
         $initialUsers = self::$orm->table('users')->get();
         $initialCount = count($initialUsers);
-        
+
         // Insertar un nuevo usuario (esto debería invalidar el caché)
         self::$orm->table('users')->insert([
             'name' => 'Cache Test User',
             'email' => 'cache.test@example.com',
-            'status' => 'active'
+            'status' => 'active',
         ]);
-        
+
         // Consultar de nuevo (debería ir a la base de datos, no al caché)
         $updatedUsers = self::$orm->table('users')->get();
         $updatedCount = count($updatedUsers);
-        
+
         // Debería haber un usuario más
         $this->assertEquals($initialCount + 1, $updatedCount);
-        
+
         // Limpiar el usuario de prueba
         self::$orm->table('users')->where('email', '=', 'cache.test@example.com')->delete();
     }
@@ -143,21 +143,21 @@ class CacheTest extends TestCase
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
         self::$orm->cache('enable');
-        
+
         // Hacer una consulta para poblar caché
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
         $originalStatus = $user->status ?? 'active';
-        
+
         // Actualizar el usuario (esto debería invalidar el caché)
         self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
             ->update(['status' => 'updated_test']);
-        
+
         // Consultar de nuevo (debería ir a la base de datos)
         $updatedUser = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
-        
+
         $this->assertEquals('updated_test', $updatedUser->status);
-        
+
         // Restaurar el estado original
         self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
@@ -170,23 +170,23 @@ class CacheTest extends TestCase
         self::$orm->table('users')->insert([
             'name' => 'Delete Test User',
             'email' => 'delete.test@example.com',
-            'status' => 'active'
+            'status' => 'active',
         ]);
-        
+
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
         self::$orm->cache('enable');
-        
+
         // Hacer una consulta para poblar caché
         $user = self::$orm->table('users')->where('email', '=', 'delete.test@example.com')->first();
         $this->assertNotNull($user);
-        
+
         // Eliminar el usuario (esto debería invalidar el caché)
         self::$orm->table('users')->where('email', '=', 'delete.test@example.com')->delete();
-        
+
         // Consultar de nuevo (debería ir a la base de datos)
         $deletedUser = self::$orm->table('users')->where('email', '=', 'delete.test@example.com')->first();
-        
+
         $this->assertNull($deletedUser);
     }
 

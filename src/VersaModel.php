@@ -252,14 +252,14 @@ class VersaModel
             throw new VersaORMException('No ORM instance available for schema validation');
         }
 
-        try {
-            // TODO: Implementar correctamente la obtención del esquema desde Rust
-            // Por ahora, retornamos un array vacío para evitar errores
-            // Cuando el binario Rust soporte correctamente la consulta de esquema,
-            // se debe implementar la llamada correcta
+        // TODO: Implementar correctamente la obtención del esquema desde Rust
+        // Por ahora, retornamos un array vacío para evitar errores
+        // Cuando el binario Rust soporte correctamente la consulta de esquema,
+        // se debe implementar la llamada correcta
 
-            // Temporalmente deshabilitado para evitar errores SQL
-            /*
+        // Temporalmente deshabilitado para evitar errores SQL
+        /*
+        try {
             $result = $orm->exec('schema', [
                 'subject' => 'validationSchema',
                 'table_name' => $this->table
@@ -268,9 +268,6 @@ class VersaModel
             if (is_array($result)) {
                 return $result;
             }
-            */
-
-            return [];
         } catch (\Exception $e) {
             throw new VersaORMException(
                 "Failed to get validation schema: {$e->getMessage()}",
@@ -283,6 +280,9 @@ class VersaModel
                 $e
             );
         }
+        */
+
+        return [];
     }
 
     /**

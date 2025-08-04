@@ -233,10 +233,10 @@ class VersaORM
     {
         $cacheParams = ['action' => $action] + $params;
         $result = $this->execute('cache', $cacheParams);
-        
+
         return [
             'status' => 'success',
-            'data' => $result
+            'data' => $result,
         ];
     }
 
