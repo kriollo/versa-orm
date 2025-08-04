@@ -17,11 +17,14 @@ namespace VersaORM;
  * @license MIT
  */
 
+use VersaORM\Interfaces\TypedModelInterface;
 use VersaORM\Traits\HasRelationships;
+use VersaORM\Traits\HasStrongTyping;
 
-class VersaModel
+class VersaModel implements TypedModelInterface
 {
     use HasRelationships;
+    use HasStrongTyping;
 
     protected string $table;
 
@@ -223,8 +226,7 @@ class VersaModel
 
             // Validar campos requeridos que no están presentes
             foreach ($validationSchema as $fieldName => $columnSchema) {
-                if (
-                    ($columnSchema['is_required'] ?? false) &&
+                if (($columnSchema['is_required'] ?? false) &&
                     !isset($this->attributes[$fieldName]) &&
                     !($columnSchema['is_auto_increment'] ?? false)
                 ) {
@@ -386,6 +388,74 @@ class VersaModel
     }
 
     /**
+     * Carga la configuración de mapeo de tipos desde el archivo JSON.
+     *
+     * @param string $configPath
+     * @return array<string, mixed>
+     * @throws VersaORMException
+     */
+    public static function loadTypeMappingConfig(string $configPath): array
+    {
+        if (!file_exists($configPath)) {
+            throw new VersaORMException("Type mapping configuration file not found: {$configPath}");
+        }
+
+        $content = file_get_contents($configPath);
+        if ($content === false) {
+            throw new VersaORMException("Could not read type mapping configuration file: {$configPath}");
+        }
+
+        $config = json_decode($content, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new VersaORMException('Invalid JSON in type mapping configuration: ' . json_last_error_msg());
+        }
+
+        return $config;
+    }
+
+    /**
+     * Convierte un valor según el mapping avanzado definido en el archivo JSON.
+     *
+     * @param string $field
+     * @param mixed $value
+     * @param array<string, mixed> $fieldSchema
+     * @return mixed
+     * @throws VersaORMException
+     */
+    public function convertValueByTypeMapping(string $field, $value, array $fieldSchema)
+    {
+        $type = $fieldSchema['type'] ?? null;
+        if (!$type) {
+            throw new VersaORMException("Type mapping not defined for field: {$field}");
+        }
+
+        switch ($type) {
+            case 'json':
+                if (is_string($value)) {
+                    return json_decode($value, true);
+                }
+                return $value;
+            case 'uuid':
+                return (string) $value; // Assuming validation has ensured UUID format
+            case 'array':
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    return $decoded !== null ? $decoded : [$value];
+                }
+                return is_array($value) ? $value : [$value];
+            case 'set':
+            case 'enum':
+                if (is_string($value)) {
+                    // For SET and ENUM, we might have comma-separated values
+                    return explode(',', $value);
+                }
+                return is_array($value) ? $value : [$value];
+            default:
+                return $value;
+        }
+    }
+
+    /**
      * Validación básica cuando no se puede obtener el esquema.
      *
      * @return array<string>
@@ -521,8 +591,7 @@ class VersaModel
                 if (method_exists($this, $relationName)) {
                     $relationInstance = $this->{$relationName}();
 
-                    if (
-                        $relationInstance instanceof \VersaORM\Relations\HasMany ||
+                    if ($relationInstance instanceof \VersaORM\Relations\HasMany ||
                         $relationInstance instanceof \VersaORM\Relations\BelongsToMany
                     ) {
                         // Para relaciones "many", convertir cada elemento del array en un modelo
@@ -698,7 +767,7 @@ class VersaModel
     }
 
     /**
-     * Asignar valor a un atributo.
+     * Asignar valor a un atributo con casting automático.
      * Nota: Para mass assignment seguro, usar fill() en su lugar.
      *
      * @param string $key
@@ -706,6 +775,11 @@ class VersaModel
      */
     public function __set(string $key, $value): void
     {
+        // Aplicar mutadores y casting si el trait HasStrongTyping está disponible
+        if (method_exists($this, 'applyMutator')) {
+            $value = $this->applyMutator($key, $value);
+        }
+
         $this->attributes[$key] = $value;
     }
 
@@ -791,7 +865,7 @@ class VersaModel
     }
 
     /**
-     * Obtener el valor de un atributo.
+     * Obtener el valor de un atributo con casting automático.
      *
      * @param string $key
      * @return mixed
@@ -799,7 +873,14 @@ class VersaModel
     public function __get(string $key)
     {
         if (isset($this->attributes[$key])) {
-            return $this->attributes[$key];
+            $value = $this->attributes[$key];
+
+            // Aplicar accesorios y casting si el trait HasStrongTyping está disponible
+            if (method_exists($this, 'applyAccessor')) {
+                $value = $this->applyAccessor($key, $value);
+            }
+
+            return $value;
         }
 
         if ($this->relationLoaded($key)) {

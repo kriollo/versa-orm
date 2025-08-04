@@ -273,8 +273,7 @@ class QueryBuilder
             // Permitir argumentos simples como column names, números, strings
             if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs)) {
                 // Verificar que no contenga patrones maliciosos
-                if (
-                    !str_contains($functionArgs, '--') &&
+                if (!str_contains($functionArgs, '--') &&
                     !str_contains($functionArgs, '/*') &&
                     !str_contains($functionArgs, ';')
                 ) {
@@ -595,7 +594,6 @@ class QueryBuilder
             ];
         }
 
-        // @phpstan-ignore-next-line
         throw new VersaORMException('Subquery callback must be a Closure or QueryBuilder instance');
     }
 
@@ -790,7 +788,6 @@ class QueryBuilder
             $subquery($subQueryBuilder);
             return $this->buildSubquerySql($subQueryBuilder);
         }
-        // @phpstan-ignore-next-line unreachable
         throw new VersaORMException('Subquery must be a Closure or QueryBuilder instance');
     }
 
@@ -836,10 +833,8 @@ class QueryBuilder
         }
 
         // GROUP BY
-        if (!empty($builder->groupBy)) {
-            if (is_array($builder->groupBy)) {
-                $sql .= ' GROUP BY ' . implode(', ', $builder->groupBy);
-            }
+        if (!empty($builder->groupBy) && is_array($builder->groupBy)) {
+            $sql .= ' GROUP BY ' . implode(', ', $builder->groupBy);
         }
 
         // HAVING
@@ -856,11 +851,10 @@ class QueryBuilder
         }
 
         // ORDER BY
-        if ($builder->orderBy && is_array($builder->orderBy)) {
-            if (isset($builder->orderBy['column'], $builder->orderBy['direction']) &&
-                is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])) {
-                $sql .= ' ORDER BY ' . $builder->orderBy['column'] . ' ' . $builder->orderBy['direction'];
-            }
+        if ($builder->orderBy && is_array($builder->orderBy) &&
+            isset($builder->orderBy['column'], $builder->orderBy['direction']) &&
+            is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])) {
+            $sql .= ' ORDER BY ' . $builder->orderBy['column'] . ' ' . $builder->orderBy['direction'];
         }
 
         // LIMIT
