@@ -719,16 +719,38 @@ async fn handle_query_action(
             handle_upsert_many(connection, &table_name, records, unique_keys, update_columns, batch_size).await
         }
         "get" | "first" => {
-            let main_results = connection
-                .execute_raw(&sql, sql_params.clone())
-                .await
-                .map_err(|e| {
-                    (
-                        format!("Query execution failed: {}", e),
-                        Some(sql.to_string()),
-                        Some(sql_params.clone()),
-                    )
-                })?;
+            // Generar clave de caché para consultas SELECT
+            let cache_key = format!("query:{}:{}", sql, serde_json::to_string(&sql_params).unwrap_or_default());
+            
+            // Intentar obtener del caché primero
+            let main_results = if let Some(cached_result) = cache::get_cached_query(&cache_key) {
+                log_debug_msg(&format!("Cache HIT for query: {}", sql));
+                serde_json::from_str(&cached_result).unwrap_or_else(|_| {
+                    log_debug_msg("Failed to deserialize cached result, executing query");
+                    Vec::new()
+                })
+            } else {
+                log_debug_msg(&format!("Cache MISS for query: {}", sql));
+                let results = connection
+                    .execute_raw(&sql, sql_params.clone())
+                    .await
+                    .map_err(|e| {
+                        (
+                            format!("Query execution failed: {}", e),
+                            Some(sql.to_string()),
+                            Some(sql_params.clone()),
+                        )
+                    })?;
+                
+                // Almacenar en caché solo si no hay relaciones (eager loading)
+                if query_builder.with.is_empty() {
+                    let cache_value = serde_json::to_string(&results).unwrap_or_default();
+                    cache::cache_query(&cache_key, &cache_value);
+                    log_debug_msg(&format!("Cached query result with key: {}", cache_key));
+                }
+                
+                results
+            };
 
             // Debug resultados
             log_debug_msg(&format!("Query results count: {}", main_results.len()));
@@ -909,6 +931,10 @@ async fn handle_query_action(
                         )
                     })?;
 
+                // Invalidar caché para esta tabla después de INSERT
+                cache::invalidate_cache_for_table(&table_name);
+                log_debug_msg(&format!("Invalidated cache for table: {}", table_name));
+
                 Ok(serde_json::json!({"status": "Insert successful", "rows_affected": 1}))
             } else {
                 Err(("Insert data is missing".to_string(), None, None))
@@ -1026,6 +1052,10 @@ async fn handle_query_action(
                         )
                     })?;
 
+                // Invalidar caché para esta tabla después de UPDATE
+                cache::invalidate_cache_for_table(&table_name);
+                log_debug_msg(&format!("Invalidated cache for table: {}", table_name));
+
                 Ok(serde_json::Value::Number(serde_json::Number::from(
                     rows_affected,
                 )))
@@ -1052,6 +1082,10 @@ async fn handle_query_action(
                         Some(sql_params.clone()),
                     )
                 })?;
+
+            // Invalidar caché para esta tabla después de DELETE
+            cache::invalidate_cache_for_table(&table_name);
+            log_debug_msg(&format!("Invalidated cache for table: {}", table_name));
 
             Ok(serde_json::Value::Number(serde_json::Number::from(
                 rows_affected,
@@ -1284,9 +1318,37 @@ fn handle_cache_action(params: &serde_json::Value) -> Result<serde_json::Value, 
             cache::clear_cache();
             Ok(serde_json::Value::String("Cache cleared".to_string()))
         }
+        "cleanup" => {
+            cache::cleanup_expired_entries();
+            Ok(serde_json::Value::String("Expired entries cleaned up".to_string()))
+        }
         "status" => {
             let status = cache::cache_status();
             Ok(serde_json::Value::Number(serde_json::Number::from(status)))
+        }
+        "stats" => {
+            Ok(cache::cache_stats())
+        }
+        "config" => {
+            let max_size = params.get("max_size").and_then(|v| v.as_u64()).unwrap_or(1000) as usize;
+            let ttl_secs = params.get("ttl_secs").and_then(|v| v.as_u64()).unwrap_or(300);
+            cache::set_cache_config(max_size, ttl_secs);
+            Ok(serde_json::json!({
+                "message": "Cache configuration updated",
+                "max_size": max_size,
+                "ttl_secs": ttl_secs
+            }))
+        }
+        "invalidate" => {
+            if let Some(table) = params.get("table").and_then(|v| v.as_str()) {
+                cache::invalidate_cache_for_table(table);
+                Ok(serde_json::Value::String(format!("Cache invalidated for table: {}", table)))
+            } else if let Some(pattern) = params.get("pattern").and_then(|v| v.as_str()) {
+                cache::invalidate_cache_by_pattern(pattern);
+                Ok(serde_json::Value::String(format!("Cache invalidated for pattern: {}", pattern)))
+            } else {
+                Err("Either 'table' or 'pattern' parameter is required for invalidate action".to_string())
+            }
         }
         _ => Err(format!("Unknown cache action: {}", action)),
     }

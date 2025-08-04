@@ -1,6 +1,8 @@
 // tests.rs - Centralización de pruebas para VersaORM Rust Core
 // Ejecutar con: cargo test
 
+pub mod cache_tests;
+
 #[cfg(test)]
 mod tests {
     // Tests de validación de SQL safety están en otros módulos
