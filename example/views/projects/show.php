@@ -76,7 +76,7 @@
                 <?php if (!empty($members)): ?>
                     <div class="space-y-2">
                         <?php foreach ($members as $member): ?>
-                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded group">
                                 <div class="flex items-center">
                                     <div class="avatar mr-3" style="background-color: <?= htmlspecialchars($member['avatar_color']) ?>">
                                         <?= strtoupper(substr($member['name'], 0, 2)) ?>
@@ -89,8 +89,11 @@
                                 <form method="POST" action="?action=project_remove_member" class="inline">
                                     <input type="hidden" name="project_id" value="<?= $project->id ?>">
                                     <input type="hidden" name="user_id" value="<?= $member['id'] ?>">
-                                    <button type="submit" class="text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity" onclick="return confirm('¿Estás seguro de que quieres eliminar este miembro?')">
-                                        <i class="fas fa-times"></i>
+                                    <button type="submit"
+                                        class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-all duration-200 opacity-50 group-hover:opacity-100"
+                                        onclick="return confirm('¿Estás seguro de que quieres eliminar este miembro?')"
+                                        title="Eliminar miembro">
+                                        <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
                                 </form>
                             </div>

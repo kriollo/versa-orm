@@ -75,10 +75,10 @@ class Project extends BaseModel
         $project->store();
 
         // Añadir el propietario como miembro del proyecto
-        static::execSql(
-            'INSERT INTO project_users (project_id, user_id) VALUES (?, ?)',
-            [$project->id, $attributes['owner_id']]
-        );
+        $projectUser = static::dispense('project_users');
+        $projectUser->project_id = $project->id;
+        $projectUser->user_id = $attributes['owner_id'];
+        $projectUser->store();
 
         return $project;
     }
@@ -108,8 +108,8 @@ class Project extends BaseModel
      */
     public function owner(): ?array
     {
-        $result = static::getAll('SELECT * FROM users WHERE id = ?', [$this->owner_id]);
-        return $result ? $result[0] : null;
+        $user = User::find($this->owner_id);
+        return $user ? $user->export() : null;
     }
 
     /**
@@ -117,6 +117,7 @@ class Project extends BaseModel
      */
     public function members(): array
     {
+        // Por ahora mantener la consulta SQL directa hasta que podamos implementar el JOIN correctamente
         return static::getAll(
             'SELECT u.* FROM users u
              INNER JOIN project_users pu ON u.id = pu.user_id
@@ -130,6 +131,7 @@ class Project extends BaseModel
      */
     public function tasks(): array
     {
+        // Por ahora mantener la consulta SQL directa
         return static::getAll(
             'SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at DESC',
             [$this->id]
@@ -143,15 +145,16 @@ class Project extends BaseModel
     {
         // Verificar si ya es miembro
         $exists = static::getAll(
-            'SELECT 1 FROM project_users WHERE project_id = ? AND user_id = ?',
+            'SELECT 1 FROM project_users WHERE project_id = ? AND user_id = ? LIMIT 1',
             [$this->id, $userId]
         );
 
         if (empty($exists)) {
-            static::execSql(
-                'INSERT INTO project_users (project_id, user_id) VALUES (?, ?)',
-                [$this->id, $userId]
-            );
+            // Usar VersaModel para crear la relación
+            $projectUser = static::dispense('project_users');
+            $projectUser->project_id = $this->id;
+            $projectUser->user_id = $userId;
+            $projectUser->store();
         }
     }
 
@@ -160,9 +163,19 @@ class Project extends BaseModel
      */
     public function removeMember(int $userId): void
     {
-        static::execSql(
-            'DELETE FROM project_users WHERE project_id = ? AND user_id = ?',
+        // Buscar la relación y eliminarla
+        $relations = static::getAll(
+            'SELECT * FROM project_users WHERE project_id = ? AND user_id = ?',
             [$this->id, $userId]
         );
+
+        foreach ($relations as $relation) {
+            if (isset($relation['id'])) {
+                $projectUser = static::load('project_users', $relation['id']);
+                if ($projectUser) {
+                    $projectUser->trash();
+                }
+            }
+        }
     }
 }

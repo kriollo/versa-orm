@@ -102,8 +102,8 @@ class Task extends BaseModel
      */
     public function project(): ?array
     {
-        $result = static::getAll('SELECT * FROM projects WHERE id = ?', [$this->project_id]);
-        return $result ? $result[0] : null;
+        $project = Project::find($this->project_id);
+        return $project ? $project->export() : null;
     }
 
     /**
@@ -114,8 +114,8 @@ class Task extends BaseModel
         if (!$this->user_id) {
             return null;
         }
-        $result = static::getAll('SELECT * FROM users WHERE id = ?', [$this->user_id]);
-        return $result ? $result[0] : null;
+        $user = User::find($this->user_id);
+        return $user ? $user->export() : null;
     }
 
     /**
@@ -148,16 +148,24 @@ class Task extends BaseModel
      */
     public function setLabels(array $labelIds): void
     {
-        // Eliminar etiquetas actuales
-        static::execSql('DELETE FROM task_labels WHERE task_id = ?', [$this->id]);
+        // Eliminar etiquetas actuales usando VersaModel
+        $existingLabels = static::getAll('SELECT * FROM task_labels WHERE task_id = ?', [$this->id]);
+        foreach ($existingLabels as $existing) {
+            if (isset($existing['id'])) {
+                $taskLabel = static::load('task_labels', $existing['id']);
+                if ($taskLabel) {
+                    $taskLabel->trash();
+                }
+            }
+        }
 
-        // Asignar nuevas etiquetas
+        // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
             if (!empty($labelId)) {
-                static::execSql(
-                    'INSERT INTO task_labels (task_id, label_id) VALUES (?, ?)',
-                    [$this->id, $labelId]
-                );
+                $taskLabel = static::dispense('task_labels');
+                $taskLabel->task_id = $this->id;
+                $taskLabel->label_id = $labelId;
+                $taskLabel->store();
             }
         }
     }
