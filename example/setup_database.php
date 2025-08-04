@@ -123,11 +123,11 @@ try {
     // Verificar si ya hay datos
     $existingUsers = $orm->exec('SELECT COUNT(*) as count FROM users', []);
     $userCount = 0;
-    
+
     if ($existingUsers && is_array($existingUsers) && count($existingUsers) > 0 && isset($existingUsers[0]['count'])) {
         $userCount = (int)$existingUsers[0]['count'];
     }
-    
+
     if ($userCount > 0) {
         echo "⚠ Ya existen datos en la base de datos. Saltando inserción de datos de ejemplo.\n";
     } else {
