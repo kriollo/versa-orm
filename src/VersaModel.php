@@ -13,7 +13,7 @@ namespace VersaORM;
  *
  * @package VersaORM
  * @version 1.0.0
- * @author VersaORM Team
+ * @author  VersaORM Team
  * @license MIT
  */
 
@@ -31,6 +31,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Campos que pueden ser asignados masivamente.
      * Si está vacío, se usa $guarded para determinar campos protegidos.
+     *
      * @var array<string>
      */
     protected array $fillable = [];
@@ -38,6 +39,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Campos protegidos contra asignación masiva.
      * Por defecto protege todos los campos ('*').
+     *
      * @var array<string>
      */
     protected array $guarded = ['*'];
@@ -45,19 +47,26 @@ class VersaModel implements TypedModelInterface
     /**
      * Reglas de validación personalizadas del modelo.
      * Pueden ser sobrescritas por modelos específicos.
+     *
      * @var array<string, array<string>>
      */
     protected array $rules = [];
 
-    /** @var VersaORM|array<string, mixed>|null */
+    /**
+     * @var VersaORM|array<string, mixed>|null
+     */
     private $orm; // Puede ser array (config) o instancia de VersaORM
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed>
+     */
     private array $attributes = [];
-    /** @var VersaORM|null */
+    /**
+     * @var VersaORM|null
+     */
     private static ?VersaORM $ormInstance = null;
 
     /**
-     * @param string $table
+     * @param string                             $table
      * @param VersaORM|array<string, mixed>|null $orm
      */
     public function __construct(string $table, $orm)
@@ -69,7 +78,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Configura la instancia global del ORM para métodos estáticos.
      *
-     * @param VersaORM $orm
+     * @param  VersaORM $orm
      * @return void
      */
     public static function setORM(VersaORM $orm): void
@@ -91,7 +100,7 @@ class VersaModel implements TypedModelInterface
      * Congela o descongela este modelo específico.
      * Esto bloquea operaciones DDL en el esquema relacionado con este modelo.
      *
-     * @param bool $frozen
+     * @param  bool $frozen
      * @return void
      * @throws VersaORMException
      */
@@ -140,7 +149,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Rellena el modelo con un array de atributos respetando Mass Assignment.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed> $attributes
      * @return self
      * @throws VersaORMException
      */
@@ -158,7 +167,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Filtra atributos basándose en las reglas de Mass Assignment.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed> $attributes
      * @return array<string, mixed>
      * @throws VersaORMException
      */
@@ -266,9 +275,9 @@ class VersaModel implements TypedModelInterface
 
             // Validar campos requeridos que no están presentes
             foreach ($validationSchema as $fieldName => $columnSchema) {
-                if (($columnSchema['is_required'] ?? false) &&
-                    !isset($this->attributes[$fieldName]) &&
-                    !($columnSchema['is_auto_increment'] ?? false)
+                if (($columnSchema['is_required'] ?? false)
+                    && !isset($this->attributes[$fieldName])
+                    && !($columnSchema['is_auto_increment'] ?? false)
                 ) {
                     $errors[] = "The {$fieldName} field is required.";
                 }
@@ -313,7 +322,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Procesa el esquema de columnas de Rust y lo convierte a reglas de validación.
      *
-     * @param array<array<string, mixed>> $schemaColumns
+     * @param  array<array<string, mixed>> $schemaColumns
      * @return array<string, array<string, mixed>>
      */
     protected function processSchemaToValidationRules(array $schemaColumns): array
@@ -375,9 +384,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Valida un campo específico contra su esquema de columna.
      *
-     * @param string $field
-     * @param mixed $value
-     * @param array<string, mixed> $columnSchema
+     * @param  string               $field
+     * @param  mixed                $value
+     * @param  array<string, mixed> $columnSchema
      * @return array<string>
      */
     protected function validateFieldAgainstSchema(string $field, $value, array $columnSchema): array
@@ -430,7 +439,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Carga la configuración de mapeo de tipos desde el archivo JSON.
      *
-     * @param string $configPath
+     * @param  string $configPath
      * @return array<string, mixed>
      * @throws VersaORMException
      */
@@ -456,9 +465,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Convierte un valor según el mapping avanzado definido en el archivo JSON.
      *
-     * @param string $field
-     * @param mixed $value
-     * @param array<string, mixed> $fieldSchema
+     * @param  string               $field
+     * @param  mixed                $value
+     * @param  array<string, mixed> $fieldSchema
      * @return mixed
      * @throws VersaORMException
      */
@@ -548,9 +557,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Valida una sola regla contra un campo.
      *
-     * @param string $field
-     * @param mixed $value
-     * @param string $rule
+     * @param  string $field
+     * @param  mixed  $value
+     * @param  string $rule
      * @return string|null
      */
     protected function validateSingleRule(string $field, $value, string $rule): ?string
@@ -602,8 +611,8 @@ class VersaModel implements TypedModelInterface
     /**
      * Cargar los datos del modelo desde la base de datos (método de instancia).
      *
-     * @param array<string, mixed>|int|string $data Puede ser un ID para buscar o un array de datos para cargar directamente
-     * @param string $pk
+     * @param  array<string, mixed>|int|string $data Puede ser un ID para buscar o un array de datos para cargar directamente
+     * @param  string                          $pk
      * @return self
      */
     public function loadInstance($data, string $pk = 'id'): self
@@ -632,8 +641,8 @@ class VersaModel implements TypedModelInterface
                     $relationInstance = $this->{$relationName}();
 
                     if (
-                        $relationInstance instanceof \VersaORM\Relations\HasMany ||
-                        $relationInstance instanceof \VersaORM\Relations\BelongsToMany
+                        $relationInstance instanceof \VersaORM\Relations\HasMany
+                        || $relationInstance instanceof \VersaORM\Relations\BelongsToMany
                     ) {
                         // Para relaciones "many", convertir cada elemento del array en un modelo
                         $modelInstances = [];
@@ -816,7 +825,7 @@ class VersaModel implements TypedModelInterface
      * Nota: Para mass assignment seguro, usar fill() en su lugar.
      *
      * @param string $key
-     * @param mixed $value
+     * @param mixed  $value
      */
     public function __set(string $key, $value): void
     {
@@ -831,12 +840,14 @@ class VersaModel implements TypedModelInterface
     /**
      * Crear una nueva instancia del modelo y rellenarla con atributos seguros.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed> $attributes
      * @return static
      */
     public static function create(array $attributes): static
     {
-        /** @var static $instance */
+        /**
+         * @var static $instance
+         */
         $instance = new static('', self::$ormInstance);
         assert($instance instanceof static);
         $instance->fill($attributes);
@@ -846,7 +857,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Actualizar el modelo con nuevos atributos respetando Mass Assignment.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed> $attributes
      * @return self
      * @throws VersaORMException
      */
@@ -880,7 +891,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Determinar si un atributo puede ser rellenado masivamente.
      *
-     * @param string $key
+     * @param  string $key
      * @return bool
      */
     public function isFillable(string $key): bool
@@ -901,7 +912,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Determinar si un atributo está protegido contra mass assignment.
      *
-     * @param string $key
+     * @param  string $key
      * @return bool
      */
     public function isGuarded(string $key): bool
@@ -912,7 +923,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Obtener el valor de un atributo con casting automático.
      *
-     * @param string $key
+     * @param  string $key
      * @return mixed
      */
     public function __get(string $key)
@@ -942,7 +953,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Obtiene el valor de un atributo del modelo.
      *
-     * @param string $key
+     * @param  string $key
      * @return mixed|null
      */
     public function getAttribute(string $key)
@@ -963,7 +974,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Exportar una colección de modelos a un array de arrays.
      *
-     * @param array<self> $models Array de instancias de Model
+     * @param  array<self> $models Array de instancias de Model
      * @return array<int, array<string, mixed>>
      */
     public static function exportAll(array $models): array
@@ -981,7 +992,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Verificar si existe un atributo.
      *
-     * @param string $key
+     * @param  string $key
      * @return bool
      */
     public function __isset(string $key): bool
@@ -992,7 +1003,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Eliminar un atributo.
      *
-     * @param string $key
+     * @param  string $key
      * @return void
      */
     public function __unset(string $key): void
@@ -1057,7 +1068,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Crea un nuevo modelo vacío (método estático).
      *
-     * @param string $table
+     * @param  string $table
      * @return self
      */
     public static function dispense(string $table): self
@@ -1071,9 +1082,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Cargar un modelo por ID (método estático).
      *
-     * @param string $table
-     * @param int|string $id
-     * @param string $pk
+     * @param  string     $table
+     * @param  int|string $id
+     * @param  string     $pk
      * @return self|null
      */
     public static function load(string $table, $id, string $pk = 'id'): ?self
@@ -1100,7 +1111,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Crea un nuevo modelo vacío (método de instancia).
      *
-     * @param string $table
+     * @param  string $table
      * @return self
      */
     public function dispenseInstance(string $table): self
@@ -1113,9 +1124,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Cuenta registros en una tabla con condiciones opcionales.
      *
-     * @param string $table
-     * @param string|null $conditions
-     * @param array<int, mixed> $bindings
+     * @param  string            $table
+     * @param  string|null       $conditions
+     * @param  array<int, mixed> $bindings
      * @return int
      */
     public static function count(string $table, ?string $conditions = null, array $bindings = []): int
@@ -1138,8 +1149,8 @@ class VersaModel implements TypedModelInterface
     /**
      * Obtiene todos los registros de una tabla como array de arrays.
      *
-     * @param string $sql
-     * @param array<int, mixed> $bindings
+     * @param  string            $sql
+     * @param  array<int, mixed> $bindings
      * @return array<int, array<string, mixed>>
      */
     public static function getAll(string $sql, array $bindings = []): array
@@ -1157,8 +1168,8 @@ class VersaModel implements TypedModelInterface
     /**
      * Obtiene una sola fila como array.
      *
-     * @param string $sql
-     * @param array<int, mixed> $bindings
+     * @param  string            $sql
+     * @param  array<int, mixed> $bindings
      * @return array<string, mixed>|null
      */
     public static function getRow(string $sql, array $bindings = []): ?array
@@ -1176,8 +1187,8 @@ class VersaModel implements TypedModelInterface
     /**
      * Obtiene un solo valor de una consulta.
      *
-     * @param string $sql
-     * @param array<int, mixed> $bindings
+     * @param  string            $sql
+     * @param  array<int, mixed> $bindings
      * @return mixed
      */
     public static function getCell(string $sql, array $bindings = [])
@@ -1198,9 +1209,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Busca un registro por ID y lo devuelve como modelo.
      *
-     * @param string $table
-     * @param mixed $id
-     * @param string $pk
+     * @param  string $table
+     * @param  mixed  $id
+     * @param  string $pk
      * @return self|null
      */
     public static function findOne(string $table, $id, string $pk = 'id'): ?self
@@ -1222,9 +1233,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Busca registros con condiciones y los devuelve como array de modelos.
      *
-     * @param string $table
-     * @param string|null $conditions
-     * @param array<int, mixed> $bindings
+     * @param  string            $table
+     * @param  string|null       $conditions
+     * @param  array<int, mixed> $bindings
      * @return array<int, self>
      */
     public static function findAll(string $table, ?string $conditions = null, array $bindings = []): array
@@ -1255,7 +1266,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Guarda un modelo (método estático de conveniencia).
      *
-     * @param self $model
+     * @param  self $model
      * @return void
      */
     public static function storeModel(self $model): void
@@ -1266,7 +1277,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Elimina un modelo (método estático de conveniencia).
      *
-     * @param self $model
+     * @param  self $model
      * @return void
      */
     public static function trashModel(self $model): void
@@ -1279,7 +1290,7 @@ class VersaModel implements TypedModelInterface
      * Si el modo freeze está desactivado, crea automáticamente las columnas faltantes.
      * Esta funcionalidad emula el comportamiento de RedBeanPHP.
      *
-     * @param VersaORM $orm Instancia del ORM
+     * @param  VersaORM $orm Instancia del ORM
      * @return void
      * @throws VersaORMException
      */
@@ -1354,7 +1365,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Infiere el tipo de columna basado en el valor PHP.
      *
-     * @param mixed $value Valor para inferir el tipo
+     * @param  mixed $value Valor para inferir el tipo
      * @return string Tipo de columna SQL
      */
     private function inferColumnType($value): string
@@ -1397,14 +1408,15 @@ class VersaModel implements TypedModelInterface
     /**
      * Crea una nueva columna en la tabla.
      *
-     * @param VersaORM $orm Instancia del ORM
-     * @param string $columnName Nombre de la columna
-     * @param string $columnType Tipo de la columna
+     * @param  VersaORM $orm        Instancia del ORM
+     * @param  string   $columnName Nombre de la columna
+     * @param  string   $columnType Tipo de la columna
      * @return void
      * @throws VersaORMException
      */
     private function createColumn(VersaORM $orm, string $columnName, string $columnType): void
     {
+        $sql = null;
         try {
             // Construir la consulta ALTER TABLE
             $sql = "ALTER TABLE `{$this->table}` ADD COLUMN `{$columnName}` {$columnType}";
@@ -1418,13 +1430,13 @@ class VersaModel implements TypedModelInterface
             throw new VersaORMException(
                 "Failed to create column '{$columnName}' in table '{$this->table}': " . $e->getMessage(),
                 'COLUMN_CREATION_FAILED',
-                $sql ?? null,
+                $sql,
                 [],
                 [
                     'table' => $this->table,
                     'column' => $columnName,
                     'type' => $columnType,
-                    'sql' => $sql ?? null
+                    'sql' => $sql
                 ]
             );
         }

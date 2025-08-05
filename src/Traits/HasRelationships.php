@@ -13,13 +13,15 @@ use VersaORM\VersaModel;
 
 trait HasRelationships
 {
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed> 
+     */
     protected array $relations = [];
 
     /**
-     * @param class-string<VersaModel> $related
-     * @param string|null $foreignKey
-     * @param string|null $localKey
+     * @param  class-string<VersaModel> $related
+     * @param  string|null              $foreignKey
+     * @param  string|null              $localKey
      * @return HasOne
      */
     public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
@@ -38,9 +40,9 @@ trait HasRelationships
     }
 
     /**
-     * @param class-string<VersaModel> $related
-     * @param string|null $foreignKey
-     * @param string|null $localKey
+     * @param  class-string<VersaModel> $related
+     * @param  string|null              $foreignKey
+     * @param  string|null              $localKey
      * @return HasMany
      */
     public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): HasMany
@@ -59,10 +61,10 @@ trait HasRelationships
     }
 
     /**
-     * @param class-string<VersaModel> $related
-     * @param string|null $foreignKey
-     * @param string|null $ownerKey
-     * @param string|null $relation
+     * @param  class-string<VersaModel> $related
+     * @param  string|null              $foreignKey
+     * @param  string|null              $ownerKey
+     * @param  string|null              $relation
      * @return BelongsTo
      */
     public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null, ?string $relation = null): BelongsTo
@@ -82,12 +84,12 @@ trait HasRelationships
     }
 
     /**
-     * @param class-string<VersaModel> $related
-     * @param string $pivotTable
-     * @param string|null $foreignPivotKey
-     * @param string|null $relatedPivotKey
-     * @param string|null $parentKey
-     * @param string|null $relatedKey
+     * @param  class-string<VersaModel> $related
+     * @param  string                   $pivotTable
+     * @param  string|null              $foreignPivotKey
+     * @param  string|null              $relatedPivotKey
+     * @param  string|null              $parentKey
+     * @param  string|null              $relatedKey
      * @return BelongsToMany
      */
     public function belongsToMany(string $related, string $pivotTable, ?string $foreignPivotKey = null, ?string $relatedPivotKey = null, ?string $parentKey = null, ?string $relatedKey = null): BelongsToMany

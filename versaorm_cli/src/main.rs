@@ -5,7 +5,9 @@
 
 use chrono::{Duration, Local, TimeZone, Utc};
 use clap::Parser;
+use query_planner::{JoinCondition, OrderBy, QueryCondition, QueryOperation, QueryOptimizer};
 use serde::{Deserialize, Serialize};
+use sqlx::{Column, Row}; // Agregamos Column también
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
@@ -141,6 +143,7 @@ mod cache;
 mod connection;
 mod model;
 mod query;
+mod query_planner;
 mod schema;
 mod tests;
 mod utils;
@@ -413,6 +416,12 @@ async fn run_main() {
                     handle_query_action(&connection_manager, &payload.params, &payload.freeze_state)
                         .await
                 }
+                "query_plan" => handle_query_plan_action(&mut connection_manager, &payload.params)
+                    .await
+                    .map_err(|e| (e, None, None)),
+                "explain_plan" => handle_explain_plan_action(&payload.params)
+                    .await
+                    .map_err(|e| (e, None, None)),
                 "schema" => handle_schema_action(
                     &connection_manager,
                     &payload.params,
@@ -2208,4 +2217,353 @@ async fn handle_upsert_many(
         "status": "success",
         "errors": errors
     }))
+}
+
+/// Maneja acciones de planificación de consultas
+async fn handle_query_plan_action(
+    connection_manager: &mut ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    log_info_msg("Processing query plan action");
+
+    // Extraer operaciones del payload
+    let operations = params
+        .get("operations")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "Missing or invalid operations array".to_string())?;
+
+    // Extraer configuración de optimización
+    let optimize_config = params.get("optimize").unwrap_or(&serde_json::Value::Null);
+
+    // Convertir operaciones a formato interno
+    let mut query_operations = Vec::new();
+    for op in operations {
+        let operation = convert_to_query_operation(op)?;
+        query_operations.push(operation);
+    }
+
+    // Crear optimizador con configuración
+    let optimizer = create_optimizer_from_config(optimize_config);
+
+    // Crear plan optimizado
+    let plan = optimizer.create_plan(query_operations);
+
+    log_info_msg(&format!(
+        "Query plan created with {} operations, estimated cost: {}",
+        plan.operations.len(),
+        plan.estimated_cost
+    ));
+
+    // Generar SQL optimizado
+    let (sql, _params) = optimizer.generate_optimized_sql(&plan);
+
+    log_debug_msg(&format!("Generated optimized SQL: {}", sql));
+
+    // Asegurar conexión
+    if connection_manager.get_pool().is_none() {
+        connection_manager
+            .connect()
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+
+    let pool = connection_manager
+        .get_pool()
+        .ok_or("No database connection")?;
+
+    let result = match pool {
+        crate::connection::DatabasePool::MySql(pool) => {
+            match sqlx::query(&sql).fetch_all(pool).await {
+                Ok(rows) => {
+                    let data: Vec<serde_json::Value> = rows
+                        .into_iter()
+                        .map(|row| {
+                            let mut obj = serde_json::Map::new();
+                            for column in row.columns().iter() {
+                                let value = crate::utils::simple_value_placeholder();
+                                obj.insert(column.name().to_string(), value);
+                            }
+                            serde_json::Value::Object(obj)
+                        })
+                        .collect();
+                    serde_json::Value::Array(data)
+                }
+                Err(e) => {
+                    log_error_msg(&format!("Query plan execution failed: {}", e));
+                    return Err(format!("Query execution failed: {}", e));
+                }
+            }
+        }
+        crate::connection::DatabasePool::Postgres(pool) => {
+            match sqlx::query(&sql).fetch_all(pool).await {
+                Ok(rows) => {
+                    let data: Vec<serde_json::Value> = rows
+                        .into_iter()
+                        .map(|row| {
+                            let mut obj = serde_json::Map::new();
+                            for column in row.columns().iter() {
+                                let value = crate::utils::simple_value_placeholder();
+                                obj.insert(column.name().to_string(), value);
+                            }
+                            serde_json::Value::Object(obj)
+                        })
+                        .collect();
+                    serde_json::Value::Array(data)
+                }
+                Err(e) => {
+                    log_error_msg(&format!("Query plan execution failed: {}", e));
+                    return Err(format!("Query execution failed: {}", e));
+                }
+            }
+        }
+        crate::connection::DatabasePool::Sqlite(pool) => {
+            match sqlx::query(&sql).fetch_all(pool).await {
+                Ok(rows) => {
+                    let data: Vec<serde_json::Value> = rows
+                        .into_iter()
+                        .map(|row| {
+                            let mut obj = serde_json::Map::new();
+                            for column in row.columns().iter() {
+                                let value = crate::utils::simple_value_placeholder();
+                                obj.insert(column.name().to_string(), value);
+                            }
+                            serde_json::Value::Object(obj)
+                        })
+                        .collect();
+                    serde_json::Value::Array(data)
+                }
+                Err(e) => {
+                    log_error_msg(&format!("Query plan execution failed: {}", e));
+                    return Err(format!("Query execution failed: {}", e));
+                }
+            }
+        }
+    };
+
+    Ok(result)
+}
+
+/// Maneja acciones de explicación de planes
+async fn handle_explain_plan_action(
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    log_info_msg("Processing explain plan action");
+
+    // Extraer operaciones del payload
+    let operations = params
+        .get("operations")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "Missing or invalid operations array".to_string())?;
+
+    // Extraer configuración de optimización
+    let optimize_config = params.get("optimize").unwrap_or(&serde_json::Value::Null);
+
+    // Convertir operaciones a formato interno
+    let mut query_operations = Vec::new();
+    for op in operations {
+        let operation = convert_to_query_operation(op)?;
+        query_operations.push(operation);
+    }
+
+    // Crear optimizador con configuración
+    let optimizer = create_optimizer_from_config(optimize_config);
+
+    // Crear plan optimizado
+    let plan = optimizer.create_plan(query_operations);
+
+    // Generar SQL para mostrar al usuario
+    let (sql, _) = optimizer.generate_optimized_sql(&plan);
+
+    // Construir respuesta con información del plan
+    let explain_info = serde_json::json!({
+        "plan": {
+            "operations_count": plan.operations.len(),
+            "estimated_cost": plan.estimated_cost,
+            "optimization_notes": plan.optimization_notes,
+            "is_lazy": plan.is_lazy,
+            "can_combine": plan.can_combine
+        },
+        "generated_sql": sql,
+        "original_operations_count": operations.len(),
+        "optimizations_applied": !plan.optimization_notes.is_empty()
+    });
+
+    Ok(explain_info)
+}
+
+/// Convierte una operación JSON a QueryOperation
+fn convert_to_query_operation(op: &serde_json::Value) -> Result<QueryOperation, String> {
+    let operation_type = op
+        .get("operation_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("SELECT")
+        .to_string();
+
+    let table = op
+        .get("table")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing table name".to_string())?
+        .to_string();
+
+    let columns = op
+        .get("columns")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_else(|| vec!["*".to_string()]);
+
+    // Convertir condiciones
+    let conditions = op
+        .get("conditions")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|c| {
+                    Some(QueryCondition {
+                        column: c.get("column")?.as_str()?.to_string(),
+                        operator: c.get("operator")?.as_str()?.to_string(),
+                        value: c.get("value")?.clone(),
+                        connector: c
+                            .get("connector")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("AND")
+                            .to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // Convertir JOINs
+    let join_conditions = op
+        .get("join_conditions")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|j| {
+                    Some(JoinCondition {
+                        table: j.get("table")?.as_str()?.to_string(),
+                        join_type: j.get("join_type")?.as_str()?.to_string(),
+                        local_column: j.get("local_column")?.as_str()?.to_string(),
+                        foreign_column: j.get("foreign_column")?.as_str()?.to_string(),
+                        operator: j
+                            .get("operator")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("=")
+                            .to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // Convertir ORDER BY
+    let ordering = op
+        .get("ordering")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|o| {
+                    Some(OrderBy {
+                        column: o.get("column")?.as_str()?.to_string(),
+                        direction: o.get("direction")?.as_str()?.to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // Otros campos
+    let grouping = op
+        .get("grouping")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let having = op
+        .get("having")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|h| {
+                    Some(QueryCondition {
+                        column: h.get("column")?.as_str()?.to_string(),
+                        operator: h.get("operator")?.as_str()?.to_string(),
+                        value: h.get("value")?.clone(),
+                        connector: h
+                            .get("connector")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("AND")
+                            .to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let limit = op.get("limit").and_then(|v| v.as_i64());
+    let offset = op.get("offset").and_then(|v| v.as_i64());
+
+    // Convertir relaciones (simplificado por ahora)
+    let relations = op
+        .get("relations")
+        .and_then(|v| v.as_array())
+        .map(|_arr| Vec::new()) // Simplificado por ahora
+        .unwrap_or_default();
+
+    Ok(QueryOperation {
+        operation_type,
+        table,
+        columns,
+        conditions,
+        join_conditions,
+        ordering,
+        grouping,
+        having,
+        limit,
+        offset,
+        relations,
+    })
+}
+
+/// Crea un optimizador a partir de la configuración
+fn create_optimizer_from_config(config: &serde_json::Value) -> QueryOptimizer {
+    let mut optimizer = QueryOptimizer::default();
+
+    if let Some(join_opt) = config
+        .get("enable_join_optimization")
+        .and_then(|v| v.as_bool())
+    {
+        optimizer.enable_join_optimization = join_opt;
+    }
+
+    if let Some(where_opt) = config
+        .get("enable_where_combination")
+        .and_then(|v| v.as_bool())
+    {
+        optimizer.enable_where_combination = where_opt;
+    }
+
+    if let Some(subquery_opt) = config
+        .get("enable_subquery_elimination")
+        .and_then(|v| v.as_bool())
+    {
+        optimizer.enable_subquery_elimination = subquery_opt;
+    }
+
+    if let Some(max_ops) = config
+        .get("max_operations_to_combine")
+        .and_then(|v| v.as_u64())
+    {
+        optimizer.max_operations_to_combine = max_ops as usize;
+    }
+
+    optimizer
 }

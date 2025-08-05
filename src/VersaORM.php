@@ -20,7 +20,7 @@ namespace VersaORM;
  *
  * @package VersaORM
  * @version 1.0.0
- * @author VersaORM Team
+ * @author  VersaORM Team
  * @license MIT
  */
 class VersaORM
@@ -28,13 +28,19 @@ class VersaORM
     // Ruta al binario de Rust. Se detecta automáticamente según el OS.
     private string $binaryPath;
 
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed> 
+     */
     private array $config = [];
 
-    /** @var bool Estado global del modo freeze */
+    /**
+     * @var bool Estado global del modo freeze 
+     */
     private bool $isFrozen = false;
 
-    /** @var array<string, bool> Estados freeze por modelo */
+    /**
+     * @var array<string, bool> Estados freeze por modelo 
+     */
     private array $frozenModels = [];
 
     /**
@@ -55,7 +61,7 @@ class VersaORM
     /**
      * Configura la conexión de la instancia.
      *
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed> $config
      * @return void
      */
     public function setConfig(array $config): void
@@ -76,8 +82,8 @@ class VersaORM
     /**
      * Ejecuta un comando usando la configuración de instancia.
      *
-     * @param string $action
-     * @param array<string, mixed> $params
+     * @param  string               $action
+     * @param  array<string, mixed> $params
      * @return mixed
      * @throws VersaORMException
      */
@@ -95,15 +101,24 @@ class VersaORM
 
 
         try {
-            $payload = json_encode([
-                'config' => $this->config,
+            // Convertir configuración para compatibilidad con Rust
+            $rustConfig = $this->config;
+            if (isset($rustConfig['database_type']) && !isset($rustConfig['driver'])) {
+                $rustConfig['driver'] = $rustConfig['database_type'];
+                unset($rustConfig['database_type']);
+            }
+
+            $payload = json_encode(
+                [
+                'config' => $rustConfig,
                 'action' => $action,
                 'params' => $params,
                 'freeze_state' => [
                     'global_frozen' => $this->isFrozen,
                     'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
                 ],
-            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
+            );
 
             // Debug: Log the JSON payload being sent to Rust
             error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
@@ -116,27 +131,33 @@ class VersaORM
                 exit(0);
             }
         } catch (\JsonException $e) {
-            throw new VersaORMException(sprintf(
-                'Failed to encode JSON payload: %s. Data contains invalid characters or circular references.',
-                $e->getMessage()
-            ), 'JSON_ENCODE_ERROR');
+            throw new VersaORMException(
+                sprintf(
+                    'Failed to encode JSON payload: %s. Data contains invalid characters or circular references.',
+                    $e->getMessage()
+                ), 'JSON_ENCODE_ERROR'
+            );
         }
 
         $binaryPath = $this->binaryPath;
 
         if (!file_exists($binaryPath)) {
-            throw new VersaORMException(sprintf(
-                'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
-                $binaryPath
-            ), 'BINARY_NOT_FOUND');
+            throw new VersaORMException(
+                sprintf(
+                    'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
+                    $binaryPath
+                ), 'BINARY_NOT_FOUND'
+            );
         }
 
         // Verificar permisos de ejecución
         if (!is_executable($binaryPath)) {
-            throw new VersaORMException(sprintf(
-                'VersaORM binary is not executable: %s. Please check file permissions.',
-                $binaryPath
-            ), 'BINARY_NOT_EXECUTABLE');
+            throw new VersaORMException(
+                sprintf(
+                    'VersaORM binary is not executable: %s. Please check file permissions.',
+                    $binaryPath
+                ), 'BINARY_NOT_EXECUTABLE'
+            );
         }
 
         // Usar método más seguro con archivo temporal para evitar problemas de escape
@@ -181,7 +202,7 @@ class VersaORM
     /**
      * Crea un QueryBuilder para la tabla especificada.
      *
-     * @param string $table
+     * @param  string $table
      * @return QueryBuilder
      */
     public function table(string $table, ?string $modelClass = null): QueryBuilder
@@ -194,8 +215,8 @@ class VersaORM
     /**
      * Ejecuta una consulta SQL personalizada.
      *
-     * @param string $query
-     * @param array<int, mixed> $bindings
+     * @param  string            $query
+     * @param  array<int, mixed> $bindings
      * @return mixed
      */
     public function exec(string $query, array $bindings = [])
@@ -206,9 +227,9 @@ class VersaORM
     /**
      * Método alias para compatibilidad con código existente.
      *
-     * @param string $query
-     * @param array<int, mixed> $bindings
-     * @return mixed
+     * @param      string            $query
+     * @param      array<int, mixed> $bindings
+     * @return     mixed
      * @deprecated Usa exec() en su lugar
      */
     public function raw(string $query, array $bindings = [])
@@ -219,8 +240,8 @@ class VersaORM
     /**
      * Obtiene el esquema de la base de datos.
      *
-     * @param string $subject
-     * @param string|null $tableName
+     * @param  string      $subject
+     * @param  string|null $tableName
      * @return mixed
      */
     public function schema(string $subject, ?string $tableName = null)
@@ -235,8 +256,8 @@ class VersaORM
     /**
      * Administra el caché interno.
      *
-     * @param string $action
-     * @param array<string, mixed> $params
+     * @param  string               $action
+     * @param  array<string, mixed> $params
      * @return array<string, mixed>
      */
     public function cache(string $action, array $params = []): array
@@ -305,7 +326,7 @@ class VersaORM
      * Activa o desactiva el modo freeze global.
      * En modo freeze, se bloquean todas las operaciones DDL que alteran el esquema.
      *
-     * @param bool $frozen Estado del modo freeze
+     * @param  bool $frozen Estado del modo freeze
      * @return $this
      * @throws VersaORMException
      */
@@ -315,11 +336,13 @@ class VersaORM
 
         // Log de seguridad
         $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
-        $this->logSecurityEvent("FREEZE_MODE_{$status}", [
+        $this->logSecurityEvent(
+            "FREEZE_MODE_{$status}", [
             'global_freeze' => $frozen,
             'timestamp' => date('Y-m-d H:i:s'),
             'trace' => $this->getDebugStackTrace(),
-        ]);
+            ]
+        );
 
         return $this;
     }
@@ -337,8 +360,8 @@ class VersaORM
     /**
      * Congela un modelo específico.
      *
-     * @param string $modelClass Nombre de la clase del modelo
-     * @param bool $frozen Estado del freeze para el modelo
+     * @param  string $modelClass Nombre de la clase del modelo
+     * @param  bool   $frozen     Estado del freeze para el modelo
      * @return $this
      */
     public function freezeModel(string $modelClass, bool $frozen = true): self
@@ -351,11 +374,13 @@ class VersaORM
 
         // Log de seguridad
         $status = $frozen ? 'FROZEN' : 'UNFROZEN';
-        $this->logSecurityEvent("MODEL_{$status}", [
+        $this->logSecurityEvent(
+            "MODEL_{$status}", [
             'model_class' => $modelClass,
             'frozen' => $frozen,
             'timestamp' => date('Y-m-d H:i:s'),
-        ]);
+            ]
+        );
 
         return $this;
     }
@@ -363,7 +388,7 @@ class VersaORM
     /**
      * Verifica si un modelo específico está congelado.
      *
-     * @param string $modelClass Nombre de la clase del modelo
+     * @param  string $modelClass Nombre de la clase del modelo
      * @return bool
      */
     public function isModelFrozen(string $modelClass): bool
@@ -383,9 +408,10 @@ class VersaORM
     /**
      * Valida que una operación sea permitida en modo freeze.
      *
-     * @param string $operation Nombre de la operación
-     * @param string|null $modelClass Clase del modelo si aplica
-     * @param array<string, mixed> $context Contexto adicional
+     * @param  string               $operation  Nombre de la
+     *                                          operación
+     * @param  string|null          $modelClass Clase del modelo si aplica
+     * @param  array<string, mixed> $context    Contexto adicional
      * @return void
      * @throws VersaORMException
      */
@@ -398,7 +424,8 @@ class VersaORM
         // Si es una operación DDL y hay freeze activo, bloquear
         if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
             // Log del intento de alteración
-            $this->logSecurityEvent('FREEZE_VIOLATION_ATTEMPT', [
+            $this->logSecurityEvent(
+                'FREEZE_VIOLATION_ATTEMPT', [
                 'operation' => $operation,
                 'model_class' => $modelClass,
                 'global_frozen' => $isGloballyFrozen,
@@ -406,7 +433,8 @@ class VersaORM
                 'context' => $context,
                 'timestamp' => date('Y-m-d H:i:s'),
                 'trace' => $this->getDebugStackTrace(),
-            ]);
+                ]
+            );
 
             $freezeType = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
             $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
@@ -436,7 +464,7 @@ class VersaORM
     /**
      * Determina si una operación es de tipo DDL (Data Definition Language).
      *
-     * @param string $operation
+     * @param  string $operation
      * @return bool
      */
     private function isDdlOperation(string $operation): bool
@@ -480,8 +508,8 @@ class VersaORM
     /**
      * Registra eventos de seguridad relacionados con el modo freeze.
      *
-     * @param string $event
-     * @param array<string, mixed> $data
+     * @param  string               $event
+     * @param  array<string, mixed> $data
      * @return void
      */
     private function logSecurityEvent(string $event, array $data): void
@@ -518,8 +546,8 @@ class VersaORM
     /**
      * Valida los parámetros de entrada antes de ejecutar comandos.
      *
-     * @param string $action
-     * @param array<string, mixed> $params
+     * @param  string               $action
+     * @param  array<string, mixed> $params
      * @return void
      * @throws VersaORMException
      */
@@ -531,37 +559,39 @@ class VersaORM
         }
 
         // Validar acciones conocidas
-        $validActions = ['query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete'];
+        $validActions = ['query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete', 'query_plan', 'explain_plan'];
         if (!in_array($action, $validActions)) {
-            throw new VersaORMException(sprintf(
-                'Invalid action: %s. Valid actions are: %s',
-                $action,
-                implode(', ', $validActions)
-            ));
+            throw new VersaORMException(
+                sprintf(
+                    'Invalid action: %s. Valid actions are: %s',
+                    $action,
+                    implode(', ', $validActions)
+                )
+            );
         }
 
         // Validaciones específicas por acción
         switch ($action) {
-            case 'raw':
-                if (!isset($params['query']) || !is_string($params['query'])) {
-                    throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
-                }
-                if (strlen($params['query']) > 1000000) { // 1MB limit
-                    throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
-                }
-                break;
+        case 'raw':
+            if (!isset($params['query']) || !is_string($params['query'])) {
+                throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
+            }
+            if (strlen($params['query']) > 1000000) { // 1MB limit
+                throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
+            }
+            break;
 
-            case 'schema':
-                if (!isset($params['subject']) || !is_string($params['subject'])) {
-                    throw new VersaORMException('Schema action requires a valid subject.', 'INVALID_SCHEMA_SUBJECT');
-                }
-                break;
+        case 'schema':
+            if (!isset($params['subject']) || !is_string($params['subject'])) {
+                throw new VersaORMException('Schema action requires a valid subject.', 'INVALID_SCHEMA_SUBJECT');
+            }
+            break;
 
-            case 'cache':
-                if (!isset($params['action']) || !is_string($params['action'])) {
-                    throw new VersaORMException('Cache action requires a valid action parameter.', 'INVALID_CACHE_ACTION');
-                }
-                break;
+        case 'cache':
+            if (!isset($params['action']) || !is_string($params['action'])) {
+                throw new VersaORMException('Cache action requires a valid action parameter.', 'INVALID_CACHE_ACTION');
+            }
+            break;
         }
 
         // Validar que los parámetros no contengan referencias circulares
@@ -572,9 +602,9 @@ class VersaORM
     /**
      * Maneja errores devueltos por el binario de Rust.
      *
-     * @param array<string, mixed> $response
-     * @param string $action
-     * @param array<string, mixed> $params
+     * @param  array<string, mixed> $response
+     * @param  string               $action
+     * @param  array<string, mixed> $params
      * @return void
      * @throws VersaORMException
      */
@@ -678,13 +708,13 @@ class VersaORM
     /**
      * Construye un mensaje de error detallado.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
-     * @param array<string, mixed> $errorDetails
-     * @param string|null $sqlState
-     * @param string $action
-     * @param string|null $query
-     * @param array<int, mixed> $bindings
+     * @param  string               $errorCode
+     * @param  string               $errorMessage
+     * @param  array<string, mixed> $errorDetails
+     * @param  string|null          $sqlState
+     * @param  string               $action
+     * @param  string|null          $query
+     * @param  array<int, mixed>    $bindings
      * @return string
      */
     private function buildDetailedErrorMessage(
@@ -743,8 +773,8 @@ class VersaORM
     /**
      * Construye un mensaje de error simple para modo producción.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
+     * @param  string $errorCode
+     * @param  string $errorMessage
      * @return string
      */
     private function buildSimpleErrorMessage(string $errorCode, string $errorMessage): string
@@ -789,8 +819,8 @@ class VersaORM
     /**
      * Registra información de debug en log.
      *
-     * @param string $message
-     * @param array<string, mixed> $context
+     * @param  string               $message
+     * @param  array<string, mixed> $context
      * @return void
      */
     private function logDebug(string $message, array $context = []): void
@@ -833,11 +863,11 @@ class VersaORM
     /**
      * Registra el error en log si está en modo debug.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
-     * @param string|null $query
-     * @param array<int, mixed> $bindings
-     * @param string $fullMessage
+     * @param  string            $errorCode
+     * @param  string            $errorMessage
+     * @param  string|null       $query
+     * @param  array<int, mixed> $bindings
+     * @param  string            $fullMessage
      * @return void
      */
     private function logError(string $errorCode, string $errorMessage, ?string $query, array $bindings, string $fullMessage): void
@@ -886,7 +916,7 @@ class VersaORM
     /**
      * Limpia archivos de log antiguos (más de 7 días).
      *
-     * @param string $logDir
+     * @param  string $logDir
      * @return void
      */
     private function cleanOldLogs(string $logDir): void
@@ -917,8 +947,8 @@ class VersaORM
     /**
      * Proporciona sugerencias basadas en el tipo de error.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
+     * @param  string $errorCode
+     * @param  string $errorMessage
      * @return array<int, string>
      */
     private function getErrorSuggestions(string $errorCode, string $errorMessage): array
@@ -983,8 +1013,8 @@ class VersaORM
     /**
      * Verifica referencias circulares en los parámetros.
      *
-     * @param mixed $data
-     * @param array<int, string> $visited
+     * @param  mixed              $data
+     * @param  array<int, string> $visited
      * @return void
      * @throws VersaORMException
      */
@@ -1020,8 +1050,8 @@ class VersaORM
     /**
      * Ejecuta el binario usando un archivo temporal para evitar problemas de escape.
      *
-     * @param string $binaryPath
-     * @param string $payload
+     * @param  string $binaryPath
+     * @param  string $payload
      * @return string|null
      */
     private function executeBinaryWithTempFile(string $binaryPath, string $payload): ?string
@@ -1064,19 +1094,19 @@ class VersaORM
         $binaryDir = __DIR__ . '/binary';
 
         switch (PHP_OS_FAMILY) {
-            case 'Windows':
-                $this->binaryPath = $binaryDir . '/versaorm_cli.exe';
-                break;
-            case 'Linux':
-                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
-                break;
-            case 'Darwin': // macOS
-                $this->binaryPath = $binaryDir . '/versaorm_cli_darwin';
-                break;
-            default:
-                // Fallback para sistemas desconocidos
-                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
-                break;
+        case 'Windows':
+            $this->binaryPath = $binaryDir . '/versaorm_cli.exe';
+            break;
+        case 'Linux':
+            $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
+            break;
+        case 'Darwin': // macOS
+            $this->binaryPath = $binaryDir . '/versaorm_cli_darwin';
+            break;
+        default:
+            // Fallback para sistemas desconocidos
+            $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
+            break;
         }
     }
 
@@ -1123,7 +1153,7 @@ class VersaORM
      * Limpia la salida del binario Rust eliminando logs de debug
      * para extraer solo el JSON válido.
      *
-     * @param string $output Salida cruda del binario
+     * @param  string $output Salida cruda del binario
      * @return string JSON limpio
      */
     private function cleanRustDebugOutput(string $output): string

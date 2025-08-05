@@ -1,9 +1,9 @@
+use base64::{Engine as _, engine::general_purpose};
 use chrono::Utc;
+use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 use uuid::Uuid;
-use base64::{Engine as _, engine::general_purpose};
-use regex::Regex;
 
 /// Sanitiza valores de entrada para prevenir inyección SQL
 #[allow(dead_code)]
@@ -58,28 +58,14 @@ pub fn cast_value_by_type(value: Value, data_type: &str) -> Value {
                     }
                 }
                 // Tipos avanzados
-                "json" | "jsonb" => {
-                    cast_json_type(s)
-                }
-                "uuid" => {
-                    cast_uuid_type(s)
-                }
-                "inet" | "cidr" => {
-                    cast_inet_type(s)
-                }
-                "enum" => {
-                    cast_enum_type(s)
-                }
-                "set" => {
-                    cast_set_type(s)
-                }
-                "blob" | "varbinary" | "binary" => {
-                    cast_binary_type(s)
-                }
+                "json" | "jsonb" => cast_json_type(s),
+                "uuid" => cast_uuid_type(s),
+                "inet" | "cidr" => cast_inet_type(s),
+                "enum" => cast_enum_type(s),
+                "set" => cast_set_type(s),
+                "blob" | "varbinary" | "binary" => cast_binary_type(s),
                 // Arrays PostgreSQL
-                t if t.ends_with("[]") => {
-                    cast_postgresql_array(s, t)
-                }
+                t if t.ends_with("[]") => cast_postgresql_array(s, t),
                 _ => Value::String(s),
             }
         }
@@ -137,7 +123,9 @@ pub fn is_safe_identifier(identifier: &str) -> bool {
     }
 
     // Permite caracteres alfanuméricos, guiones bajos y puntos (para columnas calificadas como table.column)
-    identifier.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.')
+    identifier
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '.')
 }
 
 /// Convierte snake_case a camelCase
@@ -298,7 +286,7 @@ pub fn cast_json_type(s: String) -> Value {
 pub fn cast_uuid_type(s: String) -> Value {
     match Uuid::parse_str(&s) {
         Ok(_) => Value::String(s), // UUID válido
-        Err(_) => Value::Null, // UUID inválido
+        Err(_) => Value::Null,     // UUID inválido
     }
 }
 
@@ -307,8 +295,9 @@ pub fn cast_uuid_type(s: String) -> Value {
 pub fn cast_inet_type(s: String) -> Value {
     // Regex básica para validar IPv4 y IPv6
     let ipv4_regex = Regex::new(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:/[0-9]{1,2})?$").unwrap();
-    let ipv6_regex = Regex::new(r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?:/[0-9]{1,3})?$").unwrap();
-    
+    let ipv6_regex =
+        Regex::new(r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?:/[0-9]{1,3})?$").unwrap();
+
     if ipv4_regex.is_match(&s) || ipv6_regex.is_match(&s) {
         Value::String(s)
     } else {
@@ -332,7 +321,10 @@ pub fn cast_set_type(s: String) -> Value {
     if s.is_empty() {
         Value::Array(vec![])
     } else {
-        let values: Vec<Value> = s.split(',').map(|v| Value::String(v.trim().to_string())).collect();
+        let values: Vec<Value> = s
+            .split(',')
+            .map(|v| Value::String(v.trim().to_string()))
+            .collect();
         Value::Array(values)
     }
 }
@@ -355,31 +347,31 @@ pub fn cast_binary_type(s: String) -> Value {
 pub fn cast_postgresql_array(s: String, data_type: &str) -> Value {
     // Extraer el tipo base del array (e.g., "integer[]" -> "integer")
     let base_type = data_type.trim_end_matches("[]");
-    
+
     // Los arrays de PostgreSQL vienen en formato {val1,val2,val3}
     if s.starts_with('{') && s.ends_with('}') {
-        let content = &s[1..s.len()-1]; // Quitar { }
-        
+        let content = &s[1..s.len() - 1]; // Quitar { }
+
         if content.is_empty() {
             return Value::Array(vec![]);
         }
-        
+
         let values: Vec<Value> = content
             .split(',')
             .map(|v| {
                 let trimmed = v.trim();
                 // Quitar comillas si las tiene
                 let cleaned = if trimmed.starts_with('"') && trimmed.ends_with('"') {
-                    &trimmed[1..trimmed.len()-1]
+                    &trimmed[1..trimmed.len() - 1]
                 } else {
                     trimmed
                 };
-                
+
                 // Aplicar casting según el tipo base
                 cast_value_by_type(Value::String(cleaned.to_string()), base_type)
             })
             .collect();
-            
+
         Value::Array(values)
     } else {
         // Si no es un array válido, devolver como string
@@ -409,15 +401,18 @@ pub fn load_type_mappings(json_config: &str) -> Result<Vec<TypeMapping>, String>
     match serde_json::from_str::<Value>(json_config) {
         Ok(config) => {
             let mut mappings = Vec::new();
-            
+
             if let Some(mappings_array) = config.get("type_mappings").and_then(|v| v.as_array()) {
                 for mapping in mappings_array {
                     if let (Some(from), Some(to)) = (
                         mapping.get("from").and_then(|v| v.as_str()),
                         mapping.get("to").and_then(|v| v.as_str()),
                     ) {
-                        let custom_cast = mapping.get("custom_cast").and_then(|v| v.as_str()).map(|s| s.to_string());
-                        
+                        let custom_cast = mapping
+                            .get("custom_cast")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+
                         mappings.push(TypeMapping {
                             from_type: from.to_string(),
                             to_type: to.to_string(),
@@ -426,10 +421,10 @@ pub fn load_type_mappings(json_config: &str) -> Result<Vec<TypeMapping>, String>
                     }
                 }
             }
-            
+
             Ok(mappings)
         }
-        Err(e) => Err(format!("Error parsing type mappings config: {}", e))
+        Err(e) => Err(format!("Error parsing type mappings config: {}", e)),
     }
 }
 
@@ -449,7 +444,7 @@ pub fn apply_custom_mapping(value: Value, original_type: &str, mappings: &[TypeM
             }
         }
     }
-    
+
     // Si no hay mapeo personalizado, devolver el valor original
     value
 }
@@ -498,8 +493,13 @@ pub fn validate_type_compatibility(value: &Value, expected_type: &str) -> Result
             // Para tipos no reconocidos, permitir cualquier valor
         }
     }
-    
+
     Ok(())
+}
+
+/// Convierte un valor de fila a JSON (implementación simplificada)
+pub fn simple_value_placeholder() -> serde_json::Value {
+    serde_json::Value::String("data".to_string())
 }
 
 // mod tests { ... } // Todos los tests han sido movidos a tests.rs

@@ -25,36 +25,57 @@ namespace VersaORM;
  *
  * @package VersaORM
  * @version 1.0.0
- * @author VersaORM Team
+ * @author  VersaORM Team
  * @license MIT
  */
 class QueryBuilder
 {
-    /** @var VersaORM|array<string, mixed>|null */
+    /**
+     * @var VersaORM|array<string, mixed>|null
+     */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     private string $table;
-    /** @var array<int, string|array<string, mixed>> */
+    /**
+     * @var array<int, string|array<string, mixed>>
+     */
     private array $selects = [];
-    /** @var array<int, mixed> */
+    /**
+     * @var array<int, mixed>
+     */
     private array $wheres = [];
-    /** @var array<int, mixed> */
+    /**
+     * @var array<int, mixed>
+     */
     private array $joins = [];
-    /** @var array<string, string|array<string|mixed>>|null */
+    /**
+     * @var array<string, string|array<string|mixed>>|null
+     */
     private ?array $orderBy = null;
     private ?int $limit = null;
     private ?int $offset = null;
-    /** @var array<int, string>|array<string, mixed> */
+    /**
+     * @var array<int, string>|array<string, mixed>
+     */
     private array $groupBy = [];
-    /** @var array<int, mixed> */
+    /**
+     * @var array<int, mixed>
+     */
     private array $having = [];
-    /** @var array<int, array<string, mixed>> */
+    /**
+     * @var array<int, array<string, mixed>>
+     */
     private array $with = [];
     private ?string $modelClass = null;
+    /**
+     * @var array<int, array<string, mixed>>
+     */
+    private array $lazyOperations = [];
+    private bool $isLazy = false;
 
     /**
      * @param VersaORM|array<string, mixed>|null $orm
-     * @param string $table
-     * @param string|null $modelClass
+     * @param string                             $table
+     * @param string|null                        $modelClass
      */
     public function __construct($orm, string $table, ?string $modelClass = null)
     {
@@ -66,7 +87,7 @@ class QueryBuilder
     /**
      * Especifica la tabla de origen para la consulta.
      *
-     * @param string $table
+     * @param  string $table
      * @return self
      */
     public function from(string $table): self
@@ -81,7 +102,7 @@ class QueryBuilder
     /**
      * Especifica las columnas a seleccionar.
      *
-     * @param array<int, string> $columns
+     * @param  array<int, string> $columns
      * @return self
      */
     public function select(array $columns = ['*']): self
@@ -103,8 +124,8 @@ class QueryBuilder
      * Especifica una expresión SQL raw para el SELECT.
      * ADVERTENCIA: Use con precaución para evitar inyección SQL.
      *
-     * @param string $expression
-     * @param array<int, mixed> $bindings
+     * @param  string            $expression
+     * @param  array<int, mixed> $bindings
      * @return self
      */
     public function selectRaw(string $expression, array $bindings = []): self
@@ -129,8 +150,8 @@ class QueryBuilder
     /**
      * Añade una subconsulta al SELECT con alias.
      *
-     * @param \Closure|QueryBuilder $callback
-     * @param string $alias
+     * @param  \Closure|QueryBuilder $callback
+     * @param  string                $alias
      * @return self
      */
     public function selectSubQuery($callback, string $alias): self
@@ -152,7 +173,7 @@ class QueryBuilder
     /**
      * Valida si un nombre de tabla o columna es seguro.
      *
-     * @param string $identifier
+     * @param  string $identifier
      * @return bool
      */
     private function isSafeIdentifier(string $identifier): bool
@@ -191,7 +212,7 @@ class QueryBuilder
     /**
      * Valida un identificador de base de datos individual.
      *
-     * @param string $identifier
+     * @param  string $identifier
      * @return bool
      */
     private function isValidDatabaseIdentifier(string $identifier): bool
@@ -214,7 +235,7 @@ class QueryBuilder
     /**
      * Verifica si un identificador es una función SQL válida.
      *
-     * @param string $identifier
+     * @param  string $identifier
      * @return bool
      */
     private function isSQLFunction(string $identifier): bool
@@ -274,9 +295,9 @@ class QueryBuilder
             if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs)) {
                 // Verificar que no contenga patrones maliciosos
                 if (
-                    !str_contains($functionArgs, '--') &&
-                    !str_contains($functionArgs, '/*') &&
-                    !str_contains($functionArgs, ';')
+                    !str_contains($functionArgs, '--')
+                    && !str_contains($functionArgs, '/*')
+                    && !str_contains($functionArgs, ';')
                 ) {
                     return true;
                 }
@@ -290,7 +311,7 @@ class QueryBuilder
      * Valida si una expresión SQL raw es relativamente segura.
      * NOTA: Esta es una validación básica, no una garantía completa de seguridad.
      *
-     * @param string $expression
+     * @param  string $expression
      * @return bool
      */
     private function isSafeRawExpression(string $expression): bool
@@ -336,9 +357,9 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE.
      *
-     * @param string $column
-     * @param string $operator
-     * @param mixed $value
+     * @param  string $column
+     * @param  string $operator
+     * @param  mixed  $value
      * @return self
      */
     public function where(string $column, string $operator, $value): self
@@ -355,9 +376,9 @@ class QueryBuilder
     /**
      * Añade una cláusula OR WHERE.
      *
-     * @param string $column
-     * @param string $operator
-     * @param mixed $value
+     * @param  string $column
+     * @param  string $operator
+     * @param  mixed  $value
      * @return self
      */
     public function orWhere(string $column, string $operator, $value): self
@@ -374,8 +395,8 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE IN.
      *
-     * @param string $column
-     * @param array<int, mixed> $values
+     * @param  string            $column
+     * @param  array<int, mixed> $values
      * @return self
      */
     public function whereIn(string $column, array $values): self
@@ -392,8 +413,8 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE NOT IN.
      *
-     * @param string $column
-     * @param array<int, mixed> $values
+     * @param  string            $column
+     * @param  array<int, mixed> $values
      * @return self
      */
     public function whereNotIn(string $column, array $values): self
@@ -410,7 +431,7 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE IS NULL.
      *
-     * @param string $column
+     * @param  string $column
      * @return self
      */
     public function whereNull(string $column): self
@@ -427,7 +448,7 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE IS NOT NULL.
      *
-     * @param string $column
+     * @param  string $column
      * @return self
      */
     public function whereNotNull(string $column): self
@@ -444,9 +465,9 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE BETWEEN.
      *
-     * @param string $column
-     * @param mixed $min
-     * @param mixed $max
+     * @param  string $column
+     * @param  mixed  $min
+     * @param  mixed  $max
      * @return self
      */
     public function whereBetween(string $column, $min, $max): self
@@ -463,8 +484,8 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE con SQL raw.
      *
-     * @param string $sql
-     * @param array<int, mixed> $bindings
+     * @param  string            $sql
+     * @param  array<int, mixed> $bindings
      * @return self
      */
     public function whereRaw(string $sql, array $bindings = []): self
@@ -485,9 +506,9 @@ class QueryBuilder
     /**
      * Añade una subconsulta en WHERE.
      *
-     * @param string $column
-     * @param string $operator
-     * @param \Closure|QueryBuilder $callback
+     * @param  string                $column
+     * @param  string                $operator
+     * @param  \Closure|QueryBuilder $callback
      * @return self
      */
     public function whereSubQuery(string $column, string $operator, $callback): self
@@ -516,7 +537,7 @@ class QueryBuilder
     /**
      * Añade una subconsulta EXISTS en WHERE.
      *
-     * @param \Closure|QueryBuilder $callback
+     * @param  \Closure|QueryBuilder $callback
      * @return self
      */
     public function whereExists($callback): self
@@ -536,7 +557,7 @@ class QueryBuilder
     /**
      * Añade una subconsulta NOT EXISTS en WHERE.
      *
-     * @param \Closure|QueryBuilder $callback
+     * @param  \Closure|QueryBuilder $callback
      * @return self
      */
     public function whereNotExists($callback): self
@@ -556,7 +577,7 @@ class QueryBuilder
     /**
      * Construye una subconsulta desde un callback o QueryBuilder.
      *
-     * @param \Closure|QueryBuilder $callback
+     * @param  \Closure|QueryBuilder $callback
      * @return array<string, mixed>
      */
     private function buildSubQuery($callback): array
@@ -601,9 +622,9 @@ class QueryBuilder
     /**
      * Añade una cláusula HAVING.
      *
-     * @param string $column
-     * @param string $operator
-     * @param mixed $value
+     * @param  string $column
+     * @param  string $operator
+     * @param  mixed  $value
      * @return self
      */
     public function having(string $column, string $operator, $value): self
@@ -619,10 +640,10 @@ class QueryBuilder
     /**
      * Añade un INNER JOIN.
      *
-     * @param string $table
-     * @param string $firstCol
-     * @param string $operator
-     * @param string $secondCol
+     * @param  string $table
+     * @param  string $firstCol
+     * @param  string $operator
+     * @param  string $secondCol
      * @return self
      */
     public function join(string $table, string $firstCol, string $operator, string $secondCol): self
@@ -640,10 +661,10 @@ class QueryBuilder
     /**
      * Añade un LEFT JOIN.
      *
-     * @param string $table
-     * @param string $firstCol
-     * @param string $operator
-     * @param string $secondCol
+     * @param  string $table
+     * @param  string $firstCol
+     * @param  string $operator
+     * @param  string $secondCol
      * @return self
      */
     public function leftJoin(string $table, string $firstCol, string $operator, string $secondCol): self
@@ -661,10 +682,10 @@ class QueryBuilder
     /**
      * Añade un RIGHT JOIN.
      *
-     * @param string $table
-     * @param string $firstCol
-     * @param string $operator
-     * @param string $secondCol
+     * @param  string $table
+     * @param  string $firstCol
+     * @param  string $operator
+     * @param  string $secondCol
      * @return self
      */
     public function rightJoin(string $table, string $firstCol, string $operator, string $secondCol): self
@@ -682,10 +703,10 @@ class QueryBuilder
     /**
      * Añade un FULL OUTER JOIN.
      *
-     * @param string $table
-     * @param string $firstCol
-     * @param string $operator
-     * @param string $secondCol
+     * @param  string $table
+     * @param  string $firstCol
+     * @param  string $operator
+     * @param  string $secondCol
      * @return self
      */
     public function fullOuterJoin(string $table, string $firstCol, string $operator, string $secondCol): self
@@ -703,7 +724,7 @@ class QueryBuilder
     /**
      * Añade un CROSS JOIN.
      *
-     * @param string $table
+     * @param  string $table
      * @return self
      */
     public function crossJoin(string $table): self
@@ -722,7 +743,7 @@ class QueryBuilder
      * Añade un NATURAL JOIN.
      * NATURAL JOIN automáticamente une tablas basado en columnas con el mismo nombre.
      *
-     * @param string $table
+     * @param  string $table
      * @return self
      */
     public function naturalJoin(string $table): self
@@ -740,11 +761,11 @@ class QueryBuilder
     /**
      * Añade un JOIN con una subconsulta.
      *
-     * @param \Closure|QueryBuilder $subquery
-     * @param string $alias
-     * @param string $firstCol
-     * @param string $operator
-     * @param string $secondCol
+     * @param  \Closure|QueryBuilder $subquery
+     * @param  string                $alias
+     * @param  string                $firstCol
+     * @param  string                $operator
+     * @param  string                $secondCol
      * @return self
      */
     public function joinSub($subquery, string $alias, string $firstCol, string $operator, string $secondCol): self
@@ -775,7 +796,7 @@ class QueryBuilder
     /**
      * Converts a subquery (QueryBuilder or Closure) to a SQL string.
      *
-     * @param \Closure|QueryBuilder $subquery
+     * @param  \Closure|QueryBuilder $subquery
      * @return string
      */
     private function convertSubqueryToSql($subquery): string
@@ -795,7 +816,7 @@ class QueryBuilder
     /**
      * Builds SQL string from a QueryBuilder instance.
      *
-     * @param QueryBuilder $builder
+     * @param  QueryBuilder $builder
      * @return string
      */
     private function buildSubquerySql(self $builder): string
@@ -853,9 +874,9 @@ class QueryBuilder
 
         // ORDER BY
         if (
-            $builder->orderBy && is_array($builder->orderBy) &&
-            isset($builder->orderBy['column'], $builder->orderBy['direction']) &&
-            is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])
+            $builder->orderBy && is_array($builder->orderBy)
+            && isset($builder->orderBy['column'], $builder->orderBy['direction'])
+            && is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])
         ) {
             $sql .= ' ORDER BY ' . $builder->orderBy['column'] . ' ' . $builder->orderBy['direction'];
         }
@@ -871,7 +892,7 @@ class QueryBuilder
     /**
      * Agrupa los resultados.
      *
-     * @param array<int, string>|string $columns
+     * @param  array<int, string>|string $columns
      * @return self
      */
     public function groupBy(array|string $columns): self
@@ -894,8 +915,8 @@ class QueryBuilder
      * Especifica una expresión SQL raw para GROUP BY.
      * ADVERTENCIA: Use con precaución para evitar inyección SQL.
      *
-     * @param string $expression
-     * @param array<int, mixed> $bindings
+     * @param  string            $expression
+     * @param  array<int, mixed> $bindings
      * @return self
      */
     public function groupByRaw(string $expression, array $bindings = []): self
@@ -920,8 +941,8 @@ class QueryBuilder
     /**
      * Ordena los resultados.
      *
-     * @param string $column
-     * @param string $direction
+     * @param  string $column
+     * @param  string $direction
      * @return self
      */
     public function orderBy(string $column, string $direction = 'asc'): self
@@ -945,8 +966,8 @@ class QueryBuilder
      * Especifica una expresión SQL raw para ORDER BY.
      * ADVERTENCIA: Use con precaución para evitar inyección SQL.
      *
-     * @param string $expression
-     * @param array<int, mixed> $bindings
+     * @param  string            $expression
+     * @param  array<int, mixed> $bindings
      * @return self
      */
     public function orderByRaw(string $expression, array $bindings = []): self
@@ -971,7 +992,7 @@ class QueryBuilder
     /**
      * Limita el número de resultados.
      *
-     * @param int $count
+     * @param  int $count
      * @return self
      */
     public function limit(int|string $count): self
@@ -983,7 +1004,7 @@ class QueryBuilder
     /**
      * Especifica el punto de inicio para la paginación.
      *
-     * @param int $count
+     * @param  int $count
      * @return self
      */
     public function offset(int $count): self
@@ -995,7 +1016,7 @@ class QueryBuilder
     /**
      * Especifica las relaciones a cargar.
      *
-     * @param array<int, string>|string $relations
+     * @param  array<int, string>|string $relations
      * @return self
      */
     public function with($relations): self
@@ -1035,17 +1056,23 @@ class QueryBuilder
             switch ($relationType) {
                 case 'HasOne':
                 case 'HasMany':
-                    /** @var \VersaORM\Relations\HasOne|\VersaORM\Relations\HasMany $relationInstance */
+                    /**
+                     * @var \VersaORM\Relations\HasOne|\VersaORM\Relations\HasMany $relationInstance
+                     */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
                     $relationData['local_key'] = $relationInstance->localKey;
                     break;
                 case 'BelongsTo':
-                    /** @var \VersaORM\Relations\BelongsTo $relationInstance */
+                    /**
+                     * @var \VersaORM\Relations\BelongsTo $relationInstance
+                     */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
                     $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
                     break;
                 case 'BelongsToMany':
-                    /** @var \VersaORM\Relations\BelongsToMany $relationInstance */
+                    /**
+                     * @var \VersaORM\Relations\BelongsToMany $relationInstance
+                     */
                     $relationData['pivot_table'] = $relationInstance->pivotTable;
                     $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
                     $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
@@ -1077,7 +1104,9 @@ class QueryBuilder
         $modelClass = $this->modelClass ?: VersaModel::class;
         foreach ($results as $result) {
             if (is_array($result)) {
-                /** @var VersaModel $model */
+                /**
+                 * @var VersaModel $model
+                 */
                 $model = new $modelClass($this->table, $this->orm);
                 assert($model instanceof VersaModel);
                 $model->loadInstance($result);
@@ -1135,7 +1164,9 @@ class QueryBuilder
         $result = $this->execute('first');
         if (is_array($result) && !empty($result)) {
             $modelClass = $this->modelClass ?: VersaModel::class;
-            /** @var VersaModel $model */
+            /**
+             * @var VersaModel $model
+             */
             $model = new $modelClass($this->table, $this->orm);
             assert($model instanceof VersaModel);
             $model->loadInstance($result);
@@ -1147,8 +1178,8 @@ class QueryBuilder
     /**
      * Busca un registro por su clave primaria.
      *
-     * @param mixed $id
-     * @param string $pk
+     * @param  mixed  $id
+     * @param  string $pk
      * @return mixed
      */
     public function find($id, string $pk = 'id')
@@ -1171,7 +1202,9 @@ class QueryBuilder
         $result = $this->execute('first');
         if (is_array($result) && !empty($result)) {
             $modelClass = $this->modelClass ?: VersaModel::class;
-            /** @var VersaModel $model */
+            /**
+             * @var VersaModel $model
+             */
             $model = new $modelClass($this->table, $this->orm);
             assert($model instanceof VersaModel);
             $model->loadInstance($result);
@@ -1207,7 +1240,7 @@ class QueryBuilder
     /**
      * Inserta un nuevo registro.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed> $data
      * @return bool
      */
     public function insert(array $data): bool
@@ -1219,7 +1252,7 @@ class QueryBuilder
     /**
      * Inserta un registro y devuelve su ID autoincremental.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed> $data
      * @return int|string|null
      */
     public function insertGetId(array $data)
@@ -1234,7 +1267,7 @@ class QueryBuilder
     /**
      * Actualiza los registros que coincidan con las cláusulas WHERE.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed> $data
      * @return self
      */
     public function update(array $data): self
@@ -1288,8 +1321,8 @@ class QueryBuilder
     /**
      * Ejecuta la consulta usando la instancia de VersaORM.
      *
-     * @param string $method
-     * @param array<string, mixed>|null $data
+     * @param  string                    $method
+     * @param  array<string, mixed>|null $data
      * @return mixed
      */
     private function execute(string $method, ?array $data = null)
@@ -1328,8 +1361,8 @@ class QueryBuilder
     }
 
     /**
-     * @param string $method
-     * @param array<string, mixed>|null $data
+     * @param  string                    $method
+     * @param  array<string, mixed>|null $data
      * @return array<string, mixed>
      */
     private function buildPayload(string $method, ?array $data = null): array
@@ -1392,7 +1425,9 @@ class QueryBuilder
     public function getModelInstance(): VersaModel
     {
         $modelClass = $this->modelClass ?: VersaModel::class;
-        /** @var VersaModel $model */
+        /**
+         * @var VersaModel $model
+         */
         $model = new $modelClass($this->table, $this->orm);
         assert($model instanceof VersaModel);
         return $model;
@@ -1406,8 +1441,9 @@ class QueryBuilder
      * Inserta múltiples registros en una sola operación batch optimizada.
      * Utiliza INSERT INTO table (cols) VALUES (val1), (val2), ... para máximo rendimiento.
      *
-     * @param array<int, array<string, mixed>> $records Array de arrays asociativos con los datos a insertar
-     * @param int $batchSize Tamaño del lote para operaciones muy grandes (default: 1000)
+     * @param  array<int, array<string, mixed>> $records   Array de arrays asociativos con los datos a insertar
+     * @param  int                              $batchSize Tamaño del lote para operaciones muy grandes (default:
+     *                                                     1000)
      * @return array<string, mixed> Información sobre la operación: total_inserted, batches_processed, etc.
      * @throws VersaORMException Si los datos son inválidos o la operación falla
      */
@@ -1426,12 +1462,14 @@ class QueryBuilder
 
             $currentKeys = array_keys($record);
             if ($currentKeys !== $firstKeys) {
-                throw new VersaORMException(sprintf(
-                    'Record at index %d has different columns. Expected: [%s], Got: [%s]',
-                    $index,
-                    implode(', ', $firstKeys),
-                    implode(', ', $currentKeys)
-                ));
+                throw new VersaORMException(
+                    sprintf(
+                        'Record at index %d has different columns. Expected: [%s], Got: [%s]',
+                        $index,
+                        implode(', ', $firstKeys),
+                        implode(', ', $currentKeys)
+                    )
+                );
             }
 
             // Validar nombres de columnas por seguridad
@@ -1464,8 +1502,9 @@ class QueryBuilder
      * Actualiza múltiples registros que coincidan con las condiciones WHERE.
      * Utiliza transacciones y consultas optimizadas según la base de datos.
      *
-     * @param array<string, mixed> $data Datos a actualizar
-     * @param int $maxRecords Límite máximo de registros a actualizar por seguridad (default: 10000)
+     * @param  array<string, mixed> $data       Datos a actualizar
+     * @param  int                  $maxRecords Límite máximo de registros a actualizar por seguridad (default:
+     *                                          10000)
      * @return array<string, mixed> Información sobre la operación: rows_affected, etc.
      * @throws VersaORMException Si no hay condiciones WHERE o la operación falla
      */
@@ -1504,7 +1543,7 @@ class QueryBuilder
      * Elimina múltiples registros que coincidan con las condiciones WHERE.
      * Utiliza DELETE optimizado con límites de seguridad.
      *
-     * @param int $maxRecords Límite máximo de registros a eliminar por seguridad (default: 10000)
+     * @param  int $maxRecords Límite máximo de registros a eliminar por seguridad (default: 10000)
      * @return array<string, mixed> Información sobre la operación: rows_affected, etc.
      * @throws VersaORMException Si no hay condiciones WHERE o la operación falla
      */
@@ -1531,10 +1570,11 @@ class QueryBuilder
      * Upsert (INSERT ... ON DUPLICATE KEY UPDATE) para múltiples registros.
      * Inserta registros nuevos o actualiza los existentes basado en claves únicas.
      *
-     * @param array<int, array<string, mixed>> $records Array de registros
-     * @param array<int, string> $uniqueKeys Columnas que determinan duplicados
-     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado (opcional)
-     * @param int $batchSize Tamaño del lote (default: 1000)
+     * @param  array<int, array<string, mixed>> $records       Array de registros
+     * @param  array<int, string>               $uniqueKeys    Columnas que determinan duplicados
+     * @param  array<int, string>               $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @param  int                              $batchSize     Tamaño del lote
+     *                                                         (default: 1000)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -1585,5 +1625,249 @@ class QueryBuilder
 
         $result = $this->execute('upsertMany', $params);
         return is_array($result) ? $result : [];
+    }
+
+    /**
+     * Activa el modo lazy - las consultas se acumulan pero no se ejecutan hasta collect()
+     *
+     * @return self
+     */
+    public function lazy(): self
+    {
+        $this->isLazy = true;
+        return $this;
+    }
+
+    /**
+     * Ejecuta todas las operaciones lazy acumuladas y devuelve resultados
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function collect(): array
+    {
+        if (!$this->isLazy) {
+            // Si no es lazy, ejecutar normalmente
+            return $this->get();
+        }
+
+        // Agregar la operación actual a las operaciones lazy
+        $this->addCurrentOperationToLazy();
+
+        // Optimizar el plan si hay múltiples operaciones
+        if (count($this->lazyOperations) > 1) {
+            return $this->executeOptimizedPlan();
+        }
+
+        // Si solo hay una operación, ejecutar normalmente
+        return $this->get();
+    }
+
+    /**
+     * Agrega la operación actual al conjunto de operaciones lazy
+     */
+    private function addCurrentOperationToLazy(): void
+    {
+        $operation = [
+            'operation_type' => 'SELECT',
+            'table' => $this->table,
+            'columns' => empty($this->selects) ? ['*'] : $this->selects,
+            'conditions' => $this->convertWheresToConditions(),
+            'join_conditions' => $this->convertJoinsToConditions(),
+            'ordering' => $this->convertOrderByToArray(),
+            'grouping' => $this->groupBy,
+            'having' => $this->convertHavingToConditions(),
+            'limit' => $this->limit,
+            'offset' => $this->offset,
+            'relations' => $this->with,
+        ];
+
+        $this->lazyOperations[] = $operation;
+    }
+
+    /**
+     * Convierte las condiciones WHERE al formato del planificador
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function convertWheresToConditions(): array
+    {
+        $conditions = [];
+        foreach ($this->wheres as $where) {
+            $conditions[] = [
+                'column' => $where['column'] ?? '',
+                'operator' => $where['operator'] ?? '=',
+                'value' => $where['value'] ?? null,
+                'connector' => $where['connector'] ?? 'AND',
+            ];
+        }
+        return $conditions;
+    }
+
+    /**
+     * Convierte los JOINs al formato del planificador
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function convertJoinsToConditions(): array
+    {
+        $joinConditions = [];
+        foreach ($this->joins as $join) {
+            $joinConditions[] = [
+                'table' => $join['table'] ?? '',
+                'join_type' => strtoupper($join['type'] ?? 'INNER'),
+                'local_column' => $join['first'] ?? '',
+                'foreign_column' => $join['second'] ?? '',
+                'operator' => $join['operator'] ?? '=',
+            ];
+        }
+        return $joinConditions;
+    }
+
+    /**
+     * Convierte ORDER BY al formato del planificador
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function convertOrderByToArray(): array
+    {
+        if ($this->orderBy === null) {
+            return [];
+        }
+
+        // Verificar si es una expresión raw
+        if (isset($this->orderBy['type']) && $this->orderBy['type'] === 'raw') {
+            return [
+                [
+                    'column' => $this->orderBy['expression'] ?? '',
+                    'direction' => 'ASC', // Raw expressions no tienen dirección específica
+                ]
+            ];
+        }
+
+        // Orden normal con columna y dirección
+        $direction = $this->orderBy['direction'] ?? 'ASC';
+        if (is_array($direction)) {
+            $direction = 'ASC'; // Fallback si es array por alguna razón
+        }
+
+        return [
+            [
+                'column' => $this->orderBy['column'] ?? '',
+                'direction' => strtoupper((string)$direction),
+            ]
+        ];
+    }
+
+    /**
+     * Convierte las condiciones HAVING al formato del planificador
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function convertHavingToConditions(): array
+    {
+        $conditions = [];
+        foreach ($this->having as $having) {
+            $conditions[] = [
+                'column' => $having['column'] ?? '',
+                'operator' => $having['operator'] ?? '=',
+                'value' => $having['value'] ?? null,
+                'connector' => $having['connector'] ?? 'AND',
+            ];
+        }
+        return $conditions;
+    }
+
+    /**
+     * Ejecuta el plan optimizado usando el planificador de consultas de Rust
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function executeOptimizedPlan(): array
+    {
+        if (!($this->orm instanceof VersaORM)) {
+            throw new \Exception('VersaORM instance is required for lazy execution.');
+        }
+
+        // Preparar payload para el planificador de consultas
+        $params = [
+            'action' => 'query_plan',
+            'operations' => $this->lazyOperations,
+            'optimize' => [
+                'enable_join_optimization' => true,
+                'enable_where_combination' => true,
+                'enable_subquery_elimination' => true,
+                'max_operations_to_combine' => 5,
+            ],
+        ];
+
+        // Ejecutar usando reflexión para acceder al método execute privado
+        $reflection = new \ReflectionClass($this->orm);
+        $executeMethod = $reflection->getMethod('execute');
+        $executeMethod->setAccessible(true);
+
+        $result = $executeMethod->invoke($this->orm, 'query_plan', $params);
+
+        // Limpiar operaciones lazy después de la ejecución
+        $this->lazyOperations = [];
+        $this->isLazy = false;
+
+        return $result;
+    }
+
+    /**
+     * Encadena múltiples operaciones en modo lazy
+     *
+     * @param  QueryBuilder $otherQuery
+     * @return self
+     */
+    public function chain(QueryBuilder $otherQuery): self
+    {
+        if (!$this->isLazy) {
+            $this->lazy();
+        }
+
+        // Agregar la operación actual
+        $this->addCurrentOperationToLazy();
+
+        // Agregar las operaciones del otro query
+        $otherQuery->addCurrentOperationToLazy();
+        $this->lazyOperations = array_merge($this->lazyOperations, $otherQuery->lazyOperations);
+
+        return $this;
+    }
+
+    /**
+     * Obtiene información sobre el plan de ejecución sin ejecutarlo
+     *
+     * @return array<string, mixed>
+     */
+    public function explain(): array
+    {
+        if (!$this->isLazy || empty($this->lazyOperations)) {
+            $this->addCurrentOperationToLazy();
+        }
+
+        // Preparar parámetros para el planificador
+        $params = [
+            'operations' => $this->lazyOperations,
+            'optimize' => [
+                'enable_join_optimization' => true,
+                'enable_where_combination' => true,
+                'enable_subquery_elimination' => true,
+                'max_operations_to_combine' => 5,
+            ],
+        ];
+
+        // Validar que tenemos una instancia válida de VersaORM
+        if (!($this->orm instanceof VersaORM)) {
+            throw new \Exception('VersaORM instance is required for explain.');
+        }
+
+        // Usar el método execute estándar para que incluya la configuración
+        $reflection = new \ReflectionClass($this->orm);
+        $executeMethod = $reflection->getMethod('execute');
+        $executeMethod->setAccessible(true);
+
+        return $executeMethod->invoke($this->orm, 'explain_plan', $params);
     }
 }

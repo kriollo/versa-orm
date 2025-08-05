@@ -12,22 +12,26 @@ use Exception;
 class VersaORMException extends Exception
 {
     private ?string $query;
-    /** @var array<int, mixed> */
+    /**
+     * @var array<int, mixed> 
+     */
     private array $bindings;
     private string $errorCode;
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed> 
+     */
     private array $errorDetails;
     private ?string $sqlState;
 
     /**
-     * @param string $message
-     * @param string $errorCode
-     * @param string|null $query
-     * @param array<int, mixed> $bindings
+     * @param string               $message
+     * @param string               $errorCode
+     * @param string|null          $query
+     * @param array<int, mixed>    $bindings
      * @param array<string, mixed> $errorDetails
-     * @param string|null $sqlState
-     * @param int $code
-     * @param Exception|null $previous
+     * @param string|null          $sqlState
+     * @param int                  $code
+     * @param Exception|null       $previous
      */
     public function __construct(
         string $message,

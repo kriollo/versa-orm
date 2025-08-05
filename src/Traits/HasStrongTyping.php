@@ -105,7 +105,9 @@ trait HasStrongTyping
             if ($reflectionClass->hasMethod('definePropertyTypes')) {
                 $method = $reflectionClass->getMethod('definePropertyTypes');
                 if ($method->isStatic()) {
-                    /** @var array<string, array<string, mixed>> $result */
+                    /**
+                     * @var array<string, array<string, mixed>> $result
+                     */
                     $result = $method->invoke(null);
                     self::$cachedPropertyTypes = $result;
                 } else {
@@ -132,8 +134,8 @@ trait HasStrongTyping
     /**
      * Convierte un valor de la base de datos al tipo PHP apropiado.
      *
-     * @param string $property
-     * @param mixed $value
+     * @param  string $property
+     * @param  mixed  $value
      * @return mixed
      * @throws VersaORMException
      */
@@ -265,8 +267,8 @@ trait HasStrongTyping
     /**
      * Convierte un valor PHP al formato apropiado para la base de datos.
      *
-     * @param string $property
-     * @param mixed $value
+     * @param  string $property
+     * @param  mixed  $value
      * @return mixed
      * @throws VersaORMException
      */
@@ -373,7 +375,8 @@ trait HasStrongTyping
     }
 
     /**
-     * Valida que el esquema del modelo sea consistente con la base de datos.
+     * Valida que el esquema del modelo sea consistente con la base de datos
+     * y muestra advertencias en consola si difiere
      *
      * @return array<string> Array de errores de consistencia
      */
@@ -382,109 +385,135 @@ trait HasStrongTyping
         $errors = [];
         $propertyTypes = static::getPropertyTypes();
 
-        if (empty($propertyTypes)) {
-            return ['No property types defined for model consistency validation'];
-        }
-
         try {
-            $databaseSchema = $this->getDatabaseSchema();
+            // Validar que tenemos una instancia de VersaORM
+            if (!($this->orm instanceof \VersaORM\VersaORM)) {
+                $errors[] = "Se requiere una instancia válida de VersaORM para validar el esquema";
+                return $errors;
+            }
 
-            // Validar que las propiedades del modelo existan en la base de datos
-            foreach ($propertyTypes as $property => $typeDefinition) {
-                if (!isset($databaseSchema[$property])) {
-                    $errors[] = "Property '{$property}' defined in model but not found in database schema";
+            // Obtener esquema real de la base de datos
+            $schemaInfo = $this->orm->schema('columns', $this->table);
+
+            if (empty($schemaInfo)) {
+                $errors[] = "No se pudo obtener información de esquema para la tabla '{$this->table}'";
+                return $errors;
+            }
+
+            $dbColumns = [];
+            foreach ($schemaInfo as $column) {
+                $dbColumns[strtolower($column['column_name'])] = $column;
+            }
+
+            // Verificar propiedades del modelo vs esquema DB
+            foreach ($propertyTypes as $property => $definition) {
+                $columnName = strtolower($property);
+
+                if (!isset($dbColumns[$columnName])) {
+                    $warning = "⚠️  ADVERTENCIA: La propiedad '{$property}' no existe en la base de datos";
+                    $errors[] = $warning;
+                    if (php_sapi_name() === 'cli') {
+                        echo "\033[33m{$warning}\033[0m\n";
+                    }
                     continue;
                 }
 
-                $dbColumn = $databaseSchema[$property];
-                $errors = array_merge($errors, $this->validatePropertyConsistency($property, $typeDefinition, $dbColumn));
+                $dbColumn = $dbColumns[$columnName];
+                $dbType = strtolower($dbColumn['data_type']);
+                $modelType = strtolower($definition['type']);
+
+                // Mapear tipos de base de datos a tipos del modelo
+                $typeMapping = [
+                    'varchar' => 'string',
+                    'char' => 'string',
+                    'text' => 'string',
+                    'longtext' => 'text',
+                    'int' => 'int',
+                    'integer' => 'int',
+                    'bigint' => 'int',
+                    'smallint' => 'int',
+                    'tinyint' => 'boolean',
+                    'decimal' => 'decimal',
+                    'numeric' => 'decimal',
+                    'float' => 'float',
+                    'double' => 'float',
+                    'real' => 'float',
+                    'date' => 'date',
+                    'datetime' => 'datetime',
+                    'timestamp' => 'datetime',
+                    'time' => 'time',
+                    'json' => 'json',
+                    'jsonb' => 'json',
+                    'blob' => 'blob',
+                    'longblob' => 'blob',
+                    'binary' => 'binary',
+                    'varbinary' => 'binary',
+                    'enum' => 'enum',
+                    'set' => 'set',
+                    'uuid' => 'uuid',
+                    'inet' => 'inet',
+                ];
+
+                $expectedType = $typeMapping[$dbType] ?? $dbType;
+
+                if ($expectedType !== $modelType && !$this->isCompatibleType($expectedType, $modelType)) {
+                    $warning = "⚠️  INCONSISTENCIA: '{$property}' - DB: {$dbType} ({$expectedType}) vs Modelo: {$modelType}";
+                    $errors[] = $warning;
+                    if (php_sapi_name() === 'cli') {
+                        echo "\033[31m{$warning}\033[0m\n";
+                    }
+                }
+
+                // Verificar nullabilidad
+                $isNullable = strtolower($dbColumn['is_nullable'] ?? 'no') === 'yes';
+                $modelNullable = $definition['nullable'] ?? false;
+
+                if ($isNullable !== $modelNullable) {
+                    $warning = "⚠️  NULLABILIDAD: '{$property}' - DB permite NULL: " .
+                        ($isNullable ? 'Sí' : 'No') . " vs Modelo: " .
+                        ($modelNullable ? 'Sí' : 'No');
+                    $errors[] = $warning;
+                    if (php_sapi_name() === 'cli') {
+                        echo "\033[33m{$warning}\033[0m\n";
+                    }
+                }
             }
 
-            // Validar que las columnas de la base de datos tengan propiedades correspondientes
-            foreach ($databaseSchema as $columnName => $columnInfo) {
+            // Verificar columnas de DB que no están en el modelo
+            foreach ($dbColumns as $columnName => $column) {
                 if (!isset($propertyTypes[$columnName])) {
-                    $errors[] = "Database column '{$columnName}' not defined in model property types";
+                    $warning = "💡 INFO: Columna '{$columnName}' existe en DB pero no está definida en el modelo";
+                    $errors[] = $warning;
+                    if (php_sapi_name() === 'cli') {
+                        echo "\033[36m{$warning}\033[0m\n";
+                    }
                 }
             }
         } catch (\Exception $e) {
-            $errors[] = 'Error validating schema consistency: ' . $e->getMessage();
+            $errors[] = "Error al validar esquema: " . $e->getMessage();
         }
 
         return $errors;
     }
 
     /**
-     * Valida la consistencia de una propiedad específica.
-     *
-     * @param string $property
-     * @param array<string, mixed> $typeDefinition
-     * @param array<string, mixed> $dbColumn
-     * @return array<string>
+     * Verifica si dos tipos son compatibles
      */
-    private function validatePropertyConsistency(string $property, array $typeDefinition, array $dbColumn): array
+    private function isCompatibleType(string $dbType, string $modelType): bool
     {
-        $errors = [];
-        $modelType = $typeDefinition['type'] ?? 'string';
-        $dbType = strtolower($dbColumn['data_type'] ?? '');
-
-        // Mapeo de tipos PHP a tipos de base de datos
-        $typeMapping = [
-            'int' => ['int', 'tinyint', 'smallint', 'mediumint', 'bigint'],
-            'integer' => ['int', 'tinyint', 'smallint', 'mediumint', 'bigint'],
-            'float' => ['float', 'double', 'decimal', 'numeric'],
-            'double' => ['float', 'double', 'decimal', 'numeric'],
-            'decimal' => ['decimal', 'numeric', 'float', 'double'],
-            'string' => ['varchar', 'char', 'text', 'longtext', 'mediumtext', 'tinytext'],
-            'bool' => ['tinyint', 'boolean'],
-            'boolean' => ['tinyint', 'boolean'],
-            'datetime' => ['datetime', 'timestamp'],
-            'date' => ['date'],
-            'timestamp' => ['timestamp', 'datetime'],
-            'json' => ['json', 'text', 'longtext'],
-            'array' => ['json', 'text', 'longtext'],
-            'uuid' => ['char', 'varchar'],
-            'enum' => ['enum'],
-            'set' => ['set'],
-            'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'],
-            'inet' => ['varchar', 'char'],
+        $compatibleTypes = [
+            'string' => ['text', 'varchar', 'char'],
+            'text' => ['string', 'varchar', 'char'],
+            'int' => ['integer', 'bigint', 'smallint'],
+            'integer' => ['int', 'bigint', 'smallint'],
+            'float' => ['double', 'real', 'decimal'],
+            'decimal' => ['float', 'double', 'numeric'],
+            'boolean' => ['tinyint', 'bit'],
+            'datetime' => ['timestamp', 'date'],
+            'timestamp' => ['datetime'],
         ];
 
-        // Verificar compatibilidad de tipos
-        if (isset($typeMapping[$modelType])) {
-            $compatibleDbTypes = $typeMapping[$modelType];
-            $isCompatible = false;
-
-            foreach ($compatibleDbTypes as $compatibleType) {
-                if (strpos($dbType, $compatibleType) !== false) {
-                    $isCompatible = true;
-                    break;
-                }
-            }
-
-            if (!$isCompatible) {
-                $errors[] = "Type mismatch for property '{$property}': model type '{$modelType}' is not compatible with database type '{$dbType}'";
-            }
-        }
-
-        // Verificar nullabilidad
-        $modelNullable = $typeDefinition['nullable'] ?? true;
-        $dbNullable = ($dbColumn['is_nullable'] ?? 'YES') === 'YES';
-
-        if (!$modelNullable && $dbNullable) {
-            $errors[] = "Nullability mismatch for property '{$property}': model expects non-nullable but database allows null";
-        }
-
-        // Verificar longitud máxima para strings
-        if (in_array($modelType, ['string']) && isset($typeDefinition['max_length'])) {
-            $modelMaxLength = $typeDefinition['max_length'];
-            $dbMaxLength = $dbColumn['character_maximum_length'] ?? null;
-
-            if ($dbMaxLength && $modelMaxLength > $dbMaxLength) {
-                $errors[] = "Length mismatch for property '{$property}': model max_length ({$modelMaxLength}) exceeds database max_length ({$dbMaxLength})";
-            }
-        }
-
-        return $errors;
+        return in_array($modelType, $compatibleTypes[$dbType] ?? []);
     }
 
     /**
@@ -531,8 +560,8 @@ trait HasStrongTyping
     /**
      * Aplica mutadores al establecer un valor de atributo.
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  string $key
+     * @param  mixed  $value
      * @return mixed
      */
     protected function applyMutator(string $key, $value)
@@ -548,8 +577,8 @@ trait HasStrongTyping
     /**
      * Aplica accesorios al obtener un valor de atributo.
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  string $key
+     * @param  mixed  $value
      * @return mixed
      */
     protected function applyAccessor(string $key, $value)
@@ -565,7 +594,7 @@ trait HasStrongTyping
     /**
      * Valida si una cadena es un UUID válido.
      *
-     * @param string $uuid
+     * @param  string $uuid
      * @return bool
      */
     private function isValidUuid(string $uuid): bool
