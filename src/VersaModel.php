@@ -631,7 +631,8 @@ class VersaModel implements TypedModelInterface
                 if (method_exists($this, $relationName)) {
                     $relationInstance = $this->{$relationName}();
 
-                    if ($relationInstance instanceof \VersaORM\Relations\HasMany ||
+                    if (
+                        $relationInstance instanceof \VersaORM\Relations\HasMany ||
                         $relationInstance instanceof \VersaORM\Relations\BelongsToMany
                     ) {
                         // Para relaciones "many", convertir cada elemento del array en un modelo
@@ -691,6 +692,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Guardar el modelo en la base de datos.
      * Ejecuta validación antes de guardar.
+     * Si el modo freeze está desactivado, creará automáticamente columnas faltantes.
      *
      * @return void
      * @throws VersaORMException
@@ -716,6 +718,9 @@ class VersaModel implements TypedModelInterface
                 'NO_ORM_INSTANCE'
             );
         }
+
+        // Verificar y crear columnas faltantes si freeze está desactivado
+        $this->ensureColumnsExist($orm);
 
         if (isset($this->attributes['id'])) {
             // UPDATE existente
@@ -1267,5 +1272,161 @@ class VersaModel implements TypedModelInterface
     public static function trashModel(self $model): void
     {
         $model->trash();
+    }
+
+    /**
+     * Verifica que todas las columnas del modelo existan en la tabla.
+     * Si el modo freeze está desactivado, crea automáticamente las columnas faltantes.
+     * Esta funcionalidad emula el comportamiento de RedBeanPHP.
+     *
+     * @param VersaORM $orm Instancia del ORM
+     * @return void
+     * @throws VersaORMException
+     */
+    private function ensureColumnsExist(VersaORM $orm): void
+    {
+        // Solo verificar si freeze está desactivado (tanto global como por modelo)
+        $modelClass = static::class;
+        $isGloballyFrozen = $orm->isFrozen();
+        $isModelFrozen = $orm->isModelFrozen($modelClass);
+
+        if ($isGloballyFrozen || $isModelFrozen) {
+            // Modo freeze activo - no crear columnas automáticamente
+            return;
+        }
+
+        try {
+            // Obtener columnas existentes de la tabla
+            $existingColumns = $orm->schema('columns', $this->table);
+
+            if (!is_array($existingColumns)) {
+                // Si no se puede obtener la información del esquema, continuar sin validar
+                return;
+            }
+
+            // Extraer solo los nombres de las columnas
+            $existingColumnNames = [];
+            foreach ($existingColumns as $column) {
+                if (isset($column['name'])) {
+                    // VersaORM devuelve 'name' como campo principal
+                    $existingColumnNames[] = strtolower($column['name']);
+                } elseif (isset($column['column_name'])) {
+                    $existingColumnNames[] = strtolower($column['column_name']);
+                } elseif (isset($column['Field'])) {
+                    // MySQL usa 'Field' en lugar de 'column_name'
+                    $existingColumnNames[] = strtolower($column['Field']);
+                } elseif (is_string($column)) {
+                    // Si solo es un string con el nombre
+                    $existingColumnNames[] = strtolower($column);
+                }
+            }
+
+            // Verificar qué campos del modelo no existen en la tabla
+            $missingColumns = [];
+            foreach ($this->attributes as $fieldName => $value) {
+                // Saltar campos especiales que no se deben crear
+                if (in_array($fieldName, ['id', 'created_at', 'updated_at'])) {
+                    continue;
+                }
+
+                if (!in_array(strtolower($fieldName), $existingColumnNames)) {
+                    $missingColumns[$fieldName] = $this->inferColumnType($value);
+                }
+            }
+
+            // Debug log
+            error_log("VersaORM: Table '{$this->table}' existing columns: " . implode(', ', $existingColumnNames));
+            error_log("VersaORM: Model attributes: " . implode(', ', array_keys($this->attributes)));
+            error_log("VersaORM: Missing columns to create: " . implode(', ', array_keys($missingColumns)));
+
+            // Crear columnas faltantes
+            foreach ($missingColumns as $columnName => $columnType) {
+                error_log("VersaORM: Attempting to create column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+                $this->createColumn($orm, $columnName, $columnType);
+            }
+        } catch (\Exception $e) {
+            // Si hay algún error al verificar el esquema, continuar sin crear columnas
+            // Esto previene errores en casos donde la tabla no existe aún
+            error_log("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Infiere el tipo de columna basado en el valor PHP.
+     *
+     * @param mixed $value Valor para inferir el tipo
+     * @return string Tipo de columna SQL
+     */
+    private function inferColumnType($value): string
+    {
+        if (is_null($value)) {
+            return 'VARCHAR(255)'; // Tipo por defecto para valores null
+        }
+
+        if (is_bool($value)) {
+            return 'BOOLEAN';
+        }
+
+        if (is_int($value)) {
+            return 'INT';
+        }
+
+        if (is_float($value)) {
+            return 'DECIMAL(10,2)';
+        }
+
+        if (is_string($value)) {
+            $length = strlen($value);
+            if ($length <= 255) {
+                return 'VARCHAR(255)';
+            } elseif ($length <= 65535) {
+                return 'TEXT';
+            } else {
+                return 'LONGTEXT';
+            }
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return 'JSON';
+        }
+
+        // Tipo por defecto
+        return 'VARCHAR(255)';
+    }
+
+    /**
+     * Crea una nueva columna en la tabla.
+     *
+     * @param VersaORM $orm Instancia del ORM
+     * @param string $columnName Nombre de la columna
+     * @param string $columnType Tipo de la columna
+     * @return void
+     * @throws VersaORMException
+     */
+    private function createColumn(VersaORM $orm, string $columnName, string $columnType): void
+    {
+        try {
+            // Construir la consulta ALTER TABLE
+            $sql = "ALTER TABLE `{$this->table}` ADD COLUMN `{$columnName}` {$columnType}";
+
+            // Ejecutar la consulta
+            $orm->exec($sql);
+
+            // Log de la creación automática de columna
+            error_log("VersaORM: Created column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+        } catch (\Exception $e) {
+            throw new VersaORMException(
+                "Failed to create column '{$columnName}' in table '{$this->table}': " . $e->getMessage(),
+                'COLUMN_CREATION_FAILED',
+                $sql ?? null,
+                [],
+                [
+                    'table' => $this->table,
+                    'column' => $columnName,
+                    'type' => $columnType,
+                    'sql' => $sql ?? null
+                ]
+            );
+        }
     }
 }

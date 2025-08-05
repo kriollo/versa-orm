@@ -13,6 +13,80 @@ El modo freeze actúa como un "mecanismo de protección" que:
 - **Protege contra modificaciones accidentales** del esquema en producción
 - **Registra intentos de violación** para auditoría de seguridad
 - **Permite control granular** por modelo específico o global
+- **🆕 Habilita creación automática de campos** (estilo RedBeanPHP) cuando está desactivado
+
+## Creación Automática de Campos (Modo Fluid)
+
+Cuando el **modo freeze está DESACTIVADO**, VersaORM adopta un comportamiento similar a **RedBeanPHP**:
+
+### Características del Modo Fluid
+
+- **Creación automática de columnas**: Si asignas un valor a una propiedad que no existe en la tabla, VersaORM creará automáticamente la columna
+- **Detección automática de tipos**: Infiere el tipo de columna SQL basado en el valor PHP asignado
+- **Desarrollo ágil**: Permite prototipar rápidamente sin definir esquemas previamente
+
+### Ejemplo de Creación Automática
+
+```php
+use VersaORM\VersaORM;
+use VersaORM\VersaModel;
+
+$orm = new VersaORM($config);
+VersaModel::setORM($orm);
+
+// Asegurar que freeze está desactivado
+$orm->freeze(false);
+
+class User extends VersaModel {
+    protected string $table = 'users';
+    protected array $fillable = ['*']; // Permitir todos los campos
+}
+
+// Crear un usuario con campos que NO existen en la tabla
+$user = new User('users', $orm);
+$user->name = "Juan Pérez";              // VARCHAR(255)
+$user->email = "juan@example.com";       // VARCHAR(255)
+$user->age = 30;                         // INT
+$user->salary = 50000.50;                // DECIMAL(10,2)
+$user->is_active = true;                 // BOOLEAN
+$user->metadata = ['role' => 'admin'];   // JSON
+
+// Al guardar, VersaORM creará automáticamente todas las columnas faltantes
+$user->store(); // ✅ Crea: email, age, salary, is_active, metadata
+
+// Las siguientes operaciones funcionarán sin problemas
+$users = User::findAll('users');
+echo $users[0]->email; // "juan@example.com"
+```
+
+### Mapeo Automático de Tipos
+
+VersaORM detecta automáticamente los tipos SQL basándose en los valores PHP:
+
+| Tipo PHP | Tipo SQL | Ejemplo |
+|----------|----------|---------|
+| `string` (≤255 chars) | `VARCHAR(255)` | `"Texto corto"` |
+| `string` (≤65535 chars) | `TEXT` | `"Texto largo..."` |
+| `string` (>65535 chars) | `LONGTEXT` | `"Texto muy largo..."` |
+| `int` | `INT` | `42` |
+| `float` | `DECIMAL(10,2)` | `3.14159` |
+| `bool` | `BOOLEAN` | `true` / `false` |
+| `array` / `object` | `JSON` | `['key' => 'value']` |
+| `null` | `VARCHAR(255)` | `null` (tipo por defecto) |
+
+### Seguridad y Control
+
+```php
+// ✅ Modo desarrollo - Creación automática habilitada
+$orm->freeze(false);
+$user->new_field = "Se creará automáticamente";
+$user->store(); // Crea la columna 'new_field'
+
+// 🔒 Modo producción - Creación automática bloqueada
+$orm->freeze(true);
+$user->another_field = "No se creará";
+$user->store(); // ❌ Lanza excepción
+```
 
 ## Tipos de Freeze
 

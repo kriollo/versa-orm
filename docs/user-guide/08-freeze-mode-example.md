@@ -1,18 +1,78 @@
-# Ejemplo Práctico: Modo Freeze en Producción
+# Ejemplo Práctico: Modo Freeze y Creación Automática de Campos
 
-Este ejemplo demuestra cómo implementar el modo freeze en un entorno de producción real para proteger el esquema de la base de datos.
+## Introducción
 
-## Escenario
+Este ejemplo muestra cómo utilizar el **modo freeze** de VersaORM-PHP tanto para **proteger el esquema en producción** como para **desarrollar ágilmente** con creación automática de campos (estilo RedBeanPHP).
 
-Imagina que tienes una aplicación web crítica donde:
-- La base de datos contiene información sensible de usuarios
-- Se requiere alta disponibilidad (99.9% uptime)
-- El esquema debe estar protegido contra modificaciones accidentales
-- Necesitas auditoría completa de intentos de modificación
+## Configuración Inicial
 
-## Implementación
+```php
+<?php
+require_once 'vendor/autoload.php';
 
-### 1. Configuración de Producción
+use VersaORM\VersaORM;
+use VersaORM\VersaModel;
+
+$config = [
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'port' => 3306,
+    'database' => 'mi_aplicacion',
+    'username' => 'usuario',
+    'password' => 'contraseña',
+    'charset' => 'utf8mb4',
+];
+
+$orm = new VersaORM($config);
+VersaModel::setORM($orm);
+
+class Product extends VersaModel {
+    protected string $table = 'products';
+    protected array $fillable = ['*']; // Permitir todos los campos
+}
+```
+
+## Escenario 1: Desarrollo Ágil (Freeze Desactivado)
+
+### Creación Automática de Campos
+
+```php
+echo "=== MODO DESARROLLO (Freeze OFF) ===\n";
+
+// Desactivar freeze para desarrollo ágil
+$orm->freeze(false);
+echo "Freeze status: " . ($orm->isFrozen() ? 'ON' : 'OFF') . "\n";
+
+// Crear un producto con campos que NO existen en la tabla
+$product = new Product('products', $orm);
+$product->name = "Laptop Gaming";           // VARCHAR(255)
+$product->price = 1299.99;                  // DECIMAL(10,2)
+$product->stock = 15;                       // INT
+$product->is_featured = true;               // BOOLEAN
+$product->category = "Electronics";         // VARCHAR(255)
+$product->specs = [                         // JSON
+    'cpu' => 'Intel i7',
+    'ram' => '16GB',
+    'storage' => '512GB SSD'
+];
+
+echo "Guardando producto con campos nuevos...\n";
+$product->store(); // ✅ Crea automáticamente todas las columnas
+echo "✓ Producto guardado. Columnas creadas automáticamente.\n\n";
+
+// Agregar más campos dinámicamente
+$product2 = new Product('products', $orm);
+$product2->name = "Mouse Inalámbrico";
+$product2->price = 29.99;
+$product2->warranty_months = 12;            // Nueva columna INT
+$product2->supplier = "TechCorp";           // Nueva columna VARCHAR(255)
+$product2->tags = ['wireless', 'ergonomic']; // Nueva columna JSON
+
+$product2->store(); // ✅ Crea warranty_months, supplier, tags
+echo "✓ Segundo producto guardado con campos adicionales.\n\n";
+```
+
+## Escenario 2: Producción Segura (Freeze Activado)
 
 ```php
 <?php

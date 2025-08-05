@@ -27,12 +27,15 @@ fn setup_logging(debug: bool) {
 
     // Intentar obtener el directorio padre del binario (donde debería estar el proyecto PHP)
     let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("."));
-    let project_dir = current_exe.parent().and_then(|p| p.parent()).unwrap_or_else(|| Path::new("."));
+    let project_dir = current_exe
+        .parent()
+        .and_then(|p| p.parent())
+        .unwrap_or_else(|| Path::new("."));
     let log_dir = project_dir.join("logs");
-    
+
     // Imprimir a stderr para debugging antes de configurar el archivo de log
     eprintln!("[DEBUG] Setting up logging in directory: {:?}", log_dir);
-    
+
     if !log_dir.exists() {
         if let Err(e) = fs::create_dir_all(&log_dir) {
             eprintln!("Failed to create logs directory {:?}: {}", log_dir, e);
@@ -42,7 +45,7 @@ fn setup_logging(debug: bool) {
 
     let today = Local::now().format("%Y-%m-%d").to_string();
     let log_path = log_dir.join(format!("rust-{}.log", today));
-    
+
     eprintln!("[DEBUG] Log file path: {:?}", log_path);
 
     if let Ok(file) = fs::OpenOptions::new()
@@ -52,7 +55,10 @@ fn setup_logging(debug: bool) {
     {
         *LOG_FILE.lock().unwrap() = Some(file);
         // Ahora que el archivo está configurado, escribir los mensajes de log
-        log_info_msg(&format!("=== VersaORM Rust CLI Session Started at {} ===", Local::now().format("%Y-%m-%d %H:%M:%S")));
+        log_info_msg(&format!(
+            "=== VersaORM Rust CLI Session Started at {} ===",
+            Local::now().format("%Y-%m-%d %H:%M:%S")
+        ));
         log_debug_msg(&format!("Logging configured in directory: {:?}", log_dir));
         log_debug_msg(&format!("Log file path: {:?}", log_path));
     } else {
@@ -404,12 +410,20 @@ async fn run_main() {
 
             let result = match payload.action.as_str() {
                 "query" | "insert" | "insertGetId" | "update" | "delete" => {
-                    handle_query_action(&connection_manager, &payload.params, &payload.freeze_state).await
+                    handle_query_action(&connection_manager, &payload.params, &payload.freeze_state)
+                        .await
                 }
-                "schema" => handle_schema_action(&connection_manager, &payload.params, &payload.freeze_state)
-                    .await
-                    .map_err(|e| (e, None, None)),
-                "raw" => handle_raw_action(&connection_manager, &payload.params, &payload.freeze_state).await,
+                "schema" => handle_schema_action(
+                    &connection_manager,
+                    &payload.params,
+                    &payload.freeze_state,
+                )
+                .await
+                .map_err(|e| (e, None, None)),
+                "raw" => {
+                    handle_raw_action(&connection_manager, &payload.params, &payload.freeze_state)
+                        .await
+                }
                 "cache" => handle_cache_action(&payload.params).map_err(|e| (e, None, None)),
                 _ => Err((format!("Unknown action: {}", payload.action), None, None)),
             };
@@ -504,27 +518,33 @@ fn validate_freeze_operation(
     if !is_ddl_operation(operation) {
         return Ok(()); // No es DDL, permitir
     }
-    
+
     // Verificar freeze global
     if freeze_state.global_frozen {
-        log_error_msg(&format!("DDL operation '{}' blocked by global freeze mode", operation));
+        log_error_msg(&format!(
+            "DDL operation '{}' blocked by global freeze mode",
+            operation
+        ));
         return Err(format!(
             "Operation '{}' blocked by global freeze mode. DDL operations are not allowed when freeze mode is active.",
             operation
         ));
     }
-    
+
     // Verificar freeze por modelo
     if let Some(model) = model_class {
         if *freeze_state.frozen_models.get(model).unwrap_or(&false) {
-            log_error_msg(&format!("DDL operation '{}' blocked by model '{}' freeze mode", operation, model));
+            log_error_msg(&format!(
+                "DDL operation '{}' blocked by model '{}' freeze mode",
+                operation, model
+            ));
             return Err(format!(
                 "Operation '{}' blocked by model '{}' freeze mode. DDL operations are not allowed when this model is frozen.",
                 operation, model
             ));
         }
     }
-    
+
     Ok(())
 }
 
@@ -532,46 +552,97 @@ fn validate_freeze_operation(
 #[allow(dead_code)]
 fn is_ddl_operation(operation: &str) -> bool {
     let ddl_operations = [
-        "createTable", "dropTable", "alterTable", "addColumn", "dropColumn",
-        "modifyColumn", "renameColumn", "addIndex", "dropIndex", "addForeignKey",
-        "dropForeignKey", "createIndex", "renameTable", "truncateTable",
-        "create_table", "drop_table", "alter_table", "add_column", "drop_column",
-        "modify_column", "rename_column", "add_index", "drop_index", "create_index",
-        "add_foreign_key", "drop_foreign_key", "rename_table", "truncate_table",
+        "createTable",
+        "dropTable",
+        "alterTable",
+        "addColumn",
+        "dropColumn",
+        "modifyColumn",
+        "renameColumn",
+        "addIndex",
+        "dropIndex",
+        "addForeignKey",
+        "dropForeignKey",
+        "createIndex",
+        "renameTable",
+        "truncateTable",
+        "create_table",
+        "drop_table",
+        "alter_table",
+        "add_column",
+        "drop_column",
+        "modify_column",
+        "rename_column",
+        "add_index",
+        "drop_index",
+        "create_index",
+        "add_foreign_key",
+        "drop_foreign_key",
+        "rename_table",
+        "truncate_table",
         // También considerar consultas SQL raw que modifiquen esquema
-        "CREATE", "DROP", "ALTER", "TRUNCATE"
+        "CREATE",
+        "DROP",
+        "ALTER",
+        "TRUNCATE",
     ];
-    
+
     let operation_upper = operation.to_uppercase();
-    ddl_operations.iter().any(|ddl| {
-        operation_upper.contains(&ddl.to_uppercase())
-    })
+    ddl_operations
+        .iter()
+        .any(|ddl| operation_upper.contains(&ddl.to_uppercase()))
 }
 
 /// Valida consultas SQL raw para detectar operaciones DDL
 fn validate_raw_query_freeze(query: &str, freeze_state: &FreezeState) -> Result<(), String> {
     let query_upper = query.trim().to_uppercase();
-    
+
     // Lista de comandos DDL que deben ser bloqueados en modo freeze
     let ddl_commands = [
-        "CREATE TABLE", "DROP TABLE", "ALTER TABLE", "TRUNCATE TABLE",
-        "CREATE INDEX", "DROP INDEX", "CREATE SCHEMA", "DROP SCHEMA",
-        "CREATE DATABASE", "DROP DATABASE", "CREATE VIEW", "DROP VIEW",
-        "CREATE PROCEDURE", "DROP PROCEDURE", "CREATE FUNCTION", "DROP FUNCTION",
-        "CREATE TRIGGER", "DROP TRIGGER"
+        "CREATE TABLE",
+        "DROP TABLE",
+        "ALTER TABLE",
+        "TRUNCATE TABLE",
+        "CREATE INDEX",
+        "DROP INDEX",
+        "CREATE SCHEMA",
+        "DROP SCHEMA",
+        "CREATE DATABASE",
+        "DROP DATABASE",
+        "CREATE VIEW",
+        "DROP VIEW",
+        "CREATE PROCEDURE",
+        "DROP PROCEDURE",
+        "CREATE FUNCTION",
+        "DROP FUNCTION",
+        "CREATE TRIGGER",
+        "DROP TRIGGER",
     ];
-    
-    for ddl_cmd in &ddl_commands {
-        if query_upper.starts_with(ddl_cmd)
-            && freeze_state.global_frozen {
-                log_error_msg(&format!("DDL query '{}' blocked by global freeze mode", ddl_cmd));
-                return Err(format!(
-                    "DDL query '{}' blocked by global freeze mode. Schema-modifying operations are not allowed when freeze mode is active.",
-                    ddl_cmd
-                ));
-            }
+
+    // Verificar si es una operación de creación automática de columnas
+    // Las operaciones automáticas están permitidas incluso en modo freeze
+    let is_auto_column_creation = query_upper.contains("ADD COLUMN")
+        && query_upper.starts_with("ALTER TABLE")
+        && !freeze_state.global_frozen; // Solo si no está globalmente congelado
+
+    if is_auto_column_creation {
+        // Permitir creación automática de columnas cuando freeze está desactivado
+        return Ok(());
     }
-    
+
+    for ddl_cmd in &ddl_commands {
+        if query_upper.starts_with(ddl_cmd) && freeze_state.global_frozen {
+            log_error_msg(&format!(
+                "DDL query '{}' blocked by global freeze mode",
+                ddl_cmd
+            ));
+            return Err(format!(
+                "DDL query '{}' blocked by global freeze mode. Schema-modifying operations are not allowed when freeze mode is active.",
+                ddl_cmd
+            ));
+        }
+    }
+
     Ok(())
 }
 
@@ -628,7 +699,7 @@ async fn handle_query_action(
             "cross" => "CROSS",
             _ => "INNER", // Default to INNER for unknown types
         };
-        
+
         // Check if this is a subquery join
         if let Some(subquery_sql) = join_clause.subquery {
             if let Some(alias) = join_clause.alias {
@@ -642,11 +713,7 @@ async fn handle_query_action(
                     &join_clause.second_col,
                 );
             } else {
-                return Err((
-                    "Subquery joins require an alias".to_string(),
-                    None,
-                    None,
-                ));
+                return Err(("Subquery joins require an alias".to_string(), None, None));
             }
         } else {
             // Regular table join
@@ -708,17 +775,31 @@ async fn handle_query_action(
     match query_params.method.as_str() {
         "insertMany" => {
             // Debug: Log the entire params structure
-            log_debug_msg(&format!("insertMany - Full params: {}", serde_json::to_string_pretty(params).unwrap_or("Failed to serialize".to_string())));
-            
+            log_debug_msg(&format!(
+                "insertMany - Full params: {}",
+                serde_json::to_string_pretty(params).unwrap_or("Failed to serialize".to_string())
+            ));
+
             // First try to get records from the root level (new batch format)
             let records = if let Some(records_value) = params.get("records") {
-                log_debug_msg(&format!("insertMany - Found records at root level, type: {}", if records_value.is_array() { "array" } else { "not array" }));
-                records_value.as_array()
-                    .ok_or(("insertMany requires records array".to_string(), None, None))?
+                log_debug_msg(&format!(
+                    "insertMany - Found records at root level, type: {}",
+                    if records_value.is_array() {
+                        "array"
+                    } else {
+                        "not array"
+                    }
+                ));
+                records_value.as_array().ok_or((
+                    "insertMany requires records array".to_string(),
+                    None,
+                    None,
+                ))?
             } else {
                 log_debug_msg("insertMany - Records not found at root level, trying fallback");
                 // Fallback to old format if not found at root
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("records"))
                     .and_then(|r| r.as_array())
@@ -728,7 +809,8 @@ async fn handle_query_action(
             let batch_size = if let Some(batch_size_value) = params.get("batch_size") {
                 batch_size_value.as_i64().unwrap_or(1000) as usize
             } else {
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("batch_size"))
                     .and_then(|b| b.as_i64())
@@ -740,11 +822,15 @@ async fn handle_query_action(
         "updateMany" => {
             // First try to get data from the root level (new batch format)
             let update_data = if let Some(data_value) = params.get("data") {
-                data_value.as_object()
-                    .ok_or(("updateMany requires data object".to_string(), None, None))?
+                data_value.as_object().ok_or((
+                    "updateMany requires data object".to_string(),
+                    None,
+                    None,
+                ))?
             } else {
                 // Fallback to old format if not found at root
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("data"))
                     .and_then(|d| d.as_object())
@@ -754,7 +840,8 @@ async fn handle_query_action(
             let max_records = if let Some(max_records_value) = params.get("max_records") {
                 max_records_value.as_i64().unwrap_or(10000)
             } else {
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("max_records"))
                     .and_then(|m| m.as_i64())
@@ -767,7 +854,8 @@ async fn handle_query_action(
             let max_records = if let Some(max_records_value) = params.get("max_records") {
                 max_records_value.as_i64().unwrap_or(10000)
             } else {
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("max_records"))
                     .and_then(|m| m.as_i64())
@@ -779,11 +867,15 @@ async fn handle_query_action(
         "upsertMany" => {
             // First try to get records from the root level (new batch format)
             let records = if let Some(records_value) = params.get("records") {
-                records_value.as_array()
-                    .ok_or(("upsertMany requires records array".to_string(), None, None))?
+                records_value.as_array().ok_or((
+                    "upsertMany requires records array".to_string(),
+                    None,
+                    None,
+                ))?
             } else {
                 // Fallback to old format if not found at root
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("records"))
                     .and_then(|r| r.as_array())
@@ -791,14 +883,22 @@ async fn handle_query_action(
             };
 
             let unique_keys = if let Some(unique_keys_value) = params.get("unique_keys") {
-                unique_keys_value.as_array()
-                    .ok_or(("upsertMany requires unique_keys array".to_string(), None, None))?
+                unique_keys_value.as_array().ok_or((
+                    "upsertMany requires unique_keys array".to_string(),
+                    None,
+                    None,
+                ))?
             } else {
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("unique_keys"))
                     .and_then(|k| k.as_array())
-                    .ok_or(("upsertMany requires unique_keys array".to_string(), None, None))?
+                    .ok_or((
+                        "upsertMany requires unique_keys array".to_string(),
+                        None,
+                        None,
+                    ))?
             };
 
             // Validar unique_keys antes de continuar
@@ -811,14 +911,16 @@ async fn handle_query_action(
             }
 
             let update_columns = if let Some(update_columns_value) = params.get("update_columns") {
-                update_columns_value.as_array()
+                update_columns_value
+                    .as_array()
                     .unwrap_or(&vec![])
                     .iter()
                     .filter_map(|v| v.as_str())
                     .map(|s| s.to_string())
                     .collect::<Vec<String>>()
             } else {
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("update_columns"))
                     .and_then(|c| c.as_array())
@@ -832,26 +934,43 @@ async fn handle_query_action(
             // Validar update_columns antes de continuar
             for update_col in &update_columns {
                 if utils::clean_column_name(update_col).is_err() {
-                    return Err(("Invalid update column name detected".to_string(), None, None));
+                    return Err((
+                        "Invalid update column name detected".to_string(),
+                        None,
+                        None,
+                    ));
                 }
             }
 
             let batch_size = if let Some(batch_size_value) = params.get("batch_size") {
                 batch_size_value.as_i64().unwrap_or(1000) as usize
             } else {
-                query_params.data
+                query_params
+                    .data
                     .as_ref()
                     .and_then(|d| d.get("batch_size"))
                     .and_then(|b| b.as_i64())
                     .unwrap_or(1000) as usize
             };
 
-            handle_upsert_many(connection, &table_name, records, unique_keys, update_columns, batch_size).await
+            handle_upsert_many(
+                connection,
+                &table_name,
+                records,
+                unique_keys,
+                update_columns,
+                batch_size,
+            )
+            .await
         }
         "get" | "first" => {
             // Generar clave de caché para consultas SELECT
-            let cache_key = format!("query:{}:{}", sql, serde_json::to_string(&sql_params).unwrap_or_default());
-            
+            let cache_key = format!(
+                "query:{}:{}",
+                sql,
+                serde_json::to_string(&sql_params).unwrap_or_default()
+            );
+
             // Intentar obtener del caché primero
             let main_results = if let Some(cached_result) = cache::get_cached_query(&cache_key) {
                 log_debug_msg(&format!("Cache HIT for query: {}", sql));
@@ -871,14 +990,14 @@ async fn handle_query_action(
                             Some(sql_params.clone()),
                         )
                     })?;
-                
+
                 // Almacenar en caché solo si no hay relaciones (eager loading)
                 if query_builder.with.is_empty() {
                     let cache_value = serde_json::to_string(&results).unwrap_or_default();
                     cache::cache_query(&cache_key, &cache_value);
                     log_debug_msg(&format!("Cached query result with key: {}", cache_key));
                 }
-                
+
                 results
             };
 
@@ -1302,7 +1421,7 @@ async fn handle_schema_action(
                 .get_columns(table_name)
                 .await
                 .map_err(|e| format!("Failed to get validation schema: {}", e))?;
-            
+
             // Crear el esquema de validación con solo la información relevante
             let validation_schema: std::collections::HashMap<String, serde_json::Value> = columns
                 .into_iter()
@@ -1318,11 +1437,11 @@ async fn handle_schema_action(
                             "is_primary_key": col.is_primary_key,
                             "is_auto_increment": col.is_auto_increment,
                             "default_value": col.default_value
-                        })
+                        }),
                     )
                 })
                 .collect();
-            
+
             Ok(serde_json::to_value(validation_schema).unwrap())
         }
         _ => Err(format!("Unknown schema subject: {}", subject)),
@@ -1354,9 +1473,9 @@ async fn handle_raw_action(
             Some(bindings.clone()),
         ));
     }
-    
+
     let query_upper = query.trim().to_uppercase();
-    
+
     // Para transacciones, necesitamos manejar el estado de autocommit
     if query_upper.starts_with("BEGIN") || query_upper.starts_with("START TRANSACTION") {
         // Primero, deshabilitar autocommit
@@ -1461,18 +1580,24 @@ fn handle_cache_action(params: &serde_json::Value) -> Result<serde_json::Value, 
         }
         "cleanup" => {
             cache::cleanup_expired_entries();
-            Ok(serde_json::Value::String("Expired entries cleaned up".to_string()))
+            Ok(serde_json::Value::String(
+                "Expired entries cleaned up".to_string(),
+            ))
         }
         "status" => {
             let status = cache::cache_status();
             Ok(serde_json::Value::Number(serde_json::Number::from(status)))
         }
-        "stats" => {
-            Ok(cache::cache_stats())
-        }
+        "stats" => Ok(cache::cache_stats()),
         "config" => {
-            let max_size = params.get("max_size").and_then(|v| v.as_u64()).unwrap_or(1000) as usize;
-            let ttl_secs = params.get("ttl_secs").and_then(|v| v.as_u64()).unwrap_or(300);
+            let max_size = params
+                .get("max_size")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(1000) as usize;
+            let ttl_secs = params
+                .get("ttl_secs")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(300);
             cache::set_cache_config(max_size, ttl_secs);
             Ok(serde_json::json!({
                 "message": "Cache configuration updated",
@@ -1483,12 +1608,21 @@ fn handle_cache_action(params: &serde_json::Value) -> Result<serde_json::Value, 
         "invalidate" => {
             if let Some(table) = params.get("table").and_then(|v| v.as_str()) {
                 cache::invalidate_cache_for_table(table);
-                Ok(serde_json::Value::String(format!("Cache invalidated for table: {}", table)))
+                Ok(serde_json::Value::String(format!(
+                    "Cache invalidated for table: {}",
+                    table
+                )))
             } else if let Some(pattern) = params.get("pattern").and_then(|v| v.as_str()) {
                 cache::invalidate_cache_by_pattern(pattern);
-                Ok(serde_json::Value::String(format!("Cache invalidated for pattern: {}", pattern)))
+                Ok(serde_json::Value::String(format!(
+                    "Cache invalidated for pattern: {}",
+                    pattern
+                )))
             } else {
-                Err("Either 'table' or 'pattern' parameter is required for invalidate action".to_string())
+                Err(
+                    "Either 'table' or 'pattern' parameter is required for invalidate action"
+                        .to_string(),
+                )
             }
         }
         _ => Err(format!("Unknown cache action: {}", action)),
@@ -1515,7 +1649,7 @@ async fn handle_insert_many(
     // Validar la estructura del primer registro para obtener las columnas
     let first_record = records.first().unwrap();
     log_debug_msg(&format!("insertMany - First record: {:?}", first_record));
-    
+
     let first_obj = first_record.as_object().ok_or((
         "First record must be an object".to_string(),
         None,
@@ -1640,7 +1774,7 @@ async fn handle_update_many(
     // Primero, contar cuántos registros serían afectados
     let (count_sql, count_params) = query_builder.build_sql_with_method("count");
     let count_sql = count_sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
-    
+
     let count_rows = connection
         .execute_raw(&count_sql, count_params.clone())
         .await
@@ -1680,7 +1814,7 @@ async fn handle_update_many(
 
     // Construir la consulta UPDATE
     let (select_sql, where_params) = query_builder.build_sql_with_method("get");
-    
+
     let mut set_clauses = Vec::new();
     let mut update_params = Vec::new();
 
@@ -1759,7 +1893,7 @@ async fn handle_delete_many(
     // Primero, contar cuántos registros serían eliminados
     let (count_sql, count_params) = query_builder.build_sql_with_method("count");
     let count_sql = count_sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
-    
+
     let count_rows = connection
         .execute_raw(&count_sql, count_params.clone())
         .await
@@ -1799,7 +1933,7 @@ async fn handle_delete_many(
 
     // Construir la consulta DELETE
     let (select_sql, delete_params) = query_builder.build_sql_with_method("get");
-    
+
     // Extraer la cláusula WHERE del SQL de selección
     let where_clause = if select_sql.contains(" WHERE ") {
         let where_part = select_sql.split(" WHERE ").nth(1).unwrap_or("");
@@ -1876,12 +2010,11 @@ async fn handle_upsert_many(
     for unique_key in &unique_key_names {
         log_debug_msg(&format!("Validating unique key name: '{}'", unique_key));
         if let Err(err) = utils::clean_column_name(unique_key) {
-            log_debug_msg(&format!("Unique key '{}' failed validation: {}", unique_key, err));
-            return Err((
-                "Invalid unique key name detected".to_string(),
-                None,
-                None,
+            log_debug_msg(&format!(
+                "Unique key '{}' failed validation: {}",
+                unique_key, err
             ));
+            return Err(("Invalid unique key name detected".to_string(), None, None));
         }
         log_debug_msg(&format!("Unique key '{}' passed validation", unique_key));
     }
@@ -1899,7 +2032,7 @@ async fn handle_upsert_many(
 
     // Obtener el driver de base de datos para determinar la sintaxis correcta
     let driver = connection.get_driver();
-    
+
     // Validar la estructura del primer registro
     let first_record = records.first().unwrap();
     let first_obj = first_record.as_object().ok_or((
@@ -1954,7 +2087,7 @@ async fn handle_upsert_many(
                     values_placeholders.join(", "),
                     update_clause
                 )
-            },
+            }
             "pgsql" | "postgresql" => {
                 // PostgreSQL: INSERT ... ON CONFLICT DO UPDATE
                 let values_placeholders: Vec<String> = chunk
@@ -1993,7 +2126,7 @@ async fn handle_upsert_many(
                     unique_key_names.join(", "),
                     update_clause
                 )
-            },
+            }
             _ => {
                 return Err((
                     format!("Upsert operations not supported for driver: {}", driver),
@@ -2016,9 +2149,11 @@ async fn handle_upsert_many(
             for unique_key in &unique_key_names {
                 if !record_obj.contains_key(unique_key) {
                     return Err((
-                        format!("Record at index {} is missing unique key: {}", 
-                                chunk.iter().position(|r| r == record).unwrap_or(0), 
-                                unique_key),
+                        format!(
+                            "Record at index {} is missing unique key: {}",
+                            chunk.iter().position(|r| r == record).unwrap_or(0),
+                            unique_key
+                        ),
                         Some(upsert_sql.clone()),
                         None,
                     ));
@@ -2033,7 +2168,7 @@ async fn handle_upsert_many(
         // Ejecutar el lote
         log_debug_msg(&format!("Executing upsert SQL: {}", upsert_sql));
         log_debug_msg(&format!("Parameters: {:?}", params));
-        
+
         match connection.execute_raw(&upsert_sql, params.clone()).await {
             Ok(_) => {
                 total_processed += chunk.len();
