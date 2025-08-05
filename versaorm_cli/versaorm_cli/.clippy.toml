@@ -1,3 +1,0 @@
-# VersaORM CLI Clippy configuration
-# Permitir temporal uninlined_format_args mientras se migra gradualmente
-uninlined-format-args = "allow"
