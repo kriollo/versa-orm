@@ -8,3 +8,4 @@ En esta sección aprenderás a usar todas las características de VersaORM para 
 - [Guía de Modelos y Objetos](03-models-and-objects.md)
 - [Guía de la Herramienta CLI](04-cli-tool.md)
 - [Validación y Mass Assignment](05-validation-mass-assignment.md)
+- [🎯 Tipado Fuerte y Validación de Esquemas](06-strong-typing-schema-validation.md)

@@ -74,6 +74,7 @@ Esta documentación está organizada para llevarte paso a paso desde cero hasta 
   - [Modelos y Objetos (VersaModel)](user-guide/03-models-and-objects.md)
   - [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
   - [🔒 Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
+  - [🎯 Tipado Fuerte y Validación de Esquemas](user-guide/06-strong-typing-schema-validation.md)
 
 ## Guía del Contribuidor
 
