@@ -99,7 +99,13 @@ trait HasStrongTyping
     public static function getPropertyTypes(): array
     {
         if (self::$cachedPropertyTypes === null) {
-            self::$cachedPropertyTypes = static::definePropertyTypes();
+            // Verificar si el método existe en la clase actual
+            $calledClass = get_called_class();
+            if (method_exists($calledClass, 'definePropertyTypes')) {
+                self::$cachedPropertyTypes = static::definePropertyTypes();
+            } else {
+                self::$cachedPropertyTypes = [];
+            }
         }
 
         return self::$cachedPropertyTypes;
@@ -107,14 +113,13 @@ trait HasStrongTyping
 
     /**
      * Define los tipos de propiedades del modelo.
-     * Debe ser implementado por las clases que usen este trait.
+     * Este método debe ser implementado por las clases que usen este trait.
+     * No proporciona implementación por defecto para evitar conflictos.
      *
      * @return array<string, array<string, mixed>>
      */
-    protected static function definePropertyTypes(): array
-    {
-        return [];
-    }
+    // NOTA: Este método debe ser implementado en las clases que usen el trait
+    // protected static function definePropertyTypes(): array;
 
     /**
      * Convierte un valor de la base de datos al tipo PHP apropiado.
@@ -130,7 +135,7 @@ trait HasStrongTyping
             return null;
         }
 
-        $propertyTypes = $this->getPropertyTypes();
+        $propertyTypes = static::getPropertyTypes();
 
         if (!isset($propertyTypes[$property])) {
             return $value; // Sin conversión si no hay tipo definido
@@ -263,7 +268,7 @@ trait HasStrongTyping
             return null;
         }
 
-        $propertyTypes = $this->getPropertyTypes();
+        $propertyTypes = static::getPropertyTypes();
 
         if (!isset($propertyTypes[$property])) {
             return $value; // Sin conversión si no hay tipo definido
@@ -367,7 +372,7 @@ trait HasStrongTyping
     public function validateSchemaConsistency(): array
     {
         $errors = [];
-        $propertyTypes = $this->getPropertyTypes();
+        $propertyTypes = static::getPropertyTypes();
 
         if (empty($propertyTypes)) {
             return ['No property types defined for model consistency validation'];
@@ -393,7 +398,6 @@ trait HasStrongTyping
                     $errors[] = "Database column '{$columnName}' not defined in model property types";
                 }
             }
-
         } catch (\Exception $e) {
             $errors[] = 'Error validating schema consistency: ' . $e->getMessage();
         }
