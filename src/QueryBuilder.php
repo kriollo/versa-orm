@@ -203,6 +203,10 @@ class QueryBuilder
         // Manejar notación table.column
         if (str_contains($mainIdentifier, '.')) {
             [$table, $column] = explode('.', $mainIdentifier, 2);
+            // Permitir patrones como "table.*" que son válidos en SQL
+            if ($column === '*') {
+                return $this->isValidDatabaseIdentifier($table);
+            }
             return $this->isValidDatabaseIdentifier($table) && $this->isValidDatabaseIdentifier($column);
         }
 

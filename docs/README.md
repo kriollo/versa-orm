@@ -30,6 +30,14 @@ $users = $orm->table('users')
 
 // Automáticamente protegido contra inyección SQL
 $users = $orm->table('users')->where('name', '=', $_POST['name'])->findAll();
+
+// 🆕 Con Modo Lazy - Optimización automática para máximo rendimiento
+$users = $orm->table('users')
+    ->lazy()                           // 🚀 Activa optimización automática
+    ->where('status', '=', 'active')
+    ->join('profiles', 'users.id', '=', 'profiles.user_id')
+    ->orderBy('created_at', 'desc')
+    ->collect();                       // ✅ Ejecuta consulta optimizada
 ```
 
 ## 🏆 ¿Por qué elegir VersaORM?
@@ -73,10 +81,13 @@ Esta documentación está organizada para llevarte paso a paso desde cero hasta 
   - [🚀 Operaciones de Lote (Batch)](user-guide/03-batch-operations.md)
   - [Modelos y Objetos (VersaModel)](user-guide/03-models-and-objects.md)
   - [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
+  - [Subconsultas y Expresiones Raw](user-guide/04-subqueries-raw-expressions.md)
   - [🔒 Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
   - [🎯 Tipado Fuerte y Validación de Esquemas](user-guide/06-strong-typing-schema-validation.md)
   - [🔒 Modo Freeze - Protección de Esquema](user-guide/07-freeze-mode.md)
   - [🏢 Ejemplo Práctico: Modo Freeze en Producción](user-guide/08-freeze-mode-example.md)
+  - [Tipos de Datos Avanzados](user-guide/09-advanced-data-types.md)
+  - [⚡ Modo Lazy y Planificador de Consultas](user-guide/10-lazy-mode-query-planner.md)
 
 ## Guía del Contribuidor
 

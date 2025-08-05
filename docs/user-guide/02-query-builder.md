@@ -12,11 +12,11 @@ El **Query Builder** es como un "traductor inteligente" que te permite escribir 
 ```sql
 -- Consulta compleja manual
 SELECT users.name, users.email, profiles.bio, COUNT(posts.id) as post_count
-FROM users 
+FROM users
 LEFT JOIN profiles ON users.id = profiles.user_id
-LEFT JOIN posts ON users.id = posts.user_id 
-WHERE users.status = 'active' 
-  AND users.age >= 18 
+LEFT JOIN posts ON users.id = posts.user_id
+WHERE users.status = 'active'
+  AND users.age >= 18
   AND (users.name LIKE '%john%' OR users.email LIKE '%john%')
 GROUP BY users.id, users.name, users.email, profiles.bio
 HAVING COUNT(posts.id) > 5
@@ -312,12 +312,44 @@ $orm->table('logs')
     ->delete();
 ```
 
+## ⚡ Modo Lazy para Máximo Rendimiento
+
+VersaORM incluye un **Modo Lazy** revolucionario que optimiza automáticamente tus consultas para obtener el máximo rendimiento:
+
+```php
+// Consulta normal (ejecución inmediata)
+$users = $orm->table('users')
+    ->where('status', '=', 'active')
+    ->where('age', '>=', 18)
+    ->orderBy('created_at', 'desc')
+    ->getAll();
+
+// Consulta lazy (optimizada automáticamente)
+$users = $orm->table('users')
+    ->lazy()                          // 🚀 Activa optimización automática
+    ->where('status', '=', 'active')
+    ->where('age', '>=', 18)
+    ->orderBy('created_at', 'desc')
+    ->collect();                      // ✅ Ejecuta consulta optimizada
+```
+
+**Beneficios del Modo Lazy:**
+- 🚀 **Consultas optimizadas automáticamente**
+- 🧠 **El planificador combina operaciones inteligentemente**
+- ⚡ **Mejor rendimiento con menos carga en la base de datos**
+- 🔍 **Transparente**: puedes ver las optimizaciones con `explain()`
+
+Para aprender más sobre esta funcionalidad avanzada, consulta la [Guía del Modo Lazy](10-lazy-mode-query-planner.md).
+
+---
+
 ## Siguientes Pasos
 
 Ahora que sabes cómo construir todo tipo de consultas, tienes varias opciones para profundizar:
 
 - **[Modelos y Objetos](03-models-and-objects.md)** - Trabaja con los resultados como objetos con lógica de negocio
+- **[⚡ Modo Lazy y Planificador de Consultas](10-lazy-mode-query-planner.md)** - Optimiza automáticamente tus consultas para máximo rendimiento
 - **[Validación y Mass Assignment](05-validation-mass-assignment.md)** - Protege tus datos al usar `update()` con el Query Builder
 - **[Herramienta CLI](04-cli-tool.md)** - Aprovecha el poder del núcleo Rust para operaciones avanzadas
 
-> **💡 Tip:** Cuando uses el Query Builder para operaciones de escritura (`insert`, `update`), considera combinar tu lógica con modelos personalizados que incluyan validación automática para mayor seguridad.
+> **💡 Tip:** Cuando uses el Query Builder para operaciones de escritura (`insert`, `update`), considera combinar tu lógica con modelos personalizados que incluyan validación automática para mayor seguridad. Para consultas complejas, el **Modo Lazy** puede mejorar significativamente el rendimiento.

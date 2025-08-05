@@ -122,6 +122,17 @@ pub fn is_safe_identifier(identifier: &str) -> bool {
         return false;
     }
 
+    // Casos especiales para patrones SQL válidos
+    // Permitir table.* (todas las columnas de una tabla específica)
+    if let Some(table_part) = identifier.strip_suffix(".*") {
+        return table_part.chars().all(|c| c.is_alphanumeric() || c == '_');
+    }
+
+    // Permitir * simple (todas las columnas)
+    if identifier == "*" {
+        return true;
+    }
+
     // Permite caracteres alfanuméricos, guiones bajos y puntos (para columnas calificadas como table.column)
     identifier
         .chars()
@@ -166,6 +177,25 @@ pub fn camel_to_snake(camel_str: &str) -> String {
 /// Limpia y valida un nombre de tabla
 #[allow(dead_code)]
 pub fn clean_table_name(table_name: &str) -> Result<String, String> {
+    // Manejar aliases de tabla (ej: "users as u", "tasks as t")
+    if table_name.to_lowercase().contains(" as ") {
+        let parts: Vec<&str> = table_name.split_whitespace().collect();
+        if parts.len() == 3 && parts[1].to_lowercase() == "as" {
+            let table = parts[0];
+            let alias = parts[2];
+            
+            // Validar tanto la tabla como el alias
+            if is_safe_identifier(table) && is_safe_identifier(alias) {
+                return Ok(table_name.to_string());
+            } else {
+                return Err(format!("Invalid table or alias name: {}", table_name));
+            }
+        } else {
+            return Err(format!("Invalid table alias syntax: {}", table_name));
+        }
+    }
+    
+    // Validación normal para nombres sin alias
     if !is_safe_identifier(table_name) {
         return Err(format!("Invalid table name: {}", table_name));
     }
@@ -192,6 +222,8 @@ pub fn is_sql_function_or_alias(column_expr: &str) -> bool {
     // - SUM(column_name)
     // - AVG(price) as average_price
     // - column_name as alias
+    // - table.* (todas las columnas de una tabla)
+    // - t.* as table_columns
 
     // Lista de funciones SQL permitidas
     let allowed_functions = [
@@ -212,12 +244,14 @@ pub fn is_sql_function_or_alias(column_expr: &str) -> bool {
                 return false;
             }
 
-            // Verificar la parte de la función
-            return is_valid_sql_function(function_part, &allowed_functions);
+            // Verificar la parte de la función/columna
+            return is_valid_sql_function(function_part, &allowed_functions)
+                || is_safe_identifier(function_part);
         }
     } else {
-        // Sin alias, verificar si es una función directa
-        return is_valid_sql_function(column_expr, &allowed_functions);
+        // Sin alias, verificar si es una función directa o identificador seguro
+        return is_valid_sql_function(column_expr, &allowed_functions)
+            || is_safe_identifier(column_expr);
     }
 
     false
