@@ -2,6 +2,7 @@ parameters:
     level: 8
     paths:
         - src
+    treatPhpDocTypesAsCertain: false
     ignoreErrors:
         # Permitir new static() en factory methods
         - '#Unsafe usage of new static\(\)#'

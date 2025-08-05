@@ -1,155 +1,25 @@
 # Roadmap de Desarrollo de VersaORM: Checklist de Tareas por Prioridad
 
-##  Checklist de Estado Actual (Actualizado: 3 de agosto de 2025)
-
-##  PRIORIDAD CR�TICA - Funcionalidades Core del ORM
-
-### Tarea 1.1: Relaciones Uno-a-Uno (HasOne, BelongsTo) [x] COMPLETADA
-- [x] M�todos `hasOne` y `belongsTo` en VersaModel/traits
-- [x] Lazy loading por defecto
-- [x] Consultas SQL en Rust con claves for�neas/locales
-- [x] Tests unitarios e integración en PHP y Rust
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
-### Tarea 1.2: Relaciones Uno-a-Muchos (HasMany) [x] COMPLETADA
-- [x] M�todo `hasMany` en VersaModel/traits
-- [x] Consultas SQL en Rust para múltiples registros
-- [x] Optimización con WHERE IN para eager loading
-- [x] Tests unitarios e integración en PHP y Rust
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
-### Tarea 1.3: Relaciones Muchos-a-Muchos (BelongsToMany) [x] COMPLETADA
-- [x] M�todo `belongsToMany` en VersaModel/traits
-- [x] Consultas SQL en Rust con JOIN y tabla pivote
-- [x] Tests unitarios e integración en PHP y Rust
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
-### Tarea 1.4: Lazy/Eager Loading [x] COMPLETADA
-- [x] Lazy loading controlado en PHP
-- [x] M�todo `with()` para eager loading
-- [x] Consultas optimizadas en Rust
-- [x] Generación de PHPDocs automáticos
-- [x] Tests unitarios e integración en PHP y Rust
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
-### Tarea 1.5: Transacciones [x] COMPLETADA
-- [x] M�todos `beginTransaction`, `commit`, `rollBack` en VersaORM
-- [x] Comandos de transacción en Rust
-- [x] Soporte para transacciones anidadas
-- [x] Tests unitarios e integración en PHP y Rust
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
-5. ** Tarea 1.6** - Validación Avanzada y Mass Assignment - **PARCIALMENTE COMPLETADA**
-- [x] Sanitización básica en Rust
-- [x] Método `validate()` en VersaModel/traits
-- [ ] Validación automática desde esquema de BD (integración con metadatos Rust)
-- [x] Propiedades `$fillable` y `$guarded` en modelos
-- [x] Validación en `store()` y `update()`
-- [x] Integración con librería de validación PHP
-- [x] Validación estricta de Mass Assignment
-- [x] Tests unitarios para validación y errores
-- [x] Documentación actualizada
-- [ ] Checklist de calidad:
-    - [ ] Ejecutar phpstan y corregir errores PHP
-    - [ ] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [ ] Ejecutar cargo clippy y corregir errores Rust
-    - [ ] Compilar binario Rust y copiar a src/binary
-    - [ ] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [ ] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
 ### Tarea 2.1: Sistema de Caché [ ] PARCIALMENTE COMPLETADA
 - [x] Sistema básico de caché en Rust
-- [ ] Estrategias avanzadas (TTL, tama�o)
-- [ ] API de caché en PHP
-- [ ] Integración en QueryBuilder
-- [ ] Caché de objetos en PHP
-- [ ] Tests unitarios e integración
-- [ ] Documentación actualizada
+- [x] Estrategias avanzadas (TTL, tamaño)
+- [x] API de caché en PHP
+- [x] Integración en QueryBuilder
+- [ ] Caché Persistente (archivo/base de datos/redis)
+- [x] Caché de objetos en PHP
+- [x] Tests unitarios e integración
+- [x] Documentación actualizada
 - [ ] Checklist de calidad:
     - [ ] Ejecutar phpstan y corregir errores PHP
-    - [ ] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
+    - [ ] Ejecutar php-cs-fixer fix para formato de código
+    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad
     - [ ] Ejecutar cargo clippy y corregir errores Rust
     - [ ] Compilar binario Rust y copiar a src/binary
-    - [ ] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
+    - [ ] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
     - [ ] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
 
-### Tarea 2.2: Operaciones en Lote (Batch) ✅ COMPLETADA
-- [x] Método `insertMany` en QueryBuilder
-- [x] Método `updateMany` en QueryBuilder
-- [x] Método `deleteMany` en QueryBuilder
-- [x] Método `upsertMany` en QueryBuilder
-- [x] SQL optimizado en Rust para batch
-- [x] Tests unitarios e integración
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de código
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
-### Tarea 2.3: Subconsultas y Expresiones Raw ✅ COMPLETADA
-- [x] Soporte básico en QueryBuilder
-- [x] Subconsultas completas en SELECT y WHERE
-- [x] Métodos `selectRaw`, `orderByRaw`, `groupByRaw`
-- [x] Validación segura en PHP con sistema de seguridad robusto
-- [x] Tests unitarios e integración
-- [x] Documentación actualizada
-- [x] Checklist de calidad:
-    - [x] Ejecutar phpstan y corregir errores PHP
-    - [x] Ejecutar php-cs-fixer fix para formato de código
-    - [x] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad
-    - [x] Ejecutar cargo clippy y corregir errores Rust
-    - [x] Compilar binario Rust y copiar a src/binary
-    - [x] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
-    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
 ### Tarea 2.4: Herramientas de Desarrollo y CLI [ ] PENDIENTE
-- [ ] Script CLI principal (`bin/versaorm`) para migraciones
+- [ ] Script CLI principal (`src/binary/versaorm_cli`) para migraciones
 - [ ] Estructura de archivos de migración con métodos `up()` y `down()`
 - [ ] Comandos CLI: `migrate:make`, `migrate:up`, `migrate:down`, `migrate:status`
 - [ ] Tabla en la base de datos para registrar migraciones
@@ -167,37 +37,15 @@
 
 ---
 
-##  FUNCIONALIDADES AVANZADAS - Optimización y Rendimiento
-
-### Tarea 2.5: Sistema de Caché Avanzado [ ] PARCIALMENTE COMPLETADA
-- [x] Sistema básico de caché en Rust (`cache.rs`)
-- [ ] Estrategias avanzadas (TTL, tama�o)
-- [ ] API de caché en PHP (`$orm->cache()`)
-- [ ] Integración en QueryBuilder (`->cache(60)`)
-- [ ] Caché de objetos en PHP
-- [ ] Invalidación automática despu�s de INSERT/UPDATE/DELETE
-- [ ] Tests unitarios e integración
-- [ ] Documentación actualizada
-- [ ] Checklist de calidad:
-    - [ ] Ejecutar phpstan y corregir errores PHP
-    - [ ] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [ ] Ejecutar cargo clippy y corregir errores Rust
-    - [ ] Compilar binario Rust y copiar a src/binary
-    - [ ] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [ ] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
-
----
-
 ## ? HERRAMIENTAS DE DESARROLLO - Tooling y CLI
 
 ### Tarea 3.1: Sistema de Migraciones [ ] PENDIENTE
-- [ ] Script CLI principal (`bin/versaorm`) para migraciones
-- [ ] Estructura de a de migración con métodos `up()` y `down()`
+- [ ] Script CLI principal (`src/binary/versaorm_cli`) para migraciones
+- [ ] Estructura de archivos de migración con métodos `up()` y `down()`
 - [ ] Comandos CLI:
     - [ ] `migrate:make` (crear nueva migración)
     - [ ] `migrate:up` (aplicar migraciones pendientes)
-    - [ ] `migrate:down` (revertir �ltima migración)
+    - [ ] `migrate:down` (revertir última migración)
     - [ ] `migrate:status` (mostrar estado de migraciones)
 - [ ] Tabla en la base de datos para registrar migraciones aplicadas
 - [ ] Soporte DDL en Rust (`CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`, etc.)
@@ -563,25 +411,31 @@ Esta fase se enfoca en crear una API declarativa moderna y herramientas de produ
     - [ ] Validación de seguridad con herramientas especializadas
     - [ ] Tests exhaustivos contra inyección SQL
 
-### Tarea 7.2: Implementación de Modo Freeze/Frozen para Modelos y Esquema [ ] PENDIENTE
-- [ ] Método global `$orm->freeze(true)` para activar el modo freeze en toda la aplicación
-- [ ] Permitir marcar modelos individuales como frozen: `User::freeze(true)`
-- [ ] Bloquear métodos que alteren el esquema (createTable, addColumn, dropColumn) cuando freeze est� activo
-- [ ] Lanzar excepción si se intenta modificar el esquema o propiedades protegidas en modo freeze
-- [ ] Mostrar advertencia en modo desarrollo si se intenta una operación prohibida
-- [ ] Validar en Rust que no se ejecuten comandos DDL si freeze est� activo
-- [ ] Propagar el estado freeze desde PHP al binario Rust en cada payload
-- [ ] Registrar intentos de alteración en los logs de seguridad
-- [ ] Tests unitarios para verificar que las operaciones prohibidas lanzan excepción en modo freeze
-- [ ] Documentar claramente el uso y las limitaciones del modo freeze
-- [ ] Checklist de calidad:
-    - [ ] Ejecutar phpstan y corregir errores PHP
-    - [ ] Ejecutar php-cs-fixer fix para formato de c�digo
-    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
-    - [ ] Ejecutar cargo clippy y corregir errores Rust
-    - [ ] Compilar binario Rust y copiar a src/binary
-    - [ ] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
-    - [ ] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
+### Tarea 7.2: Implementación de Modo Freeze/Frozen para Modelos y Esquema [✅] COMPLETADA
+- [x] Método global `$orm->freeze(true)` para activar el modo freeze en toda la aplicación
+- [x] Permitir marcar modelos individuales como frozen: `User::freeze(true)`
+- [x] Bloquear métodos que alteren el esquema (createTable, addColumn, dropColumn) cuando freeze está activo
+- [x] Lanzar excepción si se intenta modificar el esquema o propiedades protegidas en modo freeze
+- [x] Mostrar advertencia en modo desarrollo si se intenta una operación prohibida
+- [x] Validar en Rust que no se ejecuten comandos DDL si freeze está activo
+- [x] Propagar el estado freeze desde PHP al binario Rust en cada payload
+- [x] Registrar intentos de alteración en los logs de seguridad
+- [x] Tests unitarios para verificar que las operaciones prohibidas lanzan excepción en modo freeze
+- [x] Documentar claramente el uso y las limitaciones del modo freeze
+- [x] **🆕 FUNCIONALIDAD ADICIONAL: Creación Automática de Campos (estilo RedBeanPHP)**
+  - [x] Cuando freeze está desactivado, crear automáticamente columnas faltantes
+  - [x] Detección automática de tipos PHP → SQL (string→VARCHAR, int→INT, bool→BOOLEAN, etc.)
+  - [x] Validación que no interfiera con el modo freeze activo
+  - [x] Tests completos para verificar la creación automática de campos
+  - [x] Documentación actualizada con ejemplos prácticos
+- [x] Checklist de calidad:
+    - [x] Ejecutar phpstan y corregir errores PHP
+    - [x] Ejecutar php-cs-fixer fix para formato de código
+    - [x] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad
+    - [x] Ejecutar cargo clippy y corregir errores Rust
+    - [x] Compilar binario Rust y copiar a src/binary
+    - [x] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
+    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
 
 ---
 
@@ -747,21 +601,30 @@ Esta fase se enfoca en crear una API declarativa moderna y herramientas de produ
     - [ ] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
     - [ ] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
 
+
+### Tarea 11.2: Implementación de MS-SQL Server [ ] PENDIENTE
+- [ ] Soporte para MS-SQL Server con mapeo de tipos específico
+- [ ] Adaptación de consultas y sintaxis SQL para MS-SQL
+- [ ] Implementación de funciones específicas de MS-SQL (TOP, OFFSET-FETCH)
+- [ ] Pruebas unitarias y de integración para MS-SQL
+- [ ] Documentación de uso y ejemplos para MS-SQL
+- [ ] Checklist de calidad:
+    - [ ] Ejecutar phpstan y corregir errores PHP
+    - [ ] Ejecutar php-cs-fixer fix para formato de c�digo
+    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para an�lisis de seguridad
+    - [ ] Ejecutar cargo clippy y corregir errores Rust
+    - [ ] Compilar binario Rust y copiar a src/binary
+    - [ ] Ejecutar composer dump-autoload -o genera el autoloader m�s r�pido y liviano para entornos de despliegue
+    - [ ] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
+
 ---
 
-##  LISTA DE PRIORIZACI�N PARA DESARROLLO DE APPS
+##  LISTA DE PRIORIZACIÓN PARA DESARROLLO DE APPS
 
-### ** PRIORIDAD M�XIMA - Funcionalidades Core para Apps**
-1. ** Tarea 1.1** - Relaciones Uno-a-Uno (HasOne, BelongsTo) - **COMPLETADA**
-2. ** Tarea 1.2** - Relaciones Uno-a-Muchos (HasMany) - **COMPLETADA**
-3. ** Tarea 1.3** - Relaciones Muchos-a-Muchos (BelongsToMany) - **COMPLETADA**
-4. ** Tarea 1.4** - Lazy/Eager Loading - **COMPLETADA**
+### ** PRIORIDAD MÁXIMA - Funcionalidades Core para Apps**
 5. ** Tarea 1.6** - Validación Avanzada y Mass Assignment - **PARCIALMENTE COMPLETADA**
-6. ** Tarea 2.2** - Operaciones en Lote (Batch) - **COMPLETADA**
-7. ** Tarea 2.3** - Subconsultas y Expresiones Raw - **COMPLETADA**
 
 ### ** PRIORIDAD ALTA - Funcionalidades Críticas**
-8. ** Tarea 1.5** - Transacciones - **COMPLETADA**
 9. ** Tarea 2.1** - Sistema de Caché - **PARCIALMENTE COMPLETADA**
 10. ** Tarea 6.1** - API Declarativa Estilo Fluent - **PARCIALMENTE COMPLETADA**
 11. ** Tarea 7.1** - Seguridad Reforzada en Consultas - **PARCIALMENTE COMPLETADA**
@@ -770,12 +633,11 @@ Esta fase se enfoca en crear una API declarativa moderna y herramientas de produ
 ### ** PRIORIDAD MEDIA - Funcionalidades Avanzadas**
 13. ** Tarea 5.1** - Soporte para Tipos de Datos Avanzados - **PARCIALMENTE COMPLETADA**
 14. ** Tarea 7.2** - Modo Freeze/Frozen para Modelos y Esquema - **PENDIENTE**
-15. ** Tarea 2.5** - Sistema de Caché Avanzado - **PARCIALMENTE COMPLETADA**
 
 ### ** PRIORIDAD NORMAL - Rendimiento y Optimización**
 18. ** Tarea 8.1** - Compatibilidad con FFI/Shared Library - **PENDIENTE**
 19. ** Tarea 8.2** - Benchmark y Evaluación de IPC/Serialización - **PENDIENTE**
-20. ** Tarea 8.3** - Optimización del N�cleo Rust con SIMD/Rayon - **PENDIENTE**
+20. ** Tarea 8.3** - Optimización del Núcleo Rust con SIMD/Rayon - **PENDIENTE**
 21. ** Tarea 8.4** - Modo Lazy y Planificador de Consultas - **PENDIENTE**
 22. ** Tarea 9.1** - Benchmarking y Optimización Continua - **PENDIENTE**
 
@@ -793,16 +655,3 @@ Esta fase se enfoca en crear una API declarativa moderna y herramientas de produ
 31. ** Tarea 6.3** - Sistema de Migraciones Avanzado - **PENDIENTE**
 32. ** Tarea 6.4** - Sistema de Seeders para Datos de Prueba - **PENDIENTE**
 33. ** Tarea 10.2** - Mejora de la Herramienta CLI para Desarrolladores - **PENDIENTE**
-
-### **📊 Resumen de Estado Actualizado:**
-- **✅ Completadas:** 7 tareas (22%)
-- **🟡 Parcialmente Completadas:** 6 tareas (19%)
-- **📝 Pendientes:** 17 tareas (53%)
-- **❌ Eliminadas (Duplicados):** 2 tareas (6%)
-
-**💡 Recomendación:** Enfocar esfuerzos en completar las tareas parcialmente completadas de prioridad máxima y alta antes de avanzar a nuevas funcionalidades.
-
-**🎯 Próximas prioridades recomendadas:**
-1. Completar Tarea 1.6 (Validación Avanzada) - Solo falta el checklist de calidad
-2. Continuar con Tarea 2.1 (Sistema de Caché) - API en PHP e integración
-3. Avanzar en Tarea 6.1 (API Declarativa) - Métodos estáticos en modelos
