@@ -1,6 +1,6 @@
 # VersaORM Trello Demo
 
-Una aplicación de demostración tipo Trello construida con PHP y VersaORM para mostrar todas las capacidades del ORM.
+Una aplicación de demostración tipo Trello construida con PHP y VersaORM para mostrar todas las capacidades del ORM, incluyendo el revolucionario **Modo Lazy** para máximo rendimiento.
 
 ## 🚀 Características
 
@@ -10,6 +10,7 @@ Una aplicación de demostración tipo Trello construida con PHP y VersaORM para 
 - **Sistema de Etiquetas**: Organización de tareas con etiquetas de colores
 - **Gestión de Usuarios**: Administración de usuarios y asignación a proyectos
 - **Interfaz Moderna**: UI responsive con Tailwind CSS
+- **🆕 Modo Lazy Ultra-Optimizado**: Consultas optimizadas automáticamente para máximo rendimiento
 - **Demostraciones VersaORM**: Uso completo de todas las características del ORM
 
 ## 📋 Requisitos
@@ -63,7 +64,8 @@ Una aplicación de demostración tipo Trello construida con PHP y VersaORM para 
 example/
 ├── config.php              # Configuración de la aplicación
 ├── bootstrap.php            # Inicialización y autoloader
-├── index.php               # Controlador principal
+├── index.php               # Controlador principal (con ejemplos Modo Lazy)
+├── lazy_demo.php           # 🆕 Demostración comparativa Modo Lazy vs Normal
 ├── database.sql            # Script de base de datos
 ├── .htaccess              # Configuración Apache
 ├── models/                # Modelos de VersaORM
@@ -100,20 +102,35 @@ $user->store();
 $user->trash();
 ```
 
-### 2. **Consultas SQL Personalizadas**
+### 2. **🆕 Modo Lazy - Consultas Ultra-Optimizadas**
 ```php
-// Consultas con parámetros
+// ❌ ANTES (Ineficiente):
 $tasks = Task::getAll("SELECT * FROM tasks WHERE status = ?", ['todo']);
 
-// Consultas con joins
-$tasks = Task::getAll("
-    SELECT t.*, p.name as project_name
-    FROM tasks t
-    LEFT JOIN projects p ON t.project_id = p.id
-");
+// ✅ DESPUÉS (Modo Lazy optimizado automáticamente):
+$tasks = $orm->table('tasks as t')
+    ->lazy()                                  // 🚀 Activa optimización automática
+    ->select(['t.*', 'u.name as user_name'])
+    ->leftJoin('users as u', 't.user_id', '=', 'u.id')
+    ->where('t.status', '=', 'todo')
+    ->orderBy('t.created_at', 'desc')
+    ->collect();                             // ✅ UNA consulta súper optimizada
 ```
 
-### 3. **Relaciones Many-to-Many**
+### 3. **Consultas Complejas con JOINs Optimizados**
+```php
+// Consulta compleja con múltiples JOINs optimizada automáticamente
+$tasks = $orm->table('tasks as t')
+    ->lazy()                                              // 🚀 Optimización automática
+    ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
+    ->leftJoin('users as u', 't.user_id', '=', 'u.id')
+    ->leftJoin('projects as p', 't.project_id', '=', 'p.id')
+    ->where('t.status', '!=', 'done')
+    ->orderBy('t.priority', 'desc')
+    ->collect();                                          // ✅ JOINs optimizados automáticamente
+```
+
+### 4. **Relaciones Many-to-Many**
 ```php
 // Asignar etiquetas a una tarea
 $task->setLabels([1, 2, 3]);
@@ -143,6 +160,28 @@ $user->fill($_POST);
 protected bool $timestamps = true;
 // Maneja automáticamente created_at y updated_at
 ```
+
+## 🚀 Demostración del Modo Lazy
+
+Para ver una comparación completa entre el modo normal y el modo lazy:
+
+1. **Accede a `lazy_demo.php`** en tu navegador
+2. **Observa las mejoras de rendimiento** en tiempo real
+3. **Analiza los planes de ejecución** con `explain()`
+
+### Ejemplos de Mejoras Implementadas:
+
+#### 📊 Dashboard Optimizado:
+- **ANTES**: 4 consultas separadas + ordenamiento en PHP
+- **DESPUÉS**: 4 consultas COUNT eficientes + 1 consulta lazy con JOINs optimizados
+
+#### 📝 Lista de Tareas con Filtros:
+- **ANTES**: Cargar TODAS las tareas + filtrar en PHP + consultas N+1
+- **DESPUÉS**: Filtros aplicados en DB + JOINs optimizados + paginación eficiente
+
+#### 🏷️ Tareas por Etiqueta:
+- **ANTES**: SQL manual complejo propenso a errores
+- **DESPUÉS**: Query Builder seguro con optimización automática de JOINs
 
 ## 📊 Esquema de Base de Datos
 

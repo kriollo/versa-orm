@@ -25,18 +25,30 @@ try {
         // DASHBOARD
         // ======================
         case 'dashboard':
-            $totalProjects = count(Project::all());
-            $totalTasks = count(Task::all());
-            $totalUsers = count(User::all());
-            $totalLabels = count(Label::all());
+            // 🚀 ANTES (Múltiples consultas separadas):
+            // $totalProjects = count(Project::all());
+            // $totalTasks = count(Task::all());
+            // $totalUsers = count(User::all());
+            // $totalLabels = count(Label::all());
 
-            // Obtener las tareas recientes usando find para obtener objetos
-            $allTasks = Task::all();
-            // Ordenar por fecha de creación y tomar las 5 más recientes
-            usort($allTasks, function ($a, $b) {
-                return safe_strtotime($b->created_at) - safe_strtotime($a->created_at);
-            });
-            $recentTasks = array_slice($allTasks, 0, 5);
+            // ✅ DESPUÉS (Optimizado con consultas agregadas):
+            $orm = Task::getGlobalORM();
+
+            // Conteos eficientes usando el ORM
+            $totalProjects = $orm->table('projects')->count();
+            $totalTasks = $orm->table('tasks')->count();
+            $totalUsers = $orm->table('users')->count();
+            $totalLabels = $orm->table('labels')->count();
+
+            // 🚀 Tareas recientes con información relacionada usando Modo Lazy
+            $recentTasks = $orm->table('tasks as t')
+                ->lazy()                                                    // 🚀 Activa optimización automática
+                ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
+                ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // JOIN optimizado
+                ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // JOIN optimizado
+                ->orderBy('t.created_at', 'desc')                         // ORDER BY optimizado
+                ->limit(5)                                                 // LIMIT optimizado
+                ->collect();                                               // ✅ UNA consulta optimizada
 
             render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
             break;
@@ -62,24 +74,31 @@ try {
                 redirect('?action=projects');
             }
 
-            $tasks = Task::getAll('SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC', [$id]);
+            // 🚀 ANTES (SQL manual):
+            // $tasks = Task::getAll('SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC', [$id]);
+
+            // ✅ DESPUÉS (Modo Lazy con información relacionada):
+            $orm = Task::getGlobalORM();
+            $tasks = $orm->table('tasks as t')
+                ->lazy()                                                    // 🚀 Activa optimización automática
+                ->select(['t.*', 'u.name as user_name', 'u.email as user_email'])
+                ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // JOIN optimizado para datos del usuario
+                ->where('t.project_id', '=', $id)                         // WHERE optimizado
+                ->orderBy('t.status')                                     // ORDER BY optimizado
+                ->orderBy('t.created_at', 'desc')                         // ORDER BY secundario optimizado
+                ->collect();                                               // ✅ UNA consulta optimizada
+
             $members = $project->members();
             $owner = User::findArray($project->owner_id);
 
-            // Obtener todos los usuarios primero
+            // Obtener usuarios disponibles de forma eficiente
             $allUsers = User::all();
-
-            // Obtener IDs de miembros actuales
             $memberIds = array_column($members, 'id');
-            $memberIds[] = $project->owner_id; // Excluir también al propietario
+            $memberIds[] = $project->owner_id;
 
-            // Filtrar usuarios disponibles
-            $availableUsers = [];
-            foreach ($allUsers as $user) {
-                if (!in_array($user->id, $memberIds)) {
-                    $availableUsers[] = $user;
-                }
-            }
+            $availableUsers = array_filter($allUsers, function ($user) use ($memberIds) {
+                return !in_array($user->id, $memberIds);
+            });
 
             render('projects/show', compact('project', 'tasks', 'members', 'owner', 'availableUsers'));
             break;
@@ -233,49 +252,67 @@ try {
             $projectFilter = $_GET['project_id'] ?? '';
             $userFilter = $_GET['user_id'] ?? '';
 
-            // Obtener todas las tareas y aplicar filtros
-            $allTasks = Task::all();
-            $filteredTasks = array_filter($allTasks, function ($task) use ($statusFilter, $priorityFilter, $projectFilter, $userFilter) {
-                if ($statusFilter && $task->status !== $statusFilter) return false;
-                if ($priorityFilter && $task->priority !== $priorityFilter) return false;
-                if ($projectFilter && $task->project_id != $projectFilter) return false;
-                if ($userFilter && $task->user_id != $userFilter) return false;
-                return true;
-            });
+            // 🚀 ANTES (Muy ineficiente):
+            // - Obtener TODAS las tareas en memoria
+            // - Filtrar en PHP (muy lento con muchas tareas)
+            // - Consultas N+1 para proyecto y usuario de cada tarea
+            // $allTasks = Task::all();
+            // $filteredTasks = array_filter($allTasks, function ($task) use (...) { ... });
 
-            // Calcular totales
-            $totalTasks = count($filteredTasks);
+            // ✅ DESPUÉS (Modo Lazy - Ultra optimizado):
+            $orm = Task::getGlobalORM();
+
+            // Construcción dinámica de consulta con filtros aplicados en DB
+            $queryBuilder = $orm->table('tasks as t')
+                ->lazy()                                                    // 🚀 Activa optimización automática
+                ->select(['t.*', 'u.name as user_name', 'u.avatar_color', 'p.name as project_name', 'p.color as project_color'])
+                ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // JOIN optimizado
+                ->leftJoin('projects as p', 't.project_id', '=', 'p.id');  // JOIN optimizado
+
+            // Aplicar filtros dinámicamente (solo si están presentes)
+            if ($statusFilter) {
+                $queryBuilder->where('t.status', '=', $statusFilter);
+            }
+            if ($priorityFilter) {
+                $queryBuilder->where('t.priority', '=', $priorityFilter);
+            }
+            if ($projectFilter) {
+                $queryBuilder->where('t.project_id', '=', (int)$projectFilter);
+            }
+            if ($userFilter) {
+                $queryBuilder->where('t.user_id', '=', (int)$userFilter);
+            }
+
+            // Contar total para paginación (consulta simple sin JOINs)
+            $countQueryBuilder = $orm->table('tasks as t');
+            
+            // Aplicar los mismos filtros para el conteo
+            if ($statusFilter) {
+                $countQueryBuilder->where('t.status', '=', $statusFilter);
+            }
+            if ($priorityFilter) {
+                $countQueryBuilder->where('t.priority', '=', $priorityFilter);
+            }
+            if ($projectFilter) {
+                $countQueryBuilder->where('t.project_id', '=', (int)$projectFilter);
+            }
+            if ($userFilter) {
+                $countQueryBuilder->where('t.user_id', '=', (int)$userFilter);
+            }
+            
+            $totalTasks = $countQueryBuilder->count();                      // Conteo optimizado sin JOINs
             $totalPages = $perPage > 0 ? ceil($totalTasks / $perPage) : 1;
 
-            // Aplicar paginación
-            $tasks = array_slice($filteredTasks, $offset, $perPage);
+            // Obtener tareas paginadas
+            $tasks = $queryBuilder
+                ->orderBy('t.created_at', 'desc')                          // ORDER BY optimizado
+                ->limit($perPage)                                          // LIMIT optimizado
+                ->offset($offset)                                          // OFFSET optimizado
+                ->collect();                                               // ✅ UNA consulta optimizada
 
-            // Convertir objetos a arrays para la vista
-            $tasks = array_map(function ($task) {
-                $taskArray = $task->export();
-
-                // Añadir información del proyecto
-                if ($task->project_id) {
-                    $project = Project::find($task->project_id);
-                    $taskArray['project_name'] = $project ? $project->name : 'Sin proyecto';
-                } else {
-                    $taskArray['project_name'] = 'Sin proyecto';
-                }
-
-                // Añadir información del usuario
-                if ($task->user_id) {
-                    $user = User::find($task->user_id);
-                    $taskArray['user_name'] = $user ? $user->name : 'Sin asignar';
-                } else {
-                    $taskArray['user_name'] = 'Sin asignar';
-                }
-
-                return $taskArray;
-            }, $tasks);
-
-            // Obtener datos para filtros
-            $projects = array_map(fn($p) => $p->export(), Project::all());
-            $users = array_map(fn($u) => $u->export(), User::all());
+            // Obtener datos para filtros (solo los necesarios)
+            $projects = $orm->table('projects')->select(['id', 'name'])->getAll();
+            $users = $orm->table('users')->select(['id', 'name'])->getAll();
 
             // Datos de paginación
             $pagination = [
@@ -288,7 +325,9 @@ try {
                 'prev_page' => max(1, $page - 1),
                 'next_page' => min($totalPages, $page + 1),
                 'start' => $totalTasks > 0 ? $offset + 1 : 0,
-                'end' => min($offset + $perPage, $totalTasks)
+                'end' => min($offset + $perPage, $totalTasks),
+                'showing_from' => $totalTasks > 0 ? $offset + 1 : 0,
+                'showing_to' => min($offset + $perPage, $totalTasks)
             ];
 
             // Datos de filtros actuales
@@ -503,16 +542,28 @@ try {
                 exit;
             }
 
-            // Obtener tareas asociadas a la etiqueta
-            $tasks = Label::getAll('
-                SELECT t.*, u.name as user_name, p.name as project_name
-                FROM tasks t
-                INNER JOIN task_labels tl ON t.id = tl.task_id
-                LEFT JOIN users u ON t.user_id = u.id
-                LEFT JOIN projects p ON t.project_id = p.id
-                WHERE tl.label_id = ?
-                ORDER BY t.created_at DESC
-            ', [$labelId]);
+            // 🚀 ANTES (SQL manual complejo):
+            // $tasks = Label::getAll('
+            //     SELECT t.*, u.name as user_name, p.name as project_name
+            //     FROM tasks t
+            //     INNER JOIN task_labels tl ON t.id = tl.task_id
+            //     LEFT JOIN users u ON t.user_id = u.id
+            //     LEFT JOIN projects p ON t.project_id = p.id
+            //     WHERE tl.label_id = ?
+            //     ORDER BY t.created_at DESC
+            // ', [$labelId]);
+
+            // ✅ DESPUÉS (Modo Lazy optimizado automáticamente):
+            $orm = Task::getGlobalORM();
+            $tasks = $orm->table('tasks as t')
+                ->lazy()                                                    // 🚀 Activa optimización automática
+                ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
+                ->join('task_labels as tl', 't.id', '=', 'tl.task_id')    // INNER JOIN optimizado
+                ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // LEFT JOIN optimizado
+                ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // LEFT JOIN optimizado
+                ->where('tl.label_id', '=', $labelId)                     // WHERE optimizado
+                ->orderBy('t.created_at', 'desc')                         // ORDER BY optimizado
+                ->collect();                                               // ✅ Ejecuta UNA consulta optimizada
 
             header('Content-Type: application/json');
             echo json_encode($tasks);

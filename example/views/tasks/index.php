@@ -214,17 +214,6 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php foreach ($tasks as $task): ?>
-                        <?php
-                        // Buscar información del proyecto y usuario
-                        $taskProject = array_filter($projects, fn($p) => $p['id'] == $task['project_id']);
-                        $taskProject = !empty($taskProject) ? array_values($taskProject)[0] : null;
-
-                        $taskUser = null;
-                        if ($task['user_id']) {
-                            $taskUser = array_filter($users, fn($u) => $u['id'] == $task['user_id']);
-                            $taskUser = !empty($taskUser) ? array_values($taskUser)[0] : null;
-                        }
-                        ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div>
@@ -235,22 +224,22 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <?php if ($taskProject): ?>
+                                <?php if ($task['project_name']): ?>
                                     <div class="flex items-center">
-                                        <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($taskProject['color']) ?>"></div>
-                                        <span class="text-sm text-gray-900"><?= htmlspecialchars($taskProject['name']) ?></span>
+                                        <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($task['project_color'] ?? '#6B7280') ?>"></div>
+                                        <span class="text-sm text-gray-900"><?= htmlspecialchars($task['project_name']) ?></span>
                                     </div>
                                 <?php else: ?>
                                     <span class="text-gray-400">-</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <?php if ($taskUser): ?>
+                                <?php if ($task['user_name']): ?>
                                     <div class="flex items-center">
-                                        <div class="avatar-sm mr-2" style="background-color: <?= htmlspecialchars($taskUser['avatar_color']) ?>">
-                                            <?= strtoupper(substr($taskUser['name'], 0, 2)) ?>
+                                        <div class="avatar-sm mr-2" style="background-color: <?= htmlspecialchars($task['avatar_color'] ?? '#6B7280') ?>">
+                                            <?= strtoupper(substr($task['user_name'], 0, 2)) ?>
                                         </div>
-                                        <span class="text-sm text-gray-900"><?= htmlspecialchars($taskUser['name']) ?></span>
+                                        <span class="text-sm text-gray-900"><?= htmlspecialchars($task['user_name']) ?></span>
                                     </div>
                                 <?php else: ?>
                                     <span class="text-gray-400">Sin asignar</span>
