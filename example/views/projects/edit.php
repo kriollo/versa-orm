@@ -3,6 +3,11 @@
 /**
  * Vista para editar un proyecto existente.
  */
+
+// Verifica que $project esté definido y es un objeto válido
+if (!isset($project) || !is_object($project)) {
+    throw new \VersaORM\VersaORMException("El proyecto no está definido. Asegúrate de cargar el modelo antes de mostrar la vista.");
+}
 ?>
 
 <div class="max-w-4xl mx-auto">
@@ -90,8 +95,8 @@
                                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">Selecciona un propietario</option>
                                 <?php foreach ($users as $user): ?>
-                                    <option value="<?= $user->id ?>" <?= $project->owner_id == $user->id ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($user->name) ?> (<?= htmlspecialchars($user->email) ?>)
+                                    <option value="<?= $user['id'] ?>" <?= $project->owner_id == $user['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -113,8 +118,8 @@
                                 <div class="text-sm text-gray-500 space-y-2">
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
                                         <?php
-                                        $owner = array_filter($users, fn($u) => $u->id == $project->owner_id);
-                                        echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
+                                        $owner = array_filter($users, fn($u) => $u['id'] == $project->owner_id);
+                                        echo $owner ? htmlspecialchars(current($owner)['name']) : 'Sin asignar';
                                         ?>
                                     </p>
                                     <p><i class="fas fa-calendar mr-2"></i>Creado: <?= isset($project->created_at) ?  safe_date('M Y', $project->created_at) : '' ?></p>

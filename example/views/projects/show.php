@@ -240,8 +240,8 @@ function getPriorityClass($priority)
                         <option value="">Selecciona un usuario</option>
                         <?php if (isset($availableUsers) && is_array($availableUsers)): ?>
                             <?php foreach ($availableUsers as $user): ?>
-                                <option value="<?= $user->id ?>">
-                                    <?= htmlspecialchars($user->name) ?> (<?= htmlspecialchars($user->email) ?>)
+                                <option value="<?= $user['id'] ?>">
+                                    <?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)
                                 </option>
                             <?php endforeach; ?>
                         <?php else: ?>

@@ -62,8 +62,8 @@
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">Selecciona un proyecto</option>
                         <?php foreach ($projects as $project): ?>
-                            <option value="<?= $project->id ?>" <?= $task->project_id == $project->id ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($project->name) ?>
+                            <option value="<?= $project['id'] ?>" <?= $task->project_id == $project['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($project['name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -76,8 +76,8 @@
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">Sin asignar</option>
                         <?php foreach ($users as $user): ?>
-                            <option value="<?= $user->id ?>" <?= $task->user_id == $user->id ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($user->name) ?> (<?= htmlspecialchars($user->email) ?>)
+                            <option value="<?= $user['id'] ?>" <?= $task->user_id == $user['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -125,12 +125,12 @@
                             <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                                 <input type="checkbox"
                                     name="labels[]"
-                                    value="<?= $label->id ?>"
-                                    <?= in_array($label->id, $taskLabels ?? []) ? 'checked' : '' ?>
+                                    value="<?= $label['id'] ?>"
+                                    <?= in_array($label['id'], $taskLabels ?? []) ? 'checked' : '' ?>
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                 <div class="flex items-center flex-1">
-                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($label->color) ?>"></div>
-                                    <span class="text-sm font-medium"><?= htmlspecialchars($label->name) ?></span>
+                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($label['color']) ?>"></div>
+                                    <span class="text-sm font-medium"><?= htmlspecialchars($label['name']) ?></span>
                                 </div>
                             </label>
                         <?php endforeach; ?>
