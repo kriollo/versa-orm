@@ -23,7 +23,7 @@ return [
         'name' => 'VersaORM Trello Demo',
         'version' => '1.0.0',
         'debug' => true,
-        'timezone' => 'America/Mexico_City',
+        'timezone' => 'America/Santiago',
     ],
 
     'versaorm' => [

@@ -9,12 +9,12 @@ declare(strict_types=1);
 // Cargar Composer autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Configurar zona horaria
-date_default_timezone_set('America/Mexico_City');
 
 // Cargar configuración
 $config = require_once __DIR__ . '/config.php';
 
+// Configurar zona horaria
+date_default_timezone_set($config['app']['timezone'] ?? 'UTC');
 // Inicializar VersaORM
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
@@ -85,3 +85,52 @@ function getFlash()
 
 // Iniciar sesión
 session_start();
+
+/**
+ * Helper para convertir fechas a timestamp de manera segura.
+ * Maneja tanto strings como objetos DateTime.
+ */
+function safe_strtotime($date)
+{
+    if ($date instanceof DateTime) {
+        return $date->getTimestamp();
+    }
+    return strtotime($date);
+}
+
+/**
+ * Helper para formatear fechas de manera segura.
+ * Maneja tanto strings como objetos DateTime.
+ */
+function safe_date($format, $date)
+{
+    if ($date instanceof DateTime) {
+        return $date->format($format);
+    }
+    return date($format, strtotime($date));
+}
+
+/**
+ * Helper para formatear fechas de manera segura con manejo de errores.
+ * Maneja tanto strings como objetos DateTime.
+ */
+function safe_date_format($date, $format = 'Y-m-d H:i:s')
+{
+    if (empty($date)) {
+        return '-';
+    }
+
+    if ($date instanceof DateTime) {
+        return $date->format($format);
+    }
+
+    if (is_string($date)) {
+        $timestamp = strtotime($date);
+        if ($timestamp === false) {
+            return $date; // Devolver el valor original si no se puede parsear
+        }
+        return date($format, $timestamp);
+    }
+
+    return (string) $date;
+}

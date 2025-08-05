@@ -101,10 +101,10 @@
             <div class="mt-8 pt-6 border-t border-gray-200">
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500">
                     <div>
-                        <strong>Creado:</strong> <?= date('d/m/Y H:i', strtotime($user->created_at)) ?>
+                        <strong>Creado:</strong> <?= isset($user->created_at) ? safe_date_format($user->created_at, 'd/m/Y H:i') : 'N/A' ?>
                     </div>
                     <div>
-                        <strong>Actualizado:</strong> <?= date('d/m/Y H:i', strtotime($user->updated_at)) ?>
+                        <strong>Actualizado:</strong> <?= isset($user->updated_at) ? safe_date_format($user->updated_at, 'd/m/Y H:i') : 'N/A' ?>
                     </div>
                 </div>
             </div>

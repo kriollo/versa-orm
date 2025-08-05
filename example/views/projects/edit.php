@@ -59,8 +59,8 @@
                             <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?= $project->color ?>' }">
                                 <?php
                                 $colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#f1c40f'];
-foreach ($colors as $color):
-    ?>
+                                foreach ($colors as $color):
+                                ?>
                                     <label class="cursor-pointer">
                                         <input type="radio"
                                             name="color"
@@ -113,11 +113,11 @@ foreach ($colors as $color):
                                 <div class="text-sm text-gray-500 space-y-2">
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
                                         <?php
-            $owner = array_filter($users, fn ($u) => $u->id == $project->owner_id);
-echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
-?>
+                                        $owner = array_filter($users, fn($u) => $u->id == $project->owner_id);
+                                        echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
+                                        ?>
                                     </p>
-                                    <p><i class="fas fa-calendar mr-2"></i>Creado: <?= date('d/m/Y', strtotime($project->created_at)) ?></p>
+                                    <p><i class="fas fa-calendar mr-2"></i>Creado: <?= isset($project->created_at) ?  safe_date('M Y', $project->created_at) : '' ?></p>
                                 </div>
                             </div>
                         </div>
@@ -129,10 +129,10 @@ echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
             <div class="mt-8 pt-6 border-t border-gray-200">
                 <div class="grid grid-cols-3 gap-4 text-sm text-gray-500">
                     <div>
-                        <strong>Creado:</strong> <?= date('d/m/Y H:i', strtotime($project->created_at)) ?>
+                        <strong>Creado:</strong> <?= isset($project->created_at) ? safe_date('d/m/Y H:i', $project->created_at) : '' ?>
                     </div>
                     <div>
-                        <strong>Actualizado:</strong> <?= date('d/m/Y H:i', strtotime($project->updated_at)) ?>
+                        <strong>Actualizado:</strong> <?= isset($project->updated_at) ? safe_date('d/m/Y H:i', $project->updated_at) : '' ?>
                     </div>
                     <div>
                         <strong>ID:</strong> #<?= $project->id ?>

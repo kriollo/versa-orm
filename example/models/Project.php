@@ -178,4 +178,20 @@ class Project extends BaseModel
             }
         }
     }
+
+    /**
+     * Definir tipos de propiedades para validación de esquema y tipado fuerte.
+     */
+    public static function definePropertyTypes(): array
+    {
+        return [
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'description' => ['type' => 'text', 'nullable' => true],
+            'color' => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
+            'owner_id' => ['type' => 'int', 'nullable' => false],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
+        ];
+    }
 }

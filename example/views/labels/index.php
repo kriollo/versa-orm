@@ -38,7 +38,7 @@
                     <i class="fas fa-check-circle text-green-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count(array_filter($labels, fn ($l) => !empty($l->tasks_count) && $l->tasks_count > 0)) ?></p>
+                    <p class="text-2xl font-semibold"><?= count(array_filter($labels, fn($l) => !empty($l->tasks_count) && $l->tasks_count > 0)) ?></p>
                     <p class="text-gray-600 text-sm">En Uso</p>
                 </div>
             </div>
@@ -111,7 +111,7 @@
                                 </span>
                             </div>
                             <span class="text-xs text-gray-400">
-                                <?= date('d/m/Y', strtotime($label->created_at)) ?>
+                                <?= isset($label->created_at) ? safe_date('d/m/Y', $label->created_at) : '' ?>
                             </span>
                         </div>
 
@@ -134,13 +134,13 @@
             <div class="flex flex-wrap gap-2">
                 <?php
                 $colors = array_unique(array_column($labels, 'color'));
-foreach ($colors as $color):
-    ?>
+                foreach ($colors as $color):
+                ?>
                     <div class="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
                         <div class="w-4 h-4 rounded-full" style="background-color: <?= htmlspecialchars($color) ?>"></div>
                         <span class="text-sm font-mono text-gray-600"><?= htmlspecialchars($color) ?></span>
                         <span class="text-xs text-gray-500">
-                            (<?= count(array_filter($labels, fn ($l) => $l->color === $color)) ?> etiquetas)
+                            (<?= count(array_filter($labels, fn($l) => $l->color === $color)) ?> etiquetas)
                         </span>
                     </div>
                 <?php endforeach; ?>

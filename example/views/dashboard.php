@@ -156,8 +156,8 @@
                                     'in_progress' => 'bg-blue-100 text-blue-800',
                                     'done' => 'bg-green-100 text-green-800',
                                 ];
-                $statusColor = $statusColors[$task->status] ?? 'bg-gray-100 text-gray-800';
-                ?>
+                                $statusColor = $statusColors[$task->status] ?? 'bg-gray-100 text-gray-800';
+                                ?>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColor ?>">
                                     <?= ucfirst(str_replace('_', ' ', $task->status)) ?>
                                 </span>
@@ -172,21 +172,55 @@
                         <div class="flex items-center space-x-2">
                             <?php
                             $priorityColors = [
-                'low' => 'bg-green-100 text-green-800',
-                'medium' => 'bg-yellow-100 text-yellow-800',
-                'high' => 'bg-orange-100 text-orange-800',
-                'urgent' => 'bg-red-100 text-red-800',
+                                'low' => 'bg-green-100 text-green-800',
+                                'medium' => 'bg-yellow-100 text-yellow-800',
+                                'high' => 'bg-orange-100 text-orange-800',
+                                'urgent' => 'bg-red-100 text-red-800',
                             ];
-                $priorityColor = $priorityColors[$task->priority] ?? 'bg-gray-100 text-gray-800';
-                ?>
+                            $priorityColor = $priorityColors[$task->priority] ?? 'bg-gray-100 text-gray-800';
+                            ?>
                             <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <?= $priorityColor ?>">
                                 <?= ucfirst($task->priority) ?>
                             </span>
-                            <span class="text-sm text-gray-500"><?= date('d/m/Y', strtotime($task->created_at)) ?></span>
+                            <span class="text-sm text-gray-500"><?= safe_date('d/m/Y', $task->created_at) ?></span>
                         </div>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- Sistema de tipado fuerte activo -->
+<div class="bg-gradient-to-r from-green-50 to-blue-50 shadow rounded-lg border-l-4 border-green-400">
+    <div class="px-6 py-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-shield-alt text-2xl text-green-600"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="text-lg font-semibold text-gray-900">Sistema de Tipado Fuerte Activo</h3>
+                <p class="mt-1 text-sm text-gray-600">
+                    VersaORM está validando automáticamente los tipos de datos en todos los modelos.
+                    <?php
+                    $typedModels = [
+                        'User' => \App\Models\User::definePropertyTypes(),
+                        'Project' => \App\Models\Project::definePropertyTypes(),
+                        'Task' => \App\Models\Task::definePropertyTypes(),
+                        'Label' => \App\Models\Label::definePropertyTypes()
+                    ];
+                    $totalProperties = array_sum(array_map('count', $typedModels));
+                    ?>
+                    <strong><?= count($typedModels) ?> modelos</strong> con <strong><?= $totalProperties ?> propiedades tipadas</strong>.
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    <?php foreach ($typedModels as $modelName => $properties): ?>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <?= $modelName ?>: <?= count($properties) ?> props
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

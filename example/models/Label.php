@@ -122,4 +122,19 @@ class Label extends BaseModel
         );
         return (int) ($result['count'] ?? 0);
     }
+
+    /**
+     * Definir tipos de propiedades para validación de esquema y tipado fuerte.
+     */
+    public static function definePropertyTypes(): array
+    {
+        return [
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 50, 'nullable' => false],
+            'color' => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
+            'description' => ['type' => 'text', 'nullable' => true],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
+        ];
+    }
 }

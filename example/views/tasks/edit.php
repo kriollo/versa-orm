@@ -111,7 +111,7 @@
                     <input type="date"
                         id="due_date"
                         name="due_date"
-                        value="<?= $task->due_date ? date('Y-m-d', strtotime($task->due_date)) : '' ?>"
+                        value="<?= $task->due_date ? safe_date('Y-m-d', $task->due_date) : '' ?>"
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
 
@@ -142,10 +142,10 @@
             <div class="mt-8 pt-6 border-t border-gray-200">
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500">
                     <div>
-                        <strong>Creada:</strong> <?= date('d/m/Y H:i', strtotime($task->created_at)) ?>
+                        <strong>Creada:</strong> <?= isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : '' ?>
                     </div>
                     <div>
-                        <strong>Actualizada:</strong> <?= date('d/m/Y H:i', strtotime($task->updated_at)) ?>
+                        <strong>Actualizada:</strong> <?= isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : '' ?>
                     </div>
                 </div>
             </div>

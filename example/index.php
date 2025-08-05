@@ -34,16 +34,16 @@ try {
             $allTasks = Task::all();
             // Ordenar por fecha de creación y tomar las 5 más recientes
             usort($allTasks, function ($a, $b) {
-                return strtotime($b->created_at) - strtotime($a->created_at);
+                return safe_strtotime($b->created_at) - safe_strtotime($a->created_at);
             });
             $recentTasks = array_slice($allTasks, 0, 5);
 
             render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
             break;
 
-            // ======================
-            // PROYECTOS
-            // ======================
+        // ======================
+        // PROYECTOS
+        // ======================
         case 'projects':
             $projects = Project::all();
             $users = User::all();
@@ -217,18 +217,97 @@ try {
             redirect('?action=projects');
             break;
 
-            // ======================
-            // TAREAS
-            // ======================
+        // ======================
+        // TAREAS
+        // ======================
         case 'tasks':
-            $tasks = Task::getAll('
-                SELECT t.*, p.name as project_name, u.name as user_name
-                FROM tasks t
-                LEFT JOIN projects p ON t.project_id = p.id
-                LEFT JOIN users u ON t.user_id = u.id
-                ORDER BY t.created_at DESC
-            ');
-            render('tasks/index', compact('tasks'));
+            // Parámetros de paginación y filtros
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $perPageParam = $_GET['per_page'] ?? 10;
+            $perPage = in_array((int)$perPageParam, [1, 5, 10, 20, 50, 100]) ? (int)$perPageParam : 10;
+            $offset = ($page - 1) * $perPage;
+
+            // Filtros
+            $statusFilter = $_GET['status'] ?? '';
+            $priorityFilter = $_GET['priority'] ?? '';
+            $projectFilter = $_GET['project_id'] ?? '';
+            $userFilter = $_GET['user_id'] ?? '';
+
+            // Obtener todas las tareas y aplicar filtros
+            $allTasks = Task::all();
+            $filteredTasks = array_filter($allTasks, function ($task) use ($statusFilter, $priorityFilter, $projectFilter, $userFilter) {
+                if ($statusFilter && $task->status !== $statusFilter) return false;
+                if ($priorityFilter && $task->priority !== $priorityFilter) return false;
+                if ($projectFilter && $task->project_id != $projectFilter) return false;
+                if ($userFilter && $task->user_id != $userFilter) return false;
+                return true;
+            });
+
+            // Calcular totales
+            $totalTasks = count($filteredTasks);
+            $totalPages = $perPage > 0 ? ceil($totalTasks / $perPage) : 1;
+
+            // Aplicar paginación
+            $tasks = array_slice($filteredTasks, $offset, $perPage);
+
+            // Convertir objetos a arrays para la vista
+            $tasks = array_map(function ($task) {
+                $taskArray = $task->export();
+
+                // Añadir información del proyecto
+                if ($task->project_id) {
+                    $project = Project::find($task->project_id);
+                    $taskArray['project_name'] = $project ? $project->name : 'Sin proyecto';
+                } else {
+                    $taskArray['project_name'] = 'Sin proyecto';
+                }
+
+                // Añadir información del usuario
+                if ($task->user_id) {
+                    $user = User::find($task->user_id);
+                    $taskArray['user_name'] = $user ? $user->name : 'Sin asignar';
+                } else {
+                    $taskArray['user_name'] = 'Sin asignar';
+                }
+
+                return $taskArray;
+            }, $tasks);
+
+            // Obtener datos para filtros
+            $projects = array_map(fn($p) => $p->export(), Project::all());
+            $users = array_map(fn($u) => $u->export(), User::all());
+
+            // Datos de paginación
+            $pagination = [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $totalTasks,
+                'total_pages' => $totalPages,
+                'has_prev' => $page > 1,
+                'has_next' => $page < $totalPages,
+                'prev_page' => max(1, $page - 1),
+                'next_page' => min($totalPages, $page + 1),
+                'start' => $totalTasks > 0 ? $offset + 1 : 0,
+                'end' => min($offset + $perPage, $totalTasks)
+            ];
+
+            // Datos de filtros actuales
+            $filters = [
+                'status' => $statusFilter,
+                'priority' => $priorityFilter,
+                'project_id' => $projectFilter,
+                'user_id' => $userFilter
+            ];
+
+            // Construir query string para filtros
+            $filterParams = [];
+            if ($statusFilter) $filterParams['status'] = $statusFilter;
+            if ($priorityFilter) $filterParams['priority'] = $priorityFilter;
+            if ($projectFilter) $filterParams['project_id'] = $projectFilter;
+            if ($userFilter) $filterParams['user_id'] = $userFilter;
+            $filterQueryString = $filterParams ? '&' . http_build_query($filterParams) : '';
+
+            render('tasks/index', compact('tasks', 'projects', 'users', 'pagination', 'filters', 'filterQueryString'));
             break;
 
         case 'task_create':
@@ -253,9 +332,9 @@ try {
                 }
             }
 
-            $projects = Project::all();
-            $users = User::all();
-            $labels = Label::all();
+            $projects = array_map(fn($p) => $p->export(), Project::all());
+            $users = array_map(fn($u) => $u->export(), User::all());
+            $labels = array_map(fn($l) => $l->export(), Label::all());
             render('tasks/create', compact('projects', 'users', 'labels'));
             break;
 
@@ -295,9 +374,9 @@ try {
                 }
             }
 
-            $projects = Project::all();
-            $users = User::all();
-            $labels = Label::all();
+            $projects = array_map(fn($p) => $p->export(), Project::all());
+            $users = array_map(fn($u) => $u->export(), User::all());
+            $labels = array_map(fn($l) => $l->export(), Label::all());
             $taskLabels = $task->getLabelIds();
             render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
             break;
@@ -340,9 +419,9 @@ try {
             redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             break;
 
-            // ======================
-            // USUARIOS
-            // ======================
+        // ======================
+        // USUARIOS
+        // ======================
         case 'users':
             $users = User::all();
             render('users/index', compact('users'));
@@ -404,9 +483,9 @@ try {
             redirect('?action=users');
             break;
 
-            // ======================
-            // ETIQUETAS
-            // ======================
+        // ======================
+        // ETIQUETAS
+        // ======================
         case 'labels':
             $labels = Label::all();
             // Agregar conteo de tareas para cada etiqueta
@@ -442,6 +521,10 @@ try {
                 flash('error', 'Etiqueta no encontrada');
                 redirect('?action=labels');
             }
+
+            // Añadir conteo de tareas
+            $count = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
+            $label->tasks_count = $count[0]['count'] ?? 0;
 
             if ($_POST) {
                 try {

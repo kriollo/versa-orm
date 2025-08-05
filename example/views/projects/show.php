@@ -53,12 +53,12 @@
 
                     <div>
                         <label class="text-sm font-medium text-gray-500">Fecha de creación</label>
-                        <p class="mt-1"><?= date('d/m/Y H:i', strtotime($project->created_at)) ?></p>
+                        <p class="mt-1"><?= isset($project->created_at) ?  safe_date('M Y', $project->created_at) : '' ?></p>
                     </div>
 
                     <div>
                         <label class="text-sm font-medium text-gray-500">Última actualización</label>
-                        <p class="mt-1"><?= date('d/m/Y H:i', strtotime($project->updated_at)) ?></p>
+                        <p class="mt-1"><?= isset($project->updated_at) ? safe_date('M Y', $project->updated_at) : '' ?></p>
                     </div>
                 </div>
             </div>
@@ -119,7 +119,7 @@
                 <!-- Progreso general -->
                 <?php if (count($tasks) > 0): ?>
                     <?php
-                    $completedTasks = array_filter($tasks, fn ($t) => $t['status'] === 'done');
+                    $completedTasks = array_filter($tasks, fn($t) => $t['status'] === 'done');
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
                     <div class="mb-6">
@@ -136,21 +136,21 @@
                 <!-- Lista de tareas por estado -->
                 <?php
                 $tasksByStatus = [
-                    'todo' => array_filter($tasks, fn ($t) => $t['status'] === 'todo'),
-                    'in_progress' => array_filter($tasks, fn ($t) => $t['status'] === 'in_progress'),
-                    'done' => array_filter($tasks, fn ($t) => $t['status'] === 'done'),
+                    'todo' => array_filter($tasks, fn($t) => $t['status'] === 'todo'),
+                    'in_progress' => array_filter($tasks, fn($t) => $t['status'] === 'in_progress'),
+                    'done' => array_filter($tasks, fn($t) => $t['status'] === 'done'),
                 ];
-$statusNames = [
-    'todo' => 'Por Hacer',
-    'in_progress' => 'En Progreso',
-    'done' => 'Completadas',
-];
-$statusColors = [
-    'todo' => 'bg-gray-100 text-gray-800',
-    'in_progress' => 'bg-blue-100 text-blue-800',
-    'done' => 'bg-green-100 text-green-800',
-];
-?>
+                $statusNames = [
+                    'todo' => 'Por Hacer',
+                    'in_progress' => 'En Progreso',
+                    'done' => 'Completadas',
+                ];
+                $statusColors = [
+                    'todo' => 'bg-gray-100 text-gray-800',
+                    'in_progress' => 'bg-blue-100 text-blue-800',
+                    'done' => 'bg-green-100 text-green-800',
+                ];
+                ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <?php foreach ($tasksByStatus as $status => $statusTasks): ?>

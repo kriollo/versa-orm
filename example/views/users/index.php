@@ -51,8 +51,8 @@
                 </div>
                 <div>
                     <p class="text-2xl font-semibold"><?= count(array_filter($users, function ($u) {
-                        return strtotime($u->created_at) > strtotime('-30 days');
-                    })) ?></p>
+                                                            return safe_strtotime($u->created_at) > strtotime('-30 days');
+                                                        })) ?></p>
                     <p class="text-gray-600 text-sm">Nuevos (30 días)</p>
                 </div>
             </div>
@@ -91,7 +91,7 @@
                                 <h3 class="font-semibold text-lg text-gray-900"><?= htmlspecialchars($user->name ?? 'Sin nombre') ?></h3>
                                 <p class="text-gray-600 text-sm"><?= htmlspecialchars($user->email ?? 'Sin email') ?></p>
                                 <p class="text-gray-500 text-xs mt-1">
-                                    Miembro desde <?= isset($user->created_at) ? date('M Y', strtotime($user->created_at)) : 'Fecha desconocida' ?>
+                                    Miembro desde <?= isset($user->created_at) ? safe_date('M Y', $user->created_at) : 'Fecha desconocida' ?>
                                 </p>
                             </div>
                         </div>
@@ -150,7 +150,7 @@
                             <div class="flex items-center space-x-2 text-xs text-gray-500">
                                 <span class="flex items-center">
                                     <i class="fas fa-clock mr-1"></i>
-                                    <?= isset($user->updated_at) ? date('d/m/Y', strtotime($user->updated_at)) : 'Sin fecha' ?>
+                                    <?= isset($user->updated_at) ? safe_date('d/m/Y', $user->updated_at) : 'Sin fecha' ?>
                                 </span>
                             </div>
                             <div class="flex items-center space-x-2">

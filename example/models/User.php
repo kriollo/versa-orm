@@ -218,4 +218,20 @@ class User extends BaseModel
             ];
         }
     }
+
+    /**
+     * Definir tipos de propiedades para validación y casting.
+     */
+    public static function definePropertyTypes(): array
+    {
+        return [
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'email' => ['type' => 'string', 'max_length' => 150, 'nullable' => false, 'unique' => true],
+            'avatar_color' => ['type' => 'string', 'max_length' => 7, 'nullable' => true, 'default' => '#3498db'],
+            'active' => ['type' => 'bool', 'nullable' => false, 'default' => true],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
+        ];
+    }
 }

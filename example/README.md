@@ -219,3 +219,75 @@ Esta aplicación demuestra:
 - [ ] Exportación de datos
 - [ ] Múltiples idiomas
 - [ ] Temas personalizables
+
+## 🔧 Sistema de Tipado Fuerte
+
+Esta aplicación demuestra el nuevo sistema de tipado fuerte de VersaORM, que proporciona:
+
+### Características del Tipado Fuerte
+
+- **Validación Automática**: Todos los modelos validan automáticamente los tipos de datos
+- **Casting Inteligente**: Conversión automática entre tipos PHP y tipos de base de datos
+- **Definición de Esquemas**: Cada modelo define explícitamente los tipos de sus propiedades
+- **Validación de Enums**: Soporte completo para valores enumerados
+- **Restricciones de Longitud**: Validación automática de longitud máxima para strings
+
+### Ejemplo de Definición de Tipos
+
+```php
+// En el modelo Task
+public static function definePropertyTypes(): array
+{
+    return [
+        'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+        'title' => ['type' => 'string', 'max_length' => 200, 'nullable' => false],
+        'description' => ['type' => 'text', 'nullable' => true],
+        'status' => [
+            'type' => 'enum',
+            'values' => ['todo', 'in_progress', 'done'],
+            'default' => 'todo',
+            'nullable' => false
+        ],
+        'priority' => [
+            'type' => 'enum',
+            'values' => ['low', 'medium', 'high', 'urgent'],
+            'default' => 'medium',
+            'nullable' => false
+        ],
+        'due_date' => ['type' => 'date', 'nullable' => true],
+        'project_id' => ['type' => 'int', 'nullable' => false],
+        'user_id' => ['type' => 'int', 'nullable' => true],
+        'created_at' => ['type' => 'datetime', 'nullable' => false],
+        'updated_at' => ['type' => 'datetime', 'nullable' => false],
+    ];
+}
+```
+
+### Uso del Sistema de Tipado
+
+```php
+// Crear tarea con validación automática
+$task = Task::dispense('tasks');
+$task->title = "Mi nueva tarea";
+$task->status = "todo";          // ✅ Valor válido del enum
+$task->priority = "high";        // ✅ Valor válido del enum
+$task->due_date = "2024-12-31";  // ✅ Se convierte automáticamente a fecha
+$task->store();
+
+// Intentar asignar valor inválido
+$task->status = "invalid_status"; // ❌ Lanzará excepción por valor de enum inválido
+```
+
+### Testing del Sistema de Tipado
+
+Puedes probar el sistema ejecutando:
+
+```bash
+php test_typing_simple.php
+```
+
+Este script valida:
+- Consistencia del esquema en todos los modelos
+- Casting correcto de tipos de datos
+- Validación de enums y restricciones
+- Definiciones de tipos por modelo

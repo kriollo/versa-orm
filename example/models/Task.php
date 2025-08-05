@@ -210,7 +210,8 @@ class Task extends BaseModel
         if (!$this->due_date) {
             return false;
         }
-        return strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
+
+        return safe_strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
     }
 
     /**
@@ -247,5 +248,53 @@ class Task extends BaseModel
             default:
                 return 'bg-gray-100 text-gray-800';
         }
+    }
+
+    /**
+     * Sobrescribir el método fill para manejar campos vacíos.
+     */
+    public function fill(array $attributes): self
+    {
+        // Normalizar campos opcionales
+        $this->normalizeOptionalFields($attributes, ['user_id']);
+        $this->normalizeOptionalDateFields($attributes, ['due_date']);
+
+        // Procesar description vacía (convertir a null si está vacía para consistencia)
+        if (isset($attributes['description']) && trim((string)$attributes['description']) === '') {
+            $attributes['description'] = null;
+        }
+
+        // Llamar al método padre
+        parent::fill($attributes);
+        return $this;
+    }
+
+    /**
+     * Definir tipos de propiedades para validación de esquema y tipado fuerte.
+     */
+    public static function definePropertyTypes(): array
+    {
+        return [
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'title' => ['type' => 'string', 'max_length' => 200, 'nullable' => false],
+            'description' => ['type' => 'text', 'nullable' => true],
+            'status' => [
+                'type' => 'enum',
+                'values' => ['todo', 'in_progress', 'done'],
+                'nullable' => false,
+                'default' => 'todo'
+            ],
+            'priority' => [
+                'type' => 'enum',
+                'values' => ['low', 'medium', 'high', 'urgent'],
+                'nullable' => false,
+                'default' => 'medium'
+            ],
+            'due_date' => ['type' => 'date', 'nullable' => true],
+            'project_id' => ['type' => 'int', 'nullable' => false],
+            'user_id' => ['type' => 'int', 'nullable' => true],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
+        ];
     }
 }

@@ -174,4 +174,236 @@ abstract class BaseModel extends VersaModel
             return false;
         }
     }
+
+    /**
+     * Validar consistencia del esquema entre modelo y base de datos.
+     */
+    public function validateSchemaConsistency(): array
+    {
+        $errors = [];
+
+        try {
+            $propertyTypes = static::definePropertyTypes();
+            if (empty($propertyTypes)) {
+                return []; // No hay tipos definidos, no validar
+            }
+
+            // Aquí se podría implementar la validación contra el esquema real de la BD
+            // Por ahora, validamos que los tipos estén bien definidos en el modelo
+
+            foreach ($propertyTypes as $property => $definition) {
+                if (!isset($definition['type'])) {
+                    $errors[] = "Propiedad '{$property}': tipo no definido";
+                    continue;
+                }
+
+                $type = $definition['type'];
+                $validTypes = [
+                    'int',
+                    'string',
+                    'text',
+                    'bool',
+                    'boolean',
+                    'float',
+                    'decimal',
+                    'json',
+                    'uuid',
+                    'enum',
+                    'set',
+                    'date',
+                    'datetime',
+                    'timestamp',
+                    'inet'
+                ];
+
+                if (!in_array($type, $validTypes)) {
+                    $errors[] = "Propiedad '{$property}': tipo '{$type}' no es válido";
+                }
+
+                // Validar enumeraciones
+                if ($type === 'enum' || $type === 'set') {
+                    if (!isset($definition['values']) || !is_array($definition['values'])) {
+                        $errors[] = "Propiedad '{$property}': tipo '{$type}' requiere definir 'values'";
+                    }
+                }
+
+                // Validar longitud máxima para strings
+                if ($type === 'string' && isset($definition['max_length'])) {
+                    if (!is_int($definition['max_length']) || $definition['max_length'] <= 0) {
+                        $errors[] = "Propiedad '{$property}': max_length debe ser un entero positivo";
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $errors[] = "Error al validar esquema: " . $e->getMessage();
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validar y convertir valores según el tipo definido.
+     */
+    public function validateAndCastProperty(string $property, $value)
+    {
+        $propertyTypes = static::definePropertyTypes();
+
+        if (!isset($propertyTypes[$property])) {
+            return $value; // Sin validación si no está definido el tipo
+        }
+
+        $definition = $propertyTypes[$property];
+        $type = $definition['type'];
+        $nullable = $definition['nullable'] ?? true;
+
+        // Verificar nulos
+        if ($value === null) {
+            if (!$nullable) {
+                throw new \InvalidArgumentException("La propiedad '{$property}' no puede ser null");
+            }
+            return null;
+        }
+
+        // Conversión según tipo
+        switch ($type) {
+            case 'int':
+                return (int) $value;
+
+            case 'float':
+            case 'decimal':
+                return (float) $value;
+
+            case 'bool':
+            case 'boolean':
+                return $this->castToBoolean($value);
+
+            case 'string':
+                $stringValue = (string) $value;
+                if (isset($definition['max_length']) && strlen($stringValue) > $definition['max_length']) {
+                    throw new \InvalidArgumentException("La propiedad '{$property}' excede la longitud máxima de {$definition['max_length']} caracteres");
+                }
+                return $stringValue;
+
+            case 'text':
+                return (string) $value;
+
+            case 'json':
+                if (is_array($value) || is_object($value)) {
+                    return json_encode($value);
+                }
+                return $value;
+
+            case 'enum':
+                $stringValue = (string) $value;
+                if (!in_array($stringValue, $definition['values'])) {
+                    $allowedValues = implode(', ', $definition['values']);
+                    throw new \InvalidArgumentException("La propiedad '{$property}' debe ser uno de: {$allowedValues}");
+                }
+                return $stringValue;
+
+            case 'set':
+                if (is_array($value)) {
+                    $value = implode(',', $value);
+                }
+                $values = explode(',', (string) $value);
+                foreach ($values as $val) {
+                    $val = trim($val);
+                    if (!in_array($val, $definition['values'])) {
+                        $allowedValues = implode(', ', $definition['values']);
+                        throw new \InvalidArgumentException("Valor '{$val}' en propiedad '{$property}' no es válido. Valores permitidos: {$allowedValues}");
+                    }
+                }
+                return (string) $value;
+
+            case 'uuid':
+                if (!$this->isValidUUID($value)) {
+                    throw new \InvalidArgumentException("La propiedad '{$property}' debe ser un UUID válido");
+                }
+                return (string) $value;
+
+            case 'date':
+            case 'datetime':
+            case 'timestamp':
+                // Si ya es un DateTime, convertir a string
+                if ($value instanceof \DateTime) {
+                    return $value->format('Y-m-d H:i:s');
+                }
+                // Si es timestamp, convertir
+                if (is_numeric($value)) {
+                    return date('Y-m-d H:i:s', (int) $value);
+                }
+                return (string) $value;
+
+            case 'inet':
+                if (!filter_var($value, FILTER_VALIDATE_IP)) {
+                    throw new \InvalidArgumentException("La propiedad '{$property}' debe ser una dirección IP válida");
+                }
+                return (string) $value;
+
+            default:
+                return $value;
+        }
+    }
+
+    /**
+     * Convertir valor a booleano de manera inteligente.
+     */
+    private function castToBoolean($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (bool) $value;
+        }
+
+        if (is_string($value)) {
+            $value = strtolower(trim($value));
+            return in_array($value, ['true', '1', 'yes', 'on', 'y']);
+        }
+
+        return (bool) $value;
+    }
+
+    /**
+     * Validar formato UUID.
+     */
+    private function isValidUUID(string $uuid): bool
+    {
+        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $uuid) === 1;
+    }
+
+    /**
+     * Método para definir tipos de propiedades (debe ser sobrescrito en modelos hijos).
+     */
+    public static function definePropertyTypes(): array
+    {
+        return [];
+    }
+
+    /**
+     * Normalizar campos opcionales que vienen vacíos desde formularios.
+     * Convierte cadenas vacías a null para campos que deberían ser null en DB.
+     */
+    protected function normalizeOptionalFields(array &$attributes, array $optionalFields): void
+    {
+        foreach ($optionalFields as $field) {
+            if (isset($attributes[$field]) && ($attributes[$field] === '' || $attributes[$field] === null)) {
+                $attributes[$field] = null;
+            }
+        }
+    }
+
+    /**
+     * Normalizar campos de fecha opcionales.
+     */
+    protected function normalizeOptionalDateFields(array &$attributes, array $dateFields): void
+    {
+        foreach ($dateFields as $field) {
+            if (isset($attributes[$field]) && ($attributes[$field] === '' || $attributes[$field] === null)) {
+                $attributes[$field] = null;
+            }
+        }
+    }
 }
