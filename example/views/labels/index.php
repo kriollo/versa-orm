@@ -107,7 +107,12 @@
                             <div class="flex items-center space-x-3">
                                 <span class="flex items-center text-gray-500">
                                     <i class="fas fa-tasks mr-1"></i>
-                                    <?= $label->tasks_count ?? 0 ?> tareas
+                                    <span class="task-count-clickable cursor-pointer text-blue-600 hover:text-blue-800 underline"
+                                        data-label-id="<?= $label->id ?>"
+                                        data-label-name="<?= htmlspecialchars($label->name) ?>"
+                                        title="Haz clic para ver las tareas asociadas">
+                                        <?= $label->tasks_count ?? 0 ?> tareas
+                                    </span>
                                 </span>
                             </div>
                             <span class="text-xs text-gray-400">
@@ -160,11 +165,231 @@
     <?php endif; ?>
 </div>
 
+<!-- Modal para mostrar tareas asociadas -->
+<div id="tasksModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-96 overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-tasks mr-2 text-blue-600"></i>
+                    Tareas asociadas a <span id="modalLabelName" class="text-blue-600"></span>
+                </h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-80">
+                <div id="modalTasksContainer">
+                    <!-- Las tareas se cargarán aquí -->
+                    <div class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                        <p class="text-gray-600 mt-2">Cargando tareas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .line-clamp-2 {
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elementos de la modal
+        const modal = document.getElementById('tasksModal');
+        const modalLabelName = document.getElementById('modalLabelName');
+        const modalTasksContainer = document.getElementById('modalTasksContainer');
+        const closeModalBtn = document.getElementById('closeModal');
+
+        // Manejar clics en los contadores de tareas
+        const taskCountElements = document.querySelectorAll('.task-count-clickable');
+
+        taskCountElements.forEach(element => {
+            element.addEventListener('click', function() {
+                const labelId = this.getAttribute('data-label-id');
+                const labelName = this.getAttribute('data-label-name');
+
+                // Configurar modal
+                modalLabelName.textContent = labelName;
+
+                // Mostrar modal
+                modal.classList.remove('hidden');
+
+                // Cargar las tareas
+                loadTasksForModal(labelId);
+            });
+        });
+
+        // Cerrar modal
+        closeModalBtn.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+
+        // Cerrar modal al hacer clic en el fondo
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+
+        // Cerrar modal con Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+
+    function loadTasksForModal(labelId) {
+        const modalTasksContainer = document.getElementById('modalTasksContainer');
+
+        // Mostrar indicador de carga
+        modalTasksContainer.innerHTML = `
+        <div class="text-center py-8">
+            <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+            <p class="text-gray-600 mt-2">Cargando tareas...</p>
+        </div>
+    `;
+
+        // Realizar la petición AJAX
+        fetch('?action=label_tasks&label_id=' + labelId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    modalTasksContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                        <p class="text-red-600 mt-2">Error: ${data.error}</p>
+                    </div>
+                `;
+                    return;
+                }
+
+                if (data.length === 0) {
+                    modalTasksContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-info-circle text-gray-400 text-2xl"></i>
+                        <p class="text-gray-500 mt-2">No hay tareas asociadas a esta etiqueta</p>
+                    </div>
+                `;
+                    return;
+                }
+
+                // Mostrar las tareas en una tabla
+                let tasksHtml = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarea</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridad</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyecto</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+            `;
+
+                data.forEach(task => {
+                    const statusBadge = getStatusBadge(task.status);
+                    const priorityBadge = getPriorityBadge(task.priority);
+
+                    tasksHtml += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${escapeHtml(task.title)}</div>
+                            ${task.description ? `<div class="text-sm text-gray-500">${escapeHtml(task.description.substring(0, 60))}${task.description.length > 60 ? '...' : ''}</div>` : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${priorityBadge}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${task.project_name ? escapeHtml(task.project_name) : '<span class="text-gray-400 italic">Sin proyecto</span>'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${task.user_name ? escapeHtml(task.user_name) : '<span class="text-gray-400 italic">Sin asignar</span>'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="?action=task_edit&id=${task.id}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        </td>
+                    </tr>
+                `;
+                });
+
+                tasksHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+                modalTasksContainer.innerHTML = tasksHtml;
+            })
+            .catch(error => {
+                console.error('Error loading tasks:', error);
+                modalTasksContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                    <p class="text-red-600 mt-2">Error al cargar las tareas</p>
+                </div>
+            `;
+            });
+    }
+
+    function getStatusBadge(status) {
+        const statusClasses = {
+            'pendiente': 'bg-yellow-100 text-yellow-800',
+            'en_progreso': 'bg-blue-100 text-blue-800',
+            'completada': 'bg-green-100 text-green-800',
+            'cancelada': 'bg-red-100 text-red-800'
+        };
+
+        const statusLabels = {
+            'pendiente': 'Pendiente',
+            'en_progreso': 'En Progreso',
+            'completada': 'Completada',
+            'cancelada': 'Cancelada'
+        };
+
+        const className = statusClasses[status] || 'bg-gray-100 text-gray-800';
+        const label = statusLabels[status] || status;
+
+        return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${className}">${label}</span>`;
+    }
+
+    function getPriorityBadge(priority) {
+        const priorityClasses = {
+            'alta': 'bg-red-100 text-red-800',
+            'media': 'bg-yellow-100 text-yellow-800',
+            'baja': 'bg-green-100 text-green-800'
+        };
+
+        const priorityLabels = {
+            'alta': 'Alta',
+            'media': 'Media',
+            'baja': 'Baja'
+        };
+
+        const className = priorityClasses[priority] || 'bg-gray-100 text-gray-800';
+        const label = priorityLabels[priority] || priority;
+
+        return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${className}">${label}</span>`;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>

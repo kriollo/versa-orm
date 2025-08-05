@@ -496,6 +496,28 @@ try {
             render('labels/index', compact('labels'));
             break;
 
+        case 'label_tasks':
+            $labelId = $_GET['label_id'] ?? null;
+            if (!$labelId) {
+                echo json_encode(['error' => 'ID de etiqueta requerido']);
+                exit;
+            }
+
+            // Obtener tareas asociadas a la etiqueta
+            $tasks = Label::getAll('
+                SELECT t.*, u.name as user_name, p.name as project_name
+                FROM tasks t
+                INNER JOIN task_labels tl ON t.id = tl.task_id
+                LEFT JOIN users u ON t.user_id = u.id
+                LEFT JOIN projects p ON t.project_id = p.id
+                WHERE tl.label_id = ?
+                ORDER BY t.created_at DESC
+            ', [$labelId]);
+
+            header('Content-Type: application/json');
+            echo json_encode($tasks);
+            exit;
+
         case 'label_create':
             if ($_POST) {
                 try {
