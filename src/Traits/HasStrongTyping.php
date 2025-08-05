@@ -156,16 +156,16 @@ trait HasStrongTyping
             switch ($type) {
                 case 'int':
                 case 'integer':
-                    return (int) $value;
+                    return is_numeric($value) ? (int) $value : 0;
 
                 case 'float':
                 case 'real':
                 case 'double':
                 case 'decimal':
-                    return (float) $value;
+                    return is_numeric($value) ? (float) $value : 0.0;
 
                 case 'string':
-                    return (string) $value;
+                    return is_scalar($value) ? (string) $value : '';
 
                 case 'bool':
                 case 'boolean':

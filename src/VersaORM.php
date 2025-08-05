@@ -101,7 +101,7 @@ class VersaORM
                 'params' => $params,
                 'freeze_state' => [
                     'global_frozen' => $this->isFrozen,
-                    'frozen_models' => $this->frozenModels,
+                    'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
                 ],
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
@@ -312,15 +312,15 @@ class VersaORM
     public function freeze(bool $frozen = true): self
     {
         $this->isFrozen = $frozen;
-        
+
         // Log de seguridad
         $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
         $this->logSecurityEvent("FREEZE_MODE_{$status}", [
             'global_freeze' => $frozen,
             'timestamp' => date('Y-m-d H:i:s'),
-            'trace' => $this->getDebugStackTrace()
+            'trace' => $this->getDebugStackTrace(),
         ]);
-        
+
         return $this;
     }
 
@@ -346,17 +346,17 @@ class VersaORM
         if (empty($modelClass)) {
             throw new \InvalidArgumentException('Model class cannot be empty');
         }
-        
+
         $this->frozenModels[$modelClass] = $frozen;
-        
+
         // Log de seguridad
         $status = $frozen ? 'FROZEN' : 'UNFROZEN';
         $this->logSecurityEvent("MODEL_{$status}", [
             'model_class' => $modelClass,
             'frozen' => $frozen,
-            'timestamp' => date('Y-m-d H:i:s')
+            'timestamp' => date('Y-m-d H:i:s'),
         ]);
-        
+
         return $this;
     }
 
@@ -371,12 +371,12 @@ class VersaORM
         if (empty($modelClass)) {
             throw new \InvalidArgumentException('Model class cannot be empty');
         }
-        
+
         // Verificar freeze global primero
         if ($this->isFrozen) {
             return true;
         }
-        
+
         return $this->frozenModels[$modelClass] ?? false;
     }
 
@@ -394,7 +394,7 @@ class VersaORM
         $isDdlOperation = $this->isDdlOperation($operation);
         $isGloballyFrozen = $this->isFrozen();
         $isModelFrozen = $modelClass ? $this->isModelFrozen($modelClass) : false;
-        
+
         // Si es una operación DDL y hay freeze activo, bloquear
         if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
             // Log del intento de alteración
@@ -405,12 +405,12 @@ class VersaORM
                 'model_frozen' => $isModelFrozen,
                 'context' => $context,
                 'timestamp' => date('Y-m-d H:i:s'),
-                'trace' => $this->getDebugStackTrace()
+                'trace' => $this->getDebugStackTrace(),
             ]);
-            
+
             $freezeType = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
             $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
-            
+
             // Mostrar advertencia en modo desarrollo
             if ($this->isDebugMode()) {
                 $warningMessage .= "\n\nDDL operations are not allowed when freeze mode is active.";
@@ -422,7 +422,7 @@ class VersaORM
                     $warningMessage .= "\n- Disable model freeze: \$orm->freezeModel('{$modelClass}', false)";
                 }
             }
-            
+
             throw new VersaORMException(
                 $warningMessage,
                 'FREEZE_VIOLATION',
@@ -471,9 +471,9 @@ class VersaORM
             'add_foreign_key',
             'drop_foreign_key',
             'rename_table',
-            'truncate_table'
+            'truncate_table',
         ];
-        
+
         return in_array(strtolower($operation), array_map('strtolower', $ddlOperations));
     }
 
@@ -505,7 +505,7 @@ class VersaORM
             );
 
             file_put_contents($securityLogFile, $logEntry, FILE_APPEND | LOCK_EX);
-            
+
             // También registrar en el log principal si el debug está habilitado
             if ($this->isDebugMode()) {
                 $this->logDebug("Security Event: {$event}", $data);

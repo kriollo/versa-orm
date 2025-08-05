@@ -9,3 +9,5 @@ En esta sección aprenderás a usar todas las características de VersaORM para 
 - [Guía de la Herramienta CLI](04-cli-tool.md)
 - [Validación y Mass Assignment](05-validation-mass-assignment.md)
 - [🎯 Tipado Fuerte y Validación de Esquemas](06-strong-typing-schema-validation.md)
+- [🔒 Modo Freeze - Protección de Esquema](07-freeze-mode.md)
+- [🏢 Ejemplo Práctico: Modo Freeze en Producción](08-freeze-mode-example.md)

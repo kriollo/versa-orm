@@ -495,6 +495,7 @@ async fn run_main() {
 }
 
 /// Valida si una operación está permitida bajo el estado freeze actual
+#[allow(dead_code)]
 fn validate_freeze_operation(
     operation: &str,
     freeze_state: &FreezeState,
@@ -528,6 +529,7 @@ fn validate_freeze_operation(
 }
 
 /// Determina si una operación es de tipo DDL (Data Definition Language)
+#[allow(dead_code)]
 fn is_ddl_operation(operation: &str) -> bool {
     let ddl_operations = [
         "createTable", "dropTable", "alterTable", "addColumn", "dropColumn",
@@ -560,15 +562,14 @@ fn validate_raw_query_freeze(query: &str, freeze_state: &FreezeState) -> Result<
     ];
     
     for ddl_cmd in &ddl_commands {
-        if query_upper.starts_with(ddl_cmd) {
-            if freeze_state.global_frozen {
+        if query_upper.starts_with(ddl_cmd)
+            && freeze_state.global_frozen {
                 log_error_msg(&format!("DDL query '{}' blocked by global freeze mode", ddl_cmd));
                 return Err(format!(
                     "DDL query '{}' blocked by global freeze mode. Schema-modifying operations are not allowed when freeze mode is active.",
                     ddl_cmd
                 ));
             }
-        }
     }
     
     Ok(())
@@ -577,7 +578,7 @@ fn validate_raw_query_freeze(query: &str, freeze_state: &FreezeState) -> Result<
 async fn handle_query_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
-    freeze_state: &FreezeState,
+    _freeze_state: &FreezeState,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let mut query_params: QueryParameters =
         serde_json::from_value(params.clone()).map_err(|e| {
@@ -1231,7 +1232,7 @@ async fn handle_query_action(
 async fn handle_schema_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
-    freeze_state: &FreezeState,
+    _freeze_state: &FreezeState,
 ) -> Result<serde_json::Value, String> {
     let subject = params
         .get("subject")

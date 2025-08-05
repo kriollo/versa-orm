@@ -273,7 +273,8 @@ class QueryBuilder
             // Permitir argumentos simples como column names, números, strings
             if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs)) {
                 // Verificar que no contenga patrones maliciosos
-                if (!str_contains($functionArgs, '--') &&
+                if (
+                    !str_contains($functionArgs, '--') &&
                     !str_contains($functionArgs, '/*') &&
                     !str_contains($functionArgs, ';')
                 ) {
@@ -851,9 +852,11 @@ class QueryBuilder
         }
 
         // ORDER BY
-        if ($builder->orderBy && is_array($builder->orderBy) &&
+        if (
+            $builder->orderBy && is_array($builder->orderBy) &&
             isset($builder->orderBy['column'], $builder->orderBy['direction']) &&
-            is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])) {
+            is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])
+        ) {
             $sql .= ' ORDER BY ' . $builder->orderBy['column'] . ' ' . $builder->orderBy['direction'];
         }
 
@@ -1273,7 +1276,13 @@ class QueryBuilder
         // Simplemente devuelve el array de wheres.
         // La lógica de procesamiento se ha movido a donde se construye el payload,
         // o se ha determinado que no es necesaria si la estructura es correcta desde el principio.
-        return $this->wheres;
+        $result = [];
+        foreach ($this->wheres as $where) {
+            if (is_array($where)) {
+                $result[] = $where;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -1325,12 +1334,21 @@ class QueryBuilder
      */
     private function buildPayload(string $method, ?array $data = null): array
     {
+        // Asegurar que selects nunca esté vacío - usar ['*'] por defecto
+        $selects = empty($this->selects) ? ['*'] : $this->selects;
+
+        // Preparar orderBy como array de objetos para Rust
+        $orderBy = [];
+        if ($this->orderBy !== null) {
+            $orderBy = [$this->orderBy];
+        }
+
         $params = [
             'table' => $this->table,
-            'select' => $this->selects,
+            'select' => $selects,
             'joins' => $this->joins,
             'where' => $this->processWheres(),
-            'orderBy' => $this->orderBy ? [$this->orderBy] : [],
+            'orderBy' => $orderBy,
             'groupBy' => $this->groupBy,
             'having' => $this->having,
             'limit' => $this->limit,
@@ -1438,7 +1456,8 @@ class QueryBuilder
         error_log('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null));
         error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
 
-        return $this->execute('insertMany', $params);
+        $result = $this->execute('insertMany', $params);
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -1477,7 +1496,8 @@ class QueryBuilder
             'max_records' => $maxRecords,
         ];
 
-        return $this->execute('updateMany', $params);
+        $result = $this->execute('updateMany', $params);
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -1503,7 +1523,8 @@ class QueryBuilder
             'max_records' => $maxRecords,
         ];
 
-        return $this->execute('deleteMany', $params);
+        $result = $this->execute('deleteMany', $params);
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -1562,6 +1583,7 @@ class QueryBuilder
             'batch_size' => $batchSize,
         ];
 
-        return $this->execute('upsertMany', $params);
+        $result = $this->execute('upsertMany', $params);
+        return is_array($result) ? $result : [];
     }
 }

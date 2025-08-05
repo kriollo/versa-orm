@@ -11,8 +11,8 @@
 **❌ ANTES (SQL tradicional - difícil y peligroso):**
 ```sql
 -- Propenso a errores de sintaxis
-SELECT users.*, profiles.bio FROM users 
-LEFT JOIN profiles ON users.id = profiles.user_id 
+SELECT users.*, profiles.bio FROM users
+LEFT JOIN profiles ON users.id = profiles.user_id
 WHERE users.status = 'active' AND users.age >= 18;
 
 -- Vulnerable a inyección SQL
@@ -75,6 +75,8 @@ Esta documentación está organizada para llevarte paso a paso desde cero hasta 
   - [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
   - [🔒 Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
   - [🎯 Tipado Fuerte y Validación de Esquemas](user-guide/06-strong-typing-schema-validation.md)
+  - [🔒 Modo Freeze - Protección de Esquema](user-guide/07-freeze-mode.md)
+  - [🏢 Ejemplo Práctico: Modo Freeze en Producción](user-guide/08-freeze-mode-example.md)
 
 ## Guía del Contribuidor
 
