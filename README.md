@@ -9,7 +9,7 @@
 
 ## 📋 ¿Qué es VersaORM?
 
-**VersaORM** es una herramienta que te permite **interactuar con tu base de datos usando código PHP familiar** en lugar de escribir SQL complicado. 
+**VersaORM** es una herramienta que te permite **interactuar con tu base de datos usando código PHP familiar** en lugar de escribir SQL complicado.
 
 ### 🤔 ¿Qué es un ORM?
 
@@ -305,6 +305,27 @@ try {
 }
 ```
 
+### 4. 🔒 Modo Freeze para Protección de Esquema
+```php
+// ✅ PRODUCCIÓN - Activar freeze para proteger esquema
+if (app()->environment('production')) {
+    $orm->freeze(true);
+    echo "🔒 Esquema protegido contra modificaciones DDL";
+}
+
+// ✅ DESARROLLO - Freeze selectivo por modelo
+$orm->freezeModel(CriticalTable::class, true);
+
+// ❌ BLOQUEADO - En modo freeze esto lanza excepción
+try {
+    $orm->exec("CREATE TABLE test (id INT)");
+} catch (VersaORMException $e) {
+    if ($e->getCode() === 'FREEZE_VIOLATION') {
+        echo "Operación DDL bloqueada por seguridad";
+    }
+}
+```
+
 
 ## 🚨 Troubleshooting
 
@@ -343,6 +364,14 @@ try {
 - **Validación automática**: Reglas de validación por modelo con excepciones descriptivas
 - **Validación de tipos**: Sistema de tipos estricto en Rust
 - **Sanitización automática**: Limpieza de datos de entrada
+- **🔒 Modo Freeze**: Protección de esquema contra modificaciones DDL accidentales
+- **🆕 Creación Automática de Campos**: Estilo RedBeanPHP para desarrollo ágil
+
+### 🚀 Desarrollo Ágil
+- **Creación automática de campos**: Cuando freeze está desactivado, crea columnas automáticamente
+- **Detección inteligente de tipos**: Mapeo automático PHP → SQL (string→VARCHAR, int→INT, etc.)
+- **Modo fluid**: Desarrollo rápido sin definir esquemas previamente
+- **Transición suave**: Del prototipado (freeze OFF) a producción (freeze ON)
 
 ### 🔄 Compatibilidad
 - **Múltiples bases de datos**: MySQL, PostgreSQL, SQLite
