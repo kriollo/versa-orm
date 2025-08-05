@@ -179,6 +179,15 @@ struct InputPayload {
     config: DatabaseConfig,
     action: String,
     params: serde_json::Value,
+    #[serde(default)]
+    freeze_state: FreezeState,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+struct FreezeState {
+    global_frozen: bool,
+    #[serde(default)]
+    frozen_models: std::collections::HashMap<String, bool>,
 }
 
 #[derive(Serialize, Debug)]
@@ -395,12 +404,12 @@ async fn run_main() {
 
             let result = match payload.action.as_str() {
                 "query" | "insert" | "insertGetId" | "update" | "delete" => {
-                    handle_query_action(&connection_manager, &payload.params).await
+                    handle_query_action(&connection_manager, &payload.params, &payload.freeze_state).await
                 }
-                "schema" => handle_schema_action(&connection_manager, &payload.params)
+                "schema" => handle_schema_action(&connection_manager, &payload.params, &payload.freeze_state)
                     .await
                     .map_err(|e| (e, None, None)),
-                "raw" => handle_raw_action(&connection_manager, &payload.params).await,
+                "raw" => handle_raw_action(&connection_manager, &payload.params, &payload.freeze_state).await,
                 "cache" => handle_cache_action(&payload.params).map_err(|e| (e, None, None)),
                 _ => Err((format!("Unknown action: {}", payload.action), None, None)),
             };
@@ -485,9 +494,90 @@ async fn run_main() {
     }
 }
 
+/// Valida si una operación está permitida bajo el estado freeze actual
+fn validate_freeze_operation(
+    operation: &str,
+    freeze_state: &FreezeState,
+    model_class: Option<&str>,
+) -> Result<(), String> {
+    if !is_ddl_operation(operation) {
+        return Ok(()); // No es DDL, permitir
+    }
+    
+    // Verificar freeze global
+    if freeze_state.global_frozen {
+        log_error_msg(&format!("DDL operation '{}' blocked by global freeze mode", operation));
+        return Err(format!(
+            "Operation '{}' blocked by global freeze mode. DDL operations are not allowed when freeze mode is active.",
+            operation
+        ));
+    }
+    
+    // Verificar freeze por modelo
+    if let Some(model) = model_class {
+        if *freeze_state.frozen_models.get(model).unwrap_or(&false) {
+            log_error_msg(&format!("DDL operation '{}' blocked by model '{}' freeze mode", operation, model));
+            return Err(format!(
+                "Operation '{}' blocked by model '{}' freeze mode. DDL operations are not allowed when this model is frozen.",
+                operation, model
+            ));
+        }
+    }
+    
+    Ok(())
+}
+
+/// Determina si una operación es de tipo DDL (Data Definition Language)
+fn is_ddl_operation(operation: &str) -> bool {
+    let ddl_operations = [
+        "createTable", "dropTable", "alterTable", "addColumn", "dropColumn",
+        "modifyColumn", "renameColumn", "addIndex", "dropIndex", "addForeignKey",
+        "dropForeignKey", "createIndex", "renameTable", "truncateTable",
+        "create_table", "drop_table", "alter_table", "add_column", "drop_column",
+        "modify_column", "rename_column", "add_index", "drop_index", "create_index",
+        "add_foreign_key", "drop_foreign_key", "rename_table", "truncate_table",
+        // También considerar consultas SQL raw que modifiquen esquema
+        "CREATE", "DROP", "ALTER", "TRUNCATE"
+    ];
+    
+    let operation_upper = operation.to_uppercase();
+    ddl_operations.iter().any(|ddl| {
+        operation_upper.contains(&ddl.to_uppercase())
+    })
+}
+
+/// Valida consultas SQL raw para detectar operaciones DDL
+fn validate_raw_query_freeze(query: &str, freeze_state: &FreezeState) -> Result<(), String> {
+    let query_upper = query.trim().to_uppercase();
+    
+    // Lista de comandos DDL que deben ser bloqueados en modo freeze
+    let ddl_commands = [
+        "CREATE TABLE", "DROP TABLE", "ALTER TABLE", "TRUNCATE TABLE",
+        "CREATE INDEX", "DROP INDEX", "CREATE SCHEMA", "DROP SCHEMA",
+        "CREATE DATABASE", "DROP DATABASE", "CREATE VIEW", "DROP VIEW",
+        "CREATE PROCEDURE", "DROP PROCEDURE", "CREATE FUNCTION", "DROP FUNCTION",
+        "CREATE TRIGGER", "DROP TRIGGER"
+    ];
+    
+    for ddl_cmd in &ddl_commands {
+        if query_upper.starts_with(ddl_cmd) {
+            if freeze_state.global_frozen {
+                log_error_msg(&format!("DDL query '{}' blocked by global freeze mode", ddl_cmd));
+                return Err(format!(
+                    "DDL query '{}' blocked by global freeze mode. Schema-modifying operations are not allowed when freeze mode is active.",
+                    ddl_cmd
+                ));
+            }
+        }
+    }
+    
+    Ok(())
+}
+
 async fn handle_query_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
+    freeze_state: &FreezeState,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let mut query_params: QueryParameters =
         serde_json::from_value(params.clone()).map_err(|e| {
@@ -1141,6 +1231,7 @@ async fn handle_query_action(
 async fn handle_schema_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
+    freeze_state: &FreezeState,
 ) -> Result<serde_json::Value, String> {
     let subject = params
         .get("subject")
@@ -1240,6 +1331,7 @@ async fn handle_schema_action(
 async fn handle_raw_action(
     connection: &ConnectionManager,
     params: &serde_json::Value,
+    freeze_state: &FreezeState,
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let query = params.get("query").and_then(|v| v.as_str()).ok_or((
         "Query is required for raw action".to_string(),
@@ -1253,6 +1345,15 @@ async fn handle_raw_action(
         .cloned()
         .unwrap_or_default();
 
+    // Validar freeze para consultas DDL
+    if let Err(freeze_error) = validate_raw_query_freeze(query, freeze_state) {
+        return Err((
+            freeze_error,
+            Some(query.to_string()),
+            Some(bindings.clone()),
+        ));
+    }
+    
     let query_upper = query.trim().to_uppercase();
     
     // Para transacciones, necesitamos manejar el estado de autocommit

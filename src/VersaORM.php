@@ -31,6 +31,12 @@ class VersaORM
     /** @var array<string, mixed> */
     private array $config = [];
 
+    /** @var bool Estado global del modo freeze */
+    private bool $isFrozen = false;
+
+    /** @var array<string, bool> Estados freeze por modelo */
+    private array $frozenModels = [];
+
     /**
      * Constructor de la clase VersaORM.
      *
@@ -93,6 +99,10 @@ class VersaORM
                 'config' => $this->config,
                 'action' => $action,
                 'params' => $params,
+                'freeze_state' => [
+                    'global_frozen' => $this->isFrozen,
+                    'frozen_models' => $this->frozenModels,
+                ],
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
             // Debug: Log the JSON payload being sent to Rust
@@ -289,6 +299,220 @@ class VersaORM
     {
         $this->config = [];
         return true;
+    }
+
+    /**
+     * Activa o desactiva el modo freeze global.
+     * En modo freeze, se bloquean todas las operaciones DDL que alteran el esquema.
+     *
+     * @param bool $frozen Estado del modo freeze
+     * @return $this
+     * @throws VersaORMException
+     */
+    public function freeze(bool $frozen = true): self
+    {
+        $this->isFrozen = $frozen;
+        
+        // Log de seguridad
+        $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
+        $this->logSecurityEvent("FREEZE_MODE_{$status}", [
+            'global_freeze' => $frozen,
+            'timestamp' => date('Y-m-d H:i:s'),
+            'trace' => $this->getDebugStackTrace()
+        ]);
+        
+        return $this;
+    }
+
+    /**
+     * Verifica si el modo freeze global está activo.
+     *
+     * @return bool
+     */
+    public function isFrozen(): bool
+    {
+        return $this->isFrozen;
+    }
+
+    /**
+     * Congela un modelo específico.
+     *
+     * @param string $modelClass Nombre de la clase del modelo
+     * @param bool $frozen Estado del freeze para el modelo
+     * @return $this
+     */
+    public function freezeModel(string $modelClass, bool $frozen = true): self
+    {
+        if (empty($modelClass)) {
+            throw new \InvalidArgumentException('Model class cannot be empty');
+        }
+        
+        $this->frozenModels[$modelClass] = $frozen;
+        
+        // Log de seguridad
+        $status = $frozen ? 'FROZEN' : 'UNFROZEN';
+        $this->logSecurityEvent("MODEL_{$status}", [
+            'model_class' => $modelClass,
+            'frozen' => $frozen,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        
+        return $this;
+    }
+
+    /**
+     * Verifica si un modelo específico está congelado.
+     *
+     * @param string $modelClass Nombre de la clase del modelo
+     * @return bool
+     */
+    public function isModelFrozen(string $modelClass): bool
+    {
+        if (empty($modelClass)) {
+            throw new \InvalidArgumentException('Model class cannot be empty');
+        }
+        
+        // Verificar freeze global primero
+        if ($this->isFrozen) {
+            return true;
+        }
+        
+        return $this->frozenModels[$modelClass] ?? false;
+    }
+
+    /**
+     * Valida que una operación sea permitida en modo freeze.
+     *
+     * @param string $operation Nombre de la operación
+     * @param string|null $modelClass Clase del modelo si aplica
+     * @param array<string, mixed> $context Contexto adicional
+     * @return void
+     * @throws VersaORMException
+     */
+    public function validateFreezeOperation(string $operation, ?string $modelClass = null, array $context = []): void
+    {
+        $isDdlOperation = $this->isDdlOperation($operation);
+        $isGloballyFrozen = $this->isFrozen();
+        $isModelFrozen = $modelClass ? $this->isModelFrozen($modelClass) : false;
+        
+        // Si es una operación DDL y hay freeze activo, bloquear
+        if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
+            // Log del intento de alteración
+            $this->logSecurityEvent('FREEZE_VIOLATION_ATTEMPT', [
+                'operation' => $operation,
+                'model_class' => $modelClass,
+                'global_frozen' => $isGloballyFrozen,
+                'model_frozen' => $isModelFrozen,
+                'context' => $context,
+                'timestamp' => date('Y-m-d H:i:s'),
+                'trace' => $this->getDebugStackTrace()
+            ]);
+            
+            $freezeType = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
+            $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
+            
+            // Mostrar advertencia en modo desarrollo
+            if ($this->isDebugMode()) {
+                $warningMessage .= "\n\nDDL operations are not allowed when freeze mode is active.";
+                $warningMessage .= "\nThis is a security measure to prevent schema modifications.";
+                $warningMessage .= "\n\nTo allow this operation:";
+                if ($isGloballyFrozen) {
+                    $warningMessage .= "\n- Disable global freeze: \$orm->freeze(false)";
+                } else {
+                    $warningMessage .= "\n- Disable model freeze: \$orm->freezeModel('{$modelClass}', false)";
+                }
+            }
+            
+            throw new VersaORMException(
+                $warningMessage,
+                'FREEZE_VIOLATION',
+                null,
+                [],
+                $context
+            );
+        }
+    }
+
+    /**
+     * Determina si una operación es de tipo DDL (Data Definition Language).
+     *
+     * @param string $operation
+     * @return bool
+     */
+    private function isDdlOperation(string $operation): bool
+    {
+        $ddlOperations = [
+            'createTable',
+            'dropTable',
+            'alterTable',
+            'addColumn',
+            'dropColumn',
+            'modifyColumn',
+            'renameColumn',
+            'addIndex',
+            'dropIndex',
+            'addForeignKey',
+            'dropForeignKey',
+            'createIndex',
+            'renameTable',
+            'truncateTable',
+            // Operaciones de esquema que modifican estructura
+            'create_table',
+            'drop_table',
+            'alter_table',
+            'add_column',
+            'drop_column',
+            'modify_column',
+            'rename_column',
+            'add_index',
+            'drop_index',
+            'create_index',
+            'drop_index',
+            'add_foreign_key',
+            'drop_foreign_key',
+            'rename_table',
+            'truncate_table'
+        ];
+        
+        return in_array(strtolower($operation), array_map('strtolower', $ddlOperations));
+    }
+
+    /**
+     * Registra eventos de seguridad relacionados con el modo freeze.
+     *
+     * @param string $event
+     * @param array<string, mixed> $data
+     * @return void
+     */
+    private function logSecurityEvent(string $event, array $data): void
+    {
+        try {
+            $logDir = __DIR__ . '/../logs';
+            if (!is_dir($logDir)) {
+                if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+                }
+            }
+
+            $securityLogFile = $logDir . '/security-' . date('Y-m-d') . '.log';
+            $timestamp = date('Y-m-d H:i:s');
+
+            $logEntry = sprintf(
+                "[%s] [SECURITY] [%s] %s\n",
+                $timestamp,
+                $event,
+                json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+            );
+
+            file_put_contents($securityLogFile, $logEntry, FILE_APPEND | LOCK_EX);
+            
+            // También registrar en el log principal si el debug está habilitado
+            if ($this->isDebugMode()) {
+                $this->logDebug("Security Event: {$event}", $data);
+            }
+        } catch (\Throwable $e) {
+            // Silenciar errores de logging para no interferir con la operación principal
+        }
     }
 
     /**

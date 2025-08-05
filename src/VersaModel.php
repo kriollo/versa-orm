@@ -88,6 +88,46 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Congela o descongela este modelo específico.
+     * Esto bloquea operaciones DDL en el esquema relacionado con este modelo.
+     *
+     * @param bool $frozen
+     * @return void
+     * @throws VersaORMException
+     */
+    public static function freeze(bool $frozen = true): void
+    {
+        if (self::$ormInstance === null) {
+            throw new VersaORMException(
+                'No global ORM instance set. Call VersaModel::setORM() first.',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        $modelClass = static::class;
+        self::$ormInstance->freezeModel($modelClass, $frozen);
+    }
+
+    /**
+     * Verifica si este modelo está congelado.
+     *
+     * @return bool
+     * @throws VersaORMException
+     */
+    public static function isFrozen(): bool
+    {
+        if (self::$ormInstance === null) {
+            throw new VersaORMException(
+                'No global ORM instance set. Call VersaModel::setORM() first.',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        $modelClass = static::class;
+        return self::$ormInstance->isModelFrozen($modelClass);
+    }
+
+    /**
      * Obtiene la instancia del ORM para uso en traits.
      *
      * @return VersaORM|array<string, mixed>|null

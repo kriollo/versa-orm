@@ -99,10 +99,18 @@ trait HasStrongTyping
     public static function getPropertyTypes(): array
     {
         if (self::$cachedPropertyTypes === null) {
-            // Verificar si el método existe en la clase actual
+            // Verificar si el método existe en la clase actual usando reflection
             $calledClass = get_called_class();
-            if (method_exists($calledClass, 'definePropertyTypes')) {
-                self::$cachedPropertyTypes = static::definePropertyTypes();
+            $reflectionClass = new \ReflectionClass($calledClass);
+            if ($reflectionClass->hasMethod('definePropertyTypes')) {
+                $method = $reflectionClass->getMethod('definePropertyTypes');
+                if ($method->isStatic()) {
+                    /** @var array<string, array<string, mixed>> $result */
+                    $result = $method->invoke(null);
+                    self::$cachedPropertyTypes = $result;
+                } else {
+                    self::$cachedPropertyTypes = [];
+                }
             } else {
                 self::$cachedPropertyTypes = [];
             }

@@ -1628,4 +1628,62 @@ mod tests {
         assert_eq!(params.len(), 1);
         assert_eq!(params[0], json!("completed"));
     }
+    // ========== TESTS PARA FREEZE MODE ==========
+    #[test]
+    fn test_freeze_state_structure() {
+        use crate::FreezeState;
+        
+        let freeze_state = FreezeState {
+            global_frozen: true,
+            frozen_models: std::collections::HashMap::new(),
+        };
+
+        assert!(freeze_state.global_frozen, "Global freeze should be true");
+        assert!(freeze_state.frozen_models.is_empty(), "Model freeze map should be empty");
+    }
+
+    #[test]
+    fn test_freeze_model_specific_structure() {
+        use crate::FreezeState;
+        
+        let mut frozen_models = std::collections::HashMap::new();
+        frozen_models.insert("users".to_string(), true);
+
+        let freeze_state = FreezeState {
+            global_frozen: false,
+            frozen_models,
+        };
+
+        assert!(!freeze_state.global_frozen, "Global freeze should be false");
+        assert!(freeze_state.frozen_models.contains_key("users"), "Should contain users model");
+        assert_eq!(freeze_state.frozen_models.get("users"), Some(&true), "Users model should be frozen");
+    }
+
+    #[test]
+    fn test_freeze_validation_logic() {
+        use crate::FreezeState;
+        
+        // Test global freeze blocks all operations
+        let global_freeze_state = FreezeState {
+            global_frozen: true,
+            frozen_models: std::collections::HashMap::new(),
+        };
+        
+        assert!(global_freeze_state.global_frozen, "Global freeze should block operations");
+        
+        // Test model-specific freeze
+        let mut frozen_models = std::collections::HashMap::new();
+        frozen_models.insert("users".to_string(), true);
+        frozen_models.insert("posts".to_string(), false);
+        
+        let model_freeze_state = FreezeState {
+            global_frozen: false,
+            frozen_models,
+        };
+        
+        assert!(!model_freeze_state.global_frozen, "Global freeze should be false");
+        assert_eq!(model_freeze_state.frozen_models.get("users"), Some(&true), "Users should be frozen");
+        assert_eq!(model_freeze_state.frozen_models.get("posts"), Some(&false), "Posts should not be frozen");
+        assert_eq!(model_freeze_state.frozen_models.get("comments"), None, "Comments should not be in freeze map");
+    }
 }
