@@ -124,3 +124,74 @@
     - [X] Compilar binario Rust y copiar a src/binary
     - [X] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
     - [X] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
+
+### Tarea 7.2: Implementación de Modo Freeze/Frozen para Modelos y Esquema [✅] COMPLETADA
+- [x] Método global `$orm->freeze(true)` para activar el modo freeze en toda la aplicación
+- [x] Permitir marcar modelos individuales como frozen: `User::freeze(true)`
+- [x] Bloquear métodos que alteren el esquema (createTable, addColumn, dropColumn) cuando freeze está activo
+- [x] Lanzar excepción si se intenta modificar el esquema o propiedades protegidas en modo freeze
+- [x] Mostrar advertencia en modo desarrollo si se intenta una operación prohibida
+- [x] Validar en Rust que no se ejecuten comandos DDL si freeze está activo
+- [x] Propagar el estado freeze desde PHP al binario Rust en cada payload
+- [x] Registrar intentos de alteración en los logs de seguridad
+- [x] Tests unitarios para verificar que las operaciones prohibidas lanzan excepción en modo freeze
+- [x] Documentar claramente el uso y las limitaciones del modo freeze
+- [x] **🆕 FUNCIONALIDAD ADICIONAL: Creación Automática de Campos (estilo RedBeanPHP)**
+  - [x] Cuando freeze está desactivado, crear automáticamente columnas faltantes
+  - [x] Detección automática de tipos PHP → SQL (string→VARCHAR, int→INT, bool→BOOLEAN, etc.)
+  - [x] Validación que no interfiera con el modo freeze activo
+  - [x] Tests completos para verificar la creación automática de campos
+  - [x] Documentación actualizada con ejemplos prácticos
+- [x] Checklist de calidad:
+    - [x] Ejecutar phpstan y corregir errores PHP
+    - [x] Ejecutar php-cs-fixer fix para formato de código
+    - [x] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad
+    - [x] Ejecutar cargo clippy y corregir errores Rust
+    - [x] Compilar binario Rust y copiar a src/binary
+    - [x] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
+    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
+
+### Tarea 5.1: Soporte para Tipos de Datos Avanzados y Personalizados [✅] COMPLETADA
+- [x] Sistema básico de manejo de tipos en `utils.rs` (`cast_types()`, `cast_value_by_type()`)
+- [x] Mapeos específicos de tipos especiales (JSON, UUID, INET, ENUM, SET)
+- [x] Conversiones automáticas y fallback para tipos binarios (BLOB, VARBINARY)
+- [x] Soporte completo para tipos de array PostgreSQL
+- [x] Archivo de configuración JSON para mappings manuales (`config/type_mappings.json`)
+- [x] Tipado fuerte bidireccional Rust ↔ PHP (int, float, bool, null correctos)
+- [x] Capacidades para definir manualmente tipos en VersaModel
+- [x] Clases PHP con propiedades tipadas (PHP 8+) - Ejemplo: `TypedProduct.php`
+- [x] Validación de esquema vs modelo
+- [x] Advertencias en consola si modelo difiere del esquema
+- [x] Pruebas unitarias para cada tipo especial por base de datos (`DatabaseSpecificTypesTest.php`)
+- [x] Documentar tipos soportados por base de datos (`docs/user-guide/09-advanced-data-types.md`)
+- [x] Checklist de calidad:
+    - [x] Ejecutar phpstan y corregir errores PHP
+    - [x] Ejecutar php-cs-fixer fix para formato de código
+    - [x] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad
+    - [x] Ejecutar cargo clippy y corregir errores Rust
+    - [x] Compilar binario Rust y copiar a src/binary
+    - [x] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
+    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
+### Tarea 5.5: Implementación de Modo Lazy y Planificador de Consultas [✅] COMPLETADA - ¡FINALIZADA!
+- [x] Método ->lazy() en QueryBuilder que marque consulta como diferida
+- [x] Método ->collect() para ejecutar y obtener resultado
+- [x] QueryPlan intermedio en lugar de SQL inmediata
+- [x] Generación de SQL final optimizada al llamar collect()
+- [x] Combinar select, where, orderBy y with() en un solo SQL optimizado
+- [x] Optimización de plan de ejecución:
+    - [x] Analizar cadena de operaciones antes de ejecutar
+    - [x] Optimizar JOINs y eliminar subconsultas innecesarias
+    - [x] Combinar WHERE clauses
+- [x] Validar equivalencia de resultados con consultas normales
+- [x] Comparar rendimiento en operaciones encadenadas
+- [x] Checklist de calidad:
+    - [x] Ejecutar phpstan y corregir errores PHP
+    - [x] Ejecutar php-cs-fixer fix para formato de código
+    - [ ] Ejecutar psalm --plugin=psalm-security-plugin para análisis de seguridad (bloqueado por versión PHP)
+    - [x] Ejecutar cargo clippy y corregir errores Rust
+    - [x] Compilar binario Rust y copiar a src/binary
+    - [x] Ejecutar composer dump-autoload -o genera el autoloader más rápido y liviano para entornos de despliegue
+    - [x] Ejecutar tests de PHP y Rust, corregir errores y volver a validar
+    - [x] Tests de equivalencia funcional (12/12 tests passing)
+    - [x] Benchmarks de rendimiento lazy vs inmediato
+    - [x] Documentación completa actualizada con ejemplos

@@ -183,7 +183,7 @@ pub fn clean_table_name(table_name: &str) -> Result<String, String> {
         if parts.len() == 3 && parts[1].to_lowercase() == "as" {
             let table = parts[0];
             let alias = parts[2];
-            
+
             // Validar tanto la tabla como el alias
             if is_safe_identifier(table) && is_safe_identifier(alias) {
                 return Ok(table_name.to_string());
@@ -194,7 +194,7 @@ pub fn clean_table_name(table_name: &str) -> Result<String, String> {
             return Err(format!("Invalid table alias syntax: {}", table_name));
         }
     }
-    
+
     // Validación normal para nombres sin alias
     if !is_safe_identifier(table_name) {
         return Err(format!("Invalid table name: {}", table_name));
