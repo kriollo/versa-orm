@@ -156,16 +156,16 @@
                                     'in_progress' => 'bg-blue-100 text-blue-800',
                                     'done' => 'bg-green-100 text-green-800',
                                 ];
-                                $statusColor = $statusColors[$task->status] ?? 'bg-gray-100 text-gray-800';
+                                $statusColor = $statusColors[$task['status']] ?? 'bg-gray-100 text-gray-800';
                                 ?>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColor ?>">
-                                    <?= ucfirst(str_replace('_', ' ', $task->status)) ?>
+                                    <?= ucfirst(str_replace('_', ' ', $task['status'])) ?>
                                 </span>
                             </div>
                             <div>
-                                <h3 class="text-sm font-medium text-gray-900"><?= htmlspecialchars($task->title) ?></h3>
-                                <?php if ($task->description): ?>
-                                    <p class="text-sm text-gray-500"><?= htmlspecialchars(substr($task->description, 0, 100)) ?><?= strlen($task->description) > 100 ? '...' : '' ?></p>
+                                <h3 class="text-sm font-medium text-gray-900"><?= htmlspecialchars($task['title']) ?></h3>
+                                <?php if ($task['description']): ?>
+                                    <p class="text-sm text-gray-500"><?= htmlspecialchars(substr($task['description'], 0, 100)) ?><?= strlen($task['description']) > 100 ? '...' : '' ?></p>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -177,12 +177,12 @@
                                 'high' => 'bg-orange-100 text-orange-800',
                                 'urgent' => 'bg-red-100 text-red-800',
                             ];
-                            $priorityColor = $priorityColors[$task->priority] ?? 'bg-gray-100 text-gray-800';
+                            $priorityColor = $priorityColors[$task['priority']] ?? 'bg-gray-100 text-gray-800';
                             ?>
                             <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <?= $priorityColor ?>">
-                                <?= ucfirst($task->priority) ?>
+                                <?= ucfirst($task['priority']) ?>
                             </span>
-                            <span class="text-sm text-gray-500"><?= safe_date('d/m/Y', $task->created_at) ?></span>
+                            <span class="text-sm text-gray-500"><?= safe_date('d/m/Y', $task['created_at']) ?></span>
                         </div>
                     </div>
                 </div>
