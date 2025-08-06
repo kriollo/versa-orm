@@ -13,12 +13,12 @@ class VersaORMException extends Exception
 {
     private ?string $query;
     /**
-     * @var array<int, mixed> 
+     * @var array<int, mixed>
      */
     private array $bindings;
     private string $errorCode;
     /**
-     * @var array<string, mixed> 
+     * @var array<string, mixed>
      */
     private array $errorDetails;
     private ?string $sqlState;

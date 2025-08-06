@@ -45,7 +45,8 @@ trait VersaORMTrait
 
         $this->db = new VersaORM(
             array_merge(
-                static::$DEFAULT_CONFIG, [
+                static::$DEFAULT_CONFIG,
+                [
                 'driver' => $db_config['DB_DRIVER'],
                 'host' => $db_config['DB_HOST'],
                 'port' => $db_config['DB_PORT'],

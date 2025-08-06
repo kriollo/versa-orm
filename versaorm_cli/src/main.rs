@@ -139,8 +139,10 @@ pub fn log_error_msg(msg: &str) {
 }
 
 // Módulos del ORM
+mod advanced_sql;
 mod cache;
 mod connection;
+mod database_specific;
 mod model;
 mod query;
 mod query_planner;
@@ -148,7 +150,9 @@ mod schema;
 mod tests;
 mod utils;
 
+use advanced_sql::AdvancedSqlFeatures;
 use connection::{ConnectionManager, DatabaseConfig};
+use database_specific::DatabaseSpecificFeatures;
 use query::QueryBuilder;
 use schema::SchemaInspector;
 
@@ -434,6 +438,7 @@ async fn run_main() {
                         .await
                 }
                 "cache" => handle_cache_action(&payload.params).map_err(|e| (e, None, None)),
+                "advanced_sql" => handle_advanced_sql_action(&connection_manager, &payload.params).await,
                 _ => Err((format!("Unknown action: {}", payload.action), None, None)),
             };
 
@@ -2267,7 +2272,7 @@ async fn handle_upsert(
             // SQLite: INSERT OR REPLACE INTO o INSERT ... ON CONFLICT DO UPDATE
             // Usando REPLACE que es más simple pero puede perder datos relacionados
             let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
-            
+
             format!(
                 "INSERT OR REPLACE INTO {} ({}) VALUES {}",
                 table_name,
@@ -2297,7 +2302,7 @@ async fn handle_upsert(
     match connection.execute_raw(&upsert_sql, params.clone()).await {
         Ok(results) => {
             log_debug_msg("Upsert operation completed successfully");
-            
+
             // Para upsert individual, intentamos determinar si fue INSERT o UPDATE
             // MySQL devuelve affected_rows: 1 para INSERT, 2 para UPDATE
             // PostgreSQL devuelve 1 para ambos casos
@@ -2352,7 +2357,7 @@ async fn handle_replace_into(
 
     let columns: Vec<String> = data.keys().cloned().collect();
     let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
-    
+
     let replace_sql = format!(
         "REPLACE INTO {} ({}) VALUES {}",
         table_name,
@@ -2373,7 +2378,7 @@ async fn handle_replace_into(
     match connection.execute_raw(&replace_sql, params.clone()).await {
         Ok(_) => {
             log_debug_msg("replaceInto operation completed successfully");
-            
+
             // Invalidar caché para esta tabla después de REPLACE INTO
             cache::invalidate_cache_for_table(table_name);
             log_debug_msg(&format!("Invalidated cache for table: {}", table_name));
@@ -3108,4 +3113,870 @@ fn create_optimizer_from_config(config: &serde_json::Value) -> QueryOptimizer {
     }
 
     optimizer
+}
+
+/// Maneja operaciones de SQL avanzadas como CTEs, Window Functions, operaciones JSON, etc.
+async fn handle_advanced_sql_action(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let operation_type = params.get("operation_type")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing operation_type for advanced SQL".to_string(), None, None))?;
+
+    log_debug_msg(&format!("Processing advanced SQL operation: {}", operation_type));
+
+    match operation_type {
+        "window_function" => handle_window_function(connection, params).await,
+        "cte" => handle_cte_operation(connection, params).await,
+        "union" => handle_union_operation(connection, params).await,
+        "advanced_aggregation" => handle_advanced_aggregation(connection, params).await,
+        "json_operation" => handle_json_operation(connection, params).await,
+        "database_specific" => handle_database_specific_operation(connection, params).await,
+        _ => Err((
+            format!("Unknown advanced SQL operation: {}", operation_type),
+            None,
+            None,
+        )),
+    }
+}
+
+/// Maneja operaciones con Window Functions
+async fn handle_window_function(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let table = params.get("table")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing table for window function".to_string(), None, None))?;
+
+    let window_function = params.get("function")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing window function type".to_string(), None, None))?;
+
+    let column = params.get("column")
+        .and_then(|v| v.as_str())
+        .unwrap_or("*");
+
+    // Construir la función window usando el módulo advanced_sql
+    let advanced_sql = AdvancedSqlFeatures::new();
+
+    let window_clause = match window_function {
+        "row_number" => {
+            let partition_by = params.get("partition_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>())
+                .unwrap_or_default();
+
+            let order_by = params.get("order_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| (s.to_string(), "ASC".to_string()))).collect::<Vec<(String, String)>>())
+                .unwrap_or_default();
+
+            advanced_sql.build_window_function(
+                "ROW_NUMBER",
+                None,
+                &partition_by,
+                &order_by,
+                connection.get_driver()
+            )
+        },
+        "rank" => {
+            let partition_by = params.get("partition_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>())
+                .unwrap_or_default();
+
+            let order_by = params.get("order_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| (s.to_string(), "ASC".to_string()))).collect::<Vec<(String, String)>>())
+                .unwrap_or_default();
+
+            advanced_sql.build_window_function(
+                "RANK",
+                None,
+                &partition_by,
+                &order_by,
+                connection.get_driver()
+            )
+        },
+        "dense_rank" => {
+            let partition_by = params.get("partition_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+                .unwrap_or_default();
+
+            let order_by = params.get("order_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| (s.to_string(), "ASC".to_string()))).collect::<Vec<(String, String)>>())
+                .unwrap_or_default();
+
+            let partition_by_strings: Vec<String> = partition_by.iter().map(|s| s.to_string()).collect();
+
+            advanced_sql.build_window_function(
+                "DENSE_RANK",
+                None,
+                &partition_by_strings,
+                &order_by,
+                connection.get_driver()
+            )
+        },
+        "lag" | "lead" => {
+            let offset = params.get("offset")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(1);
+
+            let default_value = params.get("default_value")
+                .and_then(|v| v.as_str())
+                .unwrap_or("NULL");
+
+            let partition_by = params.get("partition_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+                .unwrap_or_default();
+
+            let order_by = params.get("order_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| (s.to_string(), "ASC".to_string()))).collect::<Vec<(String, String)>>())
+                .unwrap_or_default();
+
+            let partition_by_strings: Vec<String> = partition_by.iter().map(|s| s.to_string()).collect();
+
+            advanced_sql.build_window_function(
+                window_function,
+                Some(column),
+                &partition_by_strings,
+                &order_by,
+                connection.get_driver()
+            )
+        },
+        "sum" | "avg" | "count" | "min" | "max" => {
+            let partition_by = params.get("partition_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+                .unwrap_or_default();
+
+            let order_by = params.get("order_by")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| (s.to_string(), "ASC".to_string()))).collect::<Vec<(String, String)>>())
+                .unwrap_or_default();
+
+            let partition_by_strings: Vec<String> = partition_by.iter().map(|s| s.to_string()).collect();
+
+            advanced_sql.build_window_function(
+                window_function,
+                Some(column),
+                &partition_by_strings,
+                &order_by,
+                connection.get_driver()
+            )
+        },
+        _ => return Err((
+            format!("Unsupported window function: {}", window_function),
+            None,
+            None,
+        )),
+    };
+
+    // Manejar el Result de window_clause
+    let window_clause_str = match window_clause {
+        Ok(clause) => clause,
+        Err(err) => return Err((err, None, None)),
+    };
+
+    // Construir la consulta completa
+    let select_columns = params.get("select")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join(", "))
+        .unwrap_or_else(|| "*".to_string());
+
+    let alias = params.get("alias")
+        .and_then(|v| v.as_str())
+        .unwrap_or("window_result");
+
+    let sql = format!(
+        "SELECT {}, {} AS {} FROM {}",
+        select_columns, window_clause_str, alias, table
+    );
+
+    // Agregar cláusulas WHERE si existen
+    let mut final_sql = sql;
+    let mut bindings = Vec::new();
+
+    if let Some(where_conditions) = params.get("where").and_then(|v| v.as_array()) {
+        let where_clause = build_where_clause(where_conditions, &mut bindings)?;
+        final_sql.push_str(&format!(" WHERE {}", where_clause));
+    }
+
+    // Agregar ORDER BY si existe
+    if let Some(order_by) = params.get("final_order_by").and_then(|v| v.as_array()) {
+        let order_clause: Vec<String> = order_by.iter()
+            .filter_map(|v| {
+                let obj = v.as_object()?;
+                let column = obj.get("column")?.as_str()?;
+                let direction = obj.get("direction")?.as_str().unwrap_or("ASC");
+                Some(format!("{} {}", column, direction))
+            })
+            .collect();
+
+        if !order_clause.is_empty() {
+            final_sql.push_str(&format!(" ORDER BY {}", order_clause.join(", ")));
+        }
+    }
+
+    // Agregar LIMIT si existe
+    if let Some(limit) = params.get("limit").and_then(|v| v.as_i64()) {
+        final_sql.push_str(&format!(" LIMIT {}", limit));
+    }
+
+    log_debug_msg(&format!("Executing window function SQL: {}", final_sql));
+
+    // Ejecutar la consulta
+    let rows = connection.execute_raw(&final_sql, bindings.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("Window function query failed: {}", e),
+                Some(final_sql.clone()),
+                Some(bindings),
+            )
+        })?;
+
+    Ok(serde_json::to_value(rows).unwrap())
+}
+
+/// Maneja operaciones con CTEs (Common Table Expressions)
+async fn handle_cte_operation(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let advanced_sql = AdvancedSqlFeatures::new();
+
+    // Verificar soporte de CTEs para el motor actual
+    if !advanced_sql.supports_ctes(connection.get_driver()) {
+        return Err((
+            format!("CTEs are not supported for database driver: {}", connection.get_driver()),
+            None,
+            None,
+        ));
+    }
+
+    let cte_definitions = params.get("ctes")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| ("Missing CTE definitions".to_string(), None, None))?;
+
+    let main_query = params.get("main_query")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing main query for CTE".to_string(), None, None))?;
+
+    let mut cte_clauses = Vec::new();
+    let mut all_bindings = Vec::new();
+
+    // Procesar cada CTE
+    for cte in cte_definitions {
+        let name = cte.get("name")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ("Missing CTE name".to_string(), None, None))?;
+
+        let query = cte.get("query")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ("Missing CTE query".to_string(), None, None))?;
+
+        // Obtener bindings para esta CTE si existen
+        if let Some(bindings) = cte.get("bindings").and_then(|v| v.as_array()) {
+            all_bindings.extend(bindings.clone());
+        }
+
+        // Construir la definición de CTE
+        let cte_clause = format!("{} AS ({})", name, query);
+        cte_clauses.push(cte_clause);
+    }
+
+    // Obtener bindings del main_query si existen
+    if let Some(main_bindings) = params.get("main_query_bindings").and_then(|v| v.as_array()) {
+        all_bindings.extend(main_bindings.clone());
+    }
+
+    // Construir la consulta CTE completa
+    let cte_sql = advanced_sql.build_cte(&cte_clauses, main_query);
+
+    log_debug_msg(&format!("Executing CTE SQL: {}", cte_sql));
+
+    // Ejecutar la consulta CTE
+    let rows = connection.execute_raw(&cte_sql, all_bindings.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("CTE query failed: {}", e),
+                Some(cte_sql.clone()),
+                Some(all_bindings),
+            )
+        })?;
+
+    Ok(serde_json::to_value(rows).unwrap())
+}
+
+/// Maneja operaciones UNION
+async fn handle_union_operation(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let advanced_sql = AdvancedSqlFeatures::new();
+
+    let queries = params.get("queries")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| ("Missing queries for UNION operation".to_string(), None, None))?;
+
+    if queries.len() < 2 {
+        return Err(("UNION operation requires at least 2 queries".to_string(), None, None));
+    }
+
+    let union_type = params.get("union_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("UNION");
+
+    let mut query_strings = Vec::new();
+    let mut all_bindings = Vec::new();
+
+    // Procesar cada consulta
+    for query_obj in queries {
+        let query = query_obj.get("query")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ("Missing query in UNION operation".to_string(), None, None))?;
+
+        query_strings.push(query.to_string());
+
+        // Agregar bindings si existen
+        if let Some(bindings) = query_obj.get("bindings").and_then(|v| v.as_array()) {
+            all_bindings.extend(bindings.clone());
+        }
+    }
+
+    // Construir la consulta UNION
+    let union_sql = advanced_sql.build_union(&query_strings, union_type);
+
+    // Agregar ORDER BY global si existe
+    let mut final_sql = union_sql;
+    if let Some(order_by) = params.get("order_by").and_then(|v| v.as_array()) {
+        let order_clause: Vec<String> = order_by.iter()
+            .filter_map(|v| {
+                let obj = v.as_object()?;
+                let column = obj.get("column")?.as_str()?;
+                let direction = obj.get("direction")?.as_str().unwrap_or("ASC");
+                Some(format!("{} {}", column, direction))
+            })
+            .collect();
+
+        if !order_clause.is_empty() {
+            final_sql.push_str(&format!(" ORDER BY {}", order_clause.join(", ")));
+        }
+    }
+
+    // Agregar LIMIT global si existe
+    if let Some(limit) = params.get("limit").and_then(|v| v.as_i64()) {
+        final_sql.push_str(&format!(" LIMIT {}", limit));
+    }
+
+    log_debug_msg(&format!("Executing UNION SQL: {}", final_sql));
+
+    // Ejecutar la consulta UNION
+    let rows = connection.execute_raw(&final_sql, all_bindings.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("UNION query failed: {}", e),
+                Some(final_sql.clone()),
+                Some(all_bindings),
+            )
+        })?;
+
+    Ok(serde_json::to_value(rows).unwrap())
+}
+
+/// Maneja agregaciones avanzadas
+async fn handle_advanced_aggregation(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let advanced_sql = AdvancedSqlFeatures::new();
+
+    let table = params.get("table")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing table for advanced aggregation".to_string(), None, None))?;
+
+    let aggregation_type = params.get("aggregation_type")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing aggregation type".to_string(), None, None))?;
+
+    // Construir la función de agregación
+    let aggregation_function = match aggregation_type {
+        "group_concat" | "string_agg" => {
+            let column = params.get("column")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing column for string aggregation".to_string(), None, None))?;
+
+            let separator = params.get("separator")
+                .and_then(|v| v.as_str())
+                .unwrap_or(",");
+
+            advanced_sql.build_string_aggregation(column, separator)
+        },
+        "percentile" => {
+            let column = params.get("column")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing column for percentile".to_string(), None, None))?;
+
+            let percentile = params.get("percentile")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| ("Missing percentile value".to_string(), None, None))?;
+
+            advanced_sql.build_percentile_function(column, percentile)
+        },
+        "median" => {
+            let column = params.get("column")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing column for median".to_string(), None, None))?;
+
+            advanced_sql.build_percentile_function(column, 0.5)
+        },
+        "variance" | "stddev" => {
+            let column = params.get("column")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing column for statistical function".to_string(), None, None))?;
+
+            let function_name = match aggregation_type {
+                "variance" => "VAR_POP",
+                "stddev" => "STDDEV_POP",
+                _ => unreachable!(),
+            };
+
+            format!("{}({})", function_name, column)
+        },
+        _ => return Err((
+            format!("Unsupported aggregation type: {}", aggregation_type),
+            None,
+            None,
+        )),
+    };
+
+    // Construir la consulta SELECT
+    let mut select_columns = Vec::new();
+
+    // Agregar columnas de agrupación si existen
+    if let Some(group_by) = params.get("group_by").and_then(|v| v.as_array()) {
+        for col in group_by {
+            if let Some(col_str) = col.as_str() {
+                select_columns.push(col_str.to_string());
+            }
+        }
+    }
+
+    // Agregar la función de agregación
+    let alias = params.get("alias")
+        .and_then(|v| v.as_str())
+        .unwrap_or("aggregation_result");
+
+    select_columns.push(format!("{} AS {}", aggregation_function, alias));
+
+    let mut sql = format!(
+        "SELECT {} FROM {}",
+        select_columns.join(", "),
+        table
+    );
+
+    let mut bindings = Vec::new();
+
+    // Agregar cláusulas WHERE si existen
+    if let Some(where_conditions) = params.get("where").and_then(|v| v.as_array()) {
+        let where_clause = build_where_clause(where_conditions, &mut bindings)?;
+        sql.push_str(&format!(" WHERE {}", where_clause));
+    }
+
+    // Agregar GROUP BY si existe
+    if let Some(group_by) = params.get("group_by").and_then(|v| v.as_array()) {
+        let group_columns: Vec<String> = group_by.iter()
+            .filter_map(|v| v.as_str())
+            .map(|s| s.to_string())
+            .collect();
+
+        if !group_columns.is_empty() {
+            sql.push_str(&format!(" GROUP BY {}", group_columns.join(", ")));
+        }
+    }
+
+    // Agregar HAVING si existe
+    if let Some(having_conditions) = params.get("having").and_then(|v| v.as_array()) {
+        let having_clause = build_where_clause(having_conditions, &mut bindings)?;
+        sql.push_str(&format!(" HAVING {}", having_clause));
+    }
+
+    // Agregar ORDER BY si existe
+    if let Some(order_by) = params.get("order_by").and_then(|v| v.as_array()) {
+        let order_clause: Vec<String> = order_by.iter()
+            .filter_map(|v| {
+                let obj = v.as_object()?;
+                let column = obj.get("column")?.as_str()?;
+                let direction = obj.get("direction")?.as_str().unwrap_or("ASC");
+                Some(format!("{} {}", column, direction))
+            })
+            .collect();
+
+        if !order_clause.is_empty() {
+            sql.push_str(&format!(" ORDER BY {}", order_clause.join(", ")));
+        }
+    }
+
+    // Agregar LIMIT si existe
+    if let Some(limit) = params.get("limit").and_then(|v| v.as_i64()) {
+        sql.push_str(&format!(" LIMIT {}", limit));
+    }
+
+    log_debug_msg(&format!("Executing advanced aggregation SQL: {}", sql));
+
+    // Ejecutar la consulta
+    let rows = connection.execute_raw(&sql, bindings.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("Advanced aggregation query failed: {}", e),
+                Some(sql.clone()),
+                Some(bindings),
+            )
+        })?;
+
+    Ok(serde_json::to_value(rows).unwrap())
+}
+
+/// Maneja operaciones JSON
+async fn handle_json_operation(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let advanced_sql = AdvancedSqlFeatures::new();
+
+    // Verificar soporte de JSON
+    if !advanced_sql.supports_json(connection.get_driver()) {
+        return Err((
+            format!("JSON operations are not supported for database driver: {}", connection.get_driver()),
+            None,
+            None,
+        ));
+    }
+
+    let table = params.get("table")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing table for JSON operation".to_string(), None, None))?;
+
+    let operation_type = params.get("json_operation")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing JSON operation type".to_string(), None, None))?;
+
+    let column = params.get("json_column")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing JSON column".to_string(), None, None))?;
+
+    // Construir la operación JSON
+    let json_expression = match operation_type {
+        "extract" => {
+            let path = params.get("path")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing JSON path for extraction".to_string(), None, None))?;
+
+            advanced_sql.build_json_extract(column, path)
+        },
+        "array_length" => {
+            let path = params.get("path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("$");
+
+            advanced_sql.build_json_array_length(column, Some(path))
+        },
+        "object_keys" => {
+            advanced_sql.build_json_keys(column)
+        },
+        "contains" => {
+            let search_value = params.get("search_value")
+                .ok_or_else(|| ("Missing search value for JSON contains".to_string(), None, None))?;
+
+            let search_json = serde_json::to_string(search_value)
+                .map_err(|e| (format!("Failed to serialize search value: {}", e), None, None))?;
+
+            advanced_sql.build_json_contains(column, &search_json)
+        },
+        "search" => {
+            let path = params.get("path")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing JSON path for search".to_string(), None, None))?;
+
+            let value = params.get("value")
+                .ok_or_else(|| ("Missing value for JSON search".to_string(), None, None))?;
+
+            let value_str = if value.is_string() {
+                format!("'{}'", value.as_str().unwrap())
+            } else {
+                value.to_string()
+            };
+
+            format!("JSON_EXTRACT({}, '{}') = {}", column, path, value_str)
+        },
+        _ => return Err((
+            format!("Unsupported JSON operation: {}", operation_type),
+            None,
+            None,
+        )),
+    };
+
+    // Construir la consulta
+    let select_columns = params.get("select")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
+        .unwrap_or_else(|| "*".to_string());
+
+    let alias = params.get("alias")
+        .and_then(|v| v.as_str())
+        .unwrap_or("json_result");
+
+    let mut sql = format!(
+        "SELECT {}, {} AS {} FROM {}",
+        select_columns, json_expression, alias, table
+    );
+
+    let mut bindings = Vec::new();
+
+    // Agregar cláusulas WHERE si existen
+    if let Some(where_conditions) = params.get("where").and_then(|v| v.as_array()) {
+        let where_clause = build_where_clause(where_conditions, &mut bindings)?;
+        sql.push_str(&format!(" WHERE {}", where_clause));
+    }
+
+    // Para operaciones de búsqueda, usar la expresión JSON como filtro
+    if operation_type == "search" || operation_type == "contains" {
+        let filter_clause = if operation_type == "contains" {
+            json_expression
+        } else {
+            json_expression
+        };
+
+        if bindings.is_empty() {
+            sql.push_str(&format!(" WHERE {}", filter_clause));
+        } else {
+            sql.push_str(&format!(" AND {}", filter_clause));
+        }
+    }
+
+    // Agregar ORDER BY si existe
+    if let Some(order_by) = params.get("order_by").and_then(|v| v.as_array()) {
+        let order_clause: Vec<String> = order_by.iter()
+            .filter_map(|v| {
+                let obj = v.as_object()?;
+                let column = obj.get("column")?.as_str()?;
+                let direction = obj.get("direction")?.as_str().unwrap_or("ASC");
+                Some(format!("{} {}", column, direction))
+            })
+            .collect();
+
+        if !order_clause.is_empty() {
+            sql.push_str(&format!(" ORDER BY {}", order_clause.join(", ")));
+        }
+    }
+
+    // Agregar LIMIT si existe
+    if let Some(limit) = params.get("limit").and_then(|v| v.as_i64()) {
+        sql.push_str(&format!(" LIMIT {}", limit));
+    }
+
+    log_debug_msg(&format!("Executing JSON operation SQL: {}", sql));
+
+    // Ejecutar la consulta
+    let rows = connection.execute_raw(&sql, bindings.clone())
+        .await
+        .map_err(|e| {
+            (
+                format!("JSON operation query failed: {}", e),
+                Some(sql.clone()),
+                Some(bindings),
+            )
+        })?;
+
+    Ok(serde_json::to_value(rows).unwrap())
+}
+
+/// Maneja operaciones específicas por motor de base de datos
+async fn handle_database_specific_operation(
+    connection: &ConnectionManager,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let db_features = DatabaseSpecificFeatures::new();
+
+    let operation = params.get("operation")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ("Missing database specific operation".to_string(), None, None))?;
+
+    match operation {
+        "validate_driver" => {
+            let is_valid = db_features.validate_driver(connection.get_driver());
+            Ok(serde_json::json!({
+                "driver": connection.get_driver(),
+                "is_valid": is_valid,
+                "features": {
+                    "supports_json": db_features.supports_json(connection.get_driver()),
+                    "supports_ctes": db_features.supports_ctes(connection.get_driver()),
+                    "supports_window_functions": db_features.supports_window_functions(connection.get_driver()),
+                    "supports_full_text_search": db_features.supports_full_text_search(connection.get_driver()),
+                }
+            }))
+        },
+        "optimize_query" => {
+            let query = params.get("query")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing query for optimization".to_string(), None, None))?;
+
+            let optimized = db_features.optimize_query_for_driver(query, connection.get_driver());
+            Ok(serde_json::json!({
+                "original_query": query,
+                "optimized_query": optimized,
+                "driver": connection.get_driver()
+            }))
+        },
+        "get_driver_limits" => {
+            let limits = db_features.get_driver_limits(connection.get_driver());
+            Ok(serde_json::to_value(limits).unwrap())
+        },
+        "full_text_search" => {
+            if !db_features.supports_full_text_search(connection.get_driver()) {
+                return Err((
+                    format!("Full text search not supported for driver: {}", connection.get_driver()),
+                    None,
+                    None,
+                ));
+            }
+
+            let table = params.get("table")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing table for full text search".to_string(), None, None))?;
+
+            let columns = params.get("columns")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str())
+                        .collect::<Vec<_>>()
+                })
+                .ok_or_else(|| ("Missing columns for full text search".to_string(), None, None))?;
+
+            let search_term = params.get("search_term")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ("Missing search term".to_string(), None, None))?;
+
+            let columns_strings: Vec<String> = columns.iter().map(|s| s.to_string()).collect();
+            let fts_sql = db_features.build_full_text_search(table, &columns_strings, search_term, connection.get_driver());
+
+            log_debug_msg(&format!("Executing full text search SQL: {}", fts_sql));
+
+            // Ejecutar la búsqueda de texto completo
+            let rows = connection.execute_raw(&fts_sql, vec![])
+                .await
+                .map_err(|e| {
+                    (
+                        format!("Full text search failed: {}", e),
+                        Some(fts_sql.clone()),
+                        None,
+                    )
+                })?;
+
+            Ok(serde_json::to_value(rows).unwrap())
+        },
+        _ => Err((
+            format!("Unknown database specific operation: {}", operation),
+            None,
+            None,
+        )),
+    }
+}
+
+/// Helper function para construir cláusulas WHERE
+fn build_where_clause(
+    conditions: &[serde_json::Value],
+    bindings: &mut Vec<serde_json::Value>,
+) -> Result<String, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    let mut where_parts = Vec::new();
+
+    for condition in conditions {
+        let column = condition.get("column")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ("Missing column in WHERE condition".to_string(), None, None))?;
+
+        let operator = condition.get("operator")
+            .and_then(|v| v.as_str())
+            .unwrap_or("=");
+
+        let value = condition.get("value")
+            .ok_or_else(|| ("Missing value in WHERE condition".to_string(), None, None))?;
+
+        let connector = condition.get("connector")
+            .and_then(|v| v.as_str())
+            .unwrap_or("AND");
+
+        // Validar el nombre de la columna
+        if utils::clean_column_name(column).is_err() {
+            return Err(("Invalid column name in WHERE condition".to_string(), None, None));
+        }
+
+        let condition_str = match operator.to_uppercase().as_str() {
+            "IN" | "NOT IN" => {
+                if let Some(values) = value.as_array() {
+                    let placeholders = values.iter()
+                        .map(|_| "?")
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+                    for v in values {
+                        bindings.push(v.clone());
+                    }
+
+                    format!("{} {} ({})", column, operator, placeholders)
+                } else {
+                    bindings.push(value.clone());
+                    format!("{} {} (?)", column, operator)
+                }
+            },
+            "BETWEEN" => {
+                if let Some(values) = value.as_array() {
+                    if values.len() == 2 {
+                        bindings.push(values[0].clone());
+                        bindings.push(values[1].clone());
+                        format!("{} BETWEEN ? AND ?", column)
+                    } else {
+                        return Err(("BETWEEN operator requires exactly 2 values".to_string(), None, None));
+                    }
+                } else {
+                    return Err(("BETWEEN operator requires an array of 2 values".to_string(), None, None));
+                }
+            },
+            "IS NULL" | "IS NOT NULL" => {
+                format!("{} {}", column, operator)
+            },
+            "LIKE" | "NOT LIKE" | "ILIKE" => {
+                bindings.push(value.clone());
+                format!("{} {} ?", column, operator)
+            },
+            _ => {
+                bindings.push(value.clone());
+                format!("{} {} ?", column, operator)
+            }
+        };
+
+        if where_parts.is_empty() {
+            where_parts.push(condition_str);
+        } else {
+            where_parts.push(format!("{} {}", connector, condition_str));
+        }
+    }
+
+    Ok(where_parts.join(" "))
 }

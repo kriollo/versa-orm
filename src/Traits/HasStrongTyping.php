@@ -376,7 +376,7 @@ trait HasStrongTyping
 
     /**
      * Valida que el esquema del modelo sea consistente con la base de datos
-     * y muestra advertencias en consola si difiere
+     * y muestra advertencias en consola si difiere.
      *
      * @return array<string> Array de errores de consistencia
      */
@@ -388,7 +388,7 @@ trait HasStrongTyping
         try {
             // Validar que tenemos una instancia de VersaORM
             if (!($this->orm instanceof \VersaORM\VersaORM)) {
-                $errors[] = "Se requiere una instancia válida de VersaORM para validar el esquema";
+                $errors[] = 'Se requiere una instancia válida de VersaORM para validar el esquema';
                 return $errors;
             }
 
@@ -470,7 +470,7 @@ trait HasStrongTyping
 
                 if ($isNullable !== $modelNullable) {
                     $warning = "⚠️  NULLABILIDAD: '{$property}' - DB permite NULL: " .
-                        ($isNullable ? 'Sí' : 'No') . " vs Modelo: " .
+                        ($isNullable ? 'Sí' : 'No') . ' vs Modelo: ' .
                         ($modelNullable ? 'Sí' : 'No');
                     $errors[] = $warning;
                     if (php_sapi_name() === 'cli') {
@@ -490,14 +490,14 @@ trait HasStrongTyping
                 }
             }
         } catch (\Exception $e) {
-            $errors[] = "Error al validar esquema: " . $e->getMessage();
+            $errors[] = 'Error al validar esquema: ' . $e->getMessage();
         }
 
         return $errors;
     }
 
     /**
-     * Verifica si dos tipos son compatibles
+     * Verifica si dos tipos son compatibles.
      */
     private function isCompatibleType(string $dbType, string $modelType): bool
     {

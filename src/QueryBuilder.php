@@ -1625,9 +1625,9 @@ class QueryBuilder
         // FALLBACK: Usar insertOrUpdate() si el binario no soporta upsert nativo
         return $this->upsertFallback($data, $uniqueKeys, $updateColumns);
     }
-    
+
     /**
-     * Implementación fallback del upsert usando operaciones INSERT/UPDATE existentes
+     * Implementación fallback del upsert usando operaciones INSERT/UPDATE existentes.
      *
      * @param array<string, mixed> $data          Datos del registro
      * @param array<int, string>   $uniqueKeys    Columnas que determinan duplicados
@@ -1636,7 +1636,7 @@ class QueryBuilder
      */
     private function upsertFallback(
         array $data,
-        array $uniqueKeys, 
+        array $uniqueKeys,
         array $updateColumns = []
     ): array {
         // Construir condiciones WHERE para verificar existencia
@@ -1650,17 +1650,17 @@ class QueryBuilder
 
         if ($exists) {
             // Actualizar registro existente
-            $updateData = empty($updateColumns) 
+            $updateData = empty($updateColumns)
                 ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
                 : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
-                
+
             if (empty($updateData)) {
                 return [
                     'status' => 'success',
                     'operation' => 'no_update_needed',
                     'rows_affected' => 0,
                     'unique_keys' => $uniqueKeys,
-                    'table' => $this->table
+                    'table' => $this->table,
                 ];
             }
 
@@ -1669,36 +1669,36 @@ class QueryBuilder
             foreach ($uniqueKeys as $key) {
                 $updateQuery->where($key, '=', $data[$key]);
             }
-            
+
             $updateQuery->update($updateData);
-            
+
             $result = [
                 'status' => 'success',
                 'operation' => 'updated',
                 'rows_affected' => 1,
                 'unique_keys' => $uniqueKeys,
                 'table' => $this->table,
-                'update_columns' => $updateColumns // Siempre incluir, será vacío si no se especificaron
+                'update_columns' => $updateColumns, // Siempre incluir, será vacío si no se especificaron
             ];
-            
+
             return $result;
         } else {
             // Insertar nuevo registro
             $this->insert($data);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'inserted',
                 'rows_affected' => 1,
                 'unique_keys' => $uniqueKeys,
-                'table' => $this->table
+                'table' => $this->table,
             ];
         }
     }
 
     /**
-     * Método insertOrUpdate() alternativo - Verifica existencia y decide INSERT vs UPDATE
-     * 
+     * Método insertOrUpdate() alternativo - Verifica existencia y decide INSERT vs UPDATE.
+     *
      * @param  array<string, mixed> $data          Datos del registro
      * @param  array<int, string>   $uniqueKeys    Columnas para verificar existencia
      * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional, por defecto todas)
@@ -1751,16 +1751,16 @@ class QueryBuilder
 
         if ($exists) {
             // Actualizar registro existente
-            $updateData = empty($updateColumns) 
+            $updateData = empty($updateColumns)
                 ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
                 : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
-                
+
             if (empty($updateData)) {
                 return [
                     'status' => 'success',
                     'operation' => 'no_update_needed',
                     'message' => 'Record exists but no columns to update',
-                    'unique_keys' => $uniqueKeys
+                    'unique_keys' => $uniqueKeys,
                 ];
             }
 
@@ -1769,32 +1769,32 @@ class QueryBuilder
             foreach ($uniqueKeys as $key) {
                 $updateQuery->where($key, '=', $data[$key]);
             }
-            
+
             $updateQuery->update($updateData);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'updated',
                 'rows_affected' => 1,
                 'unique_keys' => $uniqueKeys,
-                'updated_columns' => array_keys($updateData)
+                'updated_columns' => array_keys($updateData),
             ];
         } else {
             // Insertar nuevo registro
             $this->insert($data);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'inserted',
                 'rows_affected' => 1,
-                'unique_keys' => $uniqueKeys
+                'unique_keys' => $uniqueKeys,
             ];
         }
     }
 
     /**
-     * Método save() inteligente - Detecta si es nuevo o existente automáticamente
-     * 
+     * Método save() inteligente - Detecta si es nuevo o existente automáticamente.
+     *
      * @param  array<string, mixed> $data        Datos del registro
      * @param  string               $primaryKey  Clave primaria (default: 'id')
      * @return array<string, mixed> Información sobre la operación
@@ -1816,43 +1816,43 @@ class QueryBuilder
             $id = $data[$primaryKey];
             $updateData = $data;
             unset($updateData[$primaryKey]); // Remover ID de los datos a actualizar
-            
+
             if (empty($updateData)) {
                 return [
                     'status' => 'success',
                     'operation' => 'no_update_needed',
                     'message' => 'No data to update',
-                    'id' => $id
+                    'id' => $id,
                 ];
             }
-            
+
             // Crear nueva instancia para la actualización
             $updateQuery = new self($this->orm, $this->table);
             $updateQuery->where($primaryKey, '=', $id)->update($updateData);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'updated',
                 'rows_affected' => 1,
                 'id' => $id,
-                'updated_columns' => array_keys($updateData)
+                'updated_columns' => array_keys($updateData),
             ];
         } else {
             // Inserción - crear nuevo registro
             $insertedId = $this->insertGetId($data);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'inserted',
                 'rows_affected' => 1,
-                'id' => $insertedId
+                'id' => $insertedId,
             ];
         }
     }
 
     /**
-     * Método createOrUpdate() con condiciones personalizadas
-     * 
+     * Método createOrUpdate() con condiciones personalizadas.
+     *
      * @param  array<string, mixed> $data        Datos del registro
      * @param  array<string, mixed> $conditions  Condiciones personalizadas para verificar existencia
      * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
@@ -1899,13 +1899,13 @@ class QueryBuilder
             $updateData = empty($updateColumns)
                 ? $data // Actualizar todas las columnas
                 : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
-                
+
             if (empty($updateData)) {
                 return [
                     'status' => 'success',
                     'operation' => 'no_update_needed',
                     'message' => 'Record exists but no columns to update',
-                    'conditions' => $conditions
+                    'conditions' => $conditions,
                 ];
             }
 
@@ -1914,27 +1914,27 @@ class QueryBuilder
             foreach ($conditions as $column => $value) {
                 $updateQuery->where($column, '=', $value);
             }
-            
+
             $updateQuery->update($updateData);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'updated',
                 'rows_affected' => 1,
                 'conditions' => $conditions,
-                'updated_columns' => array_keys($updateData)
+                'updated_columns' => array_keys($updateData),
             ];
         } else {
             // Crear nuevo registro (merging conditions with data)
             $insertData = array_merge($data, $conditions);
             $insertedId = $this->insertGetId($insertData);
-            
+
             return [
                 'status' => 'success',
                 'operation' => 'created',
                 'rows_affected' => 1,
                 'id' => $insertedId,
-                'conditions' => $conditions
+                'conditions' => $conditions,
             ];
         }
     }
@@ -2004,7 +2004,7 @@ class QueryBuilder
      * REPLACE INTO para MySQL - Compatible solo con MySQL.
      * Reemplaza completamente los registros existentes o inserta nuevos.
      * ADVERTENCIA: REPLACE puede perder datos de columnas no especificadas.
-     * 
+     *
      * @param  array<string, mixed> $data Datos del registro
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos o no es MySQL
@@ -2025,9 +2025,9 @@ class QueryBuilder
         // FALLBACK: Usar SQL raw ya que el binario no soporta REPLACE INTO nativo
         return $this->replaceIntoFallback($data);
     }
-    
+
     /**
-     * Implementación fallback para REPLACE INTO usando SQL raw
+     * Implementación fallback para REPLACE INTO usando SQL raw.
      *
      * @param array<string, mixed> $data Datos del registro
      * @return array<string, mixed> Información sobre la operación
@@ -2038,31 +2038,31 @@ class QueryBuilder
         if (!($this->orm instanceof VersaORM)) {
             throw new VersaORMException('VersaORM instance is required for replaceInto');
         }
-        
+
         // Verificar que estamos usando MySQL
         $config = $this->orm->getConfig();
         if (($config['driver'] ?? '') !== 'mysql') {
             throw new VersaORMException('REPLACE INTO operations are only supported for MySQL');
         }
-        
+
         // Construir la consulta REPLACE INTO manualmente
         $columns = array_keys($data);
         $placeholders = array_fill(0, count($data), '?');
-        
+
         $sql = sprintf(
             'REPLACE INTO `%s` (`%s`) VALUES (%s)',
             $this->table,
             implode('`, `', $columns),
             implode(', ', $placeholders)
         );
-        
+
         $this->orm->exec($sql, array_values($data));
-        
+
         return [
             'status' => 'success',
             'operation' => 'replaced',
             'rows_affected' => 1,
-            'table' => $this->table
+            'table' => $this->table,
         ];
     }
 
@@ -2070,7 +2070,7 @@ class QueryBuilder
      * REPLACE INTO múltiples registros para MySQL - Compatible solo con MySQL.
      * Reemplaza completamente los registros existentes o inserta nuevos.
      * ADVERTENCIA: REPLACE puede perder datos de columnas no especificadas.
-     * 
+     *
      * @param  array<int, array<string, mixed>> $records   Array de registros
      * @param  int                              $batchSize Tamaño del lote (default: 1000)
      * @return array<string, mixed> Información sobre la operación
@@ -2117,9 +2117,9 @@ class QueryBuilder
         // FALLBACK: Usar SQL raw con lotes ya que el binario no soporta REPLACE INTO nativo
         return $this->replaceIntoManyFallback($records, $batchSize);
     }
-    
+
     /**
-     * Implementación fallback para REPLACE INTO múltiple usando SQL raw
+     * Implementación fallback para REPLACE INTO múltiple usando SQL raw.
      *
      * @param array<int, array<string, mixed>> $records Array de registros
      * @param int $batchSize Tamaño del lote
@@ -2130,54 +2130,55 @@ class QueryBuilder
         if (!($this->orm instanceof VersaORM)) {
             throw new VersaORMException('VersaORM instance is required for replaceIntoMany');
         }
-        
+
         // Verificar que estamos usando MySQL
         $config = $this->orm->getConfig();
         if (($config['driver'] ?? '') !== 'mysql') {
             throw new VersaORMException('REPLACE INTO operations are only supported for MySQL');
         }
-        
+
         $totalReplaced = 0;
         $batchesProcessed = 0;
-        $recordBatches = array_chunk($records, $batchSize);
-        
+        $effectiveBatchSize = max(1, $batchSize); // Asegurar que sea al menos 1
+        $recordBatches = array_chunk($records, $effectiveBatchSize);
+
         foreach ($recordBatches as $batch) {
             // Construir SQL para este lote
             $columns = array_keys($batch[0]);
             $valueGroups = [];
             $allValues = [];
-            
+
             foreach ($batch as $record) {
                 $placeholders = array_fill(0, count($record), '?');
                 $valueGroups[] = '(' . implode(', ', $placeholders) . ')';
                 $allValues = array_merge($allValues, array_values($record));
             }
-            
+
             $sql = sprintf(
                 'REPLACE INTO `%s` (`%s`) VALUES %s',
                 $this->table,
                 implode('`, `', $columns),
                 implode(', ', $valueGroups)
             );
-            
+
             // Ejecutar el lote
             $this->orm->exec($sql, $allValues);
             $totalReplaced += count($batch);
             $batchesProcessed++;
         }
-        
+
         return [
             'status' => 'success',
             'total_replaced' => $totalReplaced,
             'batches_processed' => $batchesProcessed,
             'batch_size' => $batchSize,
             'total_records' => count($records),
-            'table' => $this->table
+            'table' => $this->table,
         ];
     }
 
     /**
-     * Activa el modo lazy - las consultas se acumulan pero no se ejecutan hasta collect()
+     * Activa el modo lazy - las consultas se acumulan pero no se ejecutan hasta collect().
      *
      * @return self
      */
@@ -2188,7 +2189,7 @@ class QueryBuilder
     }
 
     /**
-     * Ejecuta todas las operaciones lazy acumuladas y devuelve resultados
+     * Ejecuta todas las operaciones lazy acumuladas y devuelve resultados.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2212,7 +2213,7 @@ class QueryBuilder
     }
 
     /**
-     * Agrega la operación actual al conjunto de operaciones lazy
+     * Agrega la operación actual al conjunto de operaciones lazy.
      */
     private function addCurrentOperationToLazy(): void
     {
@@ -2234,7 +2235,7 @@ class QueryBuilder
     }
 
     /**
-     * Convierte las condiciones WHERE al formato del planificador
+     * Convierte las condiciones WHERE al formato del planificador.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2253,7 +2254,7 @@ class QueryBuilder
     }
 
     /**
-     * Convierte los JOINs al formato del planificador
+     * Convierte los JOINs al formato del planificador.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2273,7 +2274,7 @@ class QueryBuilder
     }
 
     /**
-     * Convierte ORDER BY al formato del planificador
+     * Convierte ORDER BY al formato del planificador.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2289,7 +2290,7 @@ class QueryBuilder
                 [
                     'column' => $this->orderBy['expression'] ?? '',
                     'direction' => 'ASC', // Raw expressions no tienen dirección específica
-                ]
+                ],
             ];
         }
 
@@ -2302,13 +2303,13 @@ class QueryBuilder
         return [
             [
                 'column' => $this->orderBy['column'] ?? '',
-                'direction' => strtoupper((string)$direction),
-            ]
+                'direction' => strtoupper((string) $direction),
+            ],
         ];
     }
 
     /**
-     * Convierte las condiciones HAVING al formato del planificador
+     * Convierte las condiciones HAVING al formato del planificador.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2327,7 +2328,7 @@ class QueryBuilder
     }
 
     /**
-     * Ejecuta el plan optimizado usando el planificador de consultas de Rust
+     * Ejecuta el plan optimizado usando el planificador de consultas de Rust.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2364,12 +2365,12 @@ class QueryBuilder
     }
 
     /**
-     * Encadena múltiples operaciones en modo lazy
+     * Encadena múltiples operaciones en modo lazy.
      *
      * @param  QueryBuilder $otherQuery
      * @return self
      */
-    public function chain(QueryBuilder $otherQuery): self
+    public function chain(self $otherQuery): self
     {
         if (!$this->isLazy) {
             $this->lazy();
@@ -2386,7 +2387,7 @@ class QueryBuilder
     }
 
     /**
-     * Obtiene información sobre el plan de ejecución sin ejecutarlo
+     * Obtiene información sobre el plan de ejecución sin ejecutarlo.
      *
      * @return array<string, mixed>
      */
@@ -2418,5 +2419,596 @@ class QueryBuilder
         $executeMethod->setAccessible(true);
 
         return $executeMethod->invoke($this->orm, 'explain_plan', $params);
+    }
+
+    // ========================================
+    // FUNCIONALIDADES SQL AVANZADAS - TAREA 7.1
+    // ========================================
+
+    /**
+     * Aplica una función window a la consulta.
+     * Soporta ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, etc.
+     *
+     * @param  string                           $function  Función window (row_number, rank, lag, lead, etc.)
+     * @param  string                           $column    Columna sobre la que aplicar la función
+     * @param  array<string, mixed>             $args      Argumentos específicos de la función
+     * @param  array<int, string>               $partitionBy Columnas para PARTITION BY
+     * @param  array<int, array<string, mixed>> $orderBy   Orden para ORDER BY
+     * @param  string                           $alias     Alias para el resultado
+     * @return array<string, mixed>             Resultados de la consulta con window function
+     * @throws VersaORMException
+     */
+    public function windowFunction(
+        string $function,
+        string $column = '*',
+        array $args = [],
+        array $partitionBy = [],
+        array $orderBy = [],
+        string $alias = 'window_result'
+    ): array {
+        $validFunctions = ['row_number', 'rank', 'dense_rank', 'lag', 'lead', 'first_value', 'last_value', 'ntile'];
+        if (!in_array(strtolower($function), $validFunctions, true)) {
+            throw new VersaORMException(sprintf('Unsupported window function: %s', $function));
+        }
+
+        if (!$this->isSafeIdentifier($column) && $column !== '*') {
+            throw new VersaORMException(sprintf('Invalid column name: %s', $column));
+        }
+
+        if (!$this->isSafeIdentifier($alias)) {
+            throw new VersaORMException(sprintf('Invalid alias name: %s', $alias));
+        }
+
+        $params = [
+            'operation_type' => 'window_function',
+            'function' => strtolower($function),
+            'column' => $column,
+            'args' => $args,
+            'partition_by' => $partitionBy,
+            'order_by' => $orderBy,
+            'alias' => $alias,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'selects' => $this->selects,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Crea una consulta con Common Table Expressions (CTEs).
+     *
+     * @param  array<string, array<string, mixed>> $ctes CTEs definidas como ['nombre' => ['query' => 'SQL', 'bindings' => []]]
+     * @param  string                              $mainQuery  Consulta principal
+     * @param  array<int, mixed>                   $mainQueryBindings Bindings para la consulta principal
+     * @return array<string, mixed>                Resultados de la consulta
+     * @throws VersaORMException
+     */
+    public function withCte(array $ctes, string $mainQuery, array $mainQueryBindings = []): array
+    {
+        if (empty($ctes)) {
+            throw new VersaORMException('At least one CTE must be provided');
+        }
+
+        if (empty(trim($mainQuery))) {
+            throw new VersaORMException('Main query cannot be empty');
+        }
+
+        // Validar y preparar CTEs
+        $cteDefinitions = [];
+        foreach ($ctes as $name => $definition) {
+            if (!$this->isSafeIdentifier($name)) {
+                throw new VersaORMException(sprintf('Invalid CTE name: %s', $name));
+            }
+
+            if (!isset($definition['query']) || empty(trim($definition['query']))) {
+                throw new VersaORMException(sprintf('CTE %s must have a query', $name));
+            }
+
+            if (!$this->isSafeRawExpression($definition['query'])) {
+                throw new VersaORMException(sprintf('Potentially unsafe query in CTE %s', $name));
+            }
+
+            $cteDefinitions[] = [
+                'name' => $name,
+                'query' => $definition['query'],
+                'bindings' => $definition['bindings'] ?? [],
+            ];
+        }
+
+        if (!$this->isSafeRawExpression($mainQuery)) {
+            throw new VersaORMException('Potentially unsafe main query');
+        }
+
+        $params = [
+            'operation_type' => 'cte',
+            'ctes' => $cteDefinitions,
+            'main_query' => $mainQuery,
+            'main_query_bindings' => $mainQueryBindings,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Realiza una operación UNION con otra consulta.
+     *
+     * @param  array<int, array<string, mixed>>|QueryBuilder|callable $queries Consultas a unir
+     * @param  bool                                                   $all     Si true, usa UNION ALL
+     * @return array<string, mixed> Resultados de la operación UNION
+     * @throws VersaORMException
+     */
+    public function union($queries, bool $all = false): array
+    {
+        if (empty($queries)) {
+            throw new VersaORMException('At least one query must be provided for UNION');
+        }
+
+        $queryDefinitions = [];
+
+        // Si es un array de queries
+        if (is_array($queries)) {
+            foreach ($queries as $query) {
+                if (isset($query['sql']) && isset($query['bindings'])) {
+                    if (!$this->isSafeRawExpression($query['sql'])) {
+                        throw new VersaORMException('Potentially unsafe SQL in UNION query');
+                    }
+                    $queryDefinitions[] = $query;
+                } else {
+                    throw new VersaORMException('Each UNION query must have sql and bindings keys');
+                }
+            }
+        }
+        // Si es un QueryBuilder o callable
+        elseif ($queries instanceof self || is_callable($queries)) {
+            if (is_callable($queries)) {
+                $secondQuery = new self($this->orm, $this->table);
+                $queries($secondQuery);
+                $queries = $secondQuery;
+            }
+
+            $currentSQL = $this->buildSelectSQL();
+            $secondSQL = $queries->buildSelectSQL();
+
+            $queryDefinitions = [
+                ['sql' => $currentSQL['sql'], 'bindings' => $currentSQL['bindings']],
+                ['sql' => $secondSQL['sql'], 'bindings' => $secondSQL['bindings']],
+            ];
+        } else {
+            throw new VersaORMException('Invalid queries parameter for UNION');
+        }
+
+        $params = [
+            'operation_type' => 'union',
+            'queries' => $queryDefinitions,
+            'all' => $all,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Combina la consulta actual con otra usando INTERSECT.
+     * Devuelve solo las filas que aparecen en ambas consultas.
+     *
+     * @param  QueryBuilder|callable $query La segunda consulta
+     * @param  bool                  $all   Si true, usa INTERSECT ALL
+     * @return array<string, mixed>  Resultados de la operación INTERSECT
+     * @throws VersaORMException
+     */
+    public function intersect($query, bool $all = false): array
+    {
+        if (!$query instanceof self && !is_callable($query)) {
+            throw new VersaORMException('INTERSECT query must be a QueryBuilder instance or callable');
+        }
+
+        // Si es callable, crear nuevo QueryBuilder
+        if (is_callable($query)) {
+            $secondQuery = new self($this->orm, $this->table);
+            $query($secondQuery);
+            $query = $secondQuery;
+        }
+
+        // Preparar queries para INTERSECT
+        $firstQuerySQL = $this->buildSelectSQL();
+        $secondQuerySQL = $query->buildSelectSQL();
+
+        $params = [
+            'operation_type' => 'intersect',
+            'queries' => [
+                ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
+                ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
+            ],
+            'all' => $all,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Combina la consulta actual con otra usando EXCEPT.
+     * Devuelve las filas de la primera consulta que no aparecen en la segunda.
+     *
+     * @param  QueryBuilder|callable $query La segunda consulta
+     * @param  bool                  $all   Si true, usa EXCEPT ALL
+     * @return array<string, mixed>  Resultados de la operación EXCEPT
+     * @throws VersaORMException
+     */
+    public function except($query, bool $all = false): array
+    {
+        if (!$query instanceof self && !is_callable($query)) {
+            throw new VersaORMException('EXCEPT query must be a QueryBuilder instance or callable');
+        }
+
+        // Si es callable, crear nuevo QueryBuilder
+        if (is_callable($query)) {
+            $secondQuery = new self($this->orm, $this->table);
+            $query($secondQuery);
+            $query = $secondQuery;
+        }
+
+        // Preparar queries para EXCEPT
+        $firstQuerySQL = $this->buildSelectSQL();
+        $secondQuerySQL = $query->buildSelectSQL();
+
+        $params = [
+            'operation_type' => 'except',
+            'queries' => [
+                ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
+                ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
+            ],
+            'all' => $all,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Construye la SQL SELECT para usar en intersect, except y union.
+     *
+     * @return array<string, mixed> Array con 'sql' y 'bindings'
+     */
+    private function buildSelectSQL(): array
+    {
+        $sql = 'SELECT ';
+
+        // SELECT
+        if (empty($this->selects)) {
+            $sql .= '*';
+        } else {
+            $selectParts = [];
+            foreach ($this->selects as $select) {
+                if (is_string($select)) {
+                    $selectParts[] = $select;
+                } elseif (is_array($select) && isset($select['type'])) {
+                    switch ($select['type']) {
+                        case 'raw':
+                            $selectParts[] = $select['expression'];
+                            break;
+                        case 'sub':
+                            $selectParts[] = sprintf('(%s) AS %s', $select['query'], $select['alias']);
+                            break;
+                        default:
+                            $selectParts[] = $select['column'] ?? '';
+                    }
+                }
+            }
+            $sql .= implode(', ', $selectParts);
+        }
+
+        // FROM
+        $sql .= ' FROM ' . $this->table;
+
+        // WHERE
+        $bindings = [];
+        if (!empty($this->wheres)) {
+            $sql .= ' WHERE ';
+            $whereParts = [];
+            foreach ($this->wheres as $where) {
+                if (isset($where['type']) && $where['type'] === 'raw') {
+                    $whereParts[] = $where['sql'];
+                    if (isset($where['bindings'])) {
+                        $bindings = array_merge($bindings, $where['bindings']);
+                    }
+                } else {
+                    $operator = $where['operator'] ?? '=';
+                    $whereParts[] = sprintf('%s %s ?', $where['column'], $operator);
+                    $bindings[] = $where['value'];
+                }
+            }
+            $sql .= implode(' AND ', $whereParts);
+        }
+
+        return ['sql' => $sql, 'bindings' => $bindings];
+    }
+
+    /**
+     * Ejecuta una operación SQL avanzada utilizando el handler de Rust.
+     *
+     * @param  array<string, mixed> $params Parámetros de la operación
+     * @return array<string, mixed> Resultados de la operación
+     * @throws VersaORMException
+     */
+    private function executeAdvancedSQL(array $params): array
+    {
+        if (!($this->orm instanceof VersaORM)) {
+            throw new VersaORMException('VersaORM instance is required for advanced SQL operations');
+        }
+
+        // Usar reflexión para acceder al método execute privado
+        $reflection = new \ReflectionClass($this->orm);
+        $executeMethod = $reflection->getMethod('execute');
+        $executeMethod->setAccessible(true);
+
+        $result = $executeMethod->invoke($this->orm, 'advanced_sql', $params);
+
+        // Verificar si el resultado es válido
+        if (!is_array($result)) {
+            throw new VersaORMException('Invalid result from advanced SQL operation');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Realiza operaciones JSON específicas del motor de base de datos.
+     * Soporta MySQL (->) y PostgreSQL (jsonb) sintaxis.
+     *
+     * @param  string               $operation Tipo de operación: extract, contains, search, array_length
+     * @param  string               $column    Columna JSON
+     * @param  string               $path      Ruta JSON (ej: '$.user.name')
+     * @param  mixed                $value     Valor para comparaciones/búsquedas
+     * @return array<string, mixed> Resultados de la operación JSON
+     * @throws VersaORMException
+     */
+    public function jsonOperation(string $operation, string $column, string $path = '', $value = null): array
+    {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid column name: %s', $column));
+        }
+
+        $validOperations = ['extract', 'contains', 'search', 'array_length', 'type', 'keys'];
+        if (!in_array($operation, $validOperations, true)) {
+            throw new VersaORMException(sprintf(
+                'Invalid JSON operation: %s. Valid operations: %s',
+                $operation,
+                implode(', ', $validOperations)
+            ));
+        }
+
+        // Para ciertas operaciones, path es requerido
+        if (in_array($operation, ['extract', 'contains', 'search'], true) && empty($path)) {
+            throw new VersaORMException(sprintf('JSON operation %s requires a path', $operation));
+        }
+
+        $params = [
+            'operation_type' => 'json_operation',
+            'json_operation' => $operation,
+            'column' => $column,
+            'path' => $path,
+            'value' => $value,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'selects' => $this->selects,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Operaciones con arrays (específico para PostgreSQL).
+     * Permite trabajar con tipos array de PostgreSQL.
+     *
+     * @param  string               $operation Tipo de operación: 'contains', 'overlap', 'length', 'append', 'prepend', 'remove'
+     * @param  string               $column    Columna array
+     * @param  mixed                $value     Valor para la operación
+     * @return array<string, mixed> Resultados de la operación array
+     * @throws VersaORMException
+     */
+    public function arrayOperations(string $operation, string $column, $value = null): array
+    {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid column name: %s', $column));
+        }
+
+        $validOperations = ['contains', 'overlap', 'length', 'append', 'prepend', 'remove', 'any', 'all'];
+        if (!in_array($operation, $validOperations, true)) {
+            throw new VersaORMException(sprintf(
+                'Invalid array operation: %s. Valid operations: %s',
+                $operation,
+                implode(', ', $validOperations)
+            ));
+        }
+
+        // Para operaciones que requieren value
+        if (in_array($operation, ['contains', 'overlap', 'append', 'prepend', 'remove', 'any', 'all'], true) && $value === null) {
+            throw new VersaORMException(sprintf('Array operation %s requires a value', $operation));
+        }
+
+        $params = [
+            'operation_type' => 'array_operations',
+            'array_operation' => $operation,
+            'column' => $column,
+            'value' => $value,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'bindings' => [],
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Aplica hints de optimización específicos del motor de base de datos.
+     *
+     * @param  array<string, mixed> $hints Hints específicos del motor
+     * @return self
+     * @throws VersaORMException
+     */
+    public function queryHints(array $hints): self
+    {
+        if (empty($hints)) {
+            throw new VersaORMException('Query hints cannot be empty');
+        }
+
+        foreach ($hints as $hint => $value) {
+            // Validar que el hint no contenga SQL malicioso
+            if (!$this->isSafeIdentifier($hint) && !$this->isSafeRawExpression($hint)) {
+                throw new VersaORMException(sprintf('Potentially unsafe query hint: %s', $hint));
+            }
+        }
+
+        // Guardar hints para usar en la construcción de la query
+        if (!isset($this->lazyOperations)) {
+            $this->lazyOperations = [];
+        }
+
+        $this->lazyOperations[] = [
+            'type' => 'query_hints',
+            'hints' => $hints,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Realiza búsqueda de texto completo usando las capacidades específicas del motor.
+     *
+     * @param  array<int, string> $columns   Columnas donde buscar
+     * @param  string             $searchTerm Término a buscar
+     * @param  array<string, mixed> $options   Opciones específicas del motor
+     * @return array<string, mixed> Resultados de la búsqueda full-text
+     * @throws VersaORMException
+     */
+    public function fullTextSearch(array $columns, string $searchTerm, array $options = []): array
+    {
+        if (empty($columns)) {
+            throw new VersaORMException('At least one column must be specified for full-text search');
+        }
+
+        if (empty(trim($searchTerm))) {
+            throw new VersaORMException('Search term cannot be empty');
+        }
+
+        // Validar columnas
+        foreach ($columns as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid column name: %s', $column));
+            }
+        }
+
+        $params = [
+            'operation_type' => 'full_text_search',
+            'columns' => $columns,
+            'search_term' => $searchTerm,
+            'options' => $options,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'selects' => $this->selects,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Realiza agregaciones avanzadas como percentiles, median, variance.
+     *
+     * @param  string $type    Tipo de agregación: percentile, median, variance, stddev, group_concat
+     * @param  string $column  Columna para la agregación
+     * @param  array<string, mixed> $options Opciones específicas (ej: percentile => 0.95)
+     * @return array<string, mixed> Resultados de la agregación
+     * @throws VersaORMException
+     */
+    public function advancedAggregation(string $type, string $column, array $options = []): array
+    {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid column name: %s', $column));
+        }
+
+        $validTypes = ['percentile', 'median', 'variance', 'stddev', 'group_concat'];
+        if (!in_array($type, $validTypes, true)) {
+            throw new VersaORMException(sprintf(
+                'Invalid aggregation type: %s. Valid types: %s',
+                $type,
+                implode(', ', $validTypes)
+            ));
+        }
+
+        // Validar opciones específicas
+        if ($type === 'percentile' && (!isset($options['percentile']) || $options['percentile'] < 0 || $options['percentile'] > 1)) {
+            throw new VersaORMException('Percentile must be between 0 and 1');
+        }
+
+        $params = [
+            'operation_type' => 'advanced_aggregation',
+            'aggregation_type' => $type,
+            'column' => $column,
+            'options' => $options,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'groupBy' => $this->groupBy,
+            'having' => $this->having,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Obtiene información sobre las capacidades del motor de base de datos.
+     *
+     * @return array<string, mixed> Capacidades del motor
+     * @throws VersaORMException
+     */
+    public function getDriverCapabilities(): array
+    {
+        $params = [
+            'operation_type' => 'database_specific',
+            'operation' => 'get_driver_capabilities',
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Optimiza la consulta actual para el motor de base de datos específico.
+     *
+     * @param  array<string, mixed> $options Opciones de optimización
+     * @return array<string, mixed> Información de optimización y consulta optimizada
+     * @throws VersaORMException
+     */
+    public function optimizeQuery(array $options = []): array
+    {
+        $querySQL = $this->buildSelectSQL();
+
+        $params = [
+            'operation_type' => 'database_specific',
+            'operation' => 'optimize_query',
+            'sql' => $querySQL['sql'],
+            'bindings' => $querySQL['bindings'],
+            'options' => $options,
+        ];
+
+        return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Obtiene los límites del motor de base de datos.
+     *
+     * @return array<string, mixed> Límites del motor
+     * @throws VersaORMException
+     */
+    public function getDriverLimits(): array
+    {
+        $params = [
+            'operation_type' => 'database_specific',
+            'operation' => 'get_driver_limits',
+        ];
+
+        return $this->executeAdvancedSQL($params);
     }
 }

@@ -29,17 +29,17 @@ class VersaORM
     private string $binaryPath;
 
     /**
-     * @var array<string, mixed> 
+     * @var array<string, mixed>
      */
     private array $config = [];
 
     /**
-     * @var bool Estado global del modo freeze 
+     * @var bool Estado global del modo freeze
      */
     private bool $isFrozen = false;
 
     /**
-     * @var array<string, bool> Estados freeze por modelo 
+     * @var array<string, bool> Estados freeze por modelo
      */
     private array $frozenModels = [];
 
@@ -117,7 +117,8 @@ class VersaORM
                     'global_frozen' => $this->isFrozen,
                     'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
                 ],
-                ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
+                ],
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
             );
 
             // Debug: Log the JSON payload being sent to Rust
@@ -135,7 +136,8 @@ class VersaORM
                 sprintf(
                     'Failed to encode JSON payload: %s. Data contains invalid characters or circular references.',
                     $e->getMessage()
-                ), 'JSON_ENCODE_ERROR'
+                ),
+                'JSON_ENCODE_ERROR'
             );
         }
 
@@ -146,7 +148,8 @@ class VersaORM
                 sprintf(
                     'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
                     $binaryPath
-                ), 'BINARY_NOT_FOUND'
+                ),
+                'BINARY_NOT_FOUND'
             );
         }
 
@@ -156,7 +159,8 @@ class VersaORM
                 sprintf(
                     'VersaORM binary is not executable: %s. Please check file permissions.',
                     $binaryPath
-                ), 'BINARY_NOT_EXECUTABLE'
+                ),
+                'BINARY_NOT_EXECUTABLE'
             );
         }
 
@@ -337,7 +341,8 @@ class VersaORM
         // Log de seguridad
         $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
         $this->logSecurityEvent(
-            "FREEZE_MODE_{$status}", [
+            "FREEZE_MODE_{$status}",
+            [
             'global_freeze' => $frozen,
             'timestamp' => date('Y-m-d H:i:s'),
             'trace' => $this->getDebugStackTrace(),
@@ -375,7 +380,8 @@ class VersaORM
         // Log de seguridad
         $status = $frozen ? 'FROZEN' : 'UNFROZEN';
         $this->logSecurityEvent(
-            "MODEL_{$status}", [
+            "MODEL_{$status}",
+            [
             'model_class' => $modelClass,
             'frozen' => $frozen,
             'timestamp' => date('Y-m-d H:i:s'),
@@ -425,7 +431,8 @@ class VersaORM
         if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
             // Log del intento de alteración
             $this->logSecurityEvent(
-                'FREEZE_VIOLATION_ATTEMPT', [
+                'FREEZE_VIOLATION_ATTEMPT',
+                [
                 'operation' => $operation,
                 'model_class' => $modelClass,
                 'global_frozen' => $isGloballyFrozen,
@@ -560,9 +567,9 @@ class VersaORM
 
         // Validar acciones conocidas
         $validActions = [
-            'query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete', 
+            'query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete',
             'query_plan', 'explain_plan', 'upsert', 'upsertMany', 'replaceInto', 'replaceIntoMany',
-            'insertMany', 'updateMany', 'deleteMany'
+            'insertMany', 'updateMany', 'deleteMany', 'advanced_sql',
         ];
         if (!in_array($action, $validActions)) {
             throw new VersaORMException(
@@ -576,26 +583,26 @@ class VersaORM
 
         // Validaciones específicas por acción
         switch ($action) {
-        case 'raw':
-            if (!isset($params['query']) || !is_string($params['query'])) {
-                throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
-            }
-            if (strlen($params['query']) > 1000000) { // 1MB limit
-                throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
-            }
-            break;
+            case 'raw':
+                if (!isset($params['query']) || !is_string($params['query'])) {
+                    throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
+                }
+                if (strlen($params['query']) > 1000000) { // 1MB limit
+                    throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
+                }
+                break;
 
-        case 'schema':
-            if (!isset($params['subject']) || !is_string($params['subject'])) {
-                throw new VersaORMException('Schema action requires a valid subject.', 'INVALID_SCHEMA_SUBJECT');
-            }
-            break;
+            case 'schema':
+                if (!isset($params['subject']) || !is_string($params['subject'])) {
+                    throw new VersaORMException('Schema action requires a valid subject.', 'INVALID_SCHEMA_SUBJECT');
+                }
+                break;
 
-        case 'cache':
-            if (!isset($params['action']) || !is_string($params['action'])) {
-                throw new VersaORMException('Cache action requires a valid action parameter.', 'INVALID_CACHE_ACTION');
-            }
-            break;
+            case 'cache':
+                if (!isset($params['action']) || !is_string($params['action'])) {
+                    throw new VersaORMException('Cache action requires a valid action parameter.', 'INVALID_CACHE_ACTION');
+                }
+                break;
         }
 
         // Validar que los parámetros no contengan referencias circulares
@@ -1060,7 +1067,54 @@ class VersaORM
      */
     private function executeBinaryWithTempFile(string $binaryPath, string $payload): ?string
     {
-        // Crear archivo temporal seguro
+        // Para el mock de PowerShell, pasamos el payload directamente via stdin
+        if (str_contains($binaryPath, 'versaorm_core.bat')) {
+            // Usar pipes para pasar JSON via stdin
+            $descriptorspec = [
+                0 => ['pipe', 'r'],  // stdin
+                1 => ['pipe', 'w'],  // stdout
+                2 => ['pipe', 'w'],   // stderr
+            ];
+
+            $process = proc_open($binaryPath, $descriptorspec, $pipes);
+            if (!is_resource($process)) {
+                throw new VersaORMException('Failed to start PowerShell mock process.', 'PROCESS_START_ERROR');
+            }
+
+            try {
+                // Escribir payload a stdin
+                fwrite($pipes[0], $payload);
+                fclose($pipes[0]);
+
+                // Leer respuesta desde stdout
+                $output = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+
+                // Leer errores desde stderr
+                $errors = stream_get_contents($pipes[2]);
+                fclose($pipes[2]);
+
+                // Esperar a que termine el proceso
+                $returnCode = proc_close($process);
+
+                if ($returnCode !== 0 && !empty($errors)) {
+                    throw new VersaORMException('PowerShell mock error: ' . $errors, 'MOCK_EXECUTION_ERROR');
+                }
+
+                return $output !== false ? $output : null;
+            } catch (\Exception $e) {
+                // Cerrar recursos en caso de error
+                foreach ($pipes as $pipe) {
+                    if (is_resource($pipe)) {
+                        fclose($pipe);
+                    }
+                }
+                proc_close($process);
+                throw $e;
+            }
+        }
+
+        // Comportamiento original para binarios reales
         $tempFile = tempnam(sys_get_temp_dir(), 'versaorm_');
         if ($tempFile === false) {
             throw new VersaORMException('Failed to create temporary file for binary execution.', 'TEMP_FILE_ERROR');
@@ -1098,19 +1152,19 @@ class VersaORM
         $binaryDir = __DIR__ . '/binary';
 
         switch (PHP_OS_FAMILY) {
-        case 'Windows':
-            $this->binaryPath = $binaryDir . '/versaorm_cli.exe';
-            break;
-        case 'Linux':
-            $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
-            break;
-        case 'Darwin': // macOS
-            $this->binaryPath = $binaryDir . '/versaorm_cli_darwin';
-            break;
-        default:
-            // Fallback para sistemas desconocidos
-            $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
-            break;
+            case 'Windows':
+                $this->binaryPath = $binaryDir . '/versaorm_cli.exe';
+                break;
+            case 'Linux':
+                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
+                break;
+            case 'Darwin': // macOS
+                $this->binaryPath = $binaryDir . '/versaorm_cli_darwin';
+                break;
+            default:
+                // Fallback para sistemas desconocidos
+                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
+                break;
         }
     }
 

@@ -799,7 +799,7 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Upsert (insertar o actualizar) el modelo usando claves únicas.
-     * 
+     *
      * @param  array<int, string>   $uniqueKeys    Columnas que determinan duplicados
      * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
      * @return array<string, mixed> Información sobre la operación realizada
@@ -857,7 +857,7 @@ class VersaModel implements TypedModelInterface
                     $whereConditions[$key] = $this->attributes[$key];
                 }
             }
-            
+
             if (!empty($whereConditions)) {
                 $query = $orm->table($this->table);
                 foreach ($whereConditions as $key => $value) {
@@ -876,7 +876,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Método save() inteligente - Detecta automáticamente si insertar o actualizar.
      * Utiliza la clave primaria para determinar la operación.
-     * 
+     *
      * @param  string $primaryKey Nombre de la clave primaria (default: 'id')
      * @return array<string, mixed> Información sobre la operación realizada
      * @throws VersaORMException Si los datos son inválidos
@@ -927,7 +927,7 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Método insertOrUpdate() - Verifica existencia y decide operación.
-     * 
+     *
      * @param  array<int, string>   $uniqueKeys    Columnas para verificar existencia
      * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
      * @return array<string, mixed> Información sobre la operación realizada
@@ -981,7 +981,7 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Método createOrUpdate() con condiciones personalizadas.
-     * 
+     *
      * @param  array<string, mixed> $conditions    Condiciones personalizadas para verificar existencia
      * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
      * @return array<string, mixed> Información sobre la operación realizada
@@ -1040,7 +1040,7 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Auto-detectar claves únicas desde el esquema de la tabla.
-     * 
+     *
      * @return array<string> Lista de columnas que forman claves únicas
      * @throws VersaORMException Si no se puede obtener información del esquema
      */
@@ -1055,11 +1055,8 @@ class VersaModel implements TypedModelInterface
         }
 
         try {
-            // Usar el esquema inspector para obtener información de índices únicos
-            $result = $orm->execute('schema_query', [
-                'action' => 'get_unique_keys',
-                'table' => $this->table
-            ]);
+            // Usar el método público schema para obtener información de índices únicos
+            $result = $orm->schema('unique_keys', $this->table);
 
             if (is_array($result) && isset($result['unique_keys'])) {
                 return $result['unique_keys'];
@@ -1068,7 +1065,7 @@ class VersaModel implements TypedModelInterface
             // Fallback: buscar columnas comunes que suelen ser únicas
             $commonUniqueColumns = ['email', 'username', 'slug', 'code', 'sku'];
             $detectedKeys = [];
-            
+
             foreach ($commonUniqueColumns as $column) {
                 if (isset($this->attributes[$column])) {
                     $detectedKeys[] = $column;
@@ -1084,7 +1081,7 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Upsert inteligente - Auto-detecta claves únicas y realiza upsert.
-     * 
+     *
      * @param  array<int, string>|null $updateColumns Columnas a actualizar (opcional)
      * @return array<string, mixed>    Información sobre la operación realizada
      * @throws VersaORMException Si no se pueden detectar claves únicas
@@ -1092,7 +1089,7 @@ class VersaModel implements TypedModelInterface
     public function smartUpsert(?array $updateColumns = null): array
     {
         $uniqueKeys = $this->getUniqueKeys();
-        
+
         if (empty($uniqueKeys)) {
             throw new VersaORMException(
                 'Cannot perform smart upsert: no unique keys detected in table schema',
@@ -1653,8 +1650,8 @@ class VersaModel implements TypedModelInterface
 
             // Debug log
             error_log("VersaORM: Table '{$this->table}' existing columns: " . implode(', ', $existingColumnNames));
-            error_log("VersaORM: Model attributes: " . implode(', ', array_keys($this->attributes)));
-            error_log("VersaORM: Missing columns to create: " . implode(', ', array_keys($missingColumns)));
+            error_log('VersaORM: Model attributes: ' . implode(', ', array_keys($this->attributes)));
+            error_log('VersaORM: Missing columns to create: ' . implode(', ', array_keys($missingColumns)));
 
             // Crear columnas faltantes
             foreach ($missingColumns as $columnName => $columnType) {
@@ -1742,7 +1739,7 @@ class VersaModel implements TypedModelInterface
                     'table' => $this->table,
                     'column' => $columnName,
                     'type' => $columnType,
-                    'sql' => $sql
+                    'sql' => $sql,
                 ]
             );
         }

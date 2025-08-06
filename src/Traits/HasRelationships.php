@@ -14,7 +14,7 @@ use VersaORM\VersaModel;
 trait HasRelationships
 {
     /**
-     * @var array<string, mixed> 
+     * @var array<string, mixed>
      */
     protected array $relations = [];
 
