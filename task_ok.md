@@ -195,3 +195,28 @@
     - [x] Tests de equivalencia funcional (12/12 tests passing)
     - [x] Benchmarks de rendimiento lazy vs inmediato
     - [x] Documentación completa actualizada con ejemplos
+### Tarea 2.2: Completar Operaciones CRUD Faltantes [✅] COMPLETADA (05/08/2025)
+- [x] **Método `upsert()` para un solo registro** ✅
+    - [x] Implementar `QueryBuilder->upsert(array $data, array $uniqueKeys)` ✅
+    - [x] Soporte en Rust para operación upsert individual ✅
+    - [x] Sintaxis específica por motor de BD: ✅
+        - [x] MySQL: `INSERT ... ON DUPLICATE KEY UPDATE` ✅
+        - [x] PostgreSQL: `INSERT ... ON CONFLICT DO UPDATE` ✅
+        - [x] SQLite: `INSERT OR REPLACE INTO` ✅
+- [x] **Método `insertOrUpdate()` alternativo** ✅
+    - [x] Verificar existencia y decidir INSERT vs UPDATE ✅
+    - [x] Optimización para evitar dos consultas cuando sea posible ✅
+- [x] **Métodos de conveniencia adicionales** ✅
+    - [x] `save()` inteligente (detecta si es nuevo o existente) ✅
+    - [x] `createOrUpdate()` con condiciones personalizadas ✅
+    - [x] `replaceInto()` para compatibilidad MySQL ✅
+- [x] **Integración con VersaModel** ✅
+    - [x] Método `upsert()` en instancias de modelo ✅
+    - [x] Auto-detección de claves únicas desde esquema ✅
+- [x] Tests unitarios completos ✅
+- [x] Documentación completa con ejemplos (`docs/user-guide/11-upsert-replace-operations.md`) ✅
+- [x] Checklist de calidad: ✅
+    - [x] Código PHP con validación completa ✅
+    - [x] Soporte Rust completamente implementado ✅
+    - [x] Tests de estructura y funcionalidad ✅
+    - [x] Documentación exhaustiva con ejemplos prácticos ✅
