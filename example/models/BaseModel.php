@@ -157,23 +157,6 @@ abstract class BaseModel extends VersaModel
         return $errors;
     }
 
-    /**
-     * Guardar con validación.
-     */
-    public function save(): bool
-    {
-        $errors = $this->validate();
-        if (!empty($errors)) {
-            throw new \Exception('Errores de validación: ' . json_encode($errors));
-        }
-
-        try {
-            $this->store();
-            return true;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
 
     /**
      * Validar consistencia del esquema entre modelo y base de datos.
