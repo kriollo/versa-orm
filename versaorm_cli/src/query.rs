@@ -16,6 +16,7 @@ pub struct QueryBuilder {
     pub group_by: Vec<String>,
     pub havings: Vec<(String, String, Value, String)>,
     pub with: Vec<RelationMetadata>,
+    pub subquery_bindings: Vec<Value>,  // Store subquery bindings separately
 }
 
 #[allow(dead_code)]
@@ -40,6 +41,7 @@ impl QueryBuilder {
             group_by: Vec::new(),
             havings: Vec::new(),
             with: Vec::new(),
+            subquery_bindings: Vec::new(),
         }
     }
 
@@ -251,6 +253,10 @@ impl QueryBuilder {
             if is_safe_sql_operator(operator) {
                 // Format the subquery with its alias
                 let subquery_sql = format!("({}) AS {}", subquery.0, clean_alias);
+
+                // Store subquery bindings for later inclusion in params
+                self.subquery_bindings.extend(subquery.1);
+
                 self.joins.push((
                     subquery_sql,
                     clean_first_col,
@@ -322,6 +328,9 @@ impl QueryBuilder {
         let mut query = String::new();
         let mut params = Vec::new();
 
+        // First, add subquery bindings to params to maintain correct order
+        params.extend(self.subquery_bindings.clone());
+
         if let Some(data) = &self.insert_data {
             // INSERT query
             let columns: Vec<String> = data.keys().cloned().collect();
@@ -354,7 +363,7 @@ impl QueryBuilder {
         }
         // Handle JOINs with MySQL-specific handling for FULL OUTER JOIN
         let has_full_outer = self.joins.iter().any(|(_, _, _, _, join_type)| join_type == "FULL OUTER");
-        
+
         if has_full_outer {
             // MySQL doesn't support FULL OUTER JOIN, so we need to use UNION
             // For now, we'll convert it to LEFT JOIN (this is a simplified approach)

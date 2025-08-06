@@ -47,7 +47,16 @@ impl ConnectionManager {
                     self.config.port,
                     self.config.database
                 );
-                let pool = sqlx::MySqlPool::connect(&url).await?;
+
+                // Configurar el pool con timeouts más altos para queries complejas
+                let pool_options = sqlx::mysql::MySqlPoolOptions::new()
+                    .max_connections(5)
+                    .acquire_timeout(std::time::Duration::from_secs(60))
+                    .idle_timeout(std::time::Duration::from_secs(600))
+                    .max_lifetime(std::time::Duration::from_secs(1800));
+
+                let pool = pool_options.connect(&url).await?;
+
                 DatabasePool::MySql(pool)
             }
             "postgres" | "postgresql" => {
@@ -457,7 +466,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
     }
 
     // Lógica original de conversión de tipos
-    
+
     // Primero intentar tipos DECIMAL específicos
     if let Ok(val) = row.try_get::<Option<Decimal>, _>(column_name) {
         return match val {
@@ -470,7 +479,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             None => serde_json::Value::Null,
         };
     }
-    
+
     if let Ok(val) = row.try_get::<Option<BigDecimal>, _>(column_name) {
         return match val {
             Some(v) => {
@@ -499,7 +508,7 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
             None => serde_json::Value::Null,
         };
     }
-    
+
     // Intentar obtener tipos DECIMAL como String y luego convertir a número
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
         return match val {

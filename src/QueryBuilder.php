@@ -782,8 +782,8 @@ class QueryBuilder
             throw new VersaORMException('Invalid column names in joinSub');
         }
 
-        // Convert the subquery to SQL string for the Rust engine
-        $subquerySql = $this->convertSubqueryToSql($subquery);
+        // Convert the subquery to SQL and extract bindings for the Rust engine
+        $subqueryData = $this->convertSubqueryToSql($subquery);
 
         $this->joins[] = [
             'type' => 'inner',
@@ -791,41 +791,44 @@ class QueryBuilder
             'first_col' => $firstCol,
             'operator' => $operator,
             'second_col' => $secondCol,
-            'subquery' => $subquerySql,
+            'subquery' => $subqueryData['sql'],
+            'subquery_bindings' => $subqueryData['bindings'],
             'alias' => $alias,
         ];
         return $this;
     }
 
     /**
-     * Converts a subquery (QueryBuilder or Closure) to a SQL string.
+     * Converts a subquery (QueryBuilder or Closure) to SQL and extracts parameters.
      *
      * @param  \Closure|QueryBuilder $subquery
-     * @return string
+     * @return array{sql: string, bindings: array<mixed>}
      */
-    private function convertSubqueryToSql($subquery): string
+    private function convertSubqueryToSql($subquery): array
     {
         if ($subquery instanceof self) {
-            // If it's already a QueryBuilder, build the SQL directly
-            return $this->buildSubquerySql($subquery);
+            // If it's already a QueryBuilder, build the SQL and extract bindings
+            return $this->buildSubquerySqlAndBindings($subquery);
         } elseif ($subquery instanceof \Closure) {
             // Create a new QueryBuilder instance for the closure
             $subQueryBuilder = new self($this->orm, $this->table, $this->modelClass);
             $subquery($subQueryBuilder);
-            return $this->buildSubquerySql($subQueryBuilder);
+            return $this->buildSubquerySqlAndBindings($subQueryBuilder);
         }
         throw new VersaORMException('Subquery must be a Closure or QueryBuilder instance');
     }
 
     /**
-     * Builds SQL string from a QueryBuilder instance.
+     * Builds SQL string and extracts bindings from a QueryBuilder instance.
+     * This properly handles parameter binding for the Rust engine.
      *
      * @param  QueryBuilder $builder
-     * @return string
+     * @return array{sql: string, bindings: array<mixed>}
      */
-    private function buildSubquerySql(self $builder): string
+    private function buildSubquerySqlAndBindings(self $builder): array
     {
         $sql = 'SELECT ';
+        $bindings = [];
 
         // Handle SELECT columns
         if (!empty($builder->selects)) {
@@ -845,12 +848,13 @@ class QueryBuilder
         // FROM clause
         $sql .= ' FROM ' . $builder->table;
 
-        // WHERE clauses (simplified - for production would need full WHERE processing)
+        // WHERE clauses - Extract bindings properly
         if (!empty($builder->wheres)) {
             $wheresParts = [];
             foreach ($builder->wheres as $where) {
-                if (is_array($where) && isset($where['column'], $where['operator'])) {
+                if (is_array($where) && isset($where['column'], $where['operator'], $where['value'])) {
                     $wheresParts[] = $where['column'] . ' ' . $where['operator'] . ' ?';
+                    $bindings[] = $where['value'];
                 }
             }
             if (!empty($wheresParts)) {
@@ -867,8 +871,9 @@ class QueryBuilder
         if (!empty($builder->having) && is_array($builder->having)) {
             $havingParts = [];
             foreach ($builder->having as $having) {
-                if (is_array($having) && isset($having['column'], $having['operator'])) {
+                if (is_array($having) && isset($having['column'], $having['operator'], $having['value'])) {
                     $havingParts[] = $having['column'] . ' ' . $having['operator'] . ' ?';
+                    $bindings[] = $having['value'];
                 }
             }
             if (!empty($havingParts)) {
@@ -890,7 +895,10 @@ class QueryBuilder
             $sql .= ' LIMIT ' . $builder->limit;
         }
 
-        return $sql;
+        return [
+            'sql' => $sql,
+            'bindings' => $bindings
+        ];
     }
 
     /**
