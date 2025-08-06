@@ -125,7 +125,9 @@ class TestCase extends BaseTestCase
                 sku VARCHAR(50) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 price DECIMAL(10, 2) NULL,
-                stock INT DEFAULT 0
+                stock INT DEFAULT 0,
+                description TEXT NULL,
+                category VARCHAR(100) NULL
             ) ENGINE=InnoDB;
         ');
     }

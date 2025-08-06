@@ -2,6 +2,8 @@
 
 ¡Bienvenido al Query Builder de VersaORM! Esta es la herramienta que convierte consultas SQL complejas en código PHP fácil de leer y mantener.
 
+> 🚀 **Referencia Rápida**: Si buscas ejemplos listos para copy-paste, consulta la **[Guía de Ejemplos Rápidos](12-query-builder-quick-examples.md)**
+
 ## 🤔 ¿Qué es el Query Builder?
 
 El **Query Builder** es como un "traductor inteligente" que te permite escribir consultas complejas usando métodos PHP encadenados en lugar de SQL complicado.
@@ -343,13 +345,275 @@ Para aprender más sobre esta funcionalidad avanzada, consulta la [Guía del Mod
 
 ---
 
+## 🏆 Casos de Uso Comunes y Mejores Prácticas
+
+### 🔍 Búsquedas y Filtrado Avanzado
+
+#### Búsqueda de Texto
+```php
+// Búsqueda de texto simple
+$users = $orm->table('users')
+    ->where('name', 'LIKE', '%' . $searchTerm . '%')
+    ->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
+    ->getAll();
+
+// Búsqueda más específica con múltiples criterios
+$products = $orm->table('products')
+    ->where('name', 'LIKE', '%' . $query . '%')
+    ->where('status', '=', 'published')
+    ->where('price', '<=', $maxPrice)
+    ->whereIn('category_id', $allowedCategories)
+    ->orderBy('popularity_score', 'desc')
+    ->limit(20)
+    ->getAll();
+```
+
+#### Filtros con Rangos de Fechas
+```php
+// Reportes por rango de fechas
+$orders = $orm->table('orders')
+    ->whereBetween('created_at', $startDate, $endDate)
+    ->where('status', '!=', 'cancelled')
+    ->orderBy('created_at', 'desc')
+    ->getAll();
+
+// Análisis de tendencias por mes
+$monthlyStats = $orm->table('orders')
+    ->select(['DATE_FORMAT(created_at, "%Y-%m") as month', 'COUNT(*) as orders', 'SUM(total) as revenue'])
+    ->where('created_at', '>=', date('Y-01-01'))
+    ->groupBy('month')
+    ->orderBy('month', 'desc')
+    ->getAll();
+```
+
+### 📊 Consultas de Análisis y Reportes
+
+#### Dashboard de Estadísticas
+```php
+// Estadísticas del usuario actual
+$userStats = $orm->table('users')
+    ->select([
+        'COUNT(posts.id) as total_posts',
+        'COUNT(CASE WHEN posts.status = "published" THEN 1 END) as published_posts',
+        'AVG(posts.views) as avg_views',
+        'MAX(posts.created_at) as last_post_date'
+    ])
+    ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
+    ->where('users.id', '=', $currentUserId)
+    ->groupBy('users.id')
+    ->firstArray();
+```
+
+#### Top N Consultas
+```php
+// Los 10 productos más vendidos del mes
+$topProducts = $orm->table('products')
+    ->select([
+        'products.id',
+        'products.name',
+        'SUM(order_items.quantity) as total_sold',
+        'SUM(order_items.price * order_items.quantity) as revenue'
+    ])
+    ->join('order_items', 'products.id', '=', 'order_items.product_id')
+    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+    ->where('orders.created_at', '>=', date('Y-m-01'))
+    ->where('orders.status', '=', 'completed')
+    ->groupBy(['products.id', 'products.name'])
+    ->orderBy('total_sold', 'desc')
+    ->limit(10)
+    ->getAll();
+```
+
+### 🔄 Operaciones Complejas con Subqueries
+
+#### Usando whereRaw para Lógica Avanzada
+```php
+// Usuarios con posts publicados recientemente
+$activeAuthors = $orm->table('users')
+    ->whereRaw('EXISTS (SELECT 1 FROM posts WHERE posts.user_id = users.id AND posts.created_at >= ? AND posts.status = "published")', [date('Y-m-d', strtotime('-30 days'))])
+    ->orderBy('name')
+    ->getAll();
+
+// Productos sin stock pero con pedidos pendientes
+$outOfStockProducts = $orm->table('products')
+    ->where('stock', '<=', 0)
+    ->whereRaw('EXISTS (SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = products.id AND o.status = "pending")')
+    ->select(['id', 'name', 'stock', 'price'])
+    ->getAll();
+```
+
+### 🛡️ Patrones Seguros y Eficientes
+
+#### Paginación Robusta
+```php
+class UserRepository {
+    private $orm;
+    
+    public function getPaginatedUsers($page = 1, $perPage = 15, $filters = []) {
+        $query = $this->orm->table('users')
+            ->select(['id', 'name', 'email', 'status', 'created_at']);
+        
+        // Aplicar filtros opcionales
+        if (!empty($filters['status'])) {
+            $query->where('status', '=', $filters['status']);
+        }
+        
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%");
+            });
+        }
+        
+        // Contar total para paginación
+        $total = clone $query;
+        $totalCount = $total->count();
+        
+        // Aplicar paginación
+        $results = $query
+            ->orderBy('created_at', 'desc')
+            ->limit($perPage)
+            ->offset(($page - 1) * $perPage)
+            ->getAll();
+        
+        return [
+            'data' => $results,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $totalCount,
+            'last_page' => ceil($totalCount / $perPage)
+        ];
+    }
+}
+```
+
+#### Construcción Dinámica de Consultas
+```php
+class OrderQueryBuilder {
+    private $query;
+    
+    public function __construct($orm) {
+        $this->query = $orm->table('orders')
+            ->select([
+                'orders.*',
+                'users.name as customer_name',
+                'users.email as customer_email'
+            ])
+            ->join('users', 'orders.user_id', '=', 'users.id');
+    }
+    
+    public function filterByStatus($status) {
+        if ($status !== 'all') {
+            $this->query->where('orders.status', '=', $status);
+        }
+        return $this;
+    }
+    
+    public function filterByDateRange($startDate, $endDate) {
+        if ($startDate && $endDate) {
+            $this->query->whereBetween('orders.created_at', $startDate, $endDate);
+        }
+        return $this;
+    }
+    
+    public function filterByMinAmount($minAmount) {
+        if ($minAmount > 0) {
+            $this->query->where('orders.total', '>=', $minAmount);
+        }
+        return $this;
+    }
+    
+    public function withOrderItems() {
+        $this->query->with('orderItems');
+        return $this;
+    }
+    
+    public function getResults($page = 1, $perPage = 20) {
+        return $this->query
+            ->orderBy('orders.created_at', 'desc')
+            ->limit($perPage)
+            ->offset(($page - 1) * $perPage)
+            ->findAll();
+    }
+}
+
+// Uso:
+$orderBuilder = new OrderQueryBuilder($orm);
+$orders = $orderBuilder
+    ->filterByStatus('completed')
+    ->filterByDateRange('2024-01-01', '2024-01-31')
+    ->filterByMinAmount(100)
+    ->withOrderItems()
+    ->getResults(1, 25);
+```
+
+### ⚠️ Precauciones y Mejores Prácticas
+
+#### ❌ Errores Comunes a Evitar
+```php
+// ❌ MAL: SQL injection vulnerable
+$badQuery = $orm->table('users')
+    ->whereRaw("name = '{$userInput}'"); // ¡PELIGROSO!
+
+// ✅ BIEN: Siempre usar parámetros
+$goodQuery = $orm->table('users')
+    ->whereRaw('name = ?', [$userInput]);
+
+// ❌ MAL: N+1 queries
+$users = $orm->table('users')->findAll();
+foreach ($users as $user) {
+    echo $user->posts->count(); // Consulta por cada usuario
+}
+
+// ✅ BIEN: Eager loading
+$users = $orm->table('users')
+    ->with('posts')
+    ->findAll();
+foreach ($users as $user) {
+    echo $user->posts->count(); // Sin consultas adicionales
+}
+```
+
+#### ✅ Optimizaciones Recomendadas
+```php
+// ✅ Seleccionar solo las columnas necesarias
+$lightUsers = $orm->table('users')
+    ->select(['id', 'name', 'email']) // No traer datos innecesarios
+    ->where('status', '=', 'active')
+    ->getAll();
+
+// ✅ Usar índices adecuadamente
+$indexedQuery = $orm->table('orders')
+    ->where('user_id', '=', $userId)     // Asume índice en user_id
+    ->where('status', '=', 'pending')    // Asume índice en status
+    ->orderBy('created_at', 'desc')      // Asume índice en created_at
+    ->limit(10)
+    ->getAll();
+
+// ✅ Para consultas complejas, usar modo lazy
+$complexQuery = $orm->table('orders')
+    ->lazy() // Optimización automática
+    ->select(['orders.*', 'users.name', 'products.title'])
+    ->join('users', 'orders.user_id', '=', 'users.id')
+    ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+    ->join('products', 'order_items.product_id', '=', 'products.id')
+    ->where('orders.created_at', '>=', date('Y-m-d', strtotime('-30 days')))
+    ->groupBy(['orders.id'])
+    ->orderBy('orders.created_at', 'desc')
+    ->collect(); // Ejecuta con optimizaciones
+```
+
+---
+
 ## Siguientes Pasos
 
-Ahora que sabes cómo construir todo tipo de consultas, tienes varias opciones para profundizar:
+Ahora que dominas el Query Builder desde lo básico hasta casos avanzados, puedes profundizar en:
 
 - **[Modelos y Objetos](03-models-and-objects.md)** - Trabaja con los resultados como objetos con lógica de negocio
 - **[⚡ Modo Lazy y Planificador de Consultas](10-lazy-mode-query-planner.md)** - Optimiza automáticamente tus consultas para máximo rendimiento
+- **[Operaciones Batch](03-batch-operations.md)** - Operaciones masivas eficientes con insertMany, updateMany, etc.
 - **[Validación y Mass Assignment](05-validation-mass-assignment.md)** - Protege tus datos al usar `update()` con el Query Builder
 - **[Herramienta CLI](04-cli-tool.md)** - Aprovecha el poder del núcleo Rust para operaciones avanzadas
 
-> **💡 Tip:** Cuando uses el Query Builder para operaciones de escritura (`insert`, `update`), considera combinar tu lógica con modelos personalizados que incluyan validación automática para mayor seguridad. Para consultas complejas, el **Modo Lazy** puede mejorar significativamente el rendimiento.
+> **💡 Tip:** Para aplicaciones en producción, siempre combina el Query Builder con validación de entrada, manejo de errores robusto y consideraciones de rendimiento. El **Modo Lazy** es especialmente útil para consultas complejas con múltiples JOIN y agregaciones.

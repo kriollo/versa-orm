@@ -249,6 +249,54 @@ $result = $orm->table('products')->upsertMany(
 - **PostgreSQL**: Usa `INSERT ... ON CONFLICT DO UPDATE`
 - **SQLite**: No soportado actualmente
 
+### 5. **replaceIntoMany()** - Reemplazo Masivo para MySQL
+
+⚠️ **Solo MySQL**: Reemplaza completamente registros existentes o inserta nuevos. **ADVERTENCIA**: Puede perder datos de columnas no especificadas.
+
+#### Ejemplo SQL vs VersaORM
+```sql
+-- SQL (MySQL)
+REPLACE INTO products (sku, name, price) VALUES
+('PROD001', 'Laptop Pro Updated', 1600.00),
+('PROD002', 'Mouse Gaming', 35.99),
+('PROD004', 'Monitor 4K', 299.99);
+```
+
+```php
+// VersaORM
+$products = [
+    ['sku' => 'PROD001', 'name' => 'Laptop Pro Updated', 'price' => 1600.00],
+    ['sku' => 'PROD002', 'name' => 'Mouse Gaming', 'price' => 35.99],
+    ['sku' => 'PROD004', 'name' => 'Monitor 4K', 'price' => 299.99]
+];
+
+$result = $orm->table('products')->replaceIntoMany($products, 1000);
+```
+
+#### Sintaxis Básica
+```php
+$result = $orm->table('products')->replaceIntoMany($records, $batchSize);
+```
+
+#### Diferencia con upsertMany()
+```php
+// REPLACE INTO - Reemplaza COMPLETAMENTE el registro
+// Si el producto existe con columnas 'description' y 'category', 
+// estas se perderán si no se incluyen en los datos nuevos
+$replaceResult = $orm->table('products')->replaceIntoMany([
+    ['sku' => 'PROD001', 'name' => 'New Name', 'price' => 100]
+    // description y category se establecerán como NULL
+]);
+
+// UPSERT - Solo actualiza las columnas especificadas
+// Preserva las columnas existentes que no se especifican
+$upsertResult = $orm->table('products')->upsertMany(
+    [['sku' => 'PROD001', 'name' => 'New Name', 'price' => 100]],
+    ['sku'],
+    ['name', 'price'] // Solo actualiza name y price, preserva description y category
+);
+```
+
 ---
 
 ## 🛡️ Características de Seguridad

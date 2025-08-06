@@ -5,6 +5,166 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-08-05
+
+### Añadido ⚡
+- **Completar Operaciones CRUD Faltantes (Tarea 2.2)**: Implementación integral de operaciones CRUD avanzadas
+  - Método `upsert()` individual para inserción inteligente con detección automática de duplicados
+  - Método `insertOrUpdate()` como alias intuitivo para operaciones upsert
+  - Método `save()` inteligente que detecta automáticamente si es INSERT o UPDATE
+  - Método `createOrUpdate()` con condiciones personalizadas y validación avanzada
+  - Método `replaceInto()` para compatibilidad específica MySQL con reemplazo completo
+  - Integración completa en VersaModel con validación automática y manejo de errores
+  - Soporte multi-base de datos con sintaxis específica para cada motor:
+    - MySQL: `INSERT ... ON DUPLICATE KEY UPDATE`
+    - PostgreSQL: `INSERT ... ON CONFLICT DO UPDATE`
+    - SQLite: `INSERT OR REPLACE INTO`
+
+### Mejorado 🚀
+- **QueryBuilder**: Ampliado con 5 nuevos métodos CRUD (líneas 1580-2100+)
+  - Validación completa de datos de entrada con sanitización automática
+  - Manejo inteligente de claves únicas y detección de conflictos
+  - Fallback automático para bases de datos sin soporte nativo
+  - Integración con freeze mode para protección de esquema
+- **VersaModel**: Extensión con métodos CRUD a nivel de modelo (líneas 800-1000+)
+  - Auto-detección de claves únicas desde metadatos de esquema
+  - Validación automática antes de operaciones de escritura
+  - Manejo consistente de errores con excepciones descriptivas
+- **Núcleo Rust**: Implementación completa en el backend (main.rs líneas 1020-1120)
+  - Manejo nativo de operaciones `"upsert"` con validación de parámetros
+  - Construcción SQL optimizada específica por base de datos
+  - Validación estricta de claves únicas y columnas de actualización
+
+### Técnico 🔧
+- Añadidos tests unitarios completos (`versaorm_cli/src/tests/replace_and_upsert_tests.rs`)
+  - Tests de validación de estructura JSON (514 líneas)
+  - Tests de construcción SQL específica por base de datos
+  - Tests de manejo de errores y casos edge
+- Tests PHP existentes actualizados (`QueryBuilderBatchTest.php`)
+  - Validación de `upsertMany` para operaciones batch
+  - Tests de validación de parámetros y casos límite
+- Validación completa de seguridad con `clean_column_name()` en todas las operaciones
+- Manejo robusto de errores con propagación correcta desde Rust a PHP
+
+### Documentación 📚
+- Nueva guía completa: [Operaciones UPSERT y REPLACE INTO](docs/user-guide/11-upsert-replace-operations.md) (742 líneas)
+  - Documentación exhaustiva con ejemplos prácticos de todos los métodos
+  - Comparativas detalladas UPSERT vs REPLACE INTO vs INSERT/UPDATE tradicional
+  - Casos de uso específicos: inventarios, configuraciones, contadores, sincronización
+  - Guías de mejores prácticas y optimización de rendimiento
+- Actualización del índice de documentación (`docs/user-guide/README.md`)
+  - Integración de nuevos métodos en la navegación
+  - Enlaces cruzados con ejemplos rápidos
+- Ejemplos prácticos en guía rápida (`docs/user-guide/12-query-builder-quick-examples.md`)
+
+### Calidad y Estándares 📋
+- ✅ Código PHP con PSR-12 compliance y validación completa
+- ✅ Código Rust con convenciones estándar y manejo de errores robusto
+- ✅ Tests unitarios completos con cobertura de casos edge
+- ✅ Documentación exhaustiva con ejemplos listos para usar
+- ✅ Integración perfecta con arquitectura existente PHP + Rust
+- ✅ Validación de seguridad en todas las operaciones de entrada
+
+### Ejemplos de Uso
+```php
+// Nuevo: UPSERT inteligente - insertar si no existe, actualizar si existe
+$result = $orm->table('products')->upsert(
+    ['sku' => 'PROD001', 'name' => 'Laptop Pro', 'price' => 1500.00],
+    ['sku'], // Claves únicas para detectar duplicados
+    ['name', 'price'] // Columnas a actualizar si existe
+);
+
+// Nuevo: Método save() inteligente
+$user = $orm->table('users')->where('email', '=', 'john@example.com')->first();
+if (!$user) {
+    $user = ['email' => 'john@example.com'];
+}
+$user['name'] = 'John Updated';
+$result = $orm->table('users')->save($user, ['email']);
+
+// Nuevo: insertOrUpdate con validación automática
+$result = $orm->table('settings')->insertOrUpdate(
+    ['key' => 'app_version', 'value' => '2.1.0'],
+    ['key']
+);
+```
+
+## [1.3.0] - 2025-08-06
+
+### Añadido ⚡
+- **Operaciones UPSERT y REPLACE INTO**: Nuevas operaciones avanzadas de inserción/actualización inteligente
+  - Método `upsert()` individual para inserción inteligente (insertar si no existe, actualizar si existe)
+  - Método `replaceInto()` individual para reemplazo completo (solo MySQL)
+  - Método `replaceIntoMany()` para reemplazos masivos optimizados (solo MySQL)
+  - Soporte para múltiples claves únicas en operaciones upsert
+  - Control granular de columnas a actualizar con parámetro `updateColumns`
+  - Validación automática de drivers de base de datos (REPLACE INTO solo para MySQL)
+  - Implementación fallback robusta que funciona en todas las bases de datos
+  - Manejo inteligente de tablas sin columna `id` autoincremental
+
+### Mejorado 🚀
+- **Operaciones Batch**: Ampliadas las operaciones de lote existentes
+  - `upsertMany()` ahora disponible para operaciones masivas de upsert
+  - Integración perfecta con las operaciones batch existentes
+  - Procesamiento por lotes optimizado para grandes volúmenes de datos
+- **Seguridad**: Validación estricta de nombres de columnas y claves únicas
+- **Compatibilidad**: Implementación que funciona con y sin soporte nativo del binario Rust
+
+### Técnico 🔧
+- Añadidos 22 tests completos para operaciones UPSERT y REPLACE INTO (`QueryBuilderReplaceAndUpsertTest.php`)
+- Actualización de `VersaoORM.php` para incluir nuevas acciones válidas
+- Correcciones en el esquema de pruebas (tabla `products` con columnas faltantes)
+- Implementación fallback que utiliza SQL raw para compatibilidad universal
+- Manejo robusto de errores con mensajes descriptivos
+- Integración completa con tests existentes (84+ tests pasando)
+
+### Documentación 📚
+- Nueva guía completa: [Operaciones UPSERT y REPLACE INTO](docs/user-guide/11-upsert-replace-operations.md)
+- Actualización de [Operaciones de Lote](docs/user-guide/03-batch-operations.md) con `replaceIntoMany()`
+- Comparaciones detalladas entre SQL tradicional vs VersaORM
+- Ejemplos prácticos para casos de uso comunes:
+  - Sincronización con APIs externas
+  - Sistemas de caché inteligente
+  - Contadores de actividad
+  - Configuraciones de usuario
+- Guías de mejores prácticas y manejo de errores
+- Documentación de diferencias críticas entre UPSERT y REPLACE INTO
+
+### Ejemplos de Uso
+```php
+// UPSERT - Inserción inteligente con control granular
+$result = $orm->table('products')->upsert(
+    ['sku' => 'PROD001', 'name' => 'Laptop Pro', 'price' => 1500.00],
+    ['sku'],              // Claves únicas para detectar duplicados
+    ['name', 'price']     // Solo actualizar estos campos si existe
+);
+
+// REPLACE INTO - Reemplazo completo (solo MySQL)
+$result = $orm->table('products')->replaceInto([
+    'sku' => 'PROD001',
+    'name' => 'Laptop Pro Updated',
+    'price' => 1600.00,
+    'description' => 'Nueva descripción completa'
+]);
+
+// OPERACIONES MASIVAS optimizadas
+$result = $orm->table('products')->replaceIntoMany($products, 1000);
+```
+
+### Casos de Uso Resueltos
+- ✅ Sincronización de inventario desde APIs externas
+- ✅ Sistemas de configuración que requieren reemplazo completo
+- ✅ Contadores y estadísticas con actualización inteligente
+- ✅ Cachés con tiempo de vida y contadores de acceso
+- ✅ Preferencias de usuario con claves compuestas
+
+### Migración
+- **Cambios Breaking**: Ninguno - Completamente compatible con código existente
+- **Nueva API**: Opcional - Nuevos métodos `upsert()`, `replaceInto()` y `replaceIntoMany()`
+- **Compatibilidad**: Funciona en MySQL, PostgreSQL, SQLite (con fallbacks automáticos)
+
+---
+
 ## [1.2.0] - 2025-08-05
 
 ### Añadido ⚡

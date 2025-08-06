@@ -559,7 +559,11 @@ class VersaORM
         }
 
         // Validar acciones conocidas
-        $validActions = ['query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete', 'query_plan', 'explain_plan'];
+        $validActions = [
+            'query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete', 
+            'query_plan', 'explain_plan', 'upsert', 'upsertMany', 'replaceInto', 'replaceIntoMany',
+            'insertMany', 'updateMany', 'deleteMany'
+        ];
         if (!in_array($action, $validActions)) {
             throw new VersaORMException(
                 sprintf(

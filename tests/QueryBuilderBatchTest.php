@@ -385,6 +385,87 @@ class QueryBuilderBatchTest extends TestCase
     }
 
     //======================================================================
+    // UPSERT INDIVIDUAL TESTS
+    //======================================================================
+
+    public function testUpsertIndividualBasic(): void
+    {
+        // Test básico de upsert para un registro individual
+        $data = [
+            'sku' => 'INDIVIDUAL_UPSERT001',
+            'name' => 'Individual Upsert Product',
+            'price' => 199.99
+        ];
+
+        $result = self::$orm->table('products')->upsert($data, ['sku']);
+
+        $this->assertIsArray($result);
+        $this->assertEquals('success', $result['status']);
+        $this->assertEquals(1, $result['rows_affected']);
+        $this->assertEquals(['sku'], $result['unique_keys']);
+        $this->assertEquals('products', $result['table']);
+
+        // Verificar que el registro se creó
+        $created = self::$orm->table('products')->where('sku', '=', 'INDIVIDUAL_UPSERT001')->firstArray();
+        $this->assertEquals('Individual Upsert Product', $created['name']);
+        $this->assertEquals(199.99, (float) $created['price']);
+    }
+
+    public function testUpsertIndividualUpdate(): void
+    {
+        // Insertar registro inicial
+        self::$orm->table('products')->insert([
+            'sku' => 'INDIVIDUAL_UPDATE001',
+            'name' => 'Original Individual Product',
+            'price' => 100.0
+        ]);
+
+        // Hacer upsert para actualizar
+        $updateData = [
+            'sku' => 'INDIVIDUAL_UPDATE001',
+            'name' => 'Updated Individual Product',
+            'price' => 150.0
+        ];
+
+        $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['name', 'price']);
+
+        $this->assertEquals('success', $result['status']);
+        $this->assertEquals(1, $result['rows_affected']);
+        $this->assertEquals(['name', 'price'], $result['update_columns']);
+
+        // Verificar que se actualizó
+        $updated = self::$orm->table('products')->where('sku', '=', 'INDIVIDUAL_UPDATE001')->firstArray();
+        $this->assertEquals('Updated Individual Product', $updated['name']);
+        $this->assertEquals(150.0, (float) $updated['price']);
+    }
+
+    public function testUpsertIndividualWithoutUpdateColumns(): void
+    {
+        // Test upsert sin especificar columnas de actualización (debería actualizar todas)
+        self::$orm->table('products')->insert([
+            'sku' => 'NO_UPDATE_COLS001',
+            'name' => 'Original Product',
+            'price' => 100.0
+        ]);
+
+        $updateData = [
+            'sku' => 'NO_UPDATE_COLS001',
+            'name' => 'Updated Product',
+            'price' => 200.0
+        ];
+
+        $result = self::$orm->table('products')->upsert($updateData, ['sku']);
+
+        $this->assertEquals('success', $result['status']);
+        $this->assertEquals([], $result['update_columns']); // Sin columnas específicas
+
+        // Verificar que se actualizó
+        $updated = self::$orm->table('products')->where('sku', '=', 'NO_UPDATE_COLS001')->firstArray();
+        $this->assertEquals('Updated Product', $updated['name']);
+        $this->assertEquals(200.0, (float) $updated['price']);
+    }
+
+    //======================================================================
     // EDGE CASES AND SECURITY TESTS
     //======================================================================
 

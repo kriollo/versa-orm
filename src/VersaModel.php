@@ -798,6 +798,312 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Upsert (insertar o actualizar) el modelo usando claves únicas.
+     * 
+     * @param  array<int, string>   $uniqueKeys    Columnas que determinan duplicados
+     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @return array<string, mixed> Información sobre la operación realizada
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function upsert(array $uniqueKeys, array $updateColumns = []): array
+    {
+        if (empty($this->attributes)) {
+            throw new VersaORMException(
+                'upsert requires model data',
+                'NO_DATA_FOR_UPSERT'
+            );
+        }
+
+        if (empty($uniqueKeys)) {
+            throw new VersaORMException(
+                'upsert requires unique keys to detect duplicates',
+                'NO_UNIQUE_KEYS'
+            );
+        }
+
+        // Ejecutar validación antes de upsert
+        $validationErrors = $this->validate();
+        if (!empty($validationErrors)) {
+            throw new VersaORMException(
+                'Validation failed: ' . implode(', ', $validationErrors),
+                'VALIDATION_ERROR',
+                null,
+                [],
+                ['errors' => $validationErrors, 'attributes' => $this->attributes]
+            );
+        }
+
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new VersaORMException(
+                'No ORM instance available for upsert operation',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        // Verificar y crear columnas faltantes si freeze está desactivado
+        $this->ensureColumnsExist($orm);
+
+        // Usar el QueryBuilder para hacer upsert
+        $result = $orm->table($this->table)
+            ->upsert($this->attributes, $uniqueKeys, $updateColumns);
+
+        // Si fue exitoso y se insertó un nuevo registro, actualizar el ID si es posible
+        if (isset($result['operation']) && $result['operation'] === 'inserted_or_updated') {
+            // Intentar obtener el ID del registro después del upsert
+            $whereConditions = [];
+            foreach ($uniqueKeys as $key) {
+                if (isset($this->attributes[$key])) {
+                    $whereConditions[$key] = $this->attributes[$key];
+                }
+            }
+            
+            if (!empty($whereConditions)) {
+                $query = $orm->table($this->table);
+                foreach ($whereConditions as $key => $value) {
+                    $query->where($key, '=', $value);
+                }
+                $updated = $query->firstArray();
+                if ($updated && isset($updated['id'])) {
+                    $this->attributes['id'] = $updated['id'];
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Método save() inteligente - Detecta automáticamente si insertar o actualizar.
+     * Utiliza la clave primaria para determinar la operación.
+     * 
+     * @param  string $primaryKey Nombre de la clave primaria (default: 'id')
+     * @return array<string, mixed> Información sobre la operación realizada
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function save(string $primaryKey = 'id'): array
+    {
+        if (empty($this->attributes)) {
+            throw new VersaORMException(
+                'save requires model data',
+                'NO_DATA_FOR_SAVE'
+            );
+        }
+
+        // Ejecutar validación antes de guardar
+        $validationErrors = $this->validate();
+        if (!empty($validationErrors)) {
+            throw new VersaORMException(
+                'Validation failed: ' . implode(', ', $validationErrors),
+                'VALIDATION_ERROR',
+                null,
+                [],
+                ['errors' => $validationErrors, 'attributes' => $this->attributes]
+            );
+        }
+
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new VersaORMException(
+                'No ORM instance available for save operation',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        // Verificar y crear columnas faltantes si freeze está desactivado
+        $this->ensureColumnsExist($orm);
+
+        // Usar el QueryBuilder para hacer save inteligente
+        $result = $orm->table($this->table)
+            ->save($this->attributes, $primaryKey);
+
+        // Actualizar el modelo con los datos devueltos
+        if (isset($result['id'])) {
+            $this->attributes[$primaryKey] = $result['id'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Método insertOrUpdate() - Verifica existencia y decide operación.
+     * 
+     * @param  array<int, string>   $uniqueKeys    Columnas para verificar existencia
+     * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
+     * @return array<string, mixed> Información sobre la operación realizada
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function insertOrUpdate(array $uniqueKeys, array $updateColumns = []): array
+    {
+        if (empty($this->attributes)) {
+            throw new VersaORMException(
+                'insertOrUpdate requires model data',
+                'NO_DATA_FOR_INSERT_OR_UPDATE'
+            );
+        }
+
+        if (empty($uniqueKeys)) {
+            throw new VersaORMException(
+                'insertOrUpdate requires unique keys to check existence',
+                'NO_UNIQUE_KEYS'
+            );
+        }
+
+        // Ejecutar validación antes de la operación
+        $validationErrors = $this->validate();
+        if (!empty($validationErrors)) {
+            throw new VersaORMException(
+                'Validation failed: ' . implode(', ', $validationErrors),
+                'VALIDATION_ERROR',
+                null,
+                [],
+                ['errors' => $validationErrors, 'attributes' => $this->attributes]
+            );
+        }
+
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new VersaORMException(
+                'No ORM instance available for insertOrUpdate operation',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        // Verificar y crear columnas faltantes si freeze está desactivado
+        $this->ensureColumnsExist($orm);
+
+        // Usar el QueryBuilder para hacer insertOrUpdate
+        $result = $orm->table($this->table)
+            ->insertOrUpdate($this->attributes, $uniqueKeys, $updateColumns);
+
+        return $result;
+    }
+
+    /**
+     * Método createOrUpdate() con condiciones personalizadas.
+     * 
+     * @param  array<string, mixed> $conditions    Condiciones personalizadas para verificar existencia
+     * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
+     * @return array<string, mixed> Información sobre la operación realizada
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function createOrUpdate(array $conditions, array $updateColumns = []): array
+    {
+        if (empty($this->attributes)) {
+            throw new VersaORMException(
+                'createOrUpdate requires model data',
+                'NO_DATA_FOR_CREATE_OR_UPDATE'
+            );
+        }
+
+        if (empty($conditions)) {
+            throw new VersaORMException(
+                'createOrUpdate requires conditions to check existence',
+                'NO_CONDITIONS'
+            );
+        }
+
+        // Ejecutar validación antes de la operación
+        $validationErrors = $this->validate();
+        if (!empty($validationErrors)) {
+            throw new VersaORMException(
+                'Validation failed: ' . implode(', ', $validationErrors),
+                'VALIDATION_ERROR',
+                null,
+                [],
+                ['errors' => $validationErrors, 'attributes' => $this->attributes]
+            );
+        }
+
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new VersaORMException(
+                'No ORM instance available for createOrUpdate operation',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        // Verificar y crear columnas faltantes si freeze está desactivado
+        $this->ensureColumnsExist($orm);
+
+        // Usar el QueryBuilder para hacer createOrUpdate
+        $result = $orm->table($this->table)
+            ->createOrUpdate($this->attributes, $conditions, $updateColumns);
+
+        // Actualizar el modelo con el ID si se creó un nuevo registro
+        if (isset($result['id'])) {
+            $this->attributes['id'] = $result['id'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Auto-detectar claves únicas desde el esquema de la tabla.
+     * 
+     * @return array<string> Lista de columnas que forman claves únicas
+     * @throws VersaORMException Si no se puede obtener información del esquema
+     */
+    public function getUniqueKeys(): array
+    {
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new VersaORMException(
+                'No ORM instance available for schema inspection',
+                'NO_ORM_INSTANCE'
+            );
+        }
+
+        try {
+            // Usar el esquema inspector para obtener información de índices únicos
+            $result = $orm->execute('schema_query', [
+                'action' => 'get_unique_keys',
+                'table' => $this->table
+            ]);
+
+            if (is_array($result) && isset($result['unique_keys'])) {
+                return $result['unique_keys'];
+            }
+
+            // Fallback: buscar columnas comunes que suelen ser únicas
+            $commonUniqueColumns = ['email', 'username', 'slug', 'code', 'sku'];
+            $detectedKeys = [];
+            
+            foreach ($commonUniqueColumns as $column) {
+                if (isset($this->attributes[$column])) {
+                    $detectedKeys[] = $column;
+                }
+            }
+
+            return $detectedKeys;
+        } catch (\Exception $e) {
+            // Si falla, devolver claves comunes como fallback
+            return ['id'];
+        }
+    }
+
+    /**
+     * Upsert inteligente - Auto-detecta claves únicas y realiza upsert.
+     * 
+     * @param  array<int, string>|null $updateColumns Columnas a actualizar (opcional)
+     * @return array<string, mixed>    Información sobre la operación realizada
+     * @throws VersaORMException Si no se pueden detectar claves únicas
+     */
+    public function smartUpsert(?array $updateColumns = null): array
+    {
+        $uniqueKeys = $this->getUniqueKeys();
+        
+        if (empty($uniqueKeys)) {
+            throw new VersaORMException(
+                'Cannot perform smart upsert: no unique keys detected in table schema',
+                'NO_UNIQUE_KEYS_DETECTED'
+            );
+        }
+
+        return $this->upsert($uniqueKeys, $updateColumns ?? []);
+    }
+
+    /**
      * Eliminar el registro del modelo en la base de datos.
      *
      * @return void

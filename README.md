@@ -144,7 +144,7 @@ Model::setORM($orm);
 
 ### 2. Ejemplos de Uso
 
-#### CRUD Básico
+#### CRUD Básico con ORM
 ```php
 // Crear un nuevo registro
 $user = $orm->dispense('users');
@@ -164,7 +164,79 @@ $orm->store($user);
 $orm->trash($user);
 ```
 
-#### Modelos con Validación (Nuevo!)
+#### 🛠️ Query Builder - Consultas Potentes y Seguras
+```php
+// Búsqueda avanzada con filtros múltiples
+$activeUsers = $orm->table('users')
+    ->where('status', '=', 'active')
+    ->where('age', '>=', 18)
+    ->whereIn('role', ['admin', 'editor'])
+    ->orderBy('created_at', 'desc')
+    ->limit(10)
+    ->getAll();
+
+// Joins y agregaciones - Dashboard de estadísticas
+$userStats = $orm->table('users')
+    ->select([
+        'users.name',
+        'COUNT(posts.id) as total_posts',
+        'AVG(posts.views) as avg_views'
+    ])
+    ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
+    ->where('users.status', '=', 'active')
+    ->groupBy(['users.id', 'users.name'])
+    ->having('total_posts', '>', 5)
+    ->getAll();
+
+// Operaciones de escritura masivas
+$orm->table('logs')
+    ->where('created_at', '<', date('Y-m-d', strtotime('-30 days')))
+    ->delete(); // Limpieza de logs antiguos
+
+// Actualización masiva con condiciones
+$orm->table('products')
+    ->whereIn('category_id', [1, 2, 3])
+    ->where('stock', '>', 0)
+    ->update(['status' => 'available']);
+```
+
+#### 🆕 Operaciones CRUD Avanzadas (Nuevo!)
+```php
+// UPSERT: Insertar si no existe, actualizar si existe
+$result = $orm->table('products')->upsert(
+    [
+        'sku' => 'LAPTOP-001',
+        'name' => 'MacBook Pro 16"',
+        'price' => 2499.99,
+        'stock' => 25
+    ],
+    ['sku'], // Claves únicas para detectar duplicados
+    ['name', 'price', 'stock'] // Campos a actualizar si existe
+);
+
+// Método save() inteligente - detecta automáticamente INSERT vs UPDATE
+$user = $orm->table('users')->save([
+    'email' => 'john@example.com',
+    'name' => 'John Updated',
+    'role' => 'admin'
+], ['email']); // Si existe el email, actualiza; si no, inserta
+
+// insertOrUpdate() - alias intuitivo para upsert
+$setting = $orm->table('settings')->insertOrUpdate([
+    'key' => 'app_version',
+    'value' => '2.1.0',
+    'updated_at' => date('Y-m-d H:i:s')
+], ['key']);
+
+// replaceInto() - reemplazo completo (solo MySQL)
+$backup = $orm->table('user_backups')->replaceInto([
+    'user_id' => 123,
+    'backup_data' => json_encode($userData),
+    'created_at' => date('Y-m-d H:i:s')
+]);
+```
+
+#### Modelos con Validación
 ```php
 class User extends BaseModel {
     protected string $table = 'users';

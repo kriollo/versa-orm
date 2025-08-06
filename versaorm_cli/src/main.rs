@@ -412,7 +412,7 @@ async fn run_main() {
             }
 
             let result = match payload.action.as_str() {
-                "query" | "insert" | "insertGetId" | "update" | "delete" => {
+                "query" | "insert" | "insertGetId" | "update" | "delete" | "replaceInto" => {
                     handle_query_action(&connection_manager, &payload.params, &payload.freeze_state)
                         .await
                 }
@@ -969,6 +969,144 @@ async fn handle_query_action(
                 unique_keys,
                 update_columns,
                 batch_size,
+            )
+            .await
+        }
+        "replaceInto" => {
+            // Handle single record replace (MySQL specific)
+            let data = if let Some(data_value) = params.get("data") {
+                data_value.as_object().ok_or((
+                    "replaceInto requires data object".to_string(),
+                    None,
+                    None,
+                ))?
+            } else {
+                // Fallback to old format if not found at root
+                query_params
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("data"))
+                    .and_then(|d| d.as_object())
+                    .ok_or(("replaceInto requires data object".to_string(), None, None))?
+            };
+
+            handle_replace_into(connection, &table_name, data).await
+        }
+        "replaceIntoMany" => {
+            // Handle multiple record replace (MySQL specific)
+            let records = if let Some(records_value) = params.get("records") {
+                records_value.as_array().ok_or((
+                    "replaceIntoMany requires records array".to_string(),
+                    None,
+                    None,
+                ))?
+            } else {
+                // Fallback to old format if not found at root
+                query_params
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("records"))
+                    .and_then(|r| r.as_array())
+                    .ok_or(("replaceIntoMany requires records array".to_string(), None, None))?
+            };
+
+            let batch_size = if let Some(batch_size_value) = params.get("batch_size") {
+                batch_size_value.as_i64().unwrap_or(1000) as usize
+            } else {
+                query_params
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("batch_size"))
+                    .and_then(|b| b.as_i64())
+                    .unwrap_or(1000) as usize
+            };
+
+            handle_replace_into_many(connection, &table_name, records, batch_size).await
+        }
+        "upsert" => {
+            // Handle single record upsert
+            let data = if let Some(data_value) = params.get("data") {
+                data_value.as_object().ok_or((
+                    "upsert requires data object".to_string(),
+                    None,
+                    None,
+                ))?
+            } else {
+                // Fallback to old format if not found at root
+                query_params
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("data"))
+                    .and_then(|d| d.as_object())
+                    .ok_or(("upsert requires data object".to_string(), None, None))?
+            };
+
+            let unique_keys = if let Some(unique_keys_value) = params.get("unique_keys") {
+                unique_keys_value.as_array().ok_or((
+                    "upsert requires unique_keys array".to_string(),
+                    None,
+                    None,
+                ))?
+            } else {
+                query_params
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("unique_keys"))
+                    .and_then(|k| k.as_array())
+                    .ok_or((
+                        "upsert requires unique_keys array".to_string(),
+                        None,
+                        None,
+                    ))?
+            };
+
+            // Validar unique_keys antes de continuar
+            for unique_key_value in unique_keys {
+                if let Some(unique_key_str) = unique_key_value.as_str() {
+                    if utils::clean_column_name(unique_key_str).is_err() {
+                        return Err(("Invalid unique key name detected".to_string(), None, None));
+                    }
+                }
+            }
+
+            let update_columns = if let Some(update_columns_value) = params.get("update_columns") {
+                update_columns_value
+                    .as_array()
+                    .unwrap_or(&vec![])
+                    .iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+            } else {
+                query_params
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("update_columns"))
+                    .and_then(|c| c.as_array())
+                    .unwrap_or(&vec![])
+                    .iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+            };
+
+            // Validar update_columns antes de continuar
+            for update_col in &update_columns {
+                if utils::clean_column_name(update_col).is_err() {
+                    return Err((
+                        "Invalid update column name detected".to_string(),
+                        None,
+                        None,
+                    ));
+                }
+            }
+
+            handle_upsert(
+                connection,
+                &table_name,
+                data,
+                unique_keys,
+                update_columns,
             )
             .await
         }
@@ -1982,6 +2120,410 @@ async fn handle_delete_many(
         "rows_affected": rows_affected,
         "expected_count": affected_count,
         "status": "success"
+    }))
+}
+
+/**
+ * Manejo de upsert - INSERT ... ON DUPLICATE KEY UPDATE para un solo registro
+ */
+async fn handle_upsert(
+    connection: &ConnectionManager,
+    table_name: &str,
+    data: &serde_json::Map<String, serde_json::Value>,
+    unique_keys: &[serde_json::Value],
+    update_columns: Vec<String>,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if data.is_empty() {
+        return Err(("No data provided for upsert".to_string(), None, None));
+    }
+
+    if unique_keys.is_empty() {
+        return Err(("No unique keys provided for upsert".to_string(), None, None));
+    }
+
+    // Convertir unique_keys a strings y validar nombres de columnas
+    let unique_key_names: Vec<String> = unique_keys
+        .iter()
+        .filter_map(|v| v.as_str())
+        .map(|s| s.to_string())
+        .collect();
+
+    if unique_key_names.is_empty() {
+        return Err(("Invalid unique keys format".to_string(), None, None));
+    }
+
+    // Validar que los nombres de unique keys sean seguros
+    for unique_key in &unique_key_names {
+        if let Err(err) = utils::clean_column_name(unique_key) {
+            log_debug_msg(&format!(
+                "Unique key '{}' failed validation: {}",
+                unique_key, err
+            ));
+            return Err(("Invalid unique key name detected".to_string(), None, None));
+        }
+    }
+
+    // Validar que los nombres de update_columns sean seguros
+    for update_col in &update_columns {
+        if utils::clean_column_name(update_col).is_err() {
+            return Err((
+                "Invalid update column name detected".to_string(),
+                None,
+                None,
+            ));
+        }
+    }
+
+    // Validar que todas las claves únicas estén presentes en los datos
+    for unique_key in &unique_key_names {
+        if !data.contains_key(unique_key) {
+            return Err((
+                format!("Data is missing unique key: {}", unique_key),
+                None,
+                None,
+            ));
+        }
+    }
+
+    // Obtener el driver de base de datos para determinar la sintaxis correcta
+    let driver = connection.get_driver();
+
+    let columns: Vec<String> = data.keys().cloned().collect();
+
+    let upsert_sql = match driver {
+        "mysql" => {
+            // MySQL: INSERT ... ON DUPLICATE KEY UPDATE
+            let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
+
+            let update_clause = if update_columns.is_empty() {
+                // Si no se especifican columnas, actualizar todas excepto las únicas
+                columns
+                    .iter()
+                    .filter(|col| !unique_key_names.contains(col))
+                    .map(|col| format!("{} = VALUES({})", col, col))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            } else {
+                update_columns
+                    .iter()
+                    .map(|col| format!("{} = VALUES({})", col, col))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+
+            if update_clause.is_empty() {
+                return Err((
+                    "No columns available for update in upsert operation".to_string(),
+                    None,
+                    None,
+                ));
+            }
+
+            format!(
+                "INSERT INTO {} ({}) VALUES {} ON DUPLICATE KEY UPDATE {}",
+                table_name,
+                columns.join(", "),
+                values_placeholder,
+                update_clause
+            )
+        }
+        "pgsql" | "postgresql" => {
+            // PostgreSQL: INSERT ... ON CONFLICT DO UPDATE
+            let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
+
+            let update_clause = if update_columns.is_empty() {
+                columns
+                    .iter()
+                    .filter(|col| !unique_key_names.contains(col))
+                    .map(|col| format!("{} = EXCLUDED.{}", col, col))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            } else {
+                update_columns
+                    .iter()
+                    .map(|col| format!("{} = EXCLUDED.{}", col, col))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+
+            if update_clause.is_empty() {
+                return Err((
+                    "No columns available for update in upsert operation".to_string(),
+                    None,
+                    None,
+                ));
+            }
+
+            format!(
+                "INSERT INTO {} ({}) VALUES {} ON CONFLICT ({}) DO UPDATE SET {}",
+                table_name,
+                columns.join(", "),
+                values_placeholder,
+                unique_key_names.join(", "),
+                update_clause
+            )
+        }
+        "sqlite" => {
+            // SQLite: INSERT OR REPLACE INTO o INSERT ... ON CONFLICT DO UPDATE
+            // Usando REPLACE que es más simple pero puede perder datos relacionados
+            let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
+            
+            format!(
+                "INSERT OR REPLACE INTO {} ({}) VALUES {}",
+                table_name,
+                columns.join(", "),
+                values_placeholder
+            )
+        }
+        _ => {
+            return Err((
+                format!("Upsert operations not supported for driver: {}", driver),
+                None,
+                None,
+            ));
+        }
+    };
+
+    // Preparar parámetros en el orden correcto
+    let params: Vec<serde_json::Value> = columns
+        .iter()
+        .map(|col| data.get(col).unwrap().clone())
+        .collect();
+
+    // Ejecutar la consulta upsert
+    log_debug_msg(&format!("Executing upsert SQL: {}", upsert_sql));
+    log_debug_msg(&format!("Parameters: {:?}", params));
+
+    match connection.execute_raw(&upsert_sql, params.clone()).await {
+        Ok(results) => {
+            log_debug_msg("Upsert operation completed successfully");
+            
+            // Para upsert individual, intentamos determinar si fue INSERT o UPDATE
+            // MySQL devuelve affected_rows: 1 para INSERT, 2 para UPDATE
+            // PostgreSQL devuelve 1 para ambos casos
+            let operation_type = if driver == "mysql" && results.len() == 2 {
+                "updated"
+            } else {
+                "inserted_or_updated"
+            };
+
+            Ok(serde_json::json!({
+                "status": "success",
+                "operation": operation_type,
+                "rows_affected": 1,
+                "unique_keys": unique_key_names,
+                "update_columns": update_columns,
+                "table": table_name
+            }))
+        }
+        Err(e) => {
+            let error_msg = format!("Upsert operation failed: {}", e);
+            log_debug_msg(&error_msg);
+            Err((
+                error_msg,
+                Some(upsert_sql),
+                Some(params),
+            ))
+        }
+    }
+}
+
+/**
+ * Manejo de replaceInto - REPLACE INTO para un solo registro (MySQL específico)
+ */
+async fn handle_replace_into(
+    connection: &ConnectionManager,
+    table_name: &str,
+    data: &serde_json::Map<String, serde_json::Value>,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if data.is_empty() {
+        return Err(("No data provided for replaceInto".to_string(), None, None));
+    }
+
+    // Verificar que el driver sea MySQL
+    let driver = connection.get_driver();
+    if driver != "mysql" {
+        return Err((
+            format!("REPLACE INTO operations are only supported for MySQL, current driver: {}", driver),
+            None,
+            None,
+        ));
+    }
+
+    let columns: Vec<String> = data.keys().cloned().collect();
+    let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
+    
+    let replace_sql = format!(
+        "REPLACE INTO {} ({}) VALUES {}",
+        table_name,
+        columns.join(", "),
+        values_placeholder
+    );
+
+    // Preparar parámetros en el orden correcto
+    let params: Vec<serde_json::Value> = columns
+        .iter()
+        .map(|col| data.get(col).unwrap().clone())
+        .collect();
+
+    // Ejecutar la consulta REPLACE INTO
+    log_debug_msg(&format!("Executing replaceInto SQL: {}", replace_sql));
+    log_debug_msg(&format!("Parameters: {:?}", params));
+
+    match connection.execute_raw(&replace_sql, params.clone()).await {
+        Ok(_) => {
+            log_debug_msg("replaceInto operation completed successfully");
+            
+            // Invalidar caché para esta tabla después de REPLACE INTO
+            cache::invalidate_cache_for_table(table_name);
+            log_debug_msg(&format!("Invalidated cache for table: {}", table_name));
+
+            Ok(serde_json::json!({
+                "status": "success",
+                "operation": "replaced",
+                "rows_affected": 1,
+                "table": table_name
+            }))
+        }
+        Err(e) => {
+            let error_msg = format!("replaceInto operation failed: {}", e);
+            log_debug_msg(&error_msg);
+            Err((
+                error_msg,
+                Some(replace_sql),
+                Some(params),
+            ))
+        }
+    }
+}
+
+/**
+ * Manejo de replaceIntoMany - REPLACE INTO para múltiples registros (MySQL específico)
+ */
+async fn handle_replace_into_many(
+    connection: &ConnectionManager,
+    table_name: &str,
+    records: &[serde_json::Value],
+    batch_size: usize,
+) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
+    if records.is_empty() {
+        return Err(("No records provided for replaceIntoMany".to_string(), None, None));
+    }
+
+    // Verificar que el driver sea MySQL
+    let driver = connection.get_driver();
+    if driver != "mysql" {
+        return Err((
+            format!("REPLACE INTO operations are only supported for MySQL, current driver: {}", driver),
+            None,
+            None,
+        ));
+    }
+
+    // Validar la estructura del primer registro
+    let first_record = records.first().unwrap();
+    let first_obj = first_record.as_object().ok_or((
+        "First record must be an object".to_string(),
+        None,
+        None,
+    ))?;
+
+    if first_obj.is_empty() {
+        return Err(("Records cannot be empty".to_string(), None, None));
+    }
+
+    let columns: Vec<String> = first_obj.keys().cloned().collect();
+    let mut total_replaced = 0;
+    let mut batches_processed = 0;
+    let mut errors = Vec::new();
+
+    // Procesar en lotes
+    for chunk in records.chunks(batch_size) {
+        // Construir el SQL de REPLACE INTO múltiple
+        let values_placeholders: Vec<String> = chunk
+            .iter()
+            .map(|_| format!("({})", vec!["?"; columns.len()].join(", ")))
+            .collect();
+
+        let replace_sql = format!(
+            "REPLACE INTO {} ({}) VALUES {}",
+            table_name,
+            columns.join(", "),
+            values_placeholders.join(", ")
+        );
+
+        // Preparar parámetros en el orden correcto
+        let mut params = Vec::new();
+        for record in chunk {
+            let record_obj = record.as_object().ok_or((
+                "All records must be objects".to_string(),
+                Some(replace_sql.clone()),
+                None,
+            ))?;
+
+            // Validar que el registro tenga las mismas columnas
+            let record_keys: Vec<String> = record_obj.keys().cloned().collect();
+            if record_keys != columns {
+                return Err((
+                    format!(
+                        "Record structure mismatch. Expected: [{}], Got: [{}]",
+                        columns.join(", "),
+                        record_keys.join(", ")
+                    ),
+                    Some(replace_sql.clone()),
+                    None,
+                ));
+            }
+
+            for column in &columns {
+                params.push(record_obj.get(column).unwrap().clone());
+            }
+        }
+
+        // Ejecutar el lote
+        log_debug_msg(&format!("Executing replaceIntoMany SQL: {}", replace_sql));
+        log_debug_msg(&format!("Parameters count: {}", params.len()));
+
+        match connection.execute_raw(&replace_sql, params.clone()).await {
+            Ok(_) => {
+                total_replaced += chunk.len();
+                batches_processed += 1;
+                log_debug_msg(&format!(
+                    "Replace batch {} completed: {} records replaced",
+                    batches_processed,
+                    chunk.len()
+                ));
+            }
+            Err(e) => {
+                let error_msg = format!("Replace batch {} failed: {}", batches_processed + 1, e);
+                errors.push(error_msg.clone());
+                log_debug_msg(&error_msg);
+
+                return Err((
+                    format!(
+                        "replaceIntoMany failed at batch {}: {}. Total replaced before failure: {}",
+                        batches_processed + 1,
+                        e,
+                        total_replaced
+                    ),
+                    Some(replace_sql),
+                    Some(params),
+                ));
+            }
+        }
+    }
+
+    // Invalidar caché para esta tabla después de REPLACE INTO
+    cache::invalidate_cache_for_table(table_name);
+    log_debug_msg(&format!("Invalidated cache for table: {}", table_name));
+
+    Ok(serde_json::json!({
+        "total_replaced": total_replaced,
+        "batches_processed": batches_processed,
+        "batch_size": batch_size,
+        "total_records": records.len(),
+        "status": "success",
+        "errors": errors
     }))
 }
 

@@ -1346,7 +1346,7 @@ class QueryBuilder
         // Determinar la acción principal. Para operaciones de escritura, es el método mismo.
         // Para lectura, es 'query'.
         $batchMethods = ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'];
-        $writeMethods = ['insert', 'insertGetId', 'update', 'delete'];
+        $writeMethods = ['insert', 'insertGetId', 'update', 'delete', 'upsert'];
 
         if (in_array($method, $batchMethods)) {
             // Las operaciones de lote van como 'query' con el método específico en params
@@ -1571,6 +1571,375 @@ class QueryBuilder
     }
 
     /**
+     * Upsert (INSERT ... ON DUPLICATE KEY UPDATE) para un solo registro.
+     * Inserta un registro nuevo o actualiza el existente basado en claves únicas.
+     *
+     * @param  array<string, mixed> $data          Datos del registro
+     * @param  array<int, string>   $uniqueKeys    Columnas que determinan duplicados
+     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function upsert(
+        array $data,
+        array $uniqueKeys,
+        array $updateColumns = []
+    ): array {
+        if (empty($data)) {
+            throw new VersaORMException('upsert requires data to insert/update');
+        }
+
+        if (empty($uniqueKeys)) {
+            throw new VersaORMException('upsert requires unique keys to detect duplicates');
+        }
+
+        // Validar identificadores por seguridad PRIMERO
+        foreach ($uniqueKeys as $key) {
+            if (!$this->isSafeIdentifier($key)) {
+                throw new VersaORMException('Invalid unique key name detected');
+            }
+        }
+
+        foreach ($updateColumns as $col) {
+            if (!$this->isSafeIdentifier($col)) {
+                throw new VersaORMException('Invalid update column name detected');
+            }
+        }
+
+        // Validar nombres de columnas de data por seguridad
+        foreach (array_keys($data) as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            }
+        }
+
+        // Validar que las claves únicas existen en los datos
+        foreach ($uniqueKeys as $key) {
+            if (!array_key_exists($key, $data)) {
+                throw new VersaORMException(
+                    sprintf('Record is missing unique key: %s', $key)
+                );
+            }
+        }
+
+        // FALLBACK: Usar insertOrUpdate() si el binario no soporta upsert nativo
+        return $this->upsertFallback($data, $uniqueKeys, $updateColumns);
+    }
+    
+    /**
+     * Implementación fallback del upsert usando operaciones INSERT/UPDATE existentes
+     *
+     * @param array<string, mixed> $data          Datos del registro
+     * @param array<int, string>   $uniqueKeys    Columnas que determinan duplicados
+     * @param array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado
+     * @return array<string, mixed> Información sobre la operación
+     */
+    private function upsertFallback(
+        array $data,
+        array $uniqueKeys, 
+        array $updateColumns = []
+    ): array {
+        // Construir condiciones WHERE para verificar existencia
+        $existsQuery = new self($this->orm, $this->table);
+        foreach ($uniqueKeys as $key) {
+            $existsQuery->where($key, '=', $data[$key]);
+        }
+
+        // Verificar si el registro ya existe
+        $exists = $existsQuery->exists();
+
+        if ($exists) {
+            // Actualizar registro existente
+            $updateData = empty($updateColumns) 
+                ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
+                : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
+                
+            if (empty($updateData)) {
+                return [
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
+                    'rows_affected' => 0,
+                    'unique_keys' => $uniqueKeys,
+                    'table' => $this->table
+                ];
+            }
+
+            // Crear nueva instancia con las mismas condiciones WHERE
+            $updateQuery = new self($this->orm, $this->table);
+            foreach ($uniqueKeys as $key) {
+                $updateQuery->where($key, '=', $data[$key]);
+            }
+            
+            $updateQuery->update($updateData);
+            
+            $result = [
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'unique_keys' => $uniqueKeys,
+                'table' => $this->table,
+                'update_columns' => $updateColumns // Siempre incluir, será vacío si no se especificaron
+            ];
+            
+            return $result;
+        } else {
+            // Insertar nuevo registro
+            $this->insert($data);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'inserted',
+                'rows_affected' => 1,
+                'unique_keys' => $uniqueKeys,
+                'table' => $this->table
+            ];
+        }
+    }
+
+    /**
+     * Método insertOrUpdate() alternativo - Verifica existencia y decide INSERT vs UPDATE
+     * 
+     * @param  array<string, mixed> $data          Datos del registro
+     * @param  array<int, string>   $uniqueKeys    Columnas para verificar existencia
+     * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional, por defecto todas)
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function insertOrUpdate(
+        array $data,
+        array $uniqueKeys,
+        array $updateColumns = []
+    ): array {
+        if (empty($data)) {
+            throw new VersaORMException('insertOrUpdate requires data');
+        }
+
+        if (empty($uniqueKeys)) {
+            throw new VersaORMException('insertOrUpdate requires unique keys to check existence');
+        }
+
+        // Validar identificadores por seguridad
+        foreach ($uniqueKeys as $key) {
+            if (!$this->isSafeIdentifier($key)) {
+                throw new VersaORMException('Invalid unique key name detected');
+            }
+        }
+
+        foreach ($updateColumns as $col) {
+            if (!$this->isSafeIdentifier($col)) {
+                throw new VersaORMException('Invalid update column name detected');
+            }
+        }
+
+        // Validar que las claves únicas existen en los datos
+        foreach ($uniqueKeys as $key) {
+            if (!array_key_exists($key, $data)) {
+                throw new VersaORMException(
+                    sprintf('Data is missing unique key: %s', $key)
+                );
+            }
+        }
+
+        // Construir condiciones WHERE para verificar existencia
+        $existsQuery = new self($this->orm, $this->table);
+        foreach ($uniqueKeys as $key) {
+            $existsQuery->where($key, '=', $data[$key]);
+        }
+
+        // Verificar si el registro ya existe
+        $exists = $existsQuery->exists();
+
+        if ($exists) {
+            // Actualizar registro existente
+            $updateData = empty($updateColumns) 
+                ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
+                : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
+                
+            if (empty($updateData)) {
+                return [
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
+                    'message' => 'Record exists but no columns to update',
+                    'unique_keys' => $uniqueKeys
+                ];
+            }
+
+            // Crear nueva instancia con las mismas condiciones WHERE
+            $updateQuery = new self($this->orm, $this->table);
+            foreach ($uniqueKeys as $key) {
+                $updateQuery->where($key, '=', $data[$key]);
+            }
+            
+            $updateQuery->update($updateData);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'unique_keys' => $uniqueKeys,
+                'updated_columns' => array_keys($updateData)
+            ];
+        } else {
+            // Insertar nuevo registro
+            $this->insert($data);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'inserted',
+                'rows_affected' => 1,
+                'unique_keys' => $uniqueKeys
+            ];
+        }
+    }
+
+    /**
+     * Método save() inteligente - Detecta si es nuevo o existente automáticamente
+     * 
+     * @param  array<string, mixed> $data        Datos del registro
+     * @param  string               $primaryKey  Clave primaria (default: 'id')
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function save(array $data, string $primaryKey = 'id'): array
+    {
+        if (empty($data)) {
+            throw new VersaORMException('save requires data');
+        }
+
+        if (!$this->isSafeIdentifier($primaryKey)) {
+            throw new VersaORMException('Invalid primary key name detected');
+        }
+
+        // Si tiene ID, es actualización; si no, es inserción
+        if (isset($data[$primaryKey]) && !empty($data[$primaryKey])) {
+            // Actualización - separar ID de los datos
+            $id = $data[$primaryKey];
+            $updateData = $data;
+            unset($updateData[$primaryKey]); // Remover ID de los datos a actualizar
+            
+            if (empty($updateData)) {
+                return [
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
+                    'message' => 'No data to update',
+                    'id' => $id
+                ];
+            }
+            
+            // Crear nueva instancia para la actualización
+            $updateQuery = new self($this->orm, $this->table);
+            $updateQuery->where($primaryKey, '=', $id)->update($updateData);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'id' => $id,
+                'updated_columns' => array_keys($updateData)
+            ];
+        } else {
+            // Inserción - crear nuevo registro
+            $insertedId = $this->insertGetId($data);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'inserted',
+                'rows_affected' => 1,
+                'id' => $insertedId
+            ];
+        }
+    }
+
+    /**
+     * Método createOrUpdate() con condiciones personalizadas
+     * 
+     * @param  array<string, mixed> $data        Datos del registro
+     * @param  array<string, mixed> $conditions  Condiciones personalizadas para verificar existencia
+     * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos
+     */
+    public function createOrUpdate(
+        array $data,
+        array $conditions,
+        array $updateColumns = []
+    ): array {
+        if (empty($data)) {
+            throw new VersaORMException('createOrUpdate requires data');
+        }
+
+        if (empty($conditions)) {
+            throw new VersaORMException('createOrUpdate requires conditions to check existence');
+        }
+
+        // Validar nombres de columnas en condiciones
+        foreach (array_keys($conditions) as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid column name in conditions: %s', $column));
+            }
+        }
+
+        foreach ($updateColumns as $col) {
+            if (!$this->isSafeIdentifier($col)) {
+                throw new VersaORMException('Invalid update column name detected');
+            }
+        }
+
+        // Construir consulta para verificar existencia
+        $existsQuery = new self($this->orm, $this->table);
+        foreach ($conditions as $column => $value) {
+            $existsQuery->where($column, '=', $value);
+        }
+
+        // Verificar si el registro ya existe
+        $exists = $existsQuery->exists();
+
+        if ($exists) {
+            // Actualizar registro existente
+            $updateData = empty($updateColumns)
+                ? $data // Actualizar todas las columnas
+                : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
+                
+            if (empty($updateData)) {
+                return [
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
+                    'message' => 'Record exists but no columns to update',
+                    'conditions' => $conditions
+                ];
+            }
+
+            // Crear nueva instancia con las mismas condiciones
+            $updateQuery = new self($this->orm, $this->table);
+            foreach ($conditions as $column => $value) {
+                $updateQuery->where($column, '=', $value);
+            }
+            
+            $updateQuery->update($updateData);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'conditions' => $conditions,
+                'updated_columns' => array_keys($updateData)
+            ];
+        } else {
+            // Crear nuevo registro (merging conditions with data)
+            $insertData = array_merge($data, $conditions);
+            $insertedId = $this->insertGetId($insertData);
+            
+            return [
+                'status' => 'success',
+                'operation' => 'created',
+                'rows_affected' => 1,
+                'id' => $insertedId,
+                'conditions' => $conditions
+            ];
+        }
+    }
+
+    /**
      * Upsert (INSERT ... ON DUPLICATE KEY UPDATE) para múltiples registros.
      * Inserta registros nuevos o actualiza los existentes basado en claves únicas.
      *
@@ -1629,6 +1998,182 @@ class QueryBuilder
 
         $result = $this->execute('upsertMany', $params);
         return is_array($result) ? $result : [];
+    }
+
+    /**
+     * REPLACE INTO para MySQL - Compatible solo con MySQL.
+     * Reemplaza completamente los registros existentes o inserta nuevos.
+     * ADVERTENCIA: REPLACE puede perder datos de columnas no especificadas.
+     * 
+     * @param  array<string, mixed> $data Datos del registro
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos o no es MySQL
+     */
+    public function replaceInto(array $data): array
+    {
+        if (empty($data)) {
+            throw new VersaORMException('replaceInto requires data to replace/insert');
+        }
+
+        // Validar nombres de columnas por seguridad
+        foreach (array_keys($data) as $column) {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            }
+        }
+
+        // FALLBACK: Usar SQL raw ya que el binario no soporta REPLACE INTO nativo
+        return $this->replaceIntoFallback($data);
+    }
+    
+    /**
+     * Implementación fallback para REPLACE INTO usando SQL raw
+     *
+     * @param array<string, mixed> $data Datos del registro
+     * @return array<string, mixed> Información sobre la operación
+     */
+    private function replaceIntoFallback(array $data): array
+    {
+        // Ejecutar usando raw SQL
+        if (!($this->orm instanceof VersaORM)) {
+            throw new VersaORMException('VersaORM instance is required for replaceInto');
+        }
+        
+        // Verificar que estamos usando MySQL
+        $config = $this->orm->getConfig();
+        if (($config['driver'] ?? '') !== 'mysql') {
+            throw new VersaORMException('REPLACE INTO operations are only supported for MySQL');
+        }
+        
+        // Construir la consulta REPLACE INTO manualmente
+        $columns = array_keys($data);
+        $placeholders = array_fill(0, count($data), '?');
+        
+        $sql = sprintf(
+            'REPLACE INTO `%s` (`%s`) VALUES (%s)',
+            $this->table,
+            implode('`, `', $columns),
+            implode(', ', $placeholders)
+        );
+        
+        $this->orm->exec($sql, array_values($data));
+        
+        return [
+            'status' => 'success',
+            'operation' => 'replaced',
+            'rows_affected' => 1,
+            'table' => $this->table
+        ];
+    }
+
+    /**
+     * REPLACE INTO múltiples registros para MySQL - Compatible solo con MySQL.
+     * Reemplaza completamente los registros existentes o inserta nuevos.
+     * ADVERTENCIA: REPLACE puede perder datos de columnas no especificadas.
+     * 
+     * @param  array<int, array<string, mixed>> $records   Array de registros
+     * @param  int                              $batchSize Tamaño del lote (default: 1000)
+     * @return array<string, mixed> Información sobre la operación
+     * @throws VersaORMException Si los datos son inválidos o no es MySQL
+     */
+    public function replaceIntoMany(array $records, int $batchSize = 1000): array
+    {
+        if (empty($records)) {
+            throw new VersaORMException('replaceIntoMany requires at least one record');
+        }
+
+        // Validar tamaño de lote
+        if ($batchSize <= 0 || $batchSize > 10000) {
+            throw new VersaORMException('Batch size must be between 1 and 10000');
+        }
+
+        // Validar que todos los registros tengan la misma estructura
+        $firstKeys = array_keys($records[0]);
+        foreach ($records as $index => $record) {
+            if (!is_array($record) || empty($record)) {
+                throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
+            }
+
+            $currentKeys = array_keys($record);
+            if ($currentKeys !== $firstKeys) {
+                throw new VersaORMException(
+                    sprintf(
+                        'Record at index %d has different columns. Expected: [%s], Got: [%s]',
+                        $index,
+                        implode(', ', $firstKeys),
+                        implode(', ', $currentKeys)
+                    )
+                );
+            }
+
+            // Validar nombres de columnas por seguridad
+            foreach ($currentKeys as $column) {
+                if (!$this->isSafeIdentifier($column)) {
+                    throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+                }
+            }
+        }
+
+        // FALLBACK: Usar SQL raw con lotes ya que el binario no soporta REPLACE INTO nativo
+        return $this->replaceIntoManyFallback($records, $batchSize);
+    }
+    
+    /**
+     * Implementación fallback para REPLACE INTO múltiple usando SQL raw
+     *
+     * @param array<int, array<string, mixed>> $records Array de registros
+     * @param int $batchSize Tamaño del lote
+     * @return array<string, mixed> Información sobre la operación
+     */
+    private function replaceIntoManyFallback(array $records, int $batchSize): array
+    {
+        if (!($this->orm instanceof VersaORM)) {
+            throw new VersaORMException('VersaORM instance is required for replaceIntoMany');
+        }
+        
+        // Verificar que estamos usando MySQL
+        $config = $this->orm->getConfig();
+        if (($config['driver'] ?? '') !== 'mysql') {
+            throw new VersaORMException('REPLACE INTO operations are only supported for MySQL');
+        }
+        
+        $totalReplaced = 0;
+        $batchesProcessed = 0;
+        $recordBatches = array_chunk($records, $batchSize);
+        
+        foreach ($recordBatches as $batch) {
+            // Construir SQL para este lote
+            $columns = array_keys($batch[0]);
+            $valueGroups = [];
+            $allValues = [];
+            
+            foreach ($batch as $record) {
+                $placeholders = array_fill(0, count($record), '?');
+                $valueGroups[] = '(' . implode(', ', $placeholders) . ')';
+                $allValues = array_merge($allValues, array_values($record));
+            }
+            
+            $sql = sprintf(
+                'REPLACE INTO `%s` (`%s`) VALUES %s',
+                $this->table,
+                implode('`, `', $columns),
+                implode(', ', $valueGroups)
+            );
+            
+            // Ejecutar el lote
+            $this->orm->exec($sql, $allValues);
+            $totalReplaced += count($batch);
+            $batchesProcessed++;
+        }
+        
+        return [
+            'status' => 'success',
+            'total_replaced' => $totalReplaced,
+            'batches_processed' => $batchesProcessed,
+            'batch_size' => $batchSize,
+            'total_records' => count($records),
+            'table' => $this->table
+        ];
     }
 
     /**
