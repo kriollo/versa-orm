@@ -99,6 +99,20 @@ class VersaORM
         // Log de la acción ejecutada
         $this->logDebug("Executing action: {$action}", ['params' => $params]);
 
+        // Debug temporal para advanced_sql
+        if ($action === 'advanced_sql') {
+            // fwrite(STDERR, "=== DEBUG VersaORM::execute advanced_sql ===\n");
+            // fwrite(STDERR, "Action: " . $action . "\n");
+            // fwrite(STDERR, "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n");
+        }
+
+        // Debug para raw también
+        if ($action === 'raw') {
+            // fwrite(STDERR, "=== DEBUG VersaORM::execute raw ===\n");
+            // fwrite(STDERR, "Action: " . $action . "\n");
+            // fwrite(STDERR, "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n");
+            // fwrite(STDERR, "Config antes de transformar: " . json_encode($this->config, JSON_PRETTY_PRINT) . "\n");
+        }
 
         try {
             // Convertir configuración para compatibilidad con Rust
@@ -110,18 +124,23 @@ class VersaORM
 
             $payload = json_encode(
                 [
-                'config' => $rustConfig,
-                'action' => $action,
-                'params' => $params,
-                'freeze_state' => [
-                    'global_frozen' => $this->isFrozen,
-                    'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
-                ],
+                    'config' => $rustConfig,
+                    'action' => $action,
+                    'params' => $params,
+                    'freeze_state' => [
+                        'global_frozen' => $this->isFrozen,
+                        'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
+                    ],
                 ],
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
             );
 
             // Debug: Log the JSON payload being sent to Rust
+            // if ($action === 'raw') {
+            //     fwrite(STDERR, "=== JSON PAYLOAD ===\n");
+            //     fwrite(STDERR, $payload . "\n");
+            //     fwrite(STDERR, "=== END PAYLOAD ===\n");
+            // }
             error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
 
             // If in debug mode and JSON_DUMP environment variable is set, dump and exit
@@ -183,6 +202,14 @@ class VersaORM
             // Limpiar la salida de logs de debug del binario Rust
             $cleanOutput = $this->cleanRustDebugOutput($output);
             $response = json_decode($cleanOutput, true, 512, JSON_THROW_ON_ERROR);
+
+            // Debug temporal para advanced_sql
+            if ($action === 'advanced_sql') {
+                // echo "=== DEBUG Raw Output ===\n";
+                // echo "Raw output: " . substr($output, 0, 1000) . "\n";
+                // echo "Clean output: " . substr($cleanOutput, 0, 1000) . "\n";
+                // echo "Response: " . json_encode($response, JSON_PRETTY_PRINT) . "\n";
+            }
         } catch (\JsonException $e) {
             throw new VersaORMException(
                 sprintf(
@@ -343,9 +370,9 @@ class VersaORM
         $this->logSecurityEvent(
             "FREEZE_MODE_{$status}",
             [
-            'global_freeze' => $frozen,
-            'timestamp' => date('Y-m-d H:i:s'),
-            'trace' => $this->getDebugStackTrace(),
+                'global_freeze' => $frozen,
+                'timestamp' => date('Y-m-d H:i:s'),
+                'trace' => $this->getDebugStackTrace(),
             ]
         );
 
@@ -382,9 +409,9 @@ class VersaORM
         $this->logSecurityEvent(
             "MODEL_{$status}",
             [
-            'model_class' => $modelClass,
-            'frozen' => $frozen,
-            'timestamp' => date('Y-m-d H:i:s'),
+                'model_class' => $modelClass,
+                'frozen' => $frozen,
+                'timestamp' => date('Y-m-d H:i:s'),
             ]
         );
 
@@ -433,13 +460,13 @@ class VersaORM
             $this->logSecurityEvent(
                 'FREEZE_VIOLATION_ATTEMPT',
                 [
-                'operation' => $operation,
-                'model_class' => $modelClass,
-                'global_frozen' => $isGloballyFrozen,
-                'model_frozen' => $isModelFrozen,
-                'context' => $context,
-                'timestamp' => date('Y-m-d H:i:s'),
-                'trace' => $this->getDebugStackTrace(),
+                    'operation' => $operation,
+                    'model_class' => $modelClass,
+                    'global_frozen' => $isGloballyFrozen,
+                    'model_frozen' => $isModelFrozen,
+                    'context' => $context,
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'trace' => $this->getDebugStackTrace(),
                 ]
             );
 
@@ -567,9 +594,24 @@ class VersaORM
 
         // Validar acciones conocidas
         $validActions = [
-            'query', 'raw', 'schema', 'cache', 'insert', 'insertGetId', 'update', 'delete',
-            'query_plan', 'explain_plan', 'upsert', 'upsertMany', 'replaceInto', 'replaceIntoMany',
-            'insertMany', 'updateMany', 'deleteMany', 'advanced_sql',
+            'query',
+            'raw',
+            'schema',
+            'cache',
+            'insert',
+            'insertGetId',
+            'update',
+            'delete',
+            'query_plan',
+            'explain_plan',
+            'upsert',
+            'upsertMany',
+            'replaceInto',
+            'replaceIntoMany',
+            'insertMany',
+            'updateMany',
+            'deleteMany',
+            'advanced_sql',
         ];
         if (!in_array($action, $validActions)) {
             throw new VersaORMException(

@@ -3526,7 +3526,9 @@ async fn handle_advanced_aggregation(
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| ("Missing column for percentile".to_string(), None, None))?;
 
-            let percentile = params.get("percentile")
+            let percentile = params.get("options")
+                .and_then(|opts| opts.as_object())
+                .and_then(|opts| opts.get("percentile"))
                 .and_then(|v| v.as_f64())
                 .ok_or_else(|| ("Missing percentile value".to_string(), None, None))?;
 
@@ -3586,10 +3588,12 @@ async fn handle_advanced_aggregation(
 
     let mut bindings = Vec::new();
 
-    // Agregar cláusulas WHERE si existen
-    if let Some(where_conditions) = params.get("where").and_then(|v| v.as_array()) {
-        let where_clause = build_where_clause(where_conditions, &mut bindings)?;
-        sql.push_str(&format!(" WHERE {}", where_clause));
+    // Agregar cláusulas WHERE si existen y no están vacías
+    if let Some(where_conditions) = params.get("wheres").and_then(|v| v.as_array()) {
+        if !where_conditions.is_empty() {
+            let where_clause = build_where_clause(where_conditions, &mut bindings)?;
+            sql.push_str(&format!(" WHERE {}", where_clause));
+        }
     }
 
     // Agregar GROUP BY si existe
@@ -3604,10 +3608,12 @@ async fn handle_advanced_aggregation(
         }
     }
 
-    // Agregar HAVING si existe
+    // Agregar HAVING si existe y no está vacío
     if let Some(having_conditions) = params.get("having").and_then(|v| v.as_array()) {
-        let having_clause = build_where_clause(having_conditions, &mut bindings)?;
-        sql.push_str(&format!(" HAVING {}", having_clause));
+        if !having_conditions.is_empty() {
+            let having_clause = build_where_clause(having_conditions, &mut bindings)?;
+            sql.push_str(&format!(" HAVING {}", having_clause));
+        }
     }
 
     // Agregar ORDER BY si existe

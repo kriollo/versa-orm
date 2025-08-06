@@ -1709,7 +1709,7 @@ class QueryBuilder
      *
      * @param  array<string, mixed> $data          Datos del registro
      * @param  array<int, string>   $uniqueKeys    Columnas para verificar existencia
-     * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional, por defecto todas)
+     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -1863,7 +1863,7 @@ class QueryBuilder
      *
      * @param  array<string, mixed> $data        Datos del registro
      * @param  array<string, mixed> $conditions  Condiciones personalizadas para verificar existencia
-     * @param  array<int, string>   $updateColumns Columnas a actualizar (opcional)
+     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -2740,20 +2740,25 @@ class QueryBuilder
      */
     private function executeAdvancedSQL(array $params): array
     {
+        // echo "=== DEBUG executeAdvancedSQL (Private) ===\n";
+        // echo "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n";
+
+        error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
         if (!($this->orm instanceof VersaORM)) {
-            throw new VersaORMException('VersaORM instance is required for advanced SQL operations');
+            throw new \Exception('VersaORM instance is required for advanced SQL execution.');
         }
 
-        // Usar reflexión para acceder al método execute privado
+        // Usar reflexión para acceder al método execute de VersaORM
         $reflection = new \ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
+        // Las operaciones avanzadas van como acción 'advanced_sql'
         $result = $executeMethod->invoke($this->orm, 'advanced_sql', $params);
 
-        // Verificar si el resultado es válido
-        if (!is_array($result)) {
-            throw new VersaORMException('Invalid result from advanced SQL operation');
+        // Si el resultado es un array con 'rows', extraer solo las filas
+        if (is_array($result) && isset($result['rows'])) {
+            return $result['rows'];
         }
 
         return $result;
@@ -2931,7 +2936,7 @@ class QueryBuilder
      * @return array<string, mixed> Resultados de la agregación
      * @throws VersaORMException
      */
-    public function advancedAggregation(string $type, string $column, array $options = []): array
+    public function advancedAggregation(string $type, string $column, array $options = [], array $groupBy = [], string $alias = ''): array
     {
         if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
@@ -2959,9 +2964,19 @@ class QueryBuilder
             'table' => $this->table,
             'wheres' => $this->wheres,
             'joins' => $this->joins,
-            'groupBy' => $this->groupBy,
+            'groupBy' => !empty($groupBy) ? $groupBy : $this->groupBy,
             'having' => $this->having,
+            'alias' => $alias,
         ];
+
+        // Debug temporal
+        // echo "=== DEBUG advancedAggregation ===\n";
+        // echo "Type: " . $type . "\n";
+        // echo "Column: " . $column . "\n";
+        // echo "Options: " . json_encode($options) . "\n";
+        // echo "GroupBy: " . json_encode($groupBy) . "\n";
+        // echo "Alias: " . $alias . "\n";
+        // echo "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n";
 
         return $this->executeAdvancedSQL($params);
     }
