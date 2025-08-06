@@ -39,6 +39,15 @@ $user = User::create([
 ]);
 
 $user->update(['status' => 'inactive']);
+
+// 🆕 Con Modo Lazy (optimización automática para consultas complejas)
+$users = $orm->table('users')
+    ->lazy()                           // 🚀 Activa optimización automática
+    ->where('status', '=', 'active')
+    ->where('age', '>=', 18)
+    ->join('profiles', 'users.id', '=', 'profiles.user_id')
+    ->orderBy('created_at', 'desc')
+    ->collect();                       // ✅ Ejecuta consulta optimizada
 ```
 
 ### 🏆 ¿Por qué VersaORM es tu mejor opción?
@@ -355,6 +364,8 @@ try {
 
 ### ⚡ Alto Rendimiento
 - **Núcleo en Rust**: Motor de consultas compilado para velocidad extrema
+- **🆕 Modo Lazy**: Planificador de consultas que optimiza automáticamente las operaciones complejas
+- **Optimización automática**: Combina WHERE clauses y optimiza JOINs automáticamente
 - **Conexiones optimizadas**: Pool de conexiones inteligente
 - **Caché integrado**: Sistema de caché automático para consultas frecuentes
 
