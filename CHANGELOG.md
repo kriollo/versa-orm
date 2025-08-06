@@ -40,6 +40,10 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
   - Tests de validación de estructura JSON (514 líneas)
   - Tests de construcción SQL específica por base de datos
   - Tests de manejo de errores y casos edge
+- **Nuevos tests PHP específicos para operaciones individuales**:
+  - `tests/UpsertOperationsTest.php`: 16 tests completos para upsert(), insertOrUpdate(), save(), createOrUpdate()
+  - `tests/ReplaceIntoTest.php`: 12 tests completos para replaceInto() con casos de uso específicos
+  - Total: 28 tests nuevos con 151 aserciones que validan todos los métodos CRUD individuales
 - Tests PHP existentes actualizados (`QueryBuilderBatchTest.php`)
   - Validación de `upsertMany` para operaciones batch
   - Tests de validación de parámetros y casos límite
