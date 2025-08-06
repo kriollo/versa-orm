@@ -285,7 +285,7 @@ try {
 
             // Contar total para paginación (consulta simple sin JOINs)
             $countQueryBuilder = $orm->table('tasks as t');
-            
+
             // Aplicar los mismos filtros para el conteo
             if ($statusFilter) {
                 $countQueryBuilder->where('t.status', '=', $statusFilter);
@@ -299,7 +299,7 @@ try {
             if ($userFilter) {
                 $countQueryBuilder->where('t.user_id', '=', (int)$userFilter);
             }
-            
+
             $totalTasks = $countQueryBuilder->count();                      // Conteo optimizado sin JOINs
             $totalPages = $perPage > 0 ? ceil($totalTasks / $perPage) : 1;
 
