@@ -1664,19 +1664,28 @@ async fn handle_raw_action(
 
     let query_upper = query.trim().to_uppercase();
 
-    // Para transacciones, necesitamos manejar el estado de autocommit
+    // Para transacciones, necesitamos manejar el estado según el driver
     if query_upper.starts_with("BEGIN") || query_upper.starts_with("START TRANSACTION") {
-        // Primero, deshabilitar autocommit
-        if let Err(e) = connection.execute_unprepared("SET autocommit = 0").await {
-            return Err((
-                format!("Failed to disable autocommit: {}", e),
-                Some("SET autocommit = 0".to_string()),
-                None,
-            ));
+        // Manejar autocommit solo para MySQL, PostgreSQL usa transacciones diferentes
+        if connection.get_driver() == "mysql" {
+            if let Err(e) = connection.execute_unprepared("SET autocommit = 0").await {
+                return Err((
+                    format!("Failed to disable autocommit: {}", e),
+                    Some("SET autocommit = 0".to_string()),
+                    None,
+                ));
+            }
         }
-        // Luego iniciar la transacción
+
+        // Para PostgreSQL y MySQL, usar BEGIN o START TRANSACTION
+        let transaction_cmd = if connection.get_driver().contains("postgres") {
+            "BEGIN"
+        } else {
+            "START TRANSACTION"
+        };
+
         connection
-            .execute_unprepared("START TRANSACTION")
+            .execute_unprepared(transaction_cmd)
             .await
             .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
             .map_err(|e| {
@@ -1687,9 +1696,14 @@ async fn handle_raw_action(
                 )
             })
     } else if query_upper.starts_with("COMMIT") {
-        // Hacer commit y rehabilitar autocommit
+        // Hacer commit
         let commit_result = connection.execute_unprepared("COMMIT").await;
-        let _ = connection.execute_unprepared("SET autocommit = 1").await; // Siempre rehabilitar
+
+        // Rehabilitar autocommit solo para MySQL
+        if connection.get_driver() == "mysql" {
+            let _ = connection.execute_unprepared("SET autocommit = 1").await;
+        }
+
         commit_result
             .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
             .map_err(|e| {
@@ -1700,9 +1714,14 @@ async fn handle_raw_action(
                 )
             })
     } else if query_upper.starts_with("ROLLBACK") {
-        // Hacer rollback y rehabilitar autocommit
+        // Hacer rollback
         let rollback_result = connection.execute_unprepared("ROLLBACK").await;
-        let _ = connection.execute_unprepared("SET autocommit = 1").await; // Siempre rehabilitar
+
+        // Rehabilitar autocommit solo para MySQL
+        if connection.get_driver() == "mysql" {
+            let _ = connection.execute_unprepared("SET autocommit = 1").await;
+        }
+
         rollback_result
             .map(|rows_affected| serde_json::json!({ "rows_affected": rows_affected }))
             .map_err(|e| {
@@ -1735,17 +1754,43 @@ async fn handle_raw_action(
             // Convertir placeholders según el driver de base de datos
             let converted_query = convert_placeholders(query, connection.get_driver());
 
-            let rows = connection
-                .execute_raw(&converted_query, bindings.clone())
-                .await
-                .map_err(|e| {
-                    (
-                        format!("Raw query execution failed: {}", e),
-                        Some(converted_query.clone()),
-                        Some(bindings.clone()),
-                    )
-                })?;
-            Ok(serde_json::to_value(rows).unwrap())
+            // Detectar si es un INSERT para manejar retorno de ID
+            if converted_query.trim().to_uppercase().starts_with("INSERT") {
+                let result = connection
+                    .execute_insert_with_returning(&converted_query, bindings.clone())
+                    .await
+                    .map_err(|e| {
+                        (
+                            format!("Raw query execution failed: {}", e),
+                            Some(converted_query.clone()),
+                            Some(bindings.clone()),
+                        )
+                    })?;
+                
+                // Para INSERTs, retornar el resultado en formato compatible con rows
+                if let Some(id) = result.get("id") {
+                    // Crear un formato que simule una row con el ID
+                    let row_result = vec![serde_json::json!({
+                        "id": id,
+                        "rows_affected": result.get("rows_affected").unwrap_or(&serde_json::json!(1))
+                    })];
+                    Ok(serde_json::to_value(row_result).unwrap())
+                } else {
+                    Ok(result)
+                }
+            } else {
+                let rows = connection
+                    .execute_raw(&converted_query, bindings.clone())
+                    .await
+                    .map_err(|e| {
+                        (
+                            format!("Raw query execution failed: {}", e),
+                            Some(converted_query.clone()),
+                            Some(bindings.clone()),
+                        )
+                    })?;
+                Ok(serde_json::to_value(rows).unwrap())
+            }
         }
     }
 }

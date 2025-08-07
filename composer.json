@@ -48,12 +48,15 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "VersaORM\\Tests\\": "tests/"
+      "VersaORM\\Tests\\": "tests/",
+      "VersaORM\\Tests\\PostgreSQL\\": "testPostgreSQL/"
     }
   },
   "scripts": {
-    "test": "phpunit",
-    "test-coverage": "phpunit --coverage-html coverage",
+    "test-mysql": "phpunit",
+    "test-mysql-coverage": "phpunit --coverage-html coverage",
+    "test-postgresql": "phpunit --configuration phpunit-postgresql.xml",
+    "test-postgresql-coverage": "phpunit --configuration phpunit-postgresql.xml --coverage-html coverage-postgresql",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "cs-check": "phpcs",
     "cs-fix": "phpcbf",

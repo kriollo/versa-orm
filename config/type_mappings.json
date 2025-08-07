@@ -1,0 +1,84 @@
+{
+    "type_mappings": [
+        {
+            "from": "json",
+            "to": "array",
+            "description": "Convert JSON strings to PHP arrays automatically"
+        },
+        {
+            "from": "uuid",
+            "to": "string",
+            "description": "Handle UUID as string with validation"
+        },
+        {
+            "from": "inet",
+            "to": "string",
+            "description": "PostgreSQL INET type to string"
+        },
+        {
+            "from": "enum",
+            "to": "string",
+            "description": "MySQL ENUM to string with validation"
+        },
+        {
+            "from": "set",
+            "to": "array",
+            "description": "MySQL SET to array conversion"
+        },
+        {
+            "from": "blob",
+            "to": "binary",
+            "custom_cast": "base64_decode",
+            "description": "Binary data with Base64 encoding"
+        },
+        {
+            "from": "timestamp",
+            "to": "datetime",
+            "description": "Timestamp to DateTime object"
+        },
+        {
+            "from": "decimal",
+            "to": "float",
+            "description": "High precision decimal to float"
+        },
+        {
+            "from": "array",
+            "to": "json",
+            "description": "PostgreSQL array types to JSON"
+        }
+    ],
+    "database_specific": {
+        "mysql": {
+            "geometry": "string",
+            "point": "array",
+            "linestring": "array",
+            "polygon": "array"
+        },
+        "postgresql": {
+            "jsonb": "array",
+            "uuid": "string",
+            "inet": "string",
+            "cidr": "string",
+            "macaddr": "string",
+            "tsvector": "string",
+            "tsquery": "string"
+        },
+        "sqlite": {
+            "json": "array",
+            "blob": "binary"
+        }
+    },
+    "validation_rules": {
+        "uuid": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            "case_insensitive": true
+        },
+        "email": {
+            "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        },
+        "inet": {
+            "ipv4": "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+            "ipv6": "^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
+        }
+    }
+}

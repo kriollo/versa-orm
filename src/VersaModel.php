@@ -763,35 +763,49 @@ class VersaModel implements TypedModelInterface
             $placeholders = array_fill(0, count($fields), '?');
 
             $sql = "INSERT INTO {$this->table} (" . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
-            $orm->exec($sql, array_values($filteredAttributes));
+            $result = $orm->exec($sql, array_values($filteredAttributes));
+
+            // DEBUG: Ver qué retorna exec()
+            error_log("=== DEBUG INSERT RESULT ===");
+            error_log("Result type: " . gettype($result));
+            error_log("Result content: " . var_export($result, true));
+            error_log("==========================");
 
             // Obtener el ID del registro recién insertado
-            // Como LAST_INSERT_ID() no funciona como esperado, buscaremos el registro más reciente
-            // que coincida con los datos que acabamos de insertar
-            $whereConditions = [];
-            $whereParams = [];
-
-            // Usar campos únicos para encontrar el registro
-            if (isset($filteredAttributes['email'])) {
-                $whereConditions[] = 'email = ?';
-                $whereParams[] = $filteredAttributes['email'];
+            // Para PostgreSQL/MySQL con nuestro nuevo sistema, el resultado puede contener el ID
+            if (is_array($result) && isset($result['id'])) {
+                // Resultado con ID retornado directamente (PostgreSQL RETURNING, MySQL last_insert_id)
+                $this->attributes['id'] = $result['id'];
+            } elseif (is_array($result) && !empty($result) && is_array($result[0]) && isset($result[0]['id'])) {
+                // Resultado estándar de SELECT con ID
+                $this->attributes['id'] = $result[0]['id'];
             } else {
-                // Si no hay email, usar otros campos como fallback
-                foreach ($filteredAttributes as $key => $value) {
-                    if (is_string($value) || is_numeric($value)) {
-                        $whereConditions[] = "{$key} = ?";
-                        $whereParams[] = $value;
-                        break; // Solo usar el primer campo válido
+                // Fallback: buscar el registro más reciente que coincida con los datos insertados
+                $whereConditions = [];
+                $whereParams = [];
+
+                // Usar campos únicos para encontrar el registro
+                if (isset($filteredAttributes['email'])) {
+                    $whereConditions[] = 'email = ?';
+                    $whereParams[] = $filteredAttributes['email'];
+                } else {
+                    // Si no hay email, usar otros campos como fallback
+                    foreach ($filteredAttributes as $key => $value) {
+                        if (is_string($value) || is_numeric($value)) {
+                            $whereConditions[] = "{$key} = ?";
+                            $whereParams[] = $value;
+                            break; // Solo usar el primer campo válido
+                        }
                     }
                 }
-            }
 
-            if (!empty($whereConditions)) {
-                $whereClause = implode(' AND ', $whereConditions);
-                $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
+                if (!empty($whereConditions)) {
+                    $whereClause = implode(' AND ', $whereConditions);
+                    $fallbackResult = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
 
-                if (is_array($result) && !empty($result) && is_array($result[0])) {
-                    $this->attributes = array_merge($this->attributes, $result[0]);
+                    if (is_array($fallbackResult) && !empty($fallbackResult) && is_array($fallbackResult[0])) {
+                        $this->attributes = array_merge($this->attributes, $fallbackResult[0]);
+                    }
                 }
             }
         }

@@ -221,6 +221,69 @@ impl ConnectionManager {
             )),
         }
     }
+
+    // Función específica para ejecutar INSERT con RETURNING en PostgreSQL
+    pub async fn execute_insert_with_returning(
+        &self,
+        query: &str,
+        params: Vec<serde_json::Value>,
+    ) -> Result<serde_json::Value, sqlx::Error> {
+        match self.pool.as_ref() {
+            Some(DatabasePool::Postgres(pool)) => {
+                // Para PostgreSQL, agregar RETURNING id si no existe
+                let final_query = if query.trim().to_uppercase().starts_with("INSERT") 
+                    && !query.to_uppercase().contains("RETURNING") {
+                    format!("{} RETURNING id", query)
+                } else {
+                    query.to_string()
+                };
+
+                let mut query_builder = sqlx::query(&final_query);
+                for param in params {
+                    query_builder = bind_value_postgres(query_builder, param);
+                }
+                
+                // Ejecutar y obtener el resultado
+                let result = query_builder.fetch_one(pool).await?;
+                
+                // Extraer el ID retornado
+                let id_value = postgres_value_to_json(&result, "id");
+                Ok(serde_json::json!({
+                    "id": id_value,
+                    "rows_affected": 1
+                }))
+            }
+            Some(DatabasePool::MySql(pool)) => {
+                // Para MySQL, usar execute normal y last_insert_id
+                let mut query_builder = sqlx::query(query);
+                for param in params {
+                    query_builder = bind_value_mysql(query_builder, param);
+                }
+                let result = query_builder.execute(pool).await?;
+                
+                Ok(serde_json::json!({
+                    "id": result.last_insert_id(),
+                    "rows_affected": result.rows_affected()
+                }))
+            }
+            Some(DatabasePool::Sqlite(pool)) => {
+                // Para SQLite, usar execute normal y last_insert_rowid
+                let mut query_builder = sqlx::query(query);
+                for param in params {
+                    query_builder = bind_value_sqlite(query_builder, param);
+                }
+                let result = query_builder.execute(pool).await?;
+                
+                Ok(serde_json::json!({
+                    "id": result.last_insert_rowid(),
+                    "rows_affected": result.rows_affected()
+                }))
+            }
+            None => Err(sqlx::Error::Configuration(
+                "Not connected to database".into(),
+            )),
+        }
+    }
 }
 
 // Helper functions para binding de parámetros
@@ -250,7 +313,20 @@ fn bind_value_postgres(
     value: serde_json::Value,
 ) -> sqlx::query::Query<'_, Postgres, sqlx::postgres::PgArguments> {
     match value {
-        serde_json::Value::String(s) => query.bind(s),
+        serde_json::Value::String(s) => {
+            // Verificar si es un timestamp válido para PostgreSQL
+            if is_timestamp_string(&s) {
+                // Convertir timestamp string a tipo PostgreSQL compatible
+                if let Ok(datetime) = chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S") {
+                    query.bind(datetime)
+                } else {
+                    // Si no se puede parsear como timestamp, bind como string
+                    query.bind(s)
+                }
+            } else {
+                query.bind(s)
+            }
+        },
         serde_json::Value::Number(n) => {
             if let Some(i) = n.as_i64() {
                 query.bind(i)
@@ -261,9 +337,19 @@ fn bind_value_postgres(
             }
         }
         serde_json::Value::Bool(b) => query.bind(b),
-        serde_json::Value::Null => query.bind(Option::<String>::None),
+        serde_json::Value::Null => {
+            // Para PostgreSQL, bind null como Option<String>::None que es más compatible
+            query.bind(Option::<i32>::None)
+        },
         _ => query.bind(value.to_string()),
     }
+}
+
+// Helper function para detectar si un string es un timestamp
+fn is_timestamp_string(s: &str) -> bool {
+    // Detectar formato YYYY-MM-DD HH:MM:SS o similar
+    let timestamp_regex = regex::Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").unwrap();
+    timestamp_regex.is_match(s)
 }
 
 fn bind_value_sqlite<'a>(
