@@ -328,9 +328,23 @@ pub fn cast_uuid_type(s: String) -> Value {
 #[allow(dead_code)]
 pub fn cast_inet_type(s: String) -> Value {
     // Regex básica para validar IPv4 y IPv6
-    let ipv4_regex = Regex::new(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:/[0-9]{1,2})?$").unwrap();
-    let ipv6_regex =
-        Regex::new(r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?:/[0-9]{1,3})?$").unwrap();
+    let ipv4_regex = match Regex::new(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:/[0-9]{1,2})?$") {
+        Ok(regex) => regex,
+        Err(_) => {
+            // Si la regex falla, retornar null
+            crate::log_error_msg("Failed to compile IPv4 regex pattern");
+            return Value::Null;
+        }
+    };
+    
+    let ipv6_regex = match Regex::new(r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(?:/[0-9]{1,3})?$") {
+        Ok(regex) => regex,
+        Err(_) => {
+            // Si la regex falla, retornar null
+            crate::log_error_msg("Failed to compile IPv6 regex pattern");
+            return Value::Null;
+        }
+    };
 
     if ipv4_regex.is_match(&s) || ipv6_regex.is_match(&s) {
         Value::String(s)
@@ -534,6 +548,134 @@ pub fn validate_type_compatibility(value: &Value, expected_type: &str) -> Result
 /// Convierte un valor de fila a JSON (implementación simplificada)
 pub fn simple_value_placeholder() -> serde_json::Value {
     serde_json::Value::String("data".to_string())
+}
+
+/// Convierte placeholders de PHP (?) al formato específico de cada base de datos
+/// PostgreSQL usa $1, $2, $3..., mientras que MySQL y SQLite usan ?
+pub fn convert_placeholders_for_database(sql: &str, driver: &str) -> String {
+    match driver.to_lowercase().as_str() {
+        "postgres" | "postgresql" | "pgsql" => convert_question_marks_to_numbered(sql),
+        "mysql" | "sqlite" => sql.to_string(), // Ya usan ? que es lo correcto
+        _ => sql.to_string(), // Fallback para drivers desconocidos
+    }
+}
+
+/// Convierte placeholders ? a formato PostgreSQL ($1, $2, $3...)
+fn convert_question_marks_to_numbered(sql: &str) -> String {
+    let mut result = String::new();
+    let mut param_count = 1;
+    let mut chars = sql.chars().peekable();
+    let mut in_string = false;
+    let mut string_delimiter = ' ';
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            // Detectar inicio/fin de strings
+            '\'' | '"' => {
+                if !in_string {
+                    in_string = true;
+                    string_delimiter = ch;
+                    result.push(ch);
+                } else if ch == string_delimiter {
+                    // Verificar si es un escape
+                    if chars.peek() == Some(&string_delimiter) {
+                        // Es un escape, agregar ambos caracteres
+                        result.push(ch);
+                        result.push(chars.next().unwrap());
+                    } else {
+                        // Es el final de la string
+                        in_string = false;
+                        result.push(ch);
+                    }
+                } else {
+                    result.push(ch);
+                }
+            }
+            // Solo convertir ? que no estén dentro de strings
+            '?' if !in_string => {
+                result.push_str(&format!("${}", param_count));
+                param_count += 1;
+            }
+            _ => {
+                result.push(ch);
+            }
+        }
+    }
+
+    result
+}
+
+/// Valida que el número de placeholders coincida con el número de parámetros
+pub fn validate_placeholder_count(sql: &str, param_count: usize, driver: &str) -> Result<(), String> {
+    let placeholder_count = match driver.to_lowercase().as_str() {
+        "postgres" | "postgresql" | "pgsql" => count_numbered_placeholders(sql),
+        "mysql" | "sqlite" => count_question_mark_placeholders(sql),
+        _ => count_question_mark_placeholders(sql),
+    };
+
+    if placeholder_count != param_count {
+        return Err(format!(
+            "Placeholder count mismatch: SQL has {} placeholders but {} parameters provided",
+            placeholder_count, param_count
+        ));
+    }
+
+    Ok(())
+}
+
+/// Cuenta placeholders ? en el SQL (ignorando los que están dentro de strings)
+fn count_question_mark_placeholders(sql: &str) -> usize {
+    let mut count = 0;
+    let mut chars = sql.chars().peekable();
+    let mut in_string = false;
+    let mut string_delimiter = ' ';
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\'' | '"' => {
+                if !in_string {
+                    in_string = true;
+                    string_delimiter = ch;
+                } else if ch == string_delimiter {
+                    if chars.peek() == Some(&string_delimiter) {
+                        chars.next(); // Skip escaped delimiter
+                    } else {
+                        in_string = false;
+                    }
+                }
+            }
+            '?' if !in_string => {
+                count += 1;
+            }
+            _ => {}
+        }
+    }
+
+    count
+}
+
+/// Cuenta placeholders $n en el SQL (para PostgreSQL)
+fn count_numbered_placeholders(sql: &str) -> usize {
+    let re = Regex::new(r"\$\d+").unwrap();
+    let matches: Vec<_> = re.find_iter(sql).collect();
+
+    // Encontrar el número más alto para saber cuántos parámetros hay
+    let mut max_param = 0;
+    for mat in matches {
+        if let Ok(num) = mat.as_str()[1..].parse::<usize>() {
+            max_param = max_param.max(num);
+        }
+    }
+
+    max_param
+}
+
+/// Función de utilidad para log de debug de conversión de placeholders
+pub fn log_placeholder_conversion(original_sql: &str, converted_sql: &str, driver: &str) {
+    crate::log_debug_msg(&format!(
+        "Placeholder conversion for {}: '{}' -> '{}'",
+        driver, original_sql, converted_sql
+    ));
 }
 
 // mod tests { ... } // Todos los tests han sido movidos a tests.rs

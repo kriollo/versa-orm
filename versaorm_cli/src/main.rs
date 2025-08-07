@@ -166,18 +166,7 @@ fn generate_placeholders_from_offset(count: usize, driver: &str, offset: usize) 
 
 /// Convierte placeholders ? a formato específico de la base de datos
 fn convert_placeholders(query: &str, driver: &str) -> String {
-    match driver {
-        "postgres" | "postgresql" | "pgsql" => {
-            let mut converted = query.to_string();
-            let mut counter = 1;
-            while let Some(pos) = converted.find('?') {
-                converted.replace_range(pos..pos+1, &format!("${}", counter));
-                counter += 1;
-            }
-            converted
-        }
-        _ => query.to_string()
-    }
+    utils::convert_placeholders_for_database(query, driver)
 }
 
 // Módulos del ORM
@@ -821,7 +810,7 @@ async fn handle_query_action(
 
     let table_name = query_builder.table.clone();
 
-    let (sql, sql_params) = query_builder.build_sql_with_method(&query_params.method);
+    let (sql, sql_params) = query_builder.build_sql_with_method_for_driver(&query_params.method, connection.get_driver());
 
     // Debug SQL y parámetros
     log_debug_msg(&format!("METHOD: {}", query_params.method));
@@ -1974,7 +1963,7 @@ async fn handle_update_many(
     }
 
     // Primero, contar cuántos registros serían afectados
-    let (count_sql, count_params) = query_builder.build_sql_with_method("count");
+    let (count_sql, count_params) = query_builder.build_sql_with_method_for_driver("count", connection.get_driver());
     let count_sql = count_sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
 
     let count_rows = connection
@@ -2015,7 +2004,7 @@ async fn handle_update_many(
     }
 
     // Construir la consulta UPDATE
-    let (select_sql, where_params) = query_builder.build_sql_with_method("get");
+    let (select_sql, where_params) = query_builder.build_sql_with_method_for_driver("get", connection.get_driver());
 
     let mut set_clauses = Vec::new();
     let mut update_params = Vec::new();
@@ -2093,7 +2082,7 @@ async fn handle_delete_many(
     }
 
     // Primero, contar cuántos registros serían eliminados
-    let (count_sql, count_params) = query_builder.build_sql_with_method("count");
+    let (count_sql, count_params) = query_builder.build_sql_with_method_for_driver("count", connection.get_driver());
     let count_sql = count_sql.replacen("SELECT *", "SELECT COUNT(*) as count", 1);
 
     let count_rows = connection
@@ -2134,7 +2123,7 @@ async fn handle_delete_many(
     }
 
     // Construir la consulta DELETE
-    let (select_sql, delete_params) = query_builder.build_sql_with_method("get");
+    let (select_sql, delete_params) = query_builder.build_sql_with_method_for_driver("get", connection.get_driver());
 
     // Extraer la cláusula WHERE del SQL de selección
     let where_clause = if select_sql.contains(" WHERE ") {

@@ -321,10 +321,18 @@ impl QueryBuilder {
     }
 
     pub fn build_sql(&self) -> (String, Vec<Value>) {
-        self.build_sql_with_method("get")
+        self.build_sql_with_method_for_driver("get", "mysql") // Default fallback
+    }
+
+    pub fn build_sql_for_driver(&self, driver: &str) -> (String, Vec<Value>) {
+        self.build_sql_with_method_for_driver("get", driver)
     }
 
     pub fn build_sql_with_method(&self, method: &str) -> (String, Vec<Value>) {
+        self.build_sql_with_method_for_driver(method, "mysql") // Default fallback
+    }
+
+    pub fn build_sql_with_method_for_driver(&self, method: &str, driver: &str) -> (String, Vec<Value>) {
         let mut query = String::new();
         let mut params = Vec::new();
 
@@ -546,7 +554,15 @@ impl QueryBuilder {
             query.push_str(&format!(" OFFSET {}", offset));
         }
 
-        (query, params)
+        // Convertir placeholders para el driver específico
+        let final_query = crate::utils::convert_placeholders_for_database(&query, driver);
+
+        // Log para debugging
+        if driver.to_lowercase().contains("postgres") || driver.to_lowercase().contains("pgsql") {
+            crate::utils::log_placeholder_conversion(&query, &final_query, driver);
+        }
+
+        (final_query, params)
     }
 }
 
