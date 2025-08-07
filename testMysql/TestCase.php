@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests;
+namespace VersaORM\Tests\Mysql;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use VersaORM\VersaModel;

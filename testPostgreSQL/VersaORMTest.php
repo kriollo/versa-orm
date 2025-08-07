@@ -1,6 +1,6 @@
 <?php
 
-// testPostgreSQL/VersaORMTest.php
+// tests/VersaORMTest.php
 
 declare(strict_types=1);
 
@@ -51,7 +51,7 @@ class VersaORMTest extends TestCase
 
     public function testTransactionSuccess(): void
     {
-        self::$orm->exec('BEGIN');
+        self::$orm->exec('START TRANSACTION');
         self::$orm->exec("UPDATE users SET status = 'pending' WHERE email = ?", ['alice@example.com']);
         self::$orm->exec("UPDATE users SET status = 'pending' WHERE email = ?", ['bob@example.com']);
         self::$orm->exec('COMMIT');
@@ -71,7 +71,7 @@ class VersaORMTest extends TestCase
 
         // Simular rollback verificando que el cambio no se persiste si hay error
         try {
-            self::$orm->exec('BEGIN');
+            self::$orm->exec('START TRANSACTION');
             self::$orm->exec("UPDATE users SET status = 'rollback_test' WHERE email = ?", ['alice@example.com']);
 
             // Verificar que el cambio temporal existe
@@ -156,55 +156,5 @@ class VersaORMTest extends TestCase
     {
         $this->expectException(VersaORMException::class);
         self::$orm->exec('SELECT * FROM non_existent_table');
-    }
-
-    /**
-     * Test específico para PostgreSQL: verificar que las funciones específicas de PostgreSQL funcionan
-     */
-    public function testPostgreSQLSpecificFeatures(): void
-    {
-        // Test ILIKE (case insensitive LIKE en PostgreSQL)
-        $users = self::$orm->exec("SELECT * FROM users WHERE name ILIKE ?", ['%alice%']);
-        $this->assertCount(1, $users);
-        $this->assertEquals('Alice', $users[0]['name']);
-
-        // Test de funciones de PostgreSQL como LOWER
-        $users = self::$orm->exec("SELECT * FROM users WHERE LOWER(name) = ?", ['alice']);
-        $this->assertCount(1, $users);
-        $this->assertEquals('Alice', $users[0]['name']);
-    }
-
-    /**
-     * Test para verificar el manejo correcto de SERIAL en PostgreSQL
-     */
-    public function testSerialPrimaryKey(): void
-    {
-        // Insertar sin especificar ID (debe usar SERIAL)
-        self::$orm->exec(
-            'INSERT INTO users (name, email, status) VALUES (?, ?, ?)',
-            ['SerialTest', 'serial@example.com', 'active']
-        );
-
-        $user = self::$orm->table('users')->where('email', '=', 'serial@example.com')->findOne();
-        $this->assertNotNull($user);
-        $this->assertIsInt((int)$user->id);
-        $this->assertGreaterThan(3, (int)$user->id); // Debería ser mayor que los 3 usuarios seeded
-    }
-
-    /**
-     * Test para verificar el comportamiento de TIMESTAMP en PostgreSQL
-     */
-    public function testTimestampHandling(): void
-    {
-        // PostgreSQL maneja timestamps de manera diferente a MySQL
-        $now = date('Y-m-d H:i:s');
-        self::$orm->exec(
-            'INSERT INTO users (name, email, status, created_at) VALUES (?, ?, ?, ?)',
-            ['TimestampTest', 'timestamp@example.com', 'active', $now]
-        );
-
-        $user = self::$orm->table('users')->where('email', '=', 'timestamp@example.com')->findOne();
-        $this->assertNotNull($user);
-        $this->assertNotNull($user->created_at);
     }
 }

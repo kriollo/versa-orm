@@ -53,7 +53,7 @@
     }
   },
   "scripts": {
-    "test-mysql": "phpunit",
+    "test-mysql": "phpunit --configuration phpunit-mysql.xml",
     "test-mysql-coverage": "phpunit --coverage-html coverage",
     "test-postgresql": "phpunit --configuration phpunit-postgresql.xml",
     "test-postgresql-coverage": "phpunit --configuration phpunit-postgresql.xml --coverage-html coverage-postgresql",

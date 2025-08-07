@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests;
+namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaModel;
 

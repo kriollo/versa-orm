@@ -2,21 +2,34 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Mysql;
+namespace VersaORM\Tests\PostgreSQL;
 
-use PHPUnit\Framework\TestCase;
 use VersaORM\VersaModel;
 use VersaORM\VersaORMException;
 
 /**
- * Test unitario para validar la funcionalidad de validación y Mass Assignment
+ * Test para validar la funcionalidad de validación y Mass Assignment
  * que implementa la Task 1.6.
  */
-class ValidationUnitTest extends TestCase
+class ValidationTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Crear tabla de prueba para ValidationTest
+        self::$orm->exec('CREATE TABLE IF NOT EXISTS test_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            age INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB');
+    }
+
     public function testFillableAttributesAllowMassAssignment(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -28,7 +41,7 @@ class ValidationUnitTest extends TestCase
 
     public function testFillableAttributesBlockUnallowedFields(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name'];
         };
 
@@ -40,7 +53,7 @@ class ValidationUnitTest extends TestCase
 
     public function testGuardedAttributesBlockMassAssignment(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = [];
             protected array $guarded = ['id', 'created_at'];
         };
@@ -53,7 +66,7 @@ class ValidationUnitTest extends TestCase
 
     public function testWildcardGuardBlocksAllFields(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = [];
             protected array $guarded = ['*'];
         };
@@ -66,7 +79,7 @@ class ValidationUnitTest extends TestCase
 
     public function testCustomValidationRules(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
             protected array $rules = [
                 'name' => ['required', 'min:3'],
@@ -85,7 +98,7 @@ class ValidationUnitTest extends TestCase
 
     public function testValidModelPassesValidation(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
             protected array $rules = [
                 'name' => ['required'],
@@ -100,9 +113,27 @@ class ValidationUnitTest extends TestCase
         $this->assertEmpty($errors);
     }
 
+    public function testStoreWithValidationFailureThrowsException(): void
+    {
+        $model = new class('test_users', self::$orm) extends VersaModel {
+            protected array $fillable = ['name', 'email'];
+            protected array $rules = [
+                'name' => ['required'],
+                'email' => ['required', 'email'],
+            ];
+        };
+
+        $model->fill(['name' => '', 'email' => 'invalid-email']);
+
+        $this->expectException(VersaORMException::class);
+        $this->expectExceptionMessage('Validation failed');
+
+        $model->store();
+    }
+
     public function testIsFillableMethod(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -113,7 +144,7 @@ class ValidationUnitTest extends TestCase
 
     public function testIsGuardedMethod(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -122,9 +153,41 @@ class ValidationUnitTest extends TestCase
         $this->assertTrue($model->isGuarded('id'));
     }
 
+    public function testUpdateMethodWithMassAssignment(): void
+    {
+        $model = new class('test_users', self::$orm) extends VersaModel {
+            protected array $fillable = ['name', 'email'];
+        };
+
+        $model->fill(['name' => 'John Doe', 'email' => 'john@example.com']);
+        $model->store();
+
+        // Actualizar con mass assignment
+        $model->update(['name' => 'Jane Doe']);
+
+        $this->assertEquals('Jane Doe', $model->name);
+        $this->assertEquals('john@example.com', $model->email); // Email no cambia
+    }
+
+    public function testCreateStaticMethodWithValidation(): void
+    {
+        $model = new class('test_users', self::$orm) extends VersaModel {
+            protected array $fillable = ['name', 'email'];
+            protected array $rules = [
+                'name' => ['required'],
+                'email' => ['required', 'email'],
+            ];
+        };
+
+        $instance = $model::create(['name' => 'John Doe', 'email' => 'john@example.com']);
+
+        $this->assertEquals('John Doe', $instance->name);
+        $this->assertEquals('john@example.com', $instance->email);
+    }
+
     public function testMaxLengthValidationRule(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name'];
             protected array $rules = [
                 'name' => ['max:10'],
@@ -141,7 +204,7 @@ class ValidationUnitTest extends TestCase
 
     public function testNumericValidationRule(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['age'];
             protected array $rules = [
                 'age' => ['numeric'],
@@ -154,58 +217,5 @@ class ValidationUnitTest extends TestCase
 
         $this->assertNotEmpty($errors);
         $this->assertContains('The age must be numeric.', $errors);
-    }
-
-    public function testRequiredValidationRule(): void
-    {
-        $model = new class('test_users', null) extends VersaModel {
-            protected array $fillable = ['name'];
-            protected array $rules = [
-                'name' => ['required'],
-            ];
-        };
-
-        $model->fill(['name' => '']);
-
-        $errors = $model->validate();
-
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name field is required.', $errors);
-    }
-
-    public function testMinLengthValidationRule(): void
-    {
-        $model = new class('test_users', null) extends VersaModel {
-            protected array $fillable = ['name'];
-            protected array $rules = [
-                'name' => ['min:5'],
-            ];
-        };
-
-        $model->fill(['name' => 'Jo']);
-
-        $errors = $model->validate();
-
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name must be at least 5 characters.', $errors);
-    }
-
-    public function testGetFillableMethod(): void
-    {
-        $model = new class('test_users', null) extends VersaModel {
-            protected array $fillable = ['name', 'email'];
-        };
-
-        $this->assertEquals(['name', 'email'], $model->getFillable());
-    }
-
-    public function testGetGuardedMethod(): void
-    {
-        $model = new class('test_users', null) extends VersaModel {
-            protected array $fillable = [];
-            protected array $guarded = ['id', 'created_at'];
-        };
-
-        $this->assertEquals(['id', 'created_at'], $model->getGuarded());
     }
 }

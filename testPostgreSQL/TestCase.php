@@ -24,7 +24,7 @@ class TestCase extends BaseTestCase
                 'database' => $config['DB']['DB_NAME'],
                 'debug' => $config['DB']['debug'],
                 'host' => $config['DB']['DB_HOST'] ?? '',
-                'port' => $config['DB']['DB_PORT'] ?? 0,
+                'port' => (int)($config['DB']['DB_PORT'] ?? 0),
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];
@@ -43,19 +43,20 @@ class TestCase extends BaseTestCase
 
     protected function tearDown(): void
     {
-        // Limpia las tablas después de cada test
-        self::$orm->exec('DROP TABLE IF EXISTS posts CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS profiles CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS role_user CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS roles CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS users CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS products CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS test_users CASCADE;');
+        // No es necesario hacer rollback si el esquema se recrea cada vez.
+        self::$orm->exec('DROP TABLE IF EXISTS posts;');
+        self::$orm->exec('DROP TABLE IF EXISTS profiles;');
+        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
+        self::$orm->exec('DROP TABLE IF EXISTS roles;');
+        self::$orm->exec('DROP TABLE IF EXISTS users;');
+        self::$orm->exec('DROP TABLE IF EXISTS products;');
+        self::$orm->exec('DROP TABLE IF EXISTS test_users;');
     }
 
     public static function tearDownAfterClass(): void
     {
         if (self::$schemaCreated) {
+            // self::dropSchema(); // Drop schema can be slow, rollback is enough
             self::$schemaCreated = false;
         }
         self::$orm = null;
@@ -65,92 +66,86 @@ class TestCase extends BaseTestCase
     {
         self::dropSchema(); // Ensure clean state before creating
 
-        // Configuración específica para PostgreSQL
+        // Configuración específica para MySQL
         global $config;
-        if ($config['DB']['DB_DRIVER'] === 'postgresql') {
-            // PostgreSQL no necesita configuraciones especiales como MySQL
+        if ($config['DB']['DB_DRIVER'] === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+            self::$orm->exec('SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";');
         }
 
-        // Crear tabla users con sintaxis PostgreSQL
         self::$orm->exec('
             CREATE TABLE users (
-                id SERIAL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
-                email VARCHAR(191) UNIQUE NOT NULL DEFAULT \'\',
+                email VARCHAR(191) UNIQUE NOT NULL DEFAULT "",
                 status VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
+            ) ENGINE=InnoDB;
         ');
 
-        // Crear tabla profiles
         self::$orm->exec('
             CREATE TABLE profiles (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
                 bio TEXT,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         ');
 
-        // Crear tabla posts
         self::$orm->exec('
             CREATE TABLE posts (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
                 title VARCHAR(255) NOT NULL,
                 content TEXT,
-                published_at TIMESTAMP NULL,
+                published_at DATETIME NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         ');
 
-        // Crear tabla roles
         self::$orm->exec('
             CREATE TABLE roles (
-                id SERIAL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL
-            );
+            ) ENGINE=InnoDB;
         ');
 
-        // Crear tabla role_user (pivot table)
         self::$orm->exec('
             CREATE TABLE role_user (
-                user_id INTEGER,
-                role_id INTEGER,
+                user_id INT,
+                role_id INT,
                 PRIMARY KEY (user_id, role_id),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         ');
 
-        // Crear tabla products
         self::$orm->exec('
             CREATE TABLE products (
                 sku VARCHAR(50) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 price DECIMAL(10, 2) NULL,
-                stock INTEGER DEFAULT 0,
+                stock INT DEFAULT 0,
                 description TEXT NULL,
                 category VARCHAR(100) NULL
-            );
+            ) ENGINE=InnoDB;
         ');
     }
 
     protected static function dropSchema(): void
     {
-        // Usar CASCADE para eliminar dependencias en PostgreSQL
-        self::$orm->exec('DROP TABLE IF EXISTS posts CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS profiles CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS role_user CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS roles CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS users CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS products CASCADE;');
-        self::$orm->exec('DROP TABLE IF EXISTS test_users CASCADE;');
+        self::$orm->exec('DROP TABLE IF EXISTS posts;');
+        self::$orm->exec('DROP TABLE IF EXISTS profiles;');
+        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
+        self::$orm->exec('DROP TABLE IF EXISTS roles;');
+        self::$orm->exec('DROP TABLE IF EXISTS users;');
+        self::$orm->exec('DROP TABLE IF EXISTS products;');
+        self::$orm->exec('DROP TABLE IF EXISTS test_users;');
     }
 
     protected static function seedData(): void
     {
-        // Seed users (PostgreSQL SERIAL maneja el AUTO_INCREMENT)
+        // Seed users (omitir ID, dejar que SQLite asigne automáticamente)
         self::$orm->table('users')->insert(['name' => 'Alice', 'email' => 'alice@example.com', 'status' => 'active']);
         self::$orm->table('users')->insert(['name' => 'Bob', 'email' => 'bob@example.com', 'status' => 'inactive']);
         self::$orm->table('users')->insert(['name' => 'Charlie', 'email' => 'charlie@example.com', 'status' => 'active']);

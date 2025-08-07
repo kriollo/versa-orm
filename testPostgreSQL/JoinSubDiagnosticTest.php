@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Mysql;
+namespace VersaORM\Tests\PostgreSQL;
 
 /**
  * Tests específicos para diagnosticar el problema de joinSub
@@ -269,7 +269,6 @@ class JoinSubDiagnosticTest extends TestCase
                     $this->assertGreaterThan(1, $result['post_count']);
                 }
             }
-
         } catch (\Exception $e) {
             echo '
 [TEST 9] ERROR ejecutando SQL directo: ' . $e->getMessage();

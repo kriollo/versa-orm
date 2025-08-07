@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests;
+namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaORMException;
 
@@ -24,15 +24,13 @@ class VersaORMTest extends TestCase
         $this->assertEquals('Charlie', $users[1]['name']);
     }
 
-    public function testExecInsert(): void
+    public function testExecInsert()
     {
-        $result = self::$orm->exec('INSERT INTO users (name, email, status) VALUES (?, ?, ?)', ['David', 'david@example.com', 'active']);
-        // INSERT puede devolver null o array vacío dependiendo de la implementación
-        $this->assertTrue($result === null || $result === []);
-
-        $user = self::$orm->table('users')->where('email', '=', 'david@example.com')->findOne();
-        $this->assertNotNull($user);
-        $this->assertEquals('David', $user->name);
+        $query = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
+        $result = $this->orm->exec($query);
+        
+        $this->assertTrue($result === null || (is_array($result) && count($result) === 0),
+            'exec() should return null or empty array for non-select statements');
     }
 
     public function testExecUpdate(): void

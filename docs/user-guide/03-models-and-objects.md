@@ -19,7 +19,7 @@ Aquí tienes un ejemplo de un modelo `User` para una tabla `users`.
 // en models/User.php
 namespace App\Models;
 
-use Example\Models\BaseModel; // O tu propio modelo base
+use App\Models\BaseModel; // O tu propio modelo base
 
 class User extends BaseModel
 {

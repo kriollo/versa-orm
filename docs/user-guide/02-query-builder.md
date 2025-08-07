@@ -190,6 +190,12 @@ $data = $orm->table('users')
     ->getAll();
 ```
 
+Nota: También están disponibles joins avanzados cuando tu motor de base de datos los soporta:
+- `fullOuterJoin(string $table, string $firstCol, string $operator, string $secondCol)`
+- `crossJoin(string $table)`
+- `naturalJoin(string $table)`
+- `joinSub(Closure|QueryBuilder $subquery, string $alias, string $firstCol, string $operator, string $secondCol)`
+
 ### Orden, Agrupación y Paginación
 
 - `orderBy(string $column, string $direction = 'asc')`: Ordena los resultados.
@@ -218,10 +224,14 @@ Cuando se trabaja con relaciones de modelos (ver la guía de Modelos y Objetos),
 
 VersaORM soluciona esto con la **carga ansiosa** a través del método `with()`. Este método le dice al ORM que cargue las relaciones especificadas junto con la consulta principal.
 
+Importante: `with()` requiere conocer la clase de modelo asociada a la tabla para resolver y validar los métodos de relación. Tienes dos formas correctas de usarlo:
+- Pasando el `modelClass` al crear el Query Builder: `$orm->table('posts', Post::class)`
+- Consultando directamente desde tu modelo: `Post::...`
+
 **Ejemplo del problema N+1 (MALO):**
 ```php
 // Se ejecuta 1 consulta para obtener todos los posts
-$posts = Post::findAll();
+$posts = Post::findAll('posts');
 
 // Se ejecuta 1 consulta ADICIONAL por CADA post para obtener el autor
 foreach ($posts as $post) {
@@ -229,13 +239,28 @@ foreach ($posts as $post) {
 }
 ```
 
-**Solución con `with()` (BUENO):**
+**Solución con `with()` usando modelo (BUENO):**
 ```php
 // Se ejecutan solo 2 consultas en total, sin importar cuántos posts haya.
-$posts = $orm->table('posts')->with('user')->findAll();
+$posts = (new Post('posts', Post::getGlobalORM()))
+    ->newQuery()
+    ->with('user')
+    ->findAll();
 
 foreach ($posts as $post) {
   echo "Autor: " . $post->user->name; // <-- No hay consulta aquí, los datos ya están cargados.
+}
+```
+
+**Solución con `with()` pasando modelClass (BUENO):**
+```php
+$posts = $orm
+    ->table('posts', Post::class) // <-- provee la clase del modelo
+    ->with('user')
+    ->findAll();
+
+foreach ($posts as $post) {
+  echo "Autor: " . $post->user->name;
 }
 ```
 

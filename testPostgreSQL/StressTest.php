@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Mysql;
+namespace VersaORM\Tests\PostgreSQL;
 
 /**
  * Stress tests for VersaORM performance and stability.

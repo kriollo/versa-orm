@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Mysql;
+namespace VersaORM\Tests\PostgreSQL;
 
 use VersaORM\VersaORMException;
 

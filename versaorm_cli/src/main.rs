@@ -1776,19 +1776,9 @@ async fn handle_raw_action(
 
                 log_debug_msg(&format!("INSERT result: {:?}", result));
 
-                // Para INSERTs, retornar el resultado en formato compatible con rows
-                if let Some(id) = result.get("id") {
-                    // Crear un formato que simule una row con el ID
-                    let row_result = vec![serde_json::json!({
-                        "id": id,
-                        "rows_affected": result.get("rows_affected").unwrap_or(&serde_json::json!(1))
-                    })];
-                    log_debug_msg(&format!("Returning INSERT row_result: {:?}", row_result));
-                    Ok(serde_json::to_value(row_result).unwrap())
-                } else {
-                    log_debug_msg("No ID found in INSERT result, returning original result");
-                    Ok(result)
-                }
+                // Para INSERTs, retornar el resultado directamente (no como array de rows)
+                log_debug_msg(&format!("Returning INSERT result: {:?}", result));
+                Ok(result)
             } else {
                 log_debug_msg("=== EXECUTING REGULAR QUERY ===");
                 let rows = connection

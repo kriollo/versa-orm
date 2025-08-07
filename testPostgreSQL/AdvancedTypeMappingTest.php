@@ -2,12 +2,10 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Mysql;
+namespace VersaORM\Tests\PostgreSQL;
 
 use VersaORM\VersaModel;
 use VersaORM\VersaORMException;
-
-require_once __DIR__ . '/TestCase.php';
 
 class AdvancedTypeMappingTest extends TestCase
 {
