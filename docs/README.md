@@ -1,101 +1,39 @@
 # 📚 Documentación de VersaORM
 
-¡Bienvenido a la documentación oficial de VersaORM!
+Bienvenido. Aquí tienes todo lo necesario para usar VersaORM desde cero hasta nivel avanzado, en orden lógico: primero lo básico, luego lo intermedio y finalmente lo avanzado.
 
-## 🤔 ¿Eres nuevo con los ORM?
+## 1) Empieza aquí: Primeros pasos
+- [Instalación](getting-started/installation.md)
+- [Configuración](getting-started/configuration.md)
+- [Resumen de primeros pasos](getting-started/README.md)
 
-**No te preocupes, empezamos desde cero.** Un **ORM** (Object-Relational Mapping) es una herramienta que te permite interactuar con bases de datos usando código PHP natural, sin necesidad de escribir SQL complicado.
+## 2) Uso diario (lo esencial)
+- [Uso Básico (CRUD)](user-guide/01-basic-usage.md)
+- [Query Builder (selección, filtros, joins, orden, paginación)](user-guide/02-query-builder.md)
+- [Modelos y Objetos (VersaModel, relaciones, scopes)](user-guide/03-models-and-objects.md)
+- [Query Builder - Ejemplos Rápidos](user-guide/12-query-builder-quick-examples.md)
 
-### 🔄 Antes vs Después
+## 3) Productividad y seguridad
+- [Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
+- [🎯 Tipado Fuerte y Validación de Esquemas](user-guide/06-strong-typing-schema-validation.md)
+- [🔒 Modo Freeze - Protección de Esquema](user-guide/07-freeze-mode.md)
 
-**❌ ANTES (SQL tradicional - difícil y peligroso):**
-```sql
--- Propenso a errores de sintaxis
-SELECT users.*, profiles.bio FROM users
-LEFT JOIN profiles ON users.id = profiles.user_id
-WHERE users.status = 'active' AND users.age >= 18;
+## 4) Operaciones avanzadas
+- [🚀 Operaciones de Lote (insertMany, updateMany, deleteMany)](user-guide/03-batch-operations.md)
+- [🔄 UPSERT y REPLACE INTO](user-guide/11-upsert-replace-operations.md)
+- [⚡ Modo Lazy y Planificador de Consultas](user-guide/10-lazy-mode-query-planner.md)
+- [🚀 Funcionalidades SQL Avanzadas](user-guide/13-advanced-sql-features.md)
+- [🗂️ Características Específicas del Motor](user-guide/11-database-specific-features.md)
+- [Subconsultas y Expresiones Raw](user-guide/04-subqueries-raw-expressions.md)
 
--- Vulnerable a inyección SQL
-$query = "SELECT * FROM users WHERE name = '" . $_POST['name'] . "'";
-```
+## 5) Herramientas y CLI
+- [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
 
-**✅ DESPUÉS (VersaORM - fácil y seguro):**
-```php
-// Código PHP natural y seguro
-$users = $orm->table('users')
-    ->join('profiles', 'users.id', '=', 'profiles.user_id')
-    ->where('status', '=', 'active')
-    ->where('age', '>=', 18)
-    ->findAll();
-
-// Automáticamente protegido contra inyección SQL
-$users = $orm->table('users')->where('name', '=', $_POST['name'])->findAll();
-
-// 🆕 Con Modo Lazy - Optimización automática para máximo rendimiento
-$users = $orm->table('users')
-    ->lazy()                           // 🚀 Activa optimización automática
-    ->where('status', '=', 'active')
-    ->join('profiles', 'users.id', '=', 'profiles.user_id')
-    ->orderBy('created_at', 'desc')
-    ->collect();                       // ✅ Ejecuta consulta optimizada
-```
-
-## 🏆 ¿Por qué elegir VersaORM?
-
-### 🚀 **Más Rápido que Cualquier Competencia**
-- **10x más rápido** que Eloquent (Laravel)
-- **5x más rápido** que Doctrine (Symfony)
-- Motor escrito en **Rust** (el lenguaje más rápido del mundo)
-
-### 🛡️ **Seguridad Extrema**
-- **Cero vulnerabilidades SQL** por diseño
-- Validación automática de datos
-- Protección Mass Assignment integrada
-
-### 💡 **Súper Fácil de Aprender**
-- Sintaxis intuitiva y familiar
-- Documentación completa con ejemplos
-- Migración sencilla desde otros ORMs
-
-### 🌐 **Máxima Compatibilidad**
-- MySQL, PostgreSQL, SQLite
-- Cualquier framework PHP (Laravel, Symfony, etc.)
-- Proyectos PHP existentes
+## 6) Contribuir al proyecto
+- [Arquitectura del Proyecto](contributor-guide/01-architecture.md)
+- [Configuración del Entorno de Desarrollo](contributor-guide/02-development-setup.md)
+- [Estándares de Código](contributor-guide/03-coding-standards.md)
 
 ---
 
-**VersaORM** es el ORM más avanzado para PHP, diseñado tanto para **principiantes** que quieren aprender fácilmente, como para **expertos** que necesitan máximo rendimiento.
-
-## 📖 ¿Por dónde empezar?
-
-Esta documentación está organizada para llevarte paso a paso desde cero hasta convertirte en un experto:
-
-## Guía del Usuario
-
-- **[🚀 Primeros Pasos](getting-started/README.md)**
-  - [Instalación](getting-started/installation.md)
-  - [Configuración](getting-started/configuration.md)
-- **[📖 Guía de Uso](user-guide/README.md)**
-  - [Uso Básico](user-guide/01-basic-usage.md)
-  - [Query Builder](user-guide/02-query-builder.md)
-  - [🚀 Operaciones de Lote (Batch)](user-guide/03-batch-operations.md)
-  - [Modelos y Objetos (VersaModel)](user-guide/03-models-and-objects.md)
-  - [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
-  - [Subconsultas y Expresiones Raw](user-guide/04-subqueries-raw-expressions.md)
-  - [🔒 Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
-  - [🎯 Tipado Fuerte y Validación de Esquemas](user-guide/06-strong-typing-schema-validation.md)
-  - [🔒 Modo Freeze - Protección de Esquema](user-guide/07-freeze-mode.md)
-  - [🏢 Ejemplo Práctico: Modo Freeze en Producción](user-guide/08-freeze-mode-example.md)
-  - [Tipos de Datos Avanzados](user-guide/09-advanced-data-types.md)
-  - [⚡ Modo Lazy y Planificador de Consultas](user-guide/10-lazy-mode-query-planner.md)
-  - [🔄 Operaciones UPSERT y REPLACE INTO](user-guide/11-upsert-replace-operations.md)
-  - [🗂️ Características Específicas del Motor](user-guide/11-database-specific-features.md)
-  - [⚙️ Query Builder - Ejemplos Rápidos](user-guide/12-query-builder-quick-examples.md)
-  - [🚀 Funcionalidades SQL Avanzadas](user-guide/13-advanced-sql-features.md)
-
-## Guía del Contribuidor
-
-- **[🛠️ Guía del Contribuidor](contributor-guide/README.md)**
-  - [Arquitectura del Proyecto](contributor-guide/01-architecture.md)
-  - [Configuración del Entorno de Desarrollo](contributor-guide/02-development-setup.md)
-  - [Estándares de Código](contributor-guide/03-coding-standards.md)
+VersaORM te permite trabajar con tu base de datos usando PHP claro y seguro, con un motor en Rust para máximo rendimiento. Si es tu primera vez, sigue la ruta 1 → 2 → 3. Si ya lo usas a diario, guarda 2 y 4 como referencia.

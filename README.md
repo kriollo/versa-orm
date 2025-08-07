@@ -1,5 +1,6 @@
 # 🚀 VersaORM-PHP
 
+
 **El ORM más rápido y seguro para PHP - Nunca más escribas SQL a mano**
 
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)](#)
@@ -7,9 +8,18 @@
 [![Rust](https://img.shields.io/badge/Rust-2021-orange.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
+
+
+El ORM para PHP que combina un uso simple con un motor ultra rápido en Rust. Escribe PHP claro, evita SQL manual y gana rendimiento real en producción.
+
+- 📚 Documentación: [docs/README.md](docs/README.md)
+- 🧭 Primeros pasos: [docs/getting-started/README.md](docs/getting-started/README.md)
+- 📘 Guía de uso (básico → avanzado): [docs/user-guide/README.md](docs/user-guide/README.md)
+- 🤝 Contribuir: [docs/contributor-guide/README.md](docs/contributor-guide/README.md)
+
 ## 📋 ¿Qué es VersaORM?
 
-**VersaORM** es una herramienta que te permite **interactuar con tu base de datos usando código PHP familiar** en lugar de escribir SQL complicado.
+VersaORM te permite interactuar con tu base de datos usando PHP familiar, sin SQL manual, con seguridad por defecto y alto rendimiento.
 
 ### 🤔 ¿Qué es un ORM?
 
