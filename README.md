@@ -433,12 +433,12 @@ try {
 ## 📚 Documentación
 
 ### 📚 Guías de Usuario
-- [🚀 Inicio Rápido](docs/user/quick-start.md) - Primeros pasos con VersaORM
-- [📝 Guía Completa](docs/user/user-guide.md) - Documentación detallada de todos los métodos
-- [🛠️ Instalación](docs/user/installation.md) - Guía de instalación y configuración
+- [🚀 Inicio Rápido](docs/docs/getting-started/configuration.md) - Primeros pasos con VersaORM
+- [📝 Guía Completa](docs/user-guide/README.md) - Documentación detallada de todos los métodos
+- [🛠️ Instalación](docs/getting-started/installation.md) - Guía de instalación y configuración
 
 ### 🔧 Documentación para Desarrolladores
-- [🏗️ Guía del Desarrollador](docs/dev/developer-guide.md) - Contribuir al proyecto
+- [🏗️ Guía del Desarrollador](docs/contributor-guide/README.md) - Contribuir al proyecto
 - [🧪 Aplicación de Ejemplo](example/README.md) - Demo completa To-Do App
 
 

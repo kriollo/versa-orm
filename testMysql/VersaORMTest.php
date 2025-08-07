@@ -28,9 +28,11 @@ class VersaORMTest extends TestCase
     {
         $query = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
         $result = $this->orm->exec($query);
-        
-        $this->assertTrue($result === null || (is_array($result) && count($result) === 0),
-            'exec() should return null or empty array for non-select statements');
+
+        $this->assertTrue(
+            $result === null || (is_array($result) && count($result) === 0),
+            'exec() should return null or empty array for non-select statements'
+        );
     }
 
     public function testExecUpdate(): void
