@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use sqlx::{Column, Executor, MySql, Pool, Postgres, Row, Sqlite};
 use std::collections::HashMap;
 
@@ -6,10 +6,31 @@ use std::collections::HashMap;
 use rust_decimal::Decimal;
 use bigdecimal::BigDecimal;
 
+fn deserialize_port<'de, D>(deserializer: D) -> Result<u16, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: serde_json::Value = Deserialize::deserialize(deserializer)?;
+    match s {
+        serde_json::Value::Number(n) => {
+            if let Some(num) = n.as_u64() {
+                Ok(num as u16)
+            } else {
+                Err(serde::de::Error::custom("Invalid port number"))
+            }
+        }
+        serde_json::Value::String(s) => {
+            s.parse::<u16>().map_err(serde::de::Error::custom)
+        }
+        _ => Err(serde::de::Error::custom("Port must be a number or string"))
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DatabaseConfig {
     pub driver: String,
     pub host: String,
+    #[serde(deserialize_with = "deserialize_port")]
     pub port: u16,
     pub database: String,
     pub username: String,
@@ -59,7 +80,7 @@ impl ConnectionManager {
 
                 DatabasePool::MySql(pool)
             }
-            "postgres" | "postgresql" => {
+            "postgres" | "postgresql" | "pgsql" => {
                 let url = format!(
                     "postgres://{}:{}@{}:{}/{}",
                     self.config.username,

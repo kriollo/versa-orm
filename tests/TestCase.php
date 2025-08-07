@@ -24,7 +24,7 @@ class TestCase extends BaseTestCase
                 'database' => $config['DB']['DB_NAME'],
                 'debug' => $config['DB']['debug'],
                 'host' => $config['DB']['DB_HOST'] ?? '',
-                'port' => $config['DB']['DB_PORT'] ?? 0,
+                'port' => (int)($config['DB']['DB_PORT'] ?? 0),
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];

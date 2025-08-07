@@ -138,6 +138,48 @@ pub fn log_error_msg(msg: &str) {
     }
 }
 
+/// Genera placeholders apropiados según el tipo de base de datos
+fn generate_placeholders(count: usize, driver: &str) -> Vec<String> {
+    match driver {
+        "postgres" | "postgresql" | "pgsql" => {
+            (1..=count).map(|i| format!("${}", i)).collect()
+        }
+        _ => {
+            // MySQL, SQLite, MSSQL usan ?
+            vec!["?".to_string(); count]
+        }
+    }
+}
+
+/// Genera placeholders secuenciales comenzando desde un offset específico
+fn generate_placeholders_from_offset(count: usize, driver: &str, offset: usize) -> Vec<String> {
+    match driver {
+        "postgres" | "postgresql" | "pgsql" => {
+            (1..=count).map(|i| format!("${}", i + offset)).collect()
+        }
+        _ => {
+            // MySQL, SQLite, MSSQL usan ?
+            vec!["?".to_string(); count]
+        }
+    }
+}
+
+/// Convierte placeholders ? a formato específico de la base de datos
+fn convert_placeholders(query: &str, driver: &str) -> String {
+    match driver {
+        "postgres" | "postgresql" | "pgsql" => {
+            let mut converted = query.to_string();
+            let mut counter = 1;
+            while let Some(pos) = converted.find('?') {
+                converted.replace_range(pos..pos+1, &format!("${}", counter));
+                counter += 1;
+            }
+            converted
+        }
+        _ => query.to_string()
+    }
+}
+
 // Módulos del ORM
 mod advanced_sql;
 mod cache;
@@ -1182,10 +1224,10 @@ async fn handle_query_action(
                     }
 
                     // Create placeholders for IN clause
-                    let placeholders = vec!["?"; parent_ids.len()].join(", ");
+                    let placeholders = generate_placeholders(parent_ids.len(), connection.get_driver());
                     let relation_sql = format!(
                         "SELECT * FROM {} WHERE {} IN ({})",
-                        relation.related_table, owner_key, placeholders
+                        relation.related_table, owner_key, placeholders.join(", ")
                     );
                     let relation_rows = connection
                         .execute_raw(&relation_sql, parent_ids)
@@ -1231,10 +1273,10 @@ async fn handle_query_action(
                     }
 
                     // Create placeholders for IN clause
-                    let placeholders = vec!["?"; parent_ids.len()].join(", ");
+                    let placeholders = generate_placeholders(parent_ids.len(), connection.get_driver());
                     let relation_sql = format!(
                         "SELECT * FROM {} WHERE {} IN ({})",
-                        relation.related_table, foreign_key, placeholders
+                        relation.related_table, foreign_key, placeholders.join(", ")
                     );
                     let relation_rows = connection
                         .execute_raw(&relation_sql, parent_ids)
@@ -1308,7 +1350,7 @@ async fn handle_query_action(
         "insert" => {
             if let Some(insert_data) = insert_data_ref {
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
-                let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
+                let values = generate_placeholders(columns.len(), connection.get_driver());
                 let insert_sql = format!(
                     "INSERT INTO {} ({}) VALUES ({})",
                     table_name,
@@ -1344,7 +1386,7 @@ async fn handle_query_action(
         "insertGetId" => {
             if let Some(insert_data) = insert_data_ref {
                 let columns: Vec<String> = insert_data.keys().cloned().collect();
-                let values: Vec<String> = columns.iter().map(|_| "?".to_string()).collect();
+                let values = generate_placeholders(columns.len(), connection.get_driver());
                 let insert_sql = format!(
                     "INSERT INTO {} ({}) VALUES ({})",
                     table_name,
@@ -1421,9 +1463,14 @@ async fn handle_query_action(
             if let Some(update_data) = query_params.data {
                 let mut set_clauses = Vec::new();
                 let mut update_params = Vec::new();
+                let driver = connection.get_driver();
 
-                for (key, value) in update_data {
-                    set_clauses.push(format!("{} = ?", key));
+                for (i, (key, value)) in update_data.iter().enumerate() {
+                    let placeholder = match driver {
+                        "postgres" | "postgresql" | "pgsql" => format!("${}", i + 1),
+                        _ => "?".to_string()
+                    };
+                    set_clauses.push(format!("{} = {}", key, placeholder));
                     update_params.push(value.clone());
                 }
 
@@ -1696,13 +1743,16 @@ async fn handle_raw_action(
                     )
                 })
         } else {
+            // Convertir placeholders según el driver de base de datos
+            let converted_query = convert_placeholders(query, connection.get_driver());
+
             let rows = connection
-                .execute_raw(query, bindings.clone())
+                .execute_raw(&converted_query, bindings.clone())
                 .await
                 .map_err(|e| {
                     (
                         format!("Raw query execution failed: {}", e),
-                        Some(query.to_string()),
+                        Some(converted_query.clone()),
                         Some(bindings.clone()),
                     )
                 })?;
@@ -2232,7 +2282,7 @@ async fn handle_upsert(
                 update_clause
             )
         }
-        "pgsql" | "postgresql" => {
+        "postgres" | "postgresql" | "pgsql" => {
             // PostgreSQL: INSERT ... ON CONFLICT DO UPDATE
             let values_placeholder = format!("({})", vec!["?"; columns.len()].join(", "));
 
@@ -2644,7 +2694,7 @@ async fn handle_upsert_many(
                     update_clause
                 )
             }
-            "pgsql" | "postgresql" => {
+            "postgres" | "postgresql" | "pgsql" => {
                 // PostgreSQL: INSERT ... ON CONFLICT DO UPDATE
                 let values_placeholders: Vec<String> = chunk
                     .iter()
