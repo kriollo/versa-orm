@@ -344,8 +344,8 @@ fn bind_value_postgres(
         }
         serde_json::Value::Bool(b) => query.bind(b),
         serde_json::Value::Null => {
-            // Para PostgreSQL, bind null como Option<String>::None que es más compatible
-            query.bind(Option::<i32>::None)
+            // Para PostgreSQL, usar NULL tipado para mejor compatibilidad
+            query.bind(Option::<chrono::NaiveDateTime>::None)
         },
         _ => query.bind(value.to_string()),
     }
