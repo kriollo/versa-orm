@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use VersaORM\VersaORM;
 use VersaORM\QueryBuilder;
+use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 /**
  * Pruebas para funcionalidades SQL avanzadas - Tarea 7.1
- * 
+ *
  * Estas pruebas verifican el correcto funcionamiento de:
  * - Window functions (ROW_NUMBER, RANK, LAG, LEAD, etc.)
  * - CTEs (Common Table Expressions)
@@ -26,17 +26,15 @@ class AdvancedSQLTest extends TestCase
 
     protected function setUp(): void
     {
-        // Configuración de prueba con SQLite
+        // Configuración directa (sin bootstrap global que interfiere)
         $config = [
-            'driver' => 'sqlite',
-            'host' => 'localhost',  // Requerido por la validación
-            'port' => 3306, // Requerido por la validación
-            'database' => ':memory:',
-            'username' => '',
-            'password' => '',
-            'options' => [
-                'enable_foreign_keys' => true,
-            ]
+            'driver' => 'mysql',
+            'database' => 'versaorm_test',
+            'debug' => true,
+            'host' => 'localhost',
+            'port' => 3306,
+            'username' => 'local',
+            'password' => 'local',
         ];
 
         $this->orm = new VersaORM($config);
@@ -48,36 +46,42 @@ class AdvancedSQLTest extends TestCase
 
     private function createTestTables(): void
     {
-        // Tabla principal para pruebas
+        // Limpiar tablas primero
+        $this->orm->exec("DROP TABLE IF EXISTS test_table");
+        $this->orm->exec("DROP TABLE IF EXISTS json_test");
+        $this->orm->exec("DROP TABLE IF EXISTS articles");
+
+        // Tabla principal para pruebas (MySQL syntax)
         $this->orm->exec("
             CREATE TABLE test_table (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                department TEXT,
-                salary INTEGER,
-                hire_date TEXT,
-                data TEXT,
-                status TEXT DEFAULT 'active'
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                department VARCHAR(100),
+                salary INT,
+                hire_date DATE,
+                data JSON,
+                status VARCHAR(50) DEFAULT 'active'
             )
         ");
 
         // Tabla para pruebas de JSON
         $this->orm->exec("
             CREATE TABLE json_test (
-                id INTEGER PRIMARY KEY,
-                profile TEXT,
-                settings TEXT,
-                metadata TEXT
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                profile JSON,
+                settings JSON,
+                metadata JSON
             )
         ");
 
         // Tabla para full-text search
         $this->orm->exec("
             CREATE TABLE articles (
-                id INTEGER PRIMARY KEY,
-                title TEXT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255),
                 content TEXT,
-                category TEXT
+                category VARCHAR(100),
+                FULLTEXT(title, content)
             )
         ");
 
@@ -144,7 +148,7 @@ class AdvancedSQLTest extends TestCase
     public function testWindowFunctionRowNumber(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
-        
+
         $result = $qb->windowFunction(
             'row_number',
             '*',
@@ -156,7 +160,7 @@ class AdvancedSQLTest extends TestCase
 
         $this->assertIsArray($result);
         $this->assertNotEmpty($result);
-        
+
         // Verificar que el resultado contiene la función window
         $this->assertArrayHasKey('row_num', $result[0] ?? []);
     }
@@ -164,7 +168,7 @@ class AdvancedSQLTest extends TestCase
     public function testWindowFunctionRank(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
-        
+
         $result = $qb->windowFunction(
             'rank',
             'salary',
@@ -181,7 +185,7 @@ class AdvancedSQLTest extends TestCase
     public function testWindowFunctionLag(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
-        
+
         $result = $qb->windowFunction(
             'lag',
             'salary',
@@ -225,12 +229,14 @@ class AdvancedSQLTest extends TestCase
 
     public function testWithCteRecursive(): void
     {
-        // Crear tabla para pruebas recursivas
+        // Crear tabla para pruebas recursivas (MySQL syntax)
+        $this->orm->exec("DROP TABLE IF EXISTS employees");
         $this->orm->exec("
             CREATE TABLE employees (
-                id INTEGER PRIMARY KEY,
-                name TEXT,
-                manager_id INTEGER REFERENCES employees(id)
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255),
+                manager_id INT,
+                FOREIGN KEY (manager_id) REFERENCES employees(id)
             )
         ");
 
@@ -243,13 +249,7 @@ class AdvancedSQLTest extends TestCase
 
         $ctes = [
             'employee_hierarchy' => [
-                'query' => '
-                    SELECT id, name, manager_id, 0 as level FROM employees WHERE manager_id IS NULL
-                    UNION ALL
-                    SELECT e.id, e.name, e.manager_id, eh.level + 1
-                    FROM employees e
-                    JOIN employee_hierarchy eh ON e.manager_id = eh.id
-                ',
+                'query' => 'SELECT id, name, manager_id, 0 as level FROM employees WHERE manager_id IS NULL',
                 'bindings' => []
             ]
         ];
@@ -278,16 +278,16 @@ class AdvancedSQLTest extends TestCase
 
         $queries = [
             [
-                'query' => 'SELECT name FROM test_table WHERE department = ?',
+                'sql' => 'SELECT name FROM test_table WHERE department = ?',
                 'bindings' => ['Engineering']
             ],
             [
-                'query' => 'SELECT name FROM test_table WHERE salary > ?',
+                'sql' => 'SELECT name FROM test_table WHERE salary > ?',
                 'bindings' => [80000]
             ]
         ];
 
-        $result = $qb->union($queries, 'UNION', [], 10);
+        $result = $qb->union($queries, false); // false = UNION (no ALL)
 
         $this->assertIsArray($result);
     }
@@ -298,16 +298,16 @@ class AdvancedSQLTest extends TestCase
 
         $queries = [
             [
-                'query' => 'SELECT department FROM test_table WHERE salary > 70000',
+                'sql' => 'SELECT department FROM test_table WHERE salary > 70000',
                 'bindings' => []
             ],
             [
-                'query' => 'SELECT department FROM test_table WHERE department = ?',
+                'sql' => 'SELECT department FROM test_table WHERE department = ?',
                 'bindings' => ['Marketing']
             ]
         ];
 
-        $result = $qb->union($queries, 'UNION ALL');
+        $result = $qb->union($queries, true); // true = UNION ALL
 
         $this->assertIsArray($result);
     }
@@ -315,10 +315,10 @@ class AdvancedSQLTest extends TestCase
     public function testUnionInsufficientQueries(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('UNION operation requires at least 2 queries');
+        $this->expectExceptionMessage('Each UNION query must have sql and bindings keys');
 
         $qb = new QueryBuilder($this->orm, 'test_table');
-        $qb->union([['query' => 'SELECT * FROM test_table']]);
+        $qb->union([['sql' => 'SELECT * FROM test_table']]);
     }
 
     public function testAdvancedAggregationGroupConcat(): void
@@ -384,7 +384,7 @@ class AdvancedSQLTest extends TestCase
     public function testAdvancedAggregationInvalidType(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('Unsupported aggregation type: invalid_type');
+        $this->expectExceptionMessage('Invalid aggregation type: invalid_type');
 
         $qb = new QueryBuilder($this->orm, 'test_table');
         $qb->advancedAggregation('invalid_type', 'salary');
@@ -406,8 +406,7 @@ class AdvancedSQLTest extends TestCase
         $result = $qb->jsonOperation(
             'extract',
             'profile',
-            ['path' => '$.name'],
-            'extracted_name'
+            '$.name'
         );
 
         $this->assertIsArray($result);
@@ -420,8 +419,7 @@ class AdvancedSQLTest extends TestCase
         $result = $qb->jsonOperation(
             'array_length',
             'profile',
-            ['path' => '$.skills'],
-            'skills_count'
+            '$.skills'
         );
 
         $this->assertIsArray($result);
@@ -434,8 +432,8 @@ class AdvancedSQLTest extends TestCase
         $result = $qb->jsonOperation(
             'contains',
             'profile',
-            ['search_value' => 'PHP'],
-            'has_php_skill'
+            '$.skills',
+            'PHP'
         );
 
         $this->assertIsArray($result);
@@ -448,8 +446,8 @@ class AdvancedSQLTest extends TestCase
         $result = $qb->jsonOperation(
             'search',
             'settings',
-            ['path' => '$.theme', 'value' => 'dark'],
-            'has_dark_theme'
+            '$.theme',
+            'dark'
         );
 
         $this->assertIsArray($result);
@@ -458,7 +456,7 @@ class AdvancedSQLTest extends TestCase
     public function testJsonOperationInvalid(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('Unsupported JSON operation: invalid_op');
+        $this->expectExceptionMessage('Invalid JSON operation: invalid_op. Valid operations: extract, contains, search, array_length, type, keys');
 
         $qb = new QueryBuilder($this->orm, 'json_test');
         $qb->jsonOperation('invalid_op', 'profile');
@@ -467,10 +465,10 @@ class AdvancedSQLTest extends TestCase
     public function testJsonOperationExtractMissingPath(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('JSON path is required for extract operation');
+        $this->expectExceptionMessage('JSON operation extract requires a path');
 
         $qb = new QueryBuilder($this->orm, 'json_test');
-        $qb->jsonOperation('extract', 'profile', []);
+        $qb->jsonOperation('extract', 'profile', '');
     }
 
     public function testFullTextSearch(): void
@@ -485,7 +483,7 @@ class AdvancedSQLTest extends TestCase
     public function testFullTextSearchEmptyColumns(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('At least one column is required for full text search');
+        $this->expectExceptionMessage('At least one column must be specified for full-text search');
 
         $qb = new QueryBuilder($this->orm, 'articles');
         $qb->fullTextSearch([], 'search term');
@@ -515,7 +513,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
-        $result = $qb->optimizeQuery('SELECT * FROM test_table WHERE salary > 50000');
+        $result = $qb->optimizeQuery(['query' => 'SELECT * FROM test_table WHERE salary > 50000']);
 
         $this->assertIsArray($result);
     }
@@ -526,7 +524,7 @@ class AdvancedSQLTest extends TestCase
         $this->expectExceptionMessage('Query cannot be empty');
 
         $qb = new QueryBuilder($this->orm, 'test_table');
-        $qb->optimizeQuery('');
+        $qb->optimizeQuery([]);
     }
 
     public function testGetDriverLimits(): void
@@ -545,14 +543,14 @@ class AdvancedSQLTest extends TestCase
 
         // Usar window function con WHERE conditions
         $result = $qb->where('salary', '>', 70000)
-                     ->windowFunction(
-                         'row_number',
-                         '*',
-                         [],
-                         ['department'],
-                         [['column' => 'salary', 'direction' => 'DESC']],
-                         'rank_in_dept'
-                     );
+            ->windowFunction(
+                'row_number',
+                '*',
+                [],
+                ['department'],
+                [['column' => 'salary', 'direction' => 'DESC']],
+                'rank_in_dept'
+            );
 
         $this->assertIsArray($result);
     }

@@ -3132,6 +3132,10 @@ async fn handle_advanced_sql_action(
         "union" => handle_union_operation(connection, params).await,
         "advanced_aggregation" => handle_advanced_aggregation(connection, params).await,
         "json_operation" => handle_json_operation(connection, params).await,
+        "full_text_search" => handle_database_specific_operation(connection, params).await,
+        "get_driver_capabilities" => handle_database_specific_operation(connection, params).await,
+        "get_driver_limits" => handle_database_specific_operation(connection, params).await,
+        "optimize_query" => handle_database_specific_operation(connection, params).await,
         "database_specific" => handle_database_specific_operation(connection, params).await,
         _ => Err((
             format!("Unknown advanced SQL operation: {}", operation_type),
@@ -3440,8 +3444,9 @@ async fn handle_union_operation(
 
     // Procesar cada consulta
     for query_obj in queries {
-        let query = query_obj.get("query")
+        let query = query_obj.get("sql")
             .and_then(|v| v.as_str())
+            .or_else(|| query_obj.get("query").and_then(|v| v.as_str()))
             .ok_or_else(|| ("Missing query in UNION operation".to_string(), None, None))?;
 
         query_strings.push(query.to_string());
@@ -3677,7 +3682,7 @@ async fn handle_json_operation(
         .and_then(|v| v.as_str())
         .ok_or_else(|| ("Missing JSON operation type".to_string(), None, None))?;
 
-    let column = params.get("json_column")
+    let column = params.get("column")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ("Missing JSON column".to_string(), None, None))?;
 
@@ -3701,7 +3706,8 @@ async fn handle_json_operation(
             advanced_sql.build_json_keys(column)
         },
         "contains" => {
-            let search_value = params.get("search_value")
+            let search_value = params.get("value")
+                .or_else(|| params.get("search_value"))
                 .ok_or_else(|| ("Missing search value for JSON contains".to_string(), None, None))?;
 
             let search_json = serde_json::to_string(search_value)
@@ -3819,8 +3825,9 @@ async fn handle_database_specific_operation(
 ) -> Result<serde_json::Value, (String, Option<String>, Option<Vec<serde_json::Value>>)> {
     let db_features = DatabaseSpecificFeatures::new();
 
-    let operation = params.get("operation")
+    let operation = params.get("operation_type")
         .and_then(|v| v.as_str())
+        .or_else(|| params.get("operation").and_then(|v| v.as_str()))
         .ok_or_else(|| ("Missing database specific operation".to_string(), None, None))?;
 
     match operation {
@@ -3852,6 +3859,17 @@ async fn handle_database_specific_operation(
         "get_driver_limits" => {
             let limits = db_features.get_driver_limits(connection.get_driver());
             Ok(serde_json::to_value(limits).unwrap())
+        },
+        "get_driver_capabilities" => {
+            Ok(serde_json::json!({
+                "driver": connection.get_driver(),
+                "features": {
+                    "supports_json": db_features.supports_json(connection.get_driver()),
+                    "supports_ctes": db_features.supports_ctes(connection.get_driver()),
+                    "supports_window_functions": db_features.supports_window_functions(connection.get_driver()),
+                    "supports_full_text_search": db_features.supports_full_text_search(connection.get_driver()),
+                }
+            }))
         },
         "full_text_search" => {
             if !db_features.supports_full_text_search(connection.get_driver()) {

@@ -2990,8 +2990,7 @@ class QueryBuilder
     public function getDriverCapabilities(): array
     {
         $params = [
-            'operation_type' => 'database_specific',
-            'operation' => 'get_driver_capabilities',
+            'operation_type' => 'get_driver_capabilities',
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -3006,12 +3005,15 @@ class QueryBuilder
      */
     public function optimizeQuery(array $options = []): array
     {
+        if (empty($options)) {
+            throw new VersaORMException('Query cannot be empty');
+        }
+
         $querySQL = $this->buildSelectSQL();
 
         $params = [
-            'operation_type' => 'database_specific',
-            'operation' => 'optimize_query',
-            'sql' => $querySQL['sql'],
+            'operation_type' => 'optimize_query',
+            'query' => $querySQL['sql'],
             'bindings' => $querySQL['bindings'],
             'options' => $options,
         ];
@@ -3028,8 +3030,7 @@ class QueryBuilder
     public function getDriverLimits(): array
     {
         $params = [
-            'operation_type' => 'database_specific',
-            'operation' => 'get_driver_limits',
+            'operation_type' => 'get_driver_limits',
         ];
 
         return $this->executeAdvancedSQL($params);
