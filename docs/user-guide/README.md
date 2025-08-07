@@ -18,6 +18,9 @@ En esta sección aprenderás a usar todas las características de VersaORM para 
 - [Tipos de Datos Avanzados](09-advanced-data-types.md)
 - [⚡ Modo Lazy y Planificador de Consultas](10-lazy-mode-query-planner.md)
 - [🔄 Operaciones UPSERT y REPLACE INTO](11-upsert-replace-operations.md)
+- [🗂️ Características Específicas del Motor](11-database-specific-features.md)
+- [⚙️ Query Builder - Ejemplos Rápidos](12-query-builder-quick-examples.md)
+- [🚀 Funcionalidades SQL Avanzadas](13-advanced-sql-features.md)
 
 ## 🆕 Nuevas Funcionalidades
 

@@ -88,6 +88,10 @@ Esta documentación está organizada para llevarte paso a paso desde cero hasta 
   - [🏢 Ejemplo Práctico: Modo Freeze en Producción](user-guide/08-freeze-mode-example.md)
   - [Tipos de Datos Avanzados](user-guide/09-advanced-data-types.md)
   - [⚡ Modo Lazy y Planificador de Consultas](user-guide/10-lazy-mode-query-planner.md)
+  - [🔄 Operaciones UPSERT y REPLACE INTO](user-guide/11-upsert-replace-operations.md)
+  - [🗂️ Características Específicas del Motor](user-guide/11-database-specific-features.md)
+  - [⚙️ Query Builder - Ejemplos Rápidos](user-guide/12-query-builder-quick-examples.md)
+  - [🚀 Funcionalidades SQL Avanzadas](user-guide/13-advanced-sql-features.md)
 
 ## Guía del Contribuidor
 
