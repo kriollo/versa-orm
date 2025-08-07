@@ -549,14 +549,14 @@ class VersaORM
     private function logSecurityEvent(string $event, array $data): void
     {
         try {
-            $logDir = __DIR__ . '/../logs';
+            $logDir = __DIR__ . '/logs';
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
                 }
             }
 
-            $securityLogFile = $logDir . '/security-' . date('Y-m-d') . '.log';
+            $securityLogFile = $logDir . '/php-security-' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(
@@ -883,14 +883,14 @@ class VersaORM
         }
 
         try {
-            $logDir = __DIR__ . '/../logs';
+            $logDir = __DIR__ . '/logs';
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
                 }
             }
 
-            $logFile = $logDir . '/' . date('Y-m-d') . '.log';
+            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(
@@ -930,7 +930,7 @@ class VersaORM
         }
 
         try {
-            $logDir = __DIR__ . '/../logs';
+            $logDir = __DIR__ . '/logs';
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
@@ -938,7 +938,7 @@ class VersaORM
             }
 
             // Usar archivo con fecha actual (YYYY-MM-DD.log)
-            $logFile = $logDir . '/' . date('Y-m-d') . '.log';
+            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(

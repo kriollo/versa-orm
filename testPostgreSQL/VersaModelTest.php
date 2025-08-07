@@ -16,16 +16,18 @@ class VersaModelTest extends TestCase
         $user->name = 'Heidi';
         $user->email = 'heidi@example.com';
         $user->status = 'active';
-        
+
         // Agregar debug antes del store
         echo "\n=== DEBUG BEFORE STORE ===\n";
         echo "User ID before store: " . var_export($user->id, true) . "\n";
-        
+
         $user->store();
-        
+
         // Agregar debug después del store
         echo "\n=== DEBUG AFTER STORE ===\n";
         echo "User ID after store: " . var_export($user->id, true) . "\n";
+        echo "User name: " . ($user->name ?? 'NULL') . "\n";
+        echo "User email: " . ($user->email ?? 'NULL') . "\n";
 
         $this->assertNotNull($user->id, 'ID should be set after storing.');
 
@@ -187,7 +189,6 @@ class VersaModelTest extends TestCase
             // Verificar que se guardó correctamente
             $result = self::$orm->table('array_models')->find($data, 'id');
             $this->assertNotNull($result);
-
         } catch (\Exception $e) {
             $this->markTestSkipped('Array fields test requires PostgreSQL array support');
         }
@@ -215,7 +216,6 @@ class VersaModelTest extends TestCase
             // Test consulta JSON
             $results = self::$orm->exec("SELECT * FROM json_models WHERE data->>'name' = ?", ['test']);
             $this->assertCount(1, $results);
-
         } catch (\Exception $e) {
             $this->markTestSkipped('JSONB fields test requires PostgreSQL JSONB support');
         }
@@ -273,7 +273,6 @@ class VersaModelTest extends TestCase
             // Verificar que no existe después del rollback
             $nullUser = VersaModel::load('users', $userId);
             $this->assertNull($nullUser);
-
         } catch (\Exception $e) {
             try {
                 self::$orm->exec('ROLLBACK');

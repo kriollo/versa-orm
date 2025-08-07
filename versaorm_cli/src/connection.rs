@@ -231,7 +231,7 @@ impl ConnectionManager {
         match self.pool.as_ref() {
             Some(DatabasePool::Postgres(pool)) => {
                 // Para PostgreSQL, agregar RETURNING id si no existe
-                let final_query = if query.trim().to_uppercase().starts_with("INSERT") 
+                let final_query = if query.trim().to_uppercase().starts_with("INSERT")
                     && !query.to_uppercase().contains("RETURNING") {
                     format!("{} RETURNING id", query)
                 } else {
@@ -242,12 +242,18 @@ impl ConnectionManager {
                 for param in params {
                     query_builder = bind_value_postgres(query_builder, param);
                 }
-                
+
                 // Ejecutar y obtener el resultado
                 let result = query_builder.fetch_one(pool).await?;
-                
+
+                // Debug: Log el resultado completo
+                crate::log_debug_msg(&format!("PostgreSQL RETURNING result columns: {:?}",
+                    result.columns().iter().map(|c| c.name()).collect::<Vec<_>>()));
+
                 // Extraer el ID retornado
                 let id_value = postgres_value_to_json(&result, "id");
+                crate::log_debug_msg(&format!("Extracted ID value: {:?}", id_value));
+
                 Ok(serde_json::json!({
                     "id": id_value,
                     "rows_affected": 1
@@ -260,7 +266,7 @@ impl ConnectionManager {
                     query_builder = bind_value_mysql(query_builder, param);
                 }
                 let result = query_builder.execute(pool).await?;
-                
+
                 Ok(serde_json::json!({
                     "id": result.last_insert_id(),
                     "rows_affected": result.rows_affected()
@@ -273,7 +279,7 @@ impl ConnectionManager {
                     query_builder = bind_value_sqlite(query_builder, param);
                 }
                 let result = query_builder.execute(pool).await?;
-                
+
                 Ok(serde_json::json!({
                     "id": result.last_insert_rowid(),
                     "rows_affected": result.rows_affected()
@@ -671,7 +677,20 @@ fn mysql_value_to_json(row: &sqlx::mysql::MySqlRow, column_name: &str) -> serde_
 fn postgres_value_to_json(row: &sqlx::postgres::PgRow, column_name: &str) -> serde_json::Value {
     use sqlx::Row;
 
+    println!("DEBUG: postgres_value_to_json - trying to extract column '{}'", column_name);
+
+    // Try i32 first (for SERIAL/INTEGER columns)
+    if let Ok(val) = row.try_get::<Option<i32>, _>(column_name) {
+        println!("DEBUG: Successfully extracted as i32: {:?}", val);
+        return match val {
+            Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
+            None => serde_json::Value::Null,
+        };
+    }
+
+    // Try i64 (for BIGSERIAL/BIGINT columns)
     if let Ok(val) = row.try_get::<Option<i64>, _>(column_name) {
+        println!("DEBUG: Successfully extracted as i64: {:?}", val);
         return match val {
             Some(v) => serde_json::Value::Number(serde_json::Number::from(v)),
             None => serde_json::Value::Null,
@@ -679,6 +698,7 @@ fn postgres_value_to_json(row: &sqlx::postgres::PgRow, column_name: &str) -> ser
     }
 
     if let Ok(val) = row.try_get::<Option<f64>, _>(column_name) {
+        println!("DEBUG: Successfully extracted as f64: {:?}", val);
         return match val {
             Some(v) => serde_json::Number::from_f64(v)
                 .map(serde_json::Value::Number)
@@ -688,6 +708,7 @@ fn postgres_value_to_json(row: &sqlx::postgres::PgRow, column_name: &str) -> ser
     }
 
     if let Ok(val) = row.try_get::<Option<bool>, _>(column_name) {
+        println!("DEBUG: Successfully extracted as bool: {:?}", val);
         return match val {
             Some(v) => serde_json::Value::Bool(v),
             None => serde_json::Value::Null,
@@ -695,12 +716,14 @@ fn postgres_value_to_json(row: &sqlx::postgres::PgRow, column_name: &str) -> ser
     }
 
     if let Ok(val) = row.try_get::<Option<String>, _>(column_name) {
+        println!("DEBUG: Successfully extracted as String: {:?}", val);
         return match val {
             Some(v) => serde_json::Value::String(v),
             None => serde_json::Value::Null,
         };
     }
 
+    println!("DEBUG: Failed to extract column '{}' as any known type", column_name);
     serde_json::Value::Null
 }
 

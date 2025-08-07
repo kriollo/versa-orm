@@ -1754,8 +1754,15 @@ async fn handle_raw_action(
             // Convertir placeholders según el driver de base de datos
             let converted_query = convert_placeholders(query, connection.get_driver());
 
+            log_debug_msg(&format!("=== HANDLE_RAW_ACTION DEBUG ==="));
+            log_debug_msg(&format!("Original query: {}", query));
+            log_debug_msg(&format!("Converted query: {}", converted_query));
+            log_debug_msg(&format!("Driver: {}", connection.get_driver()));
+            log_debug_msg(&format!("Query starts with INSERT: {}", converted_query.trim().to_uppercase().starts_with("INSERT")));
+
             // Detectar si es un INSERT para manejar retorno de ID
             if converted_query.trim().to_uppercase().starts_with("INSERT") {
+                log_debug_msg("=== EXECUTING INSERT WITH RETURNING ===");
                 let result = connection
                     .execute_insert_with_returning(&converted_query, bindings.clone())
                     .await
@@ -1766,7 +1773,9 @@ async fn handle_raw_action(
                             Some(bindings.clone()),
                         )
                     })?;
-                
+
+                log_debug_msg(&format!("INSERT result: {:?}", result));
+
                 // Para INSERTs, retornar el resultado en formato compatible con rows
                 if let Some(id) = result.get("id") {
                     // Crear un formato que simule una row con el ID
@@ -1774,11 +1783,14 @@ async fn handle_raw_action(
                         "id": id,
                         "rows_affected": result.get("rows_affected").unwrap_or(&serde_json::json!(1))
                     })];
+                    log_debug_msg(&format!("Returning INSERT row_result: {:?}", row_result));
                     Ok(serde_json::to_value(row_result).unwrap())
                 } else {
+                    log_debug_msg("No ID found in INSERT result, returning original result");
                     Ok(result)
                 }
             } else {
+                log_debug_msg("=== EXECUTING REGULAR QUERY ===");
                 let rows = connection
                     .execute_raw(&converted_query, bindings.clone())
                     .await
