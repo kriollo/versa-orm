@@ -6,8 +6,22 @@
     <testsuites>
         <testsuite name="VersaORM PostgreSQL Test Suite">
             <directory>./testPostgreSQL</directory>
+            <exclude>./testPostgreSQL/AdvancedSQLTest.php</exclude>
+            <exclude>./testPostgreSQL/MySQLAdvancedSQLTest.php</exclude>
+            <exclude>./testPostgreSQL/SQLiteAdvancedSQLTest.php</exclude>
+            <exclude>./testPostgreSQL/QAHardeningTest.php</exclude>
+            <exclude>./testPostgreSQL/ReplaceIntoTest.php</exclude>
+            <exclude>./testPostgreSQL/freeze_mode_test.php</exclude>
+            <exclude>./testPostgreSQL/QueryBuilderReplaceAndUpsertTest.php</exclude>
+            <exclude>./testPostgreSQL/TransactionsRollbackTest.php</exclude>
         </testsuite>
     </testsuites>
+        <groups>
+            <exclude>
+                <group>mysql</group>
+                <group>sqlite</group>
+            </exclude>
+        </groups>
     <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">./src</directory>

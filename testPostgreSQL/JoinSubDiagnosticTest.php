@@ -143,8 +143,12 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 9: Test directo en MySQL (bypass del ORM)
     //======================================================================
 
+    /**
+     * @group mysql
+     */
     public function testDirectMysqlExecution(): void
     {
+        // Este test es específico para entorno MySQL; se excluye por grupo en la suite PostgreSQL
         // Obtener configuración de la base de datos
         global $config;
 
