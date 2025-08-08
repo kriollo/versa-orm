@@ -319,6 +319,195 @@ class VersaORM
     }
 
     /**
+     * Crea una tabla usando definiciones portables de columnas.
+     * columns: lista de arrays con claves: name, type, nullable?, default?, primary?, autoIncrement?
+     * options: primary_key?, if_not_exists?, engine?, charset?, collation?
+     */
+    public function schemaCreate(string $table, array $columns, array $options = []): void
+    {
+        $this->validateFreezeOperation('createTable');
+        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q = fn(string $id) => $this->quoteIdent($id, $driver);
+        $ifNotExists = !empty($options['if_not_exists']);
+
+        $colSql = [];
+        $pkCols = [];
+        foreach ($columns as $col) {
+            $name = (string)($col['name'] ?? '');
+            $type = (string)($col['type'] ?? 'VARCHAR(255)');
+            if ($name === '') {
+                continue;
+            }
+            $nullable = array_key_exists('nullable', $col) ? (bool)$col['nullable'] : true;
+            $defaultExists = array_key_exists('default', $col);
+            $default = $col['default'] ?? null;
+            $primary = !empty($col['primary']);
+            $auto = !empty($col['autoIncrement']);
+
+            // Ajustes por dialecto para autoincrement
+            $colType = $type;
+            if ($auto) {
+                if ($driver === 'mysql' || $driver === 'mariadb') {
+                    $colType = 'INT';
+                } elseif ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                    $colType = 'SERIAL';
+                } elseif ($driver === 'sqlite') {
+                    $colType = 'INTEGER';
+                }
+            }
+
+            $parts = [$q($name) . ' ' . $colType];
+            if ($primary && ($driver === 'sqlite')) {
+                // En SQLite la PK autoincremental debe ser exactamente INTEGER PRIMARY KEY
+                $parts = [$q($name) . ' INTEGER PRIMARY KEY'];
+            } else {
+                if (!$nullable) {
+                    $parts[] = 'NOT NULL';
+                }
+                if ($defaultExists) {
+                    $parts[] = 'DEFAULT ' . $this->formatDefault($default, $driver);
+                }
+                if ($auto && ($driver === 'mysql' || $driver === 'mariadb')) {
+                    $parts[] = 'AUTO_INCREMENT';
+                }
+                if ($primary) {
+                    $pkCols[] = $q($name);
+                }
+            }
+
+            $colSql[] = implode(' ', $parts);
+        }
+
+        if (!empty($options['primary_key'])) {
+            $pk = (array)$options['primary_key'];
+            $pkCols = array_map($q, $pk);
+        }
+        if (!empty($pkCols) && $driver !== 'sqlite') {
+            $colSql[] = 'PRIMARY KEY (' . implode(', ', $pkCols) . ')';
+        }
+
+        $tableIdent = $q($table);
+        $createHead = 'CREATE TABLE ' . ($ifNotExists ? 'IF NOT EXISTS ' : '') . $tableIdent;
+        $sql = $createHead . ' (' . implode(', ', $colSql) . ')';
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            if (!empty($options['engine'])) {
+                $sql .= ' ENGINE=' . $options['engine'];
+            }
+            if (!empty($options['charset'])) {
+                $sql .= ' DEFAULT CHARSET=' . $options['charset'];
+            }
+            if (!empty($options['collation'])) {
+                $sql .= ' COLLATE=' . $options['collation'];
+            }
+        }
+
+        $this->exec($sql);
+    }
+
+    /**
+     * Modifica una tabla (MVP: soporta add columns). changes: ['add' => [colDefs...]]
+     */
+    public function schemaAlter(string $table, array $changes): void
+    {
+        $this->validateFreezeOperation('alterTable');
+        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q = fn(string $id) => $this->quoteIdent($id, $driver);
+
+        $tableIdent = $q($table);
+        $addCols = (array)($changes['add'] ?? []);
+        if (!empty($addCols)) {
+            $clauses = [];
+            foreach ($addCols as $col) {
+                $name = (string)($col['name'] ?? '');
+                $type = (string)($col['type'] ?? 'VARCHAR(255)');
+                if ($name === '') {
+                    continue;
+                }
+                $nullable = array_key_exists('nullable', $col) ? (bool)$col['nullable'] : true;
+                $defaultExists = array_key_exists('default', $col);
+                $default = $col['default'] ?? null;
+
+                $parts = ['ADD COLUMN ' . $q($name) . ' ' . $type];
+                if (!$nullable) {
+                    $parts[] = 'NOT NULL';
+                }
+                if ($defaultExists) {
+                    $parts[] = 'DEFAULT ' . $this->formatDefault($default, $driver);
+                }
+                $clauses[] = implode(' ', $parts);
+            }
+            if (!empty($clauses)) {
+                $sql = 'ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses);
+                $this->exec($sql);
+            }
+        }
+        // Extensiones futuras: rename column, drop column, modify type, add constraint, etc.
+    }
+
+    /**
+     * Elimina una tabla (DROP TABLE [IF EXISTS]).
+     */
+    public function schemaDrop(string $table, bool $ifExists = true): void
+    {
+        $this->validateFreezeOperation('dropTable');
+        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q = fn(string $id) => $this->quoteIdent($id, $driver);
+        $sql = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
+        $this->exec($sql);
+    }
+
+    /**
+     * Renombra una tabla a un nuevo nombre (dialecto-aware).
+     */
+    public function schemaRename(string $from, string $to): void
+    {
+        $this->validateFreezeOperation('alterTable');
+        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q = fn(string $id) => $this->quoteIdent($id, $driver);
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $sql = 'RENAME TABLE ' . $q($from) . ' TO ' . $q($to);
+        } else {
+            // PostgreSQL y SQLite
+            $sql = 'ALTER TABLE ' . $q($from) . ' RENAME TO ' . $q($to);
+        }
+        $this->exec($sql);
+    }
+
+    /**
+     * Quota identificadores según el driver.
+     */
+    private function quoteIdent(string $ident, string $driver): string
+    {
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            return '`' . str_replace('`', '``', $ident) . '`';
+        }
+        // PostgreSQL y SQLite usan comillas dobles
+        return '"' . str_replace('"', '""', $ident) . '"';
+    }
+
+    /**
+     * Formatea valores DEFAULT según el driver/tipo.
+     */
+    private function formatDefault($value, string $driver): string
+    {
+        if ($value === null) {
+            return 'NULL';
+        }
+        if (is_bool($value)) {
+            if ($driver === 'mysql' || $driver === 'mariadb') {
+                return $value ? '1' : '0';
+            }
+            return $value ? 'TRUE' : 'FALSE';
+        }
+        if (is_numeric($value)) {
+            return (string)$value;
+        }
+        // Cadena: comillar
+        return '\'' . str_replace('\'', '\'\'',$value) . '\'';
+    }
+
+    /**
      * Administra el caché interno.
      *
      * @param  string               $action
