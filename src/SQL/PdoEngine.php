@@ -238,7 +238,7 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute($bindings);
                             $affected = (int)$stmt->rowCount();
-                        self::clearAllCache();
+                            self::clearAllCache();
                             return [
                                 'status' => 'success',
                                 'total_processed' => $params['records'] ? count($params['records']) : $affected,
@@ -302,7 +302,15 @@ class PdoEngine
             // intentar devolver filas si hay
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if ($rows === false) {
+                // Si no hay filas, puede ser una operación de escritura; limpiar caché por seguridad
+                if (self::$cacheEnabled && preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER)\b/i', $sql) === 1) {
+                    self::clearAllCache();
+                }
                 return null;
+            }
+            // Para SELECTs, almacenar opcionalmente en caché si está habilitado
+            if (self::$cacheEnabled) {
+                self::storeInCache($sql, $bindings, 'raw', $rows);
             }
             return $rows;
         }

@@ -175,7 +175,7 @@ trait HasStrongTyping
         $typeDefinition = $propertyTypes[$property];
         $type = $typeDefinition['type'] ?? 'string';
 
-    try {
+        try {
             switch ($type) {
                 case 'int':
                 case 'integer':
