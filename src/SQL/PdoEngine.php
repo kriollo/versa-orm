@@ -66,6 +66,10 @@ class PdoEngine
                 $table = (string)($params['table_name'] ?? $params['table'] ?? '');
                 return $table !== '' ? $this->fetchColumns($pdo, $table) : [];
             }
+            if ($subject === 'indexes') {
+                $table = (string)($params['table_name'] ?? $params['table'] ?? '');
+                return $table !== '' ? $this->fetchIndexes($pdo, $table) : [];
+            }
             return [];
         }
 
@@ -778,6 +782,59 @@ class PdoEngine
                 ];
             }
             return $result;
+        }
+        return [];
+    }
+
+    private function fetchIndexes(PDO $pdo, string $table): array
+    {
+        $driver = $this->dialect->getName();
+        if ($driver === 'mysql') {
+            $stmt = $pdo->prepare('SHOW INDEX FROM ' . $this->dialect->quoteIdentifier($table));
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $out = [];
+            foreach ($rows as $r) {
+                $out[] = [
+                    'name' => (string)($r['Key_name'] ?? ''),
+                    'column' => (string)($r['Column_name'] ?? ''),
+                    'unique' => ((int)($r['Non_unique'] ?? 1)) === 0,
+                ];
+            }
+            return $out;
+        }
+        if ($driver === 'sqlite') {
+            $stmt = $pdo->prepare('PRAGMA index_list(' . $this->dialect->quoteIdentifier($table) . ')');
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $out = [];
+            foreach ($rows as $r) {
+                $out[] = [
+                    'name' => (string)($r['name'] ?? ''),
+                    'unique' => ((int)($r['unique'] ?? 0)) === 1,
+                ];
+            }
+            return $out;
+        }
+        if ($driver === 'postgres') {
+            $sql = "SELECT i.relname AS name, a.attname AS column, ix.indisunique AS unique
+            FROM pg_class t
+            JOIN pg_index ix ON t.oid = ix.indrelid
+            JOIN pg_class i ON i.oid = ix.indexrelid
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+            WHERE t.relkind = 'r' AND t.relname = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$table]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $out = [];
+            foreach ($rows as $r) {
+                $out[] = [
+                    'name' => (string)($r['name'] ?? ''),
+                    'column' => (string)($r['column'] ?? ''),
+                    'unique' => (bool)($r['unique'] ?? false),
+                ];
+            }
+            return $out;
         }
         return [];
     }

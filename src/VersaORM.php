@@ -321,7 +321,15 @@ class VersaORM
     /**
      * Crea una tabla usando definiciones portables de columnas.
      * columns: lista de arrays con claves: name, type, nullable?, default?, primary?, autoIncrement?
-     * options: primary_key?, if_not_exists?, engine?, charset?, collation?
+     * options:
+     *  - primary_key: string|string[]
+     *  - if_not_exists: bool
+     *  - engine, charset, collation (MySQL)
+     *  - constraints: [
+     *      'unique' => [ { name, columns[] }... ],
+     *      'foreign' => [ { name, columns[], refTable, refColumns[], onDelete?, onUpdate? } ... ]
+     *    ]
+     *  - indexes: [ { name, columns[], unique?, using?, where?, concurrently? } ... ]
      */
     public function schemaCreate(string $table, array $columns, array $options = []): void
     {
@@ -386,6 +394,32 @@ class VersaORM
             $colSql[] = 'PRIMARY KEY (' . implode(', ', $pkCols) . ')';
         }
 
+        // Table-level constraints: UNIQUE, FOREIGN KEYS (portables)
+        $constraints = (array)($options['constraints'] ?? []);
+        foreach ((array)($constraints['unique'] ?? []) as $uq) {
+            $cname = isset($uq['name']) ? $q((string)$uq['name']) : null;
+            $cols = array_map($q, (array)($uq['columns'] ?? []));
+            if (!empty($cols)) {
+                $colSql[] = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'UNIQUE (' . implode(', ', $cols) . ')';
+            }
+        }
+        foreach ((array)($constraints['foreign'] ?? []) as $fk) {
+            $cname = isset($fk['name']) ? $q((string)$fk['name']) : null;
+            $cols = array_map($q, (array)($fk['columns'] ?? []));
+            $refTable = isset($fk['refTable']) ? $q((string)$fk['refTable']) : null;
+            $refCols = array_map($q, (array)($fk['refColumns'] ?? []));
+            if (!empty($cols) && $refTable && !empty($refCols)) {
+                $line = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'FOREIGN KEY (' . implode(', ', $cols) . ') REFERENCES ' . $refTable . ' (' . implode(', ', $refCols) . ')';
+                if (!empty($fk['onDelete'])) {
+                    $line .= ' ON DELETE ' . strtoupper((string)$fk['onDelete']);
+                }
+                if (!empty($fk['onUpdate'])) {
+                    $line .= ' ON UPDATE ' . strtoupper((string)$fk['onUpdate']);
+                }
+                $colSql[] = $line;
+            }
+        }
+
         $tableIdent = $q($table);
         $createHead = 'CREATE TABLE ' . ($ifNotExists ? 'IF NOT EXISTS ' : '') . $tableIdent;
         $sql = $createHead . ' (' . implode(', ', $colSql) . ')';
@@ -403,6 +437,11 @@ class VersaORM
         }
 
         $this->exec($sql);
+
+        // Indexes (post-create portable)
+        foreach ((array)($options['indexes'] ?? []) as $idx) {
+            $this->createIndexPortable($table, (array)$idx, $driver);
+        }
     }
 
     /**
@@ -442,7 +481,200 @@ class VersaORM
                 $this->exec($sql);
             }
         }
-        // Extensiones futuras: rename column, drop column, modify type, add constraint, etc.
+        // Índices: addIndex / dropIndex
+        if (!empty($changes['addIndex'])) {
+            foreach ((array)$changes['addIndex'] as $idx) {
+                $this->createIndexPortable($table, (array)$idx, $driver);
+            }
+        }
+        if (!empty($changes['dropIndex'])) {
+            foreach ((array)$changes['dropIndex'] as $idxName) {
+                $this->dropIndexPortable($table, (string)$idxName, $driver);
+            }
+        }
+
+        // Foreign keys: addForeign / dropForeign
+        if (!empty($changes['addForeign'])) {
+            foreach ((array)$changes['addForeign'] as $fk) {
+                $name = (string)($fk['name'] ?? '');
+                $cols = (array)($fk['columns'] ?? []);
+                $refTable = (string)($fk['refTable'] ?? '');
+                $refCols = (array)($fk['refColumns'] ?? []);
+                if ($name && $cols && $refTable && $refCols) {
+                    $line = 'ALTER TABLE ' . $tableIdent . ' ADD CONSTRAINT ' . $q($name) . ' FOREIGN KEY (' . implode(', ', array_map($q, $cols)) . ') REFERENCES ' . $q($refTable) . ' (' . implode(', ', array_map($q, $refCols)) . ')';
+                    if (!empty($fk['onDelete'])) {
+                        $line .= ' ON DELETE ' . strtoupper((string)$fk['onDelete']);
+                    }
+                    if (!empty($fk['onUpdate'])) {
+                        $line .= ' ON UPDATE ' . strtoupper((string)$fk['onUpdate']);
+                    }
+                    // MySQL/PG: OK; SQLite: limitado (aceptamos que pueda fallar)
+                    $this->exec($line);
+                }
+            }
+        }
+        if (!empty($changes['dropForeign'])) {
+            foreach ((array)$changes['dropForeign'] as $fkName) {
+                $fk = $q((string)$fkName);
+                if ($driver === 'mysql' || $driver === 'mariadb') {
+                    $sql = 'ALTER TABLE ' . $tableIdent . ' DROP FOREIGN KEY ' . $fk;
+                } else {
+                    $sql = 'ALTER TABLE ' . $tableIdent . ' DROP CONSTRAINT ' . $fk;
+                }
+                $this->exec($sql);
+            }
+        }
+        // Rename columns
+        if (!empty($changes['rename'])) {
+            $clauses = [];
+            foreach ((array)$changes['rename'] as $rc) {
+                $from = (string)($rc['from'] ?? '');
+                $to = (string)($rc['to'] ?? '');
+                if ($from !== '' && $to !== '') {
+                    if ($driver === 'mysql' || $driver === 'mariadb' || $driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                        $clauses[] = 'RENAME COLUMN ' . $q($from) . ' TO ' . $q($to);
+                    } elseif ($driver === 'sqlite') {
+                        // SQLite soporta RENAME COLUMN (3.25+). Intentar y dejar que falle si no.
+                        $clauses[] = 'RENAME COLUMN ' . $q($from) . ' TO ' . $q($to);
+                    }
+                }
+            }
+            if (!empty($clauses)) {
+                $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+            }
+        }
+
+        // Drop columns
+        if (!empty($changes['drop'])) {
+            $cols = (array)$changes['drop'];
+            $clauses = [];
+            foreach ($cols as $c) {
+                $name = (string)$c;
+                if ($name !== '') {
+                    $clauses[] = 'DROP COLUMN ' . $q($name);
+                }
+            }
+            if (!empty($clauses)) {
+                $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+            }
+        }
+
+        // Modify columns (tipo/null/default)
+        if (!empty($changes['modify'])) {
+            $mods = (array)$changes['modify'];
+            $clauses = [];
+            if ($driver === 'mysql' || $driver === 'mariadb') {
+                foreach ($mods as $m) {
+                    $name = (string)($m['name'] ?? '');
+                    $type = (string)($m['type'] ?? '');
+                    if ($name === '' || $type === '') {
+                        continue;
+                    }
+                    $nullable = array_key_exists('nullable', $m) ? (bool)$m['nullable'] : null;
+                    $defaultExists = array_key_exists('default', $m);
+                    $default = $m['default'] ?? null;
+                    $part = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
+                    if ($nullable !== null) {
+                        $part .= $nullable ? '' : ' NOT NULL';
+                    }
+                    if ($defaultExists) {
+                        $part .= ' DEFAULT ' . $this->formatDefault($default, $driver);
+                    }
+                    $clauses[] = $part;
+                }
+                if (!empty($clauses)) {
+                    $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+                }
+            } else {
+                // PostgreSQL/SQLite estilo ALTER COLUMN por aspecto
+                foreach ($mods as $m) {
+                    $name = (string)($m['name'] ?? '');
+                    $type = (string)($m['type'] ?? '');
+                    if ($name === '' || $type === '') {
+                        continue;
+                    }
+                    $nullable = array_key_exists('nullable', $m) ? (bool)$m['nullable'] : null;
+                    $defaultExists = array_key_exists('default', $m);
+                    $default = $m['default'] ?? null;
+                    $clauses[] = 'ALTER COLUMN ' . $q($name) . ' TYPE ' . $type;
+                    if ($nullable !== null) {
+                        $clauses[] = 'ALTER COLUMN ' . $q($name) . ($nullable ? ' DROP NOT NULL' : ' SET NOT NULL');
+                    }
+                    if ($defaultExists) {
+                        if ($default === null) {
+                            $clauses[] = 'ALTER COLUMN ' . $q($name) . ' DROP DEFAULT';
+                        } else {
+                            $clauses[] = 'ALTER COLUMN ' . $q($name) . ' SET DEFAULT ' . $this->formatDefault($default, $driver);
+                        }
+                    }
+                }
+                if (!empty($clauses)) {
+                    $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+                }
+            }
+        }
+        // Futuro: rename column, drop column, modify type, add constraint types adicionales.
+    }
+
+    /** Crea índice portable según driver. */
+    private function createIndexPortable(string $table, array $idx, string $driver): void
+    {
+        $q = fn(string $id) => $this->quoteIdent($id, $driver);
+        $name = (string)($idx['name'] ?? '');
+        $cols = (array)($idx['columns'] ?? []);
+        if ($name === '' || empty($cols)) {
+            return;
+        }
+        // Validar identificador del índice para evitar inyección por nombre malicioso
+        $this->assertSafeIdentifier($name, 'index');
+        $unique = !empty($idx['unique']);
+        $using = strtoupper((string)($idx['using'] ?? ''));
+        $where = (string)($idx['where'] ?? '');
+        $ifNotExists = !empty($idx['if_not_exists']);
+        $concurrently = !empty($idx['concurrently']);
+
+        $sql = 'CREATE ' . ($unique ? 'UNIQUE ' : '') . 'INDEX ';
+        if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $ifNotExists) {
+            $sql .= 'IF NOT EXISTS ';
+        }
+        if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $concurrently) {
+            $sql .= 'CONCURRENTLY ';
+        }
+        $sql .= $q($name) . ' ON ' . $q($table);
+        if ($using !== '') {
+            // MySQL: USING BTREE/HASH; Postgres: USING GIN/GIST/...
+            $sql .= ' USING ' . $using;
+        }
+        $colsSql = [];
+        foreach ($cols as $c) {
+            if (is_array($c) && isset($c['raw'])) {
+                $colsSql[] = (string)$c['raw'];
+            } else {
+                $colName = (string)$c;
+                // Validar nombres de columnas simples (no RAW)
+                $this->assertSafeIdentifier($colName, 'column');
+                $colsSql[] = $q($colName);
+            }
+        }
+        $sql .= ' (' . implode(', ', $colsSql) . ')';
+        if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $where !== '') {
+            $sql .= ' WHERE ' . $where;
+        }
+        $this->exec($sql);
+    }
+
+    /** Elimina índice portable según driver. */
+    private function dropIndexPortable(string $table, string $indexName, string $driver): void
+    {
+        $q = fn(string $id) => $this->quoteIdent($id, $driver);
+        $iname = $q($indexName);
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $this->exec('ALTER TABLE ' . $q($table) . ' DROP INDEX ' . $iname);
+        } elseif ($driver === 'sqlite') {
+            $this->exec('DROP INDEX IF EXISTS ' . $iname);
+        } else { // Postgres
+            $this->exec('DROP INDEX IF EXISTS ' . $iname);
+        }
     }
 
     /**
@@ -487,6 +719,35 @@ class VersaORM
     }
 
     /**
+     * Valida que un identificador sea seguro (sin inyección ni caracteres peligrosos).
+     * Permite: letras, números y guion bajo; debe iniciar con letra o guion bajo.
+     * Rechaza: comillas, backticks, punto y coma, comentarios SQL, espacios, paréntesis.
+     *
+     * @param string $ident
+     * @param string $context Contexto (table|column|index|constraint)
+     * @throws VersaORMException
+     */
+    private function assertSafeIdentifier(string $ident, string $context = 'identifier'): void
+    {
+        $trim = trim($ident);
+        // Vacío o diferente tras trim => sospechoso
+        if ($trim === '' || $trim !== $ident) {
+            throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
+        }
+        // Caracteres o patrones peligrosos (chequeo simple por fragmentos)
+        $bad = ['`', '"', "'", '(', ')', ';', '.', ' ', "\t", "\n", "\r", '--', '/*', '*/'];
+        foreach ($bad as $frag) {
+            if (strpos($ident, $frag) !== false) {
+                throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
+            }
+        }
+        // Solo permitir [A-Za-z_][A-Za-z0-9_]*
+        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $ident) !== 1) {
+            throw new VersaORMException("Invalid {$context} format: '{$ident}'", 'INVALID_IDENTIFIER');
+        }
+    }
+
+    /**
      * Formatea valores DEFAULT según el driver/tipo.
      */
     private function formatDefault($value, string $driver): string
@@ -503,14 +764,20 @@ class VersaORM
         if (is_numeric($value)) {
             return (string)$value;
         }
-        // Cadena: comillar
-        return '\'' . str_replace('\'', '\'\'',$value) . '\'';
+        // Cadenas: detectar funciones/constantes temporales conocidas
+        if (is_string($value)) {
+            $v = trim($value);
+            if (preg_match('/^(CURRENT_TIMESTAMP(?:\(\))?|NOW\(\)|CURRENT_DATE|CURRENT_TIME)$/i', $v) === 1) {
+                return strtoupper($v);
+            }
+        }
+        // Por defecto, comillar
+        return '\'' . str_replace('\'', '\'\'', (string)$value) . '\'';
     }
 
     /**
      * Administra el caché interno.
      *
-     * @param  string               $action
      * @param  array<string, mixed> $params
      * @return array<string, mixed>
      */
@@ -712,18 +979,11 @@ class VersaORM
                 $warningMessage,
                 'FREEZE_VIOLATION',
                 null,
-                [],
-                $context
+                []
             );
         }
     }
 
-    /**
-     * Determina si una operación es de tipo DDL (Data Definition Language).
-     *
-     * @param  string $operation
-     * @return bool
-     */
     private function isDdlOperation(string $operation): bool
     {
         $ddlOperations = [
