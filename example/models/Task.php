@@ -214,6 +214,12 @@ class Task extends BaseModel
         return safe_strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
     }
 
+    public function getUserIdByTaskId(int $taskId): ?int
+    {
+        $task = static::find($taskId);
+        return $task ? $task->user_id : null;
+    }
+
     /**
      * Obtener clase CSS para prioridad.
      */

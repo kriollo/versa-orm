@@ -3,6 +3,7 @@
 require_once __DIR__ . '/bootstrap.php';
 
 use App\Models\Note;
+use App\Models\Task;
 
 header('Content-Type: application/json');
 
@@ -36,7 +37,9 @@ switch ($action) {
                 if (session_status() === PHP_SESSION_NONE) {
                     session_start();
                 }
-                $userId = $_SESSION['user_id'] ?? 1;
+                $orm = Note::getGlobalORM();
+                $task = Task::find((int)$taskId);
+                $userId = $task ? $task->getUserIdByTaskId((int)$taskId) : 1; // Asignar usuario por defecto si no se encuentra
 
                 Note::create([
                     'task_id' => (int)$taskId,

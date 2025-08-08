@@ -4,6 +4,7 @@ require_once __DIR__ . '/bootstrap.php';
 
 use VersaORM\VersaModel;
 
+
 header('Content-Type: application/json');
 
 // Obtener la instancia del ORM que fue configurada en bootstrap.php
