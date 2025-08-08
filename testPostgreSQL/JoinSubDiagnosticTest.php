@@ -88,7 +88,7 @@ class JoinSubDiagnosticTest extends TestCase
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
-            ->having('post_count', '>', 1);
+            ->having('COUNT(*)', '>', 1);
 
         try {
             $results = self::$orm->table('users')

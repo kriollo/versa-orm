@@ -15,9 +15,9 @@ class ValidationSchemaTest extends TestCase
     {
         parent::setUp();
 
-        // Crear tabla de prueba simular CLI Rust schema
+        // Crear tabla de prueba simulando CLI Rust schema (PostgreSQL compatible)
         self::$orm->exec('CREATE TABLE IF NOT EXISTS test_validation_schema (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
             age INT,
@@ -25,7 +25,7 @@ class ValidationSchemaTest extends TestCase
             bio TEXT,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB');
+        )');
     }
 
     public function testSchemaValidationWithRequiredFields(): void

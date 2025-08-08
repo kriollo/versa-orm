@@ -346,6 +346,21 @@ class PdoEngine
                                 $bindings = !empty($options['with_score']) ? [$term, $term] : [$term];
                                 $stmt->execute($bindings);
                                 return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                            } elseif ($driver === 'postgres') {
+                                // Usar to_tsvector/tsquery; si la columna ya es tsvector, comparar directamente
+                                $language = (string)($options['language'] ?? 'english');
+                                $operator = (string)($options['operator'] ?? '@@');
+                                $rank = !empty($options['rank']);
+                                $colExpr = implode(' || \" \" || ', array_map(fn($c) => "to_tsvector('" . $language . "', " . $c . ")", $cols));
+                                // Si solo una columna y parece tsvector, usarla directa
+                                if (count($cols) === 1 && preg_match('/vector$/i', (string)$cols[0]) === 1) {
+                                    $colExpr = (string)$cols[0];
+                                }
+                                $rankExpr = $rank ? ", ts_rank(" . $colExpr . ", plainto_tsquery(?)) AS rank" : '';
+                                $sql = 'SELECT *' . $rankExpr . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $colExpr . ' ' . $operator . ' plainto_tsquery(?)';
+                                $stmt = $pdo->prepare($sql);
+                                $stmt->execute($rank ? [$term, $term] : [$term]);
+                                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                             }
                             // Fallback: LIKE en otros drivers
                             $likeParts = [];
@@ -355,6 +370,42 @@ class PdoEngine
                             $sql = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . implode(' OR ', $likeParts);
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute(array_fill(0, count($likeParts), '%' . $term . '%'));
+                            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                        }
+                    case 'array_operations': {
+                            // Soporte mínimo para arrays en Postgres
+                            if ($driver !== 'postgres') {
+                                throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: array_operations');
+                            }
+                            $table = (string)($params['table'] ?? '');
+                            $col = (string)($params['column'] ?? '');
+                            $op = (string)($params['array_operation'] ?? '');
+                            $value = $params['value'] ?? null;
+                            $whereSql = '';
+                            $bindings = [];
+                            switch ($op) {
+                                case 'contains':
+                                    $whereSql = $col . ' @> ?';
+                                    $bindings[] = is_array($value) ? '{' . implode(',', $value) . '}' : '{' . (string)$value . '}';
+                                    break;
+                                case 'overlap':
+                                    $whereSql = $col . ' && ?';
+                                    $bindings[] = is_array($value) ? '{' . implode(',', $value) . '}' : '{' . (string)$value . '}';
+                                    break;
+                                case 'any':
+                                    $whereSql = '? = ANY(' . $col . ')';
+                                    $bindings[] = $value;
+                                    break;
+                                case 'all':
+                                    $whereSql = '? = ALL(' . $col . ')';
+                                    $bindings[] = $value;
+                                    break;
+                                default:
+                                    throw new VersaORMException('Unsupported array operation: ' . $op);
+                            }
+                            $sql = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $whereSql;
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute($bindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'advanced_aggregation': {
@@ -388,7 +439,7 @@ class PdoEngine
                             $features = [
                                 'window_functions' => in_array($driver, ['mysql', 'postgres', 'sqlite'], true),
                                 'json_support' => true,
-                                'fts_support' => in_array($driver, ['mysql', 'sqlite'], true),
+                                'fts_support' => in_array($driver, ['mysql', 'postgres', 'sqlite'], true),
                             ];
                             return [
                                 'driver' => $driver,

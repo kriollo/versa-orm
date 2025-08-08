@@ -240,10 +240,11 @@ class QueryBuilderTest extends TestCase
     public function testHaving(): void
     {
         // Test groupBy with having
+        // En PostgreSQL, el alias en HAVING no siempre es reconocido; usar la expresión
         $results = self::$orm->table('users')
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
-            ->having('count', '>', 1)
+            ->having('COUNT(*)', '>', 1)
             ->get();
 
         $this->assertCount(1, $results);
@@ -257,8 +258,8 @@ class QueryBuilderTest extends TestCase
         $results = self::$orm->table('users')
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
-            ->having('count', '>=', 1)
-            ->having('count', '<=', 2)
+            ->having('COUNT(*)', '>=', 1)
+            ->having('COUNT(*)', '<=', 2)
             ->orderBy('status', 'asc')
             ->get();
 

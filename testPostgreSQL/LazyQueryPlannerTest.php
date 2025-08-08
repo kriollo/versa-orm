@@ -215,7 +215,8 @@ class LazyQueryPlannerTest extends TestCase
 
         $this->assertIsString($sql);
         $this->assertStringContainsString('SELECT', $sql);
-        $this->assertStringContainsString('FROM users', $sql);
+        // Aceptar FROM users o FROM "users" segun dialecto
+        $this->assertMatchesRegularExpression('/FROM\s+"?users"?/i', $sql);
         $this->assertStringContainsString('WHERE', $sql);
         $this->assertStringContainsString('ORDER BY', $sql);
     }

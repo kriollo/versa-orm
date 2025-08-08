@@ -207,7 +207,7 @@ class QueryBuilderJoinTest extends TestCase
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
-            ->having('post_count', '>', 1);
+            ->having('COUNT(*)', '>', 1);
 
         $results = self::$orm->table('users')
             ->select(['users.name', 'active_users.post_count'])

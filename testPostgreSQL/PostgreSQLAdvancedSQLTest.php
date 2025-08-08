@@ -22,15 +22,10 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!extension_loaded('pdo_pgsql')) {
-            $this->markTestSkipped('pdo_pgsql no está disponible en este entorno');
-        }
         // Configuración específica para PostgreSQL
         parent::setUp();
         $driver = self::$orm->getConfig()['driver'] ?? '';
-        if ($driver !== 'postgresql' || !extension_loaded('pdo_pgsql')) {
-            $this->markTestSkipped('Tests PostgreSQL específicos omitidos: driver no es postgresql o falta pdo_pgsql');
-        }
+        // Esta suite es exclusiva para PostgreSQL; asumimos entorno correcto
         VersaModel::setORM(self::$orm);
         $this->queryBuilder = new QueryBuilder(self::$orm, 'employees');
         // Asegurar tabla limpia
@@ -217,12 +212,74 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         $this->assertIsArray($result);
     }
 
+    public function testUnion(): void
+    {
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $queries = [
+            [
+                'sql' => 'SELECT name FROM employees WHERE department = ?',
+                'bindings' => ['Engineering']
+            ],
+            [
+                'sql' => 'SELECT name FROM employees WHERE salary > ?',
+                'bindings' => [80000]
+            ]
+        ];
+        $result = $qb->union($queries, false);
+        $this->assertIsArray($result);
+    }
+
+    public function testUnionAll(): void
+    {
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $queries = [
+            [
+                'sql' => 'SELECT department FROM employees WHERE salary > 70000',
+                'bindings' => []
+            ],
+            [
+                'sql' => 'SELECT department FROM employees WHERE department = ?',
+                'bindings' => ['Data Science']
+            ]
+        ];
+        $result = $qb->union($queries, true);
+        $this->assertIsArray($result);
+    }
+
+    public function testGetDriverCapabilities(): void
+    {
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $result = $qb->getDriverCapabilities();
+        $this->assertIsArray($result);
+    }
+
+    public function testOptimizeQuery(): void
+    {
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $result = $qb->optimizeQuery(['query' => 'SELECT * FROM employees WHERE salary > 50000']);
+        $this->assertIsArray($result);
+    }
+
+    public function testGetDriverLimits(): void
+    {
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $result = $qb->getDriverLimits();
+        $this->assertIsArray($result);
+    }
+
+    public function testAdvancedAggregationGroupConcat(): void
+    {
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $result = $qb->advancedAggregation('group_concat', 'name', ['separator' => ', '], ['department'], 'employee_names');
+        $this->assertIsArray($result);
+    }
+
     public function testPostgreSQLIntersectAndExcept(): void
     {
         $qb1 = new QueryBuilder(self::$orm, 'employees');
         $qb1->where('department', '=', 'Engineering');
 
-        $qb2 = new QueryBuilder($this->orm, 'employees');
+        $qb2 = new QueryBuilder(self::$orm, 'employees');
         $qb2->where('salary', '>', 80000);
 
         // INTERSECT operation

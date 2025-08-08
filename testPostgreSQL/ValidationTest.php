@@ -17,14 +17,14 @@ class ValidationTest extends TestCase
     {
         parent::setUp();
 
-        // Crear tabla de prueba para ValidationTest
+        // Crear tabla de prueba para ValidationTest (PostgreSQL compatible)
         self::$orm->exec('CREATE TABLE IF NOT EXISTS test_users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
             age INT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB');
+        )');
     }
 
     public function testFillableAttributesAllowMassAssignment(): void
