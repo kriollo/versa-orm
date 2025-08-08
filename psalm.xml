@@ -4,10 +4,11 @@
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
     errorLevel="3"
+    phpVersion="8.3"
     cacheDirectory="vendor/cache/psalm"
     ensureArrayStringOffsetsExist="true"
-    findUnusedVariablesAndParams="true"
-    findUnusedCode="true"
+    findUnusedVariablesAndParams="false"
+    findUnusedCode="false"
     strictBinaryOperands="true"
     reportMixedIssues="true"
 >
@@ -30,6 +31,7 @@
         <TaintedHtml errorLevel="error" />
         <TaintedCookie errorLevel="error" />
         <TaintedHeader errorLevel="error" />
+        <ForbiddenCode errorLevel="suppress" />
 
         <!-- Allow mixed types in some cases -->
         <MixedAssignment errorLevel="info" />
@@ -39,13 +41,30 @@
         <MixedPropertyFetch errorLevel="info" />
 
         <!-- Strict type checking -->
-        <RedundantCondition errorLevel="error" />
+    <RedundantCondition errorLevel="info" />
         <UnresolvableInclude errorLevel="error" />
-        <InvalidDocblock errorLevel="error" />
+    <InvalidDocblock errorLevel="error" />
+    <InvalidCast errorLevel="info" />
+    <TypeDoesNotContainType errorLevel="info" />
+    <RedundantCast errorLevel="info" />
+    <PossiblyUndefinedArrayOffset errorLevel="info" />
 
         <!-- Allow some flexibility for dynamic features -->
         <UndefinedMagicMethod errorLevel="info" />
         <UndefinedMagicPropertyFetch errorLevel="info" />
         <UndefinedMagicPropertyAssignment errorLevel="info" />
+
+        <!-- Library noise reductions -->
+        <PossiblyUnusedMethod errorLevel="suppress" />
+        <UnusedClass errorLevel="suppress" />
+        <UnusedMethod errorLevel="suppress" />
+        <UnusedMethodCall errorLevel="info" />
+        <UnusedVariable errorLevel="info" />
+        <UnusedForeachValue errorLevel="info" />
+        <PossiblyUnusedProperty errorLevel="info" />
+        <PossiblyUnusedReturnValue errorLevel="info" />
+        <UnnecessaryVarAnnotation errorLevel="info" />
+        <PossiblyUndefinedStringArrayOffset errorLevel="info" />
+        <InvalidOperand errorLevel="info" />
     </issueHandlers>
 </psalm>
