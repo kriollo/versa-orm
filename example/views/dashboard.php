@@ -199,8 +199,8 @@
                 <i class="fas fa-shield-alt text-2xl text-green-600"></i>
             </div>
             <div class="ml-4">
-                <h3 class="text-lg font-semibold text-gray-900">Sistema de Tipado Fuerte Activo</h3>
-                <p class="mt-1 text-sm text-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Sistema de Tipado Fuerte Activo</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                     VersaORM está validando automáticamente los tipos de datos en todos los modelos.
                     <?php
                     $typedModels = [
@@ -215,7 +215,7 @@ $totalProperties = array_sum(array_map('count', $typedModels));
                 </p>
                 <div class="mt-2 flex flex-wrap gap-2">
                     <?php foreach ($typedModels as $modelName => $properties): ?>
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                             <?= $modelName ?>: <?= count($properties) ?> props
                         </span>
                     <?php endforeach; ?>

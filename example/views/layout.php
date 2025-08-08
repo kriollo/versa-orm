@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'VersaORM Trello Demo' ?></title>
+    <script>
+        window.tailwind = {
+            config: {
+                darkMode: 'class'
+            }
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -32,7 +39,7 @@
     </style>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900" :class="{ 'dark': darkMode }" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))">
+<body class="bg-gray-50 dark:bg-gray-900" :class="{ 'dark': darkMode }" x-data="{ darkMode: (localStorage.getItem('darkMode') === null ? window.matchMedia('(prefers-color-scheme: dark)').matches : localStorage.getItem('darkMode') === 'true') }" x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))">
     <!-- Navegación -->
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,7 +52,7 @@
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <button @click="darkMode = !darkMode" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <button @click="darkMode = !darkMode" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium" aria-label="Cambiar tema" title="Cambiar tema">
                         <i x-show="!darkMode" class="fas fa-moon"></i>
                         <i x-show="darkMode" class="fas fa-sun"></i>
                     </button>

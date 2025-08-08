@@ -9,8 +9,8 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Etiquetas</h1>
-            <p class="text-gray-600">Gestiona las etiquetas del sistema para organizar tareas</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Etiquetas</h1>
+            <p class="text-gray-600 dark:text-gray-400">Gestiona las etiquetas del sistema para organizar tareas</p>
         </div>
         <a href="?action=label_create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
             <i class="fas fa-plus mr-2"></i>
@@ -20,50 +20,50 @@
 
     <!-- Estadísticas -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white p-4 rounded-lg shadow">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div class="flex items-center">
                 <div class="p-2 bg-blue-100 rounded-lg mr-3">
                     <i class="fas fa-tags text-blue-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count($labels) ?></p>
-                    <p class="text-gray-600 text-sm">Total Etiquetas</p>
+                    <p class="text-2xl font-semibold dark:text-white"><?= count($labels) ?></p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Total Etiquetas</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-lg shadow">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div class="flex items-center">
                 <div class="p-2 bg-green-100 rounded-lg mr-3">
                     <i class="fas fa-check-circle text-green-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count(array_filter($labels, fn ($l) => !empty($l->tasks_count) && $l->tasks_count > 0)) ?></p>
-                    <p class="text-gray-600 text-sm">En Uso</p>
+                    <p class="text-2xl font-semibold dark:text-white"><?= count(array_filter($labels, fn ($l) => !empty($l->tasks_count) && $l->tasks_count > 0)) ?></p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">En Uso</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-lg shadow">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div class="flex items-center">
                 <div class="p-2 bg-yellow-100 rounded-lg mr-3">
                     <i class="fas fa-tasks text-yellow-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= array_sum(array_column($labels, 'tasks_count')) ?></p>
-                    <p class="text-gray-600 text-sm">Asignaciones</p>
+                    <p class="text-2xl font-semibold dark:text-white"><?= array_sum(array_column($labels, 'tasks_count')) ?></p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Asignaciones</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-lg shadow">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div class="flex items-center">
                 <div class="p-2 bg-purple-100 rounded-lg mr-3">
                     <i class="fas fa-palette text-purple-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count(array_unique(array_column($labels, 'color'))) ?></p>
-                    <p class="text-gray-600 text-sm">Colores Únicos</p>
+                    <p class="text-2xl font-semibold dark:text-white"><?= count(array_unique(array_column($labels, 'color'))) ?></p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Colores Únicos</p>
                 </div>
             </div>
         </div>
@@ -71,10 +71,10 @@
 
     <!-- Lista de etiquetas -->
     <?php if (!empty($labels)): ?>
-        <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-6">
                 <?php foreach ($labels as $label): ?>
-                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow">
                         <!-- Header de la etiqueta -->
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center flex-1">

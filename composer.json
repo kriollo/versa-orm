@@ -32,11 +32,9 @@
     "friendsofphp/php-cs-fixer": "^3.85",
     "phpstan/phpstan": "^1.10",
     "phpunit/phpunit": "^10.0",
-    "psalm/plugin-phpunit": "*",
-    "psalm/plugin-symfony": "*",
+    "psalm/plugin-phpunit": "^0.18",
     "squizlabs/php_codesniffer": "^3.7",
-    "vimeo/psalm": "^6.5",
-    "weirdan/doctrine-psalm-plugin": "*"
+    "vimeo/psalm": "^5.26"
   },
   "suggest": {
     "ext-mbstring": "Para un mejor manejo de cadenas UTF-8"

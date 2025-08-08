@@ -19,9 +19,7 @@
         </ignoreFiles>
     </projectFiles>
 
-    <plugins>
-        <pluginClass class="Psalm\PluginRegistrationSocket\SecurityPlugin" />
-    </plugins>
+    <!-- Plugins deshabilitados: el plugin de seguridad no está disponible para Psalm 5. Usamos reglas de Tainted* igualmente. -->
 
     <issueHandlers>
         <!-- Security issues should be treated as errors -->
@@ -32,19 +30,19 @@
         <TaintedHtml errorLevel="error" />
         <TaintedCookie errorLevel="error" />
         <TaintedHeader errorLevel="error" />
-        
+
         <!-- Allow mixed types in some cases -->
         <MixedAssignment errorLevel="info" />
         <MixedArgument errorLevel="info" />
         <MixedArrayOffset errorLevel="info" />
         <MixedMethodCall errorLevel="info" />
         <MixedPropertyFetch errorLevel="info" />
-        
+
         <!-- Strict type checking -->
         <RedundantCondition errorLevel="error" />
         <UnresolvableInclude errorLevel="error" />
         <InvalidDocblock errorLevel="error" />
-        
+
         <!-- Allow some flexibility for dynamic features -->
         <UndefinedMagicMethod errorLevel="info" />
         <UndefinedMagicPropertyFetch errorLevel="info" />
