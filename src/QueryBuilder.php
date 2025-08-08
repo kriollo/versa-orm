@@ -80,6 +80,10 @@ class QueryBuilder
     public function __construct($orm, string $table, ?string $modelClass = null)
     {
         $this->orm = $orm;
+        // Validar identificador/alias de tabla inmediatamente para prevenir casos maliciosos
+        if (!$this->isSafeIdentifier($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
         $this->table = $table;
         $this->modelClass = $modelClass;
     }

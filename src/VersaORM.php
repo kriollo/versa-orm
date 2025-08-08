@@ -58,7 +58,8 @@ class VersaORM
         }
 
         // Si el motor es PDO, no exigir la presencia del binario Rust
-        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'rust')));
+        // Por defecto, usar PDO si no se especifica motor ni variable de entorno
+        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
         if ($engine !== 'pdo') {
             $this->checkRustBinary();
         }
@@ -93,7 +94,7 @@ class VersaORM
      * @return mixed
      * @throws VersaORMException
      */
-private function execute(string $action, array $params)
+    private function execute(string $action, array $params)
     {
         if (empty($this->config)) {
             throw new VersaORMException('Database configuration is not set. Please call setConfig() first.');

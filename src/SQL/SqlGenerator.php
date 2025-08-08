@@ -23,7 +23,7 @@ class SqlGenerator
         if ($action === 'query') {
             $method = (string)($params['method'] ?? 'get');
             // Batch/write methods mapped into query by QueryBuilder
-            if (in_array($method, ['insertMany','updateMany','deleteMany','upsertMany'], true)) {
+            if (in_array($method, ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'], true)) {
                 // Defer to specific compilers that return [sql, bindings] possibly for one batch
                 return self::compileBatch($method, $params, $dialect);
             }
@@ -72,14 +72,50 @@ class SqlGenerator
         $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
         $bindings = [];
 
-        // JOINS (inner, left, right)
+        // JOINS (inner, left, right, cross, joinSub); FULL OUTER (limitado)
         $joins = $params['joins'] ?? [];
+        // Manejo especial para FULL OUTER JOIN cuando es un único join simple
+        $hasFullOuter = count($joins) === 1 && (strtolower((string)($joins[0]['type'] ?? '')) === 'full_outer');
+        if ($hasFullOuter) {
+            // Emular con UNION de LEFT y RIGHT JOIN
+            $j = $joins[0];
+            $baseFrom = ' FROM ' . self::compileTableReference($table, $dialect);
+            $onClause = self::compileJoinColumn((string)$j['first_col'], $dialect)
+                . ' ' . (string)($j['operator'] ?? '=') . ' '
+                . self::compileJoinColumn((string)$j['second_col'], $dialect);
+            $sel = implode(', ', $selectSqlParts);
+            $leftSql = 'SELECT ' . $sel . $baseFrom . ' LEFT JOIN ' . self::compileTableReference((string)$j['table'], $dialect)
+                . ' ON ' . $onClause;
+            $rightSql = 'SELECT ' . $sel . $baseFrom . ' RIGHT JOIN ' . self::compileTableReference((string)$j['table'], $dialect)
+                . ' ON ' . $onClause;
+            $sql = $leftSql . ' UNION ' . $rightSql;
+            // No soportamos WHERE/GROUP/HAVING/ORDER/LIMIT en esta emulación mínima
+            return [$sql, $bindings];
+        }
+
         foreach ($joins as $join) {
             $type = strtolower((string)($join['type'] ?? 'inner'));
+            if ($type === 'cross') {
+                $sql .= ' CROSS JOIN ' . self::compileTableReference((string)$join['table'], $dialect);
+                continue;
+            }
             if (!in_array($type, ['inner', 'left', 'right'], true)) {
                 throw new VersaORMException('Join type not supported in PDO engine: ' . $type);
             }
-            $jt = strtoupper($type) . ' JOIN ' . self::compileTableReference((string)$join['table'], $dialect);
+            // joinSub support: if subquery is provided, wrap as (subquery) AS alias
+            $tableRef = '';
+            if (isset($join['subquery']) && is_string($join['subquery'])) {
+                $alias = (string)($join['alias'] ?? $join['table'] ?? 'subq');
+                $tableRef = '(' . $join['subquery'] . ') AS ' . $dialect->quoteIdentifier($alias);
+                // merge bindings from subquery
+                if (isset($join['subquery_bindings']) && is_array($join['subquery_bindings'])) {
+                    $bindings = array_merge($bindings, $join['subquery_bindings']);
+                }
+            } else {
+                $tableRef = self::compileTableReference((string)$join['table'], $dialect);
+            }
+
+            $jt = strtoupper($type) . ' JOIN ' . $tableRef;
             $first = (string)($join['first_col'] ?? '');
             $op = (string)($join['operator'] ?? '=');
             $second = (string)($join['second_col'] ?? '');

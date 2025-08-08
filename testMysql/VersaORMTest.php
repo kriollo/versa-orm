@@ -28,7 +28,7 @@ class VersaORMTest extends TestCase
     public function testExecInsert()
     {
         $query = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
-        $result = $this->orm->exec($query);
+        $result = self::$orm->exec($query);
 
         $this->assertTrue(
             $result === null || (is_array($result) && count($result) === 0),
