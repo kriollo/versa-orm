@@ -29,12 +29,13 @@ class DatabaseSpecificTypesTest extends TestCase
     {
         $configs = [
             'mysql' => [
+                'engine' => 'pdo',
                 'database_type' => 'mysql',
                 'host' => $_ENV['MYSQL_HOST'] ?? 'localhost',
                 'port' => $_ENV['MYSQL_PORT'] ?? 3306,
-                'database' => $_ENV['MYSQL_DATABASE'] ?? 'test_versaorm',
-                'username' => $_ENV['MYSQL_USERNAME'] ?? 'root',
-                'password' => $_ENV['MYSQL_PASSWORD'] ?? '',
+                'database' => $_ENV['MYSQL_DATABASE'] ?? 'versaorm_test',
+                'username' => $_ENV['MYSQL_USERNAME'] ?? 'local',
+                'password' => $_ENV['MYSQL_PASSWORD'] ?? 'local',
                 'charset' => 'utf8mb4',
                 'collation' => 'utf8mb4_unicode_ci',
             ],
@@ -61,6 +62,8 @@ class DatabaseSpecificTypesTest extends TestCase
         if ($this->databaseType !== 'mysql') {
             $this->markTestSkipped('Este test requiere MySQL');
         }
+
+        $this->orm->freeze(false);
 
         $model = new VersaModel('test_mysql_types', $this->orm);
 

@@ -193,7 +193,7 @@ class PdoEngine
                                     if ($col !== '' && $col !== '*' && !str_contains($col, '.') && !str_contains($col, '(')) {
                                         $col = $baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($col);
                                     }
-                                    $ob[] = $col . ' ' . (in_array($dir, ['ASC','DESC'], true) ? $dir : 'ASC');
+                                    $ob[] = $col . ' ' . (in_array($dir, ['ASC', 'DESC'], true) ? $dir : 'ASC');
                                 }
                                 if (!empty($ob)) {
                                     $over[] = 'ORDER BY ' . implode(', ', $ob);
@@ -229,9 +229,14 @@ class PdoEngine
                             if (function_exists('error_log')) {
                                 @error_log('[PDO][advanced_sql][window_function] SQL: ' . $sql);
                             }
-                            $stmt = $pdo->prepare($sql);
-                            $stmt->execute($baseBindings);
-                            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                            try {
+                                $stmt = $pdo->prepare($sql);
+                                $stmt->execute($baseBindings);
+                                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                            } catch (\Throwable $e) {
+                                // Incluir el SQL generado para facilitar el diagnóstico de columnas/alias
+                                throw new \Exception('advanced_sql window_function failed. SQL: ' . $sql . ' | Bindings: ' . json_encode($baseBindings) . ' | Error: ' . $e->getMessage(), 0, $e);
+                            }
                         }
                     case 'cte': {
                             $ctes = (array)($params['ctes'] ?? []);
@@ -325,7 +330,7 @@ class PdoEngine
                                 if (isset($options['mode']) && is_string($options['mode'])) {
                                     $modeSql = ' IN ' . $options['mode'] . ' MODE';
                                 }
-                                $match = 'MATCH(' . implode(', ', $cols) . ') AGAINST (?'. $modeSql .')';
+                                $match = 'MATCH(' . implode(', ', $cols) . ') AGAINST (?' . $modeSql . ')';
                                 $select = '*';
                                 if (!empty($options['with_score'])) {
                                     $select = '*, ' . $match . ' AS score';

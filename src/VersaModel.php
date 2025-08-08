@@ -1786,7 +1786,7 @@ class VersaModel implements TypedModelInterface
             }
         }
 
-    if (is_array($value) || is_object($value)) {
+        if (is_array($value) || is_object($value)) {
             return 'JSON';
         }
 

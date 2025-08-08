@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use VersaORM\VersaORM;
 use VersaORM\QueryBuilder;
-use VersaORM\VersaORMException;
+use VersaORM\VersaORM;
 
 /**
  * Tests específicos para funcionalidades SQL avanzadas de PostgreSQL
@@ -23,6 +22,9 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     protected function setUp(): void
     {
+        if (!extension_loaded('pdo_pgsql')) {
+            $this->markTestSkipped('pdo_pgsql no está disponible en este entorno');
+        }
         // Configuración específica para PostgreSQL
         $config = [
             'driver' => 'postgresql',

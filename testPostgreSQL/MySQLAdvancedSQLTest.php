@@ -25,12 +25,13 @@ class MySQLAdvancedSQLTest extends TestCase
     {
         // Configuración específica para MySQL
         $config = [
+            'engine' => 'pdo',
             'driver' => 'mysql',
             'host' => 'localhost',
             'port' => 3306,
-            'database' => 'test_versa_orm',
-            'username' => 'root',
-            'password' => '',
+            'database' => 'versaorm_test',
+            'username' => 'local',
+            'password' => 'local',
             'options' => [
                 'charset' => 'utf8mb4',
                 'sql_mode' => 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO',

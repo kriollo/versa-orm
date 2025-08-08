@@ -45,13 +45,20 @@ class TestCase extends BaseTestCase
     protected function tearDown(): void
     {
         // No es necesario hacer rollback si el esquema se recrea cada vez.
+        global $config;
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
+        }
+        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
         self::$orm->exec('DROP TABLE IF EXISTS posts;');
         self::$orm->exec('DROP TABLE IF EXISTS profiles;');
-        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
         self::$orm->exec('DROP TABLE IF EXISTS roles;');
         self::$orm->exec('DROP TABLE IF EXISTS users;');
         self::$orm->exec('DROP TABLE IF EXISTS products;');
         self::$orm->exec('DROP TABLE IF EXISTS test_users;');
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+        }
     }
 
     public static function tearDownAfterClass(): void
@@ -70,7 +77,8 @@ class TestCase extends BaseTestCase
         // Configuración específica para MySQL
         global $config;
         if ($config['DB']['DB_DRIVER'] === 'mysql') {
-            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+            // Desactivar checks durante la creación para evitar problemas de orden
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
             self::$orm->exec('SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";');
         }
 
@@ -131,17 +139,30 @@ class TestCase extends BaseTestCase
                 category VARCHAR(100) NULL
             ) ENGINE=InnoDB;
         ');
+
+        if ($config['DB']['DB_DRIVER'] === 'mysql') {
+            // Reactivar checks una vez creado todo
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+        }
     }
 
     protected static function dropSchema(): void
     {
+        global $config;
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
+        }
+        // Dropear en orden seguro para FKs
+        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
         self::$orm->exec('DROP TABLE IF EXISTS posts;');
         self::$orm->exec('DROP TABLE IF EXISTS profiles;');
-        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
         self::$orm->exec('DROP TABLE IF EXISTS roles;');
         self::$orm->exec('DROP TABLE IF EXISTS users;');
         self::$orm->exec('DROP TABLE IF EXISTS products;');
         self::$orm->exec('DROP TABLE IF EXISTS test_users;');
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
+        }
     }
 
     protected static function seedData(): void
