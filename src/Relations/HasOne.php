@@ -15,7 +15,7 @@ class HasOne extends Relation
     public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $localKey)
     {
         $this->foreignKey = $foreignKey;
-        $this->localKey = $localKey;
+        $this->localKey   = $localKey;
         parent::__construct($query, $parent);
     }
 

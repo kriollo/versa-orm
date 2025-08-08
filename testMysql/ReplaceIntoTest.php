@@ -22,10 +22,10 @@ class ReplaceIntoTest extends TestCase
     {
         // Test: REPLACE INTO debe insertar un nuevo registro
         $newProduct = [
-            'sku' => 'REPLACE-NEW-001',
-            'name' => 'Producto Replace Nuevo',
-            'price' => 199.99,
-            'stock' => 15,
+            'sku'         => 'REPLACE-NEW-001',
+            'name'        => 'Producto Replace Nuevo',
+            'price'       => 199.99,
+            'stock'       => 15,
             'description' => 'Producto creado con REPLACE INTO'
         ];
 
@@ -49,10 +49,10 @@ class ReplaceIntoTest extends TestCase
 
         // Insertar un registro inicial
         $initialProduct = [
-            'sku' => 'REPLACE-EXIST-001',
-            'name' => 'Producto Original',
-            'price' => 100.00,
-            'stock' => 10,
+            'sku'         => 'REPLACE-EXIST-001',
+            'name'        => 'Producto Original',
+            'price'       => 100.00,
+            'stock'       => 10,
             'description' => 'Descripción original'
         ];
 
@@ -60,8 +60,8 @@ class ReplaceIntoTest extends TestCase
 
         // Ahora usar REPLACE INTO para reemplazar completamente
         $replacementProduct = [
-            'sku' => 'REPLACE-EXIST-001', // Misma clave única
-            'name' => 'Producto Reemplazado',
+            'sku'   => 'REPLACE-EXIST-001', // Misma clave única
+            'name'  => 'Producto Reemplazado',
             'price' => 250.00,
             'stock' => 25
             // Nota: No incluimos 'description' para verificar que se pierde
@@ -87,12 +87,12 @@ class ReplaceIntoTest extends TestCase
     {
         // Test: REPLACE INTO con todos los campos disponibles en el esquema
         $completeProduct = [
-            'sku' => 'REPLACE-COMPLETE-001',
-            'name' => 'Producto Completo',
-            'price' => 399.99,
-            'stock' => 50,
+            'sku'         => 'REPLACE-COMPLETE-001',
+            'name'        => 'Producto Completo',
+            'price'       => 399.99,
+            'stock'       => 50,
             'description' => 'Descripción completa del producto',
-            'category' => 'Electronics'
+            'category'    => 'Electronics'
         ];
 
         $result = self::$orm->table('products')->replaceInto($completeProduct);
@@ -113,12 +113,12 @@ class ReplaceIntoTest extends TestCase
     {
         // Test: REPLACE INTO debe manejar valores NULL correctamente
         $productWithNulls = [
-            'sku' => 'REPLACE-NULL-001',
-            'name' => 'Producto con NULLs',
-            'price' => 150.00,
-            'stock' => 20,
+            'sku'         => 'REPLACE-NULL-001',
+            'name'        => 'Producto con NULLs',
+            'price'       => 150.00,
+            'stock'       => 20,
             'description' => null, // Valor NULL explícito
-            'category' => null
+            'category'    => null
         ];
 
         $result = self::$orm->table('products')->replaceInto($productWithNulls);
@@ -146,12 +146,12 @@ class ReplaceIntoTest extends TestCase
     {
         // Test: REPLACE INTO debe manejar caracteres especiales correctamente
         $productWithSpecialChars = [
-            'sku' => 'REPLACE-SPECIAL-001',
-            'name' => "Producto 'con' \"comillas\" & símbolos",
-            'price' => 75.50,
-            'stock' => 12,
+            'sku'         => 'REPLACE-SPECIAL-001',
+            'name'        => "Producto 'con' \"comillas\" & símbolos",
+            'price'       => 75.50,
+            'stock'       => 12,
             'description' => 'Descripción con acentos: ñáéíóú y símbolos @#$%',
-            'category' => 'Categoría/Especial'
+            'category'    => 'Categoría/Especial'
         ];
 
         $result = self::$orm->table('products')->replaceInto($productWithSpecialChars);
@@ -177,20 +177,20 @@ class ReplaceIntoTest extends TestCase
 
         // 1. Insertar registro inicial con campos disponibles
         $initialData = [
-            'sku' => 'COMPARE-001',
-            'name' => 'Producto Inicial',
-            'price' => 100.00,
-            'stock' => 10,
+            'sku'         => 'COMPARE-001',
+            'name'        => 'Producto Inicial',
+            'price'       => 100.00,
+            'stock'       => 10,
             'description' => 'Descripción inicial',
-            'category' => 'Categoría inicial'
+            'category'    => 'Categoría inicial'
         ];
 
         self::$orm->table('products')->insert($initialData);
 
         // 2. Usar UPSERT para actualizar solo algunos campos
         $upsertData = [
-            'sku' => 'COMPARE-001',
-            'name' => 'Producto Actualizado UPSERT',
+            'sku'   => 'COMPARE-001',
+            'name'  => 'Producto Actualizado UPSERT',
             'price' => 150.00
         ];
 
@@ -206,8 +206,8 @@ class ReplaceIntoTest extends TestCase
 
         // 3. Usar REPLACE INTO con los mismos datos parciales
         $replaceData = [
-            'sku' => 'COMPARE-001',
-            'name' => 'Producto Reemplazado REPLACE',
+            'sku'   => 'COMPARE-001',
+            'name'  => 'Producto Reemplazado REPLACE',
             'price' => 200.00
         ];
 
@@ -233,8 +233,8 @@ class ReplaceIntoTest extends TestCase
 
         for ($i = 1; $i <= 20; $i++) {
             $data = [
-                'sku' => 'REPLACE-PERF-' . str_pad((string)$i, 3, '0', STR_PAD_LEFT),
-                'name' => "Producto Replace Performance $i",
+                'sku'   => 'REPLACE-PERF-' . str_pad((string)$i, 3, '0', STR_PAD_LEFT),
+                'name'  => "Producto Replace Performance $i",
                 'price' => 50.00 + $i,
                 'stock' => $i * 2
             ];
@@ -243,7 +243,7 @@ class ReplaceIntoTest extends TestCase
             $this->assertEquals('success', $result['status']);
         }
 
-        $endTime = microtime(true);
+        $endTime       = microtime(true);
         $executionTime = $endTime - $startTime;
 
         // Verificar que todas las operaciones fueron exitosas
@@ -267,10 +267,10 @@ class ReplaceIntoTest extends TestCase
         $largeDescription = str_repeat('Este es un texto muy largo para probar el manejo de datos grandes. ', 100);
 
         $largeDataProduct = [
-            'sku' => 'REPLACE-LARGE-001',
-            'name' => 'Producto con Datos Grandes',
-            'price' => 999.99,
-            'stock' => 1,
+            'sku'         => 'REPLACE-LARGE-001',
+            'name'        => 'Producto con Datos Grandes',
+            'price'       => 999.99,
+            'stock'       => 1,
             'description' => $largeDescription
         ];
 
@@ -289,8 +289,8 @@ class ReplaceIntoTest extends TestCase
     {
         // Test: REPLACE INTO debe ser idempotente
         $productData = [
-            'sku' => 'REPLACE-IDEM-001',
-            'name' => 'Producto Idempotente',
+            'sku'   => 'REPLACE-IDEM-001',
+            'name'  => 'Producto Idempotente',
             'price' => 300.00,
             'stock' => 15
         ];
@@ -323,8 +323,8 @@ class ReplaceIntoTest extends TestCase
         $this->expectException(VersaORMException::class);
 
         $invalidData = [
-            'sku' => 'REPLACE-INVALID-001',
-            'name' => 'Test',
+            'sku'             => 'REPLACE-INVALID-001',
+            'name'            => 'Test',
             'invalid--column' => 'value' // Nombre de columna inválido
         ];
 
@@ -338,16 +338,16 @@ class ReplaceIntoTest extends TestCase
     public function testReplaceIntoWithVersaModel(): void
     {
         // Test: REPLACE INTO debe funcionar con VersaModel
-        $product = new \VersaORM\VersaModel('products', self::$orm);
-        $product->sku = 'REPLACE-MODEL-001';
-        $product->name = 'Producto desde VersaModel';
+        $product        = new \VersaORM\VersaModel('products', self::$orm);
+        $product->sku   = 'REPLACE-MODEL-001';
+        $product->name  = 'Producto desde VersaModel';
         $product->price = 450.00;
         $product->stock = 30;
 
         // VersaModel debería tener acceso al método replaceInto
         $data = [
-            'sku' => $product->sku,
-            'name' => $product->name,
+            'sku'   => $product->sku,
+            'name'  => $product->name,
             'price' => $product->price,
             'stock' => $product->stock
         ];

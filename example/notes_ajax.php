@@ -13,13 +13,13 @@ $taskId = $_POST['task_id'] ?? $_GET['task_id'] ?? null;
 switch ($action) {
     case 'get_notes':
         if ($taskId) {
-            $notes = Note::findByTask((int)$taskId);
+            $notes     = Note::findByTask((int)$taskId);
             $notesData = [];
             foreach ($notes as $note) {
-                $user = $note->user();
-                $noteData = $note->export();
+                $user                  = $note->user();
+                $noteData              = $note->export();
                 $noteData['user_name'] = $user ? $user->name : 'Usuario desconocido';
-                $notesData[] = $noteData;
+                $notesData[]           = $noteData;
             }
             echo json_encode(['success' => true, 'notes' => $notesData]);
         } else {
@@ -28,7 +28,7 @@ switch ($action) {
         break;
 
     case 'add_note':
-        $taskId = $_POST['task_id'] ?? null;
+        $taskId  = $_POST['task_id'] ?? null;
         $content = $_POST['content'] ?? null;
 
         if ($taskId && $content) {
@@ -37,8 +37,8 @@ switch ($action) {
                 if (session_status() === PHP_SESSION_NONE) {
                     session_start();
                 }
-                $orm = Note::getGlobalORM();
-                $task = Task::find((int)$taskId);
+                $orm    = Note::getGlobalORM();
+                $task   = Task::find((int)$taskId);
                 $userId = $task ? $task->getUserIdByTaskId((int)$taskId) : 1; // Asignar usuario por defecto si no se encuentra
 
                 Note::create([
@@ -56,7 +56,7 @@ switch ($action) {
         break;
 
     case 'update_note':
-        $noteId = $_POST['note_id'] ?? null;
+        $noteId  = $_POST['note_id'] ?? null;
         $content = $_POST['content'] ?? null;
         if ($noteId && $content) {
             try {

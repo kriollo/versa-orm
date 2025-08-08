@@ -27,8 +27,8 @@ interface TypedModelInterface
     /**
      * Convierte un valor crudo de la base de datos al tipo PHP apropiado.
      *
-     * @param  string $property
-     * @param  mixed  $value
+     * @param string $property
+     * @param mixed $value
      * @return mixed
      */
     public function castToPhpType(string $property, $value);
@@ -36,8 +36,8 @@ interface TypedModelInterface
     /**
      * Convierte un valor PHP al formato apropiado para la base de datos.
      *
-     * @param  string $property
-     * @param  mixed  $value
+     * @param string $property
+     * @param mixed $value
      * @return mixed
      */
     public function castToDatabaseType(string $property, $value);

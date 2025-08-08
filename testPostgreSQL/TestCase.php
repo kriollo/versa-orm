@@ -12,7 +12,7 @@ require_once __DIR__ . '/bootstrap.php';
 
 class TestCase extends BaseTestCase
 {
-    public static ?VersaORM $orm = null;
+    public static ?VersaORM $orm       = null;
     private static bool $schemaCreated = false;
 
     public static function setUpBeforeClass(): void
@@ -20,12 +20,12 @@ class TestCase extends BaseTestCase
         if (self::$orm === null) {
             global $config;
             $dbConfig = [
-                'engine' => $config['DB']['engine'],
-                'driver' => $config['DB']['DB_DRIVER'],
+                'engine'   => $config['DB']['engine'],
+                'driver'   => $config['DB']['DB_DRIVER'],
                 'database' => $config['DB']['DB_NAME'],
-                'debug' => $config['DB']['debug'],
-                'host' => $config['DB']['DB_HOST'] ?? '',
-                'port' => (int)($config['DB']['DB_PORT'] ?? 0),
+                'debug'    => $config['DB']['debug'],
+                'host'     => $config['DB']['DB_HOST'] ?? '',
+                'port'     => (int)($config['DB']['DB_PORT'] ?? 0),
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];
@@ -158,11 +158,11 @@ class TestCase extends BaseTestCase
             ], [
                 'constraints' => [
                     'foreign' => [[
-                        'name' => 'fk_profiles_users',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
+                        'name'       => 'fk_profiles_users',
+                        'columns'    => ['user_id'],
+                        'refTable'   => 'users',
                         'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
+                        'onDelete'   => 'cascade',
                     ]],
                 ],
             ]);
@@ -176,11 +176,11 @@ class TestCase extends BaseTestCase
             ], [
                 'constraints' => [
                     'foreign' => [[
-                        'name' => 'fk_posts_users',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
+                        'name'       => 'fk_posts_users',
+                        'columns'    => ['user_id'],
+                        'refTable'   => 'users',
                         'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
+                        'onDelete'   => 'cascade',
                     ]],
                 ],
             ]);
@@ -198,18 +198,18 @@ class TestCase extends BaseTestCase
                 'constraints' => [
                     'foreign' => [
                         [
-                            'name' => 'fk_role_user_user',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
+                            'name'       => 'fk_role_user_user',
+                            'columns'    => ['user_id'],
+                            'refTable'   => 'users',
                             'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
+                            'onDelete'   => 'cascade',
                         ],
                         [
-                            'name' => 'fk_role_user_role',
-                            'columns' => ['role_id'],
-                            'refTable' => 'roles',
+                            'name'       => 'fk_role_user_role',
+                            'columns'    => ['role_id'],
+                            'refTable'   => 'roles',
                             'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
+                            'onDelete'   => 'cascade',
                         ],
                     ],
                 ],
@@ -224,19 +224,38 @@ class TestCase extends BaseTestCase
                 ['name' => 'category', 'type' => 'VARCHAR(100)'],
             ]);
         } else {
-            // Driver genérico (SQLite u otros) - sintaxis simple compatible
+            // Driver genérico (SQLite u otros) - sintaxis portable con constraints
+            if ($driver === 'sqlite') {
+                // Asegurar enforcement de FKs en SQLite
+                self::$orm->exec('PRAGMA foreign_keys = ON;');
+            }
+
             self::$orm->schemaCreate('users', [
                 ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
                 ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
                 ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
                 ['name' => 'status', 'type' => 'VARCHAR(50)'],
                 ['name' => 'created_at', 'type' => 'TEXT'],
+            ], [
+                'constraints' => [
+                    'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+                ],
             ]);
 
             self::$orm->schemaCreate('profiles', [
                 ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
                 ['name' => 'user_id', 'type' => 'INT'],
                 ['name' => 'bio', 'type' => 'TEXT'],
+            ], [
+                'constraints' => [
+                    'foreign' => [[
+                        'name'       => 'fk_profiles_users',
+                        'columns'    => ['user_id'],
+                        'refTable'   => 'users',
+                        'refColumns' => ['id'],
+                        'onDelete'   => 'cascade',
+                    ]],
+                ],
             ]);
 
             self::$orm->schemaCreate('posts', [
@@ -245,6 +264,16 @@ class TestCase extends BaseTestCase
                 ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
                 ['name' => 'content', 'type' => 'TEXT'],
                 ['name' => 'published_at', 'type' => 'TEXT'],
+            ], [
+                'constraints' => [
+                    'foreign' => [[
+                        'name'       => 'fk_posts_users',
+                        'columns'    => ['user_id'],
+                        'refTable'   => 'users',
+                        'refColumns' => ['id'],
+                        'onDelete'   => 'cascade',
+                    ]],
+                ],
             ]);
 
             self::$orm->schemaCreate('roles', [
@@ -255,7 +284,27 @@ class TestCase extends BaseTestCase
             self::$orm->schemaCreate('role_user', [
                 ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
                 ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
-            ], ['primary_key' => ['user_id', 'role_id']]);
+            ], [
+                'primary_key' => ['user_id', 'role_id'],
+                'constraints' => [
+                    'foreign' => [
+                        [
+                            'name'       => 'fk_role_user_user',
+                            'columns'    => ['user_id'],
+                            'refTable'   => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete'   => 'cascade',
+                        ],
+                        [
+                            'name'       => 'fk_role_user_role',
+                            'columns'    => ['role_id'],
+                            'refTable'   => 'roles',
+                            'refColumns' => ['id'],
+                            'onDelete'   => 'cascade',
+                        ],
+                    ],
+                ],
+            ]);
 
             self::$orm->schemaCreate('products', [
                 ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],

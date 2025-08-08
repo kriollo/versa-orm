@@ -94,10 +94,10 @@ class Note extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'content' => ['type' => 'text', 'nullable' => false],
-            'task_id' => ['type' => 'int', 'nullable' => false],
-            'user_id' => ['type' => 'int', 'nullable' => false],
+            'id'         => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'content'    => ['type' => 'text', 'nullable' => false],
+            'task_id'    => ['type' => 'int', 'nullable' => false],
+            'user_id'    => ['type' => 'int', 'nullable' => false],
             'created_at' => ['type' => 'datetime', 'nullable' => false],
             'updated_at' => ['type' => 'datetime', 'nullable' => false],
         ];

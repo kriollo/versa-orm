@@ -140,10 +140,10 @@
         <?php
         // Calcular estadísticas basadas en el total filtrado (antes de paginación)
         $totalFiltered = $pagination['total'] ?? 0;
-        $todoTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'todo'));
-        $inProgressTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'in_progress'));
-        $doneTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'done'));
-        ?>
+$todoTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 'todo'));
+$inProgressTasks       = count(array_filter($tasks, fn ($t) => $t['status'] === 'in_progress'));
+$doneTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 'done'));
+?>
 
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex items-center">
@@ -248,36 +248,36 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
-                                $statusClasses = [
-                                    'todo' => 'bg-gray-100 text-gray-800',
-                                    'in_progress' => 'bg-blue-100 text-blue-800',
-                                    'done' => 'bg-green-100 text-green-800',
-                                ];
-                                $statusNames = [
-                                    'todo' => 'Por Hacer',
-                                    'in_progress' => 'En Progreso',
-                                    'done' => 'Completada',
-                                ];
-                                ?>
+                        $statusClasses = [
+                            'todo'        => 'bg-gray-100 text-gray-800',
+                            'in_progress' => 'bg-blue-100 text-blue-800',
+                            'done'        => 'bg-green-100 text-green-800',
+                        ];
+                        $statusNames = [
+                            'todo'        => 'Por Hacer',
+                            'in_progress' => 'En Progreso',
+                            'done'        => 'Completada',
+                        ];
+                        ?>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $statusClasses[$task['status']] ?>">
                                     <?= $statusNames[$task['status']] ?>
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
-                                $priorityClasses = [
-                                    'urgent' => 'bg-red-100 text-red-800',
-                                    'high' => 'bg-orange-100 text-orange-800',
-                                    'medium' => 'bg-yellow-100 text-yellow-800',
-                                    'low' => 'bg-green-100 text-green-800',
-                                ];
-                                $priorityNames = [
-                                    'urgent' => 'Urgente',
-                                    'high' => 'Alta',
-                                    'medium' => 'Media',
-                                    'low' => 'Baja',
-                                ];
-                                ?>
+                        $priorityClasses = [
+                            'urgent' => 'bg-red-100 text-red-800',
+                            'high'   => 'bg-orange-100 text-orange-800',
+                            'medium' => 'bg-yellow-100 text-yellow-800',
+                            'low'    => 'bg-green-100 text-green-800',
+                        ];
+                        $priorityNames = [
+                            'urgent' => 'Urgente',
+                            'high'   => 'Alta',
+                            'medium' => 'Media',
+                            'low'    => 'Baja',
+                        ];
+                        ?>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $priorityClasses[$task['priority']] ?>">
                                     <?= $priorityNames[$task['priority']] ?>
                                 </span>
@@ -285,9 +285,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <?php if ($task['due_date']): ?>
                                     <?php
-                                    $dueDate = new DateTime($task['due_date']);
-                                    $today = new DateTime();
-                                    $diff = $today->diff($dueDate);
+                            $dueDate           = new DateTime($task['due_date']);
+                                    $today     = new DateTime();
+                                    $diff      = $today->diff($dueDate);
                                     $isOverdue = $today > $dueDate;
                                     ?>
                                     <span class="<?= $isOverdue ? 'text-red-600' : '' ?>">
@@ -398,10 +398,10 @@
                     <!-- Números de página -->
                     <?php
                     $start_page = max(1, $pagination['current_page'] - 2);
-                    $end_page = min($pagination['total_pages'], $pagination['current_page'] + 2);
+$end_page                       = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
-                    // Mostrar primera página si no está en el rango
-                    if ($start_page > 1): ?>
+// Mostrar primera página si no está en el rango
+if ($start_page > 1): ?>
                         <a href="?action=tasks&page=1&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
                             class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                             1

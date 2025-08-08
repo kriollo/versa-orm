@@ -25,13 +25,13 @@ class SchemaValidationTest extends TestCase
     protected function setUp(): void
     {
         $this->orm = new VersaORM([
-            'driver' => 'mysql',
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'port' => (int) ($_ENV['DB_PORT'] ?? 3306),
-            'database' => $_ENV['DB_NAME'] ?? 'versaorm_test',
-            'username' => $_ENV['DB_USER'] ?? 'root',
-            'password' => $_ENV['DB_PASS'] ?? '',
-            'charset' => 'utf8mb4',
+            'driver'     => 'mysql',
+            'host'       => $_ENV['DB_HOST'] ?? 'localhost',
+            'port'       => (int) ($_ENV['DB_PORT'] ?? 3306),
+            'database'   => $_ENV['DB_NAME'] ?? 'versaorm_test',
+            'username'   => $_ENV['DB_USER'] ?? 'root',
+            'password'   => $_ENV['DB_PASS'] ?? '',
+            'charset'    => 'utf8mb4',
             'debug_mode' => true,
         ]);
 
@@ -47,7 +47,7 @@ class SchemaValidationTest extends TestCase
 
         // Usar reflexión para acceder al método protegido
         $reflection = new \ReflectionClass($model);
-        $method = $reflection->getMethod('getTableValidationSchema');
+        $method     = $reflection->getMethod('getTableValidationSchema');
         $method->setAccessible(true);
 
         try {
@@ -90,50 +90,50 @@ class SchemaValidationTest extends TestCase
         // Simular metadatos de columnas que vendría del CLI Rust
         $mockSchemaColumns = [
             [
-                'column_name' => 'id',
-                'data_type' => 'int',
-                'is_nullable' => 'NO',
-                'column_default' => null,
-                'extra' => 'auto_increment',
+                'column_name'              => 'id',
+                'data_type'                => 'int',
+                'is_nullable'              => 'NO',
+                'column_default'           => null,
+                'extra'                    => 'auto_increment',
                 'character_maximum_length' => null,
             ],
             [
-                'column_name' => 'name',
-                'data_type' => 'varchar',
-                'is_nullable' => 'NO',
-                'column_default' => null,
-                'extra' => '',
+                'column_name'              => 'name',
+                'data_type'                => 'varchar',
+                'is_nullable'              => 'NO',
+                'column_default'           => null,
+                'extra'                    => '',
                 'character_maximum_length' => 255,
             ],
             [
-                'column_name' => 'email',
-                'data_type' => 'varchar',
-                'is_nullable' => 'YES',
-                'column_default' => null,
-                'extra' => '',
+                'column_name'              => 'email',
+                'data_type'                => 'varchar',
+                'is_nullable'              => 'YES',
+                'column_default'           => null,
+                'extra'                    => '',
                 'character_maximum_length' => 100,
             ],
             [
-                'column_name' => 'age',
-                'data_type' => 'int',
-                'is_nullable' => 'YES',
-                'column_default' => '18',
-                'extra' => '',
+                'column_name'              => 'age',
+                'data_type'                => 'int',
+                'is_nullable'              => 'YES',
+                'column_default'           => '18',
+                'extra'                    => '',
                 'character_maximum_length' => null,
             ],
             [
-                'column_name' => 'score',
-                'data_type' => 'decimal',
-                'is_nullable' => 'NO',
-                'column_default' => '0.0',
-                'extra' => '',
+                'column_name'              => 'score',
+                'data_type'                => 'decimal',
+                'is_nullable'              => 'NO',
+                'column_default'           => '0.0',
+                'extra'                    => '',
                 'character_maximum_length' => null,
             ],
         ];
 
         // Usar reflexión para acceder al método protegido
         $reflection = new \ReflectionClass($model);
-        $method = $reflection->getMethod('processSchemaToValidationRules');
+        $method     = $reflection->getMethod('processSchemaToValidationRules');
         $method->setAccessible(true);
 
         $validationSchema = $method->invoke($model, $mockSchemaColumns);
@@ -203,7 +203,7 @@ class SchemaValidationTest extends TestCase
         $this->assertContains('The email must be a valid email address.', $errors3);
 
         // Test 4: Longitud máxima excedida
-        $model4 = new TestUserModelWithMockSchema('users', $this->orm);
+        $model4   = new TestUserModelWithMockSchema('users', $this->orm);
         $longName = str_repeat('a', 256); // Excede max:255
         $model4->fill(['name' => $longName, 'email' => 'test@example.com']);
         $errors4 = $model4->validate();
@@ -255,15 +255,15 @@ class SchemaValidationTest extends TestCase
 
         // Usar reflexión para acceder al método protegido
         $reflection = new \ReflectionClass($model);
-        $method = $reflection->getMethod('validateFieldAgainstSchema');
+        $method     = $reflection->getMethod('validateFieldAgainstSchema');
         $method->setAccessible(true);
 
         // Test campo requerido vacío
         $columnSchema = [
-            'is_required' => true,
-            'is_nullable' => false,
-            'max_length' => 100,
-            'data_type' => 'varchar',
+            'is_required'      => true,
+            'is_nullable'      => false,
+            'max_length'       => 100,
+            'data_type'        => 'varchar',
             'validation_rules' => ['required', 'max:100'],
         ];
 
@@ -274,12 +274,12 @@ class SchemaValidationTest extends TestCase
         // Test campo opcional null
         $columnSchema['is_required'] = false;
         $columnSchema['is_nullable'] = true;
-        $errors2 = $method->invoke($model, 'description', null, $columnSchema);
+        $errors2                     = $method->invoke($model, 'description', null, $columnSchema);
         $this->assertEmpty($errors2); // null es válido para campos opcionales
 
         // Test longitud máxima
         $longValue = str_repeat('a', 101);
-        $errors3 = $method->invoke($model, 'name', $longValue, $columnSchema);
+        $errors3   = $method->invoke($model, 'name', $longValue, $columnSchema);
         $this->assertNotEmpty($errors3);
         $this->assertContains('The name may not be greater than 100 characters.', $errors3);
 
@@ -297,7 +297,7 @@ class SchemaValidationTest extends TestCase
         try {
             // Intentar crear un usuario inválido
             $user->fill([
-                'name' => '', // Campo requerido vacío
+                'name'  => '', // Campo requerido vacío
                 'email' => 'invalid-email', // Email inválido
             ]);
 
@@ -322,7 +322,7 @@ class TestUserModel extends VersaModel
     // Reglas personalizadas adicionales
     protected array $rules = [
         'name' => ['required'],
-        'age' => ['numeric'],
+        'age'  => ['numeric'],
     ];
 }
 
@@ -340,44 +340,44 @@ class TestUserModelWithMockSchema extends VersaModel
     {
         return [
             'id' => [
-                'is_required' => false,
-                'is_nullable' => false,
+                'is_required'       => false,
+                'is_nullable'       => false,
                 'is_auto_increment' => true,
-                'max_length' => null,
-                'data_type' => 'int',
-                'validation_rules' => ['numeric'],
+                'max_length'        => null,
+                'data_type'         => 'int',
+                'validation_rules'  => ['numeric'],
             ],
             'name' => [
-                'is_required' => true,
-                'is_nullable' => false,
+                'is_required'       => true,
+                'is_nullable'       => false,
                 'is_auto_increment' => false,
-                'max_length' => 255,
-                'data_type' => 'varchar',
-                'validation_rules' => ['required', 'max:255'],
+                'max_length'        => 255,
+                'data_type'         => 'varchar',
+                'validation_rules'  => ['required', 'max:255'],
             ],
             'email' => [
-                'is_required' => false,
-                'is_nullable' => true,
+                'is_required'       => false,
+                'is_nullable'       => true,
                 'is_auto_increment' => false,
-                'max_length' => 100,
-                'data_type' => 'varchar',
-                'validation_rules' => ['email', 'max:100'],
+                'max_length'        => 100,
+                'data_type'         => 'varchar',
+                'validation_rules'  => ['email', 'max:100'],
             ],
             'age' => [
-                'is_required' => false,
-                'is_nullable' => true,
+                'is_required'       => false,
+                'is_nullable'       => true,
                 'is_auto_increment' => false,
-                'max_length' => null,
-                'data_type' => 'int',
-                'validation_rules' => ['numeric'],
+                'max_length'        => null,
+                'data_type'         => 'int',
+                'validation_rules'  => ['numeric'],
             ],
             'score' => [
-                'is_required' => false,
-                'is_nullable' => false,
+                'is_required'       => false,
+                'is_nullable'       => false,
                 'is_auto_increment' => false,
-                'max_length' => null,
-                'data_type' => 'decimal',
-                'validation_rules' => ['numeric'],
+                'max_length'        => null,
+                'data_type'         => 'decimal',
+                'validation_rules'  => ['numeric'],
             ],
         ];
     }

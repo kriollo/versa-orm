@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
-use VersaORM\VersaORMException;
 use VersaORM\QueryBuilder;
+use VersaORM\VersaORMException;
 
 /**
  * Tests para subconsultas y expresiones raw en QueryBuilder - Tarea 2.3.
  */
 class QueryBuilderSubqueriesTest extends TestCase
 {
-
     protected function setUp(): void
     {
         // Mock del ORM para testing
@@ -207,7 +206,8 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testBuildSubQueryWithExistingQueryBuilder(): void
     {
-        $subQuery = new QueryBuilder($this->orm, 'posts');
+        // Construir el QueryBuilder existente a partir del ORM estático para evitar notices
+        $subQuery = self::$orm->table('posts');
         $subQuery->select(['user_id'])->where('status', '=', 'published');
 
         $result = self::$orm->table('users')->whereSubQuery('id', 'IN', $subQuery);
@@ -224,7 +224,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
         // Usar reflexión para acceder al método privado
         $reflection = new \ReflectionClass(self::$orm->table('users'));
-        $method = $reflection->getMethod('buildSubQuery');
+        $method     = $reflection->getMethod('buildSubQuery');
         $method->setAccessible(true);
 
         $method->invoke(self::$orm->table('users'), 'invalid_type');

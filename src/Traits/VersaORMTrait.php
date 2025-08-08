@@ -11,11 +11,11 @@ use VersaORM\VersaORM;
  */
 trait VersaORMTrait
 {
-    protected ?VersaORM $db = null;
+    protected ?VersaORM $db                = null;
     protected static array $DEFAULT_CONFIG = [
-        'driver' => 'mysql',
-        'host' => 'localhost',
-        'port' => 3306,
+        'driver'   => 'mysql',
+        'host'     => 'localhost',
+        'port'     => 3306,
         'database' => '',
         'username' => '',
         'password' => '',
@@ -47,13 +47,13 @@ trait VersaORMTrait
             array_merge(
                 static::$DEFAULT_CONFIG,
                 [
-                'driver' => $db_config['DB_DRIVER'],
-                'host' => $db_config['DB_HOST'],
-                'port' => $db_config['DB_PORT'],
+                'driver'   => $db_config['DB_DRIVER'],
+                'host'     => $db_config['DB_HOST'],
+                'port'     => $db_config['DB_PORT'],
                 'database' => $db_config['DB_NAME'],
                 'username' => $db_config['DB_USER'],
                 'password' => $db_config['DB_PASS'],
-                'debug' => $db_config['debug'] ?? false,
+                'debug'    => $db_config['debug'] ?? false,
                 ]
             )
         );

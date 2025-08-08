@@ -105,13 +105,13 @@ class QueryBuilderTest extends TestCase
         // Create a separate ORM instance to avoid setup data being inserted
         global $config;
         $orm = new \VersaORM\VersaORM([
-            'driver' => $config['DB']['DB_DRIVER'],
-            'host' => $config['DB']['DB_HOST'],
-            'port' => $config['DB']['DB_PORT'],
+            'driver'   => $config['DB']['DB_DRIVER'],
+            'host'     => $config['DB']['DB_HOST'],
+            'port'     => $config['DB']['DB_PORT'],
             'database' => $config['DB']['DB_NAME'],
             'username' => $config['DB']['DB_USER'],
             'password' => $config['DB']['DB_PASS'],
-            'debug' => true,
+            'debug'    => true,
         ]);
 
         $query = $orm->table('users')->whereIn('id', [1, 3]);
@@ -286,8 +286,8 @@ class QueryBuilderTest extends TestCase
     public function testInsert(): void
     {
         self::$orm->table('users')->insert([
-            'name' => 'Frank',
-            'email' => 'frank@example.com',
+            'name'   => 'Frank',
+            'email'  => 'frank@example.com',
             'status' => 'active',
         ]);
 
@@ -299,8 +299,8 @@ class QueryBuilderTest extends TestCase
     public function testInsertGetId(): void
     {
         $id = self::$orm->table('users')->insertGetId([
-            'name' => 'Grace',
-            'email' => 'grace@example.com',
+            'name'   => 'Grace',
+            'email'  => 'grace@example.com',
             'status' => 'active',
         ]);
 

@@ -18,13 +18,13 @@ class CacheTest extends TestCase
         // Usar la misma configuración que TestCase base
         global $config;
         self::$orm = new VersaORM([
-            'driver' => $config['DB']['DB_DRIVER'],
-            'host' => $config['DB']['DB_HOST'],
-            'port' => $config['DB']['DB_PORT'],
+            'driver'   => $config['DB']['DB_DRIVER'],
+            'host'     => $config['DB']['DB_HOST'],
+            'port'     => $config['DB']['DB_PORT'],
             'database' => $config['DB']['DB_NAME'],
             'username' => $config['DB']['DB_USER'],
             'password' => $config['DB']['DB_PASS'],
-            'debug' => $config['DB']['debug'],
+            'debug'    => $config['DB']['debug'],
         ]);
     }
 
@@ -122,8 +122,8 @@ class CacheTest extends TestCase
 
         // Insertar un nuevo usuario (esto debería invalidar el caché)
         self::$orm->table('users')->insert([
-            'name' => 'Cache Test User',
-            'email' => 'cache.test@example.com',
+            'name'   => 'Cache Test User',
+            'email'  => 'cache.test@example.com',
             'status' => 'active',
         ]);
 
@@ -145,7 +145,7 @@ class CacheTest extends TestCase
         self::$orm->cache('enable');
 
         // Hacer una consulta para poblar caché
-        $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
+        $user           = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
         $originalStatus = $user->status ?? 'active';
 
         // Actualizar el usuario (esto debería invalidar el caché)
@@ -168,8 +168,8 @@ class CacheTest extends TestCase
     {
         // Crear un usuario de prueba
         self::$orm->table('users')->insert([
-            'name' => 'Delete Test User',
-            'email' => 'delete.test@example.com',
+            'name'   => 'Delete Test User',
+            'email'  => 'delete.test@example.com',
             'status' => 'active',
         ]);
 

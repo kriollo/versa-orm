@@ -28,16 +28,16 @@ class AdvancedSQLTest extends TestCase
     {
         // Configuración directa (sin bootstrap global que interfiere)
         $config = [
-            'driver' => 'mysql',
+            'driver'   => 'mysql',
             'database' => 'versaorm_test',
-            'debug' => true,
-            'host' => 'localhost',
-            'port' => 3306,
+            'debug'    => true,
+            'host'     => 'localhost',
+            'port'     => 3306,
             'username' => 'local',
             'password' => 'local',
         ];
 
-        $this->orm = new VersaORM($config);
+        $this->orm          = new VersaORM($config);
         $this->queryBuilder = new QueryBuilder($this->orm, 'test_table');
 
         // Crear tabla de prueba
@@ -47,9 +47,9 @@ class AdvancedSQLTest extends TestCase
     private function createTestTables(): void
     {
         // Limpiar tablas primero
-        $this->orm->exec("DROP TABLE IF EXISTS test_table");
-        $this->orm->exec("DROP TABLE IF EXISTS json_test");
-        $this->orm->exec("DROP TABLE IF EXISTS articles");
+        $this->orm->exec('DROP TABLE IF EXISTS test_table');
+        $this->orm->exec('DROP TABLE IF EXISTS json_test');
+        $this->orm->exec('DROP TABLE IF EXISTS articles');
 
         // Tabla principal para pruebas (MySQL syntax)
         $this->orm->exec("
@@ -65,17 +65,17 @@ class AdvancedSQLTest extends TestCase
         ");
 
         // Tabla para pruebas de JSON
-        $this->orm->exec("
+        $this->orm->exec('
             CREATE TABLE json_test (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 profile JSON,
                 settings JSON,
                 metadata JSON
             )
-        ");
+        ');
 
         // Tabla para full-text search
-        $this->orm->exec("
+        $this->orm->exec('
             CREATE TABLE articles (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 title VARCHAR(255),
@@ -83,7 +83,7 @@ class AdvancedSQLTest extends TestCase
                 category VARCHAR(100),
                 FULLTEXT(title, content)
             )
-        ");
+        ');
 
         // Insertar datos de prueba
         $this->insertTestData();
@@ -102,7 +102,7 @@ class AdvancedSQLTest extends TestCase
 
         foreach ($employees as $employee) {
             $this->orm->exec(
-                "INSERT INTO test_table (name, department, salary, hire_date) VALUES (?, ?, ?, ?)",
+                'INSERT INTO test_table (name, department, salary, hire_date) VALUES (?, ?, ?, ?)',
                 array_values($employee)
             );
         }
@@ -110,14 +110,14 @@ class AdvancedSQLTest extends TestCase
         // Datos JSON
         $jsonData = [
             [
-                'id' => 1,
-                'profile' => '{"name": "John Doe", "age": 30, "skills": ["PHP", "JavaScript"]}',
+                'id'       => 1,
+                'profile'  => '{"name": "John Doe", "age": 30, "skills": ["PHP", "JavaScript"]}',
                 'settings' => '{"theme": "dark", "notifications": true}',
                 'metadata' => '{"created": "2023-01-01", "tags": ["developer", "senior"]}'
             ],
             [
-                'id' => 2,
-                'profile' => '{"name": "Jane Smith", "age": 28, "skills": ["Python", "React"]}',
+                'id'       => 2,
+                'profile'  => '{"name": "Jane Smith", "age": 28, "skills": ["Python", "React"]}',
                 'settings' => '{"theme": "light", "notifications": false}',
                 'metadata' => '{"created": "2023-02-15", "tags": ["designer", "junior"]}'
             ],
@@ -125,7 +125,7 @@ class AdvancedSQLTest extends TestCase
 
         foreach ($jsonData as $row) {
             $this->orm->exec(
-                "INSERT INTO json_test (id, profile, settings, metadata) VALUES (?, ?, ?, ?)",
+                'INSERT INTO json_test (id, profile, settings, metadata) VALUES (?, ?, ?, ?)',
                 array_values($row)
             );
         }
@@ -139,7 +139,7 @@ class AdvancedSQLTest extends TestCase
 
         foreach ($articles as $article) {
             $this->orm->exec(
-                "INSERT INTO articles (title, content, category) VALUES (?, ?, ?)",
+                'INSERT INTO articles (title, content, category) VALUES (?, ?, ?)',
                 array_values($article)
             );
         }
@@ -213,7 +213,7 @@ class AdvancedSQLTest extends TestCase
 
         $ctes = [
             'high_earners' => [
-                'query' => 'SELECT * FROM test_table WHERE salary > 80000',
+                'query'    => 'SELECT * FROM test_table WHERE salary > 80000',
                 'bindings' => []
             ]
         ];
@@ -230,15 +230,15 @@ class AdvancedSQLTest extends TestCase
     public function testWithCteRecursive(): void
     {
         // Crear tabla para pruebas recursivas (MySQL syntax)
-        $this->orm->exec("DROP TABLE IF EXISTS employees");
-        $this->orm->exec("
+        $this->orm->exec('DROP TABLE IF EXISTS employees');
+        $this->orm->exec('
             CREATE TABLE employees (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255),
                 manager_id INT,
                 FOREIGN KEY (manager_id) REFERENCES employees(id)
             )
-        ");
+        ');
 
         // Insertar datos jerárquicos
         $this->orm->exec("INSERT INTO employees VALUES (1, 'CEO', NULL)");
@@ -249,7 +249,7 @@ class AdvancedSQLTest extends TestCase
 
         $ctes = [
             'employee_hierarchy' => [
-                'query' => 'SELECT id, name, manager_id, 0 as level FROM employees WHERE manager_id IS NULL',
+                'query'    => 'SELECT id, name, manager_id, 0 as level FROM employees WHERE manager_id IS NULL',
                 'bindings' => []
             ]
         ];
@@ -278,11 +278,11 @@ class AdvancedSQLTest extends TestCase
 
         $queries = [
             [
-                'sql' => 'SELECT name FROM test_table WHERE department = ?',
+                'sql'      => 'SELECT name FROM test_table WHERE department = ?',
                 'bindings' => ['Engineering']
             ],
             [
-                'sql' => 'SELECT name FROM test_table WHERE salary > ?',
+                'sql'      => 'SELECT name FROM test_table WHERE salary > ?',
                 'bindings' => [80000]
             ]
         ];
@@ -298,11 +298,11 @@ class AdvancedSQLTest extends TestCase
 
         $queries = [
             [
-                'sql' => 'SELECT department FROM test_table WHERE salary > 70000',
+                'sql'      => 'SELECT department FROM test_table WHERE salary > 70000',
                 'bindings' => []
             ],
             [
-                'sql' => 'SELECT department FROM test_table WHERE department = ?',
+                'sql'      => 'SELECT department FROM test_table WHERE department = ?',
                 'bindings' => ['Marketing']
             ]
         ];
@@ -569,10 +569,10 @@ class AdvancedSQLTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe');
 
-        $qb = new QueryBuilder($this->orm, 'test_table');
+        $qb   = new QueryBuilder($this->orm, 'test_table');
         $ctes = [
             'unsafe' => [
-                'query' => 'SELECT * FROM test_table; DROP TABLE users; --',
+                'query'    => 'SELECT * FROM test_table; DROP TABLE users; --',
                 'bindings' => []
             ]
         ];

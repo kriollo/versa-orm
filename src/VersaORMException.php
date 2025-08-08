@@ -24,14 +24,14 @@ class VersaORMException extends Exception
     private ?string $sqlState;
 
     /**
-     * @param string               $message
-     * @param string               $errorCode
-     * @param string|null          $query
-     * @param array<int, mixed>    $bindings
+     * @param string $message
+     * @param string $errorCode
+     * @param string|null $query
+     * @param array<int, mixed> $bindings
      * @param array<string, mixed> $errorDetails
-     * @param string|null          $sqlState
-     * @param int                  $code
-     * @param Exception|null       $previous
+     * @param string|null $sqlState
+     * @param int $code
+     * @param Exception|null $previous
      */
     public function __construct(
         string $message,
@@ -44,11 +44,11 @@ class VersaORMException extends Exception
         ?Exception $previous = null
     ) {
         parent::__construct($message, $code, $previous);
-        $this->errorCode = $errorCode;
-        $this->query = $query;
-        $this->bindings = $bindings;
+        $this->errorCode    = $errorCode;
+        $this->query        = $query;
+        $this->bindings     = $bindings;
         $this->errorDetails = $errorDetails;
-        $this->sqlState = $sqlState;
+        $this->sqlState     = $sqlState;
     }
 
     /**

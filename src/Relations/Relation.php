@@ -21,7 +21,7 @@ abstract class Relation
 
     public function __construct(QueryBuilder $query, VersaModel $parent)
     {
-        $this->query = $query;
+        $this->query  = $query;
         $this->parent = $parent;
     }
 

@@ -23,7 +23,7 @@ class SecurityTest extends TestCase
     public function testSqlInjectionInWhereClause(): void
     {
         $maliciousInput = "' OR 1=1 --";
-        $users = self::$orm->table('users')->where('email', '=', $maliciousInput)->getAll();
+        $users          = self::$orm->table('users')->where('email', '=', $maliciousInput)->getAll();
 
         // La consulta debe estar parametrizada, así que no debe retornar usuarios.
         $this->assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
@@ -205,8 +205,8 @@ class SecurityTest extends TestCase
 
         foreach ($xssPayloads as $payload) {
             $id = self::$orm->table('users')->insertGetId([
-                'name' => 'XSS Test User',
-                'email' => 'xss' . mt_rand() . '@example.com',
+                'name'   => 'XSS Test User',
+                'email'  => 'xss' . mt_rand() . '@example.com',
                 'status' => $payload,
             ]);
 
@@ -232,8 +232,8 @@ class SecurityTest extends TestCase
 
         foreach ($specialChars as $input) {
             $id = self::$orm->table('users')->insertGetId([
-                'name' => 'Special Chars Test',
-                'email' => 'special' . mt_rand() . '@example.com',
+                'name'   => 'Special Chars Test',
+                'email'  => 'special' . mt_rand() . '@example.com',
                 'status' => $input,
             ]);
 
@@ -301,16 +301,16 @@ class SecurityTest extends TestCase
     {
         // Test que la conversión de tipos no introduce vulnerabilidades
         $maliciousData = [
-            'id' => "'; DROP TABLE users; --",
+            'id'     => "'; DROP TABLE users; --",
             'status' => "true'; DROP TABLE test; --",
-            'count' => "123'; SELECT * FROM passwords; --",
+            'count'  => "123'; SELECT * FROM passwords; --",
         ];
 
         // Intentar insertar datos maliciosos
         try {
             self::$orm->table('users')->insert([
-                'name' => 'Type Cast Test',
-                'email' => 'typecast@example.com',
+                'name'   => 'Type Cast Test',
+                'email'  => 'typecast@example.com',
                 'status' => $maliciousData['status'],
             ]);
 
@@ -336,7 +336,7 @@ class SecurityTest extends TestCase
             self::$orm->exec('START TRANSACTION');
 
             $maliciousInput = "'; COMMIT; DROP TABLE users; START TRANSACTION; --";
-            $users = self::$orm->table('users')->where('name', '=', $maliciousInput)->getAll();
+            $users          = self::$orm->table('users')->where('name', '=', $maliciousInput)->getAll();
 
             $this->assertCount(0, $users, 'Transaction injection was not prevented.');
 
@@ -358,8 +358,8 @@ class SecurityTest extends TestCase
 
         try {
             $id = self::$orm->table('users')->insertGetId([
-                'name' => 'Long String Test',
-                'email' => 'longstring@example.com',
+                'name'   => 'Long String Test',
+                'email'  => 'longstring@example.com',
                 'status' => $veryLongString,
             ]);
 
@@ -392,8 +392,8 @@ class SecurityTest extends TestCase
 
         for ($i = 0; $i < 5; $i++) {
             $maliciousInput = "'; DROP TABLE users; -- attempt {$i}";
-            $result = self::$orm->table('users')->where('email', '=', $maliciousInput)->count();
-            $results[] = $result;
+            $result         = self::$orm->table('users')->where('email', '=', $maliciousInput)->count();
+            $results[]      = $result;
         }
 
         // Todos los resultados deben ser 0 (sin inyección exitosa)

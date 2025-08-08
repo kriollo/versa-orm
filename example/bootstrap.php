@@ -30,7 +30,7 @@ try {
 spl_autoload_register(function ($class): void {
     if (strpos($class, 'App\\Models\\') === 0) {
         $className = str_replace('App\\Models\\', '', $class);
-        $file = __DIR__ . '/models/' . $className . '.php';
+        $file      = __DIR__ . '/models/' . $className . '.php';
         if (file_exists($file)) {
             require_once $file;
         }

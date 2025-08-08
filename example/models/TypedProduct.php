@@ -79,67 +79,67 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     {
         return [
             'id' => [
-                'type' => 'int',
-                'primary' => true,
+                'type'           => 'int',
+                'primary'        => true,
                 'auto_increment' => true,
             ],
             'name' => [
-                'type' => 'string',
+                'type'       => 'string',
                 'max_length' => 255,
-                'required' => true,
+                'required'   => true,
             ],
             'description' => [
-                'type' => 'text',
+                'type'     => 'text',
                 'nullable' => true,
             ],
             'price' => [
-                'type' => 'decimal',
+                'type'      => 'decimal',
                 'precision' => 10,
-                'scale' => 2,
-                'required' => true,
+                'scale'     => 2,
+                'required'  => true,
             ],
             'active' => [
-                'type' => 'boolean',
+                'type'    => 'boolean',
                 'default' => true,
             ],
             'uuid' => [
-                'type' => 'uuid',
-                'unique' => true,
+                'type'     => 'uuid',
+                'unique'   => true,
                 'required' => true,
             ],
             'metadata' => [
-                'type' => 'json',
+                'type'     => 'json',
                 'nullable' => true,
-                'default' => '{}',
+                'default'  => '{}',
             ],
             'tags' => [
-                'type' => 'set',
-                'options' => ['electronics', 'clothing', 'books', 'home', 'sports'],
+                'type'     => 'set',
+                'options'  => ['electronics', 'clothing', 'books', 'home', 'sports'],
                 'nullable' => true,
             ],
             'status' => [
-                'type' => 'enum',
+                'type'    => 'enum',
                 'options' => ['draft', 'published', 'archived'],
                 'default' => 'draft',
             ],
             'image_blob' => [
-                'type' => 'blob',
+                'type'     => 'blob',
                 'nullable' => true,
                 'encoding' => 'base64',
             ],
             'specifications' => [
-                'type' => 'array',
-                'nullable' => true,
+                'type'       => 'array',
+                'nullable'   => true,
                 'array_type' => 'text[]', // PostgreSQL specific
             ],
             'created_at' => [
-                'type' => 'datetime',
+                'type'           => 'datetime',
                 'auto_timestamp' => true,
             ],
             'updated_at' => [
-                'type' => 'datetime',
+                'type'           => 'datetime',
                 'auto_timestamp' => true,
-                'on_update' => true,
+                'on_update'      => true,
             ],
         ];
     }
@@ -184,9 +184,9 @@ class TypedProduct extends VersaModel implements TypedModelInterface
      * Validaciones personalizadas
      */
     protected array $rules = [
-        'name' => ['required', 'min:2', 'max:255'],
-        'price' => ['required', 'numeric', 'min:0'],
-        'uuid' => ['required', 'uuid'],
+        'name'   => ['required', 'min:2', 'max:255'],
+        'price'  => ['required', 'numeric', 'min:0'],
+        'uuid'   => ['required', 'uuid'],
         'status' => ['required', 'in:draft,published,archived'],
     ];
 

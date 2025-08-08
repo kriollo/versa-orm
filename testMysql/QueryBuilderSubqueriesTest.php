@@ -20,7 +20,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     protected function setUp(): void
     {
         // Mock del ORM para testing
-        $this->orm = $this->createMock(VersaORM::class);
+        $this->orm          = $this->createMock(VersaORM::class);
         $this->queryBuilder = new QueryBuilder($this->orm, 'users');
     }
 
@@ -229,7 +229,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
         // Usar reflexión para acceder al método privado
         $reflection = new \ReflectionClass($this->queryBuilder);
-        $method = $reflection->getMethod('buildSubQuery');
+        $method     = $reflection->getMethod('buildSubQuery');
         $method->setAccessible(true);
 
         $method->invoke($this->queryBuilder, 'invalid_type');

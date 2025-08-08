@@ -51,8 +51,8 @@
                 </div>
                 <div>
                     <p class="text-2xl font-semibold"><?= count(array_filter($users, function ($u) {
-                                                            return safe_strtotime($u->created_at) > strtotime('-30 days');
-                                                        })) ?></p>
+                        return safe_strtotime($u->created_at) > strtotime('-30 days');
+                    })) ?></p>
                     <p class="text-gray-600 text-sm">Nuevos (30 días)</p>
                 </div>
             </div>
@@ -69,14 +69,14 @@
                     $stats = $user->getStats();
 
                     // Extraer datos para facilitar el uso en la vista
-                    $userProjects = [];
-                    $userTasks = $stats['tasks'];
+                    $userProjects   = [];
+                    $userTasks      = $stats['tasks'];
                     $completedTasks = $stats['completed_tasks'];
 
                     // Procesar proyectos para mostrar en badges
                     foreach ($stats['projects'] as $project) {
                         $userProjects[] = [
-                            'name' => isset($project['name']) ? $project['name'] : 'Sin nombre',
+                            'name'  => isset($project['name']) ? $project['name'] : 'Sin nombre',
                             'color' => isset($project['color']) ? $project['color'] : '#6c5ce7',
                         ];
                     }

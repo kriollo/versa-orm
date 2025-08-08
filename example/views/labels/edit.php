@@ -89,8 +89,8 @@
                         '#E91E63',
                         '#FF5722'
                     ];
-                    foreach ($suggestedColors as $suggestedColor):
-                    ?>
+foreach ($suggestedColors as $suggestedColor):
+    ?>
                         <button
                             type="button"
                             class="w-8 h-8 rounded border-2 border-white shadow hover:scale-110 transition-transform"

@@ -14,9 +14,9 @@ class VersaModelTest extends TestCase
 {
     public function testDispenseAndCreate(): void
     {
-        $user = VersaModel::dispense('users');
-        $user->name = 'Heidi';
-        $user->email = 'heidi@example.com';
+        $user         = VersaModel::dispense('users');
+        $user->name   = 'Heidi';
+        $user->email  = 'heidi@example.com';
         $user->status = 'active';
         $user->store();
 
@@ -41,8 +41,8 @@ class VersaModelTest extends TestCase
 
     public function testUpdate(): void
     {
-        $user = VersaModel::load('users', 1);
-        $user->name = 'Alicia';
+        $user         = VersaModel::load('users', 1);
+        $user->name   = 'Alicia';
         $user->status = 'away';
         $user->store();
 
@@ -64,7 +64,7 @@ class VersaModelTest extends TestCase
 
     public function testMagicMethods(): void
     {
-        $user = VersaModel::dispense('users');
+        $user       = VersaModel::dispense('users');
         $user->name = 'Test';
         $this->assertEquals('Test', $user->name);
 
@@ -88,7 +88,7 @@ class VersaModelTest extends TestCase
     public function testExportAll(): void
     {
         $users = VersaModel::findAll('users', 'status = ?', ['active']);
-        $data = VersaModel::exportAll($users);
+        $data  = VersaModel::exportAll($users);
 
         $this->assertCount(2, $data);
         $this->assertIsArray($data[0]);

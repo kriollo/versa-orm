@@ -51,8 +51,8 @@ class QueryBuilder
      * @var array<string, string|array<string|mixed>>|null
      */
     private ?array $orderBy = null;
-    private ?int $limit = null;
-    private ?int $offset = null;
+    private ?int $limit     = null;
+    private ?int $offset    = null;
     /**
      * @var array<int, string>|array<string, mixed>
      */
@@ -64,18 +64,18 @@ class QueryBuilder
     /**
      * @var array<int, array<string, mixed>>
      */
-    private array $with = [];
+    private array $with         = [];
     private ?string $modelClass = null;
     /**
      * @var array<int, array<string, mixed>>
      */
     private array $lazyOperations = [];
-    private bool $isLazy = false;
+    private bool $isLazy          = false;
 
     /**
      * @param VersaORM|array<string, mixed>|null $orm
-     * @param string                             $table
-     * @param string|null                        $modelClass
+     * @param string $table
+     * @param string|null $modelClass
      */
     public function __construct($orm, string $table, ?string $modelClass = null)
     {
@@ -84,14 +84,14 @@ class QueryBuilder
         if (!$this->isSafeIdentifier($table)) {
             throw new VersaORMException(sprintf('Invalid or malicious table name detected (error): %s', $table));
         }
-        $this->table = $table;
+        $this->table      = $table;
         $this->modelClass = $modelClass;
     }
 
     /**
      * Especifica la tabla de origen para la consulta.
      *
-     * @param  string $table
+     * @param string $table
      * @return self
      */
     public function from(string $table): self
@@ -106,7 +106,7 @@ class QueryBuilder
     /**
      * Especifica las columnas a seleccionar.
      *
-     * @param  array<int, string> $columns
+     * @param array<int, string> $columns
      * @return self
      */
     public function select(array $columns = ['*']): self
@@ -128,8 +128,8 @@ class QueryBuilder
      * Especifica una expresión SQL raw para el SELECT.
      * ADVERTENCIA: Use con precaución para evitar inyección SQL.
      *
-     * @param  string            $expression
-     * @param  array<int, mixed> $bindings
+     * @param string $expression
+     * @param array<int, mixed> $bindings
      * @return self
      */
     public function selectRaw(string $expression, array $bindings = []): self
@@ -144,9 +144,9 @@ class QueryBuilder
         }
 
         $this->selects[] = [
-            'type' => 'raw',
+            'type'       => 'raw',
             'expression' => $expression,
-            'bindings' => $bindings,
+            'bindings'   => $bindings,
         ];
         return $this;
     }
@@ -154,8 +154,8 @@ class QueryBuilder
     /**
      * Añade una subconsulta al SELECT con alias.
      *
-     * @param  \Closure|QueryBuilder $callback
-     * @param  string                $alias
+     * @param \Closure|QueryBuilder $callback
+     * @param string $alias
      * @return self
      */
     public function selectSubQuery($callback, string $alias): self
@@ -167,9 +167,9 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->selects[] = [
-            'type' => 'subquery',
+            'type'     => 'subquery',
             'subquery' => $subQuery,
-            'alias' => $alias,
+            'alias'    => $alias,
         ];
         return $this;
     }
@@ -177,7 +177,7 @@ class QueryBuilder
     /**
      * Valida si un nombre de tabla o columna es seguro.
      *
-     * @param  string $identifier
+     * @param string $identifier
      * @return bool
      */
     private function isSafeIdentifier(string $identifier): bool
@@ -193,7 +193,7 @@ class QueryBuilder
             return false;
         }
         $mainIdentifier = $parts[0];
-        $alias = $parts[1] ?? null;
+        $alias          = $parts[1] ?? null;
 
         if ($alias !== null && !$this->isValidDatabaseIdentifier($alias)) {
             return false; // Alias inválido
@@ -220,7 +220,7 @@ class QueryBuilder
     /**
      * Valida un identificador de base de datos individual.
      *
-     * @param  string $identifier
+     * @param string $identifier
      * @return bool
      */
     private function isValidDatabaseIdentifier(string $identifier): bool
@@ -243,7 +243,7 @@ class QueryBuilder
     /**
      * Verifica si un identificador es una función SQL válida.
      *
-     * @param  string $identifier
+     * @param string $identifier
      * @return bool
      */
     private function isSQLFunction(string $identifier): bool
@@ -319,7 +319,7 @@ class QueryBuilder
      * Valida si una expresión SQL raw es relativamente segura.
      * NOTA: Esta es una validación básica, no una garantía completa de seguridad.
      *
-     * @param  string $expression
+     * @param string $expression
      * @return bool
      */
     private function isSafeRawExpression(string $expression): bool
@@ -353,7 +353,7 @@ class QueryBuilder
         }
 
         // Contar paréntesis balanceados
-        $openParens = substr_count($expression, '(');
+        $openParens  = substr_count($expression, '(');
         $closeParens = substr_count($expression, ')');
         if ($openParens !== $closeParens) {
             return false;
@@ -365,18 +365,18 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE.
      *
-     * @param  string $column
-     * @param  string $operator
-     * @param  mixed  $value
+     * @param string $column
+     * @param string $operator
+     * @param mixed $value
      * @return self
      */
     public function where(string $column, string $operator, $value): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => $operator,
-            'value' => $value,
-            'type' => 'and',
+            'value'    => $value,
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -384,18 +384,18 @@ class QueryBuilder
     /**
      * Añade una cláusula OR WHERE.
      *
-     * @param  string $column
-     * @param  string $operator
-     * @param  mixed  $value
+     * @param string $column
+     * @param string $operator
+     * @param mixed $value
      * @return self
      */
     public function orWhere(string $column, string $operator, $value): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => $operator,
-            'value' => $value,
-            'type' => 'or',
+            'value'    => $value,
+            'type'     => 'or',
         ];
         return $this;
     }
@@ -403,17 +403,17 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE IN.
      *
-     * @param  string            $column
-     * @param  array<int, mixed> $values
+     * @param string $column
+     * @param array<int, mixed> $values
      * @return self
      */
     public function whereIn(string $column, array $values): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => 'IN',
-            'value' => $values,
-            'type' => 'and',
+            'value'    => $values,
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -421,17 +421,17 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE NOT IN.
      *
-     * @param  string            $column
-     * @param  array<int, mixed> $values
+     * @param string $column
+     * @param array<int, mixed> $values
      * @return self
      */
     public function whereNotIn(string $column, array $values): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => 'NOT IN',
-            'value' => $values,
-            'type' => 'and',
+            'value'    => $values,
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -439,16 +439,16 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE IS NULL.
      *
-     * @param  string $column
+     * @param string $column
      * @return self
      */
     public function whereNull(string $column): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => 'IS NULL',
-            'value' => null,
-            'type' => 'and',
+            'value'    => null,
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -456,16 +456,16 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE IS NOT NULL.
      *
-     * @param  string $column
+     * @param string $column
      * @return self
      */
     public function whereNotNull(string $column): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => 'IS NOT NULL',
-            'value' => null,
-            'type' => 'and',
+            'value'    => null,
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -473,18 +473,18 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE BETWEEN.
      *
-     * @param  string $column
-     * @param  mixed  $min
-     * @param  mixed  $max
+     * @param string $column
+     * @param mixed $min
+     * @param mixed $max
      * @return self
      */
     public function whereBetween(string $column, $min, $max): self
     {
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => 'BETWEEN',
-            'value' => [$min, $max],
-            'type' => 'and',
+            'value'    => [$min, $max],
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -492,8 +492,8 @@ class QueryBuilder
     /**
      * Añade una cláusula WHERE con SQL raw.
      *
-     * @param  string            $sql
-     * @param  array<int, mixed> $bindings
+     * @param string $sql
+     * @param array<int, mixed> $bindings
      * @return self
      */
     public function whereRaw(string $sql, array $bindings = []): self
@@ -503,10 +503,10 @@ class QueryBuilder
         }
 
         $this->wheres[] = [
-            'column' => '',
+            'column'   => '',
             'operator' => 'RAW',
-            'value' => ['sql' => $sql, 'bindings' => $bindings],
-            'type' => 'and',
+            'value'    => ['sql' => $sql, 'bindings' => $bindings],
+            'type'     => 'and',
         ];
         return $this;
     }
@@ -514,9 +514,9 @@ class QueryBuilder
     /**
      * Añade una subconsulta en WHERE.
      *
-     * @param  string                $column
-     * @param  string                $operator
-     * @param  \Closure|QueryBuilder $callback
+     * @param string $column
+     * @param string $operator
+     * @param \Closure|QueryBuilder $callback
      * @return self
      */
     public function whereSubQuery(string $column, string $operator, $callback): self
@@ -533,10 +533,10 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->wheres[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => strtoupper($operator),
-            'value' => $subQuery,
-            'type' => 'and',
+            'value'    => $subQuery,
+            'type'     => 'and',
             'subquery' => true,
         ];
         return $this;
@@ -545,7 +545,7 @@ class QueryBuilder
     /**
      * Añade una subconsulta EXISTS en WHERE.
      *
-     * @param  \Closure|QueryBuilder $callback
+     * @param \Closure|QueryBuilder $callback
      * @return self
      */
     public function whereExists($callback): self
@@ -553,10 +553,10 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->wheres[] = [
-            'column' => '',
+            'column'   => '',
             'operator' => 'EXISTS',
-            'value' => $subQuery,
-            'type' => 'and',
+            'value'    => $subQuery,
+            'type'     => 'and',
             'subquery' => true,
         ];
         return $this;
@@ -565,7 +565,7 @@ class QueryBuilder
     /**
      * Añade una subconsulta NOT EXISTS en WHERE.
      *
-     * @param  \Closure|QueryBuilder $callback
+     * @param \Closure|QueryBuilder $callback
      * @return self
      */
     public function whereNotExists($callback): self
@@ -573,10 +573,10 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->wheres[] = [
-            'column' => '',
+            'column'   => '',
             'operator' => 'NOT EXISTS',
-            'value' => $subQuery,
-            'type' => 'and',
+            'value'    => $subQuery,
+            'type'     => 'and',
             'subquery' => true,
         ];
         return $this;
@@ -585,7 +585,7 @@ class QueryBuilder
     /**
      * Construye una subconsulta desde un callback o QueryBuilder.
      *
-     * @param  \Closure|QueryBuilder $callback
+     * @param \Closure|QueryBuilder $callback
      * @return array<string, mixed>
      */
     private function buildSubQuery($callback): array
@@ -597,30 +597,30 @@ class QueryBuilder
 
             // Construir el payload de la subconsulta
             return [
-                'type' => 'subquery',
-                'table' => $subQueryBuilder->getTable(),
-                'select' => $subQueryBuilder->selects ?: ['*'],
-                'where' => $subQueryBuilder->processWheres(),
-                'joins' => $subQueryBuilder->joins,
+                'type'    => 'subquery',
+                'table'   => $subQueryBuilder->getTable(),
+                'select'  => $subQueryBuilder->selects ?: ['*'],
+                'where'   => $subQueryBuilder->processWheres(),
+                'joins'   => $subQueryBuilder->joins,
                 'orderBy' => $subQueryBuilder->orderBy ? [$subQueryBuilder->orderBy] : [],
                 'groupBy' => $subQueryBuilder->groupBy,
-                'having' => $subQueryBuilder->having,
-                'limit' => $subQueryBuilder->limit,
-                'offset' => $subQueryBuilder->offset,
+                'having'  => $subQueryBuilder->having,
+                'limit'   => $subQueryBuilder->limit,
+                'offset'  => $subQueryBuilder->offset,
             ];
         } elseif ($callback instanceof self) {
             // Si ya es un QueryBuilder, usar directamente
             return [
-                'type' => 'subquery',
-                'table' => $callback->getTable(),
-                'select' => $callback->selects ?: ['*'],
-                'where' => $callback->processWheres(),
-                'joins' => $callback->joins,
+                'type'    => 'subquery',
+                'table'   => $callback->getTable(),
+                'select'  => $callback->selects ?: ['*'],
+                'where'   => $callback->processWheres(),
+                'joins'   => $callback->joins,
                 'orderBy' => $callback->orderBy ? [$callback->orderBy] : [],
                 'groupBy' => $callback->groupBy,
-                'having' => $callback->having,
-                'limit' => $callback->limit,
-                'offset' => $callback->offset,
+                'having'  => $callback->having,
+                'limit'   => $callback->limit,
+                'offset'  => $callback->offset,
             ];
         }
 
@@ -630,17 +630,17 @@ class QueryBuilder
     /**
      * Añade una cláusula HAVING.
      *
-     * @param  string $column
-     * @param  string $operator
-     * @param  mixed  $value
+     * @param string $column
+     * @param string $operator
+     * @param mixed $value
      * @return self
      */
     public function having(string $column, string $operator, $value): self
     {
         $this->having[] = [
-            'column' => $column,
+            'column'   => $column,
             'operator' => $operator,
-            'value' => $value,
+            'value'    => $value,
         ];
         return $this;
     }
@@ -648,19 +648,19 @@ class QueryBuilder
     /**
      * Añade un INNER JOIN.
      *
-     * @param  string $table
-     * @param  string $firstCol
-     * @param  string $operator
-     * @param  string $secondCol
+     * @param string $table
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
      * @return self
      */
     public function join(string $table, string $firstCol, string $operator, string $secondCol): self
     {
         $this->joins[] = [
-            'type' => 'inner',
-            'table' => $table,
-            'first_col' => $firstCol,
-            'operator' => $operator,
+            'type'       => 'inner',
+            'table'      => $table,
+            'first_col'  => $firstCol,
+            'operator'   => $operator,
             'second_col' => $secondCol,
         ];
         return $this;
@@ -669,19 +669,19 @@ class QueryBuilder
     /**
      * Añade un LEFT JOIN.
      *
-     * @param  string $table
-     * @param  string $firstCol
-     * @param  string $operator
-     * @param  string $secondCol
+     * @param string $table
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
      * @return self
      */
     public function leftJoin(string $table, string $firstCol, string $operator, string $secondCol): self
     {
         $this->joins[] = [
-            'type' => 'left',
-            'table' => $table,
-            'first_col' => $firstCol,
-            'operator' => $operator,
+            'type'       => 'left',
+            'table'      => $table,
+            'first_col'  => $firstCol,
+            'operator'   => $operator,
             'second_col' => $secondCol,
         ];
         return $this;
@@ -690,19 +690,19 @@ class QueryBuilder
     /**
      * Añade un RIGHT JOIN.
      *
-     * @param  string $table
-     * @param  string $firstCol
-     * @param  string $operator
-     * @param  string $secondCol
+     * @param string $table
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
      * @return self
      */
     public function rightJoin(string $table, string $firstCol, string $operator, string $secondCol): self
     {
         $this->joins[] = [
-            'type' => 'right',
-            'table' => $table,
-            'first_col' => $firstCol,
-            'operator' => $operator,
+            'type'       => 'right',
+            'table'      => $table,
+            'first_col'  => $firstCol,
+            'operator'   => $operator,
             'second_col' => $secondCol,
         ];
         return $this;
@@ -711,19 +711,19 @@ class QueryBuilder
     /**
      * Añade un FULL OUTER JOIN.
      *
-     * @param  string $table
-     * @param  string $firstCol
-     * @param  string $operator
-     * @param  string $secondCol
+     * @param string $table
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
      * @return self
      */
     public function fullOuterJoin(string $table, string $firstCol, string $operator, string $secondCol): self
     {
         $this->joins[] = [
-            'type' => 'full_outer',
-            'table' => $table,
-            'first_col' => $firstCol,
-            'operator' => $operator,
+            'type'       => 'full_outer',
+            'table'      => $table,
+            'first_col'  => $firstCol,
+            'operator'   => $operator,
             'second_col' => $secondCol,
         ];
         return $this;
@@ -732,16 +732,16 @@ class QueryBuilder
     /**
      * Añade un CROSS JOIN.
      *
-     * @param  string $table
+     * @param string $table
      * @return self
      */
     public function crossJoin(string $table): self
     {
         $this->joins[] = [
-            'type' => 'cross',
-            'table' => $table,
-            'first_col' => '',
-            'operator' => '',
+            'type'       => 'cross',
+            'table'      => $table,
+            'first_col'  => '',
+            'operator'   => '',
             'second_col' => '',
         ];
         return $this;
@@ -751,16 +751,16 @@ class QueryBuilder
      * Añade un NATURAL JOIN.
      * NATURAL JOIN automáticamente une tablas basado en columnas con el mismo nombre.
      *
-     * @param  string $table
+     * @param string $table
      * @return self
      */
     public function naturalJoin(string $table): self
     {
         $this->joins[] = [
-            'type' => 'natural',
-            'table' => $table,
-            'first_col' => '',
-            'operator' => '',
+            'type'       => 'natural',
+            'table'      => $table,
+            'first_col'  => '',
+            'operator'   => '',
             'second_col' => '',
         ];
         return $this;
@@ -769,11 +769,11 @@ class QueryBuilder
     /**
      * Añade un JOIN con una subconsulta.
      *
-     * @param  \Closure|QueryBuilder $subquery
-     * @param  string                $alias
-     * @param  string                $firstCol
-     * @param  string                $operator
-     * @param  string                $secondCol
+     * @param \Closure|QueryBuilder $subquery
+     * @param string $alias
+     * @param string $firstCol
+     * @param string $operator
+     * @param string $secondCol
      * @return self
      */
     public function joinSub($subquery, string $alias, string $firstCol, string $operator, string $secondCol): self
@@ -790,14 +790,14 @@ class QueryBuilder
         $subqueryData = $this->convertSubqueryToSql($subquery);
 
         $this->joins[] = [
-            'type' => 'inner',
-            'table' => $alias,
-            'first_col' => $firstCol,
-            'operator' => $operator,
-            'second_col' => $secondCol,
-            'subquery' => $subqueryData['sql'],
+            'type'              => 'inner',
+            'table'             => $alias,
+            'first_col'         => $firstCol,
+            'operator'          => $operator,
+            'second_col'        => $secondCol,
+            'subquery'          => $subqueryData['sql'],
             'subquery_bindings' => $subqueryData['bindings'],
-            'alias' => $alias,
+            'alias'             => $alias,
         ];
         return $this;
     }
@@ -805,7 +805,7 @@ class QueryBuilder
     /**
      * Converts a subquery (QueryBuilder or Closure) to SQL and extracts parameters.
      *
-     * @param  \Closure|QueryBuilder $subquery
+     * @param \Closure|QueryBuilder $subquery
      * @return array{sql: string, bindings: array<mixed>}
      */
     private function convertSubqueryToSql($subquery): array
@@ -826,12 +826,12 @@ class QueryBuilder
      * Builds SQL string and extracts bindings from a QueryBuilder instance.
      * This properly handles parameter binding for the Rust engine.
      *
-     * @param  QueryBuilder $builder
+     * @param QueryBuilder $builder
      * @return array{sql: string, bindings: array<mixed>}
      */
     private function buildSubquerySqlAndBindings(self $builder): array
     {
-        $sql = 'SELECT ';
+        $sql      = 'SELECT ';
         $bindings = [];
 
         // Handle SELECT columns
@@ -858,7 +858,7 @@ class QueryBuilder
             foreach ($builder->wheres as $where) {
                 if (is_array($where) && isset($where['column'], $where['operator'], $where['value'])) {
                     $wheresParts[] = $where['column'] . ' ' . $where['operator'] . ' ?';
-                    $bindings[] = $where['value'];
+                    $bindings[]    = $where['value'];
                 }
             }
             if (!empty($wheresParts)) {
@@ -877,7 +877,7 @@ class QueryBuilder
             foreach ($builder->having as $having) {
                 if (is_array($having) && isset($having['column'], $having['operator'], $having['value'])) {
                     $havingParts[] = $having['column'] . ' ' . $having['operator'] . ' ?';
-                    $bindings[] = $having['value'];
+                    $bindings[]    = $having['value'];
                 }
             }
             if (!empty($havingParts)) {
@@ -900,7 +900,7 @@ class QueryBuilder
         }
 
         return [
-            'sql' => $sql,
+            'sql'      => $sql,
             'bindings' => $bindings
         ];
     }
@@ -908,7 +908,7 @@ class QueryBuilder
     /**
      * Agrupa los resultados.
      *
-     * @param  array<int, string>|string $columns
+     * @param array<int, string>|string $columns
      * @return self
      */
     public function groupBy(array|string $columns): self
@@ -931,8 +931,8 @@ class QueryBuilder
      * Especifica una expresión SQL raw para GROUP BY.
      * ADVERTENCIA: Use con precaución para evitar inyección SQL.
      *
-     * @param  string            $expression
-     * @param  array<int, mixed> $bindings
+     * @param string $expression
+     * @param array<int, mixed> $bindings
      * @return self
      */
     public function groupByRaw(string $expression, array $bindings = []): self
@@ -947,9 +947,9 @@ class QueryBuilder
         }
 
         $this->groupBy = [
-            'type' => 'raw',
+            'type'       => 'raw',
             'expression' => $expression,
-            'bindings' => $bindings,
+            'bindings'   => $bindings,
         ];
         return $this;
     }
@@ -957,8 +957,8 @@ class QueryBuilder
     /**
      * Ordena los resultados.
      *
-     * @param  string $column
-     * @param  string $direction
+     * @param string $column
+     * @param string $direction
      * @return self
      */
     public function orderBy(string $column, string $direction = 'asc'): self
@@ -982,8 +982,8 @@ class QueryBuilder
      * Especifica una expresión SQL raw para ORDER BY.
      * ADVERTENCIA: Use con precaución para evitar inyección SQL.
      *
-     * @param  string            $expression
-     * @param  array<int, mixed> $bindings
+     * @param string $expression
+     * @param array<int, mixed> $bindings
      * @return self
      */
     public function orderByRaw(string $expression, array $bindings = []): self
@@ -998,9 +998,9 @@ class QueryBuilder
         }
 
         $this->orderBy = [
-            'type' => 'raw',
+            'type'       => 'raw',
             'expression' => $expression,
-            'bindings' => $bindings,
+            'bindings'   => $bindings,
         ];
         return $this;
     }
@@ -1008,7 +1008,7 @@ class QueryBuilder
     /**
      * Limita el número de resultados.
      *
-     * @param  int $count
+     * @param int $count
      * @return self
      */
     public function limit(int|string $count): self
@@ -1020,7 +1020,7 @@ class QueryBuilder
     /**
      * Especifica el punto de inicio para la paginación.
      *
-     * @param  int $count
+     * @param int $count
      * @return self
      */
     public function offset(int $count): self
@@ -1032,7 +1032,7 @@ class QueryBuilder
     /**
      * Especifica las relaciones a cargar.
      *
-     * @param  array<int, string>|string $relations
+     * @param array<int, string>|string $relations
      * @return self
      */
     public function with($relations): self
@@ -1063,8 +1063,8 @@ class QueryBuilder
 
             $relationType = (new \ReflectionClass($relationInstance))->getShortName();
             $relationData = [
-                'name' => $relationName,
-                'type' => $relationType,
+                'name'          => $relationName,
+                'type'          => $relationType,
                 'related_table' => $relationInstance->query->getTable(),
             ];
 
@@ -1076,24 +1076,24 @@ class QueryBuilder
                      * @var \VersaORM\Relations\HasOne|\VersaORM\Relations\HasMany $relationInstance
                      */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['local_key'] = $relationInstance->localKey;
+                    $relationData['local_key']   = $relationInstance->localKey;
                     break;
                 case 'BelongsTo':
                     /**
                      * @var \VersaORM\Relations\BelongsTo $relationInstance
                      */
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
+                    $relationData['owner_key']   = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
                     break;
                 case 'BelongsToMany':
                     /**
                      * @var \VersaORM\Relations\BelongsToMany $relationInstance
                      */
-                    $relationData['pivot_table'] = $relationInstance->pivotTable;
+                    $relationData['pivot_table']       = $relationInstance->pivotTable;
                     $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
                     $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
-                    $relationData['parent_key'] = $relationInstance->parentKey;
-                    $relationData['related_key'] = $relationInstance->relatedKey;
+                    $relationData['parent_key']        = $relationInstance->parentKey;
+                    $relationData['related_key']       = $relationInstance->relatedKey;
                     break;
             }
             $resolvedRelations[] = $relationData;
@@ -1113,7 +1113,7 @@ class QueryBuilder
     public function findAll(): array
     {
         $results = $this->execute('get');
-        $models = [];
+        $models  = [];
         if (!is_array($results)) {
             return $models;
         }
@@ -1213,8 +1213,8 @@ class QueryBuilder
     /**
      * Busca un registro por su clave primaria.
      *
-     * @param  mixed  $id
-     * @param  string $pk
+     * @param mixed $id
+     * @param string $pk
      * @return mixed
      */
     public function find($id, string $pk = 'id')
@@ -1275,7 +1275,7 @@ class QueryBuilder
     /**
      * Inserta un nuevo registro.
      *
-     * @param  array<string, mixed> $data
+     * @param array<string, mixed> $data
      * @return bool
      */
     public function insert(array $data): bool
@@ -1287,7 +1287,7 @@ class QueryBuilder
     /**
      * Inserta un registro y devuelve su ID autoincremental.
      *
-     * @param  array<string, mixed> $data
+     * @param array<string, mixed> $data
      * @return int|string|null
      */
     public function insertGetId(array $data)
@@ -1302,7 +1302,7 @@ class QueryBuilder
     /**
      * Actualiza los registros que coincidan con las cláusulas WHERE.
      *
-     * @param  array<string, mixed> $data
+     * @param array<string, mixed> $data
      * @return self
      */
     public function update(array $data): self
@@ -1356,8 +1356,8 @@ class QueryBuilder
     /**
      * Ejecuta la consulta usando la instancia de VersaORM.
      *
-     * @param  string                    $method
-     * @param  array<string, mixed>|null $data
+     * @param string $method
+     * @param array<string, mixed>|null $data
      * @return mixed
      */
     private function execute(string $method, ?array $data = null)
@@ -1370,7 +1370,7 @@ class QueryBuilder
         $params = $this->buildPayload($method, $data);
 
         // Llamar al método execute de VersaORM usando reflexión
-        $reflection = new \ReflectionClass($this->orm);
+        $reflection    = new \ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
@@ -1381,14 +1381,14 @@ class QueryBuilder
 
         if (in_array($method, $batchMethods)) {
             // Las operaciones de lote van como 'query' con el método específico en params
-            $action = 'query';
+            $action           = 'query';
             $params['method'] = $method;
         } elseif (in_array($method, $writeMethods)) {
             // Las operaciones de escritura normales van como su propio método
             $action = $method;
         } else {
             // Las operaciones de lectura van como 'query'
-            $action = 'query';
+            $action           = 'query';
             $params['method'] = $method;
         }
 
@@ -1396,8 +1396,8 @@ class QueryBuilder
     }
 
     /**
-     * @param  string                    $method
-     * @param  array<string, mixed>|null $data
+     * @param string $method
+     * @param array<string, mixed>|null $data
      * @return array<string, mixed>
      */
     private function buildPayload(string $method, ?array $data = null): array
@@ -1412,17 +1412,17 @@ class QueryBuilder
         }
 
         $params = [
-            'table' => $this->table,
-            'select' => $selects,
-            'joins' => $this->joins,
-            'where' => $this->processWheres(),
+            'table'   => $this->table,
+            'select'  => $selects,
+            'joins'   => $this->joins,
+            'where'   => $this->processWheres(),
             'orderBy' => $orderBy,
             'groupBy' => $this->groupBy,
-            'having' => $this->having,
-            'limit' => $this->limit,
-            'offset' => $this->offset,
-            'with' => $this->with,
-            'method' => $method,
+            'having'  => $this->having,
+            'limit'   => $this->limit,
+            'offset'  => $this->offset,
+            'with'    => $this->with,
+            'method'  => $method,
         ];
 
         if ($data !== null) {
@@ -1476,9 +1476,9 @@ class QueryBuilder
      * Inserta múltiples registros en una sola operación batch optimizada.
      * Utiliza INSERT INTO table (cols) VALUES (val1), (val2), ... para máximo rendimiento.
      *
-     * @param  array<int, array<string, mixed>> $records   Array de arrays asociativos con los datos a insertar
-     * @param  int                              $batchSize Tamaño del lote para operaciones muy grandes (default:
-     *                                                     1000)
+     * @param array<int, array<string, mixed>> $records Array de arrays asociativos con los datos a insertar
+     * @param int $batchSize Tamaño del lote para operaciones muy grandes (default:
+     *                       1000)
      * @return array<string, mixed> Información sobre la operación: total_inserted, batches_processed, etc.
      * @throws VersaORMException Si los datos son inválidos o la operación falla
      */
@@ -1521,7 +1521,7 @@ class QueryBuilder
         }
 
         $params = [
-            'records' => $records,
+            'records'    => $records,
             'batch_size' => $batchSize,
         ];
 
@@ -1537,9 +1537,9 @@ class QueryBuilder
      * Actualiza múltiples registros que coincidan con las condiciones WHERE.
      * Utiliza transacciones y consultas optimizadas según la base de datos.
      *
-     * @param  array<string, mixed> $data       Datos a actualizar
-     * @param  int                  $maxRecords Límite máximo de registros a actualizar por seguridad (default:
-     *                                          10000)
+     * @param array<string, mixed> $data Datos a actualizar
+     * @param int $maxRecords Límite máximo de registros a actualizar por seguridad (default:
+     *                        10000)
      * @return array<string, mixed> Información sobre la operación: rows_affected, etc.
      * @throws VersaORMException Si no hay condiciones WHERE o la operación falla
      */
@@ -1566,7 +1566,7 @@ class QueryBuilder
         }
 
         $params = [
-            'data' => $data,
+            'data'        => $data,
             'max_records' => $maxRecords,
         ];
 
@@ -1578,7 +1578,7 @@ class QueryBuilder
      * Elimina múltiples registros que coincidan con las condiciones WHERE.
      * Utiliza DELETE optimizado con límites de seguridad.
      *
-     * @param  int $maxRecords Límite máximo de registros a eliminar por seguridad (default: 10000)
+     * @param int $maxRecords Límite máximo de registros a eliminar por seguridad (default: 10000)
      * @return array<string, mixed> Información sobre la operación: rows_affected, etc.
      * @throws VersaORMException Si no hay condiciones WHERE o la operación falla
      */
@@ -1605,9 +1605,9 @@ class QueryBuilder
      * Upsert (INSERT ... ON DUPLICATE KEY UPDATE) para un solo registro.
      * Inserta un registro nuevo o actualiza el existente basado en claves únicas.
      *
-     * @param  array<string, mixed> $data          Datos del registro
-     * @param  array<int, string>   $uniqueKeys    Columnas que determinan duplicados
-     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @param array<string, mixed> $data Datos del registro
+     * @param array<int, string> $uniqueKeys Columnas que determinan duplicados
+     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado (opcional)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -1660,9 +1660,9 @@ class QueryBuilder
     /**
      * Implementación fallback del upsert usando operaciones INSERT/UPDATE existentes.
      *
-     * @param array<string, mixed> $data          Datos del registro
-     * @param array<int, string>   $uniqueKeys    Columnas que determinan duplicados
-     * @param array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado
+     * @param array<string, mixed> $data Datos del registro
+     * @param array<int, string> $uniqueKeys Columnas que determinan duplicados
+     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado
      * @return array<string, mixed> Información sobre la operación
      */
     private function upsertFallback(
@@ -1687,11 +1687,11 @@ class QueryBuilder
 
             if (empty($updateData)) {
                 return [
-                    'status' => 'success',
-                    'operation' => 'no_update_needed',
+                    'status'        => 'success',
+                    'operation'     => 'no_update_needed',
                     'rows_affected' => 0,
-                    'unique_keys' => $uniqueKeys,
-                    'table' => $this->table,
+                    'unique_keys'   => $uniqueKeys,
+                    'table'         => $this->table,
                 ];
             }
 
@@ -1704,11 +1704,11 @@ class QueryBuilder
             $updateQuery->update($updateData);
 
             $result = [
-                'status' => 'success',
-                'operation' => 'updated',
-                'rows_affected' => 1,
-                'unique_keys' => $uniqueKeys,
-                'table' => $this->table,
+                'status'         => 'success',
+                'operation'      => 'updated',
+                'rows_affected'  => 1,
+                'unique_keys'    => $uniqueKeys,
+                'table'          => $this->table,
                 'update_columns' => $updateColumns, // Siempre incluir, será vacío si no se especificaron
             ];
 
@@ -1718,11 +1718,11 @@ class QueryBuilder
             $this->insert($data);
 
             return [
-                'status' => 'success',
-                'operation' => 'inserted',
+                'status'        => 'success',
+                'operation'     => 'inserted',
                 'rows_affected' => 1,
-                'unique_keys' => $uniqueKeys,
-                'table' => $this->table,
+                'unique_keys'   => $uniqueKeys,
+                'table'         => $this->table,
             ];
         }
     }
@@ -1730,9 +1730,9 @@ class QueryBuilder
     /**
      * Método insertOrUpdate() alternativo - Verifica existencia y decide INSERT vs UPDATE.
      *
-     * @param  array<string, mixed> $data          Datos del registro
-     * @param  array<int, string>   $uniqueKeys    Columnas para verificar existencia
-     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @param array<string, mixed> $data Datos del registro
+     * @param array<int, string> $uniqueKeys Columnas para verificar existencia
+     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado (opcional)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -1788,9 +1788,9 @@ class QueryBuilder
 
             if (empty($updateData)) {
                 return [
-                    'status' => 'success',
-                    'operation' => 'no_update_needed',
-                    'message' => 'Record exists but no columns to update',
+                    'status'      => 'success',
+                    'operation'   => 'no_update_needed',
+                    'message'     => 'Record exists but no columns to update',
                     'unique_keys' => $uniqueKeys,
                 ];
             }
@@ -1804,10 +1804,10 @@ class QueryBuilder
             $updateQuery->update($updateData);
 
             return [
-                'status' => 'success',
-                'operation' => 'updated',
-                'rows_affected' => 1,
-                'unique_keys' => $uniqueKeys,
+                'status'          => 'success',
+                'operation'       => 'updated',
+                'rows_affected'   => 1,
+                'unique_keys'     => $uniqueKeys,
                 'updated_columns' => array_keys($updateData),
             ];
         } else {
@@ -1815,10 +1815,10 @@ class QueryBuilder
             $this->insert($data);
 
             return [
-                'status' => 'success',
-                'operation' => 'inserted',
+                'status'        => 'success',
+                'operation'     => 'inserted',
                 'rows_affected' => 1,
-                'unique_keys' => $uniqueKeys,
+                'unique_keys'   => $uniqueKeys,
             ];
         }
     }
@@ -1826,8 +1826,8 @@ class QueryBuilder
     /**
      * Método save() inteligente - Detecta si es nuevo o existente automáticamente.
      *
-     * @param  array<string, mixed> $data        Datos del registro
-     * @param  string               $primaryKey  Clave primaria (default: 'id')
+     * @param array<string, mixed> $data Datos del registro
+     * @param string $primaryKey Clave primaria (default: 'id')
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -1844,16 +1844,16 @@ class QueryBuilder
         // Si tiene ID, es actualización; si no, es inserción
         if (isset($data[$primaryKey]) && !empty($data[$primaryKey])) {
             // Actualización - separar ID de los datos
-            $id = $data[$primaryKey];
+            $id         = $data[$primaryKey];
             $updateData = $data;
             unset($updateData[$primaryKey]); // Remover ID de los datos a actualizar
 
             if (empty($updateData)) {
                 return [
-                    'status' => 'success',
+                    'status'    => 'success',
                     'operation' => 'no_update_needed',
-                    'message' => 'No data to update',
-                    'id' => $id,
+                    'message'   => 'No data to update',
+                    'id'        => $id,
                 ];
             }
 
@@ -1862,10 +1862,10 @@ class QueryBuilder
             $updateQuery->where($primaryKey, '=', $id)->update($updateData);
 
             return [
-                'status' => 'success',
-                'operation' => 'updated',
-                'rows_affected' => 1,
-                'id' => $id,
+                'status'          => 'success',
+                'operation'       => 'updated',
+                'rows_affected'   => 1,
+                'id'              => $id,
                 'updated_columns' => array_keys($updateData),
             ];
         } else {
@@ -1873,10 +1873,10 @@ class QueryBuilder
             $insertedId = $this->insertGetId($data);
 
             return [
-                'status' => 'success',
-                'operation' => 'inserted',
+                'status'        => 'success',
+                'operation'     => 'inserted',
                 'rows_affected' => 1,
-                'id' => $insertedId,
+                'id'            => $insertedId,
             ];
         }
     }
@@ -1884,9 +1884,9 @@ class QueryBuilder
     /**
      * Método createOrUpdate() con condiciones personalizadas.
      *
-     * @param  array<string, mixed> $data        Datos del registro
-     * @param  array<string, mixed> $conditions  Condiciones personalizadas para verificar existencia
-     * @param  array<int, string>   $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @param array<string, mixed> $data Datos del registro
+     * @param array<string, mixed> $conditions Condiciones personalizadas para verificar existencia
+     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado (opcional)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -1933,9 +1933,9 @@ class QueryBuilder
 
             if (empty($updateData)) {
                 return [
-                    'status' => 'success',
-                    'operation' => 'no_update_needed',
-                    'message' => 'Record exists but no columns to update',
+                    'status'     => 'success',
+                    'operation'  => 'no_update_needed',
+                    'message'    => 'Record exists but no columns to update',
                     'conditions' => $conditions,
                 ];
             }
@@ -1949,10 +1949,10 @@ class QueryBuilder
             $updateQuery->update($updateData);
 
             return [
-                'status' => 'success',
-                'operation' => 'updated',
-                'rows_affected' => 1,
-                'conditions' => $conditions,
+                'status'          => 'success',
+                'operation'       => 'updated',
+                'rows_affected'   => 1,
+                'conditions'      => $conditions,
                 'updated_columns' => array_keys($updateData),
             ];
         } else {
@@ -1961,11 +1961,11 @@ class QueryBuilder
             $insertedId = $this->insertGetId($insertData);
 
             return [
-                'status' => 'success',
-                'operation' => 'created',
+                'status'        => 'success',
+                'operation'     => 'created',
                 'rows_affected' => 1,
-                'id' => $insertedId,
-                'conditions' => $conditions,
+                'id'            => $insertedId,
+                'conditions'    => $conditions,
             ];
         }
     }
@@ -1974,11 +1974,11 @@ class QueryBuilder
      * Upsert (INSERT ... ON DUPLICATE KEY UPDATE) para múltiples registros.
      * Inserta registros nuevos o actualiza los existentes basado en claves únicas.
      *
-     * @param  array<int, array<string, mixed>> $records       Array de registros
-     * @param  array<int, string>               $uniqueKeys    Columnas que determinan duplicados
-     * @param  array<int, string>               $updateColumns Columnas a actualizar en caso de duplicado (opcional)
-     * @param  int                              $batchSize     Tamaño del lote
-     *                                                         (default: 1000)
+     * @param array<int, array<string, mixed>> $records Array de registros
+     * @param array<int, string> $uniqueKeys Columnas que determinan duplicados
+     * @param array<int, string> $updateColumns Columnas a actualizar en caso de duplicado (opcional)
+     * @param int $batchSize Tamaño del lote
+     *                       (default: 1000)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos
      */
@@ -2021,10 +2021,10 @@ class QueryBuilder
         }
 
         $params = [
-            'records' => $records,
-            'unique_keys' => $uniqueKeys,
+            'records'        => $records,
+            'unique_keys'    => $uniqueKeys,
             'update_columns' => $updateColumns,
-            'batch_size' => $batchSize,
+            'batch_size'     => $batchSize,
         ];
 
         $result = $this->execute('upsertMany', $params);
@@ -2036,7 +2036,7 @@ class QueryBuilder
      * Reemplaza completamente los registros existentes o inserta nuevos.
      * ADVERTENCIA: REPLACE puede perder datos de columnas no especificadas.
      *
-     * @param  array<string, mixed> $data Datos del registro
+     * @param array<string, mixed> $data Datos del registro
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos o no es MySQL
      */
@@ -2076,7 +2076,7 @@ class QueryBuilder
         // MySQL/MariaDB: usar REPLACE INTO nativo
         if ($driver === 'mysql' || $driver === 'mariadb') {
             // Construir la consulta REPLACE INTO manualmente
-            $columns = array_keys($data);
+            $columns      = array_keys($data);
             $placeholders = array_fill(0, count($data), '?');
 
             $sql = sprintf(
@@ -2089,10 +2089,10 @@ class QueryBuilder
             $this->orm->exec($sql, array_values($data));
 
             return [
-                'status' => 'success',
-                'operation' => 'replaced',
+                'status'        => 'success',
+                'operation'     => 'replaced',
                 'rows_affected' => 1,
-                'table' => $this->table,
+                'table'         => $this->table,
             ];
         }
 
@@ -2105,8 +2105,8 @@ class QueryBuilder
             // Reutilizar ruta de inserción
             $insertParams = [
                 'method' => 'insert',
-                'table' => $this->table,
-                'data' => $data,
+                'table'  => $this->table,
+                'data'   => $data,
             ];
             // Ejecutar a través del mismo mecanismo que insert() usa internamente
             $result = $this->execute('insert', $data);
@@ -2119,9 +2119,9 @@ class QueryBuilder
         if (!is_array($result)) {
             $result = [];
         }
-        $result['table'] = $this->table;
-        $result['status'] = $result['status'] ?? 'success';
-        $result['operation'] = 'replaced';
+        $result['table']         = $this->table;
+        $result['status']        = $result['status'] ?? 'success';
+        $result['operation']     = 'replaced';
         $result['rows_affected'] = $result['rows_affected'] ?? 1;
         return $result;
     }
@@ -2131,8 +2131,8 @@ class QueryBuilder
      * Reemplaza completamente los registros existentes o inserta nuevos.
      * ADVERTENCIA: REPLACE puede perder datos de columnas no especificadas.
      *
-     * @param  array<int, array<string, mixed>> $records   Array de registros
-     * @param  int                              $batchSize Tamaño del lote (default: 1000)
+     * @param array<int, array<string, mixed>> $records Array de registros
+     * @param int $batchSize Tamaño del lote (default: 1000)
      * @return array<string, mixed> Información sobre la operación
      * @throws VersaORMException Si los datos son inválidos o no es MySQL
      */
@@ -2195,21 +2195,21 @@ class QueryBuilder
 
         // MySQL/MariaDB: usar REPLACE INTO en lotes
         if ($driver === 'mysql' || $driver === 'mariadb') {
-            $totalReplaced = 0;
-            $batchesProcessed = 0;
+            $totalReplaced      = 0;
+            $batchesProcessed   = 0;
             $effectiveBatchSize = max(1, $batchSize); // Asegurar que sea al menos 1
-            $recordBatches = array_chunk($records, $effectiveBatchSize);
+            $recordBatches      = array_chunk($records, $effectiveBatchSize);
 
             foreach ($recordBatches as $batch) {
                 // Construir SQL para este lote
-                $columns = array_keys($batch[0]);
+                $columns     = array_keys($batch[0]);
                 $valueGroups = [];
-                $allValues = [];
+                $allValues   = [];
 
                 foreach ($batch as $record) {
-                    $placeholders = array_fill(0, count($record), '?');
+                    $placeholders  = array_fill(0, count($record), '?');
                     $valueGroups[] = '(' . implode(', ', $placeholders) . ')';
-                    $allValues = array_merge($allValues, array_values($record));
+                    $allValues     = array_merge($allValues, array_values($record));
                 }
 
                 $sql = sprintf(
@@ -2226,12 +2226,12 @@ class QueryBuilder
             }
 
             return [
-                'status' => 'success',
-                'total_replaced' => $totalReplaced,
+                'status'            => 'success',
+                'total_replaced'    => $totalReplaced,
                 'batches_processed' => $batchesProcessed,
-                'batch_size' => $batchSize,
-                'total_records' => count($records),
-                'table' => $this->table,
+                'batch_size'        => $batchSize,
+                'total_records'     => count($records),
+                'table'             => $this->table,
             ];
         }
 
@@ -2246,26 +2246,26 @@ class QueryBuilder
                 $inserted++;
             }
             return [
-                'status' => 'success',
-                'total_replaced' => $inserted,
+                'status'            => 'success',
+                'total_replaced'    => $inserted,
                 'batches_processed' => 1,
-                'batch_size' => $batchSize,
-                'total_records' => count($records),
-                'table' => $this->table,
+                'batch_size'        => $batchSize,
+                'total_records'     => count($records),
+                'table'             => $this->table,
             ];
         }
 
         // Ejecutar la operación con upsertMany pero devolver métrica tipo REPLACE
         $this->upsertMany($records, $uniqueKeys, $updateColumns);
-        $total = count($records);
+        $total            = count($records);
         $batchesProcessed = (int)ceil($total / max(1, $batchSize));
         return [
-            'status' => 'success',
-            'total_replaced' => $total,
+            'status'            => 'success',
+            'total_replaced'    => $total,
             'batches_processed' => $batchesProcessed,
-            'batch_size' => $batchSize,
-            'total_records' => $total,
-            'table' => $this->table,
+            'batch_size'        => $batchSize,
+            'total_records'     => $total,
+            'table'             => $this->table,
         ];
     }
 
@@ -2280,7 +2280,7 @@ class QueryBuilder
     private function detectUpsertKeysForReplace(array $data): array
     {
         $keysInData = array_keys($data);
-        $keysInData = array_values(array_filter($keysInData, fn($k) => $this->isSafeIdentifier($k)));
+        $keysInData = array_values(array_filter($keysInData, fn ($k) => $this->isSafeIdentifier($k)));
 
         $pk = [];
         try {
@@ -2309,7 +2309,7 @@ class QueryBuilder
                 $idx = $this->orm instanceof VersaORM ? (array)$this->orm->schema('indexes', $this->table) : [];
                 foreach ($idx as $ix) {
                     $unique = (bool)($ix['unique'] ?? false);
-                    $cols = (array)($ix['columns'] ?? ($ix['column'] ?? []));
+                    $cols   = (array)($ix['columns'] ?? ($ix['column'] ?? []));
                     if (!is_array($cols)) {
                         $cols = [$cols];
                     }
@@ -2374,17 +2374,17 @@ class QueryBuilder
     private function addCurrentOperationToLazy(): void
     {
         $operation = [
-            'operation_type' => 'SELECT',
-            'table' => $this->table,
-            'columns' => empty($this->selects) ? ['*'] : $this->selects,
-            'conditions' => $this->convertWheresToConditions(),
+            'operation_type'  => 'SELECT',
+            'table'           => $this->table,
+            'columns'         => empty($this->selects) ? ['*'] : $this->selects,
+            'conditions'      => $this->convertWheresToConditions(),
             'join_conditions' => $this->convertJoinsToConditions(),
-            'ordering' => $this->convertOrderByToArray(),
-            'grouping' => $this->groupBy,
-            'having' => $this->convertHavingToConditions(),
-            'limit' => $this->limit,
-            'offset' => $this->offset,
-            'relations' => $this->with,
+            'ordering'        => $this->convertOrderByToArray(),
+            'grouping'        => $this->groupBy,
+            'having'          => $this->convertHavingToConditions(),
+            'limit'           => $this->limit,
+            'offset'          => $this->offset,
+            'relations'       => $this->with,
         ];
 
         $this->lazyOperations[] = $operation;
@@ -2400,9 +2400,9 @@ class QueryBuilder
         $conditions = [];
         foreach ($this->wheres as $where) {
             $conditions[] = [
-                'column' => $where['column'] ?? '',
-                'operator' => $where['operator'] ?? '=',
-                'value' => $where['value'] ?? null,
+                'column'    => $where['column'] ?? '',
+                'operator'  => $where['operator'] ?? '=',
+                'value'     => $where['value'] ?? null,
                 'connector' => $where['connector'] ?? 'AND',
             ];
         }
@@ -2419,11 +2419,11 @@ class QueryBuilder
         $joinConditions = [];
         foreach ($this->joins as $join) {
             $joinConditions[] = [
-                'table' => $join['table'] ?? '',
-                'join_type' => strtoupper($join['type'] ?? 'INNER'),
-                'local_column' => $join['first'] ?? '',
+                'table'          => $join['table'] ?? '',
+                'join_type'      => strtoupper($join['type'] ?? 'INNER'),
+                'local_column'   => $join['first'] ?? '',
                 'foreign_column' => $join['second'] ?? '',
-                'operator' => $join['operator'] ?? '=',
+                'operator'       => $join['operator'] ?? '=',
             ];
         }
         return $joinConditions;
@@ -2444,7 +2444,7 @@ class QueryBuilder
         if (isset($this->orderBy['type']) && $this->orderBy['type'] === 'raw') {
             return [
                 [
-                    'column' => $this->orderBy['expression'] ?? '',
+                    'column'    => $this->orderBy['expression'] ?? '',
                     'direction' => 'ASC', // Raw expressions no tienen dirección específica
                 ],
             ];
@@ -2458,7 +2458,7 @@ class QueryBuilder
 
         return [
             [
-                'column' => $this->orderBy['column'] ?? '',
+                'column'    => $this->orderBy['column'] ?? '',
                 'direction' => strtoupper((string) $direction),
             ],
         ];
@@ -2474,9 +2474,9 @@ class QueryBuilder
         $conditions = [];
         foreach ($this->having as $having) {
             $conditions[] = [
-                'column' => $having['column'] ?? '',
-                'operator' => $having['operator'] ?? '=',
-                'value' => $having['value'] ?? null,
+                'column'    => $having['column'] ?? '',
+                'operator'  => $having['operator'] ?? '=',
+                'value'     => $having['value'] ?? null,
                 'connector' => $having['connector'] ?? 'AND',
             ];
         }
@@ -2496,18 +2496,18 @@ class QueryBuilder
 
         // Preparar payload para el planificador de consultas
         $params = [
-            'action' => 'query_plan',
+            'action'     => 'query_plan',
             'operations' => $this->lazyOperations,
-            'optimize' => [
-                'enable_join_optimization' => true,
-                'enable_where_combination' => true,
+            'optimize'   => [
+                'enable_join_optimization'    => true,
+                'enable_where_combination'    => true,
                 'enable_subquery_elimination' => true,
-                'max_operations_to_combine' => 5,
+                'max_operations_to_combine'   => 5,
             ],
         ];
 
         // Ejecutar usando reflexión para acceder al método execute privado
-        $reflection = new \ReflectionClass($this->orm);
+        $reflection    = new \ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
@@ -2515,7 +2515,7 @@ class QueryBuilder
 
         // Limpiar operaciones lazy después de la ejecución
         $this->lazyOperations = [];
-        $this->isLazy = false;
+        $this->isLazy         = false;
 
         return $result;
     }
@@ -2523,7 +2523,7 @@ class QueryBuilder
     /**
      * Encadena múltiples operaciones en modo lazy.
      *
-     * @param  QueryBuilder $otherQuery
+     * @param QueryBuilder $otherQuery
      * @return self
      */
     public function chain(self $otherQuery): self
@@ -2556,11 +2556,11 @@ class QueryBuilder
         // Preparar parámetros para el planificador
         $params = [
             'operations' => $this->lazyOperations,
-            'optimize' => [
-                'enable_join_optimization' => true,
-                'enable_where_combination' => true,
+            'optimize'   => [
+                'enable_join_optimization'    => true,
+                'enable_where_combination'    => true,
                 'enable_subquery_elimination' => true,
-                'max_operations_to_combine' => 5,
+                'max_operations_to_combine'   => 5,
             ],
         ];
 
@@ -2570,7 +2570,7 @@ class QueryBuilder
         }
 
         // Usar el método execute estándar para que incluya la configuración
-        $reflection = new \ReflectionClass($this->orm);
+        $reflection    = new \ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
@@ -2585,13 +2585,13 @@ class QueryBuilder
      * Aplica una función window a la consulta.
      * Soporta ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, etc.
      *
-     * @param  string                           $function  Función window (row_number, rank, lag, lead, etc.)
-     * @param  string                           $column    Columna sobre la que aplicar la función
-     * @param  array<string, mixed>             $args      Argumentos específicos de la función
-     * @param  array<int, string>               $partitionBy Columnas para PARTITION BY
-     * @param  array<int, array<string, mixed>> $orderBy   Orden para ORDER BY
-     * @param  string                           $alias     Alias para el resultado
-     * @return array<string, mixed>             Resultados de la consulta con window function
+     * @param string $function Función window (row_number, rank, lag, lead, etc.)
+     * @param string $column Columna sobre la que aplicar la función
+     * @param array<string, mixed> $args Argumentos específicos de la función
+     * @param array<int, string> $partitionBy Columnas para PARTITION BY
+     * @param array<int, array<string, mixed>> $orderBy Orden para ORDER BY
+     * @param string $alias Alias para el resultado
+     * @return array<string, mixed> Resultados de la consulta con window function
      * @throws VersaORMException
      */
     public function windowFunction(
@@ -2617,16 +2617,16 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'window_function',
-            'function' => strtolower($function),
-            'column' => $column,
-            'args' => $args,
-            'partition_by' => $partitionBy,
-            'order_by' => $orderBy,
-            'alias' => $alias,
-            'table' => $this->table,
-            'wheres' => $this->wheres,
-            'joins' => $this->joins,
-            'selects' => $this->selects,
+            'function'       => strtolower($function),
+            'column'         => $column,
+            'args'           => $args,
+            'partition_by'   => $partitionBy,
+            'order_by'       => $orderBy,
+            'alias'          => $alias,
+            'table'          => $this->table,
+            'wheres'         => $this->wheres,
+            'joins'          => $this->joins,
+            'selects'        => $this->selects,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2635,10 +2635,10 @@ class QueryBuilder
     /**
      * Crea una consulta con Common Table Expressions (CTEs).
      *
-     * @param  array<string, array<string, mixed>> $ctes CTEs definidas como ['nombre' => ['query' => 'SQL', 'bindings' => []]]
-     * @param  string                              $mainQuery  Consulta principal
-     * @param  array<int, mixed>                   $mainQueryBindings Bindings para la consulta principal
-     * @return array<string, mixed>                Resultados de la consulta
+     * @param array<string, array<string, mixed>> $ctes CTEs definidas como ['nombre' => ['query' => 'SQL', 'bindings' => []]]
+     * @param string $mainQuery Consulta principal
+     * @param array<int, mixed> $mainQueryBindings Bindings para la consulta principal
+     * @return array<string, mixed> Resultados de la consulta
      * @throws VersaORMException
      */
     public function withCte(array $ctes, string $mainQuery, array $mainQueryBindings = []): array
@@ -2667,8 +2667,8 @@ class QueryBuilder
             }
 
             $cteDefinitions[] = [
-                'name' => $name,
-                'query' => $definition['query'],
+                'name'     => $name,
+                'query'    => $definition['query'],
                 'bindings' => $definition['bindings'] ?? [],
             ];
         }
@@ -2678,9 +2678,9 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type' => 'cte',
-            'ctes' => $cteDefinitions,
-            'main_query' => $mainQuery,
+            'operation_type'      => 'cte',
+            'ctes'                => $cteDefinitions,
+            'main_query'          => $mainQuery,
             'main_query_bindings' => $mainQueryBindings,
         ];
 
@@ -2690,8 +2690,8 @@ class QueryBuilder
     /**
      * Realiza una operación UNION con otra consulta.
      *
-     * @param  array<int, array<string, mixed>>|QueryBuilder|callable $queries Consultas a unir
-     * @param  bool                                                   $all     Si true, usa UNION ALL
+     * @param array<int, array<string, mixed>>|QueryBuilder|callable $queries Consultas a unir
+     * @param bool $all Si true, usa UNION ALL
      * @return array<string, mixed> Resultados de la operación UNION
      * @throws VersaORMException
      */
@@ -2725,7 +2725,7 @@ class QueryBuilder
             }
 
             $currentSQL = $this->buildSelectSQL();
-            $secondSQL = $queries->buildSelectSQL();
+            $secondSQL  = $queries->buildSelectSQL();
 
             $queryDefinitions = [
                 ['sql' => $currentSQL['sql'], 'bindings' => $currentSQL['bindings']],
@@ -2737,8 +2737,8 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'union',
-            'queries' => $queryDefinitions,
-            'all' => $all,
+            'queries'        => $queryDefinitions,
+            'all'            => $all,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2748,9 +2748,9 @@ class QueryBuilder
      * Combina la consulta actual con otra usando INTERSECT.
      * Devuelve solo las filas que aparecen en ambas consultas.
      *
-     * @param  QueryBuilder|callable $query La segunda consulta
-     * @param  bool                  $all   Si true, usa INTERSECT ALL
-     * @return array<string, mixed>  Resultados de la operación INTERSECT
+     * @param QueryBuilder|callable $query La segunda consulta
+     * @param bool $all Si true, usa INTERSECT ALL
+     * @return array<string, mixed> Resultados de la operación INTERSECT
      * @throws VersaORMException
      */
     public function intersect($query, bool $all = false): array
@@ -2767,12 +2767,12 @@ class QueryBuilder
         }
 
         // Preparar queries para INTERSECT
-        $firstQuerySQL = $this->buildSelectSQL();
+        $firstQuerySQL  = $this->buildSelectSQL();
         $secondQuerySQL = $query->buildSelectSQL();
 
         $params = [
             'operation_type' => 'intersect',
-            'queries' => [
+            'queries'        => [
                 ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
                 ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
             ],
@@ -2786,9 +2786,9 @@ class QueryBuilder
      * Combina la consulta actual con otra usando EXCEPT.
      * Devuelve las filas de la primera consulta que no aparecen en la segunda.
      *
-     * @param  QueryBuilder|callable $query La segunda consulta
-     * @param  bool                  $all   Si true, usa EXCEPT ALL
-     * @return array<string, mixed>  Resultados de la operación EXCEPT
+     * @param QueryBuilder|callable $query La segunda consulta
+     * @param bool $all Si true, usa EXCEPT ALL
+     * @return array<string, mixed> Resultados de la operación EXCEPT
      * @throws VersaORMException
      */
     public function except($query, bool $all = false): array
@@ -2805,12 +2805,12 @@ class QueryBuilder
         }
 
         // Preparar queries para EXCEPT
-        $firstQuerySQL = $this->buildSelectSQL();
+        $firstQuerySQL  = $this->buildSelectSQL();
         $secondQuerySQL = $query->buildSelectSQL();
 
         $params = [
             'operation_type' => 'except',
-            'queries' => [
+            'queries'        => [
                 ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
                 ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
             ],
@@ -2868,9 +2868,9 @@ class QueryBuilder
                         $bindings = array_merge($bindings, $where['bindings']);
                     }
                 } else {
-                    $operator = $where['operator'] ?? '=';
+                    $operator     = $where['operator'] ?? '=';
                     $whereParts[] = sprintf('%s %s ?', $where['column'], $operator);
-                    $bindings[] = $where['value'];
+                    $bindings[]   = $where['value'];
                 }
             }
             $sql .= implode(' AND ', $whereParts);
@@ -2882,7 +2882,7 @@ class QueryBuilder
     /**
      * Ejecuta una operación SQL avanzada utilizando el handler de Rust.
      *
-     * @param  array<string, mixed> $params Parámetros de la operación
+     * @param array<string, mixed> $params Parámetros de la operación
      * @return array<string, mixed> Resultados de la operación
      * @throws VersaORMException
      */
@@ -2897,7 +2897,7 @@ class QueryBuilder
         }
 
         // Usar reflexión para acceder al método execute de VersaORM
-        $reflection = new \ReflectionClass($this->orm);
+        $reflection    = new \ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
@@ -2916,10 +2916,10 @@ class QueryBuilder
      * Realiza operaciones JSON específicas del motor de base de datos.
      * Soporta MySQL (->) y PostgreSQL (jsonb) sintaxis.
      *
-     * @param  string               $operation Tipo de operación: extract, contains, search, array_length
-     * @param  string               $column    Columna JSON
-     * @param  string               $path      Ruta JSON (ej: '$.user.name')
-     * @param  mixed                $value     Valor para comparaciones/búsquedas
+     * @param string $operation Tipo de operación: extract, contains, search, array_length
+     * @param string $column Columna JSON
+     * @param string $path Ruta JSON (ej: '$.user.name')
+     * @param mixed $value Valor para comparaciones/búsquedas
      * @return array<string, mixed> Resultados de la operación JSON
      * @throws VersaORMException
      */
@@ -2946,13 +2946,13 @@ class QueryBuilder
         $params = [
             'operation_type' => 'json_operation',
             'json_operation' => $operation,
-            'column' => $column,
-            'path' => $path,
-            'value' => $value,
-            'table' => $this->table,
-            'wheres' => $this->wheres,
-            'joins' => $this->joins,
-            'selects' => $this->selects,
+            'column'         => $column,
+            'path'           => $path,
+            'value'          => $value,
+            'table'          => $this->table,
+            'wheres'         => $this->wheres,
+            'joins'          => $this->joins,
+            'selects'        => $this->selects,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2962,9 +2962,9 @@ class QueryBuilder
      * Operaciones con arrays (específico para PostgreSQL).
      * Permite trabajar con tipos array de PostgreSQL.
      *
-     * @param  string               $operation Tipo de operación: 'contains', 'overlap', 'length', 'append', 'prepend', 'remove'
-     * @param  string               $column    Columna array
-     * @param  mixed                $value     Valor para la operación
+     * @param string $operation Tipo de operación: 'contains', 'overlap', 'length', 'append', 'prepend', 'remove'
+     * @param string $column Columna array
+     * @param mixed $value Valor para la operación
      * @return array<string, mixed> Resultados de la operación array
      * @throws VersaORMException
      */
@@ -2989,14 +2989,14 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type' => 'array_operations',
+            'operation_type'  => 'array_operations',
             'array_operation' => $operation,
-            'column' => $column,
-            'value' => $value,
-            'table' => $this->table,
-            'wheres' => $this->wheres,
-            'joins' => $this->joins,
-            'bindings' => [],
+            'column'          => $column,
+            'value'           => $value,
+            'table'           => $this->table,
+            'wheres'          => $this->wheres,
+            'joins'           => $this->joins,
+            'bindings'        => [],
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -3005,7 +3005,7 @@ class QueryBuilder
     /**
      * Aplica hints de optimización específicos del motor de base de datos.
      *
-     * @param  array<string, mixed> $hints Hints específicos del motor
+     * @param array<string, mixed> $hints Hints específicos del motor
      * @return self
      * @throws VersaORMException
      */
@@ -3028,7 +3028,7 @@ class QueryBuilder
         }
 
         $this->lazyOperations[] = [
-            'type' => 'query_hints',
+            'type'  => 'query_hints',
             'hints' => $hints,
         ];
 
@@ -3038,9 +3038,9 @@ class QueryBuilder
     /**
      * Realiza búsqueda de texto completo usando las capacidades específicas del motor.
      *
-     * @param  array<int, string> $columns   Columnas donde buscar
-     * @param  string             $searchTerm Término a buscar
-     * @param  array<string, mixed> $options   Opciones específicas del motor
+     * @param array<int, string> $columns Columnas donde buscar
+     * @param string $searchTerm Término a buscar
+     * @param array<string, mixed> $options Opciones específicas del motor
      * @return array<string, mixed> Resultados de la búsqueda full-text
      * @throws VersaORMException
      */
@@ -3063,13 +3063,13 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'full_text_search',
-            'columns' => $columns,
-            'search_term' => $searchTerm,
-            'options' => $options,
-            'table' => $this->table,
-            'wheres' => $this->wheres,
-            'joins' => $this->joins,
-            'selects' => $this->selects,
+            'columns'        => $columns,
+            'search_term'    => $searchTerm,
+            'options'        => $options,
+            'table'          => $this->table,
+            'wheres'         => $this->wheres,
+            'joins'          => $this->joins,
+            'selects'        => $this->selects,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -3078,9 +3078,10 @@ class QueryBuilder
     /**
      * Realiza agregaciones avanzadas como percentiles, median, variance.
      *
-     * @param  string $type    Tipo de agregación: percentile, median, variance, stddev, group_concat
-     * @param  string $column  Columna para la agregación
-     * @param  array<string, mixed> $options Opciones específicas (ej: percentile => 0.95)
+     * @param string $type Tipo de agregación: percentile, median, variance, stddev, group_concat
+     * @param string $column Columna para la agregación
+     * @param array<string, mixed> $options Opciones específicas (ej: percentile => 0.95)
+     * @param array<int, string> $groupBy Columnas para agrupar (opcional)
      * @return array<string, mixed> Resultados de la agregación
      * @throws VersaORMException
      */
@@ -3105,16 +3106,16 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type' => 'advanced_aggregation',
+            'operation_type'   => 'advanced_aggregation',
             'aggregation_type' => $type,
-            'column' => $column,
-            'options' => $options,
-            'table' => $this->table,
-            'wheres' => $this->wheres,
-            'joins' => $this->joins,
-            'groupBy' => !empty($groupBy) ? $groupBy : $this->groupBy,
-            'having' => $this->having,
-            'alias' => $alias,
+            'column'           => $column,
+            'options'          => $options,
+            'table'            => $this->table,
+            'wheres'           => $this->wheres,
+            'joins'            => $this->joins,
+            'groupBy'          => !empty($groupBy) ? $groupBy : $this->groupBy,
+            'having'           => $this->having,
+            'alias'            => $alias,
         ];
 
         // Debug temporal
@@ -3147,7 +3148,7 @@ class QueryBuilder
     /**
      * Optimiza la consulta actual para el motor de base de datos específico.
      *
-     * @param  array<string, mixed> $options Opciones de optimización
+     * @param array<string, mixed> $options Opciones de optimización
      * @return array<string, mixed> Información de optimización y consulta optimizada
      * @throws VersaORMException
      */
@@ -3161,9 +3162,9 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'optimize_query',
-            'query' => $querySQL['sql'],
-            'bindings' => $querySQL['bindings'],
-            'options' => $options,
+            'query'          => $querySQL['sql'],
+            'bindings'       => $querySQL['bindings'],
+            'options'        => $options,
         ];
 
         return $this->executeAdvancedSQL($params);

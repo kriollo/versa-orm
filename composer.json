@@ -53,9 +53,9 @@
     }
   },
   "scripts": {
-    "test-mysql": "phpunit --configuration phpunit-mysql.xml --testdox",
+    "test-mysql": "phpunit --configuration phpunit-mysql.xml --testdox --display-warnings --display-notices --display-deprecations",
     "test-mysql-coverage": "phpunit --coverage-html coverage",
-    "test-postgresql": "phpunit --configuration phpunit-postgresql.xml --testdox",
+    "test-postgresql": "phpunit --configuration phpunit-postgresql.xml --testdox --display-warnings --display-notices --display-deprecations",
     "test-postgresql-coverage": "phpunit --configuration phpunit-postgresql.xml --coverage-html coverage-postgresql",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "cs-check": "phpcs",

@@ -24,15 +24,15 @@ class MySQLAdvancedSQLTest extends TestCase
     {
         // Configuración específica para MySQL
         $config = [
-            'engine' => 'pdo',
-            'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => 3306,
+            'engine'   => 'pdo',
+            'driver'   => 'mysql',
+            'host'     => 'localhost',
+            'port'     => 3306,
             'database' => 'versaorm_test',
             'username' => 'local',
             'password' => 'local',
-            'options' => [
-                'charset' => 'utf8mb4',
+            'options'  => [
+                'charset'  => 'utf8mb4',
                 'sql_mode' => 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO',
             ]
         ];
@@ -52,28 +52,28 @@ class MySQLAdvancedSQLTest extends TestCase
         // Insertar datos de prueba
         $employees = [
             [
-                'name' => 'Alice Johnson',
+                'name'       => 'Alice Johnson',
                 'department' => 'Engineering',
-                'salary' => 90000.00,
-                'hire_date' => '2020-01-15',
-                'profile' => '{"skills": ["PHP", "MySQL"], "level": "senior"}',
-                'bio' => 'Senior PHP developer with expertise in database optimization'
+                'salary'     => 90000.00,
+                'hire_date'  => '2020-01-15',
+                'profile'    => '{"skills": ["PHP", "MySQL"], "level": "senior"}',
+                'bio'        => 'Senior PHP developer with expertise in database optimization'
             ],
             [
-                'name' => 'Bob Smith',
+                'name'       => 'Bob Smith',
                 'department' => 'Engineering',
-                'salary' => 85000.00,
-                'hire_date' => '2019-03-10',
-                'profile' => '{"skills": ["JavaScript", "React"], "level": "mid"}',
-                'bio' => 'Frontend developer specializing in React applications'
+                'salary'     => 85000.00,
+                'hire_date'  => '2019-03-10',
+                'profile'    => '{"skills": ["JavaScript", "React"], "level": "mid"}',
+                'bio'        => 'Frontend developer specializing in React applications'
             ],
             [
-                'name' => 'Carol Williams',
+                'name'       => 'Carol Williams',
                 'department' => 'Marketing',
-                'salary' => 70000.00,
-                'hire_date' => '2021-06-20',
-                'profile' => '{"skills": ["Content", "SEO"], "level": "senior"}',
-                'bio' => 'Marketing expert with focus on content strategy and SEO'
+                'salary'     => 70000.00,
+                'hire_date'  => '2021-06-20',
+                'profile'    => '{"skills": ["Content", "SEO"], "level": "senior"}',
+                'bio'        => 'Marketing expert with focus on content strategy and SEO'
             ]
         ];
 
@@ -120,7 +120,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
         // Full-text search específico de MySQL
         $result = $qb->fullTextSearch(['bio'], 'PHP developer', [
-            'mode' => 'NATURAL LANGUAGE',
+            'mode'       => 'NATURAL LANGUAGE',
             'with_score' => true
         ]);
 
@@ -133,7 +133,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
         // Hints específicos de MySQL
         $qb->queryHints([
-            'USE_INDEX' => 'idx_department',
+            'USE_INDEX'           => 'idx_department',
             'SQL_CALC_FOUND_ROWS' => true
         ]);
 
@@ -148,7 +148,7 @@ class MySQLAdvancedSQLTest extends TestCase
         // GROUP_CONCAT específico de MySQL
         $result = $qb->advancedAggregation('group_concat', 'name', [
             'separator' => ', ',
-            'order_by' => 'salary DESC'
+            'order_by'  => 'salary DESC'
         ]);
 
         $this->assertIsArray($result);
@@ -161,7 +161,7 @@ class MySQLAdvancedSQLTest extends TestCase
         // CTE recursivo en MySQL 8.0+
         $result = $qb->withCte([
             'salary_levels' => [
-                'query' => 'SELECT department, AVG(salary) as avg_salary FROM employees_mysql_adv GROUP BY department',
+                'query'    => 'SELECT department, AVG(salary) as avg_salary FROM employees_mysql_adv GROUP BY department',
                 'bindings' => []
             ]
         ], 'SELECT * FROM salary_levels WHERE avg_salary > 75000', []);
@@ -172,6 +172,6 @@ class MySQLAdvancedSQLTest extends TestCase
     protected function tearDown(): void
     {
         // Limpiar tabla después de cada test
-        $this->orm->exec("DROP TABLE IF EXISTS employees_mysql_adv");
+        $this->orm->exec('DROP TABLE IF EXISTS employees_mysql_adv');
     }
 }

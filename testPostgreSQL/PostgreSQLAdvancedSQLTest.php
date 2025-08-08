@@ -48,7 +48,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             ['name' => 'search_vector', 'type' => 'TSVECTOR'],
         ], [
             'if_not_exists' => true,
-            'indexes' => [
+            'indexes'       => [
                 ['name' => 'idx_profile_gin', 'columns' => ['profile'], 'using' => 'GIN', 'if_not_exists' => true],
                 ['name' => 'idx_skills_gin', 'columns' => ['skills'], 'using' => 'GIN', 'if_not_exists' => true],
                 ['name' => 'idx_search_gin', 'columns' => ['search_vector'], 'using' => 'GIN', 'if_not_exists' => true],
@@ -58,31 +58,31 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // Insertar datos de prueba con tipos PostgreSQL
         $employees = [
             [
-                'name' => 'Alice Johnson',
+                'name'       => 'Alice Johnson',
                 'department' => 'Engineering',
-                'salary' => 90000.00,
-                'hire_date' => '2020-01-15',
-                'profile' => '{"skills": ["PHP", "PostgreSQL"], "level": "senior", "certifications": ["AWS", "Docker"]}',
-                'skills' => '{"PHP", "PostgreSQL", "Docker"}',
-                'bio' => 'Senior database engineer with PostgreSQL expertise'
+                'salary'     => 90000.00,
+                'hire_date'  => '2020-01-15',
+                'profile'    => '{"skills": ["PHP", "PostgreSQL"], "level": "senior", "certifications": ["AWS", "Docker"]}',
+                'skills'     => '{"PHP", "PostgreSQL", "Docker"}',
+                'bio'        => 'Senior database engineer with PostgreSQL expertise'
             ],
             [
-                'name' => 'Bob Smith',
+                'name'       => 'Bob Smith',
                 'department' => 'Engineering',
-                'salary' => 85000.00,
-                'hire_date' => '2019-03-10',
-                'profile' => '{"skills": ["Python", "Django"], "level": "mid", "certifications": ["GCP"]}',
-                'skills' => '{"Python", "Django", "PostgreSQL"}',
-                'bio' => 'Backend developer specializing in Python and PostgreSQL'
+                'salary'     => 85000.00,
+                'hire_date'  => '2019-03-10',
+                'profile'    => '{"skills": ["Python", "Django"], "level": "mid", "certifications": ["GCP"]}',
+                'skills'     => '{"Python", "Django", "PostgreSQL"}',
+                'bio'        => 'Backend developer specializing in Python and PostgreSQL'
             ],
             [
-                'name' => 'Carol Williams',
+                'name'       => 'Carol Williams',
                 'department' => 'Data Science',
-                'salary' => 95000.00,
-                'hire_date' => '2021-06-20',
-                'profile' => '{"skills": ["R", "Statistics"], "level": "senior", "certifications": ["Tableau"]}',
-                'skills' => '{"R", "Statistics", "PostgreSQL", "Tableau"}',
-                'bio' => 'Data scientist with advanced PostgreSQL analytics'
+                'salary'     => 95000.00,
+                'hire_date'  => '2021-06-20',
+                'profile'    => '{"skills": ["R", "Statistics"], "level": "senior", "certifications": ["Tableau"]}',
+                'skills'     => '{"R", "Statistics", "PostgreSQL", "Tableau"}',
+                'bio'        => 'Data scientist with advanced PostgreSQL analytics'
             ]
         ];
 
@@ -153,7 +153,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         $result = $qb->fullTextSearch(['search_vector'], 'PostgreSQL & developer', [
             'language' => 'english',
             'operator' => '@@',
-            'rank' => true
+            'rank'     => true
         ]);
 
         $this->assertIsArray($result);
@@ -206,7 +206,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // Agregaciones estadísticas avanzadas
         $result = $qb->advancedAggregation('percentile', 'salary', [
             'percentile' => 0.95,
-            'method' => 'cont'  // percentile_cont
+            'method'     => 'cont'  // percentile_cont
         ]);
 
         $this->assertIsArray($result);
@@ -214,14 +214,14 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testUnion(): void
     {
-        $qb = new QueryBuilder(self::$orm, 'employees');
+        $qb      = new QueryBuilder(self::$orm, 'employees');
         $queries = [
             [
-                'sql' => 'SELECT name FROM employees WHERE department = ?',
+                'sql'      => 'SELECT name FROM employees WHERE department = ?',
                 'bindings' => ['Engineering']
             ],
             [
-                'sql' => 'SELECT name FROM employees WHERE salary > ?',
+                'sql'      => 'SELECT name FROM employees WHERE salary > ?',
                 'bindings' => [80000]
             ]
         ];
@@ -231,14 +231,14 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testUnionAll(): void
     {
-        $qb = new QueryBuilder(self::$orm, 'employees');
+        $qb      = new QueryBuilder(self::$orm, 'employees');
         $queries = [
             [
-                'sql' => 'SELECT department FROM employees WHERE salary > 70000',
+                'sql'      => 'SELECT department FROM employees WHERE salary > 70000',
                 'bindings' => []
             ],
             [
-                'sql' => 'SELECT department FROM employees WHERE department = ?',
+                'sql'      => 'SELECT department FROM employees WHERE department = ?',
                 'bindings' => ['Data Science']
             ]
         ];
@@ -248,28 +248,28 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testGetDriverCapabilities(): void
     {
-        $qb = new QueryBuilder(self::$orm, 'employees');
+        $qb     = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->getDriverCapabilities();
         $this->assertIsArray($result);
     }
 
     public function testOptimizeQuery(): void
     {
-        $qb = new QueryBuilder(self::$orm, 'employees');
+        $qb     = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->optimizeQuery(['query' => 'SELECT * FROM employees WHERE salary > 50000']);
         $this->assertIsArray($result);
     }
 
     public function testGetDriverLimits(): void
     {
-        $qb = new QueryBuilder(self::$orm, 'employees');
+        $qb     = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->getDriverLimits();
         $this->assertIsArray($result);
     }
 
     public function testAdvancedAggregationGroupConcat(): void
     {
-        $qb = new QueryBuilder(self::$orm, 'employees');
+        $qb     = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->advancedAggregation('group_concat', 'name', ['separator' => ', '], ['department'], 'employee_names');
         $this->assertIsArray($result);
     }

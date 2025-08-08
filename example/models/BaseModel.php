@@ -40,8 +40,8 @@ abstract class BaseModel extends VersaModel
     public static function all(): array
     {
         $tableName = static::getTableName();
-        $records = static::findAll($tableName);
-        $objects = [];
+        $records   = static::findAll($tableName);
+        $objects   = [];
 
         foreach ($records as $record) {
             $obj = VersaModel::dispense($tableName);
@@ -60,7 +60,7 @@ abstract class BaseModel extends VersaModel
     public static function findArray(int $id): ?array
     {
         $tableName = static::getTableName();
-        $result = static::getAll("SELECT * FROM {$tableName} WHERE id = ?", [$id]);
+        $result    = static::getAll("SELECT * FROM {$tableName} WHERE id = ?", [$id]);
         return $result ? $result[0] : null;
     }
 
@@ -70,7 +70,7 @@ abstract class BaseModel extends VersaModel
     public static function paginate(int $page = 1, int $perPage = 10): array
     {
         $tableName = static::getTableName();
-        $offset = ($page - 1) * $perPage;
+        $offset    = ($page - 1) * $perPage;
 
         $items = static::getAll(
             "SELECT * FROM {$tableName} LIMIT ? OFFSET ?",
@@ -78,13 +78,13 @@ abstract class BaseModel extends VersaModel
         );
 
         $totalResult = static::getAll("SELECT COUNT(*) as count FROM {$tableName}");
-        $total = $totalResult[0]['count'] ?? 0;
+        $total       = $totalResult[0]['count'] ?? 0;
 
         return [
-            'items' => $items,
-            'total' => $total,
-            'page' => $page,
-            'perPage' => $perPage,
+            'items'      => $items,
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
             'totalPages' => ceil($total / $perPage),
         ];
     }
@@ -96,7 +96,7 @@ abstract class BaseModel extends VersaModel
     {
         // Crear una instancia temporal solo para obtener el nombre de tabla
         $reflection = new \ReflectionClass(static::class);
-        $instance = $reflection->newInstanceWithoutConstructor();
+        $instance   = $reflection->newInstanceWithoutConstructor();
 
         // Acceder a la propiedad protegida $table
         $tableProperty = $reflection->getProperty('table');
@@ -180,7 +180,7 @@ abstract class BaseModel extends VersaModel
                     continue;
                 }
 
-                $type = $definition['type'];
+                $type       = $definition['type'];
                 $validTypes = [
                     'int',
                     'string',
@@ -218,7 +218,7 @@ abstract class BaseModel extends VersaModel
                 }
             }
         } catch (\Exception $e) {
-            $errors[] = "Error al validar esquema: " . $e->getMessage();
+            $errors[] = 'Error al validar esquema: ' . $e->getMessage();
         }
 
         return $errors;
@@ -236,8 +236,8 @@ abstract class BaseModel extends VersaModel
         }
 
         $definition = $propertyTypes[$property];
-        $type = $definition['type'];
-        $nullable = $definition['nullable'] ?? true;
+        $type       = $definition['type'];
+        $nullable   = $definition['nullable'] ?? true;
 
         // Verificar nulos
         if ($value === null) {

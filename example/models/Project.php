@@ -22,7 +22,7 @@ class Project extends BaseModel
     protected array $guarded = [];
 
     protected array $rules = [
-        'name' => ['required', 'min:2', 'max:100'],
+        'name'     => ['required', 'min:2', 'max:100'],
         'owner_id' => ['required'],
     ];
 
@@ -75,9 +75,9 @@ class Project extends BaseModel
         $project->store();
 
         // Añadir el propietario como miembro del proyecto
-        $projectUser = static::dispense('project_users');
+        $projectUser             = static::dispense('project_users');
         $projectUser->project_id = $project->id;
-        $projectUser->user_id = $attributes['owner_id'];
+        $projectUser->user_id    = $attributes['owner_id'];
         $projectUser->store();
 
         return $project;
@@ -151,9 +151,9 @@ class Project extends BaseModel
 
         if (empty($exists)) {
             // Usar VersaModel para crear la relación
-            $projectUser = static::dispense('project_users');
+            $projectUser             = static::dispense('project_users');
             $projectUser->project_id = $this->id;
-            $projectUser->user_id = $userId;
+            $projectUser->user_id    = $userId;
             $projectUser->store();
         }
     }
@@ -185,13 +185,13 @@ class Project extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name' => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name'        => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
             'description' => ['type' => 'text', 'nullable' => true],
-            'color' => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
-            'owner_id' => ['type' => 'int', 'nullable' => false],
-            'created_at' => ['type' => 'datetime', 'nullable' => false],
-            'updated_at' => ['type' => 'datetime', 'nullable' => false],
+            'color'       => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
+            'owner_id'    => ['type' => 'int', 'nullable' => false],
+            'created_at'  => ['type' => 'datetime', 'nullable' => false],
+            'updated_at'  => ['type' => 'datetime', 'nullable' => false],
         ];
     }
 }

@@ -1,27 +1,27 @@
 <?php $title = 'Error - VersaORM Trello Demo'; ?>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
         <div class="text-center">
             <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
-            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
                 ¡Oops! Algo salió mal
             </h2>
-            <p class="mt-2 text-sm text-gray-600">
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 Ha ocurrido un error en la aplicación
             </p>
         </div>
 
-        <div class="bg-white shadow rounded-lg p-6">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <div class="mb-4">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Detalles del Error:</h3>
-                <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Detalles del Error:</h3>
+                <div class="bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border border-red-200 dark:border-red-800 rounded-md p-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <i class="fas fa-exclamation-circle text-red-400"></i>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-red-700">
+                            <p class="text-sm text-red-700 dark:text-red-300">
                                 <?= htmlspecialchars($message ?? 'Error desconocido') ?>
                             </p>
                         </div>
@@ -37,13 +37,13 @@
                 </a>
 
                 <a href="javascript:history.back()"
-                    class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    class="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Página Anterior
                 </a>
 
                 <button onclick="location.reload()"
-                    class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    class="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-redo mr-2"></i>
                     Reintentar
                 </button>
@@ -51,9 +51,9 @@
         </div>
 
         <?php if (isset($config['app']['debug']) && $config['app']['debug']): ?>
-            <div class="bg-gray-100 rounded-lg p-4">
-                <h4 class="text-sm font-medium text-gray-900 mb-2">Información de Debug:</h4>
-                <div class="text-xs text-gray-600 font-mono">
+            <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Información de Debug:</h4>
+                <div class="text-xs text-gray-600 dark:text-gray-400 font-mono">
                     <p><strong>Timestamp:</strong> <?= date('Y-m-d H:i:s') ?></p>
                     <p><strong>Método:</strong> <?= $_SERVER['REQUEST_METHOD'] ?? 'N/A' ?></p>
                     <p><strong>URI:</strong> <?= $_SERVER['REQUEST_URI'] ?? 'N/A' ?></p>
@@ -63,7 +63,7 @@
         <?php endif; ?>
 
         <div class="text-center">
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
                 Si el problema persiste, contacta al administrador del sistema.
             </p>
         </div>

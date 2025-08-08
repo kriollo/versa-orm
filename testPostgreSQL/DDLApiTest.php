@@ -34,20 +34,20 @@ class DDLApiTest extends TestCase
                 ['name' => 'email', 'type' => 'VARCHAR(150)', 'nullable' => true],
             ],
         ]);
-        $cols2 = $orm->schema('columns', 'ddl_mvp_users');
-        $colNames2 = array_map(fn($c) => strtolower($c['name'] ?? ($c['column_name'] ?? ($c['Field'] ?? ''))), $cols2);
+        $cols2     = $orm->schema('columns', 'ddl_mvp_users');
+        $colNames2 = array_map(fn ($c) => strtolower($c['name'] ?? ($c['column_name'] ?? ($c['Field'] ?? ''))), $cols2);
         $this->assertContains('email', $colNames2);
 
         // 3) Rename
         $orm->schemaRename('ddl_mvp_users', 'ddl_mvp_people');
         $tables = $orm->schema('tables');
         $this->assertIsArray($tables);
-        $this->assertTrue(in_array('ddl_mvp_people', array_map('strtolower', array_map(fn($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string)$t) : (string)$t, $tables))));
+        $this->assertTrue(in_array('ddl_mvp_people', array_map('strtolower', array_map(fn ($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string)$t) : (string)$t, $tables))));
 
         // 4) Drop
         $orm->schemaDrop('ddl_mvp_people');
         $tablesAfter = $orm->schema('tables');
-        $this->assertFalse(in_array('ddl_mvp_people', array_map('strtolower', array_map(fn($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string)$t) : (string)$t, $tablesAfter))));
+        $this->assertFalse(in_array('ddl_mvp_people', array_map('strtolower', array_map(fn ($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string)$t) : (string)$t, $tablesAfter))));
     }
 
     public function testFreezeBlocksDDL(): void

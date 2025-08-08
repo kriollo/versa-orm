@@ -11,7 +11,7 @@ final class QAHardeningStrongTest extends TestCase
         $orm = self::$orm;
         $this->expectException(\Throwable::class);
         // Nombres con comillas y comentario
-        $orm->table("users\"; -- ")->get();
+        $orm->table('users"; -- ')->get();
     }
 
     public function testRawExpressionGuardrails(): void

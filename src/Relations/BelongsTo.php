@@ -15,8 +15,8 @@ class BelongsTo extends Relation
 
     public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $ownerKey, string $relationName)
     {
-        $this->foreignKey = $foreignKey;
-        $this->ownerKey = $ownerKey;
+        $this->foreignKey   = $foreignKey;
+        $this->ownerKey     = $ownerKey;
         $this->relationName = $relationName;
         parent::__construct($query, $parent);
     }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
-use VersaORM\Tests\PostgreSQL\TestCase;
-
 /**
  * Pruebas de transacciones: commit y rollback usando las APIs del ORM/QueryBuilder.
  */

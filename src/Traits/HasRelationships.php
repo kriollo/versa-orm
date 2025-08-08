@@ -19,20 +19,20 @@ trait HasRelationships
     protected array $relations = [];
 
     /**
-     * @param  class-string<VersaModel> $related
-     * @param  string|null              $foreignKey
-     * @param  string|null              $localKey
+     * @param class-string<VersaModel> $related
+     * @param string|null $foreignKey
+     * @param string|null $localKey
      * @return HasOne
      */
     public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
     {
         $foreignKey = $foreignKey ?: $this->getForeignKey();
-        $localKey = $localKey ?: $this->getKeyName();
+        $localKey   = $localKey ?: $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new \ReflectionClass($related);
+        $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+        $table             = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
 
@@ -40,20 +40,20 @@ trait HasRelationships
     }
 
     /**
-     * @param  class-string<VersaModel> $related
-     * @param  string|null              $foreignKey
-     * @param  string|null              $localKey
+     * @param class-string<VersaModel> $related
+     * @param string|null $foreignKey
+     * @param string|null $localKey
      * @return HasMany
      */
     public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): HasMany
     {
         $foreignKey = $foreignKey ?: $this->getForeignKey();
-        $localKey = $localKey ?: $this->getKeyName();
+        $localKey   = $localKey ?: $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new \ReflectionClass($related);
+        $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+        $table             = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
 
@@ -61,21 +61,21 @@ trait HasRelationships
     }
 
     /**
-     * @param  class-string<VersaModel> $related
-     * @param  string|null              $foreignKey
-     * @param  string|null              $ownerKey
-     * @param  string|null              $relation
+     * @param class-string<VersaModel> $related
+     * @param string|null $foreignKey
+     * @param string|null $ownerKey
+     * @param string|null $relation
      * @return BelongsTo
      */
     public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null, ?string $relation = null): BelongsTo
     {
-        $relation = $relation ?: $this->getRelationName();
+        $relation   = $relation ?: $this->getRelationName();
         $foreignKey = $foreignKey ?: $relation . '_id';
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new \ReflectionClass($related);
+        $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+        $table             = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
         $ownerKey = $ownerKey ?: $instance->getKeyName();
@@ -84,26 +84,26 @@ trait HasRelationships
     }
 
     /**
-     * @param  class-string<VersaModel> $related
-     * @param  string                   $pivotTable
-     * @param  string|null              $foreignPivotKey
-     * @param  string|null              $relatedPivotKey
-     * @param  string|null              $parentKey
-     * @param  string|null              $relatedKey
+     * @param class-string<VersaModel> $related
+     * @param string $pivotTable
+     * @param string|null $foreignPivotKey
+     * @param string|null $relatedPivotKey
+     * @param string|null $parentKey
+     * @param string|null $relatedKey
      * @return BelongsToMany
      */
     public function belongsToMany(string $related, string $pivotTable, ?string $foreignPivotKey = null, ?string $relatedPivotKey = null, ?string $parentKey = null, ?string $relatedKey = null): BelongsToMany
     {
         $foreignPivotKey = $foreignPivotKey ?: $this->getForeignKey();
         $relatedPivotKey = $relatedPivotKey ?: (new $related('dummy', $this->getOrm()))->getForeignKey();
-        $parentKey = $parentKey ?: $this->getKeyName();
+        $parentKey       = $parentKey ?: $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new \ReflectionClass($related);
+        $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        $table = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
+        $table             = $defaultProperties['table'] ?? 'dummy'; // Usar un nombre de tabla predeterminado si no se encuentra
 
-        $instance = new $related($table, $this->getOrm());
+        $instance   = new $related($table, $this->getOrm());
         $relatedKey = $relatedKey ?: $instance->getKeyName();
 
         return new BelongsToMany($instance->newQuery(), $this, $pivotTable, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey);
@@ -143,7 +143,7 @@ trait HasRelationships
             throw new \Exception('Relationship method must return an object of type Relation.');
         }
 
-        $result = $relation->getResults();
+        $result                   = $relation->getResults();
         $this->relations[$method] = $result;
         return $result;
     }

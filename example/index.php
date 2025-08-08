@@ -16,7 +16,7 @@ use App\Models\User;
 
 // Obtener la acción y parámetros de la URL
 $action = $_GET['action'] ?? 'dashboard';
-$id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+$id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
 try {
     switch ($action) {
@@ -36,9 +36,9 @@ try {
 
             // Conteos eficientes usando el ORM
             $totalProjects = $orm->table('projects')->count();
-            $totalTasks = $orm->table('tasks')->count();
-            $totalUsers = $orm->table('users')->count();
-            $totalLabels = $orm->table('labels')->count();
+            $totalTasks    = $orm->table('tasks')->count();
+            $totalUsers    = $orm->table('users')->count();
+            $totalLabels   = $orm->table('labels')->count();
 
             // 🚀 Tareas recientes con información relacionada usando Modo Lazy
             $recentTasks = $orm->table('tasks as t')
@@ -53,12 +53,12 @@ try {
             render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
             break;
 
-        // ======================
-        // PROYECTOS
-        // ======================
+            // ======================
+            // PROYECTOS
+            // ======================
         case 'projects':
             $projects = Project::all();
-            $users = User::all();
+            $users    = User::all();
             render('projects/index', compact('projects', 'users'));
             break;
 
@@ -78,7 +78,7 @@ try {
             // $tasks = Task::getAll('SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC', [$id]);
 
             // ✅ DESPUÉS (Modo Lazy con información relacionada):
-            $orm = Task::getGlobalORM();
+            $orm   = Task::getGlobalORM();
             $tasks = $orm->table('tasks as t')
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'u.email as user_email'])
@@ -89,7 +89,7 @@ try {
                 ->collect();                                               // ✅ UNA consulta optimizada
 
             // Obtener el recuento de notas para las tareas obtenidas
-            $taskIds = array_column($tasks, 'id');
+            $taskIds    = array_column($tasks, 'id');
             $noteCounts = [];
             if (!empty($taskIds)) {
                 $noteCountsData = $orm->table('task_notes')
@@ -97,7 +97,7 @@ try {
                     ->whereIn('task_id', $taskIds)
                     ->groupBy('task_id')
                     ->getAll();
-                
+
                 foreach ($noteCountsData as $row) {
                     $noteCounts[$row['task_id']] = $row['count'];
                 }
@@ -110,11 +110,11 @@ try {
             unset($task); // Romper la referencia
 
             $members = $project->members();
-            $owner = User::findArray($project->owner_id);
+            $owner   = User::findArray($project->owner_id);
 
             // Obtener usuarios disponibles de forma eficiente
-            $allUsers = User::all();
-            $memberIds = array_column($members, 'id');
+            $allUsers    = User::all();
+            $memberIds   = array_column($members, 'id');
             $memberIds[] = $project->owner_id;
 
             $availableUsers = array_filter($allUsers, function ($user) use ($memberIds) {
@@ -257,21 +257,21 @@ try {
             redirect('?action=projects');
             break;
 
-        // ======================
-        // TAREAS
-        // ======================
+            // ======================
+            // TAREAS
+            // ======================
         case 'tasks':
             // Parámetros de paginación y filtros
-            $page = max(1, (int)($_GET['page'] ?? 1));
+            $page         = max(1, (int)($_GET['page'] ?? 1));
             $perPageParam = $_GET['per_page'] ?? 10;
-            $perPage = in_array((int)$perPageParam, [1, 5, 10, 20, 50, 100]) ? (int)$perPageParam : 10;
-            $offset = ($page - 1) * $perPage;
+            $perPage      = in_array((int)$perPageParam, [1, 5, 10, 20, 50, 100]) ? (int)$perPageParam : 10;
+            $offset       = ($page - 1) * $perPage;
 
             // Filtros
-            $statusFilter = $_GET['status'] ?? '';
+            $statusFilter   = $_GET['status'] ?? '';
             $priorityFilter = $_GET['priority'] ?? '';
-            $projectFilter = $_GET['project_id'] ?? '';
-            $userFilter = $_GET['user_id'] ?? '';
+            $projectFilter  = $_GET['project_id'] ?? '';
+            $userFilter     = $_GET['user_id'] ?? '';
 
             // 🚀 ANTES (Muy ineficiente):
             // - Obtener TODAS las tareas en memoria
@@ -332,7 +332,7 @@ try {
                 ->collect();                                               // ✅ UNA consulta optimizada
 
             // Obtener el recuento de notas para las tareas obtenidas
-            $taskIds = array_column($tasks, 'id');
+            $taskIds    = array_column($tasks, 'id');
             $noteCounts = [];
             if (!empty($taskIds)) {
                 $noteCountsData = $orm->table('task_notes')
@@ -340,7 +340,7 @@ try {
                     ->whereIn('task_id', $taskIds)
                     ->groupBy('task_id')
                     ->getAll();
-                
+
                 foreach ($noteCountsData as $row) {
                     $noteCounts[$row['task_id']] = $row['count'];
                 }
@@ -354,38 +354,46 @@ try {
 
             // Obtener datos para filtros (solo los necesarios)
             $projects = $orm->table('projects')->select(['id', 'name'])->getAll();
-            $users = $orm->table('users')->select(['id', 'name'])->getAll();
+            $users    = $orm->table('users')->select(['id', 'name'])->getAll();
 
             // Datos de paginación
             $pagination = [
                 'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $totalTasks,
-                'total_pages' => $totalPages,
-                'has_prev' => $page > 1,
-                'has_next' => $page < $totalPages,
-                'prev_page' => max(1, $page - 1),
-                'next_page' => min($totalPages, $page + 1),
-                'start' => $totalTasks > 0 ? $offset + 1 : 0,
-                'end' => min($offset + $perPage, $totalTasks),
+                'per_page'     => $perPage,
+                'total'        => $totalTasks,
+                'total_pages'  => $totalPages,
+                'has_prev'     => $page > 1,
+                'has_next'     => $page < $totalPages,
+                'prev_page'    => max(1, $page - 1),
+                'next_page'    => min($totalPages, $page + 1),
+                'start'        => $totalTasks > 0 ? $offset + 1 : 0,
+                'end'          => min($offset + $perPage, $totalTasks),
                 'showing_from' => $totalTasks > 0 ? $offset + 1 : 0,
-                'showing_to' => min($offset + $perPage, $totalTasks)
+                'showing_to'   => min($offset + $perPage, $totalTasks)
             ];
 
             // Datos de filtros actuales
             $filters = [
-                'status' => $statusFilter,
-                'priority' => $priorityFilter,
+                'status'     => $statusFilter,
+                'priority'   => $priorityFilter,
                 'project_id' => $projectFilter,
-                'user_id' => $userFilter
+                'user_id'    => $userFilter
             ];
 
             // Construir query string para filtros
             $filterParams = [];
-            if ($statusFilter) $filterParams['status'] = $statusFilter;
-            if ($priorityFilter) $filterParams['priority'] = $priorityFilter;
-            if ($projectFilter) $filterParams['project_id'] = $projectFilter;
-            if ($userFilter) $filterParams['user_id'] = $userFilter;
+            if ($statusFilter) {
+                $filterParams['status'] = $statusFilter;
+            }
+            if ($priorityFilter) {
+                $filterParams['priority'] = $priorityFilter;
+            }
+            if ($projectFilter) {
+                $filterParams['project_id'] = $projectFilter;
+            }
+            if ($userFilter) {
+                $filterParams['user_id'] = $userFilter;
+            }
             $filterQueryString = $filterParams ? '&' . http_build_query($filterParams) : '';
 
             render('tasks/index', compact('tasks', 'projects', 'users', 'pagination', 'filters', 'filterQueryString'));
@@ -395,7 +403,7 @@ try {
             if ($_POST) {
                 try {
                     // Extraer las etiquetas del POST antes de crear la tarea
-                    $labels = isset($_POST['labels']) ? $_POST['labels'] : [];
+                    $labels   = isset($_POST['labels']) ? $_POST['labels'] : [];
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
@@ -413,9 +421,9 @@ try {
                 }
             }
 
-            $projects = array_map(fn($p) => $p->export(), Project::all());
-            $users = array_map(fn($u) => $u->export(), User::all());
-            $labels = array_map(fn($l) => $l->export(), Label::all());
+            $projects = array_map(fn ($p) => $p->export(), Project::all());
+            $users    = array_map(fn ($u) => $u->export(), User::all());
+            $labels   = array_map(fn ($l) => $l->export(), Label::all());
             render('tasks/create', compact('projects', 'users', 'labels'));
             break;
 
@@ -434,7 +442,7 @@ try {
             if ($_POST) {
                 try {
                     // Extraer las etiquetas del POST antes de actualizar la tarea
-                    $labels = isset($_POST['labels']) ? $_POST['labels'] : [];
+                    $labels   = isset($_POST['labels']) ? $_POST['labels'] : [];
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
@@ -455,9 +463,9 @@ try {
                 }
             }
 
-            $projects = array_map(fn($p) => $p->export(), Project::all());
-            $users = array_map(fn($u) => $u->export(), User::all());
-            $labels = array_map(fn($l) => $l->export(), Label::all());
+            $projects   = array_map(fn ($p) => $p->export(), Project::all());
+            $users      = array_map(fn ($u) => $u->export(), User::all());
+            $labels     = array_map(fn ($l) => $l->export(), Label::all());
             $taskLabels = $task->getLabelIds();
             render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
             break;
@@ -500,9 +508,9 @@ try {
             redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             break;
 
-        // ======================
-        // USUARIOS
-        // ======================
+            // ======================
+            // USUARIOS
+            // ======================
         case 'users':
             $users = User::all();
             render('users/index', compact('users'));
@@ -564,14 +572,14 @@ try {
             redirect('?action=users');
             break;
 
-        // ======================
-        // ETIQUETAS
-        // ======================
+            // ======================
+            // ETIQUETAS
+            // ======================
         case 'labels':
             $labels = Label::all();
             // Agregar conteo de tareas para cada etiqueta
             foreach ($labels as &$label) {
-                $count = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
+                $count              = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
                 $label->tasks_count = $count[0]['count'] ?? 0;
             }
             render('labels/index', compact('labels'));
@@ -596,7 +604,7 @@ try {
             // ', [$labelId]);
 
             // ✅ DESPUÉS (Modo Lazy optimizado automáticamente):
-            $orm = Task::getGlobalORM();
+            $orm   = Task::getGlobalORM();
             $tasks = $orm->table('tasks as t')
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
@@ -638,7 +646,7 @@ try {
             }
 
             // Añadir conteo de tareas
-            $count = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
+            $count              = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
             $label->tasks_count = $count[0]['count'] ?? 0;
 
             if ($_POST) {

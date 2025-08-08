@@ -46,8 +46,8 @@ class QueryBuilderBatchTest extends TestCase
         $records = [];
         for ($i = 1; $i <= 5; $i++) {
             $records[] = [
-                'name' => "Batch User {$i}",
-                'email' => "batch{$i}@example.com",
+                'name'   => "Batch User {$i}",
+                'email'  => "batch{$i}@example.com",
                 'status' => 'active',
             ];
         }
@@ -150,11 +150,11 @@ class QueryBuilderBatchTest extends TestCase
     {
         // Insertar varios registros con marcador único
         $uniqueMarker = 'limit_test_' . time() . '_' . mt_rand(1000, 9999);
-        $records = [];
+        $records      = [];
         for ($i = 1; $i <= 5; $i++) {
             $records[] = [
-                'name' => "Limit Test {$i}",
-                'email' => "limit{$i}@example.com",
+                'name'   => "Limit Test {$i}",
+                'email'  => "limit{$i}@example.com",
                 'status' => $uniqueMarker . '_pending',
             ];
         }
@@ -241,8 +241,8 @@ class QueryBuilderBatchTest extends TestCase
         $records = [];
         for ($i = 1; $i <= 5; $i++) {
             $records[] = [
-                'name' => "Delete Limit Test {$i}",
-                'email' => "delete_limit{$i}@example.com",
+                'name'   => "Delete Limit Test {$i}",
+                'email'  => "delete_limit{$i}@example.com",
                 'status' => 'bulk_delete',
             ];
         }
@@ -287,11 +287,9 @@ class QueryBuilderBatchTest extends TestCase
             ['sku' => 'UPSERT001', 'name' => 'Original Product 1', 'price' => 100.0],
             ['sku' => 'UPSERT002', 'name' => 'Original Product 2', 'price' => 200.0],
         ]);
-        echo "\nDebug - Insert result: " . json_encode($insertResult) . "\n";
 
         // Verificar que se insertaron correctamente
         $originalProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
-        echo "\nDebug - Original Product 1 after insert: " . json_encode($originalProduct) . "\n";
 
         // Ahora hacer upsert: actualizar existentes y crear nuevos
         $records = [
@@ -312,13 +310,10 @@ class QueryBuilderBatchTest extends TestCase
         // Verificar que los registros se actualizaron/crearon correctamente
         $updatedProduct1 = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
 
-        // Debug: Imprimir el producto completo
-        echo "\nDebug - Updated Product 1: " . json_encode($updatedProduct1) . "\n";
-        echo 'Price value: ' . var_export($updatedProduct1['price'], true) . "\n";
-        echo 'Price type: ' . gettype($updatedProduct1['price']) . "\n";
+        // Debug removido
 
         $this->assertEquals('Updated Product 1', $updatedProduct1['name']);
-        $this->assertEquals(150.0, (float) $updatedProduct1['price'], 'Updated price should be 150.0', 0.01);
+        $this->assertEquals(150.0, (float) $updatedProduct1['price']);
 
         $newProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT003')->firstArray();
         $this->assertEquals('New Product 3', $newProduct['name']);
@@ -392,8 +387,8 @@ class QueryBuilderBatchTest extends TestCase
     {
         // Test básico de upsert para un registro individual
         $data = [
-            'sku' => 'INDIVIDUAL_UPSERT001',
-            'name' => 'Individual Upsert Product',
+            'sku'   => 'INDIVIDUAL_UPSERT001',
+            'name'  => 'Individual Upsert Product',
             'price' => 199.99
         ];
 
@@ -415,15 +410,15 @@ class QueryBuilderBatchTest extends TestCase
     {
         // Insertar registro inicial
         self::$orm->table('products')->insert([
-            'sku' => 'INDIVIDUAL_UPDATE001',
-            'name' => 'Original Individual Product',
+            'sku'   => 'INDIVIDUAL_UPDATE001',
+            'name'  => 'Original Individual Product',
             'price' => 100.0
         ]);
 
         // Hacer upsert para actualizar
         $updateData = [
-            'sku' => 'INDIVIDUAL_UPDATE001',
-            'name' => 'Updated Individual Product',
+            'sku'   => 'INDIVIDUAL_UPDATE001',
+            'name'  => 'Updated Individual Product',
             'price' => 150.0
         ];
 
@@ -443,14 +438,14 @@ class QueryBuilderBatchTest extends TestCase
     {
         // Test upsert sin especificar columnas de actualización (debería actualizar todas)
         self::$orm->table('products')->insert([
-            'sku' => 'NO_UPDATE_COLS001',
-            'name' => 'Original Product',
+            'sku'   => 'NO_UPDATE_COLS001',
+            'name'  => 'Original Product',
             'price' => 100.0
         ]);
 
         $updateData = [
-            'sku' => 'NO_UPDATE_COLS001',
-            'name' => 'Updated Product',
+            'sku'   => 'NO_UPDATE_COLS001',
+            'name'  => 'Updated Product',
             'price' => 200.0
         ];
 
@@ -475,15 +470,15 @@ class QueryBuilderBatchTest extends TestCase
         $records = [];
         for ($i = 1; $i <= 100; $i++) {
             $records[] = [
-                'name' => "Performance Test User {$i}",
-                'email' => "perf{$i}@example.com",
+                'name'   => "Performance Test User {$i}",
+                'email'  => "perf{$i}@example.com",
                 'status' => 'performance_test',
             ];
         }
 
         $startTime = microtime(true);
-        $result = self::$orm->table('users')->insertMany($records, 25); // Lotes de 25
-        $endTime = microtime(true);
+        $result    = self::$orm->table('users')->insertMany($records, 25); // Lotes de 25
+        $endTime   = microtime(true);
 
         $this->assertEquals(100, $result['total_inserted']);
         $this->assertEquals(4, $result['batches_processed']); // 100/25 = 4 lotes

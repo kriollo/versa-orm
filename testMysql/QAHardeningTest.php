@@ -16,10 +16,10 @@ class QAHardeningTest extends TestCase
     protected function setUp(): void
     {
         $config = [
-            'engine' => 'pdo',
-            'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => 3306,
+            'engine'   => 'pdo',
+            'driver'   => 'mysql',
+            'host'     => 'localhost',
+            'port'     => 3306,
             'database' => 'versaorm_test',
             'username' => 'local',
             'password' => 'local',
@@ -47,13 +47,13 @@ class QAHardeningTest extends TestCase
         ) ENGINE=InnoDB;');
         $this->orm->table('qa_docs')->insert([
             'title' => 'Foo',
-            'body' => 'lorem ipsum foo bar',
-            'meta' => '{"tags":["a","b"]}',
+            'body'  => 'lorem ipsum foo bar',
+            'meta'  => '{"tags":["a","b"]}',
         ]);
         $this->orm->table('qa_docs')->insert([
             'title' => 'Bar',
-            'body' => 'foo boolean -bar +baz',
-            'meta' => '{"tags":["b"]}',
+            'body'  => 'foo boolean -bar +baz',
+            'meta'  => '{"tags":["b"]}',
         ]);
     }
 
@@ -65,7 +65,7 @@ class QAHardeningTest extends TestCase
 
     public function testReservedIdentifiersAreQuoted(): void
     {
-        $qb = new QueryBuilder($this->orm, 'order');
+        $qb   = new QueryBuilder($this->orm, 'order');
         $rows = $qb->select(['select'])->where('group', '=', 'g1')->get();
         $this->assertNotEmpty($rows);
         $this->assertSame('s1', $rows[0]['select'] ?? null);
@@ -75,7 +75,7 @@ class QAHardeningTest extends TestCase
     {
         $this->orm->table('order')->insert(['select' => 's2', 'group' => 'g1', 'name' => 'n2']);
         $this->orm->table('order')->insert(['select' => 's3', 'group' => 'g1', 'name' => 'n3']);
-        $qb = new QueryBuilder($this->orm, 'order');
+        $qb   = new QueryBuilder($this->orm, 'order');
         $rows = $qb->windowFunction('row_number', '*', [], ['group'], [['column' => 'name', 'direction' => 'ASC']], 'rn');
         $this->assertNotEmpty($rows);
         $this->assertArrayHasKey('rn', $rows[0]);
@@ -93,10 +93,10 @@ class QAHardeningTest extends TestCase
 
     public function testCteWithBindings(): void
     {
-        $qb = new QueryBuilder($this->orm, 'qa_docs');
+        $qb   = new QueryBuilder($this->orm, 'qa_docs');
         $rows = $qb->withCte([
             'docs' => [
-                'query' => 'SELECT id, title FROM qa_docs WHERE id > ?',
+                'query'    => 'SELECT id, title FROM qa_docs WHERE id > ?',
                 'bindings' => [0]
             ]
         ], 'SELECT * FROM docs WHERE title LIKE ?', ['%o%']);
@@ -105,7 +105,7 @@ class QAHardeningTest extends TestCase
 
     public function testGroupConcatWithSpecialSeparator(): void
     {
-        $qb = new QueryBuilder($this->orm, 'qa_docs');
+        $qb   = new QueryBuilder($this->orm, 'qa_docs');
         $rows = $qb->advancedAggregation('group_concat', 'title', ['separator' => "'|,|'", 'order_by' => 'id ASC']);
         $this->assertIsArray($rows);
         $this->assertArrayHasKey('agg', $rows[0] ?? []);

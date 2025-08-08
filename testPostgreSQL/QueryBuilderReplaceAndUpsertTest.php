@@ -38,8 +38,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         // Insertar un registro inicial
         $initialData = [
-            'sku' => 'REPLACE001',
-            'name' => 'Original Product',
+            'sku'   => 'REPLACE001',
+            'name'  => 'Original Product',
             'price' => 100.0
         ];
         self::$orm->table('products')->insert($initialData);
@@ -51,9 +51,9 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         // Ahora usar replaceInto para reemplazar completamente el registro
         $replaceData = [
-            'sku' => 'REPLACE001',
-            'name' => 'Replaced Product',
-            'price' => 200.0,
+            'sku'         => 'REPLACE001',
+            'name'        => 'Replaced Product',
+            'price'       => 200.0,
             'description' => 'New description' // Campo adicional
         ];
 
@@ -78,8 +78,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         // Usar replaceInto para insertar un registro completamente nuevo
         $newData = [
-            'sku' => 'REPLACE_NEW001',
-            'name' => 'New Product via Replace',
+            'sku'   => 'REPLACE_NEW001',
+            'name'  => 'New Product via Replace',
             'price' => 150.0
         ];
 
@@ -114,7 +114,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         self::$orm->table('products')->replaceInto([
             'sku; DROP TABLE products; --' => 'malicious',
-            'name' => 'Test Product'
+            'name'                         => 'Test Product'
         ]);
     }
 
@@ -175,8 +175,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $records = [];
         for ($i = 1; $i <= 5; $i++) {
             $records[] = [
-                'sku' => "BATCH_REPLACE{$i}",
-                'name' => "Batch Replace Product {$i}",
+                'sku'   => "BATCH_REPLACE{$i}",
+                'name'  => "Batch Replace Product {$i}",
                 'price' => $i * 100.0,
             ];
         }
@@ -241,8 +241,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Test upsert que debería insertar un nuevo registro
         $data = [
-            'sku' => 'UPSERT_NEW001',
-            'name' => 'New Upsert Product',
+            'sku'   => 'UPSERT_NEW001',
+            'name'  => 'New Upsert Product',
             'price' => 199.99
         ];
 
@@ -265,16 +265,16 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Primero insertar un registro
         $initialData = [
-            'sku' => 'UPSERT_UPDATE001',
-            'name' => 'Original Upsert Product',
+            'sku'   => 'UPSERT_UPDATE001',
+            'name'  => 'Original Upsert Product',
             'price' => 100.0
         ];
         self::$orm->table('products')->insert($initialData);
 
         // Ahora hacer upsert para actualizar
         $updateData = [
-            'sku' => 'UPSERT_UPDATE001',
-            'name' => 'Updated Upsert Product',
+            'sku'   => 'UPSERT_UPDATE001',
+            'name'  => 'Updated Upsert Product',
             'price' => 150.0
         ];
 
@@ -295,10 +295,10 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Test upsert con múltiples claves únicas
         $data = [
-            'sku' => 'MULTI_KEY001',
+            'sku'      => 'MULTI_KEY001',
             'category' => 'electronics',
-            'name' => 'Multi Key Product',
-            'price' => 299.99
+            'name'     => 'Multi Key Product',
+            'price'    => 299.99
         ];
 
         $result = self::$orm->table('products')->upsert($data, ['sku', 'category']);
@@ -370,18 +370,18 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Insertar registro inicial
         $initialData = [
-            'sku' => 'SPECIFIC_UPDATE001',
-            'name' => 'Original Name',
-            'price' => 100.0,
+            'sku'         => 'SPECIFIC_UPDATE001',
+            'name'        => 'Original Name',
+            'price'       => 100.0,
             'description' => 'Original Description'
         ];
         self::$orm->table('products')->insert($initialData);
 
         // Hacer upsert especificando solo actualizar el precio
         $updateData = [
-            'sku' => 'SPECIFIC_UPDATE001',
-            'name' => 'New Name', // Este no debería actualizarse
-            'price' => 200.0,     // Este sí debería actualizarse
+            'sku'         => 'SPECIFIC_UPDATE001',
+            'name'        => 'New Name', // Este no debería actualizarse
+            'price'       => 200.0,     // Este sí debería actualizarse
             'description' => 'New Description' // Este no debería actualizarse
         ];
 
@@ -408,9 +408,9 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     public function testUpsertWithSpecialCharacters(): void
     {
         $data = [
-            'sku' => 'SPECIAL_CHARS001',
-            'name' => "Product with 'quotes' and \"double quotes\"",
-            'price' => 99.99,
+            'sku'         => 'SPECIAL_CHARS001',
+            'name'        => "Product with 'quotes' and \"double quotes\"",
+            'price'       => 99.99,
             'description' => 'Unicode: áéíóú ñ 测试 🚀💻'
         ];
 
@@ -433,18 +433,18 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         // Insertar registro inicial con campo extra
         $initialData = [
-            'sku' => 'BEHAVIOR_TEST001',
-            'name' => 'Original Product',
-            'price' => 100.0,
+            'sku'         => 'BEHAVIOR_TEST001',
+            'name'        => 'Original Product',
+            'price'       => 100.0,
             'description' => 'Original Description',
-            'category' => 'original_category'
+            'category'    => 'original_category'
         ];
         self::$orm->table('products')->insert($initialData);
 
         // Test 1: REPLACE INTO - debería reemplazar completamente el registro
         $replaceData = [
-            'sku' => 'BEHAVIOR_TEST001',
-            'name' => 'Replaced Product',
+            'sku'   => 'BEHAVIOR_TEST001',
+            'name'  => 'Replaced Product',
             'price' => 200.0
             // Nota: no incluimos description ni category
         ];
@@ -464,8 +464,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         // Test 2: UPSERT - debería actualizar solo los campos especificados
         $upsertData = [
-            'sku' => 'BEHAVIOR_TEST001',
-            'name' => 'Upserted Product',
+            'sku'   => 'BEHAVIOR_TEST001',
+            'name'  => 'Upserted Product',
             'price' => 300.0
             // Nota: no incluimos description ni category
         ];
@@ -488,16 +488,16 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $records = [];
         for ($i = 1; $i <= 50; $i++) {
             $records[] = [
-                'sku' => "PERF_REPLACE{$i}",
-                'name' => "Performance Test Product {$i}",
-                'price' => $i * 10.0,
+                'sku'         => "PERF_REPLACE{$i}",
+                'name'        => "Performance Test Product {$i}",
+                'price'       => $i * 10.0,
                 'description' => "Performance test description for product {$i}"
             ];
         }
 
         $startTime = microtime(true);
-        $result = self::$orm->table('products')->replaceIntoMany($records, 10);
-        $endTime = microtime(true);
+        $result    = self::$orm->table('products')->replaceIntoMany($records, 10);
+        $endTime   = microtime(true);
 
         $this->assertEquals(50, $result['total_replaced']);
         $this->assertEquals(5, $result['batches_processed']); // 50/10 = 5 lotes

@@ -6,7 +6,7 @@
 
 // Verifica que $project esté definido y es un objeto válido
 if (!isset($project) || !is_object($project)) {
-    throw new \VersaORM\VersaORMException("El proyecto no está definido. Asegúrate de cargar el modelo antes de mostrar la vista.");
+    throw new \VersaORM\VersaORMException('El proyecto no está definido. Asegúrate de cargar el modelo antes de mostrar la vista.');
 }
 ?>
 
@@ -64,8 +64,8 @@ if (!isset($project) || !is_object($project)) {
                             <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?= $project->color ?>' }">
                                 <?php
                                 $colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#f1c40f'];
-                                foreach ($colors as $color):
-                                ?>
+foreach ($colors as $color):
+    ?>
                                     <label class="cursor-pointer">
                                         <input type="radio"
                                             name="color"
@@ -118,11 +118,11 @@ if (!isset($project) || !is_object($project)) {
                                 <div class="text-sm text-gray-500 space-y-2">
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
                                         <?php
-                                        $owner = array_filter($users, fn($u) => $u->id == $project->owner_id);
-                                        echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
-                                        ?>
+            $owner = array_filter($users, fn ($u) => $u->id == $project->owner_id);
+echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
+?>
                                     </p>
-                                    <p><i class="fas fa-calendar mr-2"></i>Creado: <?= isset($project->created_at) ?  safe_date('M Y', $project->created_at) : '' ?></p>
+                                    <p><i class="fas fa-calendar mr-2"></i>Creado: <?= isset($project->created_at) ? safe_date('M Y', $project->created_at) : '' ?></p>
                                 </div>
                             </div>
                         </div>

@@ -9,6 +9,7 @@ use VersaORM\VersaORMException;
 
 class PdoConnection
 {
+    /** @var array<string, mixed> */
     private array $config;
     private ?PDO $pdo = null;
     /**
@@ -18,6 +19,9 @@ class PdoConnection
      */
     private static array $pool = [];
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(array $config)
     {
         $this->config = $config;
@@ -57,7 +61,7 @@ class PdoConnection
                     break;
                 case 'sqlite':
                     $path = $this->config['database'] ?? ':memory:';
-                    $dsn = sprintf('sqlite:%s', $path);
+                    $dsn  = sprintf('sqlite:%s', $path);
                     // No reutilizar conexión para ':memory:' para que cada instancia tenga DB fresca
                     $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
                     break;
@@ -67,10 +71,10 @@ class PdoConnection
 
             $username = (string)($this->config['username'] ?? '');
             $password = (string)($this->config['password'] ?? '');
-            $options = [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            $options  = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_EMULATE_PREPARES   => false,
             ];
 
             // Reutilizar conexión desde el pool si existe
@@ -87,7 +91,7 @@ class PdoConnection
                         if ($fallbackUser !== 'local') {
                             $fallbackUser = 'local';
                             $fallbackPass = 'local';
-                            $this->pdo = new PDO($dsn, $fallbackUser, $fallbackPass, $options);
+                            $this->pdo    = new PDO($dsn, $fallbackUser, $fallbackPass, $options);
                         } else {
                             throw $ex;
                         }

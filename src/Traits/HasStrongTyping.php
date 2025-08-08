@@ -17,7 +17,7 @@ trait HasStrongTyping
     /**
      * Cache de tipos de propiedades para mejorar rendimiento.
      *
-     * @var array<string, array<string, mixed>>|null
+     * @var array<string, array<string, mixed>>
      */
     // Cache por clase para evitar colisiones entre distintos modelos
     private static array $cachedPropertyTypes = [];
@@ -49,27 +49,27 @@ trait HasStrongTyping
      * @var array<string, string>
      */
     private static array $supportedCasts = [
-        'int' => 'integer',
-        'integer' => 'integer',
-        'real' => 'float',
-        'float' => 'float',
-        'double' => 'float',
-        'decimal' => 'float',
-        'string' => 'string',
-        'bool' => 'boolean',
-        'boolean' => 'boolean',
-        'object' => 'object',
-        'array' => 'array',
+        'int'        => 'integer',
+        'integer'    => 'integer',
+        'real'       => 'float',
+        'float'      => 'float',
+        'double'     => 'float',
+        'decimal'    => 'float',
+        'string'     => 'string',
+        'bool'       => 'boolean',
+        'boolean'    => 'boolean',
+        'object'     => 'object',
+        'array'      => 'array',
         'collection' => 'array',
-        'date' => 'datetime',
-        'datetime' => 'datetime',
-        'timestamp' => 'datetime',
-        'json' => 'json',
-        'uuid' => 'uuid',
-        'enum' => 'enum',
-        'set' => 'set',
-        'blob' => 'blob',
-        'inet' => 'inet',
+        'date'       => 'datetime',
+        'datetime'   => 'datetime',
+        'timestamp'  => 'datetime',
+        'json'       => 'json',
+        'uuid'       => 'uuid',
+        'enum'       => 'enum',
+        'set'        => 'set',
+        'blob'       => 'blob',
+        'inet'       => 'inet',
     ];
 
     /**
@@ -111,7 +111,7 @@ trait HasStrongTyping
                         $method->setAccessible(true);
                     }
                     /** @var array<string, array<string, mixed>> $result */
-                    $result = $method->invoke(null);
+                    $result                                  = $method->invoke(null);
                     self::$cachedPropertyTypes[$calledClass] = $result;
                 } else {
                     self::$cachedPropertyTypes[$calledClass] = [];
@@ -137,8 +137,8 @@ trait HasStrongTyping
     /**
      * Convierte un valor de la base de datos al tipo PHP apropiado.
      *
-     * @param  string $property
-     * @param  mixed  $value
+     * @param string $property
+     * @param mixed $value
      * @return mixed
      * @throws VersaORMException
      */
@@ -173,7 +173,7 @@ trait HasStrongTyping
         }
 
         $typeDefinition = $propertyTypes[$property];
-        $type = $typeDefinition['type'] ?? 'string';
+        $type           = $typeDefinition['type'] ?? 'string';
 
         try {
             switch ($type) {
@@ -238,7 +238,7 @@ trait HasStrongTyping
                     return new \DateTime('@' . (int) $value);
 
                 case 'enum':
-                    $enumValue = (string) $value;
+                    $enumValue     = (string) $value;
                     $allowedValues = $typeDefinition['values'] ?? [];
                     if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
                         throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
@@ -297,8 +297,8 @@ trait HasStrongTyping
     /**
      * Convierte un valor PHP al formato apropiado para la base de datos.
      *
-     * @param  string $property
-     * @param  mixed  $value
+     * @param string $property
+     * @param mixed $value
      * @return mixed
      * @throws VersaORMException
      */
@@ -325,7 +325,7 @@ trait HasStrongTyping
         }
 
         $typeDefinition = $propertyTypes[$property];
-        $type = $typeDefinition['type'] ?? 'string';
+        $type           = $typeDefinition['type'] ?? 'string';
 
         try {
             switch ($type) {
@@ -341,7 +341,7 @@ trait HasStrongTyping
 
                 case 'string':
                     $stringValue = (string) $value;
-                    $maxLength = $typeDefinition['max_length'] ?? null;
+                    $maxLength   = $typeDefinition['max_length'] ?? null;
                     if ($maxLength && strlen($stringValue) > $maxLength) {
                         throw new VersaORMException("String too long for property {$property}. Max: {$maxLength}, got: " . strlen($stringValue));
                     }
@@ -374,7 +374,7 @@ trait HasStrongTyping
                     return date('Y-m-d H:i:s', (int) $value);
 
                 case 'enum':
-                    $enumValue = (string) $value;
+                    $enumValue     = (string) $value;
                     $allowedValues = $typeDefinition['values'] ?? [];
                     if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
                         throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
@@ -382,7 +382,7 @@ trait HasStrongTyping
                     return $enumValue;
 
                 case 'set':
-                    $setValue = is_array($value) ? $value : [$value];
+                    $setValue      = is_array($value) ? $value : [$value];
                     $allowedValues = $typeDefinition['values'] ?? [];
                     if (!empty($allowedValues)) {
                         foreach ($setValue as $val) {
@@ -426,7 +426,7 @@ trait HasStrongTyping
      */
     public function validateSchemaConsistency(): array
     {
-        $errors = [];
+        $errors        = [];
         $propertyTypes = static::getPropertyTypes();
 
         if (empty($propertyTypes)) {
@@ -458,7 +458,7 @@ trait HasStrongTyping
                 $columnName = strtolower($property);
 
                 if (!isset($dbColumns[$columnName])) {
-                    $warning = "⚠️  ADVERTENCIA: La propiedad '{$property}' no existe en la base de datos";
+                    $warning  = "⚠️  ADVERTENCIA: La propiedad '{$property}' no existe en la base de datos";
                     $errors[] = $warning;
                     if (php_sapi_name() === 'cli') {
                         echo "\033[33m{$warning}\033[0m\n";
@@ -466,46 +466,46 @@ trait HasStrongTyping
                     continue;
                 }
 
-                $dbColumn = $dbColumns[$columnName];
-                $dbType = strtolower($dbColumn['data_type']);
+                $dbColumn  = $dbColumns[$columnName];
+                $dbType    = strtolower($dbColumn['data_type']);
                 $modelType = strtolower($definition['type']);
 
                 // Mapear tipos de base de datos a tipos del modelo
                 $typeMapping = [
-                    'varchar' => 'string',
-                    'char' => 'string',
-                    'text' => 'string',
-                    'longtext' => 'text',
-                    'int' => 'int',
-                    'integer' => 'int',
-                    'bigint' => 'int',
-                    'smallint' => 'int',
-                    'tinyint' => 'boolean',
-                    'decimal' => 'decimal',
-                    'numeric' => 'decimal',
-                    'float' => 'float',
-                    'double' => 'float',
-                    'real' => 'float',
-                    'date' => 'date',
-                    'datetime' => 'datetime',
+                    'varchar'   => 'string',
+                    'char'      => 'string',
+                    'text'      => 'string',
+                    'longtext'  => 'text',
+                    'int'       => 'int',
+                    'integer'   => 'int',
+                    'bigint'    => 'int',
+                    'smallint'  => 'int',
+                    'tinyint'   => 'boolean',
+                    'decimal'   => 'decimal',
+                    'numeric'   => 'decimal',
+                    'float'     => 'float',
+                    'double'    => 'float',
+                    'real'      => 'float',
+                    'date'      => 'date',
+                    'datetime'  => 'datetime',
                     'timestamp' => 'datetime',
-                    'time' => 'time',
-                    'json' => 'json',
-                    'jsonb' => 'json',
-                    'blob' => 'blob',
-                    'longblob' => 'blob',
-                    'binary' => 'binary',
+                    'time'      => 'time',
+                    'json'      => 'json',
+                    'jsonb'     => 'json',
+                    'blob'      => 'blob',
+                    'longblob'  => 'blob',
+                    'binary'    => 'binary',
                     'varbinary' => 'binary',
-                    'enum' => 'enum',
-                    'set' => 'set',
-                    'uuid' => 'uuid',
-                    'inet' => 'inet',
+                    'enum'      => 'enum',
+                    'set'       => 'set',
+                    'uuid'      => 'uuid',
+                    'inet'      => 'inet',
                 ];
 
                 $expectedType = $typeMapping[$dbType] ?? $dbType;
 
                 if ($expectedType !== $modelType && !$this->isCompatibleType($expectedType, $modelType)) {
-                    $warning = "⚠️  INCONSISTENCIA: '{$property}' - DB: {$dbType} ({$expectedType}) vs Modelo: {$modelType}";
+                    $warning  = "⚠️  INCONSISTENCIA: '{$property}' - DB: {$dbType} ({$expectedType}) vs Modelo: {$modelType}";
                     $errors[] = $warning;
                     if (php_sapi_name() === 'cli') {
                         echo "\033[31m{$warning}\033[0m\n";
@@ -513,7 +513,7 @@ trait HasStrongTyping
                 }
 
                 // Verificar nullabilidad
-                $isNullable = strtolower($dbColumn['is_nullable'] ?? 'no') === 'yes';
+                $isNullable    = strtolower($dbColumn['is_nullable'] ?? 'no') === 'yes';
                 $modelNullable = $definition['nullable'] ?? false;
 
                 if ($isNullable !== $modelNullable) {
@@ -530,7 +530,7 @@ trait HasStrongTyping
             // Verificar columnas de DB que no están en el modelo
             foreach ($dbColumns as $columnName => $column) {
                 if (!isset($propertyTypes[$columnName])) {
-                    $warning = "💡 INFO: Columna '{$columnName}' existe en DB pero no está definida en el modelo";
+                    $warning  = "💡 INFO: Columna '{$columnName}' existe en DB pero no está definida en el modelo";
                     $errors[] = $warning;
                     if (php_sapi_name() === 'cli') {
                         echo "\033[36m{$warning}\033[0m\n";
@@ -550,14 +550,14 @@ trait HasStrongTyping
     private function isCompatibleType(string $dbType, string $modelType): bool
     {
         $compatibleTypes = [
-            'string' => ['text', 'varchar', 'char'],
-            'text' => ['string', 'varchar', 'char'],
-            'int' => ['integer', 'bigint', 'smallint'],
-            'integer' => ['int', 'bigint', 'smallint'],
-            'float' => ['double', 'real', 'decimal'],
-            'decimal' => ['float', 'double', 'numeric'],
-            'boolean' => ['tinyint', 'bit'],
-            'datetime' => ['timestamp', 'date'],
+            'string'    => ['text', 'varchar', 'char'],
+            'text'      => ['string', 'varchar', 'char'],
+            'int'       => ['integer', 'bigint', 'smallint'],
+            'integer'   => ['int', 'bigint', 'smallint'],
+            'float'     => ['double', 'real', 'decimal'],
+            'decimal'   => ['float', 'double', 'numeric'],
+            'boolean'   => ['tinyint', 'bit'],
+            'datetime'  => ['timestamp', 'date'],
             'timestamp' => ['datetime'],
         ];
 
@@ -577,7 +577,7 @@ trait HasStrongTyping
         }
 
         try {
-            $schema = $this->getTableValidationSchema();
+            $schema                    = $this->getTableValidationSchema();
             $this->databaseSchemaCache = $schema;
             return $schema;
         } catch (\Exception $e) {
@@ -608,8 +608,8 @@ trait HasStrongTyping
     /**
      * Aplica mutadores al establecer un valor de atributo.
      *
-     * @param  string $key
-     * @param  mixed  $value
+     * @param string $key
+     * @param mixed $value
      * @return mixed
      */
     protected function applyMutator(string $key, $value)
@@ -625,8 +625,8 @@ trait HasStrongTyping
     /**
      * Aplica accesorios al obtener un valor de atributo.
      *
-     * @param  string $key
-     * @param  mixed  $value
+     * @param string $key
+     * @param mixed $value
      * @return mixed
      */
     protected function applyAccessor(string $key, $value)
@@ -642,7 +642,7 @@ trait HasStrongTyping
     /**
      * Valida si una cadena es un UUID válido.
      *
-     * @param  string $uuid
+     * @param string $uuid
      * @return bool
      */
     private function isValidUuid(string $uuid): bool
@@ -685,25 +685,25 @@ trait HasStrongTyping
      */
     private function validatePropertyConsistency(string $property, array $propertyDef, array $dbColumn): array
     {
-        $errors = [];
+        $errors    = [];
         $modelType = strtolower((string)($propertyDef['type'] ?? ''));
-        $dbType = strtolower((string)($dbColumn['data_type'] ?? ''));
+        $dbType    = strtolower((string)($dbColumn['data_type'] ?? ''));
 
         // Mapeo y compatibilidad ampliada
         $compatMap = [
-            'int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'],
-            'float' => ['float', 'double', 'real', 'decimal', 'numeric'],
-            'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'],
-            'bool' => ['tinyint', 'boolean', 'bit'],
-            'boolean' => ['tinyint', 'boolean', 'bit'],
+            'int'      => ['int', 'integer', 'tinyint', 'smallint', 'bigint'],
+            'float'    => ['float', 'double', 'real', 'decimal', 'numeric'],
+            'string'   => ['varchar', 'char', 'text', 'mediumtext', 'longtext'],
+            'bool'     => ['tinyint', 'boolean', 'bit'],
+            'boolean'  => ['tinyint', 'boolean', 'bit'],
             'datetime' => ['datetime', 'timestamp', 'date'],
-            'date' => ['date', 'datetime', 'timestamp'],
-            'json' => ['json', 'jsonb', 'text'],
-            'uuid' => ['uuid', 'char', 'varchar'],
-            'enum' => ['enum'],
-            'set'  => ['set'],
-            'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'],
-            'inet' => ['inet', 'varchar', 'char'],
+            'date'     => ['date', 'datetime', 'timestamp'],
+            'json'     => ['json', 'jsonb', 'text'],
+            'uuid'     => ['uuid', 'char', 'varchar'],
+            'enum'     => ['enum'],
+            'set'      => ['set'],
+            'blob'     => ['blob', 'longblob', 'mediumblob', 'tinyblob'],
+            'inet'     => ['inet', 'varchar', 'char'],
         ];
 
         $isTypeOk = in_array($dbType, $compatMap[$modelType] ?? [], true) || $dbType === $modelType;
@@ -714,7 +714,7 @@ trait HasStrongTyping
         // Nullability
         if (isset($propertyDef['nullable'])) {
             $modelNullable = (bool)$propertyDef['nullable'];
-            $dbNullable = strtoupper((string)($dbColumn['is_nullable'] ?? 'NO')) === 'YES';
+            $dbNullable    = strtoupper((string)($dbColumn['is_nullable'] ?? 'NO')) === 'YES';
             if ($modelNullable !== $dbNullable) {
                 $errors[] = "Nullability mismatch for property '{$property}': model=" . ($modelNullable ? 'YES' : 'NO') . ' db=' . ($dbNullable ? 'YES' : 'NO');
             }
@@ -723,7 +723,7 @@ trait HasStrongTyping
         // Longitud
         if (isset($propertyDef['max_length']) && ($propertyDef['max_length'] ?? null) !== null) {
             $modelLen = (int)$propertyDef['max_length'];
-            $dbLen = (int)($dbColumn['character_maximum_length'] ?? 0);
+            $dbLen    = (int)($dbColumn['character_maximum_length'] ?? 0);
             if ($dbLen > 0 && $modelLen > $dbLen) {
                 $errors[] = "Length mismatch for property '{$property}': model={$modelLen} db={$dbLen}";
             }

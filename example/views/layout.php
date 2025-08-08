@@ -32,32 +32,36 @@
     </style>
 </head>
 
-<body class="bg-gray-50">
+<body class="bg-gray-50 dark:bg-gray-900" :class="{ 'dark': darkMode }" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))">
     <!-- Navegación -->
-    <nav class="bg-white shadow-sm border-b">
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <a href="/" class="flex items-center space-x-2">
                         <i class="fas fa-tasks text-2xl text-blue-600"></i>
-                        <span class="text-xl font-bold text-gray-900">VersaORM Trello</span>
+                        <span class="text-xl font-bold text-gray-900 dark:text-white">VersaORM Trello</span>
                     </a>
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <button @click="darkMode = !darkMode" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <i x-show="!darkMode" class="fas fa-moon"></i>
+                        <i x-show="darkMode" class="fas fa-sun"></i>
+                    </button>
+                    <a href="/" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-home mr-1"></i> Inicio
                     </a>
-                    <a href="/projects?action=projects" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/projects?action=projects" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-folder mr-1"></i> Proyectos
                     </a>
-                    <a href="/tasks?action=tasks" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/tasks?action=tasks" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-tasks mr-1"></i> Tareas
                     </a>
-                    <a href="/labels?action=labels" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/labels?action=labels" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-tags mr-1"></i> Etiquetas
                     </a>
-                    <a href="/users?action=users" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                    <a href="/users?action=users" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-users mr-1"></i> Usuarios
                     </a>
                 </div>
@@ -82,9 +86,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t mt-16">
+    <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="text-center text-gray-500">
+            <div class="text-center text-gray-500 dark:text-gray-400">
                 <p>&copy; 2025 VersaORM Trello Demo. Demostrando las capacidades de VersaORM-PHP.</p>
             </div>
         </div>

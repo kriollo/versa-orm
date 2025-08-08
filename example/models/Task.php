@@ -25,23 +25,23 @@ class Task extends BaseModel
     protected array $guarded = [];
 
     protected array $rules = [
-        'title' => ['required', 'min:3', 'max:200'],
+        'title'      => ['required', 'min:3', 'max:200'],
         'project_id' => ['required'],
     ];
 
     /**
      * Estados disponibles para las tareas.
      */
-    public const STATUS_TODO = 'todo';
+    public const STATUS_TODO        = 'todo';
     public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_DONE = 'done';
+    public const STATUS_DONE        = 'done';
 
     /**
      * Prioridades disponibles.
      */
-    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_LOW    = 'low';
     public const PRIORITY_MEDIUM = 'medium';
-    public const PRIORITY_HIGH = 'high';
+    public const PRIORITY_HIGH   = 'high';
     public const PRIORITY_URGENT = 'urgent';
 
     /**
@@ -162,8 +162,8 @@ class Task extends BaseModel
         // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
             if (!empty($labelId)) {
-                $taskLabel = static::dispense('task_labels');
-                $taskLabel->task_id = $this->id;
+                $taskLabel           = static::dispense('task_labels');
+                $taskLabel->task_id  = $this->id;
                 $taskLabel->label_id = $labelId;
                 $taskLabel->store();
             }
@@ -281,24 +281,24 @@ class Task extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'title' => ['type' => 'string', 'max_length' => 200, 'nullable' => false],
+            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'title'       => ['type' => 'string', 'max_length' => 200, 'nullable' => false],
             'description' => ['type' => 'text', 'nullable' => true],
-            'status' => [
-                'type' => 'enum',
-                'values' => ['todo', 'in_progress', 'done'],
+            'status'      => [
+                'type'     => 'enum',
+                'values'   => ['todo', 'in_progress', 'done'],
                 'nullable' => false,
-                'default' => 'todo'
+                'default'  => 'todo'
             ],
             'priority' => [
-                'type' => 'enum',
-                'values' => ['low', 'medium', 'high', 'urgent'],
+                'type'     => 'enum',
+                'values'   => ['low', 'medium', 'high', 'urgent'],
                 'nullable' => false,
-                'default' => 'medium'
+                'default'  => 'medium'
             ],
-            'due_date' => ['type' => 'date', 'nullable' => true],
+            'due_date'   => ['type' => 'date', 'nullable' => true],
             'project_id' => ['type' => 'int', 'nullable' => false],
-            'user_id' => ['type' => 'int', 'nullable' => true],
+            'user_id'    => ['type' => 'int', 'nullable' => true],
             'created_at' => ['type' => 'datetime', 'nullable' => false],
             'updated_at' => ['type' => 'datetime', 'nullable' => false],
         ];

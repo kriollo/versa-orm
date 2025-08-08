@@ -12,7 +12,7 @@ require_once __DIR__ . '/bootstrap.php';
 
 class TestCase extends BaseTestCase
 {
-    public static ?VersaORM $orm = null;
+    public static ?VersaORM $orm       = null;
     private static bool $schemaCreated = false;
 
     public static function setUpBeforeClass(): void
@@ -20,12 +20,12 @@ class TestCase extends BaseTestCase
         if (self::$orm === null) {
             global $config;
             $dbConfig = [
-                'engine' => $config['DB']['engine'],
-                'driver' => $config['DB']['DB_DRIVER'],
+                'engine'   => $config['DB']['engine'],
+                'driver'   => $config['DB']['DB_DRIVER'],
                 'database' => $config['DB']['DB_NAME'],
-                'debug' => $config['DB']['debug'],
-                'host' => $config['DB']['DB_HOST'] ?? '',
-                'port' => (int)($config['DB']['DB_PORT'] ?? 0),
+                'debug'    => $config['DB']['debug'],
+                'host'     => $config['DB']['DB_HOST'] ?? '',
+                'port'     => (int)($config['DB']['DB_PORT'] ?? 0),
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];
@@ -89,7 +89,7 @@ class TestCase extends BaseTestCase
             ['name' => 'status', 'type' => 'VARCHAR(50)'],
             ['name' => 'created_at', 'type' => 'TIMESTAMP', 'default' => 'CURRENT_TIMESTAMP'],
         ], [
-            'engine' => 'InnoDB',
+            'engine'      => 'InnoDB',
             'constraints' => [
                 'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
             ],
@@ -100,14 +100,14 @@ class TestCase extends BaseTestCase
             ['name' => 'user_id', 'type' => 'INT'],
             ['name' => 'bio', 'type' => 'TEXT'],
         ], [
-            'engine' => 'InnoDB',
+            'engine'      => 'InnoDB',
             'constraints' => [
                 'foreign' => [[
-                    'name' => 'fk_profiles_users',
-                    'columns' => ['user_id'],
-                    'refTable' => 'users',
+                    'name'       => 'fk_profiles_users',
+                    'columns'    => ['user_id'],
+                    'refTable'   => 'users',
                     'refColumns' => ['id'],
-                    'onDelete' => 'cascade',
+                    'onDelete'   => 'cascade',
                 ]],
             ],
         ]);
@@ -119,14 +119,14 @@ class TestCase extends BaseTestCase
             ['name' => 'content', 'type' => 'TEXT'],
             ['name' => 'published_at', 'type' => 'DATETIME'],
         ], [
-            'engine' => 'InnoDB',
+            'engine'      => 'InnoDB',
             'constraints' => [
                 'foreign' => [[
-                    'name' => 'fk_posts_users',
-                    'columns' => ['user_id'],
-                    'refTable' => 'users',
+                    'name'       => 'fk_posts_users',
+                    'columns'    => ['user_id'],
+                    'refTable'   => 'users',
                     'refColumns' => ['id'],
-                    'onDelete' => 'cascade',
+                    'onDelete'   => 'cascade',
                 ]],
             ],
         ]);
@@ -140,23 +140,23 @@ class TestCase extends BaseTestCase
             ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
             ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
         ], [
-            'engine' => 'InnoDB',
+            'engine'      => 'InnoDB',
             'primary_key' => ['user_id', 'role_id'],
             'constraints' => [
                 'foreign' => [
                     [
-                        'name' => 'fk_ru_user',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
+                        'name'       => 'fk_ru_user',
+                        'columns'    => ['user_id'],
+                        'refTable'   => 'users',
                         'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
+                        'onDelete'   => 'cascade',
                     ],
                     [
-                        'name' => 'fk_ru_role',
-                        'columns' => ['role_id'],
-                        'refTable' => 'roles',
+                        'name'       => 'fk_ru_role',
+                        'columns'    => ['role_id'],
+                        'refTable'   => 'roles',
                         'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
+                        'onDelete'   => 'cascade',
                     ],
                 ],
             ],

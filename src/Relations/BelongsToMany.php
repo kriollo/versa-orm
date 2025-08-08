@@ -24,11 +24,11 @@ class BelongsToMany extends Relation
         string $parentKey,
         string $relatedKey
     ) {
-        $this->pivotTable = $pivotTable;
+        $this->pivotTable      = $pivotTable;
         $this->foreignPivotKey = $foreignPivotKey;
         $this->relatedPivotKey = $relatedPivotKey;
-        $this->parentKey = $parentKey;
-        $this->relatedKey = $relatedKey;
+        $this->parentKey       = $parentKey;
+        $this->relatedKey      = $relatedKey;
 
         parent::__construct($query, $parent);
     }

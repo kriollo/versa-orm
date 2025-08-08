@@ -31,11 +31,11 @@ final class DDLAlterOperationsTest extends TestCase
         // add foreign key
         $orm->schemaAlter('emp', [
             'addForeign' => [[
-                'name' => 'fk_emp_dept',
-                'columns' => ['dept_id'],
-                'refTable' => 'dept',
+                'name'       => 'fk_emp_dept',
+                'columns'    => ['dept_id'],
+                'refTable'   => 'dept',
                 'refColumns' => ['id'],
-                'onDelete' => 'cascade',
+                'onDelete'   => 'cascade',
             ]]
         ]);
         $orm->table('dept')->insert(['name' => 'IT']);
@@ -67,8 +67,8 @@ final class DDLAlterOperationsTest extends TestCase
         // drop column b
         $orm->schemaAlter('tddl', ['drop' => ['b']]);
 
-        $cols = $orm->schema('columns', 'tddl');
-        $names = array_map(fn($c) => (string)($c['name'] ?? $c['column_name'] ?? ''), $cols);
+        $cols  = $orm->schema('columns', 'tddl');
+        $names = array_map(fn ($c) => (string)($c['name'] ?? $c['column_name'] ?? ''), $cols);
         $this->assertContains('a_id', $names);
         $this->assertNotContains('a', $names);
         $this->assertNotContains('b', $names);

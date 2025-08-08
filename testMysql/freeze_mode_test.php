@@ -23,13 +23,13 @@ class TestModel extends VersaModel
 
 // Configuración de base de datos para pruebas
 $config = [
-    'driver' => 'mysql',
-    'host' => 'localhost',
+    'driver'   => 'mysql',
+    'host'     => 'localhost',
     'username' => 'test_user',
     'password' => 'test_pass',
     'database' => 'test_db',
-    'port' => 3306,
-    'debug' => true,
+    'port'     => 3306,
+    'debug'    => true,
 ];
 
 echo "=== VersaORM Freeze Mode Tests ===\n";
