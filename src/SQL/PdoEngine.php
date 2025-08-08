@@ -250,9 +250,14 @@ class PdoEngine
                                 }
                             }
                             $main = (string)($params['main_query'] ?? '');
+                            // Agregar bindings de la consulta principal si fueron provistos
+                            $mainBindings = [];
+                            if (isset($params['main_query_bindings']) && is_array($params['main_query_bindings'])) {
+                                $mainBindings = $params['main_query_bindings'];
+                            }
                             $sql = 'WITH ' . implode(', ', $withParts) . ' ' . $main;
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $stmt->execute(array_merge($bindings, $mainBindings));
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'union':

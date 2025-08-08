@@ -38,8 +38,8 @@ class MySQLAdvancedSQLTest extends TestCase
         ];
 
         $this->orm = new VersaORM($config);
-    // Usar un nombre de tabla único para evitar colisiones con otras pruebas que también usan 'employees'
-    $this->queryBuilder = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        // Usar un nombre de tabla único para evitar colisiones con otras pruebas que también usan 'employees'
+        $this->queryBuilder = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         $this->createMySQLTestTables();
     }
@@ -47,7 +47,7 @@ class MySQLAdvancedSQLTest extends TestCase
     private function createMySQLTestTables(): void
     {
         // Tabla con full-text index para MySQL
-    $this->orm->exec("\n            CREATE TABLE IF NOT EXISTS employees_mysql_adv (\n                id INT AUTO_INCREMENT PRIMARY KEY,\n                name VARCHAR(255) NOT NULL,\n                department VARCHAR(100),\n                salary DECIMAL(10,2),\n                hire_date DATE,\n                profile JSON,\n                bio TEXT,\n                INDEX idx_department (department),\n                FULLTEXT(bio)\n            ) ENGINE=InnoDB\n        ");
+        $this->orm->exec("\n            CREATE TABLE IF NOT EXISTS employees_mysql_adv (\n                id INT AUTO_INCREMENT PRIMARY KEY,\n                name VARCHAR(255) NOT NULL,\n                department VARCHAR(100),\n                salary DECIMAL(10,2),\n                hire_date DATE,\n                profile JSON,\n                bio TEXT,\n                INDEX idx_department (department),\n                FULLTEXT(bio)\n            ) ENGINE=InnoDB\n        ");
 
         // Insertar datos de prueba
         $employees = [
@@ -87,7 +87,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLWindowFunctionWithSpecificSyntax(): void
     {
-    $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         $result = $qb->windowFunction(
             'row_number',
@@ -107,7 +107,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLJSONOperationsWithArrowSyntax(): void
     {
-    $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         // Usar sintaxis específica de MySQL para JSON
         $result = $qb->jsonOperation('extract', 'profile', '$.skills[0]');
@@ -118,7 +118,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLFullTextSearchWithMatch(): void
     {
-    $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         // Full-text search específico de MySQL
         $result = $qb->fullTextSearch(['bio'], 'PHP developer', [
@@ -131,7 +131,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLQueryHints(): void
     {
-    $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         // Hints específicos de MySQL
         $qb->queryHints([
@@ -145,7 +145,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLAdvancedAggregationGroupConcat(): void
     {
-    $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         // GROUP_CONCAT específico de MySQL
         $result = $qb->advancedAggregation('group_concat', 'name', [
@@ -158,7 +158,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLCTEWithRecursive(): void
     {
-    $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
+        $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         // CTE recursivo en MySQL 8.0+
         $result = $qb->withCte([
@@ -174,6 +174,6 @@ class MySQLAdvancedSQLTest extends TestCase
     protected function tearDown(): void
     {
         // Limpiar tabla después de cada test
-    $this->orm->exec("DROP TABLE IF EXISTS employees_mysql_adv");
+        $this->orm->exec("DROP TABLE IF EXISTS employees_mysql_adv");
     }
 }
