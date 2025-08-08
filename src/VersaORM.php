@@ -106,8 +106,8 @@ class VersaORM
         // Log de la acción ejecutada
         $this->logDebug("Executing action: {$action}", ['params' => $params]);
 
-        // Si está configurado el motor PDO, ejecutar por ahí
-        $engine = strtolower((string)($this->config['engine'] ?? 'rust'));
+    // Si está configurado el motor PDO, ejecutar por ahí (usar pdo por defecto)
+    $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
         if ($engine === 'pdo') {
             try {
                 $pdoEngine = new \VersaORM\SQL\PdoEngine($this->config);

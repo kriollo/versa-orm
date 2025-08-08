@@ -1126,6 +1126,16 @@ class QueryBuilder
                 $model = new $modelClass($this->table, $this->orm);
                 assert($model instanceof VersaModel);
                 $model->loadInstance($result);
+                // Eager load relations if requested
+                if (!empty($this->with)) {
+                    foreach ($this->with as $relation) {
+                        $name = is_array($relation) ? ($relation['name'] ?? null) : (string)$relation;
+                        if (is_string($name) && $name !== '') {
+                            // This will also cache the relation inside the model
+                            $model->getRelationValue($name);
+                        }
+                    }
+                }
                 $models[] = $model;
             }
         }
@@ -1186,6 +1196,15 @@ class QueryBuilder
             $model = new $modelClass($this->table, $this->orm);
             assert($model instanceof VersaModel);
             $model->loadInstance($result);
+            // Eager load relations if requested
+            if (!empty($this->with)) {
+                foreach ($this->with as $relation) {
+                    $name = is_array($relation) ? ($relation['name'] ?? null) : (string)$relation;
+                    if (is_string($name) && $name !== '') {
+                        $model->getRelationValue($name);
+                    }
+                }
+            }
             return $model;
         }
         return null;

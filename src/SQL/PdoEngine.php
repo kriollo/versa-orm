@@ -16,6 +16,13 @@ class PdoEngine
     private PdoConnection $connector;
     private SqlDialectInterface $dialect;
 
+    // Caché en memoria (estático para compartirse entre instancias durante tests)
+    private static bool $cacheEnabled = false;
+    /** @var array<string, mixed> */
+    private static array $queryCache = [];
+    /** @var array<string, array<int, string>> Mapear tabla -> claves de caché */
+    private static array $tableKeyIndex = [];
+
     public function __construct(array $config)
     {
         $this->config = $config;
@@ -97,6 +104,41 @@ class PdoEngine
             return is_array($rows) ? $rows : [];
         }
 
+        // Gestión de caché (enable/disable/clear/status/invalidate)
+        if ($action === 'cache') {
+            $cacheAction = strtolower((string)($params['action'] ?? ''));
+            switch ($cacheAction) {
+                case 'enable':
+                    self::$cacheEnabled = true;
+                    return 'cache enabled';
+                case 'disable':
+                    self::$cacheEnabled = false;
+                    return 'cache disabled';
+                case 'clear':
+                    self::$queryCache = [];
+                    self::$tableKeyIndex = [];
+                    return 'cache cleared';
+                case 'status':
+                    return (int)count(self::$queryCache);
+                case 'invalidate': {
+                        $table = isset($params['table']) ? (string)$params['table'] : '';
+                        $pattern = isset($params['pattern']) ? (string)$params['pattern'] : '';
+                        if ($table === '' && $pattern === '') {
+                            throw new VersaORMException('Cache invalidation requires a table or pattern parameter.', 'INVALID_CACHE_INVALIDATE');
+                        }
+                        if ($table !== '') {
+                            self::invalidateCacheForTable($table);
+                        }
+                        if ($pattern !== '') {
+                            self::invalidateCacheByPattern($pattern);
+                        }
+                        return 'cache invalidated';
+                    }
+                default:
+                    throw new VersaORMException('PDO engine does not support this cache action: ' . $cacheAction, 'UNSUPPORTED_CACHE_ACTION');
+            }
+        }
+
         [$sql, $bindings] = SqlGenerator::generate($action, $params, $this->dialect);
 
         // Normalización por acción
@@ -159,6 +201,8 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute($bindings);
                             $affected = (int)$stmt->rowCount();
+                            // Invalidate all cache on write to keep it simple and correct
+                            self::clearAllCache();
                             return [
                                 'status' => 'success',
                                 'rows_affected' => $affected,
@@ -183,6 +227,7 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute($bindings);
                             $affected = (int)$stmt->rowCount();
+                            self::clearAllCache();
                             return [
                                 'status' => 'success',
                                 'rows_affected' => $affected,
@@ -193,6 +238,7 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute($bindings);
                             $affected = (int)$stmt->rowCount();
+                        self::clearAllCache();
                             return [
                                 'status' => 'success',
                                 'total_processed' => $params['records'] ? count($params['records']) : $affected,
@@ -202,30 +248,52 @@ class PdoEngine
                         }
                 }
             }
+            // Lecturas con caché
+            if (self::$cacheEnabled && in_array($method, ['get', 'first', 'exists', 'count'], true)) {
+                $cacheKey = self::makeCacheKey($sql, $bindings, $method);
+                if (isset(self::$queryCache[$cacheKey])) {
+                    return self::$queryCache[$cacheKey];
+                }
+            }
             if ($method === 'count') {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($bindings);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-                return (int)($row['count'] ?? 0);
+                $result = (int)($row['count'] ?? 0);
+                if (self::$cacheEnabled) {
+                    self::storeInCache($sql, $bindings, 'count', $result);
+                }
+                return $result;
             }
             if ($method === 'exists') {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($bindings);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
                 $val = array_values($row)[0] ?? 0;
-                return (bool)$val;
+                $result = (bool)$val;
+                if (self::$cacheEnabled) {
+                    self::storeInCache($sql, $bindings, 'exists', $result);
+                }
+                return $result;
             }
             if ($method === 'first') {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($bindings);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                return $row ?: null;
+                $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                if (self::$cacheEnabled) {
+                    self::storeInCache($sql, $bindings, 'first', $row);
+                }
+                return $row;
             }
             // default get
             $stmt = $pdo->prepare($sql);
             $stmt->execute($bindings);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            return is_array($rows) ? $rows : [];
+            $result = is_array($rows) ? $rows : [];
+            if (self::$cacheEnabled) {
+                self::storeInCache($sql, $bindings, 'get', $result);
+            }
+            return $result;
         }
 
         if ($action === 'raw') {
@@ -242,18 +310,21 @@ class PdoEngine
         if ($action === 'insert') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($bindings);
+            self::clearAllCache();
             return (int)$stmt->rowCount();
         }
 
         if ($action === 'insertGetId') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($bindings);
+            self::clearAllCache();
             return $pdo->lastInsertId() ?: null;
         }
 
         if ($action === 'update' || $action === 'delete') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($bindings);
+            self::clearAllCache();
             return (int)$stmt->rowCount();
         }
 
@@ -408,5 +479,79 @@ class PdoEngine
         }
 
         return SqlGenerator::generate('query', $params, $this->dialect);
+    }
+
+    // =====================
+    // Utilidades de Caché
+    // =====================
+    private static function makeCacheKey(string $sql, array $bindings, string $method): string
+    {
+        // Normalizar bindings para clave estable
+        $key = $method . '|' . $sql . '|' . json_encode($bindings, JSON_UNESCAPED_UNICODE);
+        return hash('sha256', $key);
+    }
+
+    private static function extractTablesFromSql(string $sql): array
+    {
+        $tables = [];
+        // Buscar FROM y JOIN simples (identificadores con o sin backticks)
+        if (preg_match_all('/\bFROM\s+`?([a-zA-Z0-9_\.]+)`?/i', $sql, $m1) === 1) {
+            foreach ($m1[1] as $t) {
+                $tables[] = strtolower($t);
+            }
+        }
+        if (preg_match_all('/\bJOIN\s+`?([a-zA-Z0-9_\.]+)`?/i', $sql, $m2) === 1) {
+            foreach ($m2[1] as $t) {
+                $tables[] = strtolower($t);
+            }
+        }
+        return array_values(array_unique($tables));
+    }
+
+    private static function storeInCache(string $sql, array $bindings, string $method, $result): void
+    {
+        $key = self::makeCacheKey($sql, $bindings, $method);
+        self::$queryCache[$key] = $result;
+        // Indexar por tabla para invalidación selectiva (best-effort)
+        foreach (self::extractTablesFromSql($sql) as $table) {
+            self::$tableKeyIndex[$table] = self::$tableKeyIndex[$table] ?? [];
+            // Evitar inflar con duplicados
+            if (!in_array($key, self::$tableKeyIndex[$table], true)) {
+                self::$tableKeyIndex[$table][] = $key;
+            }
+        }
+    }
+
+    private static function invalidateCacheForTable(string $table): void
+    {
+        $t = strtolower($table);
+        if (!isset(self::$tableKeyIndex[$t])) {
+            return;
+        }
+        foreach (self::$tableKeyIndex[$t] as $key) {
+            unset(self::$queryCache[$key]);
+        }
+        unset(self::$tableKeyIndex[$t]);
+    }
+
+    private static function invalidateCacheByPattern(string $pattern): void
+    {
+        $regex = '/' . str_replace('/', '\/', $pattern) . '/i';
+        foreach (array_keys(self::$queryCache) as $key) {
+            // No tenemos el SQL original aquí, así que invalidación por patrón
+            // no puede mapear directamente; como aproximación, si el patrón
+            // coincide con alguna tabla indexada, invalidar por esa tabla.
+            foreach (array_keys(self::$tableKeyIndex) as $table) {
+                if (preg_match($regex, $table) === 1) {
+                    self::invalidateCacheForTable($table);
+                }
+            }
+        }
+    }
+
+    private static function clearAllCache(): void
+    {
+        self::$queryCache = [];
+        self::$tableKeyIndex = [];
     }
 }
