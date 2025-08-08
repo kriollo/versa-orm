@@ -330,16 +330,16 @@ class SqlGenerator
             [$left, $alias] = preg_split('/\s+as\s+/i', $expr);
             return self::compileSelectPart((string)$left, $dialect) . ' AS ' . $dialect->quoteIdentifier((string)$alias);
         }
+        // funciones: si parece FUNC(...), no entrecomillar (debe evaluarse antes que table.column)
+        if (preg_match('/^[A-Za-z_]+\s*\(.*\)$/', $expr) === 1) {
+            return $expr;
+        }
         if (str_contains($expr, '.')) {
             [$t, $c] = explode('.', $expr, 2);
             if ($c === '*') {
                 return $dialect->quoteIdentifier($t) . '.*';
             }
             return $dialect->quoteIdentifier($t) . '.' . $dialect->quoteIdentifier($c);
-        }
-        // funciones: si parece FUNC(...), no entrecomillar
-        if (preg_match('/^[A-Za-z_]+\s*\(.*\)$/', $expr) === 1) {
-            return $expr;
         }
         if ($expr === '*') {
             return '*';
