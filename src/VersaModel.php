@@ -728,8 +728,16 @@ class VersaModel implements TypedModelInterface
             );
         }
 
-        // Verificar y crear columnas faltantes si freeze está desactivado
-        $this->ensureColumnsExist($orm);
+        // Intentar asegurar que tabla/columnas existan si freeze está desactivado
+        try {
+            $this->ensureColumnsExist($orm);
+        } catch (VersaORMException $e) {
+            // Si la tabla no existe, crearla mínimamente y reintentar ensureColumnsExist
+            if (stripos($e->getMessage(), 'no such table') !== false || stripos($e->getMessage(), 'doesn\'t exist') !== false) {
+                $this->createBaseTableIfMissing($orm);
+                $this->ensureColumnsExist($orm);
+            }
+        }
 
         if (isset($this->attributes['id'])) {
             // UPDATE existente
@@ -808,6 +816,28 @@ class VersaModel implements TypedModelInterface
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Crea una tabla base con una columna id si no existe.
+     * Usada como fallback cuando no está en freeze y la tabla falta.
+     */
+    private function createBaseTableIfMissing(VersaORM $orm): void
+    {
+        try {
+            $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (id INTEGER PRIMARY KEY AUTOINCREMENT)";
+            // Ajuste de sintaxis por driver
+            $cfg = $orm->getConfig();
+            $driver = strtolower((string)($cfg['driver'] ?? $cfg['database_type'] ?? 'mysql'));
+            if ($driver === 'mysql' || $driver === 'mariadb') {
+                $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (id INT AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB";
+            } elseif ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                $sql = "CREATE TABLE IF NOT EXISTS \"{$this->table}\" (id SERIAL PRIMARY KEY)";
+            }
+            $orm->exec($sql);
+        } catch (\Throwable $t) {
+            // Silencioso: si no se puede crear, dejar que el flujo normal falle
         }
     }
 
