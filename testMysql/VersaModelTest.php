@@ -8,6 +8,8 @@ namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaModel;
 
+require_once __DIR__ . '/TestCase.php';
+
 class VersaModelTest extends TestCase
 {
     public function testDispenseAndCreate(): void

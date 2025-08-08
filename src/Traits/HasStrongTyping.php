@@ -385,6 +385,10 @@ trait HasStrongTyping
         $errors = [];
         $propertyTypes = static::getPropertyTypes();
 
+        if (empty($propertyTypes)) {
+            return ['No property types defined for model ' . static::class];
+        }
+
         try {
             // Validar que tenemos una instancia de VersaORM
             if (!($this->orm instanceof \VersaORM\VersaORM)) {
@@ -392,7 +396,7 @@ trait HasStrongTyping
                 return $errors;
             }
 
-            // Obtener esquema real de la base de datos
+            // Obtener esquema real de la base de datos (soporta fallback PDO schema action)
             $schemaInfo = $this->orm->schema('columns', $this->table);
 
             if (empty($schemaInfo)) {
@@ -621,5 +625,63 @@ trait HasStrongTyping
     public function clearDatabaseSchemaCache(): void
     {
         $this->databaseSchemaCache = null;
+    }
+
+    /**
+     * Valida consistencia de una propiedad vs definición de columna DB.
+     * Usado por tests SchemaConsistencyTest vía reflexión.
+     *
+     * @param string $property
+     * @param array<string,mixed> $propertyDef
+     * @param array<string,mixed> $dbColumn
+     * @return array<int,string>
+     */
+    private function validatePropertyConsistency(string $property, array $propertyDef, array $dbColumn): array
+    {
+        $errors = [];
+        $modelType = strtolower((string)($propertyDef['type'] ?? ''));
+        $dbType = strtolower((string)($dbColumn['data_type'] ?? ''));
+
+        // Mapeo y compatibilidad ampliada
+        $compatMap = [
+            'int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'],
+            'float' => ['float', 'double', 'real', 'decimal', 'numeric'],
+            'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'],
+            'bool' => ['tinyint', 'boolean', 'bit'],
+            'boolean' => ['tinyint', 'boolean', 'bit'],
+            'datetime' => ['datetime', 'timestamp', 'date'],
+            'date' => ['date', 'datetime', 'timestamp'],
+            'json' => ['json', 'jsonb', 'text'],
+            'uuid' => ['uuid', 'char', 'varchar'],
+            'enum' => ['enum'],
+            'set'  => ['set'],
+            'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'],
+            'inet' => ['inet', 'varchar', 'char'],
+        ];
+
+        $isTypeOk = in_array($dbType, $compatMap[$modelType] ?? [], true) || $dbType === $modelType;
+        if (!$isTypeOk) {
+            $errors[] = "Type mismatch for property '{$property}': model={$modelType} db={$dbType}";
+        }
+
+        // Nullability
+        if (isset($propertyDef['nullable'])) {
+            $modelNullable = (bool)$propertyDef['nullable'];
+            $dbNullable = strtoupper((string)($dbColumn['is_nullable'] ?? 'NO')) === 'YES';
+            if ($modelNullable !== $dbNullable) {
+                $errors[] = "Nullability mismatch for property '{$property}': model=" . ($modelNullable ? 'YES' : 'NO') . ' db=' . ($dbNullable ? 'YES' : 'NO');
+            }
+        }
+
+        // Longitud
+        if (isset($propertyDef['max_length']) && ($propertyDef['max_length'] ?? null) !== null) {
+            $modelLen = (int)$propertyDef['max_length'];
+            $dbLen = (int)($dbColumn['character_maximum_length'] ?? 0);
+            if ($dbLen > 0 && $modelLen > $dbLen) {
+                $errors[] = "Length mismatch for property '{$property}': model={$modelLen} db={$dbLen}";
+            }
+        }
+
+        return $errors;
     }
 }

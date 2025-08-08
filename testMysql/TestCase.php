@@ -20,6 +20,7 @@ class TestCase extends BaseTestCase
         if (self::$orm === null) {
             global $config;
             $dbConfig = [
+                'engine' => $config['DB']['engine'],
                 'driver' => $config['DB']['DB_DRIVER'],
                 'database' => $config['DB']['DB_NAME'],
                 'debug' => $config['DB']['debug'],

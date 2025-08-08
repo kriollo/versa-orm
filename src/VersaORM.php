@@ -51,10 +51,16 @@ class VersaORM
     public function __construct(array $config = [])
     {
         $this->setBinaryPath();
-        $this->checkRustBinary();
 
+        // Establecer configuración primero para poder decidir sobre el motor
         if (!empty($config)) {
             $this->config = $config;
+        }
+
+        // Si el motor es PDO, no exigir la presencia del binario Rust
+        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'rust')));
+        if ($engine !== 'pdo') {
+            $this->checkRustBinary();
         }
     }
 
@@ -87,7 +93,7 @@ class VersaORM
      * @return mixed
      * @throws VersaORMException
      */
-    private function execute(string $action, array $params)
+private function execute(string $action, array $params)
     {
         if (empty($this->config)) {
             throw new VersaORMException('Database configuration is not set. Please call setConfig() first.');
@@ -98,6 +104,17 @@ class VersaORM
 
         // Log de la acción ejecutada
         $this->logDebug("Executing action: {$action}", ['params' => $params]);
+
+        // Si está configurado el motor PDO, ejecutar por ahí
+        $engine = strtolower((string)($this->config['engine'] ?? 'rust'));
+        if ($engine === 'pdo') {
+            try {
+                $pdoEngine = new \VersaORM\SQL\PdoEngine($this->config);
+                return $pdoEngine->execute($action, $params);
+            } catch (\Throwable $e) {
+                throw new VersaORMException('PDO engine execution failed: ' . $e->getMessage(), 'PDO_ENGINE_FAILED');
+            }
+        }
 
         // Debug temporal para advanced_sql
         if ($action === 'advanced_sql') {
