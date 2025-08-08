@@ -88,6 +88,27 @@ try {
                 ->orderBy('t.created_at', 'desc')                         // ORDER BY secundario optimizado
                 ->collect();                                               // ✅ UNA consulta optimizada
 
+            // Obtener el recuento de notas para las tareas obtenidas
+            $taskIds = array_column($tasks, 'id');
+            $noteCounts = [];
+            if (!empty($taskIds)) {
+                $noteCountsData = $orm->table('task_notes')
+                    ->select(['task_id', 'COUNT(*) as count'])
+                    ->whereIn('task_id', $taskIds)
+                    ->groupBy('task_id')
+                    ->getAll();
+                
+                foreach ($noteCountsData as $row) {
+                    $noteCounts[$row['task_id']] = $row['count'];
+                }
+            }
+
+            // Añadir el recuento de notas a cada tarea
+            foreach ($tasks as &$task) {
+                $task['notes_count'] = $noteCounts[$task['id']] ?? 0;
+            }
+            unset($task); // Romper la referencia
+
             $members = $project->members();
             $owner = User::findArray($project->owner_id);
 
@@ -309,6 +330,27 @@ try {
                 ->limit($perPage)                                          // LIMIT optimizado
                 ->offset($offset)                                          // OFFSET optimizado
                 ->collect();                                               // ✅ UNA consulta optimizada
+
+            // Obtener el recuento de notas para las tareas obtenidas
+            $taskIds = array_column($tasks, 'id');
+            $noteCounts = [];
+            if (!empty($taskIds)) {
+                $noteCountsData = $orm->table('task_notes')
+                    ->select(['task_id', 'COUNT(*) as count'])
+                    ->whereIn('task_id', $taskIds)
+                    ->groupBy('task_id')
+                    ->getAll();
+                
+                foreach ($noteCountsData as $row) {
+                    $noteCounts[$row['task_id']] = $row['count'];
+                }
+            }
+
+            // Añadir el recuento de notas a cada tarea
+            foreach ($tasks as &$task) {
+                $task['notes_count'] = $noteCounts[$task['id']] ?? 0;
+            }
+            unset($task); // Romper la referencia
 
             // Obtener datos para filtros (solo los necesarios)
             $projects = $orm->table('projects')->select(['id', 'name'])->getAll();

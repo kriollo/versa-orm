@@ -209,6 +209,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridad</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimiento</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
@@ -298,6 +299,16 @@
                                 <?php else: ?>
                                     <span class="text-gray-400">-</span>
                                 <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <button class="text-blue-600 hover:text-blue-900 open-notes-modal <?= ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : '' ?>"
+                                        data-task-id="<?= $task['id'] ?>" 
+                                        data-task-title="<?= htmlspecialchars($task['title']) ?>">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <?php if (($task['notes_count'] ?? 0) > 0): ?>
+                                        <span class="note-count-badge"><?= $task['notes_count'] ?></span>
+                                    <?php endif; ?>
+                                </button>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-2">
@@ -458,6 +469,188 @@
     }
 </script>
 
+<!-- Modal para Notas -->
+<div id="notes-modal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-sticky-note text-blue-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Notas para la Tarea</h3>
+                        <p id="modal-task-title" class="text-sm text-gray-500"></p>
+                        <div class="mt-4" id="notes-container">
+                            <!-- Las notas se cargarán aquí -->
+                        </div>
+                        <div class="mt-4">
+                            <form id="add-note-form">
+                                <input type="hidden" name="task_id" id="note-task-id">
+                                <textarea name="content" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Escribe una nueva nota..."></textarea>
+                                <button type="submit" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Agregar Nota</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" id="close-notes-modal">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('notes-modal');
+    const closeButton = document.getElementById('close-notes-modal');
+    const notesContainer = document.getElementById('notes-container');
+    const modalTaskTitle = document.getElementById('modal-task-title');
+    const addNoteForm = document.getElementById('add-note-form');
+    const noteTaskIdInput = document.getElementById('note-task-id');
+
+    document.querySelectorAll('.open-notes-modal').forEach(button => {
+        button.addEventListener('click', function () {
+            const taskId = this.dataset.taskId;
+            const taskTitle = this.dataset.taskTitle;
+            
+            modalTaskTitle.textContent = taskTitle;
+            noteTaskIdInput.value = taskId; // <-- Aquí está la corrección
+            
+            // Cargar notas
+            loadNotes(taskId);
+
+            modal.classList.remove('hidden');
+        });
+    });
+
+    closeButton.addEventListener('click', function () {
+        modal.classList.add('hidden');
+        window.location.reload(); // <-- Recargar la página
+    });
+
+    function loadNotes(taskId) {
+        fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
+            .then(response => response.json())
+            .then(data => {
+                notesContainer.innerHTML = '';
+                if (data.success && data.notes.length > 0) {
+                    data.notes.forEach(note => {
+                        const noteElement = document.createElement('div');
+                        noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'rounded');
+                        noteElement.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <p class="text-sm">${note.content}</p>
+                                <div class="flex-shrink-0 ml-2">
+                                    <button class="text-yellow-600 hover:text-yellow-900 edit-note" data-note-id="${note.id}" data-note-content="${note.content}"><i class="fas fa-edit"></i></button>
+                                    <button class="text-red-600 hover:text-red-900 delete-note" data-note-id="${note.id}"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500">- ${note.user_name} en ${note.created_at}</p>
+                        `;
+                        notesContainer.appendChild(noteElement);
+                    });
+                } else {
+                    notesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay notas para esta tarea.</p>';
+                }
+            });
+    }
+
+    addNoteForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('action', 'add_note');
+
+        fetch('notes_ajax.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotes(noteTaskIdInput.value);
+                this.reset();
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+
+    notesContainer.addEventListener('click', function (e) {
+        if (e.target.closest('.edit-note')) {
+            const button = e.target.closest('.edit-note');
+            const noteId = button.dataset.noteId;
+            const noteContent = button.dataset.noteContent;
+            
+            const editForm = `
+                <form class="edit-note-form">
+                    <input type="hidden" name="note_id" value="${noteId}">
+                    <textarea name="content" class="w-full border border-gray-300 rounded-md px-3 py-2">${noteContent}</textarea>
+                    <button type="submit" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Guardar</button>
+                    <button type="button" class="mt-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors cancel-edit">Cancelar</button>
+                </form>
+            `;
+            
+            const noteItem = button.closest('.note-item');
+            noteItem.innerHTML = editForm;
+        }
+
+        if (e.target.closest('.cancel-edit')) {
+            loadNotes(noteTaskIdInput.value);
+        }
+
+        if (e.target.closest('.delete-note')) {
+            const button = e.target.closest('.delete-note');
+            const noteId = button.dataset.noteId;
+            
+            if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
+                fetch('notes_ajax.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `action=delete_note&note_id=${noteId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadNotes(noteTaskIdInput.value);
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            }
+        }
+    });
+
+    notesContainer.addEventListener('submit', function (e) {
+        if (e.target.classList.contains('edit-note-form')) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            formData.append('action', 'update_note');
+
+            fetch('notes_ajax.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadNotes(noteTaskIdInput.value);
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+    });
+});
+</script>
+
 <style>
     .avatar-sm {
         width: 24px;
@@ -469,5 +662,20 @@
         font-size: 10px;
         font-weight: 500;
         color: white;
+    }
+
+    .note-count-badge {
+        background-color: #3498db;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 10px;
+        position: relative;
+        top: -10px;
+        right: 5px;
+    }
+
+    .has-notes .fa-sticky-note {
+        color: #2980b9;
     }
 </style>

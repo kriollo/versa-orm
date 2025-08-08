@@ -30,6 +30,7 @@ try {
     $tables = [
         // Drop tables if they exist
         'DROP TABLE IF EXISTS task_labels',
+        'DROP TABLE IF EXISTS task_notes',
         'DROP TABLE IF EXISTS project_users',
         'DROP TABLE IF EXISTS tasks',
         'DROP TABLE IF EXISTS labels',
@@ -105,6 +106,18 @@ try {
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
             FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE,
             UNIQUE KEY unique_task_label (task_id, label_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+        
+        // Tabla de notas de tareas
+        'CREATE TABLE IF NOT EXISTS task_notes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            content TEXT NOT NULL,
+            task_id INT NOT NULL,
+            user_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
     ];
 
@@ -263,6 +276,27 @@ try {
                 echo "✓ Relación proyecto-usuario {$relation[0]}-{$relation[1]} creada\n";
             } catch (Exception $e) {
                 echo '⚠ Error creando relación proyecto-usuario: ' . $e->getMessage() . "\n";
+            }
+        }
+        
+        // Notas de ejemplo
+        $notes = [
+            ['content' => 'Revisar la configuración del servidor de base de datos.', 'task_id' => 1, 'user_id' => 1],
+            ['content' => 'Asegurarse de que los modelos sean compatibles con la última versión de VersaORM.', 'task_id' => 2, 'user_id' => 2],
+            ['content' => 'El cliente quiere un diseño más minimalista.', 'task_id' => 3, 'user_id' => 3],
+            ['content' => 'La autenticación debe ser compatible con OAuth2.', 'task_id' => 5, 'user_id' => 1],
+        ];
+
+        foreach ($notes as $noteData) {
+            try {
+                $note = VersaModel::dispense('task_notes');
+                $note->content = $noteData['content'];
+                $note->task_id = $noteData['task_id'];
+                $note->user_id = $noteData['user_id'];
+                $note->store();
+                echo "✓ Nota creada para la tarea {$noteData['task_id']}\n";
+            } catch (Exception $e) {
+                echo "⚠ Error creando nota: " . $e->getMessage() . "\n";
             }
         }
     }
