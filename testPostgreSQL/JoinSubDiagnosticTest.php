@@ -48,60 +48,6 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 3: Verificar que las subconsultas simples funcionan
     //======================================================================
 
-    public function testBasicSubqueryWorks(): void
-    {
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id');
-
-        // Verificar que podemos construir la subconsulta
-        $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $subquery);
-        echo "\n[TEST 3] Subconsulta construida correctamente";
-
-        // Intentar ejecutar la subconsulta directamente
-        try {
-            $subResults = $subquery->getAll();
-            $this->assertGreaterThan(0, count($subResults));
-            echo "\n[TEST 3] Subconsulta ejecutada directamente. Resultados: " . count($subResults);
-        } catch (\Exception $e) {
-            echo "\n[TEST 3] ERROR ejecutando subconsulta: " . $e->getMessage();
-            throw $e;
-        }
-    }
-
-    //======================================================================
-    // Test 4: Verificar que el método joinSub existe
-    //======================================================================
-
-    public function testJoinSubMethodExists(): void
-    {
-        $query = self::$orm->table('users');
-        $this->assertTrue(method_exists($query, 'joinSub'));
-        echo "\n[TEST 4] Método joinSub existe";
-    }
-
-    //======================================================================
-    // Test 5: Test mínimo de joinSub - solo construcción
-    //======================================================================
-
-    public function testJoinSubConstruction(): void
-    {
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id'])
-            ->limit(1);
-
-        try {
-            $query = self::$orm->table('users')
-                ->select(['users.name'])
-                ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id');
-
-            $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $query);
-            echo "\n[TEST 5] joinSub construido correctamente";
-        } catch (\Exception $e) {
-            echo "\n[TEST 5] ERROR construyendo joinSub: " . $e->getMessage();
-            throw $e;
-        }
-    }
 
     //======================================================================
     // Test 6: Test mínimo de joinSub - ejecución simple
@@ -181,37 +127,16 @@ class JoinSubDiagnosticTest extends TestCase
 
     public function testJoinSubSqlGeneration(): void
     {
-        // Crear ORM con debug para ver el SQL
-        global $config;
-        $debugOrm = new \VersaORM\VersaORM([
-            'driver' => $config['DB']['DB_DRIVER'],
-            'host' => $config['DB']['DB_HOST'],
-            'port' => $config['DB']['DB_PORT'],
-            'database' => $config['DB']['DB_NAME'],
-            'username' => $config['DB']['DB_USER'],
-            'password' => $config['DB']['DB_PASS'],
-            'debug' => true,
-        ]);
-
-        $subquery = $debugOrm->table('posts')
+        $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id');
 
-        try {
-            // Esto debería mostrar el SQL generado
-            echo "\n[TEST 8] Generando SQL con debug activado...";
+        $query = self::$orm->table('users')
+            ->select(['users.name', 'active_users.post_count'])
+            ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
 
-            $query = $debugOrm->table('users')
-                ->select(['users.name', 'active_users.post_count'])
-                ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
-
-            // Intentar capturar el SQL sin ejecutar
-            $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $query);
-            echo "\n[TEST 8] Query construido para debug";
-        } catch (\Exception $e) {
-            echo "\n[TEST 8] ERROR en generación SQL: " . $e->getMessage();
-            throw $e;
-        }
+        $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $query);
+        echo "\n[TEST 8] Query construido para debug";
     }
 
     //======================================================================

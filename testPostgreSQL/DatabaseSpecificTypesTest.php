@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
+namespace VersaORM\Tests\PostgreSQL;
+
 use VersaORM\VersaModel;
-use VersaORM\VersaORM;
 
 /**
  * Tests de tipos específicos por base de datos
@@ -12,29 +12,26 @@ use VersaORM\VersaORM;
  */
 class DatabaseSpecificTypesTest extends TestCase
 {
-    private VersaORM $orm;
     private string $databaseType;
 
     protected function setUp(): void
     {
-        // Configuración dinámica según la base de datos de prueba
-        $this->databaseType = $_ENV['DB_TYPE'] ?? 'mysql';
-
-        $config = $this->getConfigForDatabase($this->databaseType);
-        $this->orm = new VersaORM($config);
-        VersaModel::setORM($this->orm);
+        // Determinar tipo en base al driver activo del TestCase unificado
+        $this->databaseType = self::$orm->getConfig()['driver'] ?? 'mysql';
+        VersaModel::setORM(self::$orm);
     }
 
     private function getConfigForDatabase(string $type): array
     {
         $configs = [
             'mysql' => [
+                'engine' => 'pdo',
                 'database_type' => 'mysql',
                 'host' => $_ENV['MYSQL_HOST'] ?? 'localhost',
                 'port' => $_ENV['MYSQL_PORT'] ?? 3306,
-                'database' => $_ENV['MYSQL_DATABASE'] ?? 'test_versaorm',
-                'username' => $_ENV['MYSQL_USERNAME'] ?? 'root',
-                'password' => $_ENV['MYSQL_PASSWORD'] ?? '',
+                'database' => $_ENV['MYSQL_DATABASE'] ?? 'versaorm_test',
+                'username' => $_ENV['MYSQL_USERNAME'] ?? 'local',
+                'password' => $_ENV['MYSQL_PASSWORD'] ?? 'local',
                 'charset' => 'utf8mb4',
                 'collation' => 'utf8mb4_unicode_ci',
             ],
@@ -62,7 +59,9 @@ class DatabaseSpecificTypesTest extends TestCase
             $this->markTestSkipped('Este test requiere MySQL');
         }
 
-        $model = new VersaModel('test_mysql_types', $this->orm);
+        $this->orm->freeze(false);
+
+        $model = new VersaModel('test_mysql_types', self::$orm);
 
         // Test ENUM
         $model->status = 'active';
@@ -99,7 +98,7 @@ class DatabaseSpecificTypesTest extends TestCase
             $this->markTestSkipped('Este test requiere PostgreSQL');
         }
 
-        $model = new VersaModel('test_postgresql_types', $this->orm);
+        $model = new VersaModel('test_postgresql_types', self::$orm);
 
         // Test UUID
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
@@ -144,7 +143,7 @@ class DatabaseSpecificTypesTest extends TestCase
             $this->markTestSkipped('Este test requiere SQLite');
         }
 
-        $model = new VersaModel('test_sqlite_types', $this->orm);
+        $model = new VersaModel('test_sqlite_types', self::$orm);
 
         // SQLite maneja JSON como TEXT
         $jsonData = ['key' => 'value', 'number' => 42];
@@ -167,7 +166,7 @@ class DatabaseSpecificTypesTest extends TestCase
 
     public function testTypeCastingConsistency(): void
     {
-        $model = new VersaModel('test_type_casting', $this->orm);
+        $model = new VersaModel('test_type_casting', self::$orm);
 
         // Test casting de string a JSON
         $model->metadata = '{"key": "value"}';
@@ -191,7 +190,7 @@ class DatabaseSpecificTypesTest extends TestCase
 
     public function testBinaryDataHandling(): void
     {
-        $model = new VersaModel('test_binary', $this->orm);
+        $model = new VersaModel('test_binary', self::$orm);
 
         // Test Base64 encoding/decoding
         $originalData = 'This is binary data with special chars: áéíóú ñ ¿¡';
@@ -206,7 +205,7 @@ class DatabaseSpecificTypesTest extends TestCase
 
     public function testComplexTypeMapping(): void
     {
-        $model = new VersaModel('test_complex_mapping', $this->orm);
+        $model = new VersaModel('test_complex_mapping', self::$orm);
 
         // Test mapeo de tipo complejo con configuración personalizada
         $complexData = [
@@ -233,7 +232,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function testTypeValidationErrors(): void
     {
         // Crear un modelo de prueba con tipos definidos
-        $testModel = new class('test_validation', $this->orm) extends VersaModel {
+        $testModel = new class('test_validation', self::$orm) extends VersaModel {
             public static function getPropertyTypes(): array
             {
                 return [
@@ -261,7 +260,7 @@ class DatabaseSpecificTypesTest extends TestCase
             'data' => ['nested' => array_fill(0, 100, 'value')]
         ]);
 
-        $model = new VersaModel('test_performance', $this->orm);
+        $model = new VersaModel('test_performance', self::$orm);
         $model->large_dataset = $largeArray;
 
         // El casting debe ser rápido incluso con datos grandes

@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use VersaORM\VersaORM;
 use VersaORM\QueryBuilder;
-use VersaORM\VersaORMException;
+use VersaORM\VersaORM;
 
 /**
  * Tests específicos para funcionalidades SQL avanzadas de MySQL
@@ -23,43 +22,20 @@ class MySQLAdvancedSQLTest extends TestCase
 
     protected function setUp(): void
     {
-        // Configuración específica para MySQL
-        $config = [
-            'engine' => 'pdo',
-            'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => 3306,
-            'database' => 'versaorm_test',
-            'username' => 'local',
-            'password' => 'local',
-            'options' => [
-                'charset' => 'utf8mb4',
-                'sql_mode' => 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO',
-            ]
-        ];
-
-        $this->orm = new VersaORM($config);
-        $this->queryBuilder = new QueryBuilder($this->orm, 'employees');
+        parent::setUp();
+        $driver = self::$orm->getConfig()['driver'] ?? '';
+        if ($driver !== 'mysql') {
+            $this->markTestSkipped('MySQLAdvancedSQLTest es específico de MySQL; omitido en suite PostgreSQL');
+        }
+        // Usar un nombre de tabla único para evitar colisiones con otras pruebas que también usan 'employees'
+        $this->queryBuilder = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         $this->createMySQLTestTables();
     }
 
     private function createMySQLTestTables(): void
     {
-        // Tabla con full-text index para MySQL
-        $this->orm->exec("
-            CREATE TABLE IF NOT EXISTS employees (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                department VARCHAR(100),
-                salary DECIMAL(10,2),
-                hire_date DATE,
-                profile JSON,
-                bio TEXT,
-                INDEX idx_department (department),
-                FULLTEXT(bio)
-            ) ENGINE=InnoDB
-        ");
+        self::$orm->exec("\n            CREATE TABLE IF NOT EXISTS employees_mysql_adv (\n                id INT AUTO_INCREMENT PRIMARY KEY,\n                name VARCHAR(255) NOT NULL,\n                department VARCHAR(100),\n                salary DECIMAL(10,2),\n                hire_date DATE,\n                profile JSON,\n                bio TEXT,\n                INDEX idx_department (department),\n                FULLTEXT(bio)\n            ) ENGINE=InnoDB\n        ");
 
         // Insertar datos de prueba
         $employees = [
@@ -90,16 +66,14 @@ class MySQLAdvancedSQLTest extends TestCase
         ];
 
         foreach ($employees as $employee) {
-            $this->orm->exec(
-                "INSERT IGNORE INTO employees (name, department, salary, hire_date, profile, bio) VALUES (?, ?, ?, ?, ?, ?)",
-                array_values($employee)
-            );
+            // Usar QueryBuilder/ORM para insertar y ejercitar el ORM
+            self::$orm->table('employees_mysql_adv')->insert($employee);
         }
     }
 
     public function testMySQLWindowFunctionWithSpecificSyntax(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         $result = $qb->windowFunction(
             'row_number',
@@ -119,7 +93,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLJSONOperationsWithArrowSyntax(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         // Usar sintaxis específica de MySQL para JSON
         $result = $qb->jsonOperation('extract', 'profile', '$.skills[0]');
@@ -130,7 +104,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLFullTextSearchWithMatch(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         // Full-text search específico de MySQL
         $result = $qb->fullTextSearch(['bio'], 'PHP developer', [
@@ -143,7 +117,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLQueryHints(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         // Hints específicos de MySQL
         $qb->queryHints([
@@ -157,7 +131,7 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLAdvancedAggregationGroupConcat(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         // GROUP_CONCAT específico de MySQL
         $result = $qb->advancedAggregation('group_concat', 'name', [
@@ -170,12 +144,12 @@ class MySQLAdvancedSQLTest extends TestCase
 
     public function testMySQLCTEWithRecursive(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees_mysql_adv');
 
         // CTE recursivo en MySQL 8.0+
         $result = $qb->withCte([
             'salary_levels' => [
-                'query' => 'SELECT department, AVG(salary) as avg_salary FROM employees GROUP BY department',
+                'query' => 'SELECT department, AVG(salary) as avg_salary FROM employees_mysql_adv GROUP BY department',
                 'bindings' => []
             ]
         ], 'SELECT * FROM salary_levels WHERE avg_salary > 75000', []);
@@ -186,6 +160,6 @@ class MySQLAdvancedSQLTest extends TestCase
     protected function tearDown(): void
     {
         // Limpiar tabla después de cada test
-        $this->orm->exec("DROP TABLE IF EXISTS employees");
+        self::$orm->exec("DROP TABLE IF EXISTS employees_mysql_adv");
     }
 }

@@ -102,20 +102,8 @@ class QueryBuilderTest extends TestCase
 
     public function testWhereInDebug(): void
     {
-        // Create a separate ORM instance to avoid setup data being inserted
-        global $config;
-        $orm = new \VersaORM\VersaORM([
-            'driver' => $config['DB']['DB_DRIVER'],
-            'host' => $config['DB']['DB_HOST'],
-            'port' => $config['DB']['DB_PORT'],
-            'database' => $config['DB']['DB_NAME'],
-            'username' => $config['DB']['DB_USER'],
-            'password' => $config['DB']['DB_PASS'],
-            'debug' => true,
-        ]);
-
-        $query = $orm->table('users')->whereIn('id', [1, 3]);
-        // The query will be dumped and exit in execute method
+        // Unificado: usar el ORM compartido del TestCase, sin crear configuración local
+        $query = self::$orm->table('users')->whereIn('id', [1, 3]);
         $users = $query->findAll();
         $this->assertCount(2, $users);
     }

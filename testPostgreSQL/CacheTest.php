@@ -4,29 +4,11 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
-use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 class CacheTest extends TestCase
 {
-    public static ?VersaORM $orm = null;
-
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-
-        // Usar la misma configuración que TestCase base
-        global $config;
-        self::$orm = new VersaORM([
-            'driver' => $config['DB']['DB_DRIVER'],
-            'host' => $config['DB']['DB_HOST'],
-            'port' => $config['DB']['DB_PORT'],
-            'database' => $config['DB']['DB_NAME'],
-            'username' => $config['DB']['DB_USER'],
-            'password' => $config['DB']['DB_PASS'],
-            'debug' => $config['DB']['debug'],
-        ]);
-    }
+    // Usa self::$orm de TestCase
 
     protected function setUp(): void
     {

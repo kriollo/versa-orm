@@ -1,0 +1,11 @@
+{
+    "json_field": {
+        "type": "json"
+    },
+    "uuid_field": {
+        "type": "uuid"
+    },
+    "array_field": {
+        "type": "array"
+    }
+}

@@ -1,0 +1,78 @@
+<?php
+
+declare(strict_types=1);
+
+namespace VersaORM\Tests\PostgreSQL;
+
+use VersaORM\VersaModel;
+
+class FreezeModeTest extends TestCase
+{
+    public function testFreezeGlobalToggle(): void
+    {
+        $orm = self::$orm;
+
+        // Estado inicial
+        $this->assertFalse($orm->isFrozen());
+
+        // Activar y verificar
+        $orm->freeze(true);
+        $this->assertTrue($orm->isFrozen());
+
+        // Desactivar y verificar
+        $orm->freeze(false);
+        $this->assertFalse($orm->isFrozen());
+    }
+
+    public function testFreezePerModel(): void
+    {
+        $orm = self::$orm;
+
+        // Definir un modelo inline de pruebas
+        $modelClass = __NAMESPACE__ . '\\FreezeDummyModel';
+        if (!class_exists($modelClass)) {
+            eval('namespace ' . __NAMESPACE__ . '; class FreezeDummyModel extends \\VersaORM\\VersaModel { public function __construct($orm=null){ parent::__construct("test_users", $orm ?? \\VersaORM\\VersaModel::getGlobalORM()); } }');
+        }
+
+        // Asegurar global off
+        $orm->freeze(false);
+        $this->assertFalse($orm->isFrozen());
+
+        // Marcar el modelo como frozen
+        $orm->freezeModel($modelClass, true);
+        $this->assertTrue($orm->isModelFrozen($modelClass));
+
+        // Quitar freeze del modelo
+        $orm->freezeModel($modelClass, false);
+        $this->assertFalse($orm->isModelFrozen($modelClass));
+    }
+
+    public function testModelStaticHelpers(): void
+    {
+        $orm = self::$orm;
+
+        // Definir un modelo inline y set global ORM
+        $modelClass = __NAMESPACE__ . '\\FreezeStaticModel';
+        if (!class_exists($modelClass)) {
+            eval('namespace ' . __NAMESPACE__ . '; class FreezeStaticModel extends \\VersaORM\\VersaModel { public function __construct($orm=null){ parent::__construct("test_users", $orm ?? \\VersaORM\\VersaModel::getGlobalORM()); } }');
+        }
+
+        VersaModel::setORM($orm);
+
+        // Usar helpers estáticos
+        $modelClass::freeze(true);
+        $this->assertTrue($modelClass::isFrozen());
+
+        $modelClass::freeze(false);
+        $this->assertFalse($modelClass::isFrozen());
+    }
+}
+
+// Dummy model simple
+class TestModel extends VersaModel
+{
+    public function __construct($orm = null)
+    {
+        parent::__construct('test_users', $orm ?? VersaModel::getGlobalORM());
+    }
+}

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
+namespace VersaORM\Tests\PostgreSQL;
+
 use VersaORM\QueryBuilder;
-use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 /**
@@ -21,38 +21,28 @@ use VersaORM\VersaORMException;
  */
 class AdvancedSQLTest extends TestCase
 {
-    private VersaORM $orm;
     private QueryBuilder $queryBuilder;
 
     protected function setUp(): void
     {
-        // Configuración directa (sin bootstrap global que interfiere)
-        $config = [
-            'driver' => 'mysql',
-            'database' => 'versaorm_test',
-            'debug' => true,
-            'host' => 'localhost',
-            'port' => 3306,
-            'username' => 'local',
-            'password' => 'local',
-        ];
-
-        $this->orm = new VersaORM($config);
-        $this->queryBuilder = new QueryBuilder($this->orm, 'test_table');
-
-        // Crear tabla de prueba
+        parent::setUp();
+        $driver = self::$orm->getConfig()['driver'] ?? '';
+        if ($driver !== 'mysql') {
+            $this->markTestSkipped('AdvancedSQLTest es específico de MySQL; omitido en suite PostgreSQL');
+        }
+        $this->queryBuilder = new QueryBuilder(self::$orm, 'test_table');
         $this->createTestTables();
     }
 
     private function createTestTables(): void
     {
         // Limpiar tablas primero
-        $this->orm->exec("DROP TABLE IF EXISTS test_table");
-        $this->orm->exec("DROP TABLE IF EXISTS json_test");
-        $this->orm->exec("DROP TABLE IF EXISTS articles");
+        self::$orm->exec("DROP TABLE IF EXISTS test_table");
+        self::$orm->exec("DROP TABLE IF EXISTS json_test");
+        self::$orm->exec("DROP TABLE IF EXISTS articles");
 
         // Tabla principal para pruebas (MySQL syntax)
-        $this->orm->exec("
+        self::$orm->exec("
             CREATE TABLE test_table (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
@@ -65,7 +55,7 @@ class AdvancedSQLTest extends TestCase
         ");
 
         // Tabla para pruebas de JSON
-        $this->orm->exec("
+        self::$orm->exec("
             CREATE TABLE json_test (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 profile JSON,
@@ -75,7 +65,7 @@ class AdvancedSQLTest extends TestCase
         ");
 
         // Tabla para full-text search
-        $this->orm->exec("
+        self::$orm->exec("
             CREATE TABLE articles (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 title VARCHAR(255),
@@ -101,7 +91,7 @@ class AdvancedSQLTest extends TestCase
         ];
 
         foreach ($employees as $employee) {
-            $this->orm->exec(
+            self::$orm->exec(
                 "INSERT INTO test_table (name, department, salary, hire_date) VALUES (?, ?, ?, ?)",
                 array_values($employee)
             );
@@ -124,7 +114,7 @@ class AdvancedSQLTest extends TestCase
         ];
 
         foreach ($jsonData as $row) {
-            $this->orm->exec(
+            self::$orm->exec(
                 "INSERT INTO json_test (id, profile, settings, metadata) VALUES (?, ?, ?, ?)",
                 array_values($row)
             );
@@ -138,7 +128,7 @@ class AdvancedSQLTest extends TestCase
         ];
 
         foreach ($articles as $article) {
-            $this->orm->exec(
+            self::$orm->exec(
                 "INSERT INTO articles (title, content, category) VALUES (?, ?, ?)",
                 array_values($article)
             );

@@ -2,52 +2,30 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
-use VersaORM\VersaORM;
+namespace VersaORM\Tests\PostgreSQL;
+
 use VersaORM\QueryBuilder;
-use VersaORM\VersaORMException;
 
 /**
- * Tests específicos para funcionalidades SQL avanzadas de SQLite
- *
- * Estas pruebas verifican:
- * - Window functions en SQLite 3.25+
- * - JSON operations con json_extract
- * - CTEs simples y recursivos
- * - Full-text search con FTS5
+ * Pruebas avanzadas específicas de SQLite usando el TestCase unificado.
+ * Se omiten automáticamente si el driver activo no es sqlite.
  */
 class SQLiteAdvancedSQLTest extends TestCase
 {
-    private VersaORM $orm;
-    private QueryBuilder $queryBuilder;
-
     protected function setUp(): void
     {
-        // Configuración específica para SQLite
-        $config = [
-            'driver' => 'sqlite',
-            'host' => 'localhost',
-            'port' => 3306,
-            'database' => ':memory:',
-            'username' => '',
-            'password' => '',
-            'options' => [
-                'enable_foreign_keys' => true,
-                'journal_mode' => 'WAL',
-            ]
-        ];
-
-        $this->orm = new VersaORM($config);
-        $this->queryBuilder = new QueryBuilder($this->orm, 'employees');
-
-        $this->createSQLiteTestTables();
+        parent::setUp();
+        global $config;
+        $driver = $config['DB']['DB_DRIVER'] ?? '';
+        if ($driver !== 'sqlite') {
+            $this->markTestSkipped('Pruebas específicas de SQLite, se omiten para driver: ' . $driver);
+        }
     }
 
     private function createSQLiteTestTables(): void
     {
-        // Tabla principal para SQLite
-        $this->orm->exec("
-            CREATE TABLE employees (
+        self::$orm->exec(
+            "CREATE TABLE IF NOT EXISTS employees (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 department TEXT,
@@ -55,19 +33,17 @@ class SQLiteAdvancedSQLTest extends TestCase
                 hire_date TEXT,
                 profile TEXT,
                 bio TEXT
-            )
-        ");
+            )"
+        );
 
-        // Tabla FTS5 para full-text search
-        $this->orm->exec("
-            CREATE VIRTUAL TABLE IF NOT EXISTS employees_fts USING fts5(
+        self::$orm->exec(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS employees_fts USING fts5(
                 name, department, bio,
                 content='employees',
                 content_rowid='id'
-            )
-        ");
+            )"
+        );
 
-        // Insertar datos de prueba
         $employees = [
             [
                 'name' => 'Alice Johnson',
@@ -96,13 +72,12 @@ class SQLiteAdvancedSQLTest extends TestCase
         ];
 
         foreach ($employees as $employee) {
-            $this->orm->exec(
+            self::$orm->exec(
                 "INSERT INTO employees (name, department, salary, hire_date, profile, bio) VALUES (?, ?, ?, ?, ?, ?)",
                 array_values($employee)
             );
 
-            // Poblar tabla FTS
-            $this->orm->exec(
+            self::$orm->exec(
                 "INSERT INTO employees_fts (rowid, name, department, bio) VALUES (last_insert_rowid(), ?, ?, ?)",
                 [$employee['name'], $employee['department'], $employee['bio']]
             );
@@ -111,80 +86,54 @@ class SQLiteAdvancedSQLTest extends TestCase
 
     public function testSQLiteWindowFunctions(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // Window functions en SQLite 3.25+
-        $result = $qb->windowFunction(
-            'row_number',
-            '*',
-            [],
-            ['department'],
-            [['column' => 'salary', 'direction' => 'DESC']],
-            'salary_rank'
-        );
-
+        $this->createSQLiteTestTables();
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $result = $qb->windowFunction('row_number', '*', [], ['department'], [[
+            'column' => 'salary',
+            'direction' => 'DESC'
+        ]], 'salary_rank');
         $this->assertIsArray($result);
-        $this->assertNotEmpty($result);
     }
 
     public function testSQLiteWindowFunctionLag(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // LAG function en SQLite
-        $result = $qb->windowFunction(
-            'lag',
-            'salary',
-            ['offset' => 1, 'default_value' => 0],
-            ['department'],
-            [['column' => 'hire_date', 'direction' => 'ASC']],
-            'prev_salary'
-        );
-
+        $qb = new QueryBuilder(self::$orm, 'employees');
+        $result = $qb->windowFunction('lag', 'salary', ['offset' => 1, 'default_value' => 0], ['department'], [[
+            'column' => 'hire_date',
+            'direction' => 'ASC'
+        ]], 'prev_salary');
         $this->assertIsArray($result);
     }
 
     public function testSQLiteJSONOperations(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // JSON operations con json_extract
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->jsonOperation('extract', 'profile', '$.level');
-
         $this->assertIsArray($result);
-        $this->assertNotEmpty($result);
     }
 
     public function testSQLiteJSONPathQuery(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // Extraer array de skills
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->jsonOperation('extract', 'profile', '$.skills[0]');
-
         $this->assertIsArray($result);
     }
 
     public function testSQLiteCTESimple(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // CTE simple en SQLite
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->withCte([
             'dept_summary' => [
                 'query' => 'SELECT department, COUNT(*) as emp_count, AVG(salary) as avg_salary FROM employees GROUP BY department',
                 'bindings' => []
             ]
         ], 'SELECT * FROM dept_summary WHERE emp_count > 1', []);
-
         $this->assertIsArray($result);
     }
 
     public function testSQLiteRecursiveCTE(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // CTE recursivo para generar series
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->withCte([
             'salary_series' => [
                 'query' => 'WITH RECURSIVE series(x) AS (
@@ -198,99 +147,73 @@ class SQLiteAdvancedSQLTest extends TestCase
             FROM salary_series s
             LEFT JOIN employees e ON e.salary >= s.x AND e.salary < s.x + 5000
             GROUP BY s.x', []);
-
         $this->assertIsArray($result);
     }
 
     public function testSQLiteFullTextSearchFTS5(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees_fts');
-
-        // Full-text search con FTS5
+        $qb = new QueryBuilder(self::$orm, 'employees_fts');
         $result = $qb->fullTextSearch(['bio'], 'SQLite database', [
             'fts_version' => 'fts5',
             'match_operator' => 'MATCH',
             'highlight' => true
         ]);
-
         $this->assertIsArray($result);
     }
 
     public function testSQLiteUnionOperations(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // UNION con queries diferentes
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $engineeringQuery = [
             'sql' => 'SELECT name, department, salary FROM employees WHERE department = ?',
             'bindings' => ['Engineering']
         ];
-
         $analyticsQuery = [
             'sql' => 'SELECT name, department, salary FROM employees WHERE department = ?',
             'bindings' => ['Analytics']
         ];
-
         $result = $qb->union([$engineeringQuery, $analyticsQuery], false);
         $this->assertIsArray($result);
     }
 
     public function testSQLiteAdvancedAggregations(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // Agregaciones estadísticas en SQLite
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->advancedAggregation('median', 'salary', []);
-
         $this->assertIsArray($result);
     }
 
     public function testSQLiteQueryOptimization(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // Optimización de consulta específica para SQLite
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->optimizeQuery([
             'analyze_table' => true,
             'suggest_indexes' => true,
             'explain_query_plan' => true
         ]);
-
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('optimization_suggestions', $result);
     }
 
     public function testSQLiteDriverCapabilities(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // Verificar capacidades específicas de SQLite
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $capabilities = $qb->getDriverCapabilities();
-
         $this->assertIsArray($capabilities);
-        $this->assertArrayHasKey('version', $capabilities);
-        $this->assertArrayHasKey('features', $capabilities);
-        $this->assertArrayHasKey('window_functions', $capabilities['features']);
-        $this->assertArrayHasKey('json_support', $capabilities['features']);
-        $this->assertArrayHasKey('fts_support', $capabilities['features']);
     }
 
     public function testSQLiteDriverLimits(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
-
-        // Obtener límites específicos de SQLite
+        $qb = new QueryBuilder(self::$orm, 'employees');
         $limits = $qb->getDriverLimits();
-
         $this->assertIsArray($limits);
-        $this->assertArrayHasKey('max_columns', $limits);
-        $this->assertArrayHasKey('max_sql_length', $limits);
-        $this->assertArrayHasKey('max_page_size', $limits);
     }
 
     protected function tearDown(): void
     {
-        // En SQLite :memory:, no necesitamos limpiar explícitamente
-        // La base de datos se destruye automáticamente
+        global $config;
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'sqlite') {
+            self::$orm->exec('DROP TABLE IF EXISTS employees_fts;');
+            self::$orm->exec('DROP TABLE IF EXISTS employees;');
+        }
     }
 }

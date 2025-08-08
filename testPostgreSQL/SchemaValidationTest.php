@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
-use PHPUnit\Framework\TestCase;
 use VersaORM\VersaModel;
-use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 /**
@@ -20,22 +18,12 @@ use VersaORM\VersaORMException;
  */
 class SchemaValidationTest extends TestCase
 {
-    private VersaORM $orm;
+    // Usar self::$orm de TestCase
 
     protected function setUp(): void
     {
-        $this->orm = new VersaORM([
-            'driver' => 'mysql',
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'port' => (int) ($_ENV['DB_PORT'] ?? 3306),
-            'database' => $_ENV['DB_NAME'] ?? 'versaorm_test',
-            'username' => $_ENV['DB_USER'] ?? 'root',
-            'password' => $_ENV['DB_PASS'] ?? '',
-            'charset' => 'utf8mb4',
-            'debug_mode' => true,
-        ]);
-
-        VersaModel::setORM($this->orm);
+        parent::setUp();
+        VersaModel::setORM(self::$orm);
     }
 
     /**
@@ -43,7 +31,7 @@ class SchemaValidationTest extends TestCase
      */
     public function testGetTableValidationSchemaBasic(): void
     {
-        $model = new TestUserModel('users', $this->orm);
+        $model = new TestUserModel('users', self::$orm);
 
         // Usar reflexión para acceder al método protegido
         $reflection = new \ReflectionClass($model);
@@ -85,7 +73,7 @@ class SchemaValidationTest extends TestCase
      */
     public function testProcessSchemaToValidationRules(): void
     {
-        $model = new TestUserModel('users', $this->orm);
+        $model = new TestUserModel('users', self::$orm);
 
         // Simular metadatos de columnas que vendría del CLI Rust
         $mockSchemaColumns = [
@@ -181,7 +169,7 @@ class SchemaValidationTest extends TestCase
      */
     public function testValidateAgainstSchema(): void
     {
-        $model = new TestUserModelWithMockSchema('users', $this->orm);
+        $model = new TestUserModelWithMockSchema('users', self::$orm);
 
         // Test 1: Datos válidos
         $model->fill(['name' => 'Juan Pérez', 'email' => 'juan@example.com', 'age' => 25]);
@@ -189,21 +177,21 @@ class SchemaValidationTest extends TestCase
         $this->assertEmpty($errors, 'Datos válidos no deberían generar errores');
 
         // Test 2: Campo requerido faltante
-        $model2 = new TestUserModelWithMockSchema('users', $this->orm);
+        $model2 = new TestUserModelWithMockSchema('users', self::$orm);
         $model2->fill(['email' => 'test@example.com']); // Falta 'name'
         $errors2 = $model2->validate();
         $this->assertNotEmpty($errors2);
         $this->assertContains('The name field is required.', $errors2);
 
         // Test 3: Email inválido
-        $model3 = new TestUserModelWithMockSchema('users', $this->orm);
+        $model3 = new TestUserModelWithMockSchema('users', self::$orm);
         $model3->fill(['name' => 'Test', 'email' => 'invalid-email']);
         $errors3 = $model3->validate();
         $this->assertNotEmpty($errors3);
         $this->assertContains('The email must be a valid email address.', $errors3);
 
         // Test 4: Longitud máxima excedida
-        $model4 = new TestUserModelWithMockSchema('users', $this->orm);
+        $model4 = new TestUserModelWithMockSchema('users', self::$orm);
         $longName = str_repeat('a', 256); // Excede max:255
         $model4->fill(['name' => $longName, 'email' => 'test@example.com']);
         $errors4 = $model4->validate();
@@ -214,7 +202,7 @@ class SchemaValidationTest extends TestCase
         );
 
         // Test 5: Tipo de datos incorrecto
-        $model5 = new TestUserModelWithMockSchema('users', $this->orm);
+        $model5 = new TestUserModelWithMockSchema('users', self::$orm);
         $model5->fill(['name' => 'Test', 'email' => 'test@example.com', 'age' => 'not-a-number']);
         $errors5 = $model5->validate();
         $this->assertNotEmpty($errors5);
@@ -228,7 +216,7 @@ class SchemaValidationTest extends TestCase
      */
     public function testSchemaValidationFallback(): void
     {
-        $model = new TestUserModelWithFailingSchema('users', $this->orm);
+        $model = new TestUserModelWithFailingSchema('users', self::$orm);
 
         // Llenar con datos válidos básicos
         $model->fill(['name' => 'Test User', 'email' => 'test@example.com']);
@@ -251,7 +239,7 @@ class SchemaValidationTest extends TestCase
      */
     public function testValidateFieldAgainstSchema(): void
     {
-        $model = new TestUserModel('users', $this->orm);
+        $model = new TestUserModel('users', self::$orm);
 
         // Usar reflexión para acceder al método protegido
         $reflection = new \ReflectionClass($model);

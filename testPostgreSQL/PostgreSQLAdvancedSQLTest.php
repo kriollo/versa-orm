@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
-use VersaORM\VersaORM;
+namespace VersaORM\Tests\PostgreSQL;
+
 use VersaORM\QueryBuilder;
-use VersaORM\VersaORMException;
+use VersaORM\VersaModel;
 
 /**
  * Tests específicos para funcionalidades SQL avanzadas de PostgreSQL
@@ -18,34 +18,30 @@ use VersaORM\VersaORMException;
  */
 class PostgreSQLAdvancedSQLTest extends TestCase
 {
-    private VersaORM $orm;
     private QueryBuilder $queryBuilder;
 
     protected function setUp(): void
     {
+        if (!extension_loaded('pdo_pgsql')) {
+            $this->markTestSkipped('pdo_pgsql no está disponible en este entorno');
+        }
         // Configuración específica para PostgreSQL
-        $config = [
-            'driver' => 'postgresql',
-            'host' => 'localhost',
-            'port' => 5432,
-            'database' => 'test_versa_orm',
-            'username' => 'postgres',
-            'password' => '',
-            'options' => [
-                'sslmode' => 'prefer',
-            ]
-        ];
-
-        $this->orm = new VersaORM($config);
-        $this->queryBuilder = new QueryBuilder($this->orm, 'employees');
-
+        parent::setUp();
+        $driver = self::$orm->getConfig()['driver'] ?? '';
+        if ($driver !== 'postgresql' || !extension_loaded('pdo_pgsql')) {
+            $this->markTestSkipped('Tests PostgreSQL específicos omitidos: driver no es postgresql o falta pdo_pgsql');
+        }
+        VersaModel::setORM(self::$orm);
+        $this->queryBuilder = new QueryBuilder(self::$orm, 'employees');
+        // Asegurar tabla limpia
+        self::$orm->exec('DROP TABLE IF EXISTS employees');
         $this->createPostgreSQLTestTables();
     }
 
     private function createPostgreSQLTestTables(): void
     {
         // Tabla con tipos específicos de PostgreSQL
-        $this->orm->exec("
+        self::$orm->exec("
             CREATE TABLE IF NOT EXISTS employees (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
@@ -60,9 +56,9 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         ");
 
         // Crear índices específicos de PostgreSQL
-        $this->orm->exec("CREATE INDEX IF NOT EXISTS idx_profile_gin ON employees USING GIN(profile)");
-        $this->orm->exec("CREATE INDEX IF NOT EXISTS idx_skills_gin ON employees USING GIN(skills)");
-        $this->orm->exec("CREATE INDEX IF NOT EXISTS idx_search_gin ON employees USING GIN(search_vector)");
+        self::$orm->exec("CREATE INDEX IF NOT EXISTS idx_profile_gin ON employees USING GIN(profile)");
+        self::$orm->exec("CREATE INDEX IF NOT EXISTS idx_skills_gin ON employees USING GIN(skills)");
+        self::$orm->exec("CREATE INDEX IF NOT EXISTS idx_search_gin ON employees USING GIN(search_vector)");
 
         // Insertar datos de prueba con tipos PostgreSQL
         $employees = [
@@ -96,7 +92,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         ];
 
         foreach ($employees as $employee) {
-            $this->orm->exec(
+            self::$orm->exec(
                 "INSERT INTO employees (name, department, salary, hire_date, profile, skills, bio, search_vector)
                  VALUES (?, ?, ?, ?, ?::jsonb, ?::text[], ?, to_tsvector('english', ?))",
                 [
@@ -115,7 +111,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLArrayOperations(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // Operación de array específica de PostgreSQL
         $result = $qb->arrayOperations('contains', 'skills', 'PHP');
@@ -126,7 +122,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLArrayOverlap(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // Array overlap operation
         $result = $qb->arrayOperations('overlap', 'skills', ['PHP', 'Python']);
@@ -136,7 +132,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLJSONBOperations(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // JSONB operations específicas de PostgreSQL
         $result = $qb->jsonOperation('contains', 'profile', '{"level": "senior"}');
@@ -146,7 +142,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLJSONBPathQueries(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // JSONB path queries
         $result = $qb->jsonOperation('extract', 'profile', '$.certifications[0]');
@@ -156,7 +152,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLFullTextSearchWithTSVector(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // Full-text search con tsvector
         $result = $qb->fullTextSearch(['search_vector'], 'PostgreSQL & developer', [
@@ -170,7 +166,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLWindowFunctionsAdvanced(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // Window functions avanzadas de PostgreSQL
         $result = $qb->windowFunction(
@@ -187,7 +183,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLRecursiveCTE(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // CTE recursivo complejo para jerarquía organizacional
         $result = $qb->withCte([
@@ -210,7 +206,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLAdvancedAggregations(): void
     {
-        $qb = new QueryBuilder($this->orm, 'employees');
+        $qb = new QueryBuilder(self::$orm, 'employees');
 
         // Agregaciones estadísticas avanzadas
         $result = $qb->advancedAggregation('percentile', 'salary', [
@@ -223,7 +219,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
     public function testPostgreSQLIntersectAndExcept(): void
     {
-        $qb1 = new QueryBuilder($this->orm, 'employees');
+        $qb1 = new QueryBuilder(self::$orm, 'employees');
         $qb1->where('department', '=', 'Engineering');
 
         $qb2 = new QueryBuilder($this->orm, 'employees');
@@ -241,6 +237,9 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     protected function tearDown(): void
     {
         // Limpiar tabla después de cada test
-        $this->orm->exec("DROP TABLE IF EXISTS employees");
+        try {
+            self::$orm->exec("DROP TABLE IF EXISTS employees");
+        } catch (\Throwable $e) {
+        }
     }
 }
