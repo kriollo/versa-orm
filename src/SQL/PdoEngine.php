@@ -222,7 +222,13 @@ class PdoEngine
                             $parts = [];
                             $bindings = [];
                             foreach ($queries as $q) {
-                                $parts[] = '(' . (string)($q['sql'] ?? '') . ')';
+                                $sqlPart = (string)($q['sql'] ?? '');
+                                // SQLite puede quejarse de paréntesis en cada SELECT en UNION
+                                if ($this->dialect->getName() === 'sqlite') {
+                                    $parts[] = $sqlPart;
+                                } else {
+                                    $parts[] = '(' . $sqlPart . ')';
+                                }
                                 $qb = is_array($q['bindings'] ?? null) ? $q['bindings'] : [];
                                 $bindings = array_merge($bindings, $qb);
                             }
@@ -316,25 +322,28 @@ class PdoEngine
                             return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
                         }
                     case 'get_driver_capabilities': {
+                            $features = [
+                                'window_functions' => in_array($driver, ['mysql','postgres','sqlite'], true),
+                                'json_support' => true,
+                                'fts_support' => in_array($driver, ['mysql','sqlite'], true),
+                            ];
                             return [
                                 'driver' => $driver,
-                                'window_functions' => in_array($driver, ['mysql','postgres','sqlite'], true),
-                                'cte' => in_array($driver, ['mysql','postgres','sqlite'], true),
-                                'json' => true,
-                                'full_text_search' => $driver === 'mysql',
-                                'advanced_aggregation' => true,
+                                'version' => $pdo->getAttribute(PDO::ATTR_SERVER_VERSION) ?: null,
+                                'features' => $features,
                             ];
                         }
                     case 'get_driver_limits': {
+                            // Valores aproximados comunes o seguros
                             return [
-                                'max_bind_params' => 65535,
-                                'max_identifier_length' => 64,
-                                'supports_batch_inserts' => true,
+                                'max_columns' => 2000,
+                                'max_sql_length' => 1000000,
+                                'max_page_size' => 4096,
                             ];
                         }
                     case 'optimize_query': {
                             return [
-                                'optimizations' => [],
+                                'optimization_suggestions' => [],
                                 'generated_sql' => (string)($params['query'] ?? ''),
                             ];
                         }
