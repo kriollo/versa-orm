@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use VersaORM\VersaORM;
 use VersaORM\QueryBuilder;
+use VersaORM\VersaORM;
 
 /**
  * Pruebas duras estilo QA para romper el SqlGenerator y PdoEngine.
@@ -45,10 +45,16 @@ class QAHardeningTest extends TestCase
             meta JSON,
             FULLTEXT(title, body)
         ) ENGINE=InnoDB;');
-        $this->orm->exec('INSERT INTO qa_docs (title, body, meta) VALUES
-            ("Foo", "lorem ipsum foo bar", "{\\"tags\\":[\\"a\\",\\"b\\"]}"),
-            ("Bar", "foo boolean -bar +baz", "{\\"tags\\":[\\"b\\"]}")
-        ');
+        $this->orm->table('qa_docs')->insert([
+            'title' => 'Foo',
+            'body' => 'lorem ipsum foo bar',
+            'meta' => '{"tags":["a","b"]}',
+        ]);
+        $this->orm->table('qa_docs')->insert([
+            'title' => 'Bar',
+            'body' => 'foo boolean -bar +baz',
+            'meta' => '{"tags":["b"]}',
+        ]);
     }
 
     protected function tearDown(): void
@@ -67,7 +73,8 @@ class QAHardeningTest extends TestCase
 
     public function testWindowFunctionQualificationAndAlias(): void
     {
-        $this->orm->exec('INSERT INTO `order` (`select`, `group`, `name`) VALUES ("s2", "g1", "n2"), ("s3", "g1", "n3")');
+        $this->orm->table('order')->insert(['select' => 's2', 'group' => 'g1', 'name' => 'n2']);
+        $this->orm->table('order')->insert(['select' => 's3', 'group' => 'g1', 'name' => 'n3']);
         $qb = new QueryBuilder($this->orm, 'order');
         $rows = $qb->windowFunction('row_number', '*', [], ['group'], [['column' => 'name', 'direction' => 'ASC']], 'rn');
         $this->assertNotEmpty($rows);

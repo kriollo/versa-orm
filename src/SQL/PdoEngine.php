@@ -576,6 +576,25 @@ class PdoEngine
         }
 
         if ($action === 'raw') {
+            // Soporte explícito para transacciones
+            $normalized = strtoupper(trim($sql));
+            if (str_starts_with($normalized, 'BEGIN') || str_starts_with($normalized, 'START TRANSACTION')) {
+                $pdo->beginTransaction();
+                return null;
+            }
+            if (str_starts_with($normalized, 'COMMIT')) {
+                $pdo->commit();
+                // Al confirmar cambios, invalidar caché por seguridad
+                self::clearAllCache();
+                return null;
+            }
+            if (str_starts_with($normalized, 'ROLLBACK')) {
+                $pdo->rollBack();
+                // Tras rollback, el caché puede quedar inconsistente si se cachearon lecturas intermedias
+                self::clearAllCache();
+                return null;
+            }
+
             // Detectar si es una sentencia de escritura antes de intentar fetchAll
             $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER)\b/i', $sql) === 1;
             $stmt = $pdo->prepare($sql);

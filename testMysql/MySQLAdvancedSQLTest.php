@@ -78,10 +78,8 @@ class MySQLAdvancedSQLTest extends TestCase
         ];
 
         foreach ($employees as $employee) {
-            $this->orm->exec(
-                "INSERT IGNORE INTO employees_mysql_adv (name, department, salary, hire_date, profile, bio) VALUES (?, ?, ?, ?, ?, ?)",
-                array_values($employee)
-            );
+            // Usar QueryBuilder/ORM para insertar y ejercitar el ORM
+            $this->orm->table('employees_mysql_adv')->insert($employee);
         }
     }
 
