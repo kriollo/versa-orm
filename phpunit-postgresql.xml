@@ -6,9 +6,6 @@
     <testsuites>
         <testsuite name="VersaORM PostgreSQL Test Suite">
             <directory>./testPostgreSQL</directory>
-            <exclude>./testPostgreSQL/freeze_mode_test.php</exclude>
-            <exclude>./testPostgreSQL/QueryBuilderReplaceAndUpsertTest.php</exclude>
-            <exclude>./testPostgreSQL/TransactionsRollbackTest.php</exclude>
         </testsuite>
     </testsuites>
         <groups>

@@ -14,26 +14,32 @@ class TransactionsRollbackTest extends TestCase
     protected function setUp(): void
     {
         // No llamamos a parent::setUp() para evitar recrear el esquema base; este test usa su propia tabla
-        $driver = self::$orm->getConfig()['driver'] ?? '';
-        if ($driver !== 'mysql') {
-            $this->markTestSkipped('TransactionsRollbackTest es específico de MySQL; omitido en suite PostgreSQL');
+        // Asegurar estado limpio e independiente del driver
+        try {
+            self::$orm->schemaDrop('tx_users');
+        } catch (\Throwable $e) {
+            // ignorar si no existe
         }
 
-        // Asegurar tabla de pruebas aislada
-        self::$orm->schemaDrop('tx_users');
+        // Crear tabla portable con PK autoincremental y UNIQUE(email)
         self::$orm->schemaCreate('tx_users', [
             ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
             ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
             ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
-        ], ['engine' => 'InnoDB']);
-        self::$orm->exec('ALTER TABLE `tx_users` ADD UNIQUE (`email`)');
+        ], [
+            'constraints' => [
+                'unique' => [
+                    ['name' => 'uniq_tx_users_email', 'columns' => ['email']]
+                ]
+            ]
+        ]);
     }
 
     protected function tearDown(): void
     {
         try {
             self::$orm->schemaDrop('tx_users');
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e) { /* ignore */
         }
     }
 
