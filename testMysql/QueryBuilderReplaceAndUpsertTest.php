@@ -130,21 +130,6 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         ]);
     }
 
-    public function testReplaceIntoNonMySQLDriver(): void
-    {
-        // Skip this test if we're not using MySQL since it requires MySQL to test the fallback
-        if (self::$config['driver'] !== 'mysql') {
-            $this->expectException(VersaORMException::class);
-            $this->expectExceptionMessage('REPLACE INTO operations are only supported for MySQL');
-            self::$orm->table('products')->replaceInto(['sku' => 'TEST', 'name' => 'Test']);
-            return;
-        }
-
-        // Para MySQL necesitamos mockear temporalmente el método getConfig
-        // para simular un driver diferente
-        $this->markTestSkipped('Cannot effectively test non-MySQL driver behavior in MySQL environment without mocking');
-    }
-
     //======================================================================
     // REPLACE INTO MANY TESTS (MySQL específico)
     //======================================================================

@@ -18,13 +18,13 @@ class ValidationTest extends TestCase
         parent::setUp();
 
         // Crear tabla de prueba para ValidationTest (PostgreSQL compatible)
-        self::$orm->exec('CREATE TABLE IF NOT EXISTS test_users (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            age INT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )');
+        self::$orm->schemaCreate('test_users', [
+            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ['name' => 'email', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ['name' => 'age', 'type' => 'INT'],
+            ['name' => 'created_at', 'type' => 'TIMESTAMP'],
+        ], ['if_not_exists' => true]);
     }
 
     public function testFillableAttributesAllowMassAssignment(): void

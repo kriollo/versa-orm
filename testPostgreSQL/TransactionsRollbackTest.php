@@ -20,18 +20,19 @@ class TransactionsRollbackTest extends TestCase
         }
 
         // Asegurar tabla de pruebas aislada
-        self::$orm->exec('DROP TABLE IF EXISTS tx_users');
-        self::$orm->exec('CREATE TABLE tx_users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(191) UNIQUE NOT NULL
-        ) ENGINE=InnoDB');
+        self::$orm->schemaDrop('tx_users');
+        self::$orm->schemaCreate('tx_users', [
+            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+            ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
+            ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+        ], ['engine' => 'InnoDB']);
+        self::$orm->exec('ALTER TABLE `tx_users` ADD UNIQUE (`email`)');
     }
 
     protected function tearDown(): void
     {
         try {
-            self::$orm->exec('DROP TABLE IF EXISTS tx_users');
+            self::$orm->schemaDrop('tx_users');
         } catch (\Throwable $e) {
         }
     }

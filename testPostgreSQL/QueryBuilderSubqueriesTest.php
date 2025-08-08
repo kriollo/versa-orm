@@ -4,24 +4,19 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
-use PHPUnit\Framework\TestCase;
-use VersaORM\QueryBuilder;
-use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
+use VersaORM\QueryBuilder;
 
 /**
  * Tests para subconsultas y expresiones raw en QueryBuilder - Tarea 2.3.
  */
 class QueryBuilderSubqueriesTest extends TestCase
 {
-    private QueryBuilder $queryBuilder;
-    private VersaORM $orm;
 
     protected function setUp(): void
     {
         // Mock del ORM para testing
-        $this->orm = $this->createMock(VersaORM::class);
-        $this->queryBuilder = new QueryBuilder($this->orm, 'users');
+        parent::setUp();
     }
 
     /**
@@ -30,11 +25,11 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function testSelectRawWithSafeExpressions(): void
     {
         // Expresión segura
-        $result = $this->queryBuilder->selectRaw('COUNT(*) as total_users');
+        $result = self::$orm->table('users')->selectRaw('COUNT(*) as total_users');
         $this->assertInstanceOf(QueryBuilder::class, $result);
 
         // Expresión con bindings
-        $result = $this->queryBuilder->selectRaw('UPPER(name) as upper_name', ['test']);
+        $result = self::$orm->table('users')->selectRaw('UPPER(name) as upper_name', ['test']);
         $this->assertInstanceOf(QueryBuilder::class, $result);
     }
 
@@ -46,7 +41,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $this->queryBuilder->selectRaw('name; DROP TABLE users; --');
+        self::$orm->table('users')->selectRaw('name; DROP TABLE users; --');
     }
 
     /**
@@ -57,7 +52,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('selectRaw expression cannot be empty');
 
-        $this->queryBuilder->selectRaw('');
+        self::$orm->table('users')->selectRaw('');
     }
 
     /**
@@ -65,7 +60,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testOrderByRawWithSafeExpressions(): void
     {
-        $result = $this->queryBuilder->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['active']);
+        $result = self::$orm->table('users')->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['active']);
         $this->assertInstanceOf(QueryBuilder::class, $result);
     }
 
@@ -77,7 +72,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in orderByRaw');
 
-        $this->queryBuilder->orderByRaw('name; DELETE FROM users WHERE 1=1; --');
+        self::$orm->table('users')->orderByRaw('name; DELETE FROM users WHERE 1=1; --');
     }
 
     /**
@@ -85,7 +80,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testGroupByRawWithSafeExpressions(): void
     {
-        $result = $this->queryBuilder->groupByRaw('YEAR(created_at), MONTH(created_at)');
+        $result = self::$orm->table('users')->groupByRaw('YEAR(created_at), MONTH(created_at)');
         $this->assertInstanceOf(QueryBuilder::class, $result);
     }
 
@@ -97,7 +92,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in groupByRaw');
 
-        $this->queryBuilder->groupByRaw('name UNION SELECT password FROM admin_users');
+        self::$orm->table('users')->groupByRaw('name UNION SELECT password FROM admin_users');
     }
 
     /**
@@ -105,7 +100,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testWhereRawWithSafeExpressions(): void
     {
-        $result = $this->queryBuilder->whereRaw('age > ? AND status = ?', [18, 'active']);
+        $result = self::$orm->table('users')->whereRaw('age > ? AND status = ?', [18, 'active']);
         $this->assertInstanceOf(QueryBuilder::class, $result);
     }
 
@@ -117,7 +112,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in whereRaw');
 
-        $this->queryBuilder->whereRaw('1=1; DROP TABLE users; --');
+        self::$orm->table('users')->whereRaw('1=1; DROP TABLE users; --');
     }
 
     /**
@@ -125,7 +120,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testSelectSubQueryWithClosure(): void
     {
-        $result = $this->queryBuilder->selectSubQuery(function (QueryBuilder $query): void {
+        $result = self::$orm->table('users')->selectSubQuery(function (QueryBuilder $query): void {
             $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
         }, 'posts_count');
 
@@ -140,7 +135,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid alias name in selectSubQuery');
 
-        $this->queryBuilder->selectSubQuery(function (QueryBuilder $query): void {
+        self::$orm->table('users')->selectSubQuery(function (QueryBuilder $query): void {
             $query->select(['COUNT(*)']);
         }, 'invalid--alias');
     }
@@ -150,7 +145,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testWhereSubQueryWithValidOperators(): void
     {
-        $result = $this->queryBuilder->whereSubQuery('id', 'IN', function (QueryBuilder $query): void {
+        $result = self::$orm->table('users')->whereSubQuery('id', 'IN', function (QueryBuilder $query): void {
             $query->select(['user_id'])->where('status', '=', 'active');
         });
 
@@ -165,7 +160,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid operator in whereSubQuery');
 
-        $this->queryBuilder->whereSubQuery('id', 'LIKE', function (QueryBuilder $query): void {
+        self::$orm->table('users')->whereSubQuery('id', 'LIKE', function (QueryBuilder $query): void {
             $query->select(['user_id']);
         });
     }
@@ -178,7 +173,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid column name in whereSubQuery');
 
-        $this->queryBuilder->whereSubQuery('id; DROP TABLE users', '=', function (QueryBuilder $query): void {
+        self::$orm->table('users')->whereSubQuery('id; DROP TABLE users', '=', function (QueryBuilder $query): void {
             $query->select(['user_id']);
         });
     }
@@ -188,7 +183,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testWhereExists(): void
     {
-        $result = $this->queryBuilder->whereExists(function (QueryBuilder $query): void {
+        $result = self::$orm->table('users')->whereExists(function (QueryBuilder $query): void {
             $query->from('posts')->where('user_id', '=', 'users.id');
         });
 
@@ -200,7 +195,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testWhereNotExists(): void
     {
-        $result = $this->queryBuilder->whereNotExists(function (QueryBuilder $query): void {
+        $result = self::$orm->table('users')->whereNotExists(function (QueryBuilder $query): void {
             $query->from('banned_users')->where('user_id', '=', 'users.id');
         });
 
@@ -215,7 +210,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $subQuery = new QueryBuilder($this->orm, 'posts');
         $subQuery->select(['user_id'])->where('status', '=', 'published');
 
-        $result = $this->queryBuilder->whereSubQuery('id', 'IN', $subQuery);
+        $result = self::$orm->table('users')->whereSubQuery('id', 'IN', $subQuery);
         $this->assertInstanceOf(QueryBuilder::class, $result);
     }
 
@@ -228,11 +223,11 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectExceptionMessage('Subquery callback must be a Closure or QueryBuilder instance');
 
         // Usar reflexión para acceder al método privado
-        $reflection = new \ReflectionClass($this->queryBuilder);
+        $reflection = new \ReflectionClass(self::$orm->table('users'));
         $method = $reflection->getMethod('buildSubQuery');
         $method->setAccessible(true);
 
-        $method->invoke($this->queryBuilder, 'invalid_type');
+        $method->invoke(self::$orm->table('users'), 'invalid_type');
     }
 
     /**
@@ -243,7 +238,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $this->queryBuilder->selectRaw('COUNT((posts.id) as total');
+        self::$orm->table('users')->selectRaw('COUNT((posts.id) as total');
     }
 
     /**
@@ -255,7 +250,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
         $longExpression = str_repeat('a', 501); // Más de 500 caracteres
-        $this->queryBuilder->selectRaw($longExpression);
+        self::$orm->table('users')->selectRaw($longExpression);
     }
 
     /**
@@ -266,7 +261,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $this->queryBuilder->selectRaw('name /* comment */ as user_name');
+        self::$orm->table('users')->selectRaw('name /* comment */ as user_name');
     }
 
     /**
@@ -277,7 +272,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $this->queryBuilder->selectRaw('name UNION SELECT password FROM admin');
+        self::$orm->table('users')->selectRaw('name UNION SELECT password FROM admin');
     }
 
     /**
@@ -288,7 +283,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $this->queryBuilder->selectRaw('LOAD_FILE("/etc/passwd") as content');
+        self::$orm->table('users')->selectRaw('LOAD_FILE("/etc/passwd") as content');
     }
 
     /**
@@ -313,7 +308,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         ];
 
         foreach ($allowedFunctions as $function) {
-            $result = $this->queryBuilder->selectRaw($function . ' as result');
+            $result = self::$orm->table('users')->selectRaw($function . ' as result');
             $this->assertInstanceOf(QueryBuilder::class, $result);
         }
     }
@@ -323,7 +318,7 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function testComplexSubqueryWithMultipleConditions(): void
     {
-        $result = $this->queryBuilder
+        $result = self::$orm->table('users')
             ->select(['id', 'name', 'email'])
             ->selectSubQuery(function (QueryBuilder $query): void {
                 $query->select(['COUNT(*)'])

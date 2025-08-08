@@ -49,13 +49,13 @@ class TestCase extends BaseTestCase
         if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
-        self::$orm->exec('DROP TABLE IF EXISTS posts;');
-        self::$orm->exec('DROP TABLE IF EXISTS profiles;');
-        self::$orm->exec('DROP TABLE IF EXISTS roles;');
-        self::$orm->exec('DROP TABLE IF EXISTS users;');
-        self::$orm->exec('DROP TABLE IF EXISTS products;');
-        self::$orm->exec('DROP TABLE IF EXISTS test_users;');
+        self::$orm->schemaDrop('role_user');
+        self::$orm->schemaDrop('posts');
+        self::$orm->schemaDrop('profiles');
+        self::$orm->schemaDrop('roles');
+        self::$orm->schemaDrop('users');
+        self::$orm->schemaDrop('products');
+        self::$orm->schemaDrop('test_users');
         if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
@@ -82,181 +82,189 @@ class TestCase extends BaseTestCase
             // Desactivar checks durante la creación para evitar problemas de orden
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
             self::$orm->exec('SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";');
+            // users
+            self::$orm->schemaCreate('users', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+                ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                ['name' => 'created_at', 'type' => 'TIMESTAMP'],
+            ], ['engine' => 'InnoDB']);
+            // unique email
+            self::$orm->exec('ALTER TABLE `users` ADD UNIQUE (`email`)');
 
-            self::$orm->exec('
-                CREATE TABLE users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    email VARCHAR(191) UNIQUE NOT NULL DEFAULT "",
-                    status VARCHAR(50),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB;
-            ');
+            // profiles
+            self::$orm->schemaCreate('profiles', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'bio', 'type' => 'TEXT'],
+            ], ['engine' => 'InnoDB']);
+            self::$orm->exec('ALTER TABLE `profiles` ADD CONSTRAINT `fk_profiles_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
 
-            self::$orm->exec('
-                CREATE TABLE profiles (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT,
-                    bio TEXT,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                ) ENGINE=InnoDB;
-            ');
+            // posts
+            self::$orm->schemaCreate('posts', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'content', 'type' => 'TEXT'],
+                ['name' => 'published_at', 'type' => 'DATETIME'],
+            ], ['engine' => 'InnoDB']);
+            self::$orm->exec('ALTER TABLE `posts` ADD CONSTRAINT `fk_posts_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
 
-            self::$orm->exec('
-                CREATE TABLE posts (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT,
-                    title VARCHAR(255) NOT NULL,
-                    content TEXT,
-                    published_at DATETIME NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                ) ENGINE=InnoDB;
-            ');
+            // roles
+            self::$orm->schemaCreate('roles', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ], ['engine' => 'InnoDB']);
 
-            self::$orm->exec('
-                CREATE TABLE roles (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL
-                ) ENGINE=InnoDB;
-            ');
+            // role_user (pivot)
+            self::$orm->schemaCreate('role_user', [
+                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+            ], ['engine' => 'InnoDB', 'primary_key' => ['user_id', 'role_id']]);
+            self::$orm->exec('ALTER TABLE `role_user` ADD CONSTRAINT `fk_ru_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
+            self::$orm->exec('ALTER TABLE `role_user` ADD CONSTRAINT `fk_ru_role` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE');
 
-            self::$orm->exec('
-                CREATE TABLE role_user (
-                    user_id INT,
-                    role_id INT,
-                    PRIMARY KEY (user_id, role_id),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-                ) ENGINE=InnoDB;
-            ');
-
-            self::$orm->exec('
-                CREATE TABLE products (
-                    sku VARCHAR(50) PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    price DECIMAL(10, 2) NULL,
-                    stock INT DEFAULT 0,
-                    description TEXT NULL,
-                    category VARCHAR(100) NULL
-                ) ENGINE=InnoDB;
-            ');
+            // products
+            self::$orm->schemaCreate('products', [
+                ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
+                ['name' => 'stock', 'type' => 'INT'],
+                ['name' => 'description', 'type' => 'TEXT'],
+                ['name' => 'category', 'type' => 'VARCHAR(100)'],
+            ], ['engine' => 'InnoDB']);
 
             // Reactivar checks una vez creado todo
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         } elseif ($driver === 'postgresql' || $driver === 'pgsql') {
             // PostgreSQL DDL (sin ENGINE, con identity columns y tipos compatibles)
-            self::$orm->exec("
-                CREATE TABLE users (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    email VARCHAR(191) UNIQUE NOT NULL DEFAULT '' ,
-                    status VARCHAR(50),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            ");
+            self::$orm->schemaCreate('users', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+                ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                ['name' => 'created_at', 'type' => 'TIMESTAMP'],
+            ], [
+                'constraints' => [
+                    'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+                ],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE profiles (
-                    id SERIAL PRIMARY KEY,
-                    user_id INT,
-                    bio TEXT,
-                    CONSTRAINT fk_profiles_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                );
-            ');
+            self::$orm->schemaCreate('profiles', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'bio', 'type' => 'TEXT'],
+            ], [
+                'constraints' => [
+                    'foreign' => [[
+                        'name' => 'fk_profiles_users',
+                        'columns' => ['user_id'],
+                        'refTable' => 'users',
+                        'refColumns' => ['id'],
+                        'onDelete' => 'cascade',
+                    ]],
+                ],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE posts (
-                    id SERIAL PRIMARY KEY,
-                    user_id INT,
-                    title VARCHAR(255) NOT NULL,
-                    content TEXT,
-                    published_at TIMESTAMP NULL,
-                    CONSTRAINT fk_posts_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                );
-            ');
+            self::$orm->schemaCreate('posts', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'content', 'type' => 'TEXT'],
+                ['name' => 'published_at', 'type' => 'TIMESTAMP'],
+            ], [
+                'constraints' => [
+                    'foreign' => [[
+                        'name' => 'fk_posts_users',
+                        'columns' => ['user_id'],
+                        'refTable' => 'users',
+                        'refColumns' => ['id'],
+                        'onDelete' => 'cascade',
+                    ]],
+                ],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE roles (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL
-                );
-            ');
+            self::$orm->schemaCreate('roles', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE role_user (
-                    user_id INT,
-                    role_id INT,
-                    PRIMARY KEY (user_id, role_id),
-                    CONSTRAINT fk_role_user_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    CONSTRAINT fk_role_user_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-                );
-            ');
+            self::$orm->schemaCreate('role_user', [
+                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+            ], [
+                'primary_key' => ['user_id', 'role_id'],
+                'constraints' => [
+                    'foreign' => [
+                        [
+                            'name' => 'fk_role_user_user',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ],
+                        [
+                            'name' => 'fk_role_user_role',
+                            'columns' => ['role_id'],
+                            'refTable' => 'roles',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ],
+                    ],
+                ],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE products (
-                    sku VARCHAR(50) PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    price DECIMAL(10, 2) NULL,
-                    stock INT DEFAULT 0,
-                    description TEXT NULL,
-                    category VARCHAR(100) NULL
-                );
-            ');
+            self::$orm->schemaCreate('products', [
+                ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
+                ['name' => 'stock', 'type' => 'INT'],
+                ['name' => 'description', 'type' => 'TEXT'],
+                ['name' => 'category', 'type' => 'VARCHAR(100)'],
+            ]);
         } else {
             // Driver genérico (SQLite u otros) - sintaxis simple compatible
-            self::$orm->exec("
-                CREATE TABLE users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name VARCHAR(255) NOT NULL,
-                    email VARCHAR(191) UNIQUE NOT NULL DEFAULT '' ,
-                    status VARCHAR(50),
-                    created_at TEXT
-                );
-            ");
+            self::$orm->schemaCreate('users', [
+                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+                ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                ['name' => 'created_at', 'type' => 'TEXT'],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE profiles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INT,
-                    bio TEXT
-                );
-            ');
+            self::$orm->schemaCreate('profiles', [
+                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'bio', 'type' => 'TEXT'],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE posts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INT,
-                    title VARCHAR(255) NOT NULL,
-                    content TEXT,
-                    published_at TEXT NULL
-                );
-            ');
+            self::$orm->schemaCreate('posts', [
+                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'content', 'type' => 'TEXT'],
+                ['name' => 'published_at', 'type' => 'TEXT'],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE roles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name VARCHAR(255) NOT NULL
-                );
-            ');
+            self::$orm->schemaCreate('roles', [
+                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ]);
 
-            self::$orm->exec('
-                CREATE TABLE role_user (
-                    user_id INT,
-                    role_id INT,
-                    PRIMARY KEY (user_id, role_id)
-                );
-            ');
+            self::$orm->schemaCreate('role_user', [
+                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+            ], ['primary_key' => ['user_id', 'role_id']]);
 
-            self::$orm->exec('
-                CREATE TABLE products (
-                    sku VARCHAR(50) PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    price DECIMAL(10, 2) NULL,
-                    stock INT DEFAULT 0,
-                    description TEXT NULL,
-                    category VARCHAR(100) NULL
-                );
-            ');
+            self::$orm->schemaCreate('products', [
+                ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
+                ['name' => 'stock', 'type' => 'INT'],
+                ['name' => 'description', 'type' => 'TEXT'],
+                ['name' => 'category', 'type' => 'VARCHAR(100)'],
+            ]);
         }
     }
 
@@ -267,13 +275,13 @@ class TestCase extends BaseTestCase
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
         // Dropear en orden seguro para FKs
-        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
-        self::$orm->exec('DROP TABLE IF EXISTS posts;');
-        self::$orm->exec('DROP TABLE IF EXISTS profiles;');
-        self::$orm->exec('DROP TABLE IF EXISTS roles;');
-        self::$orm->exec('DROP TABLE IF EXISTS users;');
-        self::$orm->exec('DROP TABLE IF EXISTS products;');
-        self::$orm->exec('DROP TABLE IF EXISTS test_users;');
+        self::$orm->schemaDrop('role_user');
+        self::$orm->schemaDrop('posts');
+        self::$orm->schemaDrop('profiles');
+        self::$orm->schemaDrop('roles');
+        self::$orm->schemaDrop('users');
+        self::$orm->schemaDrop('products');
+        self::$orm->schemaDrop('test_users');
         if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         }

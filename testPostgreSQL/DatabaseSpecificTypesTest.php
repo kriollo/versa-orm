@@ -106,15 +106,15 @@ class DatabaseSpecificTypesTest extends TestCase
             return;
         }
         // Crear tabla con tipos específicos de PostgreSQL
-        self::$orm->exec("CREATE TABLE IF NOT EXISTS test_postgresql_types (
-            id SERIAL PRIMARY KEY,
-            uuid UUID NULL,
-            data JSONB NULL,
-            ip_address INET NULL,
-            text_array TEXT[] NULL,
-            network CIDR NULL,
-            mac_address MACADDR NULL
-        )");
+        self::$orm->schemaCreate('test_postgresql_types', [
+            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+            ['name' => 'uuid', 'type' => 'UUID'],
+            ['name' => 'data', 'type' => 'JSONB'],
+            ['name' => 'ip_address', 'type' => 'INET'],
+            ['name' => 'text_array', 'type' => 'TEXT[]'],
+            ['name' => 'network', 'type' => 'CIDR'],
+            ['name' => 'mac_address', 'type' => 'MACADDR'],
+        ], ['if_not_exists' => true]);
         $model = new VersaModel('test_postgresql_types', self::$orm);
 
         // Test UUID
@@ -213,10 +213,10 @@ class DatabaseSpecificTypesTest extends TestCase
     public function testBinaryDataHandling(): void
     {
         // Crear tabla para binarios
-        self::$orm->exec("CREATE TABLE IF NOT EXISTS test_binary (
-            id SERIAL PRIMARY KEY,
-            binary_field TEXT NULL
-        )");
+        self::$orm->schemaCreate('test_binary', [
+            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+            ['name' => 'binary_field', 'type' => 'TEXT'],
+        ], ['if_not_exists' => true]);
         $model = new VersaModel('test_binary', self::$orm);
 
         // Test Base64 encoding/decoding
@@ -233,10 +233,10 @@ class DatabaseSpecificTypesTest extends TestCase
     public function testComplexTypeMapping(): void
     {
         // Crear tabla para mapeo complejo
-        self::$orm->exec("CREATE TABLE IF NOT EXISTS test_complex_mapping (
-            id SERIAL PRIMARY KEY,
-            complex_data JSONB NULL
-        )");
+        self::$orm->schemaCreate('test_complex_mapping', [
+            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+            ['name' => 'complex_data', 'type' => 'JSONB'],
+        ], ['if_not_exists' => true]);
         $model = new VersaModel('test_complex_mapping', self::$orm);
 
         // Test mapeo de tipo complejo con configuración personalizada
@@ -330,7 +330,7 @@ class DatabaseSpecificTypesTest extends TestCase
 
             foreach ($testTables as $table) {
                 try {
-                    $this->orm->exec("DROP TABLE IF EXISTS {$table}");
+                    $this->orm->schemaDrop($table);
                 } catch (\Exception $e) {
                     // Ignorar errores de limpieza
                 }

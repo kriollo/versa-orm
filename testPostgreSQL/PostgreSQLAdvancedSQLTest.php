@@ -29,31 +29,31 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         VersaModel::setORM(self::$orm);
         $this->queryBuilder = new QueryBuilder(self::$orm, 'employees');
         // Asegurar tabla limpia
-        self::$orm->exec('DROP TABLE IF EXISTS employees');
+        self::$orm->schemaDrop('employees');
         $this->createPostgreSQLTestTables();
     }
 
     private function createPostgreSQLTestTables(): void
     {
         // Tabla con tipos específicos de PostgreSQL
-        self::$orm->exec("
-            CREATE TABLE IF NOT EXISTS employees (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                department VARCHAR(100),
-                salary DECIMAL(10,2),
-                hire_date DATE,
-                profile JSONB,
-                skills TEXT[],
-                bio TEXT,
-                search_vector TSVECTOR
-            )
-        ");
-
-        // Crear índices específicos de PostgreSQL
-        self::$orm->exec("CREATE INDEX IF NOT EXISTS idx_profile_gin ON employees USING GIN(profile)");
-        self::$orm->exec("CREATE INDEX IF NOT EXISTS idx_skills_gin ON employees USING GIN(skills)");
-        self::$orm->exec("CREATE INDEX IF NOT EXISTS idx_search_gin ON employees USING GIN(search_vector)");
+        self::$orm->schemaCreate('employees', [
+            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ['name' => 'department', 'type' => 'VARCHAR(100)'],
+            ['name' => 'salary', 'type' => 'DECIMAL(10,2)'],
+            ['name' => 'hire_date', 'type' => 'DATE'],
+            ['name' => 'profile', 'type' => 'JSONB'],
+            ['name' => 'skills', 'type' => 'TEXT[]'],
+            ['name' => 'bio', 'type' => 'TEXT'],
+            ['name' => 'search_vector', 'type' => 'TSVECTOR'],
+        ], [
+            'if_not_exists' => true,
+            'indexes' => [
+                ['name' => 'idx_profile_gin', 'columns' => ['profile'], 'using' => 'GIN', 'if_not_exists' => true],
+                ['name' => 'idx_skills_gin', 'columns' => ['skills'], 'using' => 'GIN', 'if_not_exists' => true],
+                ['name' => 'idx_search_gin', 'columns' => ['search_vector'], 'using' => 'GIN', 'if_not_exists' => true],
+            ],
+        ]);
 
         // Insertar datos de prueba con tipos PostgreSQL
         $employees = [
@@ -295,7 +295,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     {
         // Limpiar tabla después de cada test
         try {
-            self::$orm->exec("DROP TABLE IF EXISTS employees");
+            self::$orm->schemaDrop('employees');
         } catch (\Throwable $e) {
         }
     }
