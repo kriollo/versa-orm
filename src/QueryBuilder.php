@@ -82,7 +82,7 @@ class QueryBuilder
         $this->orm = $orm;
         // Validar identificador/alias de tabla inmediatamente para prevenir casos maliciosos
         if (!$this->isSafeIdentifier($table)) {
-            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected (error): %s', $table));
         }
         $this->table = $table;
         $this->modelClass = $modelClass;

@@ -395,6 +395,18 @@ class PdoEngine
             ];
         }
 
+        // ORDER BY mapping: take first ordering entry if present
+        $ordering = (array)($op['ordering'] ?? []);
+        if (!empty($ordering)) {
+            $first = $ordering[0];
+            if (is_array($first)) {
+                $params['orderBy'] = [[
+                    'column' => (string)($first['column'] ?? ''),
+                    'direction' => strtoupper((string)($first['direction'] ?? 'ASC')),
+                ]];
+            }
+        }
+
         return SqlGenerator::generate('query', $params, $this->dialect);
     }
 }
