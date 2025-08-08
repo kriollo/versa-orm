@@ -757,8 +757,7 @@ class VersaModel implements TypedModelInterface
             // INSERT nuevo - filtrar campos que no deben insertarse manualmente
             $filteredAttributes = $this->attributes;
             unset($filteredAttributes['id']); // No insertar ID manualmente
-            unset($filteredAttributes['created_at']); // Dejar que MySQL lo maneje
-            unset($filteredAttributes['updated_at']); // Dejar que MySQL lo maneje
+            // Nota: permitimos created_at/updated_at si vienen provistos; si la columna no existe, ensureColumnsExist la creará
 
             if (empty($filteredAttributes)) {
                 throw new VersaORMException(
@@ -1682,8 +1681,8 @@ class VersaModel implements TypedModelInterface
             // Verificar qué campos del modelo no existen en la tabla
             $missingColumns = [];
             foreach ($this->attributes as $fieldName => $value) {
-                // Saltar campos especiales que no se deben crear
-                if (in_array($fieldName, ['id', 'created_at', 'updated_at'])) {
+                // Saltar únicamente la PK 'id' (permitimos created_at/updated_at si el modelo los usa)
+                if ($fieldName === 'id') {
                     continue;
                 }
 
@@ -1703,9 +1702,47 @@ class VersaModel implements TypedModelInterface
                 $this->createColumn($orm, $columnName, $columnType);
             }
         } catch (\Exception $e) {
-            // Si hay algún error al verificar el esquema, continuar sin crear columnas
-            // Esto previene errores en casos donde la tabla no existe aún
-            error_log("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage());
+            // Si la tabla no existe, intentar crearla y continuar
+            $msg = strtolower($e->getMessage());
+            if (str_contains($msg, 'no such table') || str_contains($msg, "doesn't exist") || str_contains($msg, 'base table or view not found')) {
+                $this->createBaseTableIfMissing($orm);
+                // Intentar nuevamente obtener columnas tras crear la tabla y crear las faltantes
+                try {
+                    $existingColumns = $orm->schema('columns', $this->table);
+                    if (!is_array($existingColumns)) {
+                        return;
+                    }
+                    $existingColumnNames = [];
+                    foreach ($existingColumns as $column) {
+                        if (isset($column['name'])) {
+                            $existingColumnNames[] = strtolower($column['name']);
+                        } elseif (isset($column['column_name'])) {
+                            $existingColumnNames[] = strtolower($column['column_name']);
+                        } elseif (isset($column['Field'])) {
+                            $existingColumnNames[] = strtolower($column['Field']);
+                        } elseif (is_string($column)) {
+                            $existingColumnNames[] = strtolower($column);
+                        }
+                    }
+                    $missingColumns = [];
+                    foreach ($this->attributes as $fieldName => $value) {
+                        if ($fieldName === 'id') {
+                            continue;
+                        }
+                        if (!in_array(strtolower($fieldName), $existingColumnNames)) {
+                            $missingColumns[$fieldName] = $this->inferColumnType($value);
+                        }
+                    }
+                    foreach ($missingColumns as $columnName => $columnType) {
+                        $this->createColumn($orm, $columnName, $columnType);
+                    }
+                } catch (\Throwable) {
+                    return; // si aún falla, salir silenciosamente
+                }
+            } else {
+                // Otros errores: loguear y continuar
+                error_log("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage());
+            }
         }
     }
 
@@ -1719,6 +1756,11 @@ class VersaModel implements TypedModelInterface
     {
         if (is_null($value)) {
             return 'VARCHAR(255)'; // Tipo por defecto para valores null
+        }
+
+        // Mapear DateTime a tipo de fecha
+        if ($value instanceof \DateTime) {
+            return 'DATETIME';
         }
 
         if (is_bool($value)) {
@@ -1744,7 +1786,7 @@ class VersaModel implements TypedModelInterface
             }
         }
 
-        if (is_array($value) || is_object($value)) {
+    if (is_array($value) || is_object($value)) {
             return 'JSON';
         }
 

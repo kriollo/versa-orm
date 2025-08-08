@@ -163,15 +163,37 @@ class PdoEngine
                                 'ntile' => 'NTILE(' . (int)(($params['args']['buckets'] ?? 2)) . ')',
                                 default => 'ROW_NUMBER()'
                             };
+                            // Detectar alias de tabla si viene como "table AS alias" o "table alias"
+                            $tableRef = trim($table);
+                            $baseQualifier = $tableRef;
+                            if (preg_match('/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i', $tableRef, $m) === 1) {
+                                $baseQualifier = (string)$m[2]; // usar alias si existe
+                            }
+                            $baseQualifierQuoted = $this->dialect->quoteIdentifier($baseQualifier);
                             $over = [];
                             if (!empty($partition)) {
-                                $over[] = 'PARTITION BY ' . implode(', ', $partition);
+                                // Calificar columnas de PARTITION BY con alias/tabla base si no vienen calificadas
+                                $parts = array_map(function ($p) use ($baseQualifierQuoted) {
+                                    $p = (string)$p;
+                                    if ($p === '*' || str_contains($p, '(')) {
+                                        return $p;
+                                    }
+                                    if (str_contains($p, '.')) {
+                                        return $p;
+                                    }
+                                    return $baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($p);
+                                }, $partition);
+                                $over[] = 'PARTITION BY ' . implode(', ', $parts);
                             }
                             if (!empty($orderBy)) {
                                 $ob = [];
                                 foreach ($orderBy as $o) {
                                     $dir = strtoupper((string)($o['direction'] ?? 'ASC'));
-                                    $ob[] = ($o['column'] ?? '') . ' ' . (in_array($dir, ['ASC','DESC'], true) ? $dir : 'ASC');
+                                    $col = (string)($o['column'] ?? '');
+                                    if ($col !== '' && $col !== '*' && !str_contains($col, '.') && !str_contains($col, '(')) {
+                                        $col = $baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($col);
+                                    }
+                                    $ob[] = $col . ' ' . (in_array($dir, ['ASC','DESC'], true) ? $dir : 'ASC');
                                 }
                                 if (!empty($ob)) {
                                     $over[] = 'ORDER BY ' . implode(', ', $ob);
@@ -185,7 +207,28 @@ class PdoEngine
                                 'select' => ['*'],
                                 'where' => $wheres,
                             ], $this->dialect);
-                            $sql = 'SELECT subq.*, ' . $funcSql . ' ' . $overSql . ' AS ' . $this->dialect->quoteIdentifier($alias) . ' FROM (' . $baseSql . ') AS subq';
+                            // Calificar columna si aplica
+                            $qualifiedFuncSql = preg_replace('/\((\s*\*\s*)\)/', '(1)', $funcSql);
+                            if ($column !== '*') {
+                                // Solo reemplazar ocurrencias de nombre de columna aislado (evitar tocar funciones)
+                                $qualified = (str_contains($column, '(') || str_contains($column, '.')
+                                    ? $column
+                                    : ($baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($column))
+                                );
+                                // Reemplazo conservador: si la función es LAG/LEAD/FIRST_VALUE/LAST_VALUE con el nombre simple
+                                $qualifiedFuncSql = preg_replace('/\b' . preg_quote($column, '/') . '\b/', $qualified, $qualifiedFuncSql);
+                            }
+                            // Insertar la expresión window directamente en el SELECT base
+                            $sql = preg_replace(
+                                '/^SELECT\s+\*\s+FROM\s+/i',
+                                'SELECT *, ' . $qualifiedFuncSql . ' ' . $overSql . ' AS ' . $this->dialect->quoteIdentifier($alias) . ' FROM ',
+                                $baseSql,
+                                1
+                            );
+                            // Log de depuración opcional
+                            if (function_exists('error_log')) {
+                                @error_log('[PDO][advanced_sql][window_function] SQL: ' . $sql);
+                            }
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute($baseBindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -251,7 +294,9 @@ class PdoEngine
                                 // usar ->> con path simple '$.a.b' a 'a','b'
                                 $segments = array_filter(explode('.', trim($path, '$.')));
                                 $expr = $col;
-                                foreach ($segments as $s) { $expr .= "->'" . $s . "'"; }
+                                foreach ($segments as $s) {
+                                    $expr .= "->'" . $s . "'";
+                                }
                                 $jsonExpr = $expr . ' AS value';
                                 $bind = [];
                             } else { // sqlite con json_extract
@@ -276,21 +321,27 @@ class PdoEngine
                             $term = (string)($params['search_term'] ?? '');
                             $options = (array)($params['options'] ?? []);
                             if ($driver === 'mysql') {
-                                $match = 'MATCH(' . implode(', ', $cols) . ') AGAINST (? ' . ((isset($options['mode']) && is_string($options['mode'])) ? ' IN ' . $options['mode'] . ' MODE' : '') . ')';
-                                $select = !empty($options['with_score']) ? ['*', ['type'=>'raw','expression'=>$match.' AS score']] : ['*'];
-                                [$sql, $bind] = SqlGenerator::generate('query', [
-                                    'method' => 'get',
-                                    'table' => $table,
-                                    'select' => $select,
-                                    'where' => [ ['column' => $match, 'operator' => 'RAW', 'value' => ['sql' => $match, 'bindings' => [$term]]] ],
-                                ], $this->dialect);
+                                $modeSql = '';
+                                if (isset($options['mode']) && is_string($options['mode'])) {
+                                    $modeSql = ' IN ' . $options['mode'] . ' MODE';
+                                }
+                                $match = 'MATCH(' . implode(', ', $cols) . ') AGAINST (?'. $modeSql .')';
+                                $select = '*';
+                                if (!empty($options['with_score'])) {
+                                    $select = '*, ' . $match . ' AS score';
+                                }
+                                $sql = 'SELECT ' . $select . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $match;
                                 $stmt = $pdo->prepare($sql);
-                                $stmt->execute([$term]);
+                                // Si with_score agrega el MATCH también en SELECT, enlazar el término dos veces
+                                $bindings = !empty($options['with_score']) ? [$term, $term] : [$term];
+                                $stmt->execute($bindings);
                                 return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                             }
                             // Fallback: LIKE en otros drivers
                             $likeParts = [];
-                            foreach ($cols as $c) { $likeParts[] = "$c LIKE ?"; }
+                            foreach ($cols as $c) {
+                                $likeParts[] = "$c LIKE ?";
+                            }
                             $sql = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . implode(' OR ', $likeParts);
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute(array_fill(0, count($likeParts), '%' . $term . '%'));
@@ -307,9 +358,11 @@ class PdoEngine
                                 // Escapar comillas simples en separador para SQL literal
                                 $sepLiteralValue = str_replace("'", "''", $sep);
                                 $sepLiteral = "'" . $sepLiteralValue . "'";
-                                $expr = 'GROUP_CONCAT(' . $column . ( $order ? ' ORDER BY ' . $order : '') . ' SEPARATOR ' . $sepLiteral . ' ) AS agg';
+                                $expr = 'GROUP_CONCAT(' . $column . ($order ? ' ORDER BY ' . $order : '') . ' SEPARATOR ' . $sepLiteral . ' ) AS agg';
                                 $sql = 'SELECT ' . (empty($groupBy) ? $expr : implode(', ', $groupBy) . ', ' . $expr) . ' FROM ' . $this->dialect->quoteIdentifier($table);
-                                if (!empty($groupBy)) { $sql .= ' GROUP BY ' . implode(', ', $groupBy); }
+                                if (!empty($groupBy)) {
+                                    $sql .= ' GROUP BY ' . implode(', ', $groupBy);
+                                }
                                 $stmt = $pdo->prepare($sql);
                                 $stmt->execute();
                                 return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -323,9 +376,9 @@ class PdoEngine
                         }
                     case 'get_driver_capabilities': {
                             $features = [
-                                'window_functions' => in_array($driver, ['mysql','postgres','sqlite'], true),
+                                'window_functions' => in_array($driver, ['mysql', 'postgres', 'sqlite'], true),
                                 'json_support' => true,
-                                'fts_support' => in_array($driver, ['mysql','sqlite'], true),
+                                'fts_support' => in_array($driver, ['mysql', 'sqlite'], true),
                             ];
                             return [
                                 'driver' => $driver,
@@ -512,7 +565,7 @@ class PdoEngine
             return $result;
         }
 
-    if ($action === 'raw') {
+        if ($action === 'raw') {
             // Detectar si es una sentencia de escritura antes de intentar fetchAll
             $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER)\b/i', $sql) === 1;
             $stmt = $pdo->prepare($sql);
@@ -520,8 +573,8 @@ class PdoEngine
             if ($isWrite) {
                 // Invalidar todo el caché en operaciones de escritura para mantener coherencia
                 self::clearAllCache();
-        // Normalizar: devolver null para no-SELECT (los tests aceptan null/[])
-        return null;
+                // Normalizar: devolver null para no-SELECT (los tests aceptan null/[])
+                return null;
             }
             // Lecturas: devolver filas y cachear si corresponde
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
