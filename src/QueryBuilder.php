@@ -2053,7 +2053,7 @@ class QueryBuilder
             }
         }
 
-        // FALLBACK: Usar SQL raw ya que el binario no soporta REPLACE INTO nativo
+        // Fallback / emulación por driver
         return $this->replaceIntoFallback($data);
     }
 
@@ -2070,31 +2070,60 @@ class QueryBuilder
             throw new VersaORMException('VersaORM instance is required for replaceInto');
         }
 
-        // Verificar que estamos usando MySQL
         $config = $this->orm->getConfig();
-        if (($config['driver'] ?? '') !== 'mysql') {
-            throw new VersaORMException('REPLACE INTO operations are only supported for MySQL');
+        $driver = strtolower((string)($config['driver'] ?? $config['database_type'] ?? 'mysql'));
+
+        // MySQL/MariaDB: usar REPLACE INTO nativo
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            // Construir la consulta REPLACE INTO manualmente
+            $columns = array_keys($data);
+            $placeholders = array_fill(0, count($data), '?');
+
+            $sql = sprintf(
+                'REPLACE INTO `%s` (`%s`) VALUES (%s)',
+                $this->table,
+                implode('`, `', $columns),
+                implode(', ', $placeholders)
+            );
+
+            $this->orm->exec($sql, array_values($data));
+
+            return [
+                'status' => 'success',
+                'operation' => 'replaced',
+                'rows_affected' => 1,
+                'table' => $this->table,
+            ];
         }
 
-        // Construir la consulta REPLACE INTO manualmente
-        $columns = array_keys($data);
-        $placeholders = array_fill(0, count($data), '?');
+        // Otros drivers (PostgreSQL, SQLite): emular como UPSERT por PK/únicas, sin DELETE
+        // 1) Detectar claves para upsert (PK preferente; si no, índice único disponible en los datos)
+        [$uniqueKeys, $updateColumns] = $this->detectUpsertKeysForReplace($data);
 
-        $sql = sprintf(
-            'REPLACE INTO `%s` (`%s`) VALUES (%s)',
-            $this->table,
-            implode('`, `', $columns),
-            implode(', ', $placeholders)
-        );
+        // 2) Si no hay claves únicas detectadas en los datos, hacer un INSERT estándar
+        if (empty($uniqueKeys)) {
+            // Reutilizar ruta de inserción
+            $insertParams = [
+                'method' => 'insert',
+                'table' => $this->table,
+                'data' => $data,
+            ];
+            // Ejecutar a través del mismo mecanismo que insert() usa internamente
+            $result = $this->execute('insert', $data);
+            return is_array($result) ? $result : ['status' => 'success', 'operation' => 'inserted', 'rows_affected' => 1, 'table' => $this->table];
+        }
 
-        $this->orm->exec($sql, array_values($data));
-
-        return [
-            'status' => 'success',
-            'operation' => 'replaced',
-            'rows_affected' => 1,
-            'table' => $this->table,
-        ];
+        // 3) Delegar a upsert con updateColumns = todas menos las claves
+        $result = $this->upsert($data, $uniqueKeys, $updateColumns);
+        // Normalizar respuesta para compatibilidad con tests de "replace"
+        if (!is_array($result)) {
+            $result = [];
+        }
+        $result['table'] = $this->table;
+        $result['status'] = $result['status'] ?? 'success';
+        $result['operation'] = 'replaced';
+        $result['rows_affected'] = $result['rows_affected'] ?? 1;
+        return $result;
     }
 
     /**
@@ -2145,7 +2174,6 @@ class QueryBuilder
             }
         }
 
-        // FALLBACK: Usar SQL raw con lotes ya que el binario no soporta REPLACE INTO nativo
         return $this->replaceIntoManyFallback($records, $batchSize);
     }
 
@@ -2162,50 +2190,147 @@ class QueryBuilder
             throw new VersaORMException('VersaORM instance is required for replaceIntoMany');
         }
 
-        // Verificar que estamos usando MySQL
         $config = $this->orm->getConfig();
-        if (($config['driver'] ?? '') !== 'mysql') {
-            throw new VersaORMException('REPLACE INTO operations are only supported for MySQL');
-        }
+        $driver = strtolower((string)($config['driver'] ?? $config['database_type'] ?? 'mysql'));
 
-        $totalReplaced = 0;
-        $batchesProcessed = 0;
-        $effectiveBatchSize = max(1, $batchSize); // Asegurar que sea al menos 1
-        $recordBatches = array_chunk($records, $effectiveBatchSize);
+        // MySQL/MariaDB: usar REPLACE INTO en lotes
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $totalReplaced = 0;
+            $batchesProcessed = 0;
+            $effectiveBatchSize = max(1, $batchSize); // Asegurar que sea al menos 1
+            $recordBatches = array_chunk($records, $effectiveBatchSize);
 
-        foreach ($recordBatches as $batch) {
-            // Construir SQL para este lote
-            $columns = array_keys($batch[0]);
-            $valueGroups = [];
-            $allValues = [];
+            foreach ($recordBatches as $batch) {
+                // Construir SQL para este lote
+                $columns = array_keys($batch[0]);
+                $valueGroups = [];
+                $allValues = [];
 
-            foreach ($batch as $record) {
-                $placeholders = array_fill(0, count($record), '?');
-                $valueGroups[] = '(' . implode(', ', $placeholders) . ')';
-                $allValues = array_merge($allValues, array_values($record));
+                foreach ($batch as $record) {
+                    $placeholders = array_fill(0, count($record), '?');
+                    $valueGroups[] = '(' . implode(', ', $placeholders) . ')';
+                    $allValues = array_merge($allValues, array_values($record));
+                }
+
+                $sql = sprintf(
+                    'REPLACE INTO `%s` (`%s`) VALUES %s',
+                    $this->table,
+                    implode('`, `', $columns),
+                    implode(', ', $valueGroups)
+                );
+
+                // Ejecutar el lote
+                $this->orm->exec($sql, $allValues);
+                $totalReplaced += count($batch);
+                $batchesProcessed++;
             }
 
-            $sql = sprintf(
-                'REPLACE INTO `%s` (`%s`) VALUES %s',
-                $this->table,
-                implode('`, `', $columns),
-                implode(', ', $valueGroups)
-            );
-
-            // Ejecutar el lote
-            $this->orm->exec($sql, $allValues);
-            $totalReplaced += count($batch);
-            $batchesProcessed++;
+            return [
+                'status' => 'success',
+                'total_replaced' => $totalReplaced,
+                'batches_processed' => $batchesProcessed,
+                'batch_size' => $batchSize,
+                'total_records' => count($records),
+                'table' => $this->table,
+            ];
         }
 
+        // Otros drivers (PostgreSQL, SQLite): emular con upsertMany por PK/índices únicos
+        [$uniqueKeys, $updateColumns] = $this->detectUpsertKeysForReplace($records[0]);
+        if (empty($uniqueKeys)) {
+            // Sin claves únicas detectadas en los datos: repetir insertMany simple
+            // Reutilizar generate/execute de upsertMany espera unique_keys, así que haremos inserciones individuales
+            $inserted = 0;
+            foreach ($records as $rec) {
+                $this->execute('insert', $rec);
+                $inserted++;
+            }
+            return [
+                'status' => 'success',
+                'total_replaced' => $inserted,
+                'batches_processed' => 1,
+                'batch_size' => $batchSize,
+                'total_records' => count($records),
+                'table' => $this->table,
+            ];
+        }
+
+        // Ejecutar la operación con upsertMany pero devolver métrica tipo REPLACE
+        $this->upsertMany($records, $uniqueKeys, $updateColumns);
+        $total = count($records);
+        $batchesProcessed = (int)ceil($total / max(1, $batchSize));
         return [
             'status' => 'success',
-            'total_replaced' => $totalReplaced,
+            'total_replaced' => $total,
             'batches_processed' => $batchesProcessed,
             'batch_size' => $batchSize,
-            'total_records' => count($records),
+            'total_records' => $total,
             'table' => $this->table,
         ];
+    }
+
+
+    /**
+     * Detecta claves únicas apropiadas para emular REPLACE (PK preferente) y columnas a actualizar.
+     * Devuelve [uniqueKeys, updateColumns]. Si no encuentra claves presentes en los datos, uniqueKeys = [].
+     *
+     * @param array<string,mixed> $data
+     * @return array{0:array<int,string>,1:array<int,string>}
+     */
+    private function detectUpsertKeysForReplace(array $data): array
+    {
+        $keysInData = array_keys($data);
+        $keysInData = array_values(array_filter($keysInData, fn($k) => $this->isSafeIdentifier($k)));
+
+        $pk = [];
+        try {
+            $cols = $this->orm instanceof VersaORM ? (array)$this->orm->schema('columns', $this->table) : [];
+            foreach ($cols as $col) {
+                $name = (string)($col['column_name'] ?? $col['name'] ?? '');
+                $isPk = false;
+                if (isset($col['is_primary_key'])) {
+                    $isPk = (bool)$col['is_primary_key'];
+                } elseif (isset($col['extra']) && strtolower((string)$col['extra']) === 'primary_key') {
+                    $isPk = true;
+                } elseif (isset($col['key']) && strtoupper((string)$col['key']) === 'PRI') {
+                    $isPk = true;
+                }
+                if ($isPk && $name !== '' && in_array($name, $keysInData, true)) {
+                    $pk[] = $name;
+                }
+            }
+        } catch (\Throwable $t) {
+            // Silencioso: usar heurísticas si falla
+        }
+
+        // Si no detectamos PK presentes en los datos, intentar con índices únicos
+        if (empty($pk)) {
+            try {
+                $idx = $this->orm instanceof VersaORM ? (array)$this->orm->schema('indexes', $this->table) : [];
+                foreach ($idx as $ix) {
+                    $unique = (bool)($ix['unique'] ?? false);
+                    $cols = (array)($ix['columns'] ?? ($ix['column'] ?? []));
+                    if (!is_array($cols)) {
+                        $cols = [$cols];
+                    }
+                    $cols = array_values(array_filter(array_map('strval', $cols)));
+                    if ($unique && !empty($cols) && empty(array_diff($cols, $keysInData))) {
+                        $pk = $cols;
+                        break;
+                    }
+                }
+            } catch (\Throwable $t) {
+                // Ignorar
+            }
+        }
+
+        // Heurística final: si hay 'id' en los datos, úsalo como clave
+        if (empty($pk) && in_array('id', $keysInData, true)) {
+            $pk = ['id'];
+        }
+
+        $updateColumns = array_values(array_diff($keysInData, $pk));
+        return [$pk, $updateColumns];
     }
 
     /**

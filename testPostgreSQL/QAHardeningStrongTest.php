@@ -26,9 +26,24 @@ final class QAHardeningStrongTest extends TestCase
     public function testIndexCreationWithMaliciousNameFails(): void
     {
         $orm = self::$orm;
+        // Asegurar estado limpio
+        try {
+            $orm->schemaDrop('secure_t');
+        } catch (\Throwable $e) {
+            // ignorar si no existe
+        }
+
         $orm->schemaCreate('secure_t', [['name' => 'id', 'type' => 'INT']]);
-        $this->expectException(\Throwable::class);
-        $orm->schemaAlter('secure_t', ['addIndex' => [['name' => 'idx_bad";--', 'columns' => ['id']]]]);
-        $orm->schemaDrop('secure_t');
+        try {
+            $this->expectException(\Throwable::class);
+            $orm->schemaAlter('secure_t', ['addIndex' => [['name' => 'idx_bad";--', 'columns' => ['id']]]]);
+        } finally {
+            // Siempre limpiar
+            try {
+                $orm->schemaDrop('secure_t');
+            } catch (\Throwable $e) {
+                // ignorar
+            }
+        }
     }
 }
