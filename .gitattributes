@@ -1,0 +1,49 @@
+# Incluir sólo código necesario y docs en el paquete exportado por Packagist.
+# Todo lo marcado con export-ignore NO se incluye en el tarball/zip.
+
+# Mantener src y docs
+/src export-ignore=false
+/docs export-ignore=false
+
+# Excluir directorios de desarrollo / ejemplos / tests
+/testMysql export-ignore
+/testPostgreSQL export-ignore
+/testSQLite export-ignore
+/tests export-ignore
+/example export-ignore
+/versaorm_cli export-ignore
+
+# Infraestructura CI/CD, IDE y metadatos
+/.github export-ignore
+/.vscode export-ignore
+/.idea export-ignore
+
+# Archivos de configuración de herramientas y análisis (no requeridos en runtime)
+phpunit*.xml export-ignore
+phpstan.neon export-ignore
+psalm.xml export-ignore
+psalm.xml.dist export-ignore
+ANALYSIS.md export-ignore
+CHANGELOG.md export-ignore
+GEMINI.md export-ignore
+rule.md export-ignore
+sentencias*SQL.md export-ignore
+tasks.md export-ignore
+task_ok.md export-ignore
+
+# Logs, caches y artefactos locales
+/logs export-ignore
+/tests.sqlite export-ignore
+/cache_test.json export-ignore
+
+# Composer lock (opcional mantenerlo fuera del paquete para libs)
+composer.lock export-ignore
+
+# Binarios/platforma (si no quieres distribuirlos directamente)
+/src/binary/*.exe export-ignore
+/src/binary/*.dll export-ignore
+/src/binary/*.so export-ignore
+/src/binary/*.dylib export-ignore
+
+# Asegúrate de NO excluir archivos de configuración requeridos en runtime (p.ej., config/)
+/config export-ignore=false

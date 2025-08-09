@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
-use VersaORM\VersaModel;
-use VersaORM\VersaORM;
+
 
 require_once __DIR__ . '/bootstrap.php';
 

@@ -7,6 +7,7 @@ namespace App\Models;
 use VersaORM\QueryBuilder;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
+use VersaORM\VersaORMException;
 
 /**
  * Modelo base para la aplicación.
@@ -27,6 +28,19 @@ abstract class BaseModel extends VersaModel
      * Campos protegidos (permitir asignación masiva por defecto).
      */
     protected array $guarded = [];
+
+    /* =============================================================
+     * Helpers para generar la instancia
+     * ============================================================= */
+    public static function generateInstance(array $config): void
+    {
+        try {
+            $orm = new VersaORM($config['versaorm'] + $config['database']);
+            VersaModel::setORM($orm);
+        } catch (VersaORMException $e) {
+            die('Error al inicializar VersaORM: ' . $e->getMessage());
+        }
+    }
 
     /* =============================================================
      * Helpers de acceso al ORM / QueryBuilder para evitar repetir
