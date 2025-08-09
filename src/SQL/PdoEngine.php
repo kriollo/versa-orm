@@ -59,6 +59,35 @@ class PdoEngine
         }
     }
 
+    /**
+     * Enlaza parámetros con tipos adecuados y ejecuta el statement.
+     * Forza INT/BOOL/NULL; el resto como STR para evitar sorpresas en SQLite.
+     *
+     * @param \PDOStatement $stmt
+     * @param array<int, mixed> $bindings
+     */
+    private function bindAndExecute(\PDOStatement $stmt, array $bindings): void
+    {
+        if (!empty($bindings)) {
+            foreach (array_values($bindings) as $i => $val) {
+                $param = $i + 1; // 1-based
+                if (is_int($val)) {
+                    $stmt->bindValue($param, $val, \PDO::PARAM_INT);
+                } elseif (is_bool($val)) {
+                    $stmt->bindValue($param, $val, \PDO::PARAM_BOOL);
+                } elseif ($val === null) {
+                    $stmt->bindValue($param, $val, \PDO::PARAM_NULL);
+                } else {
+                    // floats y strings van como STR
+                    $stmt->bindValue($param, (string)$val, \PDO::PARAM_STR);
+                }
+            }
+            $stmt->execute();
+            return;
+        }
+        $stmt->execute();
+    }
+
     private function detectDialect(): SqlDialectInterface
     {
         $driver = strtolower((string)($this->config['driver'] ?? 'mysql'));
@@ -628,7 +657,7 @@ class PdoEngine
             if ($method === 'count') {
                 $stmt = $pdo->prepare($sql);
                 try {
-                    $stmt->execute($bindings);
+                    $this->bindAndExecute($stmt, $bindings);
                 } catch (\Throwable $e) {
                     throw new VersaORMException('SQL failed (count): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
                 }
@@ -642,7 +671,7 @@ class PdoEngine
             if ($method === 'exists') {
                 $stmt = $pdo->prepare($sql);
                 try {
-                    $stmt->execute($bindings);
+                    $this->bindAndExecute($stmt, $bindings);
                 } catch (\Throwable $e) {
                     throw new VersaORMException('SQL failed (exists): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
                 }
@@ -657,7 +686,7 @@ class PdoEngine
             if ($method === 'first') {
                 $stmt = $pdo->prepare($sql);
                 try {
-                    $stmt->execute($bindings);
+                    $this->bindAndExecute($stmt, $bindings);
                 } catch (\Throwable $e) {
                     throw new VersaORMException('SQL failed (first): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
                 }
@@ -672,7 +701,7 @@ class PdoEngine
             $this->log('[PDO][GET] Executing SQL', ['sql' => $sql, 'bindings' => $bindings]);
             $stmt = $pdo->prepare($sql);
             try {
-                $stmt->execute($bindings);
+                $this->bindAndExecute($stmt, $bindings);
             } catch (\Throwable $e) {
                 throw new VersaORMException('SQL failed (get): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
             }
