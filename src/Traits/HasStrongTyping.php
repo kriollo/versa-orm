@@ -96,26 +96,26 @@ trait HasStrongTyping
         }
 
         // Handlers reutilizados por sinónimos
-    $intHandler = static function ($self, string $property, $value) {
+        $intHandler = static function ($self, string $property, $value) {
             return is_numeric($value) ? (int) $value : 0;
         };
 
-    $floatHandler = static function ($self, string $property, $value) {
+        $floatHandler = static function ($self, string $property, $value) {
             return is_numeric($value) ? (float) $value : 0.0;
         };
 
-    $stringHandler = static function ($self, string $property, $value) {
+        $stringHandler = static function ($self, string $property, $value) {
             return is_scalar($value) ? (string) $value : '';
         };
 
-    $boolHandler = static function ($self, string $property, $value) {
+        $boolHandler = static function ($self, string $property, $value) {
             if (is_string($value)) {
                 return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
             }
             return (bool) $value;
         };
 
-    $arrayHandler = static function ($self, string $property, $value) {
+        $arrayHandler = static function ($self, string $property, $value) {
             if (is_string($value)) {
                 $decoded = json_decode($value, true);
                 return $decoded !== null ? $decoded : [];
@@ -123,7 +123,7 @@ trait HasStrongTyping
             return is_array($value) ? $value : [$value];
         };
 
-    $jsonHandler = static function ($self, string $property, $value, array $typeDefinition = []) {
+        $jsonHandler = static function ($self, string $property, $value, array $typeDefinition = []) {
             if (is_string($value)) {
                 $decoded = json_decode($value, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -134,7 +134,7 @@ trait HasStrongTyping
             return $value;
         };
 
-    $uuidHandler = static function ($self, string $property, $value) {
+        $uuidHandler = static function ($self, string $property, $value) {
             $uuidValue = (string) $value;
             if (!$self->isValidUuid($uuidValue)) {
                 if ($property === 'uuid') {
@@ -145,7 +145,7 @@ trait HasStrongTyping
             return $uuidValue;
         };
 
-    $datetimeHandler = static function ($self, string $property, $value) {
+        $datetimeHandler = static function ($self, string $property, $value) {
             if (is_string($value)) {
                 return new \DateTime($value);
             }
@@ -155,7 +155,7 @@ trait HasStrongTyping
             return new \DateTime('@' . (int) $value);
         };
 
-    $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
+        $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
             $enumValue     = (string) $value;
             $allowedValues = $typeDefinition['values'] ?? [];
             if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
@@ -164,7 +164,7 @@ trait HasStrongTyping
             return $enumValue;
         };
 
-    $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
+        $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
             if (is_string($value)) {
                 $decoded = json_decode($value, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -186,11 +186,11 @@ trait HasStrongTyping
             return $setValue;
         };
 
-    $blobHandler = static function ($self, string $property, $value) {
+        $blobHandler = static function ($self, string $property, $value) {
             return $value; // sin transformación
         };
 
-    $inetHandler = static function ($self, string $property, $value) {
+        $inetHandler = static function ($self, string $property, $value) {
             $inetValue = (string) $value;
             if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
@@ -237,15 +237,15 @@ trait HasStrongTyping
             return self::$dbCastHandlers;
         }
 
-    $intHandler = static function ($self, string $property, $value) {
+        $intHandler = static function ($self, string $property, $value) {
             return (int) $value;
         };
 
-    $floatHandler = static function ($self, string $property, $value) {
+        $floatHandler = static function ($self, string $property, $value) {
             return (float) $value;
         };
 
-    $stringHandler = static function ($self, string $property, $value, array $typeDefinition) {
+        $stringHandler = static function ($self, string $property, $value, array $typeDefinition) {
             $stringValue = (string) $value;
             $maxLength   = $typeDefinition['max_length'] ?? null;
             if ($maxLength && strlen($stringValue) > $maxLength) {
@@ -254,15 +254,15 @@ trait HasStrongTyping
             return $stringValue;
         };
 
-    $boolHandler = static function ($self, string $property, $value) {
+        $boolHandler = static function ($self, string $property, $value) {
             return (bool) $value ? 1 : 0;
         };
 
-    $jsonLikeHandler = static function ($self, string $property, $value) {
+        $jsonLikeHandler = static function ($self, string $property, $value) {
             return json_encode($value, JSON_UNESCAPED_UNICODE);
         };
 
-    $uuidHandler = static function ($self, string $property, $value) {
+        $uuidHandler = static function ($self, string $property, $value) {
             $uuidValue = (string) $value;
             if (!$self->isValidUuid($uuidValue)) {
                 throw new VersaORMException("Invalid UUID format for property {$property}: {$uuidValue}");
@@ -270,7 +270,7 @@ trait HasStrongTyping
             return $uuidValue;
         };
 
-    $datetimeHandler = static function ($self, string $property, $value) {
+        $datetimeHandler = static function ($self, string $property, $value) {
             if ($value instanceof \DateTime) {
                 return $value->format('Y-m-d H:i:s');
             }
@@ -280,7 +280,7 @@ trait HasStrongTyping
             return date('Y-m-d H:i:s', (int) $value);
         };
 
-    $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
+        $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
             $enumValue     = (string) $value;
             $allowedValues = $typeDefinition['values'] ?? [];
             if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
@@ -289,7 +289,7 @@ trait HasStrongTyping
             return $enumValue;
         };
 
-    $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
+        $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
             $setValue      = is_array($value) ? $value : [$value];
             $allowedValues = $typeDefinition['values'] ?? [];
             if (!empty($allowedValues)) {
@@ -302,11 +302,11 @@ trait HasStrongTyping
             return implode(',', $setValue);
         };
 
-    $blobHandler = static function ($self, string $property, $value) {
+        $blobHandler = static function ($self, string $property, $value) {
             return $value;
         };
 
-    $inetHandler = static function ($self, string $property, $value) {
+        $inetHandler = static function ($self, string $property, $value) {
             $inetValue = (string) $value;
             if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
@@ -478,7 +478,7 @@ trait HasStrongTyping
         $type           = $typeDefinition['type'] ?? 'string';
 
         $handlers = self::getDbCastHandlers();
-    $handler  = $handlers[$type] ?? static function ($self, string $property, $value) {
+        $handler  = $handlers[$type] ?? static function ($self, string $property, $value) {
             return $value; // fallback
         };
 
