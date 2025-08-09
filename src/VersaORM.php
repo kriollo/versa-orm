@@ -94,6 +94,25 @@ class VersaORM
     }
 
     /**
+     * Devuelve métricas internas del motor PDO (si está en uso).
+     * @return array<string,int|float>|null
+     */
+    public function metrics(): ?array
+    {
+        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        if ($engine !== 'pdo') {
+            return null; // Métricas actuales sólo para motor PDO
+        }
+        if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {
+            // Forzar inicialización perezosa para disponer de métricas
+            $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config, function (string $message, array $context = []): void {
+                $this->logDebug($message, $context);
+            });
+        }
+        return \VersaORM\SQL\PdoEngine::getMetrics();
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param string $action

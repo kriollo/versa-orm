@@ -1380,9 +1380,9 @@ class QueryBuilder
         $writeMethods = ['insert', 'insertGetId', 'update', 'delete', 'upsert'];
 
         if (in_array($method, $batchMethods)) {
-            // Las operaciones de lote van como 'query' con el método específico en params
-            $action           = 'query';
-            $params['method'] = $method;
+            // Ahora enviamos operaciones batch como acciones dedicadas (insertMany, updateMany, etc.)
+            $action = $method;
+            // El motor PDO ignora 'method' para acciones directas; mantenerlo no afecta.
         } elseif (in_array($method, $writeMethods)) {
             // Las operaciones de escritura normales van como su propio método
             $action = $method;
@@ -2280,7 +2280,7 @@ class QueryBuilder
     private function detectUpsertKeysForReplace(array $data): array
     {
         $keysInData = array_keys($data);
-        $keysInData = array_values(array_filter($keysInData, fn ($k) => $this->isSafeIdentifier($k)));
+        $keysInData = array_values(array_filter($keysInData, fn($k) => $this->isSafeIdentifier($k)));
 
         $pk = [];
         try {
