@@ -29,7 +29,20 @@ class VersaORM
     private string $binaryPath;
 
     /**
-     * @var array<string, mixed>
+     * Configuración principal del ORM (forma parcial esperada).
+     * @var array{
+     *   engine?:string,
+     *   driver?:string,
+     *   host?:string,
+     *   port?:int|string,
+     *   database?:string,
+     *   database_type?:string,
+     *   charset?:string,
+     *   username?:string,
+     *   password?:string,
+     *   debug?:bool,
+     *   options?:array<string,mixed>
+     * }
      */
     private array $config = [];
 
@@ -39,7 +52,8 @@ class VersaORM
     private bool $isFrozen = false;
 
     /**
-     * @var array<string, bool> Estados freeze por modelo
+     * Estados freeze por modelo (class-string => bool)
+     * @var array<string,bool>
      */
     private array $frozenModels = [];
 
@@ -55,13 +69,18 @@ class VersaORM
      *
      * @param array<string, mixed> $config Configuración de la base de datos
      */
+    /**
+     * @param array<string,mixed> $config
+     */
     public function __construct(array $config = [])
     {
         $this->setBinaryPath();
 
         // Establecer configuración primero para poder decidir sobre el motor
         if (!empty($config)) {
-            $this->config = $config;
+            /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $normalized */
+            $normalized   = $config;
+            $this->config = $normalized;
         }
 
         // Si el motor es PDO, no exigir la presencia del binario Rust
@@ -78,9 +97,12 @@ class VersaORM
      * @param array<string, mixed> $config
      * @return void
      */
+    /** @param array<string,mixed> $config */
     public function setConfig(array $config): void
     {
-        $this->config = $config;
+        /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $normalized */
+        $normalized   = $config;
+        $this->config = $normalized;
     }
 
     /**
@@ -88,6 +110,7 @@ class VersaORM
      *
      * @return array<string, mixed>
      */
+    /** @return array<string,mixed> */
     public function getConfig(): array
     {
         return $this->config;
@@ -119,6 +142,11 @@ class VersaORM
      * @param array<string, mixed> $params
      * @return mixed
      * @throws VersaORMException
+     */
+    /**
+     * Ejecutor interno que decide backend (PDO / Rust).
+     * @param array<string,mixed> $params
+     * @return mixed
      */
     private function execute(string $action, array $params)
     {
@@ -166,6 +194,7 @@ class VersaORM
 
         try {
             // Convertir configuración para compatibilidad con Rust
+            /** @var array<string,mixed> $rustConfig */
             $rustConfig = $this->config;
             if (isset($rustConfig['database_type']) && !isset($rustConfig['driver'])) {
                 $rustConfig['driver'] = $rustConfig['database_type'];
@@ -273,7 +302,10 @@ class VersaORM
 
         // Manejar errores del binario
         if (is_array($response) && isset($response['status']) && $response['status'] === 'error') {
-            $this->handleBinaryError($response, $action, $params);
+            // Construir shape mínima para satisfacer tipado esperado
+            /** @var array{status?:string,error?:array{code?:string,message?:string,details?:array<string,mixed>,sql_state?:string,query?:string,bindings?:array<int,mixed>}} $responseShape */
+            $responseShape = $response;
+            $this->handleBinaryError($responseShape, $action, $params);
         }
 
         return is_array($response) ? ($response['data'] ?? null) : null;
@@ -1180,6 +1212,10 @@ class VersaORM
      * @param array<string, mixed> $params
      * @return void
      * @throws VersaORMException
+     */
+    /**
+     * @param array{status?:string,error?:array{code?:string,message?:string,details?:array<string,mixed>,sql_state?:string,query?:string,bindings?:array<int,mixed>}} $response
+     * @param array<string,mixed> $params
      */
     private function handleBinaryError(array $response, string $action, array $params): void
     {

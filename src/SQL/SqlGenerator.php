@@ -19,9 +19,14 @@ class SqlGenerator
     public static function generate(string $action, array $params, SqlDialectInterface $dialect): array
     {
         if ($action === 'raw') {
-            $sql      = (string)($params['query'] ?? '');
-            $bindings = is_array($params['bindings'] ?? null) ? $params['bindings'] : [];
-            return [$sql, $bindings];
+            $sql = (string)($params['query'] ?? '');
+            /** @var array<int,mixed> $bindings */
+            $bindings = [];
+            if (isset($params['bindings']) && is_array($params['bindings'])) {
+                // forzamos índices numéricos consecutivos
+                $bindings = array_values($params['bindings']);
+            }
+            return [$sql, $bindings]; // tuple exacta
         }
 
         if ($action === 'query') {
@@ -50,7 +55,16 @@ class SqlGenerator
     }
 
     /**
-     * @param array<string, mixed> $params
+     * Compila SELECT soportando métodos get|first|count|exists.
+     * @param array<string, mixed> $params Forma esperada (parcial):
+     *  table: string,
+     *  select?: list<string|array{type:string,expression?:string,subquery?:string}>,
+     *  joins?: list<array{type?:string,table?:string,first_col?:string,second_col?:string,operator?:string,subquery?:string,alias?:string,subquery_bindings?:array<int,mixed>}>,
+     *  where?: list<array{type?:string,operator?:string,column?:string,first_col?:string,second_col?:string,value:mixed}>,
+     *  groupBy?: list<string>|array{type:string,expression?:string,bindings?:array<int,mixed>},
+     *  having?: list<array{column:string,operator?:string,value:mixed}>,
+     *  orderBy?: list<array{column?:string,direction?:string,type?:string,expression?:string}>,
+     *  limit?: int, offset?: int
      * @return array{0:string,1:array<int, mixed>}
      */
     private static function compileSelect(string $method, array $params, SqlDialectInterface $dialect): array
@@ -59,29 +73,62 @@ class SqlGenerator
         if ($table === '') {
             throw new VersaORMException('Missing table for SELECT');
         }
-
-        $select         = $params['select'] ?? ['*'];
+        /**
+         * Normalizamos SELECT asegurando lista tipada.
+         * @var list<string|array{type:string,expression?:string,subquery?:string}> $select
+         */
+        $select = [];
+        if (isset($params['select']) && is_array($params['select'])) {
+            $selectRaw = array_values($params['select']);
+            foreach ($selectRaw as $s) {
+                /** @var mixed $s */
+                if (is_string($s)) {
+                    $select[] = $s;
+                    continue;
+                }
+                if (is_array($s) && isset($s['type']) && is_string($s['type'])) {
+                    $select[] = [
+                        'type'       => (string)$s['type'],
+                        'expression' => isset($s['expression']) && is_string($s['expression']) ? $s['expression'] : null,
+                        'subquery'   => isset($s['subquery']) && is_string($s['subquery']) ? $s['subquery'] : null,
+                    ];
+                }
+            }
+        }
+        if ($select === []) { $select = ['*']; }
+        /** @var list<string> $selectSqlParts */
         $selectSqlParts = [];
         foreach ($select as $sel) {
+            /** @var string|array{type:string,expression?:string,subquery?:string} $sel */
             if (is_string($sel)) {
                 $selectSqlParts[] = self::compileSelectPart($sel, $dialect);
-            } elseif (is_array($sel) && isset($sel['type'])) {
-                if (($sel['type'] ?? '') === 'raw' && isset($sel['expression'])) {
-                    $selectSqlParts[] = (string)$sel['expression'];
-                } elseif (($sel['type'] ?? '') === 'subquery') {
-                    throw new VersaORMException('Subquery SELECT not supported yet in PDO engine');
-                }
+                continue;
+            }
+            $type = (string)($sel['type'] ?? '');
+            if ($type === 'raw' && isset($sel['expression'])) {
+                $selectSqlParts[] = (string)$sel['expression'];
+            } elseif ($type === 'subquery') {
+                throw new VersaORMException('Subquery SELECT not supported yet in PDO engine');
             }
         }
         if (empty($selectSqlParts)) {
             $selectSqlParts[] = '*';
         }
 
-        $sql      = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
+        $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
+        /** @var array<int,mixed> $bindings */
         $bindings = [];
 
         // JOINS (inner, left, right, cross, joinSub); FULL OUTER (limitado)
-        $joins = $params['joins'] ?? [];
+        /** @var list<array{type?:string,table?:string,first_col?:string,second_col?:string,operator?:string,subquery?:string,alias?:string,subquery_bindings?:array<int,mixed>}> $joins */
+        $joins = [];
+        if (isset($params['joins']) && is_array($params['joins'])) {
+            $joinsRaw = array_values($params['joins']);
+            foreach ($joinsRaw as $j) {
+                if (!is_array($j)) { continue; }
+                $joins[] = $j; // shape se describe en docblock
+            }
+        }
         // Manejo especial para FULL OUTER JOIN cuando es un único join simple
         $hasFullOuter = count($joins) === 1 && (strtolower((string)($joins[0]['type'] ?? '')) === 'full_outer');
         if ($hasFullOuter) {
@@ -134,45 +181,72 @@ class SqlGenerator
         }
 
         // WHERE
-        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect);
+        /** @var list<array{type?:string,operator?:string,column?:string,value:mixed}> $whereList */
+        $whereList = [];
+        if (isset($params['where']) && is_array($params['where'])) {
+            $whereRaw = array_values($params['where']);
+            foreach ($whereRaw as $w) {
+                if (is_array($w)) { $whereList[] = $w; }
+            }
+        }
+        [$whereSql, $whereBindings] = self::compileWhere($whereList, $dialect);
         if ($whereSql !== '') {
             $sql .= ' WHERE ' . $whereSql;
             $bindings = array_merge($bindings, $whereBindings);
         }
 
         // GROUP BY
+        /** @var list<string>|array{type:string,expression?:string,bindings?:array<int,mixed>} $groupBy */
         $groupBy = $params['groupBy'] ?? [];
-        if (!empty($groupBy)) {
+        if ($groupBy !== []) {
             if (is_array($groupBy) && isset($groupBy['type']) && $groupBy['type'] === 'raw') {
-                $sql .= ' GROUP BY ' . (string)($groupBy['expression'] ?? '');
-                $bindings = array_merge($bindings, is_array($groupBy['bindings'] ?? null) ? $groupBy['bindings'] : []);
-            } else {
+                $expr = isset($groupBy['expression']) ? (string)$groupBy['expression'] : '';
+                if ($expr !== '') { $sql .= ' GROUP BY ' . $expr; }
+                if (isset($groupBy['bindings']) && is_array($groupBy['bindings'])) {
+                    /** @var array<int,mixed> $gbB */
+                    $gbB = array_values($groupBy['bindings']);
+                    $bindings = array_merge($bindings, $gbB);
+                }
+            } elseif (is_array($groupBy)) {
                 $gb = [];
-                foreach ((array)$groupBy as $col) {
-                    $gb[] = self::compileSelectPart((string)$col, $dialect);
+                foreach ($groupBy as $col) {
+                    if (is_string($col) && $col !== '') {
+                        $gb[] = self::compileSelectPart($col, $dialect);
+                    }
                 }
-                if (!empty($gb)) {
-                    $sql .= ' GROUP BY ' . implode(', ', $gb);
-                }
+                if ($gb !== []) { $sql .= ' GROUP BY ' . implode(', ', $gb); }
             }
         }
 
         // HAVING (simple col op ? )
-        $having = $params['having'] ?? [];
-        if (!empty($having)) {
-            $parts = [];
-            foreach ($having as $h) {
-                $col        = (string)($h['column'] ?? '');
-                $op         = (string)($h['operator'] ?? '=');
-                $parts[]    = self::compileSelectPart($col, $dialect) . ' ' . $op . ' ?';
-                $bindings[] = $h['value'] ?? null;
+        /** @var list<array{column:string,operator?:string,value:mixed}> $having */
+        $having = [];
+        if (isset($params['having']) && is_array($params['having'])) {
+            $havingRaw = array_values($params['having']);
+            foreach ($havingRaw as $h) {
+                if (is_array($h) && isset($h['column']) && is_string($h['column'])) { $having[] = $h; }
             }
-            $sql .= ' HAVING ' . implode(' AND ', $parts);
+        }
+        if ($having !== []) {
+            /** @var list<array{0:string,1:string}> $havingParts */
+            $havingParts = [];
+            foreach ($having as $h) {
+                $col          = (string)($h['column'] ?? '');
+                $op           = (string)($h['operator'] ?? '=');
+                $havingParts[] = [$col, self::compileSelectPart($col, $dialect) . ' ' . $op . ' ?'];
+                $bindings[]   = $h['value'] ?? null;
+            }
+            $sql .= ' HAVING ' . implode(' AND ', array_map(fn($hp) => $hp[1], $havingParts));
         }
 
         // ORDER BY (single or raw)
-        $orderBy = $params['orderBy'] ?? [];
-        if (!empty($orderBy)) {
+        /** @var list<array{column?:string,direction?:string,type?:string,expression?:string}> $orderBy */
+        $orderBy = [];
+        if (isset($params['orderBy']) && is_array($params['orderBy'])) {
+            $orderRaw = array_values($params['orderBy']);
+            foreach ($orderRaw as $o) { if (is_array($o)) { $orderBy[] = $o; } }
+        }
+        if ($orderBy !== []) {
             $ob = $orderBy[0] ?? [];
             if (isset($ob['type']) && $ob['type'] === 'raw') {
                 $sql .= ' ORDER BY ' . (string)($ob['expression'] ?? '');
@@ -194,19 +268,19 @@ class SqlGenerator
         if ($method === 'count') {
             // Wrap as COUNT(*) OVER subquery
             $countSql = 'SELECT COUNT(*) as count FROM (' . $sql . ') as subq';
-            return [$countSql, $bindings];
+            return [$countSql, array_values($bindings)];
         }
         if ($method === 'exists') {
             $existsSql = 'SELECT EXISTS(' . $sql . ') as exists_flag';
-            return [$existsSql, $bindings];
+            return [$existsSql, array_values($bindings)];
         }
         if ($method === 'first') {
             // force single row
             $sqlFirst = $sql . ' ' . $dialect->compileLimitOffset(1, null);
-            return [$sqlFirst, $bindings];
+            return [$sqlFirst, array_values($bindings)];
         }
         // default get
-        return [$sql, $bindings];
+        return [$sql, array_values($bindings)];
     }
 
     /**
@@ -242,7 +316,8 @@ class SqlGenerator
         }
         $setParts = [];
         $bindings = [];
-        foreach ($data as $col => $val) {
+    /** @var array<string,mixed> $data */
+    foreach ($data as $col => $val) {
             $setParts[] = $dialect->quoteIdentifier((string)$col) . ' = ?';
             $bindings[] = $val;
         }
@@ -276,20 +351,29 @@ class SqlGenerator
     }
 
     /**
-     * @param array<int, array<string, mixed>> $wheres
+     * Compila cláusulas WHERE.
+     * @param list<array{type?:string,operator?:string,column?:string,value:mixed}> $wheres
      * @return array{0:string,1:array<int, mixed>}
      */
     private static function compileWhere(array $wheres, SqlDialectInterface $dialect): array
     {
+        /** @var list<array{0:string,1:string}> $parts */
         $parts    = [];
+        /** @var array<int,mixed> $bindings */
         $bindings = [];
         foreach ($wheres as $w) {
+            /** @var array{type?:string,operator?:string,column?:string,value?:mixed} $w */
             $type     = strtolower((string)($w['type'] ?? 'and'));
             $operator = strtoupper((string)($w['operator'] ?? '='));
-            if ($operator === 'RAW' && isset($w['value']['sql'])) {
-                $clause         = '(' . (string)$w['value']['sql'] . ')';
-                $clauseBindings = is_array($w['value']['bindings'] ?? null) ? $w['value']['bindings'] : [];
-                $parts[]        = [$type, $clause];
+            if ($operator === 'RAW' && isset($w['value']) && is_array($w['value']) && isset($w['value']['sql'])) {
+                $clause = '(' . (string)$w['value']['sql'] . ')';
+                $clauseBindings = [];
+                if (isset($w['value']['bindings']) && is_array($w['value']['bindings'])) {
+                    /** @var array<int,mixed> $tmp */
+                    $tmp            = array_values($w['value']['bindings']);
+                    $clauseBindings = $tmp;
+                }
+                $parts[] = [$type, $clause];
                 foreach ($clauseBindings as $cb) {
                     $bindings[] = $cb;
                 }
@@ -301,8 +385,8 @@ class SqlGenerator
 
             match ($operator) {
                 'IN', 'NOT IN' => (function () use ($operator, $value, $type, $column, $dialect, &$parts, &$bindings) {
-                    $vals = is_array($value) ? $value : [];
-                    if (empty($vals)) {
+                    $vals = is_array($value) ? array_values($value) : [];
+                    if ($vals === []) {
                         $parts[] = [$type, $operator === 'IN' ? '1=0' : '1=1'];
                         return;
                     }
@@ -324,7 +408,8 @@ class SqlGenerator
                 })(),
                 'EXISTS', 'NOT EXISTS' => throw new VersaORMException('EXISTS subqueries not supported yet in PDO engine'),
                 default => (function () use ($w, $type, $column, $dialect, $value, &$parts, &$bindings) {
-                    $parts[]    = [$type, self::compileSelectPart($column, $dialect) . ' ' . ($w['operator'] ?? '=') . ' ?'];
+                    $op = isset($w['operator']) ? (string)$w['operator'] : '=';
+                    $parts[]    = [$type, self::compileSelectPart($column, $dialect) . ' ' . $op . ' ?'];
                     $bindings[] = $value;
                 })(),
             };
@@ -336,12 +421,8 @@ class SqlGenerator
 
         $sql = '';
         foreach ($parts as $i => $p) {
-            [$conj, $clause] = $p;
-            if ($i === 0) {
-                $sql .= $clause;
-            } else {
-                $sql .= ' ' . strtoupper($conj) . ' ' . $clause;
-            }
+            [$conj, $clause] = $p; // $p es array{0:string,1:string}
+            $sql .= $i === 0 ? $clause : ' ' . strtoupper($conj) . ' ' . $clause;
         }
         return [$sql, $bindings];
     }
@@ -401,14 +482,15 @@ class SqlGenerator
         }
         return match ($method) {
             'insertMany' => (function () use ($params, $dialect, $table) {
-                $records = $params['records'] ?? [];
+                /** @var list<array<string,mixed>> $records */
+                $records = is_array($params['records'] ?? null) ? $params['records'] : [];
                 if (!is_array($records) || empty($records)) {
                     throw new VersaORMException('insertMany requires records');
                 }
                 $columns = array_keys($records[0]);
                 $rowPh   = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
                 $sql     = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
-                    . ' (' . implode(', ', array_map(fn ($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
+                    . ' (' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
                 $bindings  = [];
                 $valuesSql = [];
                 foreach ($records as $rec) {
@@ -431,17 +513,21 @@ class SqlGenerator
                 'where' => $params['where'] ?? [],
             ], $dialect),
             'upsertMany' => (function () use ($params, $dialect, $table) {
-                $records       = $params['records'] ?? [];
-                $unique        = $params['unique_keys'] ?? [];
-                $updateColumns = $params['update_columns'] ?? [];
+                /** @var list<array<string,mixed>> $records */
+                $records       = is_array($params['records'] ?? null) ? $params['records'] : [];
+                /** @var list<string> $unique */
+                $unique        = is_array($params['unique_keys'] ?? null) ? $params['unique_keys'] : [];
+                /** @var list<string> $updateColumns */
+                $updateColumns = is_array($params['update_columns'] ?? null) ? $params['update_columns'] : [];
                 if (!is_array($records) || empty($records)) {
                     throw new VersaORMException('upsertMany requires records');
                 }
                 $columns = array_keys($records[0]);
+                /** @var list<string> $setCols */
                 $setCols = !empty($updateColumns) ? $updateColumns : array_values(array_diff($columns, $unique));
                 $rowPh   = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
                 $sql     = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
-                    . ' (' . implode(', ', array_map(fn ($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
+                    . ' (' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
                 $bindings  = [];
                 $valuesSql = [];
                 foreach ($records as $rec) {
@@ -456,7 +542,7 @@ class SqlGenerator
                     if (empty($unique)) {
                         throw new VersaORMException('PostgreSQL upsert requires unique_keys');
                     }
-                    $conflict = '(' . implode(', ', array_map(fn ($name) => $dialect->quoteIdentifier((string)$name), $unique)) . ')';
+                    $conflict = '(' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $unique)) . ')';
                     $sets     = [];
                     foreach ($setCols as $c) {
                         $sets[] = $dialect->quoteIdentifier($c) . ' = EXCLUDED.' . $dialect->quoteIdentifier($c);

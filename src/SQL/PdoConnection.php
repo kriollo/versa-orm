@@ -9,7 +9,19 @@ use VersaORM\VersaORMException;
 
 class PdoConnection
 {
-    /** @var array<string, mixed> */
+    /**
+     * Configuración de conexión esperada (parcial):
+     * @var array{
+     *   driver?:string,
+     *   host?:string,
+     *   port?:int|string,
+     *   database?:string,
+     *   charset?:string,
+     *   username?:string,
+     *   password?:string,
+     *   options?:array{enable_foreign_keys?:bool}
+     * }
+     */
     private array $config;
     private ?PDO $pdo = null;
     /**
@@ -24,7 +36,9 @@ class PdoConnection
      */
     public function __construct(array $config)
     {
-        $this->config = $config;
+        /** @var array{driver?:string,host?:string,port?:int|string,database?:string,charset?:string,username?:string,password?:string,options?:array{enable_foreign_keys?:bool}} $normalized */
+        $normalized = $config;
+        $this->config = $normalized;
     }
 
     public function getPdo(): PDO

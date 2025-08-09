@@ -24,7 +24,18 @@ class PdoEngine
 
     // Caché en memoria (estático para compartirse entre instancias durante tests)
     private static bool $cacheEnabled = false;
-    /** @var array<string, mixed> */
+    /**
+     * Caché de consultas.
+     * Clave: hash derivado de (sql, bindings, method).
+     * Valor: resultados normalizados por método:
+     *  - get/raw: list<array<string,mixed>>
+     *  - first: array<string,mixed>|null
+     *  - count: int
+     *  - exists: bool
+     *  - otros potenciales (futuros): scalar|null
+     *
+     * @var array<string, int|bool|null|array<string,mixed>|list<array<string,mixed>>>
+     */
     private static array $queryCache = [];
     /** @var array<string, array<int, string>> Mapear tabla -> claves de caché */
     private static array $tableKeyIndex = [];
@@ -1234,13 +1245,17 @@ class PdoEngine
         if ($driver === 'mysql') {
             $stmt = $pdo->prepare('SHOW INDEX FROM ' . $this->dialect->quoteIdentifier($table));
             $stmt->execute();
+            /** @var list<array{Key_name?:string,Column_name?:string,Non_unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $out  = [];
             foreach ($rows as $r) {
+                $keyName    = isset($r['Key_name']) ? (string)$r['Key_name'] : '';
+                $columnName = isset($r['Column_name']) ? (string)$r['Column_name'] : '';
+                $nonUnique  = isset($r['Non_unique']) ? (int)$r['Non_unique'] : 1;
                 $out[] = [
-                    'name'   => (string)($r['Key_name'] ?? ''),
-                    'column' => (string)($r['Column_name'] ?? ''),
-                    'unique' => ((int)($r['Non_unique'] ?? 1)) === 0,
+                    'name'   => $keyName,
+                    'column' => $columnName,
+                    'unique' => $nonUnique === 0,
                 ];
             }
             return $out;
@@ -1248,12 +1263,15 @@ class PdoEngine
         if ($driver === 'sqlite') {
             $stmt = $pdo->prepare('PRAGMA index_list(' . $this->dialect->quoteIdentifier($table) . ')');
             $stmt->execute();
+            /** @var list<array{name?:string,unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $out  = [];
             foreach ($rows as $r) {
+                $idxName = isset($r['name']) ? (string)$r['name'] : '';
+                $isUnique = isset($r['unique']) ? ((int)$r['unique'] === 1) : false;
                 $out[] = [
-                    'name'   => (string)($r['name'] ?? ''),
-                    'unique' => ((int)($r['unique'] ?? 0)) === 1,
+                    'name'   => $idxName,
+                    'unique' => $isUnique,
                 ];
             }
             return $out;
@@ -1267,13 +1285,17 @@ class PdoEngine
             WHERE t.relkind = 'r' AND t.relname = ?";
             $stmt = $pdo->prepare($sql);
             $this->bindAndExecute($stmt, [$table]);
+            /** @var list<array{name?:string,column?:string,unique?:bool|int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $out  = [];
             foreach ($rows as $r) {
+                $idxName    = isset($r['name']) ? (string)$r['name'] : '';
+                $colName    = isset($r['column']) ? (string)$r['column'] : '';
+                $uniqueFlag = isset($r['unique']) ? (bool)$r['unique'] : false;
                 $out[] = [
-                    'name'   => (string)($r['name'] ?? ''),
-                    'column' => (string)($r['column'] ?? ''),
-                    'unique' => (bool)($r['unique'] ?? false),
+                    'name'   => $idxName,
+                    'column' => $colName,
+                    'unique' => $uniqueFlag,
                 ];
             }
             return $out;
@@ -1304,51 +1326,63 @@ class PdoEngine
      */
     private function buildSqlFromOperation(array $op): array
     {
+        $columns = isset($op['columns']) && is_array($op['columns']) ? array_values($op['columns']) : ['*'];
+        /** @var list<string> $columns */
+        $grouping = isset($op['grouping']) && is_array($op['grouping']) ? array_values($op['grouping']) : [];
+        /** @var list<string> $grouping */
+        $havingRaw = isset($op['having']) && is_array($op['having']) ? array_values($op['having']) : [];
+        /** @var list<array<string,mixed>> $havingRaw */
         $params = [
             'method'  => 'get',
-            'table'   => (string)($op['table'] ?? ''),
-            'select'  => (array)($op['columns'] ?? ['*']),
+            'table'   => isset($op['table']) ? (string)$op['table'] : '',
+            'select'  => $columns,
             'joins'   => [],
             'where'   => [],
-            'groupBy' => (array)($op['grouping'] ?? []),
-            'having'  => (array)($op['having'] ?? []),
+            'groupBy' => $grouping,
+            'having'  => $havingRaw,
             'orderBy' => [],
             'limit'   => $op['limit'] ?? null,
             'offset'  => $op['offset'] ?? null,
         ];
 
         /** @var array<int,array{join_type?:string,table?:string,local_column?:string,operator?:string,foreign_column?:string}> $joinConditions */
-        $joinConditions = (array)($op['join_conditions'] ?? []);
+        $joinConditions = isset($op['join_conditions']) && is_array($op['join_conditions']) ? array_values($op['join_conditions']) : [];
         foreach ($joinConditions as $j) {
+            if (!is_array($j)) {
+                continue;
+            }
             $params['joins'][] = [
-                'type'       => strtolower((string)($j['join_type'] ?? 'inner')),
-                'table'      => (string)($j['table'] ?? ''),
-                'first_col'  => (string)($j['local_column'] ?? ''),
-                'operator'   => (string)($j['operator'] ?? '='),
-                'second_col' => (string)($j['foreign_column'] ?? ''),
+                'type'       => strtolower(isset($j['join_type']) ? (string)$j['join_type'] : 'inner'),
+                'table'      => isset($j['table']) ? (string)$j['table'] : '',
+                'first_col'  => isset($j['local_column']) ? (string)$j['local_column'] : '',
+                'operator'   => isset($j['operator']) ? (string)$j['operator'] : '=',
+                'second_col' => isset($j['foreign_column']) ? (string)$j['foreign_column'] : '',
             ];
         }
 
         /** @var array<int,array{column?:string,operator?:string,value?:mixed,connector?:string}> $whereConditions */
-        $whereConditions = (array)($op['conditions'] ?? []);
+        $whereConditions = isset($op['conditions']) && is_array($op['conditions']) ? array_values($op['conditions']) : [];
         foreach ($whereConditions as $w) {
+            if (!is_array($w)) {
+                continue;
+            }
             $params['where'][] = [
-                'column'   => (string)($w['column'] ?? ''),
-                'operator' => (string)($w['operator'] ?? '='),
+                'column'   => isset($w['column']) ? (string)$w['column'] : '',
+                'operator' => isset($w['operator']) ? (string)$w['operator'] : '=',
                 'value'    => $w['value'] ?? null,
-                'type'     => strtolower((string)($w['connector'] ?? 'and')),
+                'type'     => strtolower(isset($w['connector']) ? (string)$w['connector'] : 'and'),
             ];
         }
 
         // ORDER BY mapping: take first ordering entry if present
         /** @var array<int,array{column?:string,direction?:string}> $ordering */
-        $ordering = (array)($op['ordering'] ?? []);
+        $ordering = isset($op['ordering']) && is_array($op['ordering']) ? array_values($op['ordering']) : [];
         if ($ordering !== []) {
             $first = $ordering[0] ?? null;
             if (is_array($first) && $first !== []) {
                 $params['orderBy'] = [[
-                    'column'    => (string)($first['column'] ?? ''),
-                    'direction' => strtoupper((string)($first['direction'] ?? 'ASC')),
+                    'column'    => isset($first['column']) ? (string)$first['column'] : '',
+                    'direction' => strtoupper(isset($first['direction']) ? (string)$first['direction'] : 'ASC'),
                 ]];
             }
         }
@@ -1390,10 +1424,12 @@ class PdoEngine
     }
 
     /**
+     * Almacena un resultado en caché con tipado explícito admitiendo los tipos usados.
+     *
      * @param array<int, mixed> $bindings
-     * @param mixed $result
+     * @param int|bool|null|array<string,mixed>|list<array<string,mixed>> $result
      */
-    private static function storeInCache(string $sql, array $bindings, string $method, $result): void
+    private static function storeInCache(string $sql, array $bindings, string $method, int|bool|null|array $result): void
     {
         $key                    = self::makeCacheKey($sql, $bindings, $method);
         self::$queryCache[$key] = $result;
