@@ -1542,10 +1542,9 @@ class QueryBuilder
         error_log('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null));
         error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
 
-        $result = $this->execute('insertMany', $params);
-    /** @var mixed $rawResult */
-    $rawResult = $this->execute('insertMany', $params);
-    return is_array($rawResult) ? $rawResult : [];
+        /** @var mixed $rawResult */
+        $rawResult = $this->execute('insertMany', $params); // ejecutar solo una vez
+        return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -1585,10 +1584,9 @@ class QueryBuilder
             'max_records' => $maxRecords,
         ];
 
-        $result = $this->execute('updateMany', $params);
-    /** @var mixed $rawResult */
-    $rawResult = $this->execute('updateMany', $params);
-    return is_array($rawResult) ? $rawResult : [];
+        /** @var mixed $rawResult */
+        $rawResult = $this->execute('updateMany', $params); // ejecutar solo una vez
+        return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -1614,10 +1612,9 @@ class QueryBuilder
             'max_records' => $maxRecords,
         ];
 
-        $result = $this->execute('deleteMany', $params);
-    /** @var mixed $rawResult */
-    $rawResult = $this->execute('deleteMany', $params);
-    return is_array($rawResult) ? $rawResult : [];
+        /** @var mixed $rawResult */
+        $rawResult = $this->execute('deleteMany', $params); // ejecutar solo una vez
+        return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -2047,9 +2044,9 @@ class QueryBuilder
         ];
 
         $result = $this->execute('upsertMany', $params);
-    /** @var mixed $rawResult */
-    $rawResult = $this->execute('upsertMany', $params);
-    return is_array($rawResult) ? $rawResult : [];
+        /** @var mixed $rawResult */
+        $rawResult = $this->execute('upsertMany', $params);
+        return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -2674,8 +2671,8 @@ class QueryBuilder
         }
 
         // Validar y preparar CTEs
-    $cteDefinitions = [];
-    foreach ($ctes as $name => $definition) {
+        $cteDefinitions = [];
+        foreach ($ctes as $name => $definition) {
             if (!$this->isSafeIdentifier($name)) {
                 throw new VersaORMException(sprintf('Invalid CTE name: %s', $name));
             }
@@ -2725,19 +2722,25 @@ class QueryBuilder
         $queryDefinitions = [];
 
         // Si es un array de queries
-    if (is_array($queries)) {
+        if (is_array($queries)) {
             foreach ($queries as $query) {
-                if (is_array($query) && isset($query['sql']) && is_string($query['sql'])) {
-                    if (!$this->isSafeRawExpression($query['sql'])) {
-                        throw new VersaORMException('Potentially unsafe SQL in UNION query');
-                    }
-                    $queryDefinitions[] = [
-                        'sql'      => $query['sql'],
-                        'bindings' => isset($query['bindings']) && is_array($query['bindings']) ? array_values($query['bindings']) : [],
-                    ];
-                } else {
+                // Requerir explícitamente ambas claves (sql y bindings) para cumplir con la expectativa del test
+                if (!is_array($query) || !isset($query['sql'], $query['bindings'])) {
                     throw new VersaORMException('Each UNION query must have sql and bindings keys');
                 }
+                if (!is_string($query['sql'])) {
+                    throw new VersaORMException('Each UNION query must have sql and bindings keys');
+                }
+                if (!is_array($query['bindings'])) {
+                    throw new VersaORMException('Each UNION query must have sql and bindings keys');
+                }
+                if (!$this->isSafeRawExpression($query['sql'])) {
+                    throw new VersaORMException('Potentially unsafe SQL in UNION query');
+                }
+                $queryDefinitions[] = [
+                    'sql'      => $query['sql'],
+                    'bindings' => array_values($query['bindings']),
+                ];
             }
         }
         // Si es un QueryBuilder o callable
@@ -2854,7 +2857,7 @@ class QueryBuilder
         $sql = 'SELECT ';
 
         // SELECT
-    if (empty($this->selects)) {
+        if (empty($this->selects)) {
             $sql .= '*';
         } else {
             /** @var list<string> $selectParts */
@@ -2890,7 +2893,7 @@ class QueryBuilder
 
         // WHERE
         $bindings = [];
-    if (!empty($this->wheres)) {
+        if (!empty($this->wheres)) {
             $sql .= ' WHERE ';
             $whereParts = [];
             foreach ($this->wheres as $where) {

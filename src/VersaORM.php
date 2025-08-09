@@ -243,10 +243,10 @@ class VersaORM
             // fwrite(STDERR, "Config antes de transformar: " . json_encode($this->config, JSON_PRETTY_PRINT) . "\n");
         }
 
-    try {
+        try {
             // Convertir configuración para compatibilidad con Rust
-        /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $rustConfig */
-        $rustConfig = $this->config; // copia superficial para normalizar claves
+            /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $rustConfig */
+            $rustConfig = $this->config; // copia superficial para normalizar claves
             if (isset($rustConfig['database_type']) && !isset($rustConfig['driver'])) {
                 $rustConfig['driver'] = $rustConfig['database_type'];
                 unset($rustConfig['database_type']);
@@ -254,12 +254,12 @@ class VersaORM
 
             $payload = json_encode(
                 [
-            // Config normalizada para el binario
-            'config'       => $rustConfig,
-            // Acción solicitada
-            'action'       => $action,
-            // Parámetros (shape depende de la acción; mantener mixed tipado)
-            'params'       => $params,
+                    // Config normalizada para el binario
+                    'config'       => $rustConfig,
+                    // Acción solicitada
+                    'action'       => $action,
+                    // Parámetros (shape depende de la acción; mantener mixed tipado)
+                    'params'       => $params,
                     'freeze_state' => [
                         'global_frozen' => $this->isFrozen,
                         'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
@@ -363,7 +363,7 @@ class VersaORM
             $this->handleBinaryError($responseShape, $action, $params);
         }
 
-    return is_array($response) ? ($response['data'] ?? null) : null;
+        return is_array($response) ? ($response['data'] ?? null) : null;
     }
 
 
@@ -389,8 +389,8 @@ class VersaORM
      */
     public function exec(string $query, array $bindings = [])
     {
-    /** @var mixed $result */
-    $result = $this->execute('raw', ['query' => $query, 'bindings' => $bindings]);
+        /** @var mixed $result */
+        $result = $this->execute('raw', ['query' => $query, 'bindings' => $bindings]);
         // Normalizar: para sentencias no-SELECT devolver null o [] (tests aceptan null/array vacío)
         if (is_int($result)) {
             return null;

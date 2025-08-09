@@ -32,8 +32,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-    /** @var string $table */
-    $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        /** @var string $table */
+        $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
 
@@ -54,8 +54,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-    /** @var string $table */
-    $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        /** @var string $table */
+        $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
 
@@ -77,8 +77,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-    /** @var string $table */
-    $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        /** @var string $table */
+        $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
         $ownerKey = $ownerKey !== null ? $ownerKey : $instance->getKeyName();
@@ -104,8 +104,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection        = new \ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-    /** @var string $table */
-    $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        /** @var string $table */
+        $table             = (string)($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance   = new $related($table, $this->getOrm());
         $relatedKey = $relatedKey !== null ? $relatedKey : $instance->getKeyName();

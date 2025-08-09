@@ -92,6 +92,29 @@ class VersaModel implements TypedModelInterface
      */
     private static ?VersaORM $ormInstance = null;
 
+    /* =============================================================
+     * Accesos simplificados solicitados: $this->orm / $this->db y
+     * self::orm() / self::db() para evitar repetir getGlobalORM().
+     * ============================================================= */
+    /** Obtiene instancia global o lanza excepción clara. */
+    public static function orm(): VersaORM
+    {
+        if (!self::$ormInstance) {
+            throw new VersaORMException('No global ORM instance set. Call VersaModel::setORM() first.');
+        }
+        return self::$ormInstance;
+    }
+    /** Alias semántico (db). */
+    public static function db(): VersaORM
+    {
+        return self::orm();
+    }
+    /** Acceso desde instancia ($this->orm / $this->db). */
+    protected function getOrmInstance(): VersaORM
+    {
+        return self::orm();
+    }
+
     /**
      * @param string $table
      * @param VersaORM|array<string, mixed>|null $orm
@@ -1320,6 +1343,10 @@ class VersaModel implements TypedModelInterface
      */
     public function __get(string $key)
     {
+        // Atajos para $this->orm y $this->db
+        if ($key === 'orm' || $key === 'db') {
+            return self::orm();
+        }
         if (isset($this->attributes[$key])) {
             $value = $this->attributes[$key];
 
