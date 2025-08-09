@@ -36,9 +36,8 @@ class PdoConnection
         $driver = strtolower((string)($this->config['driver'] ?? 'mysql'));
         try {
             $poolKey = '';
-            switch ($driver) {
-                case 'mysql':
-                case 'mariadb':
+            [$dsn, $poolKey] = match ($driver) {
+                'mysql', 'mariadb' => (function () {
                     $dsn = sprintf(
                         'mysql:host=%s;port=%s;dbname=%s;charset=%s',
                         $this->config['host'] ?? 'localhost',
@@ -47,10 +46,9 @@ class PdoConnection
                         $this->config['charset'] ?? 'utf8mb4'
                     );
                     $poolKey = 'mysql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
-                    break;
-                case 'pgsql':
-                case 'postgres':
-                case 'postgresql':
+                    return [$dsn, $poolKey];
+                })(),
+                'pgsql', 'postgres', 'postgresql' => (function () {
                     $dsn = sprintf(
                         'pgsql:host=%s;port=%s;dbname=%s',
                         $this->config['host'] ?? 'localhost',
@@ -58,16 +56,16 @@ class PdoConnection
                         $this->config['database'] ?? ''
                     );
                     $poolKey = 'pgsql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
-                    break;
-                case 'sqlite':
+                    return [$dsn, $poolKey];
+                })(),
+                'sqlite' => (function () {
                     $path = $this->config['database'] ?? ':memory:';
                     $dsn  = sprintf('sqlite:%s', $path);
-                    // No reutilizar conexión para ':memory:' para que cada instancia tenga DB fresca
                     $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
-                    break;
-                default:
-                    throw new VersaORMException('Unsupported PDO driver: ' . $driver);
-            }
+                    return [$dsn, $poolKey];
+                })(),
+                default => throw new VersaORMException('Unsupported PDO driver: ' . $driver),
+            };
 
             $username = (string)($this->config['username'] ?? '');
             $password = (string)($this->config['password'] ?? '');
