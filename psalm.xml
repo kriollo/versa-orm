@@ -7,8 +7,8 @@
     phpVersion="8.3"
     cacheDirectory="vendor/cache/psalm"
     ensureArrayStringOffsetsExist="true"
-    findUnusedVariablesAndParams="false"
-    findUnusedCode="false"
+    findUnusedVariablesAndParams="true"
+    findUnusedCode="true"
     strictBinaryOperands="true"
     reportMixedIssues="true"
 >
@@ -34,11 +34,12 @@
         <ForbiddenCode errorLevel="suppress" />
 
         <!-- Allow mixed types in some cases -->
-        <MixedAssignment errorLevel="info" />
-        <MixedArgument errorLevel="info" />
-        <MixedArrayOffset errorLevel="info" />
-        <MixedMethodCall errorLevel="info" />
-        <MixedPropertyFetch errorLevel="info" />
+    <!-- Escalamos mixed para forzar limpieza completa -->
+    <MixedAssignment errorLevel="error" />
+    <MixedArgument errorLevel="error" />
+    <MixedArrayOffset errorLevel="error" />
+    <MixedMethodCall errorLevel="error" />
+    <MixedPropertyFetch errorLevel="error" />
 
         <!-- Strict type checking -->
     <RedundantCondition errorLevel="info" />
