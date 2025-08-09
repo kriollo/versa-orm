@@ -56,7 +56,7 @@
     </style>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200" :class="{ 'dark': darkMode }" x-data="{ darkMode: (localStorage.getItem('darkMode') === null ? window.matchMedia('(prefers-color-scheme: dark)').matches : localStorage.getItem('darkMode') === 'true') }" x-init="$nextTick(() => { document.documentElement.classList.toggle('dark', darkMode); $watch('darkMode', val => { localStorage.setItem('darkMode', val); document.documentElement.classList.toggle('dark', val); }); })">
+<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200" :class="{ 'dark': darkMode }" x-data="{ darkMode: (localStorage.getItem('darkMode') === null ? window.matchMedia('(prefers-color-scheme: dark)').matches : localStorage.getItem('darkMode') === 'true') }" x-init="$nextTick(() => { document.documentElement.classList.toggle('dark', darkMode); $watch('darkMode', val => { localStorage.setItem('darkMode', val); document.documentElement.classList.toggle('dark', val); }); })">
     <!-- Navegación -->
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode); document.documentElement.classList.toggle('dark', darkMode)" x-bind:aria-pressed="darkMode" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" aria-label="Cambiar tema" title="Cambiar tema">
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode); document.documentElement.classList.toggle('dark', darkMode); setTimeout(() => location.reload(), 0)" x-bind:aria-pressed="darkMode" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" aria-label="Cambiar tema" title="Cambiar tema">
                         <i x-show="!darkMode" x-cloak class="fas fa-moon"></i>
                         <i x-show="darkMode" x-cloak class="fas fa-sun"></i>
                     </button>
@@ -105,7 +105,7 @@
     <?php endif; ?>
 
     <!-- Contenido principal -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors duration-200">
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors duration-200 w-full">
         <?= $content ?>
     </main>
 
