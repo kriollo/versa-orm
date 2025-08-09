@@ -95,7 +95,9 @@ class SqlGenerator
                 }
             }
         }
-        if ($select === []) { $select = ['*']; }
+        if ($select === []) {
+            $select = ['*'];
+        }
         /** @var list<string> $selectSqlParts */
         $selectSqlParts = [];
         foreach ($select as $sel) {
@@ -125,7 +127,9 @@ class SqlGenerator
         if (isset($params['joins']) && is_array($params['joins'])) {
             $joinsRaw = array_values($params['joins']);
             foreach ($joinsRaw as $j) {
-                if (!is_array($j)) { continue; }
+                if (!is_array($j)) {
+                    continue;
+                }
                 $joins[] = $j; // shape se describe en docblock
             }
         }
@@ -186,7 +190,9 @@ class SqlGenerator
         if (isset($params['where']) && is_array($params['where'])) {
             $whereRaw = array_values($params['where']);
             foreach ($whereRaw as $w) {
-                if (is_array($w)) { $whereList[] = $w; }
+                if (is_array($w)) {
+                    $whereList[] = $w;
+                }
             }
         }
         [$whereSql, $whereBindings] = self::compileWhere($whereList, $dialect);
@@ -201,7 +207,9 @@ class SqlGenerator
         if ($groupBy !== []) {
             if (is_array($groupBy) && isset($groupBy['type']) && $groupBy['type'] === 'raw') {
                 $expr = isset($groupBy['expression']) ? (string)$groupBy['expression'] : '';
-                if ($expr !== '') { $sql .= ' GROUP BY ' . $expr; }
+                if ($expr !== '') {
+                    $sql .= ' GROUP BY ' . $expr;
+                }
                 if (isset($groupBy['bindings']) && is_array($groupBy['bindings'])) {
                     /** @var array<int,mixed> $gbB */
                     $gbB = array_values($groupBy['bindings']);
@@ -214,7 +222,9 @@ class SqlGenerator
                         $gb[] = self::compileSelectPart($col, $dialect);
                     }
                 }
-                if ($gb !== []) { $sql .= ' GROUP BY ' . implode(', ', $gb); }
+                if ($gb !== []) {
+                    $sql .= ' GROUP BY ' . implode(', ', $gb);
+                }
             }
         }
 
@@ -224,7 +234,9 @@ class SqlGenerator
         if (isset($params['having']) && is_array($params['having'])) {
             $havingRaw = array_values($params['having']);
             foreach ($havingRaw as $h) {
-                if (is_array($h) && isset($h['column']) && is_string($h['column'])) { $having[] = $h; }
+                if (is_array($h) && isset($h['column']) && is_string($h['column'])) {
+                    $having[] = $h;
+                }
             }
         }
         if ($having !== []) {
@@ -244,7 +256,11 @@ class SqlGenerator
         $orderBy = [];
         if (isset($params['orderBy']) && is_array($params['orderBy'])) {
             $orderRaw = array_values($params['orderBy']);
-            foreach ($orderRaw as $o) { if (is_array($o)) { $orderBy[] = $o; } }
+            foreach ($orderRaw as $o) {
+                if (is_array($o)) {
+                    $orderBy[] = $o;
+                }
+            }
         }
         if ($orderBy !== []) {
             $ob = $orderBy[0] ?? [];
@@ -316,8 +332,8 @@ class SqlGenerator
         }
         $setParts = [];
         $bindings = [];
-    /** @var array<string,mixed> $data */
-    foreach ($data as $col => $val) {
+        /** @var array<string,mixed> $data */
+        foreach ($data as $col => $val) {
             $setParts[] = $dialect->quoteIdentifier((string)$col) . ' = ?';
             $bindings[] = $val;
         }

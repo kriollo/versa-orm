@@ -35,7 +35,10 @@ class VersaModel implements TypedModelInterface
      */
     public static function getPropertyTypes(): array
     {
-        return self::traitGetPropertyTypes();
+        // Usar late static binding para que static::class dentro del trait
+        // refleje correctamente la subclase (p.ej. TestTypedModel) y pueda
+        // descubrir su método protected static definePropertyTypes().
+        return static::traitGetPropertyTypes();
     }
 
     /**
