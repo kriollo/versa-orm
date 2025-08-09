@@ -24,7 +24,30 @@ use VersaORM\Traits\HasStrongTyping;
 class VersaModel implements TypedModelInterface
 {
     use HasRelationships;
-    use HasStrongTyping;
+    use HasStrongTyping {
+        HasStrongTyping::getPropertyTypes as private traitGetPropertyTypes;
+        HasStrongTyping::castToPhpType as private traitCastToPhpType;
+    }
+
+    /**
+     * Wrapper explícito para garantizar que el cargador vea la implementación.
+     * @return array<string,array<string,mixed>>
+     */
+    public static function getPropertyTypes(): array
+    {
+        return self::traitGetPropertyTypes();
+    }
+
+    /**
+     * Wrapper explícito para el método de casting a PHP.
+     * @param string $property
+     * @param mixed $value
+     * @return mixed
+     */
+    public function castToPhpType(string $property, $value)
+    {
+        return $this->traitCastToPhpType($property, $value);
+    }
 
     protected string $table;
 
