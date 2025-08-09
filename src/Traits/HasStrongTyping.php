@@ -12,6 +12,12 @@ use VersaORM\VersaORMException;
  */
 trait HasStrongTyping
 {
+    /**
+     * REGLA DE EXCEPCIONES UNIFICADA
+     * - Para propiedades "core" (actualmente 'uuid', 'created_at', etc. que intervienen en tests de integridad) se lanza VersaORMException con mensaje contextual.
+     * - Para validaciones genéricas ad-hoc (p.ej. uuid_field en pruebas de mapeo de tipos) se lanza InvalidArgumentException breve.
+     * Esto permite a las suites diferenciar entre errores de modelo (capturables por la capa ORM) y errores de datos genéricos.
+     */
     // Cache interno por clase consumidora (evita acceder propiedades estáticas del trait directamente)
     private static function &propertyTypeRegistry(): array
     {
