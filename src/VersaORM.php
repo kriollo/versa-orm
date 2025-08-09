@@ -119,7 +119,9 @@ class VersaORM
             try {
                 // Reutilizar la misma instancia para mantener la conexión viva
                 if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {
-                    $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config);
+                    $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config, function (string $message, array $context = []): void {
+                        $this->logDebug($message, $context);
+                    });
                 }
                 return $this->pdoEngine->execute($action, $params);
             } catch (\Throwable $e) {
@@ -339,11 +341,12 @@ class VersaORM
     {
         $this->validateFreezeOperation('createTable');
         $driver      = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q           = fn (string $id) => $this->quoteIdent($id, $driver);
+        $q           = fn(string $id) => $this->quoteIdent($id, $driver);
         $ifNotExists = !empty($options['if_not_exists']);
 
-        $colSql = [];
-        $pkCols = [];
+        $colSql      = [];
+        $pkCols      = [];
+        $sqliteInlinePkUsed = false; // Para SQLite, usamos PK inline solo cuando es INTEGER PRIMARY KEY autoincremental
         foreach ($columns as $col) {
             $name = (string)($col['name'] ?? '');
             $type = (string)($col['type'] ?? 'VARCHAR(255)');
@@ -369,9 +372,10 @@ class VersaORM
             }
 
             $parts = [$q($name) . ' ' . $colType];
-            if ($primary && ($driver === 'sqlite')) {
+            if ($primary && $driver === 'sqlite' && $auto) {
                 // En SQLite la PK autoincremental debe ser exactamente INTEGER PRIMARY KEY
-                $parts = [$q($name) . ' INTEGER PRIMARY KEY'];
+                $parts              = [$q($name) . ' INTEGER PRIMARY KEY'];
+                $sqliteInlinePkUsed = true;
             } else {
                 if (!$nullable) {
                     $parts[] = 'NOT NULL';
@@ -394,7 +398,8 @@ class VersaORM
             $pk     = (array)$options['primary_key'];
             $pkCols = array_map($q, $pk);
         }
-        if (!empty($pkCols) && $driver !== 'sqlite') {
+        // Para SQLite, permitimos PRIMARY KEY a nivel de tabla cuando no se usó inline (INTEGER PRIMARY KEY)
+        if (!empty($pkCols) && ($driver !== 'sqlite' || ($driver === 'sqlite' && !$sqliteInlinePkUsed))) {
             $colSql[] = 'PRIMARY KEY (' . implode(', ', $pkCols) . ')';
         }
 
@@ -458,7 +463,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('alterTable');
         $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn (string $id) => $this->quoteIdent($id, $driver);
+        $q      = fn(string $id) => $this->quoteIdent($id, $driver);
 
         $tableIdent = $q($table);
         $addCols    = (array)($changes['add'] ?? []);
@@ -629,7 +634,7 @@ class VersaORM
      */
     private function createIndexPortable(string $table, array $idx, string $driver): void
     {
-        $q    = fn (string $id) => $this->quoteIdent($id, $driver);
+        $q    = fn(string $id) => $this->quoteIdent($id, $driver);
         $name = (string)($idx['name'] ?? '');
         $cols = (array)($idx['columns'] ?? []);
         if ($name === '' || empty($cols)) {
@@ -676,7 +681,7 @@ class VersaORM
     /** Elimina índice portable según driver. */
     private function dropIndexPortable(string $table, string $indexName, string $driver): void
     {
-        $q     = fn (string $id) => $this->quoteIdent($id, $driver);
+        $q     = fn(string $id) => $this->quoteIdent($id, $driver);
         $iname = $q($indexName);
         if ($driver === 'mysql' || $driver === 'mariadb') {
             $this->exec('ALTER TABLE ' . $q($table) . ' DROP INDEX ' . $iname);
@@ -694,7 +699,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('dropTable');
         $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn (string $id) => $this->quoteIdent($id, $driver);
+        $q      = fn(string $id) => $this->quoteIdent($id, $driver);
         $sql    = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
         $this->exec($sql);
     }
@@ -706,7 +711,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('alterTable');
         $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn (string $id) => $this->quoteIdent($id, $driver);
+        $q      = fn(string $id) => $this->quoteIdent($id, $driver);
         if ($driver === 'mysql' || $driver === 'mariadb') {
             $sql = 'RENAME TABLE ' . $q($from) . ' TO ' . $q($to);
         } else {
