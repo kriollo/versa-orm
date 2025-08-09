@@ -272,8 +272,8 @@ class PdoEngine
             $driver = $this->dialect->getName();
             $opType = (string)($params['operation_type'] ?? '');
             try {
-                switch ($opType) {
-                    case 'window_function': {
+                $result = match ($opType) {
+                    'window_function' => (function () use ($params, $pdo) {
                             // SELECT existente + columna window
                             $table     = (string)($params['table'] ?? '');
                             $function  = strtolower((string)($params['function'] ?? 'row_number'));
@@ -368,8 +368,8 @@ class PdoEngine
                                 // Incluir el SQL generado para facilitar el diagnóstico de columnas/alias
                                 throw new \Exception('advanced_sql window_function failed. SQL: ' . $sql . ' | Bindings: ' . json_encode($baseBindings) . ' | Error: ' . $e->getMessage(), 0, $e);
                             }
-                        }
-                    case 'cte': {
+                        })(),
+                    'cte' => (function () use ($params, $pdo) {
                             $ctes        = (array)($params['ctes'] ?? []);
                             $withParts   = [];
                             $bindings    = [];
@@ -400,10 +400,8 @@ class PdoEngine
                             $stmt        = $pdo->prepare($sql);
                             $this->bindAndExecute($stmt, array_merge($bindings, $mainBindings));
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                        }
-                    case 'union':
-                    case 'intersect':
-                    case 'except': {
+                        })(),
+                    'union', 'intersect', 'except' => (function () use ($params, $pdo, $opType) {
                             $queries = (array)($params['queries'] ?? []);
                             $all     = (bool)($params['all'] ?? false);
                             if ($opType === 'union') {
@@ -430,8 +428,8 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $this->bindAndExecute($stmt, $bindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                        }
-                    case 'json_operation': {
+                        })(),
+                    'json_operation' => (function () use ($params, $pdo, $driver) {
                             $table  = (string)($params['table'] ?? '');
                             $col    = (string)($params['column'] ?? '');
                             $op     = (string)($params['json_operation'] ?? 'extract');
@@ -502,8 +500,8 @@ class PdoEngine
                             $stmt   = $pdo->prepare($sql);
                             $this->bindAndExecute($stmt, array_merge($bind, $baseBindings));
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                        }
-                    case 'full_text_search': {
+                        })(),
+                    'full_text_search' => (function () use ($params, $pdo, $driver) {
                             $table   = (string)($params['table'] ?? '');
                             $cols    = (array)($params['columns'] ?? []);
                             $term    = (string)($params['search_term'] ?? '');
@@ -549,8 +547,8 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $this->bindAndExecute($stmt, array_fill(0, count($likeParts), '%' . $term . '%'));
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                        }
-                    case 'array_operations': {
+                        })(),
+                    'array_operations' => (function () use ($params, $pdo, $driver) {
                             // Soporte mínimo para arrays en Postgres
                             if ($driver !== 'postgres') {
                                 throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: array_operations');
@@ -585,8 +583,8 @@ class PdoEngine
                             $stmt = $pdo->prepare($sql);
                             $this->bindAndExecute($stmt, $bindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                        }
-                    case 'advanced_aggregation': {
+                        })(),
+                    'advanced_aggregation' => (function () use ($params, $pdo, $driver) {
                             $type    = (string)($params['aggregation_type'] ?? '');
                             $table   = (string)($params['table'] ?? '');
                             $column  = (string)($params['column'] ?? '');
@@ -617,8 +615,8 @@ class PdoEngine
                             $sql  = 'SELECT ' . $func . '(' . ($column ?: '*') . ') AS agg FROM ' . $this->dialect->quoteIdentifier($table);
                             $stmt = $pdo->query($sql);
                             return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
-                        }
-                    case 'get_driver_capabilities': {
+                        })(),
+                    'get_driver_capabilities' => (function () use ($pdo, $driver) {
                             $features = [
                                 'window_functions' => in_array($driver, ['mysql', 'postgres', 'sqlite'], true),
                                 'json_support'     => true,
@@ -629,24 +627,22 @@ class PdoEngine
                                 'version'  => $pdo->getAttribute(PDO::ATTR_SERVER_VERSION) ?: null,
                                 'features' => $features,
                             ];
-                        }
-                    case 'get_driver_limits': {
+                        })(),
+                    'get_driver_limits' => (function () {
                             // Valores aproximados comunes o seguros
                             return [
                                 'max_columns'    => 2000,
                                 'max_sql_length' => 1000000,
                                 'max_page_size'  => 4096,
                             ];
-                        }
-                    case 'optimize_query': {
-                            return [
-                                'optimization_suggestions' => [],
-                                'generated_sql'            => (string)($params['query'] ?? ''),
-                            ];
-                        }
-                    default:
-                        throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: ' . $opType);
-                }
+                        })(),
+                    'optimize_query' => [
+                        'optimization_suggestions' => [],
+                        'generated_sql'            => (string)($params['query'] ?? ''),
+                    ],
+                    default => throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: ' . $opType),
+                };
+                return $result;
             } catch (\Throwable $e) {
                 throw new VersaORMException('PDO advanced_sql failed: ' . $e->getMessage(), 'PDO_ADVANCED_SQL_FAILED');
             }
