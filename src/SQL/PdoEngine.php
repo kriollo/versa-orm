@@ -170,121 +170,13 @@ class PdoEngine
         // no como method dentro de 'query', así que las manejamos aquí primero.
         // ==============================
         if (in_array($normalizedAction, ['insertmany', 'updatemany', 'deletemany', 'upsertmany'], true)) {
-            // Reconstruimos parámetros esperados similares al bloque anterior basado en method
-            switch ($normalizedAction) {
-                case 'insertmany': {
-                        $records   = $params['records'] ?? [];
-                        $batchSize = (int)($params['batch_size'] ?? 1000);
-                        if (!is_array($records) || empty($records)) {
-                            return [
-                                'status'            => 'success',
-                                'total_inserted'    => 0,
-                                'batches_processed' => 0,
-                                'batch_size'        => $batchSize,
-                            ];
-                        }
-                        $total         = count($records);
-                        $batches       = $batchSize > 0 ? (int)ceil($total / $batchSize) : 1;
-                        $totalInserted = 0;
-                        for ($i = 0; $i < $total; $i += $batchSize) {
-                            $chunk = array_slice($records, $i, $batchSize);
-                            [$chunkSql, $chunkBindings] = \VersaORM\SQL\SqlGenerator::generate('query', [
-                                'method'  => 'insertMany',
-                                'table'   => $params['table'] ?? '',
-                                'records' => $chunk,
-                            ], $this->dialect);
-                            $st = $pdo->prepare($chunkSql);
-                            $st->execute($chunkBindings);
-                            $totalInserted += count($chunk);
-                        }
-                        self::clearAllCache();
-                        return [
-                            'status'            => 'success',
-                            'total_inserted'    => $totalInserted,
-                            'batches_processed' => $batches,
-                            'batch_size'        => $batchSize,
-                        ];
-                    }
-                case 'updatemany': {
-                        $max = (int)($params['max_records'] ?? 10000);
-                        [$countSql, $countBindings] = \VersaORM\SQL\SqlGenerator::generate('query', [
-                            'method' => 'count',
-                            'table'  => $params['table'] ?? '',
-                            'where'  => $params['where'] ?? [],
-                        ], $this->dialect);
-                        $stc = $pdo->prepare($countSql);
-                        $stc->execute($countBindings);
-                        $row      = $stc->fetch(\PDO::FETCH_ASSOC) ?: [];
-                        $toAffect = (int)($row['count'] ?? 0);
-                        if ($toAffect > $max) {
-                            throw new VersaORMException(sprintf('The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.', $toAffect, $max), 'BATCH_LIMIT_EXCEEDED');
-                        }
-                        // Generar SQL updateMany reutilizando SqlGenerator
-                        [$sqlU, $bindU] = \VersaORM\SQL\SqlGenerator::generate('query', [
-                            'method' => 'updateMany',
-                            'table'  => $params['table'] ?? '',
-                            'where'  => $params['where'] ?? [],
-                            'data'   => $params['data'] ?? [],
-                        ], $this->dialect);
-                        $stmt = $pdo->prepare($sqlU);
-                        $this->bindAndExecute($stmt, $bindU);
-                        $affected = (int)$stmt->rowCount();
-                        self::clearAllCache();
-                        return [
-                            'status'        => 'success',
-                            'rows_affected' => $affected,
-                            'message'       => $affected === 0 ? 'No records matched the WHERE conditions' : 'Update completed',
-                        ];
-                    }
-                case 'deletemany': {
-                        $max = (int)($params['max_records'] ?? 10000);
-                        [$countSql, $countBindings] = \VersaORM\SQL\SqlGenerator::generate('query', [
-                            'method' => 'count',
-                            'table'  => $params['table'] ?? '',
-                            'where'  => $params['where'] ?? [],
-                        ], $this->dialect);
-                        $stc = $pdo->prepare($countSql);
-                        $stc->execute($countBindings);
-                        $row      = $stc->fetch(\PDO::FETCH_ASSOC) ?: [];
-                        $toAffect = (int)($row['count'] ?? 0);
-                        if ($toAffect > $max) {
-                            throw new VersaORMException(sprintf('The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.', $toAffect, $max), 'BATCH_LIMIT_EXCEEDED');
-                        }
-                        [$sqlD, $bindD] = \VersaORM\SQL\SqlGenerator::generate('query', [
-                            'method' => 'deleteMany',
-                            'table'  => $params['table'] ?? '',
-                            'where'  => $params['where'] ?? [],
-                        ], $this->dialect);
-                        $stmt = $pdo->prepare($sqlD);
-                        $this->bindAndExecute($stmt, $bindD);
-                        $affected = (int)$stmt->rowCount();
-                        self::clearAllCache();
-                        return [
-                            'status'        => 'success',
-                            'rows_affected' => $affected,
-                            'message'       => $affected === 0 ? 'No records matched the WHERE conditions' : 'Delete completed',
-                        ];
-                    }
-                case 'upsertmany': {
-                        [$sqlUp, $bindUp] = \VersaORM\SQL\SqlGenerator::generate('query', [
-                            'method'        => 'upsertMany',
-                            'table'         => $params['table'] ?? '',
-                            'records'       => $params['records'] ?? [],
-                            'unique_keys'   => $params['unique_keys'] ?? [],
-                            'update_columns' => $params['update_columns'] ?? [],
-                        ], $this->dialect);
-                        $stmt = $pdo->prepare($sqlUp);
-                        $this->bindAndExecute($stmt, $bindUp);
-                        $affected = (int)$stmt->rowCount();
-                        self::clearAllCache();
-                        return [
-                            'status'          => 'success',
-                            'total_processed' => is_array($params['records'] ?? null) ? count($params['records']) : $affected,
-                            'unique_keys'     => $params['unique_keys'] ?? [],
-                            'update_columns'  => $params['update_columns'] ?? [],
-                        ];
-                    }
-            }
+            return match ($normalizedAction) {
+                'insertmany' => $this->handleInsertMany($params, $pdo),
+                'updatemany' => $this->handleUpdateMany($params, $pdo),
+                'deletemany' => $this->handleDeleteMany($params, $pdo),
+                'upsertmany' => $this->handleUpsertMany($params, $pdo),
+                default      => throw new VersaORMException('Unsupported batch action: ' . $normalizedAction),
+            };
         }
         // Acción especial 'schema' para introspección mínima (MySQL/SQLite/Postgres)
         if ($action === 'schema') {
@@ -352,36 +244,27 @@ class PdoEngine
         // Gestión de caché (enable/disable/clear/status/invalidate)
         if ($action === 'cache') {
             $cacheAction = strtolower((string)($params['action'] ?? ''));
-            switch ($cacheAction) {
-                case 'enable':
-                    self::$cacheEnabled = true;
-                    return 'cache enabled';
-                case 'disable':
-                    self::$cacheEnabled = false;
-                    return 'cache disabled';
-                case 'clear':
-                    self::$queryCache    = [];
-                    self::$tableKeyIndex = [];
-                    return 'cache cleared';
-                case 'status':
-                    return (int)count(self::$queryCache);
-                case 'invalidate': {
-                        $table   = isset($params['table']) ? (string)$params['table'] : '';
-                        $pattern = isset($params['pattern']) ? (string)$params['pattern'] : '';
-                        if ($table === '' && $pattern === '') {
-                            throw new VersaORMException('Cache invalidation requires a table or pattern parameter.', 'INVALID_CACHE_INVALIDATE');
-                        }
-                        if ($table !== '') {
-                            self::invalidateCacheForTable($table);
-                        }
-                        if ($pattern !== '') {
-                            self::invalidateCacheByPattern($pattern);
-                        }
-                        return 'cache invalidated';
+            return match ($cacheAction) {
+                'enable' => (function () { self::$cacheEnabled = true; return 'cache enabled'; })(),
+                'disable' => (function () { self::$cacheEnabled = false; return 'cache disabled'; })(),
+                'clear' => (function () { self::$queryCache = []; self::$tableKeyIndex = []; return 'cache cleared'; })(),
+                'status' => (int)count(self::$queryCache),
+                'invalidate' => (function () use ($params) {
+                    $table = isset($params['table']) ? (string)$params['table'] : '';
+                    $pattern = isset($params['pattern']) ? (string)$params['pattern'] : '';
+                    if ($table === '' && $pattern === '') {
+                        throw new VersaORMException('Cache invalidation requires a table or pattern parameter.', 'INVALID_CACHE_INVALIDATE');
                     }
-                default:
-                    throw new VersaORMException('PDO engine does not support this cache action: ' . $cacheAction, 'UNSUPPORTED_CACHE_ACTION');
-            }
+                    if ($table !== '') {
+                        self::invalidateCacheForTable($table);
+                    }
+                    if ($pattern !== '') {
+                        self::invalidateCacheByPattern($pattern);
+                    }
+                    return 'cache invalidated';
+                })(),
+                default => throw new VersaORMException('PDO engine does not support this cache action: ' . $cacheAction, 'UNSUPPORTED_CACHE_ACTION'),
+            };
         }
 
         // Soporte mínimo para operaciones avanzadas cuando el motor es PDO
@@ -1040,6 +923,153 @@ class PdoEngine
         }
 
         throw new VersaORMException('Unsupported PDO action: ' . $action);
+    }
+
+    /**
+     * Maneja inserciones batch (insertMany) como acción directa.
+     * @param array<string,mixed> $params
+     * @return array<string,mixed>
+     */
+    private function handleInsertMany(array $params, PDO $pdo): array
+    {
+        $records   = $params['records'] ?? [];
+        $batchSize = (int)($params['batch_size'] ?? 1000);
+        if (!is_array($records) || empty($records)) {
+            return [
+                'status'            => 'success',
+                'total_inserted'    => 0,
+                'batches_processed' => 0,
+                'batch_size'        => $batchSize,
+            ];
+        }
+        $total         = count($records);
+        $batches       = $batchSize > 0 ? (int)ceil($total / $batchSize) : 1;
+        $totalInserted = 0;
+        for ($i = 0; $i < $total; $i += $batchSize) {
+            $chunk = array_slice($records, $i, $batchSize);
+            [$chunkSql, $chunkBindings] = SqlGenerator::generate('query', [
+                'method'  => 'insertMany',
+                'table'   => $params['table'] ?? '',
+                'records' => $chunk,
+            ], $this->dialect);
+            $st = $pdo->prepare($chunkSql);
+            $st->execute($chunkBindings);
+            $totalInserted += count($chunk);
+        }
+        self::clearAllCache();
+        return [
+            'status'            => 'success',
+            'total_inserted'    => $totalInserted,
+            'batches_processed' => $batches,
+            'batch_size'        => $batchSize,
+        ];
+    }
+
+    /**
+     * Maneja actualizaciones batch (updateMany) directas.
+     * @param array<string,mixed> $params
+     * @return array<string,mixed>
+     */
+    private function handleUpdateMany(array $params, PDO $pdo): array
+    {
+        $max = (int)($params['max_records'] ?? 10000);
+        [$countSql, $countBindings] = SqlGenerator::generate('query', [
+            'method' => 'count',
+            'table'  => $params['table'] ?? '',
+            'where'  => $params['where'] ?? [],
+        ], $this->dialect);
+        $stc = $pdo->prepare($countSql);
+        $stc->execute($countBindings);
+        $row      = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
+        $toAffect = (int)($row['count'] ?? 0);
+        if ($toAffect > $max) {
+            throw new VersaORMException(sprintf(
+                'The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.',
+                $toAffect,
+                $max
+            ), 'BATCH_LIMIT_EXCEEDED');
+        }
+        [$sqlU, $bindU] = SqlGenerator::generate('query', [
+            'method' => 'updateMany',
+            'table'  => $params['table'] ?? '',
+            'where'  => $params['where'] ?? [],
+            'data'   => $params['data'] ?? [],
+        ], $this->dialect);
+        $stmt = $pdo->prepare($sqlU);
+        $this->bindAndExecute($stmt, $bindU);
+        $affected = (int)$stmt->rowCount();
+        self::clearAllCache();
+        return [
+            'status'        => 'success',
+            'rows_affected' => $affected,
+            'message'       => $affected === 0 ? 'No records matched the WHERE conditions' : 'Update completed',
+        ];
+    }
+
+    /**
+     * Maneja eliminaciones batch (deleteMany) directas.
+     * @param array<string,mixed> $params
+     * @return array<string,mixed>
+     */
+    private function handleDeleteMany(array $params, PDO $pdo): array
+    {
+        $max = (int)($params['max_records'] ?? 10000);
+        [$countSql, $countBindings] = SqlGenerator::generate('query', [
+            'method' => 'count',
+            'table'  => $params['table'] ?? '',
+            'where'  => $params['where'] ?? [],
+        ], $this->dialect);
+        $stc = $pdo->prepare($countSql);
+        $stc->execute($countBindings);
+        $row      = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
+        $toAffect = (int)($row['count'] ?? 0);
+        if ($toAffect > $max) {
+            throw new VersaORMException(sprintf(
+                'The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.',
+                $toAffect,
+                $max
+            ), 'BATCH_LIMIT_EXCEEDED');
+        }
+        [$sqlD, $bindD] = SqlGenerator::generate('query', [
+            'method' => 'deleteMany',
+            'table'  => $params['table'] ?? '',
+            'where'  => $params['where'] ?? [],
+        ], $this->dialect);
+        $stmt = $pdo->prepare($sqlD);
+        $this->bindAndExecute($stmt, $bindD);
+        $affected = (int)$stmt->rowCount();
+        self::clearAllCache();
+        return [
+            'status'        => 'success',
+            'rows_affected' => $affected,
+            'message'       => $affected === 0 ? 'No records matched the WHERE conditions' : 'Delete completed',
+        ];
+    }
+
+    /**
+     * Maneja upserts batch (upsertMany) directos.
+     * @param array<string,mixed> $params
+     * @return array<string,mixed>
+     */
+    private function handleUpsertMany(array $params, PDO $pdo): array
+    {
+        [$sqlUp, $bindUp] = SqlGenerator::generate('query', [
+            'method'         => 'upsertMany',
+            'table'          => $params['table'] ?? '',
+            'records'        => $params['records'] ?? [],
+            'unique_keys'    => $params['unique_keys'] ?? [],
+            'update_columns' => $params['update_columns'] ?? [],
+        ], $this->dialect);
+        $stmt = $pdo->prepare($sqlUp);
+        $this->bindAndExecute($stmt, $bindUp);
+        $affected = (int)$stmt->rowCount();
+        self::clearAllCache();
+        return [
+            'status'          => 'success',
+            'total_processed' => is_array($params['records'] ?? null) ? count($params['records']) : $affected,
+            'unique_keys'     => $params['unique_keys'] ?? [],
+            'update_columns'  => $params['update_columns'] ?? [],
+        ];
     }
 
     /**
