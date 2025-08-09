@@ -164,7 +164,7 @@ class PdoEngine
             // Ejecutar sólo la primera operación como fallback
             [$sql, $bindings] = $this->buildSqlFromOperation($operations[0]);
             $stmt             = $pdo->prepare($sql);
-            $stmt->execute($bindings);
+            $this->bindAndExecute($stmt, $bindings);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             return is_array($rows) ? $rows : [];
         }
@@ -299,7 +299,7 @@ class PdoEngine
                             }
                             try {
                                 $stmt = $pdo->prepare($sql);
-                                $stmt->execute($baseBindings);
+                                $this->bindAndExecute($stmt, $baseBindings);
                                 return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                             } catch (\Throwable $e) {
                                 // Incluir el SQL generado para facilitar el diagnóstico de columnas/alias
@@ -325,7 +325,7 @@ class PdoEngine
                             }
                             $sql  = 'WITH ' . implode(', ', $withParts) . ' ' . $main;
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute(array_merge($bindings, $mainBindings));
+                            $this->bindAndExecute($stmt, array_merge($bindings, $mainBindings));
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'union':
@@ -355,7 +355,7 @@ class PdoEngine
                             }
                             $sql  = implode($glue, $parts);
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $this->bindAndExecute($stmt, $bindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'json_operation': {
@@ -391,7 +391,7 @@ class PdoEngine
                             $sql      = is_string($tmpSql) ? $tmpSql : (string)$baseSql;
                             $bindings = array_merge($bind, $baseBindings);
                             $stmt     = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $this->bindAndExecute($stmt, $bindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'full_text_search': {
@@ -428,7 +428,7 @@ class PdoEngine
                                 $rankExpr = $rank ? ', ts_rank(' . $colExpr . ', plainto_tsquery(?)) AS rank' : '';
                                 $sql      = 'SELECT *' . $rankExpr . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $colExpr . ' ' . $operator . ' plainto_tsquery(?)';
                                 $stmt     = $pdo->prepare($sql);
-                                $stmt->execute($rank ? [$term, $term] : [$term]);
+                                $this->bindAndExecute($stmt, $rank ? [$term, $term] : [$term]);
                                 return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                             }
                             // Fallback: LIKE en otros drivers
@@ -438,7 +438,7 @@ class PdoEngine
                             }
                             $sql  = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . implode(' OR ', $likeParts);
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute(array_fill(0, count($likeParts), '%' . $term . '%'));
+                            $this->bindAndExecute($stmt, array_fill(0, count($likeParts), '%' . $term . '%'));
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'array_operations': {
@@ -474,7 +474,7 @@ class PdoEngine
                             }
                             $sql  = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $whereSql;
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $this->bindAndExecute($stmt, $bindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
                     case 'advanced_aggregation': {
@@ -598,7 +598,7 @@ class PdoEngine
                             }
                             // Ejecutar el update real
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $this->bindAndExecute($stmt, $bindings);
                             $affected = (int)$stmt->rowCount();
                             // Invalidate all cache on write to keep it simple and correct
                             self::clearAllCache();
@@ -624,7 +624,7 @@ class PdoEngine
                                 throw new \Exception(sprintf('The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.', $toAffect, $max));
                             }
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $this->bindAndExecute($stmt, $bindings);
                             $affected = (int)$stmt->rowCount();
                             self::clearAllCache();
                             return [
@@ -635,7 +635,7 @@ class PdoEngine
                         }
                     case 'upsertMany': {
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute($bindings);
+                            $this->bindAndExecute($stmt, $bindings);
                             $affected = (int)$stmt->rowCount();
                             self::clearAllCache();
                             return [
@@ -736,7 +736,7 @@ class PdoEngine
             // Detectar si es una sentencia de escritura antes de intentar fetchAll
             $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER)\b/i', $sql) === 1;
             $stmt    = $pdo->prepare($sql);
-            $stmt->execute($bindings);
+            $this->bindAndExecute($stmt, $bindings);
             if ($isWrite) {
                 // Invalidar todo el caché en operaciones de escritura para mantener coherencia
                 self::clearAllCache();
@@ -754,7 +754,7 @@ class PdoEngine
         if ($action === 'insert') {
             $stmt = $pdo->prepare($sql);
             try {
-                $stmt->execute($bindings);
+                $this->bindAndExecute($stmt, $bindings);
             } catch (\Throwable $e) {
                 throw new VersaORMException('SQL failed (insert): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
             }
@@ -765,7 +765,7 @@ class PdoEngine
         if ($action === 'insertGetId') {
             $stmt = $pdo->prepare($sql);
             try {
-                $stmt->execute($bindings);
+                $this->bindAndExecute($stmt, $bindings);
             } catch (\Throwable $e) {
                 throw new VersaORMException('SQL failed (insertGetId): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
             }
@@ -776,7 +776,7 @@ class PdoEngine
         if ($action === 'update' || $action === 'delete') {
             $stmt = $pdo->prepare($sql);
             try {
-                $stmt->execute($bindings);
+                $this->bindAndExecute($stmt, $bindings);
             } catch (\Throwable $e) {
                 throw new VersaORMException('SQL failed (' . $action . '): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
             }
@@ -867,7 +867,7 @@ class PdoEngine
             $sql = 'SELECT column_name, data_type, is_nullable, column_default, character_maximum_length ' .
                 'FROM information_schema.columns WHERE table_name = ?';
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$table]);
+            $this->bindAndExecute($stmt, [$table]);
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $result  = [];
             foreach ($columns as $col) {
@@ -928,7 +928,7 @@ class PdoEngine
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
             WHERE t.relkind = 'r' AND t.relname = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$table]);
+            $this->bindAndExecute($stmt, [$table]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $out  = [];
             foreach ($rows as $r) {
