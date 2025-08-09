@@ -80,6 +80,7 @@ class VersaModel implements TypedModelInterface
      */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     /**
+     * Atributos dinámicos del modelo cargados desde la base de datos o asignados.
      * @var array<string, mixed>
      */
     private array $attributes = [];
@@ -278,6 +279,16 @@ class VersaModel implements TypedModelInterface
 
         try {
             // Obtener el esquema de validación desde Rust
+            /**
+             * @var array<string, array{
+             *   is_required: bool,
+             *   is_nullable: bool,
+             *   is_auto_increment: bool,
+             *   max_length: int|string|null,
+             *   data_type: string,
+             *   validation_rules: array<int,string>
+             * }> $validationSchema
+             */
             $validationSchema = $this->getTableValidationSchema();
 
             if (empty($validationSchema)) {
@@ -350,6 +361,15 @@ class VersaModel implements TypedModelInterface
      */
     protected function processSchemaToValidationRules(array $schemaColumns): array
     {
+        /** @var array<string, array{
+         *   is_required: bool,
+         *   is_nullable: bool,
+         *   is_auto_increment: bool,
+         *   max_length: int|string|null,
+         *   data_type: string,
+         *   validation_rules: array<int,string>
+         * }> $validationSchema
+         */
         $validationSchema = [];
 
         foreach ($schemaColumns as $column) {
@@ -357,11 +377,11 @@ class VersaModel implements TypedModelInterface
                 continue;
             }
 
-            $columnName      = $column['column_name'];
-            $dataType        = strtolower($column['data_type'] ?? '');
-            $isNullable      = ($column['is_nullable'] ?? 'YES') === 'YES';
+            $columnName      = (string)$column['column_name'];
+            $dataType        = strtolower((string)($column['data_type'] ?? ''));
+            $isNullable      = ((string)($column['is_nullable'] ?? 'YES')) === 'YES';
             $maxLength       = $column['character_maximum_length'] ?? null;
-            $isAutoIncrement = ($column['extra'] ?? '') === 'auto_increment';
+            $isAutoIncrement = ((string)($column['extra'] ?? '')) === 'auto_increment';
             $isRequired      = !$isNullable && ($column['column_default'] === null) && !$isAutoIncrement;
 
             $validationRules = [];
@@ -392,9 +412,9 @@ class VersaModel implements TypedModelInterface
             }
 
             $validationSchema[$columnName] = [
-                'is_required'       => $isRequired,
-                'is_nullable'       => $isNullable,
-                'is_auto_increment' => $isAutoIncrement,
+                'is_required'       => (bool)$isRequired,
+                'is_nullable'       => (bool)$isNullable,
+                'is_auto_increment' => (bool)$isAutoIncrement,
                 'max_length'        => $maxLength,
                 'data_type'         => $dataType,
                 'validation_rules'  => $validationRules,

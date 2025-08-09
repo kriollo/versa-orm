@@ -40,11 +40,39 @@ class QueryBuilder
      */
     private array $selects = [];
     /**
-     * @var array<int, mixed>
+     * Lista de condiciones WHERE.
+     * Puede incluir entradas RAW con claves adicionales 'sql' y 'bindings'.
+     *
+     * Shape base: {column, operator, value, type}
+     * Opcionales: sql?:string, bindings?:array<int,mixed>, subquery?:true
+     *
+     * @var list<array{
+     *   column:string,
+     *   operator:string,
+     *   value:mixed,
+     *   type:'and'|'or',
+     *   sql?:string,
+     *   bindings?:array<int,mixed>,
+     *   subquery?:true
+     * }>
      */
     private array $wheres = [];
     /**
-     * @var array<int, mixed>
+     * Lista de JOINs.
+     * Admite joins simples y subqueries con alias y bindings.
+     *
+     * @var list<array{
+     *   type:string,
+     *   table:string,
+     *   first?:string,
+     *   first_col?:string,
+     *   operator:string,
+     *   second?:string,
+     *   second_col?:string,
+     *   alias?:string,
+     *   subquery?:string,
+     *   subquery_bindings?:array<int,mixed>
+     * }>
      */
     private array $joins = [];
     /**
@@ -58,13 +86,35 @@ class QueryBuilder
      */
     private array $groupBy = [];
     /**
-     * @var array<int, mixed>
+     * Lista de condiciones HAVING.
+     * Shape: {column, operator, value, connector}
+     * Se admite lista vacía o no vacía.
+     *
+     * @var list<array{column:string, operator:string, value:mixed, connector:string}>
      */
     private array $having = [];
     /**
-     * @var array<int, array<string, mixed>>
+     * Relaciones eager a cargar.
+     * Campos opcionales según tipo de relación.
+     * @var list<array{
+     *   name:string,
+     *   type?:non-empty-string,
+     *   related_table?:string,
+     *   foreign_key?:string,
+     *   local_key?:string,
+     *   owner_key?:string,
+     *   pivot_table?:string,
+     *   foreign_pivot_key?:string,
+     *   related_pivot_key?:string,
+     *   parent_key?:string,
+     *   related_key?:string
+     * }>
      */
-    private array $with         = [];
+    private array $with = [];
+    /**
+     * Clase de modelo asociada (FQCN) o null.
+     * @var class-string<VersaModel>|null
+     */
     private ?string $modelClass = null;
     /**
      * @var array<int, array<string, mixed>>
@@ -85,7 +135,12 @@ class QueryBuilder
             throw new VersaORMException(sprintf('Invalid or malicious table name detected (error): %s', $table));
         }
         $this->table      = $table;
-        $this->modelClass = $modelClass;
+        if (is_string($modelClass) && $modelClass !== '' && class_exists($modelClass) && is_a($modelClass, VersaModel::class, true)) {
+            /** @var class-string<VersaModel> $modelClass */
+            $this->modelClass = $modelClass;
+        } else {
+            $this->modelClass = null;
+        }
     }
 
     /**
@@ -370,14 +425,9 @@ class QueryBuilder
      * @param mixed $value
      * @return self
      */
-    public function where(string $column, string $operator, $value): self
+    public function where(string $column, string $operator, mixed $value): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => $operator,
-            'value'    => $value,
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry($column, $operator, $value, 'and');
         return $this;
     }
 
@@ -389,14 +439,9 @@ class QueryBuilder
      * @param mixed $value
      * @return self
      */
-    public function orWhere(string $column, string $operator, $value): self
+    public function orWhere(string $column, string $operator, mixed $value): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => $operator,
-            'value'    => $value,
-            'type'     => 'or',
-        ];
+        $this->addWhereEntry($column, $operator, $value, 'or');
         return $this;
     }
 
@@ -409,12 +454,7 @@ class QueryBuilder
      */
     public function whereIn(string $column, array $values): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => 'IN',
-            'value'    => $values,
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry($column, 'IN', $values, 'and');
         return $this;
     }
 
@@ -427,12 +467,7 @@ class QueryBuilder
      */
     public function whereNotIn(string $column, array $values): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => 'NOT IN',
-            'value'    => $values,
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry($column, 'NOT IN', $values, 'and');
         return $this;
     }
 
@@ -444,12 +479,7 @@ class QueryBuilder
      */
     public function whereNull(string $column): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => 'IS NULL',
-            'value'    => null,
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry($column, 'IS NULL', null, 'and');
         return $this;
     }
 
@@ -461,31 +491,20 @@ class QueryBuilder
      */
     public function whereNotNull(string $column): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => 'IS NOT NULL',
-            'value'    => null,
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry($column, 'IS NOT NULL', null, 'and');
         return $this;
     }
 
     /**
      * Añade una cláusula WHERE BETWEEN.
-     *
      * @param string $column
      * @param mixed $min
      * @param mixed $max
      * @return self
      */
-    public function whereBetween(string $column, $min, $max): self
+    public function whereBetween(string $column, mixed $min, mixed $max): self
     {
-        $this->wheres[] = [
-            'column'   => $column,
-            'operator' => 'BETWEEN',
-            'value'    => [$min, $max],
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry($column, 'BETWEEN', [$min, $max], 'and');
         return $this;
     }
 
@@ -501,14 +520,26 @@ class QueryBuilder
         if (!$this->isSafeRawExpression($sql)) {
             throw new VersaORMException('Potentially unsafe SQL expression detected in whereRaw');
         }
-
-        $this->wheres[] = [
-            'column'   => '',
-            'operator' => 'RAW',
-            'value'    => ['sql' => $sql, 'bindings' => $bindings],
-            'type'     => 'and',
-        ];
+        $this->addWhereEntry('', 'RAW', ['sql' => $sql, 'bindings' => $bindings], 'and');
         return $this;
+    }
+
+    /**
+     * Agrega entrada tipada al array de wheres para mantener shape estática.
+     *
+     * @param string $column
+     * @param string $operator
+     * @param mixed $value
+     * @param 'and'|'or' $type
+     */
+    private function addWhereEntry(string $column, string $operator, mixed $value, string $type): void
+    {
+        $this->wheres[] = [
+            'column'   => $column,
+            'operator' => $operator,
+            'value'    => $value,
+            'type'     => $type === 'or' ? 'or' : 'and',
+        ];
     }
 
     /**
@@ -635,12 +666,13 @@ class QueryBuilder
      * @param mixed $value
      * @return self
      */
-    public function having(string $column, string $operator, $value): self
+    public function having(string $column, string $operator, mixed $value): self
     {
         $this->having[] = [
-            'column'   => $column,
-            'operator' => $operator,
-            'value'    => $value,
+            'column'    => $column,
+            'operator'  => $operator,
+            'value'     => $value,
+            'connector' => 'AND',
         ];
         return $this;
     }
@@ -1112,32 +1144,30 @@ class QueryBuilder
      */
     public function findAll(): array
     {
-        $results = $this->execute('get');
-        $models  = [];
-        if (!is_array($results)) {
+        $raw = $this->execute('get');
+        $models = [];
+        if (!is_array($raw)) {
             return $models;
         }
-        $modelClass = $this->modelClass ?: VersaModel::class;
-        foreach ($results as $result) {
-            if (is_array($result)) {
-                /**
-                 * @var VersaModel $model
-                 */
-                $model = new $modelClass($this->table, $this->orm);
-                assert($model instanceof VersaModel);
-                $model->loadInstance($result);
-                // Eager load relations if requested
-                if (!empty($this->with)) {
-                    foreach ($this->with as $relation) {
-                        $name = is_array($relation) ? ($relation['name'] ?? null) : (string)$relation;
-                        if (is_string($name) && $name !== '') {
-                            // This will also cache the relation inside the model
-                            $model->getRelationValue($name);
-                        }
+        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+            ? $this->modelClass
+            : VersaModel::class;
+        /** @var class-string<VersaModel> $modelClass */
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $model = new $modelClass($this->table, $this->orm);
+            $model->loadInstance($row);
+            if ($this->with !== []) {
+                foreach ($this->with as $relation) {
+                    $name = $relation['name'] ?? null;
+                    if (is_string($name) && $name !== '') {
+                        $model->getRelationValue($name);
                     }
                 }
-                $models[] = $model;
             }
+            $models[] = $model;
         }
         return $models;
     }
@@ -1187,27 +1217,25 @@ class QueryBuilder
      */
     public function findOne(): ?VersaModel
     {
-        $result = $this->execute('first');
-        if (is_array($result) && !empty($result)) {
-            $modelClass = $this->modelClass ?: VersaModel::class;
-            /**
-             * @var VersaModel $model
-             */
-            $model = new $modelClass($this->table, $this->orm);
-            assert($model instanceof VersaModel);
-            $model->loadInstance($result);
-            // Eager load relations if requested
-            if (!empty($this->with)) {
-                foreach ($this->with as $relation) {
-                    $name = is_array($relation) ? ($relation['name'] ?? null) : (string)$relation;
-                    if (is_string($name) && $name !== '') {
-                        $model->getRelationValue($name);
-                    }
+        $row = $this->execute('first');
+        if (!is_array($row) || $row === []) {
+            return null;
+        }
+        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+            ? $this->modelClass
+            : VersaModel::class;
+        /** @var class-string<VersaModel> $modelClass */
+        $model = new $modelClass($this->table, $this->orm);
+        $model->loadInstance($row);
+        if ($this->with !== []) {
+            foreach ($this->with as $relation) {
+                $name = $relation['name'] ?? null;
+                if (is_string($name) && $name !== '') {
+                    $model->getRelationValue($name);
                 }
             }
-            return $model;
         }
-        return null;
+        return $model;
     }
 
     /**
@@ -1234,18 +1262,17 @@ class QueryBuilder
      */
     public function first(): ?VersaModel
     {
-        $result = $this->execute('first');
-        if (is_array($result) && !empty($result)) {
-            $modelClass = $this->modelClass ?: VersaModel::class;
-            /**
-             * @var VersaModel $model
-             */
-            $model = new $modelClass($this->table, $this->orm);
-            assert($model instanceof VersaModel);
-            $model->loadInstance($result);
-            return $model;
+        $row = $this->execute('first');
+        if (!is_array($row) || $row === []) {
+            return null;
         }
-        return null;
+        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+            ? $this->modelClass
+            : VersaModel::class;
+        /** @var class-string<VersaModel> $modelClass */
+        $model = new $modelClass($this->table, $this->orm);
+        $model->loadInstance($row);
+        return $model;
     }
 
     /**
@@ -2280,7 +2307,7 @@ class QueryBuilder
     private function detectUpsertKeysForReplace(array $data): array
     {
         $keysInData = array_keys($data);
-        $keysInData = array_values(array_filter($keysInData, fn ($k) => $this->isSafeIdentifier($k)));
+        $keysInData = array_values(array_filter($keysInData, fn($k) => $this->isSafeIdentifier($k)));
 
         $pk = [];
         try {
@@ -2403,7 +2430,8 @@ class QueryBuilder
                 'column'    => $where['column'] ?? '',
                 'operator'  => $where['operator'] ?? '=',
                 'value'     => $where['value'] ?? null,
-                'connector' => $where['connector'] ?? 'AND',
+                // Los WHERE almacenan 'type' ('and'|'or'); mapearlo a 'AND'/'OR'
+                'connector' => isset($where['type']) && $where['type'] === 'or' ? 'OR' : 'AND',
             ];
         }
         return $conditions;

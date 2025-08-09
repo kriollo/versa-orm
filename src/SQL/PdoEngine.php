@@ -30,15 +30,25 @@ class PdoEngine
     private static array $tableKeyIndex = [];
 
     // Métricas internas simples (estáticas para compartirse en tests)
-    /** @var array<string,int|float> */
+    /**
+     * @var array{
+     *  queries:int,
+     *  writes:int,
+     *  transactions:int,
+     *  cache_hits:int,
+     *  cache_misses:int,
+     *  last_query_ms:float,
+     *  total_query_ms:float
+     * }
+     */
     private static array $metrics = [
-        'queries'           => 0,    // Consultas realmente ejecutadas contra la BD
-        'writes'            => 0,    // INSERT/UPDATE/DELETE
-        'transactions'      => 0,    // BEGIN
-        'cache_hits'        => 0,
-        'cache_misses'      => 0,
-        'last_query_ms'     => 0.0,
-        'total_query_ms'    => 0.0,
+        'queries'        => 0,    // Consultas realmente ejecutadas contra la BD
+        'writes'         => 0,    // INSERT/UPDATE/DELETE
+        'transactions'   => 0,    // BEGIN
+        'cache_hits'     => 0,
+        'cache_misses'   => 0,
+        'last_query_ms'  => 0.0,
+        'total_query_ms' => 0.0,
     ];
 
     /**
@@ -67,24 +77,24 @@ class PdoEngine
     /** Registra ejecución de consulta */
     private static function recordQuery(bool $isWrite, float $elapsedMs): void
     {
-        self::$metrics['queries']++;
+        self::$metrics['queries'] = self::$metrics['queries'] + 1;
         if ($isWrite) {
-            self::$metrics['writes']++;
+            self::$metrics['writes'] = self::$metrics['writes'] + 1;
         }
-        self::$metrics['last_query_ms'] = $elapsedMs;
-        self::$metrics['total_query_ms'] += $elapsedMs;
+        self::$metrics['last_query_ms']  = $elapsedMs;
+        self::$metrics['total_query_ms'] = self::$metrics['total_query_ms'] + $elapsedMs;
     }
 
     /** Registra hit de caché */
     private static function recordCacheHit(): void
     {
-        self::$metrics['cache_hits']++;
+        self::$metrics['cache_hits'] = self::$metrics['cache_hits'] + 1;
     }
 
     /** Registra miss de caché */
     private static function recordCacheMiss(): void
     {
-        self::$metrics['cache_misses']++;
+        self::$metrics['cache_misses'] = self::$metrics['cache_misses'] + 1;
     }
 
     /**
@@ -150,6 +160,19 @@ class PdoEngine
             return;
         }
         $stmt->execute();
+    }
+
+    /**
+     * Ejecuta un SQL con bindings y devuelve siempre una lista normalizada de filas asociativas.
+     * @param array<int, mixed> $bindings
+     * @return list<array<string, mixed>>
+     */
+    private function executeFetchAll(PDO $pdo, string $sql, array $bindings = []): array
+    {
+        $stmt = $pdo->prepare($sql);
+        $this->bindAndExecute($stmt, $bindings);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return is_array($rows) ? array_values($rows) : [];
     }
 
     private function detectDialect(): SqlDialectInterface
@@ -294,13 +317,47 @@ class PdoEngine
                 $result = match ($opType) {
                     'window_function' => (function () use ($params, $pdo) {
                         // SELECT existente + columna window
-                        $table     = (string)($params['table'] ?? '');
-                        $function  = strtolower((string)($params['function'] ?? 'row_number'));
-                        $column    = (string)($params['column'] ?? '*');
-                        $alias     = (string)($params['alias'] ?? 'window_result');
-                        $partition = (array)($params['partition_by'] ?? []);
-                        $orderBy   = (array)($params['order_by'] ?? []);
-                        $wheres    = (array)($params['wheres'] ?? []);
+                        $table    = (string)($params['table'] ?? '');
+                        $function = strtolower((string)($params['function'] ?? 'row_number'));
+                        $column   = (string)($params['column'] ?? '*');
+                        $alias    = (string)($params['alias'] ?? 'window_result');
+                        /** @var list<string> $partition */
+                        $partition = [];
+                        if (isset($params['partition_by']) && is_array($params['partition_by'])) {
+                            foreach ($params['partition_by'] as $p) {
+                                if (is_string($p) && $p !== '') {
+                                    $partition[] = $p;
+                                }
+                            }
+                        }
+                        /** @var list<array{column:string,direction?:string}> $orderBy */
+                        $orderBy = [];
+                        if (isset($params['order_by']) && is_array($params['order_by'])) {
+                            foreach ($params['order_by'] as $o) {
+                                if (is_array($o) && isset($o['column']) && is_string($o['column'])) {
+                                    $entry = ['column' => (string)$o['column']];
+                                    if (isset($o['direction']) && is_string($o['direction'])) {
+                                        $entry['direction'] = $o['direction'];
+                                    }
+                                    $orderBy[] = $entry; // forma tipada
+                                }
+                            }
+                        }
+                        /** @var list<array{type:string,field:string,operator:string,value:mixed,boolean?:string}> $wheres */
+                        $wheres = [];
+                        if (isset($params['wheres']) && is_array($params['wheres'])) {
+                            foreach ($params['wheres'] as $w) {
+                                if (is_array($w) && isset($w['field'], $w['operator'])) {
+                                    $wheres[] = [
+                                        'type'     => (string)($w['type'] ?? 'basic'),
+                                        'field'    => (string)$w['field'],
+                                        'operator' => (string)$w['operator'],
+                                        'value'    => $w['value'] ?? null,
+                                        'boolean'  => (string)($w['boolean'] ?? 'and'),
+                                    ];
+                                }
+                            }
+                        }
                         // Mapear función a SQL
                         $funcSql = match ($function) {
                             'row_number', 'rank', 'dense_rank' => strtoupper($function) . '()',
@@ -389,8 +446,17 @@ class PdoEngine
                         }
                     })(),
                     'cte' => (function () use ($params, $pdo) {
-                        $ctes        = (array)($params['ctes'] ?? []);
+                        /** @var list<array{name?:string,query?:string,columns?:list<string>,recursive?:bool,bindings?:array<int,mixed>}> $ctes */
+                        $ctes = [];
+                        if (isset($params['ctes']) && is_array($params['ctes'])) {
+                            foreach ($params['ctes'] as $c) {
+                                if (is_array($c)) {
+                                    $ctes[] = $c; // normalizamos sólo a array
+                                }
+                            }
+                        }
                         $withParts   = [];
+                        /** @var array<int,mixed> $bindings */
                         $bindings    = [];
                         $isRecursive = false;
                         foreach ($ctes as $c) {
@@ -398,7 +464,7 @@ class PdoEngine
                             $querySql = (string)($c['query'] ?? '');
                             $colsDef  = '';
                             if (!empty($c['columns']) && is_array($c['columns'])) {
-                                $quotedCols = array_map(fn ($col) => $this->dialect->quoteIdentifier((string)$col), $c['columns']);
+                                $quotedCols = array_map(fn($col) => $this->dialect->quoteIdentifier((string)$col), $c['columns']);
                                 $colsDef    = ' (' . implode(', ', $quotedCols) . ')';
                             }
                             if (!empty($c['recursive'])) {
@@ -421,7 +487,15 @@ class PdoEngine
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
                     'union', 'intersect', 'except' => (function () use ($params, $pdo, $opType) {
-                        $queries = (array)($params['queries'] ?? []);
+                        /** @var list<array{sql?:string,bindings?:array<int,mixed>}> $queries */
+                        $queries = [];
+                        if (isset($params['queries']) && is_array($params['queries'])) {
+                            foreach ($params['queries'] as $q) {
+                                if (is_array($q)) {
+                                    $queries[] = $q;
+                                }
+                            }
+                        }
                         $all     = (bool)($params['all'] ?? false);
                         if ($opType === 'union') {
                             $glue = $all ? ' UNION ALL ' : ' UNION ';
@@ -453,7 +527,21 @@ class PdoEngine
                         $col      = (string)($params['column'] ?? '');
                         $op       = (string)($params['json_operation'] ?? 'extract');
                         $path     = (string)($params['path'] ?? '');
-                        $wheres   = (array)($params['wheres'] ?? []);
+                        /** @var list<array{type:string,field:string,operator:string,value:mixed,boolean?:string}> $wheres */
+                        $wheres = [];
+                        if (isset($params['wheres']) && is_array($params['wheres'])) {
+                            foreach ($params['wheres'] as $w) {
+                                if (is_array($w) && isset($w['field'], $w['operator'])) {
+                                    $wheres[] = [
+                                        'type'     => (string)($w['type'] ?? 'basic'),
+                                        'field'    => (string)$w['field'],
+                                        'operator' => (string)$w['operator'],
+                                        'value'    => $w['value'] ?? null,
+                                        'boolean'  => (string)($w['boolean'] ?? 'and'),
+                                    ];
+                                }
+                            }
+                        }
                         $bind     = [];
                         $jsonExpr = '';
 
@@ -472,14 +560,14 @@ class PdoEngine
                                 // Convertir col->a->b->>c en JSON_EXTRACT(col,'$.a.b.c') y opcional JSON_UNQUOTE
                                 $segments = preg_split('/->>?/', $path) ?: [];
                                 // Filtrar segmentos vacíos o que repitan el nombre de la columna
-                                $segments = array_values(array_filter($segments, static fn ($s): bool => is_string($s) && $s !== '' && $s !== $col));
+                                $segments = array_values(array_filter($segments, static fn($s): bool => is_string($s) && $s !== '' && $s !== $col));
                                 // Si el path original incluía col al inicio, removerlo
                                 if (!empty($segments) && $segments[0] === $col) {
                                     array_shift($segments);
                                 }
                                 $jsonPath = '$';
                                 if (!empty($segments)) {
-                                    $jsonPath .= '.' . implode('.', array_map(fn ($s) => trim($s, "'\"` "), $segments));
+                                    $jsonPath .= '.' . implode('.', array_map(fn($s) => trim($s, "'\"` "), $segments));
                                 }
                                 $core     = "JSON_EXTRACT($col, ?)";
                                 $jsonExpr = ($unquote ? 'JSON_UNQUOTE(' . $core . ')' : $core) . ' AS value';
@@ -497,7 +585,7 @@ class PdoEngine
                         } elseif ($driver === 'postgres') {
                             $segments = array_filter(
                                 explode('.', trim($path, '$.')),
-                                static fn ($s): bool => $s !== ''
+                                static fn($s): bool => $s !== ''
                             );
                             $expr     = $col;
                             foreach ($segments as $idx => $s) {
@@ -526,7 +614,15 @@ class PdoEngine
                     })(),
                     'full_text_search' => (function () use ($params, $pdo, $driver) {
                         $table   = (string)($params['table'] ?? '');
-                        $cols    = (array)($params['columns'] ?? []);
+                        /** @var list<string> $cols */
+                        $cols = [];
+                        if (isset($params['columns']) && is_array($params['columns'])) {
+                            foreach ($params['columns'] as $c) {
+                                if (is_string($c) && $c !== '') {
+                                    $cols[] = $c;
+                                }
+                            }
+                        }
                         $term    = (string)($params['search_term'] ?? '');
                         $options = (array)($params['options'] ?? []);
                         if ($driver === 'mysql') {
@@ -550,7 +646,7 @@ class PdoEngine
                             $language = (string)($options['language'] ?? 'english');
                             $operator = (string)($options['operator'] ?? '@@');
                             $rank     = !empty($options['rank']);
-                            $colExpr  = implode(' || \" \" || ', array_map(fn ($c) => "to_tsvector('" . $language . "', " . $c . ')', $cols));
+                            $colExpr  = implode(' || \" \" || ', array_map(fn($c) => "to_tsvector('" . $language . "', " . $c . ')', $cols));
                             // Si solo una columna y parece tsvector, usarla directa
                             if (count($cols) === 1 && preg_match('/vector$/i', (string)$cols[0]) === 1) {
                                 $colExpr = (string)$cols[0];
@@ -611,7 +707,15 @@ class PdoEngine
                         $type    = (string)($params['aggregation_type'] ?? '');
                         $table   = (string)($params['table'] ?? '');
                         $column  = (string)($params['column'] ?? '');
-                        $groupBy = (array)($params['groupBy'] ?? []);
+                        /** @var list<string> $groupBy */
+                        $groupBy = [];
+                        if (isset($params['groupBy']) && is_array($params['groupBy'])) {
+                            foreach ($params['groupBy'] as $g) {
+                                if (is_string($g) && $g !== '') {
+                                    $groupBy[] = $g;
+                                }
+                            }
+                        }
                         if ($type === 'group_concat') {
                             $sep      = (string)($params['options']['separator'] ?? ',');
                             $order    = (string)($params['options']['order_by'] ?? '');
@@ -1000,7 +1104,7 @@ class PdoEngine
     }
 
     /**
-     * @return array<int, array<string, string|null>>
+     * @return list<array{table_name:string|null}>
      */
     private function fetchTables(PDO $pdo): array
     {
@@ -1016,17 +1120,39 @@ class PdoEngine
         }
         if ($driver === 'sqlite') {
             $stmt = $pdo->query("SELECT name as table_name FROM sqlite_master WHERE type='table'");
-            return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            $out  = [];
+            foreach ($rows as $r) {
+                if (is_array($r)) {
+                    $out[] = ['table_name' => isset($r['table_name']) ? (string)$r['table_name'] : null];
+                }
+            }
+            return $out;
         }
         if ($driver === 'postgres') {
             $stmt = $pdo->query("SELECT tablename AS table_name FROM pg_tables WHERE schemaname='public'");
-            return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            $out  = [];
+            foreach ($rows as $r) {
+                if (is_array($r)) {
+                    $out[] = ['table_name' => isset($r['table_name']) ? (string)$r['table_name'] : null];
+                }
+            }
+            return $out;
         }
         return [];
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<array{
+     *   column_name:string,
+     *   name:string,
+     *   data_type:string,
+     *   is_nullable:string,
+     *   column_default:string|null,
+     *   character_maximum_length:int|null,
+     *   extra:string
+     * }>
      */
     private function fetchColumns(PDO $pdo, string $table): array
     {
@@ -1100,7 +1226,7 @@ class PdoEngine
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<array{name:string,column?:string,unique:bool}>
      */
     private function fetchIndexes(PDO $pdo, string $table): array
     {
@@ -1163,7 +1289,17 @@ class PdoEngine
      * @return array{0:string,1:array<int,mixed>}
      */
     /**
-     * @param array<string, mixed> $op
+     * @param array{
+     *   table?:string,
+     *   columns?:array<int,string>,
+     *   join_conditions?:array<int,array{join_type?:string,table?:string,local_column?:string,operator?:string,foreign_column?:string}>,
+     *   conditions?:array<int,array{column?:string,operator?:string,value?:mixed,connector?:string}>,
+     *   grouping?:array<int,string>,
+     *   having?:array<int,array<string,mixed>>,
+     *   ordering?:array<int,array{column?:string,direction?:string}>,
+     *   limit?:int|null,
+     *   offset?:int|null
+     * } $op
      * @return array{0:string,1:array<int, mixed>}
      */
     private function buildSqlFromOperation(array $op): array
@@ -1181,7 +1317,9 @@ class PdoEngine
             'offset'  => $op['offset'] ?? null,
         ];
 
-        foreach ((array)($op['join_conditions'] ?? []) as $j) {
+        /** @var array<int,array{join_type?:string,table?:string,local_column?:string,operator?:string,foreign_column?:string}> $joinConditions */
+        $joinConditions = (array)($op['join_conditions'] ?? []);
+        foreach ($joinConditions as $j) {
             $params['joins'][] = [
                 'type'       => strtolower((string)($j['join_type'] ?? 'inner')),
                 'table'      => (string)($j['table'] ?? ''),
@@ -1191,7 +1329,9 @@ class PdoEngine
             ];
         }
 
-        foreach ((array)($op['conditions'] ?? []) as $w) {
+        /** @var array<int,array{column?:string,operator?:string,value?:mixed,connector?:string}> $whereConditions */
+        $whereConditions = (array)($op['conditions'] ?? []);
+        foreach ($whereConditions as $w) {
             $params['where'][] = [
                 'column'   => (string)($w['column'] ?? ''),
                 'operator' => (string)($w['operator'] ?? '='),
@@ -1201,10 +1341,11 @@ class PdoEngine
         }
 
         // ORDER BY mapping: take first ordering entry if present
+        /** @var array<int,array{column?:string,direction?:string}> $ordering */
         $ordering = (array)($op['ordering'] ?? []);
-        if (!empty($ordering)) {
-            $first = $ordering[0];
-            if (is_array($first)) {
+        if ($ordering !== []) {
+            $first = $ordering[0] ?? null;
+            if (is_array($first) && $first !== []) {
                 $params['orderBy'] = [[
                     'column'    => (string)($first['column'] ?? ''),
                     'direction' => strtoupper((string)($first['direction'] ?? 'ASC')),
