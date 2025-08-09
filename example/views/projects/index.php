@@ -6,7 +6,7 @@
         <p class="text-gray-600 dark:text-gray-400">Gestiona todos los proyectos de tu organización</p>
     </div>
 
-    <a href="?action=project_create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+    <a href="?action=project_create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500">
         <i class="fas fa-plus mr-2"></i>
         Nuevo Proyecto
     </a>
@@ -14,10 +14,10 @@
 
 <?php if (empty($projects)): ?>
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center">
-        <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+        <i class="fas fa-folder-open text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No hay proyectos</h3>
         <p class="text-gray-500 dark:text-gray-400 mb-6">Comienza creando tu primer proyecto para organizar las tareas.</p>
-        <a href="?action=project_create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        <a href="?action=project_create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500">
             <i class="fas fa-plus mr-2"></i>
             Crear Primer Proyecto
         </a>
@@ -26,7 +26,7 @@
 <?php else: ?>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php foreach ($projects as $project): ?>
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow transition-colors">
                 <!-- Header del proyecto con color -->
                 <div class="h-24" style="background: linear-gradient(135deg, <?= htmlspecialchars($project->color) ?>, <?= htmlspecialchars($project->color) ?>80);">
                     <div class="p-4 h-full flex items-end">
@@ -102,18 +102,18 @@
 
                     <!-- Acciones -->
                     <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <a href="?action=project_show&id=<?= $project->id ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        <a href="?action=project_show&id=<?= $project->id ?>" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
                             <i class="fas fa-eye mr-1"></i>
                             Ver detalles
                         </a>
                         <div class="flex items-center space-x-2">
 
-                            <a href="?action=project_edit&id=<?= $project->id ?>" class="text-yellow-600 hover:text-yellow-800" title="Editar">
+                            <a href="?action=project_edit&id=<?= $project->id ?>" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300" title="Editar">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a href="?action=project_delete&id=<?= $project->id ?>"
                                 onclick="return confirm('¿Estás seguro de que quieres eliminar este proyecto?')"
-                                class="text-red-600 hover:text-red-800" title="Eliminar">
+                                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Eliminar">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </div>

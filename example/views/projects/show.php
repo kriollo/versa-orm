@@ -7,7 +7,7 @@
 
 <div class="max-w-6xl mx-auto">
     <!-- Header del proyecto -->
-    <div class="bg-white shadow rounded-lg mb-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 transition-colors">
         <div class="h-32" style="background: linear-gradient(135deg, <?= htmlspecialchars($project->color) ?>, <?= htmlspecialchars($project->color) ?>80);">
             <div class="p-6 h-full flex items-end">
                 <div class="flex-1">
@@ -33,18 +33,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Información del proyecto -->
         <div class="lg:col-span-1">
-            <div class="bg-white shadow rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold mb-4">Información del Proyecto</h3>
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 transition-colors">
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white transition-colors">Información del Proyecto</h3>
 
                 <div class="space-y-3">
                     <div>
-                        <label class="text-sm font-medium text-gray-500">Propietario</label>
+                        <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Propietario</label>
                         <div class="flex items-center mt-1">
                             <?php if ($owner): ?>
                                 <div class="avatar mr-2" style="background-color: <?= htmlspecialchars($owner['avatar_color']) ?>">
                                     <?= strtoupper(substr($owner['name'], 0, 2)) ?>
                                 </div>
-                                <span><?= htmlspecialchars($owner['name']) ?></span>
+                                <span class="text-gray-900 dark:text-white transition-colors"><?= htmlspecialchars($owner['name']) ?></span>
                             <?php else: ?>
                                 <span class="text-gray-400">Sin propietario</span>
                             <?php endif; ?>
@@ -52,22 +52,22 @@
                     </div>
 
                     <div>
-                        <label class="text-sm font-medium text-gray-500">Fecha de creación</label>
-                        <p class="mt-1"><?= isset($project->created_at) ? safe_date('M Y', $project->created_at) : '' ?></p>
+                        <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Fecha de creación</label>
+                        <p class="mt-1 text-gray-900 dark:text-gray-200 transition-colors"><?= isset($project->created_at) ? safe_date('M Y', $project->created_at) : '' ?></p>
                     </div>
 
                     <div>
-                        <label class="text-sm font-medium text-gray-500">Última actualización</label>
-                        <p class="mt-1"><?= isset($project->updated_at) ? safe_date('M Y', $project->updated_at) : '' ?></p>
+                        <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Última actualización</label>
+                        <p class="mt-1 text-gray-900 dark:text-gray-200 transition-colors"><?= isset($project->updated_at) ? safe_date('M Y', $project->updated_at) : '' ?></p>
                     </div>
                 </div>
             </div>
 
             <!-- Miembros del proyecto -->
-            <div class="bg-white shadow rounded-lg p-6">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Miembros (<?= count($members) ?>)</h3>
-                    <button id="addMemberBtn" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Miembros (<?= count($members) ?>)</h3>
+                    <button id="addMemberBtn" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors">
                         <i class="fas fa-plus mr-1"></i>
                         Agregar
                     </button>
@@ -76,14 +76,14 @@
                 <?php if (!empty($members)): ?>
                     <div class="space-y-2">
                         <?php foreach ($members as $member): ?>
-                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded group">
+                            <div class="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group transition-colors">
                                 <div class="flex items-center">
                                     <div class="avatar mr-3" style="background-color: <?= htmlspecialchars($member['avatar_color']) ?>">
                                         <?= strtoupper(substr($member['name'], 0, 2)) ?>
                                     </div>
                                     <div>
-                                        <p class="font-medium"><?= htmlspecialchars($member['name']) ?></p>
-                                        <p class="text-sm text-gray-500"><?= htmlspecialchars($member['email']) ?></p>
+                                        <p class="font-medium text-gray-900 dark:text-white transition-colors"><?= htmlspecialchars($member['name']) ?></p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?= htmlspecialchars($member['email']) ?></p>
                                     </div>
                                 </div>
                                 <form method="POST" action="?action=project_remove_member" class="inline">
@@ -100,17 +100,17 @@
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p class="text-gray-500 text-center py-4">No hay miembros asignados</p>
+                    <p class="text-gray-500 dark:text-gray-300 text-center py-4 transition-colors">No hay miembros asignados</p>
                 <?php endif; ?>
             </div>
         </div>
 
         <!-- Tareas del proyecto -->
         <div class="lg:col-span-2">
-            <div class="bg-white shadow rounded-lg p-6">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-semibold">Tareas (<?= count($tasks) ?>)</h3>
-                    <a href="?action=task_create&project_id=<?= $project->id ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Tareas (<?= count($tasks) ?>)</h3>
+                    <a href="?action=task_create&project_id=<?= $project->id ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors dark:bg-blue-600 dark:hover:bg-blue-500">
                         <i class="fas fa-plus mr-2"></i>
                         Nueva Tarea
                     </a>
@@ -123,11 +123,11 @@
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
                     <div class="mb-6">
-                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2 transition-colors">
                             <span>Progreso del proyecto</span>
                             <span><?= count($completedTasks) ?>/<?= count($tasks) ?> tareas completadas</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 transition-colors">
                             <div class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: <?= $progressPercent ?>%"></div>
                         </div>
                     </div>
@@ -146,16 +146,16 @@ $statusNames = [
     'done'        => 'Completadas',
 ];
 $statusColors = [
-    'todo'        => 'bg-gray-100 text-gray-800',
-    'in_progress' => 'bg-blue-100 text-blue-800',
-    'done'        => 'bg-green-100 text-green-800',
+    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+    'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
 ];
 ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <?php foreach ($tasksByStatus as $status => $statusTasks): ?>
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-medium mb-3 flex items-center">
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 transition-colors">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-3 flex items-center transition-colors">
                                 <span class="inline-block w-3 h-3 rounded-full mr-2 <?= $statusColors[$status] ?>"></span>
                                 <?= $statusNames[$status] ?> (<?= count($statusTasks) ?>)
                             </h4>
@@ -163,12 +163,12 @@ $statusColors = [
                             <?php if (!empty($statusTasks)): ?>
                                 <div class="space-y-2">
                                     <?php foreach ($statusTasks as $task): ?>
-                                        <div class="bg-gray-50 p-3 rounded border">
+                                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 transition-colors">
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
-                                                    <h5 class="font-medium text-sm mb-1"><?= htmlspecialchars($task['title']) ?></h5>
+                                                    <h5 class="font-medium text-sm mb-1 text-gray-900 dark:text-white transition-colors"><?= htmlspecialchars($task['title']) ?></h5>
                                                     <?php if ($task['description']): ?>
-                                                        <p class="text-xs text-gray-600 mb-2"><?= htmlspecialchars(substr($task['description'], 0, 80)) ?><?= strlen($task['description']) > 80 ? '...' : '' ?></p>
+                                                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2 transition-colors"><?= htmlspecialchars(substr($task['description'], 0, 80)) ?><?= strlen($task['description']) > 80 ? '...' : '' ?></p>
                                                     <?php endif; ?>
 
                                                     <div class="flex items-center justify-between">
@@ -176,16 +176,16 @@ $statusColors = [
                                                             <?= ucfirst($task['priority']) ?>
                                                         </span>
                                                         <?php if ($task['due_date']): ?>
-                                                            <span class="text-xs text-gray-500">
+                                                            <span class="text-xs text-gray-500 dark:text-gray-400 transition-colors">
                                                                 <?= date('d/m', strtotime($task['due_date'])) ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
-                                                <a href="?action=task_edit&id=<?= $task['id'] ?>" class="text-gray-400 hover:text-gray-600 ml-2">
+                                                <a href="?action=task_edit&id=<?= $task['id'] ?>" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 ml-2 transition-colors">
                                                     <i class="fas fa-edit text-xs"></i>
                                                 </a>
-                                                <button class="text-blue-600 hover:text-blue-900 open-notes-modal <?= ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : '' ?> ml-2"
+                                                <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal <?= ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : '' ?> ml-2 transition-colors"
                                                         data-task-id="<?= $task['id'] ?>" 
                                                         data-task-title="<?= htmlspecialchars($task['title']) ?>">
                                                     <i class="fas fa-sticky-note text-xs"></i>
@@ -198,7 +198,7 @@ $statusColors = [
                                     <?php endforeach; ?>
                                 </div>
                             <?php else: ?>
-                                <p class="text-gray-400 text-sm text-center py-4">No hay tareas</p>
+                                <p class="text-gray-400 dark:text-gray-300 text-sm text-center py-4 transition-colors">No hay tareas</p>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -213,26 +213,26 @@ function getPriorityClass($priority)
 {
     switch ($priority) {
         case 'urgent':
-            return 'bg-red-100 text-red-800';
+            return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
         case 'high':
-            return 'bg-orange-100 text-orange-800';
+            return 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300';
         case 'medium':
-            return 'bg-yellow-100 text-yellow-800';
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
         case 'low':
-            return 'bg-green-100 text-green-800';
+            return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
         default:
-            return 'bg-gray-100 text-gray-800';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
 }
 ?>
 
 <!-- Modal para agregar miembros -->
-<div id="addMemberModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+<div id="addMemberModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-black/70 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Agregar Miembro</h3>
-                <button id="closeMemberModal" class="text-gray-400 hover:text-gray-600">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white transition-colors">Agregar Miembro</h3>
+                <button id="closeMemberModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -241,14 +241,14 @@ function getPriorityClass($priority)
                 <input type="hidden" name="project_id" value="<?= $project->id ?>">
 
                 <div class="mb-4">
-                    <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="user_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         Seleccionar Usuario
                     </label>
-                    <select name="user_id" id="user_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select name="user_id" id="user_id" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                         <option value="">Selecciona un usuario</option>
                         <?php if (isset($availableUsers) && is_array($availableUsers)): ?>
                             <?php foreach ($availableUsers as $user): ?>
-                                <option value="<?= $user->id ?>">
+                                <option value="<?= $user->id ?>" class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                                     <?= htmlspecialchars($user->name) ?> (<?= htmlspecialchars($user->email) ?>)
                                 </option>
                             <?php endforeach; ?>

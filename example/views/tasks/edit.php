@@ -8,25 +8,25 @@
 <div class="max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Editar Tarea</h1>
-            <p class="text-gray-600">Modifica los detalles de la tarea</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Editar Tarea</h1>
+            <p class="text-gray-600 dark:text-gray-300 transition-colors">Modifica la información de la tarea seleccionada</p>
         </div>
-        <a href="?action=tasks" class="text-gray-600 hover:text-gray-800">
+        <a href="?action=tasks" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>
             Volver a Tareas
         </a>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 border border-transparent dark:border-gray-700 transition-colors">
         <form method="POST" action="?action=task_edit&id=<?= $task->id ?>">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Información básica -->
                 <div class="md:col-span-2">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Información Básica</h3>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 transition-colors">Información Básica</h3>
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         Título <span class="text-red-500">*</span>
                     </label>
                     <input type="text"
@@ -34,32 +34,32 @@
                         name="title"
                         required
                         value="<?= htmlspecialchars($task->title) ?>"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Ingresa el título de la tarea">
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                    <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Descripción</label>
                     <textarea id="description"
                         name="description"
                         rows="4"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Describe los detalles de la tarea"><?= htmlspecialchars($task->description ?? '') ?></textarea>
                 </div>
 
                 <!-- Asignación y configuración -->
                 <div class="md:col-span-2">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4 mt-6">Asignación y Configuración</h3>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 mt-6 transition-colors">Asignación y Configuración</h3>
                 </div>
 
                 <div>
-                    <label for="project_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="project_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         Proyecto <span class="text-red-500">*</span>
                     </label>
                     <select id="project_id"
                         name="project_id"
                         required
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Selecciona un proyecto</option>
                         <?php foreach ($projects as $project): ?>
                             <option value="<?= $project['id'] ?>" <?= $task->project_id == $project['id'] ? 'selected' : '' ?>>
@@ -70,10 +70,10 @@
                 </div>
 
                 <div>
-                    <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">Asignar a</label>
+                    <label for="user_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Asignar a</label>
                     <select id="user_id"
                         name="user_id"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Sin asignar</option>
                         <?php foreach ($users as $user): ?>
                             <option value="<?= $user['id'] ?>" <?= $task->user_id == $user['id'] ? 'selected' : '' ?>>
@@ -84,10 +84,10 @@
                 </div>
 
                 <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                    <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Estado</label>
                     <select id="status"
                         name="status"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="todo" <?= $task->status === 'todo' ? 'selected' : '' ?>>Por Hacer</option>
                         <option value="in_progress" <?= $task->status === 'in_progress' ? 'selected' : '' ?>>En Progreso</option>
                         <option value="done" <?= $task->status === 'done' ? 'selected' : '' ?>>Completada</option>
@@ -95,10 +95,10 @@
                 </div>
 
                 <div>
-                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Prioridad</label>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Prioridad</label>
                     <select id="priority"
                         name="priority"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="low" <?= $task->priority === 'low' ? 'selected' : '' ?>>Baja</option>
                         <option value="medium" <?= $task->priority === 'medium' ? 'selected' : '' ?>>Media</option>
                         <option value="high" <?= $task->priority === 'high' ? 'selected' : '' ?>>Alta</option>
@@ -107,30 +107,30 @@
                 </div>
 
                 <div>
-                    <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Fecha de vencimiento</label>
+                    <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Fecha de vencimiento</label>
                     <input type="date"
                         id="due_date"
                         name="due_date"
                         value="<?= $task->due_date ? safe_date('Y-m-d', $task->due_date) : '' ?>"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                 </div>
 
                 <!-- Etiquetas -->
                 <div class="md:col-span-2">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4 mt-6">Etiquetas</h3>
-                    <p class="text-sm text-gray-600 mb-4">Selecciona las etiquetas que se aplicarán a esta tarea</p>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 mt-6 transition-colors">Etiquetas</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors">Selecciona las etiquetas que se aplicarán a esta tarea</p>
 
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         <?php foreach ($labels as $label): ?>
-                            <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
                                 <input type="checkbox"
                                     name="labels[]"
                                     value="<?= $label['id'] ?>"
                                     <?= in_array($label['id'], $taskLabels ?? []) ? 'checked' : '' ?>
-                                    class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
                                     <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($label['color']) ?>"></div>
-                                    <span class="text-sm font-medium"><?= htmlspecialchars($label['name']) ?></span>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?= htmlspecialchars($label['name']) ?></span>
                                 </div>
                             </label>
                         <?php endforeach; ?>
@@ -139,8 +139,8 @@
             </div>
 
             <!-- Información adicional -->
-            <div class="mt-8 pt-6 border-t border-gray-200">
-                <div class="grid grid-cols-2 gap-4 text-sm text-gray-500">
+            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
+                <div class="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <div>
                         <strong>Creada:</strong> <?= isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : '' ?>
                     </div>
@@ -152,10 +152,10 @@
 
             <!-- Botones de acción -->
             <div class="flex items-center justify-end space-x-3 mt-6">
-                <a href="?action=tasks" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                <a href="?action=tasks" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     Cancelar
                 </a>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors">
                     <i class="fas fa-save mr-2"></i>
                     Guardar Cambios
                 </button>

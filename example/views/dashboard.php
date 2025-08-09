@@ -23,7 +23,7 @@
         </div>
         <div class="bg-gray-50 dark:bg-gray-700 px-5 py-3">
             <div class="text-sm">
-                <a href="?action=projects" class="font-medium text-blue-600 hover:text-blue-500">
+                <a href="?action=projects" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                     Ver todos <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
@@ -46,7 +46,7 @@
         </div>
         <div class="bg-gray-50 dark:bg-gray-700 px-5 py-3">
             <div class="text-sm">
-                <a href="?action=tasks" class="font-medium text-green-600 hover:text-green-500">
+                <a href="?action=tasks" class="font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300">
                     Ver todas <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
@@ -69,7 +69,7 @@
         </div>
         <div class="bg-gray-50 dark:bg-gray-700 px-5 py-3">
             <div class="text-sm">
-                <a href="?action=users" class="font-medium text-purple-600 hover:text-purple-500">
+                <a href="?action=users" class="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300">
                     Ver todos <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
@@ -92,7 +92,7 @@
         </div>
         <div class="bg-gray-50 dark:bg-gray-700 px-5 py-3">
             <div class="text-sm">
-                <a href="?action=labels" class="font-medium text-orange-600 hover:text-orange-500">
+                <a href="?action=labels" class="font-medium text-orange-600 hover:text-orange-500 dark:text-orange-400 dark:hover:text-orange-300">
                     Ver todas <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
@@ -140,7 +140,7 @@
             <div class="p-6 text-center text-gray-500 dark:text-gray-400">
                 <i class="fas fa-tasks text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
                 <p>No hay tareas aún</p>
-                <a href="?action=task_create" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                <a href="?action=task_create" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500">
                     Crear primera tarea
                 </a>
             </div>
@@ -152,13 +152,13 @@
                             <div class="flex-shrink-0">
                                 <?php
                                 $statusColors = [
-                                    'todo'        => 'bg-gray-100 text-gray-800',
-                                    'in_progress' => 'bg-blue-100 text-blue-800',
-                                    'done'        => 'bg-green-100 text-green-800',
+                                    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+                                    'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                                 ];
                 $statusColor = $statusColors[$task['status']] ?? 'bg-gray-100 text-gray-800';
                 ?>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColor ?> dark:bg-opacity-20">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColor ?>">
                                     <?= ucfirst(str_replace('_', ' ', $task['status'])) ?>
                                 </span>
                             </div>
@@ -172,14 +172,14 @@
                         <div class="flex items-center space-x-2">
                             <?php
                             $priorityColors = [
-                'low'    => 'bg-green-100 text-green-800',
-                'medium' => 'bg-yellow-100 text-yellow-800',
-                'high'   => 'bg-orange-100 text-orange-800',
-                'urgent' => 'bg-red-100 text-red-800',
+                'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
                             ];
                 $priorityColor = $priorityColors[$task['priority']] ?? 'bg-gray-100 text-gray-800';
                 ?>
-                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <?= $priorityColor ?> dark:bg-opacity-20">
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <?= $priorityColor ?>">
                                 <?= ucfirst($task['priority']) ?>
                             </span>
                             <span class="text-sm text-gray-500 dark:text-gray-400"><?= safe_date('d/m/Y', $task['created_at']) ?></span>

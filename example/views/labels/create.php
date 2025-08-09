@@ -8,25 +8,25 @@
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Nueva Etiqueta</h1>
-            <p class="text-gray-600">Crea una nueva etiqueta para organizar tus tareas</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Nueva Etiqueta</h1>
+            <p class="text-gray-600 dark:text-gray-300 transition-colors">Crea una nueva etiqueta para organizar tus tareas</p>
         </div>
-        <a href="?action=labels" class="text-gray-600 hover:text-gray-800">
+        <a href="?action=labels" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>
             Volver a Etiquetas
         </a>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 border border-transparent dark:border-gray-700 transition-colors">
         <form method="POST" action="?action=label_create">
             <div class="space-y-6">
                 <!-- Información básica -->
                 <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Información Básica</h3>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 transition-colors">Información Básica</h3>
                 </div>
 
                 <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         Nombre de la etiqueta <span class="text-red-500">*</span>
                     </label>
                     <input type="text"
@@ -34,46 +34,46 @@
                         name="name"
                         required
                         maxlength="50"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Ej: Bug, Feature, Urgente, etc.">
-                    <p class="text-sm text-gray-500 mt-1">Máximo 50 caracteres</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 transition-colors">Máximo 50 caracteres</p>
                 </div>
 
                 <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                    <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Descripción</label>
                     <textarea id="description"
                         name="description"
                         rows="3"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Describe para qué se usa esta etiqueta (opcional)"></textarea>
                 </div>
 
                 <!-- Personalización visual -->
                 <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4 mt-8">Personalización Visual</h3>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 mt-8 transition-colors">Personalización Visual</h3>
                 </div>
 
                 <div>
-                    <label for="color" class="block text-sm font-medium text-gray-700 mb-2">Color de la etiqueta</label>
+                    <label for="color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Color de la etiqueta</label>
                     <div class="flex items-center space-x-4">
                         <input type="color"
                             id="color"
                             name="color"
                             value="#6c757d"
-                            class="h-10 w-20 border border-gray-300 rounded cursor-pointer">
+                            class="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer bg-white dark:bg-gray-700 transition-colors">
                         <div class="flex items-center">
                             <div id="label-preview" class="label-preview" style="background-color: #6c757d20; color: #6c757d;">
                                 <div class="label-dot" style="background-color: #6c757d;"></div>
                                 <span id="label-text">Ejemplo</span>
                             </div>
-                            <span class="text-sm text-gray-600 ml-3">Vista previa</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400 ml-3 transition-colors">Vista previa</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Colores predefinidos -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Colores predefinidos</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Colores predefinidos</label>
                     <div class="grid grid-cols-8 gap-2">
                         <?php
                         $predefinedColors = [
@@ -96,7 +96,7 @@
                         ];
 foreach ($predefinedColors as $color): ?>
                             <button type="button"
-                                class="color-option w-8 h-8 rounded-full border-2 border-gray-300 hover:border-gray-400 transition-colors"
+                                class="color-option w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                                 style="background-color: <?= $color ?>"
                                 data-color="<?= $color ?>"
                                 title="<?= $color ?>"></button>
@@ -106,10 +106,10 @@ foreach ($predefinedColors as $color): ?>
 
                 <!-- Colores por categoría -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Colores sugeridos por categoría</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Colores sugeridos por categoría</label>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-2">
-                            <h4 class="text-sm font-medium text-gray-600">Estados y Prioridades</h4>
+                            <h4 class="text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors">Estados y Prioridades</h4>
                             <div class="flex flex-wrap gap-2">
                                 <button type="button" class="category-color" data-color="#e74c3c" title="Urgente/Crítico">#e74c3c</button>
                                 <button type="button" class="category-color" data-color="#f39c12" title="Importante">#f39c12</button>
@@ -118,7 +118,7 @@ foreach ($predefinedColors as $color): ?>
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <h4 class="text-sm font-medium text-gray-600">Tipos de Tarea</h4>
+                            <h4 class="text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors">Tipos de Tarea</h4>
                             <div class="flex flex-wrap gap-2">
                                 <button type="button" class="category-color" data-color="#9b59b6" title="Diseño">#9b59b6</button>
                                 <button type="button" class="category-color" data-color="#1abc9c" title="Desarrollo">#1abc9c</button>
@@ -131,11 +131,11 @@ foreach ($predefinedColors as $color): ?>
             </div>
 
             <!-- Botones de acción -->
-            <div class="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
-                <a href="?action=labels" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
+                <a href="?action=labels" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     Cancelar
                 </a>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors">
                     <i class="fas fa-plus mr-2"></i>
                     Crear Etiqueta
                 </button>
