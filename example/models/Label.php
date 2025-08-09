@@ -62,11 +62,7 @@ class Label extends BaseModel
         }
 
         // Crear instancia correctamente con el nombre de tabla
-        $ormInstance = static::getGlobalORM();
-        if (!$ormInstance) {
-            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
-        }
-        $label = new static('labels', $ormInstance);
+        $label = new static('labels', static::orm());
         $label->fill($attributes);
         $label->store();
         return $label;
@@ -102,13 +98,13 @@ class Label extends BaseModel
      */
     public function tasks(): array
     {
-        return static::getAll(
-            'SELECT t.* FROM tasks t
-             INNER JOIN task_labels tl ON t.id = tl.task_id
-             WHERE tl.label_id = ?
-             ORDER BY t.created_at DESC',
-            [$this->id]
-        );
+        return static::orm()
+            ->table('tasks')
+            ->join('task_labels', 'tasks.id', '=', 'task_labels.task_id')
+            ->where('task_labels.label_id', '=', $this->id)
+            ->orderBy('tasks.created_at', 'DESC')
+            ->select(['tasks.*'])
+            ->get();
     }
 
     /**
@@ -116,11 +112,13 @@ class Label extends BaseModel
      */
     public function tasksCount(): int
     {
-        $result = static::getRow(
-            'SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?',
-            [$this->id]
-        );
-        return (int) ($result['count'] ?? 0);
+        $rows = static::orm()
+            ->table('task_labels')
+            ->select(['COUNT(*) AS count'])
+            ->where('label_id', '=', $this->id)
+            ->get();
+        $row = $rows[0] ?? [];
+        return (int)($row['count'] ?? 0);
     }
 
     /**

@@ -87,11 +87,7 @@ class Task extends BaseModel
         }
 
         // Crear instancia correctamente con el nombre de tabla
-        $ormInstance = static::getGlobalORM();
-        if (!$ormInstance) {
-            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
-        }
-        $task = new static('tasks', $ormInstance);
+        $task = new static('tasks', static::orm());
         $task->fill($attributes);
         $task->store();
         return $task;
@@ -123,12 +119,13 @@ class Task extends BaseModel
      */
     public function labels(): array
     {
-        return static::getAll(
-            'SELECT l.* FROM labels l
-             INNER JOIN task_labels tl ON l.id = tl.label_id
-             WHERE tl.task_id = ?',
-            [$this->id]
-        );
+        return static::orm()
+            ->table('labels')
+            ->join('task_labels', 'labels.id', '=', 'task_labels.label_id')
+            ->where('task_labels.task_id', '=', $this->id)
+            ->orderBy('labels.created_at', 'DESC')
+            ->select(['labels.*'])
+            ->get();
     }
 
     /**
@@ -136,11 +133,12 @@ class Task extends BaseModel
      */
     public function getLabelIds(): array
     {
-        $results = static::getAll(
-            'SELECT label_id FROM task_labels WHERE task_id = ?',
-            [$this->id]
-        );
-        return array_column($results, 'label_id');
+        $rows = static::orm()
+            ->table('task_labels')
+            ->select(['label_id'])
+            ->where('task_id', '=', $this->id)
+            ->get();
+        return array_column($rows, 'label_id');
     }
 
     /**
@@ -149,10 +147,13 @@ class Task extends BaseModel
     public function setLabels(array $labelIds): void
     {
         // Eliminar etiquetas actuales usando VersaModel
-        $existingLabels = static::getAll('SELECT * FROM task_labels WHERE task_id = ?', [$this->id]);
+        $existingLabels = static::orm()
+            ->table('task_labels')
+            ->where('task_id', '=', $this->id)
+            ->get();
         foreach ($existingLabels as $existing) {
             if (isset($existing['id'])) {
-                $taskLabel = static::load('task_labels', $existing['id']);
+                $taskLabel = static::load('task_labels', (int)$existing['id']);
                 if ($taskLabel) {
                     $taskLabel->trash();
                 }

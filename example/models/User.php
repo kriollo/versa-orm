@@ -69,11 +69,7 @@ class User extends BaseModel
         }
 
         // Crear instancia correctamente con el nombre de tabla
-        $ormInstance = static::getGlobalORM();
-        if (!$ormInstance) {
-            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
-        }
-        $user = new static('users', $ormInstance);
+        $user = new static('users', static::orm());
         $user->fill($attributes);
         $user->store();
         return $user;
@@ -109,16 +105,11 @@ class User extends BaseModel
      */
     public function projects(): array
     {
-        $orm = static::getGlobalORM();
-        if (!$orm) {
-            return [];
-        }
-
         try {
             $allProjects = [];
 
             // Proyectos donde es propietario
-            $ownedProjects = $orm->table('projects')
+            $ownedProjects = static::orm()->table('projects')
                 ->where('owner_id', '=', $this->id)
                 ->get();
 
@@ -127,7 +118,7 @@ class User extends BaseModel
             }
 
             // Proyectos donde es miembro
-            $memberProjects = $orm->table('projects')
+            $memberProjects = static::orm()->table('projects')
                 ->join('project_users', 'projects.id', '=', 'project_users.project_id')
                 ->where('project_users.user_id', '=', $this->id)
                 ->select(['projects.*'])
@@ -153,7 +144,7 @@ class User extends BaseModel
         } catch (\Exception $e) {
             // Si falla el join, intentar solo los proyectos propios
             try {
-                $projects = $orm->table('projects')
+                $projects = static::orm()->table('projects')
                     ->where('owner_id', '=', $this->id)
                     ->get();
                 return $projects ?: [];
@@ -168,13 +159,8 @@ class User extends BaseModel
      */
     public function tasks(): array
     {
-        $orm = static::getGlobalORM();
-        if (!$orm) {
-            return [];
-        }
-
         try {
-            $tasks = $orm->table('tasks')
+            $tasks = static::orm()->table('tasks')
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')
                 ->get();

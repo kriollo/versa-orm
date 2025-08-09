@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 /**
- * Modelo Project
- * Gestiona proyectos del sistema.
+ * Modelo Project modernizado para usar QueryBuilder de VersaORM y evitar SQL crudo.
  */
 class Project extends BaseModel
 {
@@ -26,33 +25,36 @@ class Project extends BaseModel
         'owner_id' => ['required'],
     ];
 
-    /**
-     * Buscar por ID.
-     */
-    public static function find($id): ?self
+    /* ===================== Factores internos ===================== */
+    // Helpers orm()/qb() heredados de BaseModel
+
+    /** Genera color aleatorio si no viene definido. */
+    private static function ensureColor(array &$attributes): void
     {
-        return static::findOne('projects', (int) $id);
+        if (!isset($attributes['color'])) {
+            $attributes['color'] = static::generateRandomColor();
+        }
     }
 
-    /**
-     * Obtener todos los proyectos.
-     */
+    /* ===================== Métodos CRUD estáticos ===================== */
+
+    /** Buscar por ID. */
+    public static function find($id): ?self
+    {
+        return static::findOne('projects', (int)$id);
+    }
+
+    /** Obtener todos los proyectos. */
     public static function all(): array
     {
         return static::findAll('projects');
     }
 
-    /**
-     * Crear nuevo proyecto.
-     */
+    /** Crear nuevo proyecto usando fill + store. */
     public static function create(array $attributes): static
     {
-        // Aplicar valores por defecto
-        if (!isset($attributes['color'])) {
-            $attributes['color'] = static::generateRandomColor();
-        }
+        static::ensureColor($attributes);
 
-        // Validar antes de crear
         $errors = [];
         if (empty($attributes['name'])) {
             $errors[] = 'El nombre es requerido';
@@ -60,32 +62,106 @@ class Project extends BaseModel
         if (empty($attributes['owner_id'])) {
             $errors[] = 'El propietario es requerido';
         }
-
-        if (!empty($errors)) {
-            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
+        if ($errors) {
+            throw new \InvalidArgumentException('Errores de validación: ' . implode(', ', $errors));
         }
 
-        // Crear instancia correctamente con el nombre de tabla
-        $ormInstance = static::getGlobalORM();
-        if (!$ormInstance) {
-            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
-        }
-        $project = new static('projects', $ormInstance);
+        $project = new static('projects', static::orm());
         $project->fill($attributes);
         $project->store();
 
-        // Añadir el propietario como miembro del proyecto
-        $projectUser             = static::dispense('project_users');
-        $projectUser->project_id = $project->id;
-        $projectUser->user_id    = $attributes['owner_id'];
-        $projectUser->store();
+        // Añadir propietario como miembro (pivot project_users)
+        static::addMemberToProject((int)$project->id, (int)$attributes['owner_id']);
 
         return $project;
     }
 
-    /**
-     * Generar color aleatorio para proyecto.
-     */
+    /* ===================== Relaciones y consultas ===================== */
+
+    /** Propietario del proyecto como array exportado. */
+    public function owner(): ?array
+    {
+        $user = User::find($this->owner_id);
+        return $user?->export();
+    }
+
+    /** Miembros del proyecto (usuarios) vía tabla pivote project_users. */
+    public function members(): array
+    {
+        return static::orm()
+            ->table('users')
+            ->join('project_users', 'users.id', '=', 'project_users.user_id')
+            ->where('project_users.project_id', '=', $this->id)
+            ->get();
+    }
+
+    /** Tareas asociadas al proyecto ordenadas por creación desc. */
+    public function tasks(): array
+    {
+        return static::orm()
+            ->table('tasks')
+            ->where('project_id', '=', $this->id)
+            ->orderBy('created_at', 'DESC')
+            ->get();
+    }
+
+    /** Añadir miembro (inserta en project_users si no existe ya). */
+    public function addMember(int $userId): void
+    {
+        $exists = static::orm()->table('project_users')
+            ->select(['id'])
+            ->where('project_id', '=', $this->id)
+            ->where('user_id', '=', $userId)
+            ->limit(1)
+            ->get();
+        if (!$exists) {
+            $pivot = static::dispense('project_users');
+            $pivot->project_id = $this->id;
+            $pivot->user_id    = $userId;
+            $pivot->store();
+        }
+    }
+
+    /** Remover miembro del proyecto eliminando fila pivot. */
+    public function removeMember(int $userId): void
+    {
+        $rows = static::orm()->table('project_users')
+            ->select(['id'])
+            ->where('project_id', '=', $this->id)
+            ->where('user_id', '=', $userId)
+            ->get();
+        foreach ($rows as $row) {
+            if (isset($row['id'])) {
+                $pivot = static::load('project_users', (int)$row['id']);
+                $pivot?->trash();
+            }
+        }
+    }
+
+    /* ===================== Helpers pivot ===================== */
+    private static function addMemberToProject(int $projectId, int $userId): void
+    {
+        $pivot = static::dispense('project_users');
+        $pivot->project_id = $projectId;
+        $pivot->user_id    = $userId;
+        $pivot->store();
+    }
+
+    /* ===================== Tipado fuerte / esquema ===================== */
+    public static function definePropertyTypes(): array
+    {
+        return [
+            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name'        => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'description' => ['type' => 'text', 'nullable' => true],
+            'color'       => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
+            'owner_id'    => ['type' => 'int', 'nullable' => false],
+            'created_at'  => ['type' => 'datetime', 'nullable' => false],
+            'updated_at'  => ['type' => 'datetime', 'nullable' => false],
+        ];
+    }
+
+    /* ===================== Utilidades internas ===================== */
     private static function generateRandomColor(): string
     {
         $colors = [
@@ -101,97 +177,5 @@ class Project extends BaseModel
             '#16a085',
         ];
         return $colors[array_rand($colors)];
-    }
-
-    /**
-     * Obtener propietario del proyecto.
-     */
-    public function owner(): ?array
-    {
-        $user = User::find($this->owner_id);
-        return $user ? $user->export() : null;
-    }
-
-    /**
-     * Obtener miembros del proyecto.
-     */
-    public function members(): array
-    {
-        // Por ahora mantener la consulta SQL directa hasta que podamos implementar el JOIN correctamente
-        return static::getAll(
-            'SELECT u.* FROM users u
-             INNER JOIN project_users pu ON u.id = pu.user_id
-             WHERE pu.project_id = ?',
-            [$this->id]
-        );
-    }
-
-    /**
-     * Obtener tareas del proyecto.
-     */
-    public function tasks(): array
-    {
-        // Por ahora mantener la consulta SQL directa
-        return static::getAll(
-            'SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at DESC',
-            [$this->id]
-        );
-    }
-
-    /**
-     * Añadir miembro al proyecto.
-     */
-    public function addMember(int $userId): void
-    {
-        // Verificar si ya es miembro
-        $exists = static::getAll(
-            'SELECT 1 FROM project_users WHERE project_id = ? AND user_id = ? LIMIT 1',
-            [$this->id, $userId]
-        );
-
-        if (empty($exists)) {
-            // Usar VersaModel para crear la relación
-            $projectUser             = static::dispense('project_users');
-            $projectUser->project_id = $this->id;
-            $projectUser->user_id    = $userId;
-            $projectUser->store();
-        }
-    }
-
-    /**
-     * Remover miembro del proyecto.
-     */
-    public function removeMember(int $userId): void
-    {
-        // Buscar la relación y eliminarla
-        $relations = static::getAll(
-            'SELECT * FROM project_users WHERE project_id = ? AND user_id = ?',
-            [$this->id, $userId]
-        );
-
-        foreach ($relations as $relation) {
-            if (isset($relation['id'])) {
-                $projectUser = static::load('project_users', $relation['id']);
-                if ($projectUser) {
-                    $projectUser->trash();
-                }
-            }
-        }
-    }
-
-    /**
-     * Definir tipos de propiedades para validación de esquema y tipado fuerte.
-     */
-    public static function definePropertyTypes(): array
-    {
-        return [
-            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'        => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
-            'description' => ['type' => 'text', 'nullable' => true],
-            'color'       => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
-            'owner_id'    => ['type' => 'int', 'nullable' => false],
-            'created_at'  => ['type' => 'datetime', 'nullable' => false],
-            'updated_at'  => ['type' => 'datetime', 'nullable' => false],
-        ];
     }
 }

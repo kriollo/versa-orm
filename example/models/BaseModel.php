@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use VersaORM\QueryBuilder;
 use VersaORM\VersaModel;
+use VersaORM\VersaORM;
 
 /**
  * Modelo base para la aplicación.
@@ -25,6 +27,37 @@ abstract class BaseModel extends VersaModel
      * Campos protegidos (permitir asignación masiva por defecto).
      */
     protected array $guarded = [];
+
+    /* =============================================================
+     * Helpers de acceso al ORM / QueryBuilder para evitar repetir
+     * getGlobalORM() + validaciones en cada modelo hijo.
+     * ============================================================= */
+    /** ORM global (static). */
+    public static function orm(): VersaORM
+    {
+        $orm = static::getGlobalORM();
+        if (!$orm) {
+            throw new \RuntimeException('No ORM instance available. Call VersaModel::setORM() first.');
+        }
+        return $orm;
+    }
+    /** ORM desde instancia. */
+    protected function ormInstance(): VersaORM
+    {
+        /** @var VersaORM $orm */
+        $orm = static::orm();
+        return $orm;
+    }
+    /** QueryBuilder estático. */
+    protected static function qb(string $table, ?string $modelClass = null): QueryBuilder
+    {
+        return static::orm()->table($table, $modelClass);
+    }
+    /** QueryBuilder desde instancia. */
+    protected function query(string $table, ?string $modelClass = null): QueryBuilder
+    {
+        return static::orm()->table($table, $modelClass);
+    }
 
     /**
      * Obtener todos los registros como array.

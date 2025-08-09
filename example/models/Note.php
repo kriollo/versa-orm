@@ -62,11 +62,7 @@ class Note extends BaseModel
             throw new \Exception('Errores de validación: ' . implode(', ', $errors));
         }
 
-        $ormInstance = static::getGlobalORM();
-        if (!$ormInstance) {
-            throw new \Exception('No ORM instance available. Call Model::setORM() first.');
-        }
-        $note = new static('task_notes', $ormInstance);
+        $note = new static('task_notes', static::orm());
         $note->fill($attributes);
         $note->store();
         return $note;
