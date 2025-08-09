@@ -31,31 +31,20 @@ namespace VersaORM;
 class QueryBuilder
 {
     /**
-     * @var VersaORM|array<string, mixed>|null
+     * Psalm type aliases
+     * @psalm-type WhereEntry = array{column:string,operator:string,value:mixed,type:'and'|'or',sql?:string,bindings?:list<mixed>,subquery?:true}
+     * @psalm-type HavingEntry = array{column:string,operator:string,value:mixed,connector:string}
+     * @psalm-type SelectRaw = array{type:'raw',expression:string,bindings?:list<mixed>}
+     * @psalm-type SelectSub = array{type:'subquery'|'sub',query:string,alias:string}
+     * @psalm-type OperationResult = array<string,mixed>
      */
+
+    /** @var VersaORM|array<string,mixed>|null */
     private $orm; // Puede ser array (config) o instancia de VersaORM
     private string $table;
-    /**
-     * @var array<int, string|array<string, mixed>>
-     */
+    /** @var list<string|SelectRaw|SelectSub> */
     private array $selects = [];
-    /**
-     * Lista de condiciones WHERE.
-     * Puede incluir entradas RAW con claves adicionales 'sql' y 'bindings'.
-     *
-     * Shape base: {column, operator, value, type}
-     * Opcionales: sql?:string, bindings?:array<int,mixed>, subquery?:true
-     *
-     * @var list<array{
-     *   column:string,
-     *   operator:string,
-     *   value:mixed,
-     *   type:'and'|'or',
-     *   sql?:string,
-     *   bindings?:array<int,mixed>,
-     *   subquery?:true
-     * }>
-     */
+    /** @var list<WhereEntry> */
     private array $wheres = [];
     /**
      * Lista de JOINs.
@@ -90,8 +79,7 @@ class QueryBuilder
      * Shape: {column, operator, value, connector}
      * Se admite lista vacía o no vacía.
      *
-     * @var list<array{column:string, operator:string, value:mixed, connector:string}>
-     */
+    /** @var list<HavingEntry> */
     private array $having = [];
     /**
      * Relaciones eager a cargar.
@@ -116,14 +104,12 @@ class QueryBuilder
      * @var class-string<VersaModel>|null
      */
     private ?string $modelClass = null;
-    /**
-     * @var array<int, array<string, mixed>>
-     */
+    /** @var list<array<string,mixed>> */
     private array $lazyOperations = [];
     private bool $isLazy          = false;
 
     /**
-     * @param VersaORM|array<string, mixed>|null $orm
+     * @param VersaORM|array<string,mixed>|null $orm
      * @param string $table
      * @param string|null $modelClass
      */
@@ -1557,7 +1543,9 @@ class QueryBuilder
         error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
 
         $result = $this->execute('insertMany', $params);
-        return is_array($result) ? $result : [];
+    /** @var mixed $rawResult */
+    $rawResult = $this->execute('insertMany', $params);
+    return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -1598,7 +1586,9 @@ class QueryBuilder
         ];
 
         $result = $this->execute('updateMany', $params);
-        return is_array($result) ? $result : [];
+    /** @var mixed $rawResult */
+    $rawResult = $this->execute('updateMany', $params);
+    return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -1625,7 +1615,9 @@ class QueryBuilder
         ];
 
         $result = $this->execute('deleteMany', $params);
-        return is_array($result) ? $result : [];
+    /** @var mixed $rawResult */
+    $rawResult = $this->execute('deleteMany', $params);
+    return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -2055,7 +2047,9 @@ class QueryBuilder
         ];
 
         $result = $this->execute('upsertMany', $params);
-        return is_array($result) ? $result : [];
+    /** @var mixed $rawResult */
+    $rawResult = $this->execute('upsertMany', $params);
+    return is_array($rawResult) ? $rawResult : [];
     }
 
     /**
@@ -2680,24 +2674,23 @@ class QueryBuilder
         }
 
         // Validar y preparar CTEs
-        $cteDefinitions = [];
-        foreach ($ctes as $name => $definition) {
+    $cteDefinitions = [];
+    foreach ($ctes as $name => $definition) {
             if (!$this->isSafeIdentifier($name)) {
                 throw new VersaORMException(sprintf('Invalid CTE name: %s', $name));
             }
-
-            if (!isset($definition['query']) || empty(trim($definition['query']))) {
+            $rawQuery = $definition['query'] ?? null;
+            $queryStr = is_string($rawQuery) ? trim($rawQuery) : '';
+            if ($queryStr === '') {
                 throw new VersaORMException(sprintf('CTE %s must have a query', $name));
             }
-
-            if (!$this->isSafeRawExpression($definition['query'])) {
+            if (!$this->isSafeRawExpression($queryStr)) {
                 throw new VersaORMException(sprintf('Potentially unsafe query in CTE %s', $name));
             }
-
             $cteDefinitions[] = [
                 'name'     => $name,
-                'query'    => $definition['query'],
-                'bindings' => $definition['bindings'] ?? [],
+                'query'    => $queryStr,
+                'bindings' => isset($definition['bindings']) && is_array($definition['bindings']) ? array_values($definition['bindings']) : [],
             ];
         }
 
@@ -2732,13 +2725,16 @@ class QueryBuilder
         $queryDefinitions = [];
 
         // Si es un array de queries
-        if (is_array($queries)) {
+    if (is_array($queries)) {
             foreach ($queries as $query) {
-                if (isset($query['sql']) && isset($query['bindings'])) {
+                if (is_array($query) && isset($query['sql']) && is_string($query['sql'])) {
                     if (!$this->isSafeRawExpression($query['sql'])) {
                         throw new VersaORMException('Potentially unsafe SQL in UNION query');
                     }
-                    $queryDefinitions[] = $query;
+                    $queryDefinitions[] = [
+                        'sql'      => $query['sql'],
+                        'bindings' => isset($query['bindings']) && is_array($query['bindings']) ? array_values($query['bindings']) : [],
+                    ];
                 } else {
                     throw new VersaORMException('Each UNION query must have sql and bindings keys');
                 }
@@ -2858,25 +2854,33 @@ class QueryBuilder
         $sql = 'SELECT ';
 
         // SELECT
-        if (empty($this->selects)) {
+    if (empty($this->selects)) {
             $sql .= '*';
         } else {
+            /** @var list<string> $selectParts */
             $selectParts = [];
             foreach ($this->selects as $select) {
                 if (is_string($select)) {
                     $selectParts[] = $select;
-                } elseif (is_array($select) && isset($select['type'])) {
-                    switch ($select['type']) {
-                        case 'raw':
-                            $selectParts[] = $select['expression'];
-                            break;
-                        case 'sub':
-                            $selectParts[] = sprintf('(%s) AS %s', $select['query'], $select['alias']);
-                            break;
-                        default:
-                            $selectParts[] = $select['column'] ?? '';
+                    continue;
+                }
+                if (is_array($select) && isset($select['type'])) {
+                    $type = $select['type'];
+                    if ($type === 'raw' && isset($select['expression']) && is_string($select['expression'])) {
+                        $selectParts[] = $select['expression'];
+                        continue;
+                    }
+                    if (($type === 'sub' || $type === 'subquery') && isset($select['query'], $select['alias']) && is_string($select['query']) && is_string($select['alias']) && $select['alias'] !== '') {
+                        $selectParts[] = sprintf('(%s) AS %s', $select['query'], $select['alias']);
+                        continue;
+                    }
+                    if (isset($select['column']) && is_string($select['column'])) {
+                        $selectParts[] = $select['column'];
                     }
                 }
+            }
+            if ($selectParts === []) {
+                $selectParts[] = '*';
             }
             $sql .= implode(', ', $selectParts);
         }
@@ -2886,20 +2890,21 @@ class QueryBuilder
 
         // WHERE
         $bindings = [];
-        if (!empty($this->wheres)) {
+    if (!empty($this->wheres)) {
             $sql .= ' WHERE ';
             $whereParts = [];
             foreach ($this->wheres as $where) {
-                if (isset($where['type']) && $where['type'] === 'raw') {
+                if (isset($where['sql']) && isset($where['bindings']) && is_string($where['sql']) && is_array($where['bindings'])) {
                     $whereParts[] = $where['sql'];
-                    if (isset($where['bindings'])) {
-                        $bindings = array_merge($bindings, $where['bindings']);
-                    }
-                } else {
-                    $operator     = $where['operator'] ?? '=';
-                    $whereParts[] = sprintf('%s %s ?', $where['column'], $operator);
-                    $bindings[]   = $where['value'];
+                    /** @var list<mixed> $wb */
+                    $wb = array_values($where['bindings']);
+                    $bindings = array_merge($bindings, $wb);
+                    continue;
                 }
+                $operator = isset($where['operator']) && is_string($where['operator']) ? $where['operator'] : '=';
+                $col      = isset($where['column']) && is_string($where['column']) ? $where['column'] : '';
+                $whereParts[] = sprintf('%s %s ?', $col, $operator);
+                $bindings[]   = $where['value'] ?? null;
             }
             $sql .= implode(' AND ', $whereParts);
         }

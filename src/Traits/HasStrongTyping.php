@@ -10,6 +10,15 @@ use VersaORM\VersaORMException;
  * Casting fuerte bidireccional usando mapas de handlers uniformes.
  * Handler: fn(object $self,string $property,mixed $value,array $typeDef=[]): mixed
  */
+/**
+ * @psalm-type PropertyTypeDef = array{
+ *   type?: string,
+ *   values?: array<int,string>,
+ *   max_length?: int,
+ *   nullable?: bool
+ * }
+ * @psalm-type PropertyTypeMap = array<string,PropertyTypeDef>
+ */
 trait HasStrongTyping
 {
     /**
@@ -54,7 +63,9 @@ trait HasStrongTyping
     /** @var array<string,callable> */ private static array $phpCastHandlers = [];
     /** @var array<string,callable> */ private static array $dbCastHandlers = [];
 
-    /** @return array<string,array<string,mixed>> */
+    /**
+     * @return PropertyTypeMap
+     */
     public static function getPropertyTypes(): array
     {
         $cls = static::class;
@@ -63,6 +74,7 @@ trait HasStrongTyping
             return $registry[$cls];
         }
 
+        /** @var PropertyTypeMap $types */
         $types = [];
         // 1. Método público/estático propertyTypes()
         if (method_exists($cls, 'propertyTypes')) {
@@ -96,33 +108,38 @@ trait HasStrongTyping
         return $registry[$cls] = $types;
     }
 
-    /** @return array<string,callable> */
+    /**
+     * @return array<string,callable(object,string,mixed,PropertyTypeDef):mixed>
+     */
     private static function getPhpCastHandlers(): array
     {
         if (self::$phpCastHandlers) return self::$phpCastHandlers;
-        $int = static fn($s, $p, $v, $t = []): int => (int) (is_numeric($v) ? $v : 0);
-        $float = static fn($s, $p, $v, $t = []): float => (float) (is_numeric($v) ? $v : 0.0);
-        $string = static fn($s, $p, $v, $t = []): string => is_scalar($v)
+        $int = static fn($s, $p, $v, $_ = []): int => (int) (is_numeric($v) ? $v : 0);
+        $float = static fn($s, $p, $v, $_ = []): float => (float) (is_numeric($v) ? $v : 0.0);
+        $string = static fn($s, $p, $v, $_ = []): string => is_scalar($v)
             ? (string)$v
             : ((json_encode($v, JSON_UNESCAPED_UNICODE) ?: ''));
-        $bool = static function ($s, $p, $v, $t = []): bool {
+        $bool = static function ($s, $p, $v, $_ = []): bool {
             if (is_bool($v)) return $v;
             if (is_int($v)) return $v === 1;
             if (is_string($v)) return in_array(strtolower($v), ['1', 'true', 'yes', 'on'], true);
             return (bool)$v;
         };
-        $array = static function ($s, $p, $v, $t = []): array {
+        $array = static function ($s, $p, $v, $_ = []): array {
             if (is_array($v)) return $v;
             if (is_string($v)) {
-                $d = json_decode($v, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($d)) return $d;
+                $decoded = json_decode($v, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    /** @var array $decoded */
+                    return $decoded;
+                }
                 if ($v === '') return [];
                 return explode(',', $v);
             }
             if ($v === null) return [];
             return [$v];
         };
-        $json = static function ($s, $p, $v, $t = []): mixed {
+        $json = static function ($s, $p, $v, $_ = []): mixed {
             if (is_string($v)) {
                 $d = json_decode($v, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -133,11 +150,10 @@ trait HasStrongTyping
             if (is_array($v) || is_object($v)) return $v;
             throw new VersaORMException("Invalid JSON for property {$p}: not a valid json string");
         };
-        $uuid = static function ($s, $p, $v, $t = []): string {
+        $uuid = static function ($s, $p, $v, $_ = []): string {
             $u = (string)$v;
-            if (!$s->isValidUuid($u)) {
-                // Compatibilidad con pruebas: StrongTypingTest espera VersaORMException para propiedad 'uuid'
-                // mientras que DatabaseSpecificTypesTest espera InvalidArgumentException genérica.
+            // Validación inline para evitar MixedMethodCall sobre $s
+            if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $u) !== 1) {
                 if ($p === 'uuid') {
                     throw new VersaORMException("Invalid UUID format for property {$p}: {$u}");
                 }
@@ -145,43 +161,72 @@ trait HasStrongTyping
             }
             return $u;
         };
-        $dt = static function ($s, $p, $v, $t = []): \DateTimeInterface {
+        $dt = static function ($s, $p, $v, $_ = []): \DateTimeInterface {
             if ($v instanceof \DateTimeInterface) return $v;
             if (is_string($v)) return new \DateTime($v);
             if (is_int($v) || ctype_digit((string)$v)) return (new \DateTimeImmutable('@' . (int)$v))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
             throw new VersaORMException("Invalid datetime value for property {$p}");
         };
         $enum = static function ($s, $p, $v, $t = []): string {
-            $val = (string)$v;
-            $allowed = is_array($t['values'] ?? null) ? $t['values'] : [];
+            $val       = (string)$v;
+            $rawValues = $t['values'] ?? [];
+            $allowed   = [];
+            if (is_array($rawValues)) {
+                foreach ($rawValues as $rv) {
+                    if (is_scalar($rv) || $rv === null) {
+                        $allowed[] = (string)$rv;
+                    }
+                }
+            }
             if ($allowed !== [] && !in_array($val, $allowed, true)) {
-                throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', array_map('strval', $allowed)));
+                throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed));
             }
             return $val;
         };
         $set = static function ($s, $p, $v, $t = []): array {
             $vals = [];
-            if (is_array($v)) $vals = $v;
-            elseif (is_string($v)) {
-                if ($v === '') $vals = [];
-                else {
-                    $json = json_decode($v, true);
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($json)) $vals = $json;
-                    else $vals = explode(',', $v);
+            if (is_array($v)) {
+                $vals = $v;
+            } elseif (is_string($v)) {
+                if ($v === '') {
+                    $vals = [];
+                } else {
+                    $decoded = json_decode($v, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        /** @var array $decoded */
+                        $vals = $decoded;
+                    } else {
+                        $vals = explode(',', $v);
+                    }
                 }
-            } elseif ($v !== null) $vals = [$v];
-            $allowed = is_array($t['values'] ?? null) ? $t['values'] : [];
-            if ($allowed !== []) {
-                foreach ($vals as $vv) {
-                    if (!in_array($vv, $allowed, true)) {
-                        throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', array_map('strval', $allowed)));
+            } elseif ($v !== null) {
+                $vals = [$v];
+            }
+            $allowed = [];
+            if (isset($t['values']) && is_array($t['values'])) {
+                /** @var array<int|mixed,string|scalar|null> $candidateValues */
+                $candidateValues = $t['values'];
+                foreach ($candidateValues as $rv) {
+                    if (is_scalar($rv) || $rv === null) {
+                        $allowed[] = (string)$rv;
                     }
                 }
             }
-            return array_values($vals);
+            if ($allowed !== []) {
+                foreach ($vals as $vv) {
+                    if (!in_array((string)$vv, $allowed, true)) {
+                        throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed));
+                    }
+                }
+            }
+            $out = [];
+            foreach ($vals as $vv) {
+                $out[] = (string)$vv;
+            }
+            return $out;
         };
-        $blob = static fn($s, $p, $v, $t = []): mixed => $v;
-        $inet = static function ($s, $p, $v, $t = []): string {
+        $blob = static fn($s, $p, $v, $_ = []): mixed => $v;
+        $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string)$v;
             if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
@@ -192,12 +237,14 @@ trait HasStrongTyping
         return self::$phpCastHandlers;
     }
 
-    /** @return array<string,callable> */
+    /**
+     * @return array<string,callable(object,string,mixed,PropertyTypeDef):mixed>
+     */
     private static function getDbCastHandlers(): array
     {
         if (self::$dbCastHandlers) return self::$dbCastHandlers;
-        $int = static fn($s, $p, $v, $t = []): int => (int)$v;
-        $float = static fn($s, $p, $v, $t = []): float => (float)$v;
+        $int = static fn($s, $p, $v, $_ = []): int => (int)$v;
+        $float = static fn($s, $p, $v, $_ = []): float => (float)$v;
         $string = static function ($s, $p, $v, $t = []): string {
             $sv = (string)$v;
             $max = $t['max_length'] ?? null;
@@ -206,17 +253,17 @@ trait HasStrongTyping
             }
             return $sv;
         };
-        $bool = static fn($s, $p, $v, $t = []): int => ((is_bool($v) ? $v : (is_numeric($v) ? (float)$v != 0 : in_array(strtolower((string)$v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0);
-        $jsonLike = static function ($s, $p, $v, $t = []): string {
+        $bool = static fn($s, $p, $v, $_ = []): int => ((is_bool($v) ? $v : (is_numeric($v) ? (float)$v != 0 : in_array(strtolower((string)$v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0);
+        $jsonLike = static function ($s, $p, $v, $_ = []): string {
             if (is_string($v)) {
                 $trim = ltrim($v);
                 if ($trim !== '' && ($trim[0] == '{' || $trim[0] == '[')) return $v;
             }
             return json_encode($v, JSON_UNESCAPED_UNICODE) ?: 'null';
         };
-        $uuid = static function ($s, $p, $v, $t = []): string {
+        $uuid = static function ($s, $p, $v, $_ = []): string {
             $u = (string)$v;
-            if (!$s->isValidUuid($u)) {
+            if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $u) !== 1) {
                 if ($p === 'uuid') {
                     throw new VersaORMException("Invalid UUID format for property {$p}: {$u}");
                 }
@@ -224,43 +271,72 @@ trait HasStrongTyping
             }
             return $u;
         };
-        $dt = static function ($s, $p, $v, $t = []): string {
+        $dt = static function ($s, $p, $v, $_ = []): string {
             if ($v instanceof \DateTimeInterface) return $v->format('Y-m-d H:i:s');
             if (is_string($v)) return (new \DateTime($v))->format('Y-m-d H:i:s');
             if (is_int($v) || ctype_digit((string)$v)) return date('Y-m-d H:i:s', (int)$v);
             throw new VersaORMException("Invalid datetime value for property {$p}");
         };
         $enum = static function ($s, $p, $v, $t = []): string {
-            $val = (string)$v;
-            $allowed = is_array($t['values'] ?? null) ? $t['values'] : [];
+            $val       = (string)$v;
+            $rawValues = $t['values'] ?? [];
+            $allowed   = [];
+            if (is_array($rawValues)) {
+                foreach ($rawValues as $rv) {
+                    if (is_scalar($rv) || $rv === null) {
+                        $allowed[] = (string)$rv;
+                    }
+                }
+            }
             if ($allowed !== [] && !in_array($val, $allowed, true)) {
-                throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', array_map('strval', $allowed)));
+                throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed));
             }
             return $val;
         };
         $set = static function ($s, $p, $v, $t = []): string {
             $vals = [];
-            if (is_array($v)) $vals = $v;
-            elseif (is_string($v)) {
-                if ($v === '') $vals = [];
-                else {
-                    $json = json_decode($v, true);
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($json)) $vals = $json;
-                    else $vals = explode(',', $v);
+            if (is_array($v)) {
+                $vals = $v;
+            } elseif (is_string($v)) {
+                if ($v === '') {
+                    $vals = [];
+                } else {
+                    $decoded = json_decode($v, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        /** @var array $decoded */
+                        $vals = $decoded;
+                    } else {
+                        $vals = explode(',', $v);
+                    }
                 }
-            } elseif ($v !== null) $vals = [$v];
-            $allowed = is_array($t['values'] ?? null) ? $t['values'] : [];
-            if ($allowed !== []) {
-                foreach ($vals as $vv) {
-                    if (!in_array($vv, $allowed, true)) {
-                        throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', array_map('strval', $allowed)));
+            } elseif ($v !== null) {
+                $vals = [$v];
+            }
+            $allowed = [];
+            if (isset($t['values']) && is_array($t['values'])) {
+                /** @var array<int|mixed,string|scalar|null> $candidateValues */
+                $candidateValues = $t['values'];
+                foreach ($candidateValues as $rv) {
+                    if (is_scalar($rv) || $rv === null) {
+                        $allowed[] = (string)$rv;
                     }
                 }
             }
-            return implode(',', array_map('strval', $vals));
+            if ($allowed !== []) {
+                foreach ($vals as $vv) {
+                    if (!in_array((string)$vv, $allowed, true)) {
+                        throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed));
+                    }
+                }
+            }
+            $out = [];
+            foreach ($vals as $vv) {
+                $out[] = (string)$vv;
+            }
+            return implode(',', $out);
         };
-        $blob = static fn($s, $p, $v, $t = []): mixed => $v;
-        $inet = static function ($s, $p, $v, $t = []): string {
+        $blob = static fn($s, $p, $v, $_ = []): mixed => $v;
+        $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string)$v;
             if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
@@ -271,12 +347,17 @@ trait HasStrongTyping
         return self::$dbCastHandlers;
     }
 
-    /** @throws VersaORMException */
+    /**
+     * @param mixed $value
+     * @return mixed
+     * @throws VersaORMException
+     */
     public function castToPhpType(string $property, $value)
     {
         if ($value === null) return null;
+        /** @var PropertyTypeMap $types */
         $types = static::getPropertyTypes();
-        if (!isset($types[$property])) {
+        if (!isset($types[$property])) { // fallback heurístico
             if (is_string($value)) {
                 $trim = trim($value);
                 if ($trim !== '' && ($trim[0] == '{' || $trim[0] == '[')) {
@@ -290,8 +371,9 @@ trait HasStrongTyping
             }
             return $value;
         }
+        /** @var PropertyTypeDef $def */
         $def = $types[$property];
-        $type = $def['type'] ?? 'string';
+        $type = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
         $handler = self::getPhpCastHandlers()[$type] ?? static fn($s, $p, $v, $t = []): mixed => $v;
         try {
             return $handler($this, $property, $value, $def);
@@ -301,10 +383,15 @@ trait HasStrongTyping
         }
     }
 
-    /** @throws VersaORMException */
+    /**
+     * @param mixed $value
+     * @return mixed
+     * @throws VersaORMException
+     */
     public function castToDatabaseType(string $property, $value)
     {
         if ($value === null) return null;
+        /** @var PropertyTypeMap $types */
         $types = static::getPropertyTypes();
         if (!isset($types[$property])) {
             if ($value instanceof \DateTimeInterface) return $value->format('Y-m-d H:i:s');
@@ -312,8 +399,9 @@ trait HasStrongTyping
             if (is_bool($value)) return $value ? 1 : 0;
             return $value;
         }
+        /** @var PropertyTypeDef $def */
         $def = $types[$property];
-        $type = $def['type'] ?? 'string';
+        $type = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
         $handler = self::getDbCastHandlers()[$type] ?? static fn($s, $p, $v, $t = []): mixed => $v;
         try {
             return $handler($this, $property, $value, $def);
@@ -331,8 +419,10 @@ trait HasStrongTyping
         if ($types === []) return ['No property types defined for model ' . static::class];
         try {
             if (!($this->orm instanceof \VersaORM\VersaORM)) return ['Se requiere una instancia válida de VersaORM para validar el esquema'];
+            /** @var list<array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}>|false $schema */
             $schema = $this->orm->schema('columns', $this->table);
             if (!$schema) return ["No se pudo obtener información de esquema para la tabla '{$this->table}'"];
+            /** @var array<string,array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $db */
             $db = [];
             foreach ($schema as $c) {
                 $db[strtolower($c['column_name'])] = $c;
@@ -346,13 +436,13 @@ trait HasStrongTyping
                 }
                 $dbCol = $db[$c];
                 $dbType = strtolower($dbCol['data_type']);
-                $modelType = strtolower($def['type']);
+                $modelType = strtolower((string)($def['type'] ?? ''));
                 $expected = $map[$dbType] ?? $dbType;
                 if ($expected !== $modelType && !$this->isCompatibleType($expected, $modelType)) {
                     $errs[] = "⚠️  INCONSISTENCIA: '{$prop}' - DB: {$dbType} ({$expected}) vs Modelo: {$modelType}";
                 }
                 $nullable = strtolower($dbCol['is_nullable'] ?? 'no') === 'yes';
-                $modelNull = $def['nullable'] ?? false;
+                $modelNull = (bool)($def['nullable'] ?? false);
                 if ($nullable !== $modelNull) {
                     $errs[] = "⚠️  NULLABILIDAD: '{$prop}' - DB permite NULL: " . ($nullable ? 'Sí' : 'No') . ' vs Modelo: ' . ($modelNull ? 'Sí' : 'No');
                 }

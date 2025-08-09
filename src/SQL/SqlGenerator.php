@@ -507,6 +507,7 @@ class SqlGenerator
                 $rowPh   = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
                 $sql     = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
                     . ' (' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
+                /** @var list<mixed> $bindings */
                 $bindings  = [];
                 $valuesSql = [];
                 foreach ($records as $rec) {
@@ -544,6 +545,7 @@ class SqlGenerator
                 $rowPh   = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
                 $sql     = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
                     . ' (' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
+                /** @var list<mixed> $bindings */
                 $bindings  = [];
                 $valuesSql = [];
                 foreach ($records as $rec) {

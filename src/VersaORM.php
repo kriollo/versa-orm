@@ -5,6 +5,57 @@ declare(strict_types=1);
 namespace VersaORM;
 
 /**
+ * Definiciones de tipos Psalm para estructuras internas de esquema y operaciones.
+ * Se usan para eliminar usages "mixed" y dar forma explícita a arrays asociativos.
+ *
+ * @psalm-type ColumnDef = array{
+ *   name?:string,
+ *   type?:string,
+ *   nullable?:bool,
+ *   default?:mixed,
+ *   primary?:bool,
+ *   autoIncrement?:bool
+ * }
+ * @psalm-type UniqueConstraintDef = array{
+ *   name?:string,
+ *   columns?:list<string>
+ * }
+ * @psalm-type ForeignConstraintDef = array{
+ *   name?:string,
+ *   columns?:list<string>,
+ *   refTable?:string,
+ *   refColumns?:list<string>,
+ *   onDelete?:string,
+ *   onUpdate?:string
+ * }
+ * @psalm-type TableConstraintsDef = array{
+ *   unique?:list<UniqueConstraintDef>,
+ *   foreign?:list<ForeignConstraintDef>
+ * }
+ * @psalm-type IndexColumn = string|array{raw?:string}
+ * @psalm-type IndexDef = array{
+ *   name?:string,
+ *   columns?:list<IndexColumn>,
+ *   unique?:bool,
+ *   using?:string,
+ *   where?:string,
+ *   if_not_exists?:bool,
+ *   concurrently?:bool
+ * }
+ * @psalm-type AlterRenameDef = array{from?:string,to?:string}
+ * @psalm-type AlterModifyDef = array{name?:string,type?:string,nullable?:bool,default?:mixed}
+ * @psalm-type AlterChanges = array{
+ *   add?:list<ColumnDef>,
+ *   addIndex?:list<IndexDef>,
+ *   dropIndex?:list<string>,
+ *   addForeign?:list<ForeignConstraintDef>,
+ *   dropForeign?:list<string>,
+ *   rename?:list<AlterRenameDef>,
+ *   drop?:list<string>,
+ *   modify?:list<AlterModifyDef>
+ * }
+ */
+/**
  * VersaORM - ORM de alto rendimiento para PHP con núcleo en Rust.
  *
  * PROPÓSITO: Configuración general del ORM y acceso al motor SQL
@@ -192,10 +243,10 @@ class VersaORM
             // fwrite(STDERR, "Config antes de transformar: " . json_encode($this->config, JSON_PRETTY_PRINT) . "\n");
         }
 
-        try {
+    try {
             // Convertir configuración para compatibilidad con Rust
-            /** @var array<string,mixed> $rustConfig */
-            $rustConfig = $this->config;
+        /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $rustConfig */
+        $rustConfig = $this->config; // copia superficial para normalizar claves
             if (isset($rustConfig['database_type']) && !isset($rustConfig['driver'])) {
                 $rustConfig['driver'] = $rustConfig['database_type'];
                 unset($rustConfig['database_type']);
@@ -203,9 +254,12 @@ class VersaORM
 
             $payload = json_encode(
                 [
-                    'config'       => $rustConfig,
-                    'action'       => $action,
-                    'params'       => $params,
+            // Config normalizada para el binario
+            'config'       => $rustConfig,
+            // Acción solicitada
+            'action'       => $action,
+            // Parámetros (shape depende de la acción; mantener mixed tipado)
+            'params'       => $params,
                     'freeze_state' => [
                         'global_frozen' => $this->isFrozen,
                         'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
@@ -280,6 +334,7 @@ class VersaORM
         try {
             // Limpiar la salida de logs de debug del binario Rust
             $cleanOutput = $this->cleanRustDebugOutput($output);
+            /** @var array{status?:string,data?:mixed,error?:array{code?:string,message?:string,details?:array<string,mixed>,sql_state?:string,query?:string,bindings?:array<int,mixed>}}|null $response */
             $response    = json_decode($cleanOutput, true, 512, JSON_THROW_ON_ERROR);
 
             // Debug temporal para advanced_sql
@@ -308,7 +363,7 @@ class VersaORM
             $this->handleBinaryError($responseShape, $action, $params);
         }
 
-        return is_array($response) ? ($response['data'] ?? null) : null;
+    return is_array($response) ? ($response['data'] ?? null) : null;
     }
 
 
@@ -334,7 +389,8 @@ class VersaORM
      */
     public function exec(string $query, array $bindings = [])
     {
-        $result = $this->execute('raw', ['query' => $query, 'bindings' => $bindings]);
+    /** @var mixed $result */
+    $result = $this->execute('raw', ['query' => $query, 'bindings' => $bindings]);
         // Normalizar: para sentencias no-SELECT devolver null o [] (tests aceptan null/array vacío)
         if (is_int($result)) {
             return null;
@@ -398,6 +454,7 @@ class VersaORM
         $colSql             = [];
         $pkCols             = [];
         $sqliteInlinePkUsed = false; // Para SQLite, usamos PK inline solo cuando es INTEGER PRIMARY KEY autoincremental
+        /** @var list<ColumnDef> $columns */
         foreach ($columns as $col) {
             $name = (string)($col['name'] ?? '');
             $type = (string)($col['type'] ?? 'VARCHAR(255)');
@@ -406,6 +463,7 @@ class VersaORM
             }
             $nullable      = array_key_exists('nullable', $col) ? (bool)$col['nullable'] : true;
             $defaultExists = array_key_exists('default', $col);
+            /** @var mixed $default */
             $default       = $col['default'] ?? null;
             $primary       = !empty($col['primary']);
             $auto          = !empty($col['autoIncrement']);
@@ -455,19 +513,30 @@ class VersaORM
         }
 
         // Table-level constraints: UNIQUE, FOREIGN KEYS (portables)
+        /** @var TableConstraintsDef $constraints */
         $constraints = (array)($options['constraints'] ?? []);
-        foreach ((array)($constraints['unique'] ?? []) as $uq) {
+        /** @var list<UniqueConstraintDef> $uniqueList */
+        $uniqueList = (array)($constraints['unique'] ?? []);
+        foreach ($uniqueList as $uq) {
             $cname = isset($uq['name']) ? $q((string)$uq['name']) : null;
-            $cols  = array_map($q, (array)($uq['columns'] ?? []));
+            /** @var list<string> $uqCols */
+            $uqCols = (array)($uq['columns'] ?? []);
+            $cols  = array_map($q, $uqCols);
             if (!empty($cols)) {
                 $colSql[] = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'UNIQUE (' . implode(', ', $cols) . ')';
             }
         }
-        foreach ((array)($constraints['foreign'] ?? []) as $fk) {
+        /** @var list<ForeignConstraintDef> $foreignList */
+        $foreignList = (array)($constraints['foreign'] ?? []);
+        foreach ($foreignList as $fk) {
             $cname    = isset($fk['name']) ? $q((string)$fk['name']) : null;
-            $cols     = array_map($q, (array)($fk['columns'] ?? []));
+            /** @var list<string> $fkCols */
+            $fkCols   = (array)($fk['columns'] ?? []);
+            $cols     = array_map($q, $fkCols);
             $refTable = isset($fk['refTable']) ? $q((string)$fk['refTable']) : null;
-            $refCols  = array_map($q, (array)($fk['refColumns'] ?? []));
+            /** @var list<string> $fkRefCols */
+            $fkRefCols = (array)($fk['refColumns'] ?? []);
+            $refCols  = array_map($q, $fkRefCols);
             if (!empty($cols) && $refTable && !empty($refCols)) {
                 $line = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'FOREIGN KEY (' . implode(', ', $cols) . ') REFERENCES ' . $refTable . ' (' . implode(', ', $refCols) . ')';
                 if (!empty($fk['onDelete'])) {
@@ -499,8 +568,10 @@ class VersaORM
         $this->exec($sql);
 
         // Indexes (post-create portable)
-        foreach ((array)($options['indexes'] ?? []) as $idx) {
-            $this->createIndexPortable($table, (array)$idx, $driver);
+        /** @var list<IndexDef> $indexesList */
+        $indexesList = (array)($options['indexes'] ?? []);
+        foreach ($indexesList as $idx) {
+            $this->createIndexPortable($table, $idx, $driver);
         }
     }
 
@@ -517,6 +588,8 @@ class VersaORM
         $q      = fn(string $id): string => $this->quoteIdent($id, $driver);
 
         $tableIdent = $q($table);
+        /** @var AlterChanges $changes */
+        /** @var list<ColumnDef> $addCols */
         $addCols    = (array)($changes['add'] ?? []);
         if (!empty($addCols)) {
             $clauses = [];
@@ -528,6 +601,7 @@ class VersaORM
                 }
                 $nullable      = array_key_exists('nullable', $col) ? (bool)$col['nullable'] : true;
                 $defaultExists = array_key_exists('default', $col);
+                /** @var mixed $default */
                 $default       = $col['default'] ?? null;
 
                 $parts = ['ADD COLUMN ' . $q($name) . ' ' . $type];
@@ -546,19 +620,25 @@ class VersaORM
         }
         // Índices: addIndex / dropIndex
         if (!empty($changes['addIndex'])) {
-            foreach ((array)$changes['addIndex'] as $idx) {
-                $this->createIndexPortable($table, (array)$idx, $driver);
+            /** @var list<IndexDef> $idxList */
+            $idxList = (array)$changes['addIndex'];
+            foreach ($idxList as $idx) {
+                $this->createIndexPortable($table, $idx, $driver);
             }
         }
         if (!empty($changes['dropIndex'])) {
-            foreach ((array)$changes['dropIndex'] as $idxName) {
+            /** @var list<string> $dropIdx */
+            $dropIdx = (array)$changes['dropIndex'];
+            foreach ($dropIdx as $idxName) {
                 $this->dropIndexPortable($table, (string)$idxName, $driver);
             }
         }
 
         // Foreign keys: addForeign / dropForeign
         if (!empty($changes['addForeign'])) {
-            foreach ((array)$changes['addForeign'] as $fk) {
+            /** @var list<ForeignConstraintDef> $addForeign */
+            $addForeign = (array)$changes['addForeign'];
+            foreach ($addForeign as $fk) {
                 $name     = (string)($fk['name'] ?? '');
                 $cols     = (array)($fk['columns'] ?? []);
                 $refTable = (string)($fk['refTable'] ?? '');
@@ -577,7 +657,9 @@ class VersaORM
             }
         }
         if (!empty($changes['dropForeign'])) {
-            foreach ((array)$changes['dropForeign'] as $fkName) {
+            /** @var list<string> $dropForeign */
+            $dropForeign = (array)$changes['dropForeign'];
+            foreach ($dropForeign as $fkName) {
                 $fk = $q((string)$fkName);
                 if ($driver === 'mysql' || $driver === 'mariadb') {
                     $sql = 'ALTER TABLE ' . $tableIdent . ' DROP FOREIGN KEY ' . $fk;
@@ -590,7 +672,9 @@ class VersaORM
         // Rename columns
         if (!empty($changes['rename'])) {
             $clauses = [];
-            foreach ((array)$changes['rename'] as $rc) {
+            /** @var list<AlterRenameDef> $renameDefs */
+            $renameDefs = (array)$changes['rename'];
+            foreach ($renameDefs as $rc) {
                 $from = (string)($rc['from'] ?? '');
                 $to   = (string)($rc['to'] ?? '');
                 if ($from !== '' && $to !== '') {
@@ -609,6 +693,7 @@ class VersaORM
 
         // Drop columns
         if (!empty($changes['drop'])) {
+            /** @var list<string> $cols */
             $cols    = (array)$changes['drop'];
             $clauses = [];
             foreach ($cols as $c) {
@@ -624,6 +709,7 @@ class VersaORM
 
         // Modify columns (tipo/null/default)
         if (!empty($changes['modify'])) {
+            /** @var list<AlterModifyDef> $mods */
             $mods    = (array)$changes['modify'];
             $clauses = [];
             if ($driver === 'mysql' || $driver === 'mariadb') {
@@ -635,6 +721,7 @@ class VersaORM
                     }
                     $nullable      = array_key_exists('nullable', $m) ? (bool)$m['nullable'] : null;
                     $defaultExists = array_key_exists('default', $m);
+                    /** @var mixed $default */
                     $default       = $m['default'] ?? null;
                     $part          = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
                     if ($nullable !== null) {
@@ -658,6 +745,7 @@ class VersaORM
                     }
                     $nullable      = array_key_exists('nullable', $m) ? (bool)$m['nullable'] : null;
                     $defaultExists = array_key_exists('default', $m);
+                    /** @var mixed $default */
                     $default       = $m['default'] ?? null;
                     $clauses[]     = 'ALTER COLUMN ' . $q($name) . ' TYPE ' . $type;
                     if ($nullable !== null) {
@@ -686,7 +774,9 @@ class VersaORM
     private function createIndexPortable(string $table, array $idx, string $driver): void
     {
         $q    = fn(string $id): string => $this->quoteIdent($id, $driver);
+        /** @var IndexDef $idx */
         $name = (string)($idx['name'] ?? '');
+        /** @var list<IndexColumn> $cols */
         $cols = (array)($idx['columns'] ?? []);
         if ($name === '' || empty($cols)) {
             return;
