@@ -16,7 +16,10 @@ class PdoEngine
     private array $config;
     private PdoConnection $connector;
     private SqlDialectInterface $dialect;
-    /** @var null|callable(string,array):void */
+    /**
+     * Logger opcional inyectable.
+     * @var (callable(string,array<string,mixed>):void)|null
+     */
     private $logger = null;
 
     // Caché en memoria (estático para compartirse entre instancias durante tests)
@@ -38,7 +41,10 @@ class PdoEngine
         'total_query_ms'    => 0.0,
     ];
 
-    /** Devuelve métricas actuales */
+    /**
+     * Devuelve métricas actuales.
+     * @return array<string,int|float>
+     */
     public static function getMetrics(): array
     {
         return self::$metrics;
@@ -65,7 +71,7 @@ class PdoEngine
         if ($isWrite) {
             self::$metrics['writes']++;
         }
-        self::$metrics['last_query_ms']  = $elapsedMs;
+        self::$metrics['last_query_ms'] = $elapsedMs;
         self::$metrics['total_query_ms'] += $elapsedMs;
     }
 
@@ -102,7 +108,10 @@ class PdoEngine
         $this->logger = $logger;
     }
 
-    /** Log auxiliar seguro */
+    /**
+     * Log auxiliar seguro.
+     * @param array<string,mixed> $context
+     */
     private function log(string $message, array $context = []): void
     {
         if (is_callable($this->logger)) {
@@ -170,12 +179,12 @@ class PdoEngine
         // no como method dentro de 'query', así que las manejamos aquí primero.
         // ==============================
         if (in_array($normalizedAction, ['insertmany', 'updatemany', 'deletemany', 'upsertmany'], true)) {
+            // Exhaustivo respecto a la lista filtrada; no se necesita default (evita rama inalcanzable segun PHPStan)
             return match ($normalizedAction) {
                 'insertmany' => $this->handleInsertMany($params, $pdo),
                 'updatemany' => $this->handleUpdateMany($params, $pdo),
                 'deletemany' => $this->handleDeleteMany($params, $pdo),
                 'upsertmany' => $this->handleUpsertMany($params, $pdo),
-                default      => throw new VersaORMException('Unsupported batch action: ' . $normalizedAction),
             };
         }
         // Acción especial 'schema' para introspección mínima (MySQL/SQLite/Postgres)
@@ -254,13 +263,13 @@ class PdoEngine
                     return 'cache disabled';
                 })(),
                 'clear' => (function () {
-                    self::$queryCache = [];
+                    self::$queryCache    = [];
                     self::$tableKeyIndex = [];
                     return 'cache cleared';
                 })(),
-                'status' => (int)count(self::$queryCache),
+                'status'     => (int)count(self::$queryCache),
                 'invalidate' => (function () use ($params) {
-                    $table = isset($params['table']) ? (string)$params['table'] : '';
+                    $table   = isset($params['table']) ? (string)$params['table'] : '';
                     $pattern = isset($params['pattern']) ? (string)$params['pattern'] : '';
                     if ($table === '' && $pattern === '') {
                         throw new VersaORMException('Cache invalidation requires a table or pattern parameter.', 'INVALID_CACHE_INVALIDATE');
@@ -389,7 +398,7 @@ class PdoEngine
                             $querySql = (string)($c['query'] ?? '');
                             $colsDef  = '';
                             if (!empty($c['columns']) && is_array($c['columns'])) {
-                                $quotedCols = array_map(fn($col) => $this->dialect->quoteIdentifier((string)$col), $c['columns']);
+                                $quotedCols = array_map(fn ($col) => $this->dialect->quoteIdentifier((string)$col), $c['columns']);
                                 $colsDef    = ' (' . implode(', ', $quotedCols) . ')';
                             }
                             if (!empty($c['recursive'])) {
@@ -400,7 +409,7 @@ class PdoEngine
                                 $bindings = array_merge($bindings, $c['bindings']);
                             }
                         }
-                        $main = (string)($params['main_query'] ?? '');
+                        $main         = (string)($params['main_query'] ?? '');
                         $mainBindings = [];
                         if (isset($params['main_query_bindings']) && is_array($params['main_query_bindings'])) {
                             $mainBindings = $params['main_query_bindings'];
@@ -440,12 +449,12 @@ class PdoEngine
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
                     'json_operation' => (function () use ($params, $pdo, $driver) {
-                        $table  = (string)($params['table'] ?? '');
-                        $col    = (string)($params['column'] ?? '');
-                        $op     = (string)($params['json_operation'] ?? 'extract');
-                        $path   = (string)($params['path'] ?? '');
-                        $wheres = (array)($params['wheres'] ?? []);
-                        $bind   = [];
+                        $table    = (string)($params['table'] ?? '');
+                        $col      = (string)($params['column'] ?? '');
+                        $op       = (string)($params['json_operation'] ?? 'extract');
+                        $path     = (string)($params['path'] ?? '');
+                        $wheres   = (array)($params['wheres'] ?? []);
+                        $bind     = [];
                         $jsonExpr = '';
 
                         // Soporte de sintaxis arrow (col->key->>key2) y extracción sin comillas en MySQL
@@ -461,17 +470,18 @@ class PdoEngine
                         if ($driver === 'mysql') {
                             if ($arrowStyle) {
                                 // Convertir col->a->b->>c en JSON_EXTRACT(col,'$.a.b.c') y opcional JSON_UNQUOTE
-                                $segments = preg_split('/->>?/', $path);
-                                $segments = array_values(array_filter($segments, fn($s) => $s !== '' && $s !== $col));
+                                $segments = preg_split('/->>?/', $path) ?: [];
+                                // Filtrar segmentos vacíos o que repitan el nombre de la columna
+                                $segments = array_values(array_filter($segments, static fn ($s): bool => is_string($s) && $s !== '' && $s !== $col));
                                 // Si el path original incluía col al inicio, removerlo
                                 if (!empty($segments) && $segments[0] === $col) {
                                     array_shift($segments);
                                 }
                                 $jsonPath = '$';
                                 if (!empty($segments)) {
-                                    $jsonPath .= '.' . implode('.', array_map(fn($s) => trim($s, "'\"` "), $segments));
+                                    $jsonPath .= '.' . implode('.', array_map(fn ($s) => trim($s, "'\"` "), $segments));
                                 }
-                                $core = "JSON_EXTRACT($col, ?)";
+                                $core     = "JSON_EXTRACT($col, ?)";
                                 $jsonExpr = ($unquote ? 'JSON_UNQUOTE(' . $core . ')' : $core) . ' AS value';
                                 $bind     = [$jsonPath];
                             } else {
@@ -485,12 +495,15 @@ class PdoEngine
                                 }
                             }
                         } elseif ($driver === 'postgres') {
-                            $segments = array_filter(explode('.', trim($path, '$.')));
+                            $segments = array_filter(
+                                explode('.', trim($path, '$.')),
+                                static fn ($s): bool => $s !== ''
+                            );
                             $expr     = $col;
                             foreach ($segments as $idx => $s) {
                                 // Último segmento usar ->> para texto simple
                                 $opArrow = $idx === array_key_last($segments) ? '->>' : '->';
-                                $expr   .= $opArrow . "'" . $s . "'";
+                                $expr .= $opArrow . "'" . $s . "'";
                             }
                             $jsonExpr = $expr . ' AS value';
                             $bind     = [];
@@ -537,7 +550,7 @@ class PdoEngine
                             $language = (string)($options['language'] ?? 'english');
                             $operator = (string)($options['operator'] ?? '@@');
                             $rank     = !empty($options['rank']);
-                            $colExpr  = implode(' || \" \" || ', array_map(fn($c) => "to_tsvector('" . $language . "', " . $c . ')', $cols));
+                            $colExpr  = implode(' || \" \" || ', array_map(fn ($c) => "to_tsvector('" . $language . "', " . $c . ')', $cols));
                             // Si solo una columna y parece tsvector, usarla directa
                             if (count($cols) === 1 && preg_match('/vector$/i', (string)$cols[0]) === 1) {
                                 $colExpr = (string)$cols[0];
@@ -686,8 +699,8 @@ class PdoEngine
                 }
             }
             if ($method === 'count') {
-                $stmt   = $pdo->prepare($sql);
-                $start  = microtime(true);
+                $stmt  = $pdo->prepare($sql);
+                $start = microtime(true);
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (\Throwable $e) {
@@ -860,7 +873,7 @@ class PdoEngine
         $batches       = $batchSize > 0 ? (int)ceil($total / $batchSize) : 1;
         $totalInserted = 0;
         for ($i = 0; $i < $total; $i += $batchSize) {
-            $chunk = array_slice($records, $i, $batchSize);
+            $chunk                      = array_slice($records, $i, $batchSize);
             [$chunkSql, $chunkBindings] = SqlGenerator::generate('query', [
                 'method'  => 'insertMany',
                 'table'   => $params['table'] ?? '',
@@ -886,7 +899,7 @@ class PdoEngine
      */
     private function handleUpdateMany(array $params, PDO $pdo): array
     {
-        $max = (int)($params['max_records'] ?? 10000);
+        $max                        = (int)($params['max_records'] ?? 10000);
         [$countSql, $countBindings] = SqlGenerator::generate('query', [
             'method' => 'count',
             'table'  => $params['table'] ?? '',
@@ -927,7 +940,7 @@ class PdoEngine
      */
     private function handleDeleteMany(array $params, PDO $pdo): array
     {
-        $max = (int)($params['max_records'] ?? 10000);
+        $max                        = (int)($params['max_records'] ?? 10000);
         [$countSql, $countBindings] = SqlGenerator::generate('query', [
             'method' => 'count',
             'table'  => $params['table'] ?? '',

@@ -2280,7 +2280,7 @@ class QueryBuilder
     private function detectUpsertKeysForReplace(array $data): array
     {
         $keysInData = array_keys($data);
-        $keysInData = array_values(array_filter($keysInData, fn($k) => $this->isSafeIdentifier($k)));
+        $keysInData = array_values(array_filter($keysInData, fn ($k) => $this->isSafeIdentifier($k)));
 
         $pk = [];
         try {

@@ -35,7 +35,7 @@ class PdoConnection
 
         $driver = strtolower((string)($this->config['driver'] ?? 'mysql'));
         try {
-            $poolKey = '';
+            $poolKey         = '';
             [$dsn, $poolKey] = match ($driver) {
                 'mysql', 'mariadb' => (function () {
                     $dsn = sprintf(
@@ -59,8 +59,8 @@ class PdoConnection
                     return [$dsn, $poolKey];
                 })(),
                 'sqlite' => (function () {
-                    $path = $this->config['database'] ?? ':memory:';
-                    $dsn  = sprintf('sqlite:%s', $path);
+                    $path    = $this->config['database'] ?? ':memory:';
+                    $dsn     = sprintf('sqlite:%s', $path);
                     $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
                     return [$dsn, $poolKey];
                 })(),

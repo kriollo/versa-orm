@@ -408,7 +408,7 @@ class SqlGenerator
                 $columns = array_keys($records[0]);
                 $rowPh   = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
                 $sql     = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
-                    . ' (' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
+                    . ' (' . implode(', ', array_map(fn ($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
                 $bindings  = [];
                 $valuesSql = [];
                 foreach ($records as $rec) {
@@ -441,7 +441,7 @@ class SqlGenerator
                 $setCols = !empty($updateColumns) ? $updateColumns : array_values(array_diff($columns, $unique));
                 $rowPh   = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
                 $sql     = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
-                    . ' (' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
+                    . ' (' . implode(', ', array_map(fn ($name) => $dialect->quoteIdentifier((string)$name), $columns)) . ') VALUES ';
                 $bindings  = [];
                 $valuesSql = [];
                 foreach ($records as $rec) {
@@ -456,7 +456,7 @@ class SqlGenerator
                     if (empty($unique)) {
                         throw new VersaORMException('PostgreSQL upsert requires unique_keys');
                     }
-                    $conflict = '(' . implode(', ', array_map(fn($name) => $dialect->quoteIdentifier((string)$name), $unique)) . ')';
+                    $conflict = '(' . implode(', ', array_map(fn ($name) => $dialect->quoteIdentifier((string)$name), $unique)) . ')';
                     $sets     = [];
                     foreach ($setCols as $c) {
                         $sets[] = $dialect->quoteIdentifier($c) . ' = EXCLUDED.' . $dialect->quoteIdentifier($c);

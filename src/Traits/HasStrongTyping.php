@@ -200,26 +200,26 @@ trait HasStrongTyping
 
         // Registrar sinónimos apuntando al mismo handler
         $map = [
-            'int' => $intHandler,
-            'integer' => $intHandler,
-            'float' => $floatHandler,
-            'real' => $floatHandler,
-            'double' => $floatHandler,
-            'decimal' => $floatHandler,
-            'string' => $stringHandler,
-            'bool' => $boolHandler,
-            'boolean' => $boolHandler,
-            'array' => $arrayHandler,
+            'int'        => $intHandler,
+            'integer'    => $intHandler,
+            'float'      => $floatHandler,
+            'real'       => $floatHandler,
+            'double'     => $floatHandler,
+            'decimal'    => $floatHandler,
+            'string'     => $stringHandler,
+            'bool'       => $boolHandler,
+            'boolean'    => $boolHandler,
+            'array'      => $arrayHandler,
             'collection' => $arrayHandler,
-            'json' => $jsonHandler,
-            'uuid' => $uuidHandler,
-            'datetime' => $datetimeHandler,
-            'date' => $datetimeHandler,
-            'timestamp' => $datetimeHandler,
-            'enum' => $enumHandler,
-            'set' => $setHandler,
-            'blob' => $blobHandler,
-            'inet' => $inetHandler,
+            'json'       => $jsonHandler,
+            'uuid'       => $uuidHandler,
+            'datetime'   => $datetimeHandler,
+            'date'       => $datetimeHandler,
+            'timestamp'  => $datetimeHandler,
+            'enum'       => $enumHandler,
+            'set'        => $setHandler,
+            'blob'       => $blobHandler,
+            'inet'       => $inetHandler,
         ];
 
         self::$phpCastHandlers = $map;
@@ -315,26 +315,26 @@ trait HasStrongTyping
         };
 
         $map = [
-            'int' => $intHandler,
-            'integer' => $intHandler,
-            'float' => $floatHandler,
-            'real' => $floatHandler,
-            'double' => $floatHandler,
-            'decimal' => $floatHandler,
-            'string' => $stringHandler,
-            'bool' => $boolHandler,
-            'boolean' => $boolHandler,
-            'array' => $jsonLikeHandler,
+            'int'        => $intHandler,
+            'integer'    => $intHandler,
+            'float'      => $floatHandler,
+            'real'       => $floatHandler,
+            'double'     => $floatHandler,
+            'decimal'    => $floatHandler,
+            'string'     => $stringHandler,
+            'bool'       => $boolHandler,
+            'boolean'    => $boolHandler,
+            'array'      => $jsonLikeHandler,
             'collection' => $jsonLikeHandler,
-            'json' => $jsonLikeHandler,
-            'uuid' => $uuidHandler,
-            'datetime' => $datetimeHandler,
-            'date' => $datetimeHandler,
-            'timestamp' => $datetimeHandler,
-            'enum' => $enumHandler,
-            'set' => $setHandler,
-            'blob' => $blobHandler,
-            'inet' => $inetHandler,
+            'json'       => $jsonLikeHandler,
+            'uuid'       => $uuidHandler,
+            'datetime'   => $datetimeHandler,
+            'date'       => $datetimeHandler,
+            'timestamp'  => $datetimeHandler,
+            'enum'       => $enumHandler,
+            'set'        => $setHandler,
+            'blob'       => $blobHandler,
+            'inet'       => $inetHandler,
         ];
 
         self::$dbCastHandlers = $map;
@@ -390,7 +390,7 @@ trait HasStrongTyping
      * Implementación basada en un mapa de handlers para evitar grandes switch.
      *
      * @param string $property
-     * @param mixed  $value
+     * @param mixed $value
      * @return mixed
      * @throws VersaORMException
      */
@@ -483,7 +483,7 @@ trait HasStrongTyping
         };
 
         try {
-            return $handler($this, $property, $value, $typeDefinition);
+            return $handler($this, $property, $value);
         } catch (\Exception $e) {
             if ($e instanceof VersaORMException || $e instanceof \InvalidArgumentException) {
                 throw $e;
