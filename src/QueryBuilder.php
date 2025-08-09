@@ -1132,6 +1132,7 @@ class QueryBuilder
     {
         $raw = $this->execute('get');
         $models = [];
+        $hydrationStart = microtime(true);
         if (!is_array($raw)) {
             return $models;
         }
@@ -1139,6 +1140,39 @@ class QueryBuilder
             ? $this->modelClass
             : VersaModel::class;
         /** @var class-string<VersaModel> $modelClass */
+
+        // FAST-PATH: sin relaciones, modelo base (VersaModel exactamente), sin select personalizado (usa '*'), sin having ni window ni unions.
+        $canFastPath = $this->with === []
+            && $modelClass === VersaModel::class
+            && (count($this->selects) === 0 || (count($this->selects) === 1 && $this->selects[0] === '*'))
+            && $this->groupBy === []
+            && $this->having === [];
+        if ($canFastPath) {
+            try {
+                $fpStart = microtime(true);
+                foreach ($raw as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $m = new VersaModel($this->table, $this->orm);
+                    // Asignar atributos directamente (evita separación relaciones/casts costosos); loadInstance hace lógica adicional.
+                    // Dado que no hay relaciones en fast-path, podemos setear attributes internamente usando reflexión simple.
+                    // Para mantener compatibilidad, reutilizamos loadInstance (micro-optimización posible a futuro si es hotspot).
+                    $m->loadInstance($row);
+                    $models[] = $m;
+                }
+                if ($this->orm instanceof VersaORM) {
+                    $cfgEngine = strtolower((string)($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                    if ($cfgEngine === 'pdo' && class_exists('\\VersaORM\\SQL\\PdoEngine')) {
+                        $elapsedFp = (microtime(true) - $fpStart) * 1000;
+                        \VersaORM\SQL\PdoEngine::recordHydrationFast(count($models), $elapsedFp);
+                    }
+                }
+                return $models; // Terminar aquí (fast-path completado)
+            } catch (\Throwable $e) {
+                // fallback silencioso al camino normal
+            }
+        }
         foreach ($raw as $row) {
             if (!is_array($row)) {
                 continue;
@@ -1154,6 +1188,18 @@ class QueryBuilder
                 }
             }
             $models[] = $model;
+        }
+        // Registrar métricas de hidratación si el motor PDO está activo
+        try {
+            if ($this->orm instanceof VersaORM) {
+                $cfgEngine = strtolower((string)($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                if ($cfgEngine === 'pdo' && class_exists('\VersaORM\\SQL\\PdoEngine')) {
+                    $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
+                    \VersaORM\SQL\PdoEngine::recordHydration(count($models), $elapsed);
+                }
+            }
+        } catch (\Throwable $e) {
+            // silencioso: no romper flujo si métricas fallan
         }
         return $models;
     }
@@ -1203,6 +1249,7 @@ class QueryBuilder
      */
     public function findOne(): ?VersaModel
     {
+        $hydrationStart = microtime(true);
         $row = $this->execute('first');
         if (!is_array($row) || $row === []) {
             return null;
@@ -1211,6 +1258,24 @@ class QueryBuilder
             ? $this->modelClass
             : VersaModel::class;
         /** @var class-string<VersaModel> $modelClass */
+        // Fast-path single row para VersaModel base sin relaciones
+        if ($this->with === [] && $modelClass === VersaModel::class) {
+            try {
+                $fpStart = microtime(true);
+                $m       = new VersaModel($this->table, $this->orm);
+                $m->loadInstance($row); // simple; mapping directo interno
+                if ($this->orm instanceof VersaORM) {
+                    $cfgEngine = strtolower((string)($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                    if ($cfgEngine === 'pdo' && class_exists('\\VersaORM\\SQL\\PdoEngine')) {
+                        $elapsedFp = (microtime(true) - $fpStart) * 1000;
+                        \VersaORM\SQL\PdoEngine::recordHydrationFast(1, $elapsedFp);
+                    }
+                }
+                return $m;
+            } catch (\Throwable $e) {
+                // fallback normal
+            }
+        }
         $model = new $modelClass($this->table, $this->orm);
         $model->loadInstance($row);
         if ($this->with !== []) {
@@ -1220,6 +1285,16 @@ class QueryBuilder
                     $model->getRelationValue($name);
                 }
             }
+        }
+        try {
+            if ($this->orm instanceof VersaORM) {
+                $cfgEngine = strtolower((string)($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                if ($cfgEngine === 'pdo' && class_exists('\VersaORM\\SQL\\PdoEngine')) {
+                    $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
+                    \VersaORM\SQL\PdoEngine::recordHydration(1, $elapsed);
+                }
+            }
+        } catch (\Throwable $e) {
         }
         return $model;
     }
@@ -1248,6 +1323,7 @@ class QueryBuilder
      */
     public function first(): ?VersaModel
     {
+        $hydrationStart = microtime(true);
         $row = $this->execute('first');
         if (!is_array($row) || $row === []) {
             return null;
@@ -1256,8 +1332,34 @@ class QueryBuilder
             ? $this->modelClass
             : VersaModel::class;
         /** @var class-string<VersaModel> $modelClass */
+        if ($this->with === [] && $modelClass === VersaModel::class) {
+            try {
+                $fpStart = microtime(true);
+                $m       = new VersaModel($this->table, $this->orm);
+                $m->loadInstance($row);
+                if ($this->orm instanceof VersaORM) {
+                    $cfgEngine = strtolower((string)($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                    if ($cfgEngine === 'pdo' && class_exists('\\VersaORM\\SQL\\PdoEngine')) {
+                        $elapsedFp = (microtime(true) - $fpStart) * 1000;
+                        \VersaORM\SQL\PdoEngine::recordHydrationFast(1, $elapsedFp);
+                    }
+                }
+                return $m;
+            } catch (\Throwable $e) {
+            }
+        }
         $model = new $modelClass($this->table, $this->orm);
         $model->loadInstance($row);
+        try {
+            if ($this->orm instanceof VersaORM) {
+                $cfgEngine = strtolower((string)($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                if ($cfgEngine === 'pdo' && class_exists('\VersaORM\\SQL\\PdoEngine')) {
+                    $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
+                    \VersaORM\SQL\PdoEngine::recordHydration(1, $elapsed);
+                }
+            }
+        } catch (\Throwable $e) {
+        }
         return $model;
     }
 

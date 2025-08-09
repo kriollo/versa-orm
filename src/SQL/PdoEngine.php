@@ -60,7 +60,23 @@ class PdoEngine
         'cache_misses'   => 0,
         'last_query_ms'  => 0.0,
         'total_query_ms' => 0.0,
+        // Métricas de caché de sentencias
+        'stmt_cache_hits'   => 0,
+        'stmt_cache_misses' => 0,
+        'total_prepare_ms'  => 0.0,
+        // Métricas de hidratación (creación de objetos VersaModel)
+        'hydration_ms'      => 0.0,
+        'objects_hydrated'  => 0,
+        // Fast-path hidratación
+        'hydration_fastpath_uses' => 0,
+        'hydration_fastpath_rows' => 0,
+        'hydration_fastpath_ms'   => 0.0,
     ];
+
+    /** @var array<string,\PDOStatement> LRU cache de sentencias preparadas */
+    private static array $stmtCache = [];
+    /** @var int límite de sentencias en caché */
+    private static int $stmtCacheLimit = 100;
 
     /**
      * Devuelve métricas actuales.
@@ -69,6 +85,12 @@ class PdoEngine
     public static function getMetrics(): array
     {
         return self::$metrics;
+    }
+
+    /** Resetea métricas + caché de sentencias (instancia) */
+    public function resetAllMetrics(): void
+    {
+        self::resetMetrics();
     }
 
     /** Resetea métricas (uso interno/tests) */
@@ -82,7 +104,39 @@ class PdoEngine
             'cache_misses'   => 0,
             'last_query_ms'  => 0.0,
             'total_query_ms' => 0.0,
+            'stmt_cache_hits'   => 0,
+            'stmt_cache_misses' => 0,
+            'total_prepare_ms'  => 0.0,
+            'hydration_ms'      => 0.0,
+            'objects_hydrated'  => 0,
+            'hydration_fastpath_uses' => 0,
+            'hydration_fastpath_rows' => 0,
+            'hydration_fastpath_ms'   => 0.0,
         ];
+        self::$stmtCache = [];
+    }
+
+    /** Registra métricas de hidratación de modelos */
+    public static function recordHydration(int $count, float $elapsedMs): void
+    {
+        if ($count <= 0) {
+            return;
+        }
+        self::$metrics['objects_hydrated'] = self::$metrics['objects_hydrated'] + $count;
+        self::$metrics['hydration_ms'] = self::$metrics['hydration_ms'] + $elapsedMs;
+    }
+
+    /** Registra uso de fast-path de hidratación */
+    public static function recordHydrationFast(int $count, float $elapsedMs): void
+    {
+        if ($count <= 0) {
+            return;
+        }
+        self::$metrics['hydration_fastpath_uses'] = self::$metrics['hydration_fastpath_uses'] + 1;
+        self::$metrics['hydration_fastpath_rows'] = self::$metrics['hydration_fastpath_rows'] + $count;
+        self::$metrics['hydration_fastpath_ms'] = self::$metrics['hydration_fastpath_ms'] + $elapsedMs;
+        // También acumular en métricas generales de hidratación
+        self::recordHydration($count, $elapsedMs);
     }
 
     /** Registra ejecución de consulta */
@@ -116,6 +170,11 @@ class PdoEngine
         $this->config    = $config;
         $this->connector = new PdoConnection($config);
         $this->dialect   = $this->detectDialect();
+        // Configurar límite de caché si se provee
+        $limit = (int)($config['statement_cache_limit'] ?? 100);
+        if ($limit > 0 && $limit < 5000) {
+            self::$stmtCacheLimit = $limit;
+        }
         // Provide dialect name hint if supported for SQL generator decisions
         // Ahora todos los dialectos implementan getName()
         if ($logger !== null) {
@@ -180,10 +239,36 @@ class PdoEngine
      */
     private function executeFetchAll(PDO $pdo, string $sql, array $bindings = []): array
     {
-        $stmt = $pdo->prepare($sql);
+        $stmt = $this->prepareCached($pdo, $sql);
         $this->bindAndExecute($stmt, $bindings);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return is_array($rows) ? array_values($rows) : [];
+    }
+
+    /**
+     * Obtiene una sentencia preparada desde caché o la prepara y cachea.
+     */
+    private function prepareCached(PDO $pdo, string $sql): \PDOStatement
+    {
+        $key = md5($sql);
+        if (isset(self::$stmtCache[$key])) {
+            self::$metrics['stmt_cache_hits']++;
+            // LRU: mover al final (reinsertar)
+            $stmt = self::$stmtCache[$key];
+            unset(self::$stmtCache[$key]);
+            self::$stmtCache[$key] = $stmt;
+            return $stmt;
+        }
+        self::$metrics['stmt_cache_misses']++;
+        $start = microtime(true);
+        $stmt  = $pdo->prepare($sql);
+        self::$metrics['total_prepare_ms'] += (microtime(true) - $start) * 1000;
+        self::$stmtCache[$key] = $stmt;
+        // Evict LRU (primer elemento)
+        if (count(self::$stmtCache) > self::$stmtCacheLimit) {
+            array_shift(self::$stmtCache);
+        }
+        return $stmt;
     }
 
     private function detectDialect(): SqlDialectInterface
@@ -278,7 +363,7 @@ class PdoEngine
             }
             // Ejecutar sólo la primera operación como fallback
             [$sql, $bindings] = $this->buildSqlFromOperation($operations[0]);
-            $stmt             = $pdo->prepare($sql);
+            $stmt             = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, $bindings);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             return is_array($rows) ? $rows : [];
@@ -448,7 +533,7 @@ class PdoEngine
                             @error_log('[PDO][advanced_sql][window_function] SQL: ' . $sql);
                         }
                         try {
-                            $stmt = $pdo->prepare($sql);
+                            $stmt = $this->prepareCached($pdo, $sql);
                             $this->bindAndExecute($stmt, $baseBindings);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         } catch (\Throwable $e) {
@@ -493,7 +578,7 @@ class PdoEngine
                         }
                         $withKeyword = 'WITH' . ($isRecursive ? ' RECURSIVE ' : ' ');
                         $sql         = $withKeyword . implode(', ', $withParts) . ' ' . $main;
-                        $stmt        = $pdo->prepare($sql);
+                        $stmt        = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, array_merge($bindings, $mainBindings));
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
@@ -529,7 +614,7 @@ class PdoEngine
                             $bindings = array_merge($bindings, $qb);
                         }
                         $sql  = implode($glue, $parts);
-                        $stmt = $pdo->prepare($sql);
+                        $stmt = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, $bindings);
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
@@ -619,7 +704,7 @@ class PdoEngine
                         ], $this->dialect);
                         $tmpSql = preg_replace('/^SELECT\s+\*\s+FROM/i', 'SELECT *, ' . $jsonExpr . ' FROM', (string)$baseSql, 1);
                         $sql    = is_string($tmpSql) ? $tmpSql : (string)$baseSql;
-                        $stmt   = $pdo->prepare($sql);
+                        $stmt   = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, array_merge($bind, $baseBindings));
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
@@ -647,7 +732,7 @@ class PdoEngine
                                 $select = '*, ' . $match . ' AS score';
                             }
                             $sql  = 'SELECT ' . $select . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $match;
-                            $stmt = $pdo->prepare($sql);
+                            $stmt = $this->prepareCached($pdo, $sql);
                             // Si with_score agrega el MATCH también en SELECT, enlazar el término dos veces
                             $bindings = !empty($options['with_score']) ? [$term, $term] : [$term];
                             $stmt->execute($bindings);
@@ -664,7 +749,7 @@ class PdoEngine
                             }
                             $rankExpr = $rank ? ', ts_rank(' . $colExpr . ', plainto_tsquery(?)) AS rank' : '';
                             $sql      = 'SELECT *' . $rankExpr . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $colExpr . ' ' . $operator . ' plainto_tsquery(?)';
-                            $stmt     = $pdo->prepare($sql);
+                            $stmt     = $this->prepareCached($pdo, $sql);
                             $this->bindAndExecute($stmt, $rank ? [$term, $term] : [$term]);
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
@@ -674,7 +759,7 @@ class PdoEngine
                             $likeParts[] = "$c LIKE ?";
                         }
                         $sql  = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . implode(' OR ', $likeParts);
-                        $stmt = $pdo->prepare($sql);
+                        $stmt = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, array_fill(0, count($likeParts), '%' . $term . '%'));
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
@@ -710,7 +795,7 @@ class PdoEngine
                                 throw new VersaORMException('Unsupported array operation: ' . $op);
                         }
                         $sql  = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $whereSql;
-                        $stmt = $pdo->prepare($sql);
+                        $stmt = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, $bindings);
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                     })(),
@@ -744,7 +829,7 @@ class PdoEngine
                             if (!empty($groupBy)) {
                                 $sql .= ' GROUP BY ' . implode(', ', $groupBy);
                             }
-                            $stmt = $pdo->prepare($sql);
+                            $stmt = $this->prepareCached($pdo, $sql);
                             $stmt->execute();
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                         }
@@ -814,7 +899,7 @@ class PdoEngine
                 }
             }
             if ($method === 'count') {
-                $stmt  = $pdo->prepare($sql);
+                $stmt  = $this->prepareCached($pdo, $sql);
                 $start = microtime(true);
                 try {
                     $this->bindAndExecute($stmt, $bindings);
@@ -831,7 +916,7 @@ class PdoEngine
                 return $result;
             }
             if ($method === 'exists') {
-                $stmt  = $pdo->prepare($sql);
+                $stmt  = $this->prepareCached($pdo, $sql);
                 $start = microtime(true);
                 try {
                     $this->bindAndExecute($stmt, $bindings);
@@ -849,7 +934,7 @@ class PdoEngine
                 return $result;
             }
             if ($method === 'first') {
-                $stmt  = $pdo->prepare($sql);
+                $stmt  = $this->prepareCached($pdo, $sql);
                 $start = microtime(true);
                 try {
                     $this->bindAndExecute($stmt, $bindings);
@@ -867,7 +952,7 @@ class PdoEngine
             // default get
             // Log de diagnóstico usando el logger inyectado (VersaORM::logDebug)
             $this->log('[PDO][GET] Executing SQL', ['sql' => $sql, 'bindings' => $bindings]);
-            $stmt  = $pdo->prepare($sql);
+            $stmt  = $this->prepareCached($pdo, $sql);
             $start = microtime(true);
             try {
                 $this->bindAndExecute($stmt, $bindings);
@@ -906,7 +991,7 @@ class PdoEngine
 
             // Detectar si es una sentencia de escritura antes de intentar fetchAll
             $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER)\b/i', $sql) === 1;
-            $stmt    = $pdo->prepare($sql);
+            $stmt    = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, $bindings);
             if ($isWrite) {
                 // Invalidar todo el caché en operaciones de escritura para mantener coherencia
@@ -923,7 +1008,7 @@ class PdoEngine
         }
 
         if ($action === 'insert') {
-            $stmt  = $pdo->prepare($sql);
+            $stmt  = $this->prepareCached($pdo, $sql);
             $start = microtime(true);
             try {
                 $this->bindAndExecute($stmt, $bindings);
@@ -937,7 +1022,7 @@ class PdoEngine
         }
 
         if ($action === 'insertGetId') {
-            $stmt  = $pdo->prepare($sql);
+            $stmt  = $this->prepareCached($pdo, $sql);
             $start = microtime(true);
             try {
                 $this->bindAndExecute($stmt, $bindings);
@@ -951,7 +1036,7 @@ class PdoEngine
         }
 
         if ($action === 'update' || $action === 'delete') {
-            $stmt  = $pdo->prepare($sql);
+            $stmt  = $this->prepareCached($pdo, $sql);
             $start = microtime(true);
             try {
                 $this->bindAndExecute($stmt, $bindings);
@@ -994,7 +1079,7 @@ class PdoEngine
                 'table'   => $params['table'] ?? '',
                 'records' => $chunk,
             ], $this->dialect);
-            $st = $pdo->prepare($chunkSql);
+            $st = $this->prepareCached($pdo, $chunkSql);
             $st->execute($chunkBindings);
             $totalInserted += count($chunk);
         }
@@ -1020,7 +1105,7 @@ class PdoEngine
             'table'  => $params['table'] ?? '',
             'where'  => $params['where'] ?? [],
         ], $this->dialect);
-        $stc = $pdo->prepare($countSql);
+        $stc = $this->prepareCached($pdo, $countSql);
         $stc->execute($countBindings);
         $row      = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
         $toAffect = (int)($row['count'] ?? 0);
@@ -1037,7 +1122,7 @@ class PdoEngine
             'where'  => $params['where'] ?? [],
             'data'   => $params['data'] ?? [],
         ], $this->dialect);
-        $stmt = $pdo->prepare($sqlU);
+        $stmt = $this->prepareCached($pdo, $sqlU);
         $this->bindAndExecute($stmt, $bindU);
         $affected = (int)$stmt->rowCount();
         self::clearAllCache();
@@ -1061,7 +1146,7 @@ class PdoEngine
             'table'  => $params['table'] ?? '',
             'where'  => $params['where'] ?? [],
         ], $this->dialect);
-        $stc = $pdo->prepare($countSql);
+        $stc = $this->prepareCached($pdo, $countSql);
         $stc->execute($countBindings);
         $row      = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
         $toAffect = (int)($row['count'] ?? 0);
@@ -1077,7 +1162,7 @@ class PdoEngine
             'table'  => $params['table'] ?? '',
             'where'  => $params['where'] ?? [],
         ], $this->dialect);
-        $stmt = $pdo->prepare($sqlD);
+        $stmt = $this->prepareCached($pdo, $sqlD);
         $this->bindAndExecute($stmt, $bindD);
         $affected = (int)$stmt->rowCount();
         self::clearAllCache();
@@ -1102,7 +1187,7 @@ class PdoEngine
             'unique_keys'    => $params['unique_keys'] ?? [],
             'update_columns' => $params['update_columns'] ?? [],
         ], $this->dialect);
-        $stmt = $pdo->prepare($sqlUp);
+        $stmt = $this->prepareCached($pdo, $sqlUp);
         $this->bindAndExecute($stmt, $bindUp);
         $affected = (int)$stmt->rowCount();
         self::clearAllCache();
@@ -1169,7 +1254,7 @@ class PdoEngine
     {
         $driver = $this->dialect->getName();
         if ($driver === 'mysql') {
-            $stmt = $pdo->prepare('SHOW FULL COLUMNS FROM ' . $this->dialect->quoteIdentifier($table));
+            $stmt = $this->prepareCached($pdo, 'SHOW FULL COLUMNS FROM ' . $this->dialect->quoteIdentifier($table));
             $stmt->execute();
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $result  = [];
@@ -1194,7 +1279,7 @@ class PdoEngine
             return $result;
         }
         if ($driver === 'sqlite') {
-            $stmt = $pdo->prepare('PRAGMA table_info(' . $this->dialect->quoteIdentifier($table) . ')');
+            $stmt = $this->prepareCached($pdo, 'PRAGMA table_info(' . $this->dialect->quoteIdentifier($table) . ')');
             $stmt->execute();
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $result  = [];
@@ -1215,7 +1300,7 @@ class PdoEngine
         if ($driver === 'postgres') {
             $sql = 'SELECT column_name, data_type, is_nullable, column_default, character_maximum_length ' .
                 'FROM information_schema.columns WHERE table_name = ?';
-            $stmt = $pdo->prepare($sql);
+            $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $result  = [];
@@ -1243,7 +1328,7 @@ class PdoEngine
     {
         $driver = $this->dialect->getName();
         if ($driver === 'mysql') {
-            $stmt = $pdo->prepare('SHOW INDEX FROM ' . $this->dialect->quoteIdentifier($table));
+            $stmt = $this->prepareCached($pdo, 'SHOW INDEX FROM ' . $this->dialect->quoteIdentifier($table));
             $stmt->execute();
             /** @var list<array{Key_name?:string,Column_name?:string,Non_unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -1261,7 +1346,7 @@ class PdoEngine
             return $out;
         }
         if ($driver === 'sqlite') {
-            $stmt = $pdo->prepare('PRAGMA index_list(' . $this->dialect->quoteIdentifier($table) . ')');
+            $stmt = $this->prepareCached($pdo, 'PRAGMA index_list(' . $this->dialect->quoteIdentifier($table) . ')');
             $stmt->execute();
             /** @var list<array{name?:string,unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -1283,7 +1368,7 @@ class PdoEngine
             JOIN pg_class i ON i.oid = ix.indexrelid
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
             WHERE t.relkind = 'r' AND t.relname = ?";
-            $stmt = $pdo->prepare($sql);
+            $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
             /** @var list<array{name?:string,column?:string,unique?:bool|int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

@@ -187,6 +187,23 @@ class VersaORM
     }
 
     /**
+     * Reinicia métricas y cache de sentencias preparadas del motor PDO.
+     */
+    public function metricsReset(): void
+    {
+        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        if ($engine !== 'pdo') {
+            return;
+        }
+        if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {
+            $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config, function (string $message, array $context = []): void {
+                $this->logDebug($message, $context);
+            });
+        }
+        $this->pdoEngine->resetAllMetrics();
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param string $action

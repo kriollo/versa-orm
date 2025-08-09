@@ -52,28 +52,24 @@ class PdoConnection
             $poolKey         = '';
             [$dsn, $poolKey] = match ($driver) {
                 'mysql', 'mariadb' => (function () {
-                    $dsn = sprintf(
-                        'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-                        $this->config['host'] ?? 'localhost',
-                        (string)($this->config['port'] ?? '3306'),
-                        $this->config['database'] ?? '',
-                        $this->config['charset'] ?? 'utf8mb4'
-                    );
+                    $host     = (string)($this->config['host'] ?? 'localhost');
+                    $port     = (string)($this->config['port'] ?? '3306');
+                    $database = (string)($this->config['database'] ?? '');
+                    $charset  = (string)($this->config['charset'] ?? 'utf8mb4');
+                    $dsn = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
                     $poolKey = 'mysql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
                     return [$dsn, $poolKey];
                 })(),
                 'pgsql', 'postgres', 'postgresql' => (function () {
-                    $dsn = sprintf(
-                        'pgsql:host=%s;port=%s;dbname=%s',
-                        $this->config['host'] ?? 'localhost',
-                        (string)($this->config['port'] ?? '5432'),
-                        $this->config['database'] ?? ''
-                    );
+                    $host     = (string)($this->config['host'] ?? 'localhost');
+                    $port     = (string)($this->config['port'] ?? '5432');
+                    $database = (string)($this->config['database'] ?? '');
+                    $dsn = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
                     $poolKey = 'pgsql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
                     return [$dsn, $poolKey];
                 })(),
                 'sqlite' => (function () {
-                    $path    = $this->config['database'] ?? ':memory:';
+                    $path    = (string)($this->config['database'] ?? ':memory:');
                     $dsn     = sprintf('sqlite:%s', $path);
                     $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
                     return [$dsn, $poolKey];
