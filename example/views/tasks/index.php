@@ -472,32 +472,32 @@ if ($start_page > 1): ?>
 <!-- Modal para Notas -->
 <div id="notes-modal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-black/70 transition-opacity" aria-hidden="true"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 transition-colors">
                 <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="fas fa-sticky-note text-blue-600"></i>
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/40 sm:mx-0 sm:h-10 sm:w-10 transition-colors">
+                        <i class="fas fa-sticky-note text-blue-600 dark:text-blue-400"></i>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Notas para la Tarea</h3>
-                        <p id="modal-task-title" class="text-sm text-gray-500"></p>
-                        <div class="mt-4" id="notes-container">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white transition-colors" id="modal-title">Notas para la Tarea</h3>
+                        <p id="modal-task-title" class="text-sm text-gray-500 dark:text-gray-300 transition-colors"></p>
+                        <div class="mt-4 space-y-2" id="notes-container">
                             <!-- Las notas se cargarán aquí -->
                         </div>
                         <div class="mt-4">
                             <form id="add-note-form">
                                 <input type="hidden" name="task_id" id="note-task-id">
-                                <textarea name="content" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Escribe una nueva nota..."></textarea>
+                                <textarea name="content" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 transition-colors" placeholder="Escribe una nueva nota..."></textarea>
                                 <button type="submit" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Agregar Nota</button>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" id="close-notes-modal">
+            <div class="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse transition-colors">
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors" id="close-notes-modal">
                     Cerrar
                 </button>
             </div>
@@ -542,21 +542,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.success && data.notes.length > 0) {
                     data.notes.forEach(note => {
                         const noteElement = document.createElement('div');
-                        noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'rounded');
+                        noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'dark:bg-gray-800', 'rounded', 'transition-colors');
                         noteElement.innerHTML = `
                             <div class="flex justify-between items-start">
-                                <p class="text-sm">${note.content}</p>
+                                <p class="text-sm text-gray-800 dark:text-gray-200">${note.content}</p>
                                 <div class="flex-shrink-0 ml-2">
-                                    <button class="text-yellow-600 hover:text-yellow-900 edit-note" data-note-id="${note.id}" data-note-content="${note.content}"><i class="fas fa-edit"></i></button>
-                                    <button class="text-red-600 hover:text-red-900 delete-note" data-note-id="${note.id}"><i class="fas fa-trash"></i></button>
+                                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 edit-note" data-note-id="${note.id}" data-note-content="${note.content}"><i class="fas fa-edit"></i></button>
+                                    <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 delete-note" data-note-id="${note.id}"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500">- ${note.user_name} en ${note.created_at}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">- ${note.user_name} en ${note.created_at}</p>
                         `;
                         notesContainer.appendChild(noteElement);
                     });
                 } else {
-                    notesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay notas para esta tarea.</p>';
+                    notesContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 transition-colors">No hay notas para esta tarea.</p>';
                 }
             });
     }

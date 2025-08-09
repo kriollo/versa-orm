@@ -26,7 +26,7 @@
                     <i class="fas fa-users text-blue-600 dark:text-blue-400"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count($users) ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors duration-200"><?= count($users) ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200">Total Usuarios</p>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                     <i class="fas fa-user-check text-green-600 dark:text-green-400"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count($users) ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors duration-200"><?= count($users) ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200">Usuarios Activos</p>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                     <i class="fas fa-clock text-yellow-600 dark:text-yellow-400"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold"><?= count(array_filter($users, function ($u) {
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors duration-200"><?= count(array_filter($users, function ($u) {
                         return safe_strtotime($u->created_at) > strtotime('-30 days');
                     })) ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200">Nuevos (30 días)</p>

@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <button @click="darkMode = !darkMode" x-bind:aria-pressed="darkMode" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" aria-label="Cambiar tema" title="Cambiar tema">
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode); document.documentElement.classList.toggle('dark', darkMode)" x-bind:aria-pressed="darkMode" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" aria-label="Cambiar tema" title="Cambiar tema">
                         <i x-show="!darkMode" x-cloak class="fas fa-moon"></i>
                         <i x-show="darkMode" x-cloak class="fas fa-sun"></i>
                     </button>
