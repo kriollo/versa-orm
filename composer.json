@@ -47,7 +47,8 @@
   "autoload-dev": {
     "psr-4": {
       "VersaORM\\Tests\\": "tests/",
-      "VersaORM\\Tests\\PostgreSQL\\": "testPostgreSQL/"
+      "VersaORM\\Tests\\PostgreSQL\\": "testPostgreSQL/",
+      "VersaORM\\Tests\\SQLite\\": "testSQLite/"
     }
   },
   "scripts": {
@@ -55,6 +56,8 @@
     "test-mysql-coverage": "phpunit --coverage-html coverage",
     "test-postgresql": "phpunit --configuration phpunit-postgresql.xml --testdox --display-warnings --display-notices --display-deprecations",
     "test-postgresql-coverage": "phpunit --configuration phpunit-postgresql.xml --coverage-html coverage-postgresql",
+    "test-sqlite": "phpunit --configuration phpunit-sqlite.xml --testdox --display-warnings --display-notices --display-deprecations",
+    "test-sqlite-coverage": "phpunit --configuration phpunit-sqlite.xml --coverage-html coverage-sqlite",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "cs-check": "phpcs",
     "cs-fix": "phpcbf",
