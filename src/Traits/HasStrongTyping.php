@@ -254,60 +254,70 @@ trait HasStrongTyping
             return $stringValue;
         };
 
-        $boolHandler = static function ($self, string $property, $value) {
+        /** @var callable(object,string,mixed):int */
+        $boolHandler = static function ($self, string $property, mixed $value): int {
             return (bool) $value ? 1 : 0;
         };
 
-        $jsonLikeHandler = static function ($self, string $property, $value) {
-            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        /** @var callable(object,string,mixed):string */
+        $jsonLikeHandler = static function ($self, string $property, mixed $value): string {
+            return json_encode($value, JSON_UNESCAPED_UNICODE) ?: 'null';
         };
 
-        $uuidHandler = static function ($self, string $property, $value) {
-            $uuidValue = (string) $value;
+        /** @var callable(object,string,mixed):string */
+        $uuidHandler = static function ($self, string $property, mixed $value): string {
+            $uuidValue = (string)$value;
             if (!$self->isValidUuid($uuidValue)) {
                 throw new VersaORMException("Invalid UUID format for property {$property}: {$uuidValue}");
             }
             return $uuidValue;
         };
 
-        $datetimeHandler = static function ($self, string $property, $value) {
-            if ($value instanceof \DateTime) {
+        /** @var callable(object,string,mixed):string */
+        $datetimeHandler = static function ($self, string $property, mixed $value): string {
+            if ($value instanceof \DateTimeInterface) {
                 return $value->format('Y-m-d H:i:s');
             }
             if (is_string($value)) {
                 return (new \DateTime($value))->format('Y-m-d H:i:s');
             }
-            return date('Y-m-d H:i:s', (int) $value);
+            return date('Y-m-d H:i:s', is_numeric($value) ? (int)$value : time());
         };
 
-        $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
-            $enumValue     = (string) $value;
-            $allowedValues = $typeDefinition['values'] ?? [];
-            if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
-                throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
+        /** @var callable(object,string,mixed,array<string,mixed>):string */
+        $enumHandler = static function ($self, string $property, mixed $value, array $typeDefinition): string {
+            $enumValue = (string)$value;
+            /** @var array<int|string,mixed> $allowedValues */
+            $allowedValues = is_array($typeDefinition['values'] ?? null) ? $typeDefinition['values'] : [];
+            if ($allowedValues !== [] && !in_array($enumValue, $allowedValues, true)) {
+                throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', array_map('strval', $allowedValues)));
             }
             return $enumValue;
         };
 
-        $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
-            $setValue      = is_array($value) ? $value : [$value];
-            $allowedValues = $typeDefinition['values'] ?? [];
-            if (!empty($allowedValues)) {
+        /** @var callable(object,string,mixed,array<string,mixed>):string */
+        $setHandler = static function ($self, string $property, mixed $value, array $typeDefinition): string {
+            $setValue = is_array($value) ? $value : [$value];
+            /** @var array<int|string,mixed> $allowedValues */
+            $allowedValues = is_array($typeDefinition['values'] ?? null) ? $typeDefinition['values'] : [];
+            if ($allowedValues !== []) {
                 foreach ($setValue as $val) {
                     if (!in_array($val, $allowedValues, true)) {
-                        throw new VersaORMException("Invalid set value '{$val}' for property {$property}. Allowed: " . implode(', ', $allowedValues));
+                        throw new VersaORMException("Invalid set value '{$val}' for property {$property}. Allowed: " . implode(', ', array_map('strval', $allowedValues)));
                     }
                 }
             }
-            return implode(',', $setValue);
+            return implode(',', array_map('strval', $setValue));
         };
 
-        $blobHandler = static function ($self, string $property, $value) {
-            return $value;
+        /** @var callable(object,string,mixed):mixed */
+        $blobHandler = static function ($self, string $property, mixed $value): mixed {
+            return $value; // sin transformación
         };
 
-        $inetHandler = static function ($self, string $property, $value) {
-            $inetValue = (string) $value;
+        /** @var callable(object,string,mixed):string */
+        $inetHandler = static function ($self, string $property, mixed $value): string {
+            $inetValue = (string)$value;
             if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
             }
@@ -427,7 +437,8 @@ trait HasStrongTyping
         $type           = $typeDefinition['type'] ?? 'string';
 
         $handlers = self::getPhpCastHandlers();
-        $handler  = $handlers[$type] ?? static function ($self, string $property, $value) {
+        /** @var callable(object,string,mixed,array<string,mixed>):mixed $handler */
+        $handler = $handlers[$type] ?? static function ($self, string $property, mixed $value): mixed {
             return $value; // fallback
         };
 
@@ -478,7 +489,8 @@ trait HasStrongTyping
         $type           = $typeDefinition['type'] ?? 'string';
 
         $handlers = self::getDbCastHandlers();
-        $handler  = $handlers[$type] ?? static function ($self, string $property, $value) {
+        /** @var callable(object,string,mixed):mixed $handler */
+        $handler = $handlers[$type] ?? static function ($self, string $property, mixed $value): mixed {
             return $value; // fallback
         };
 
