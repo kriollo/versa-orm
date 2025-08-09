@@ -73,72 +73,324 @@ trait HasStrongTyping
     ];
 
     /**
-     * Obtiene los tipos de propiedades definidos para el modelo.
-     *
-     * Los modelos deben sobrescribir este método para definir sus tipos.
-     *
-     * Ejemplo:
-     * ```php
-     * public static function getPropertyTypes(): array
-     * {
-     *     return [
-     *         'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-     *         'name' => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
-     *         'email' => ['type' => 'string', 'max_length' => 255, 'nullable' => false, 'unique' => true],
-     *         'settings' => ['type' => 'json', 'nullable' => true],
-     *         'uuid' => ['type' => 'uuid', 'nullable' => false],
-     *         'status' => ['type' => 'enum', 'values' => ['active', 'inactive'], 'default' => 'active'],
-     *         'tags' => ['type' => 'set', 'values' => ['work', 'personal', 'urgent']],
-     *         'created_at' => ['type' => 'datetime', 'nullable' => false],
-     *         'updated_at' => ['type' => 'datetime', 'nullable' => true],
-     *     ];
-     * }
-     * ```
-     *
-     * @return array<string, array<string, mixed>>
+     * Mapa de handlers de casting PHP (inicializado bajo demanda).
+     * @var array<string, callable>
      */
-    public static function getPropertyTypes(): array
+    private static array $phpCastHandlers = [];
+
+    /**
+     * Mapa de handlers de casting a DB (inicializado bajo demanda).
+     * @var array<string, callable>
+     */
+    private static array $dbCastHandlers = [];
+
+    /**
+     * Inicializa (si es necesario) y devuelve los handlers de casting a PHP.
+     * Cada handler firma: function(self $self, string $property, mixed $value, array $typeDefinition): mixed
+     * @return array<string, callable>
+     */
+    private static function getPhpCastHandlers(): array
     {
-        $calledClass = get_called_class();
-        if (!isset(self::$cachedPropertyTypes[$calledClass])) {
-            // Verificar si el método existe en la clase actual usando reflection
-            $reflectionClass = new \ReflectionClass($calledClass);
-            if ($reflectionClass->hasMethod('definePropertyTypes')) {
-                $method = $reflectionClass->getMethod('definePropertyTypes');
-                if ($method->isStatic()) {
-                    // Permitir acceder si es protected/private
-                    if (!$method->isPublic()) {
-                        $method->setAccessible(true);
-                    }
-                    /** @var array<string, array<string, mixed>> $result */
-                    $result                                  = $method->invoke(null);
-                    self::$cachedPropertyTypes[$calledClass] = $result;
-                } else {
-                    self::$cachedPropertyTypes[$calledClass] = [];
-                }
-            } else {
-                self::$cachedPropertyTypes[$calledClass] = [];
-            }
+        if (self::$phpCastHandlers) {
+            return self::$phpCastHandlers;
         }
 
-        return self::$cachedPropertyTypes[$calledClass];
+        // Handlers reutilizados por sinónimos
+    $intHandler = static function ($self, string $property, $value) {
+            return is_numeric($value) ? (int) $value : 0;
+        };
+
+    $floatHandler = static function ($self, string $property, $value) {
+            return is_numeric($value) ? (float) $value : 0.0;
+        };
+
+    $stringHandler = static function ($self, string $property, $value) {
+            return is_scalar($value) ? (string) $value : '';
+        };
+
+    $boolHandler = static function ($self, string $property, $value) {
+            if (is_string($value)) {
+                return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
+            }
+            return (bool) $value;
+        };
+
+    $arrayHandler = static function ($self, string $property, $value) {
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                return $decoded !== null ? $decoded : [];
+            }
+            return is_array($value) ? $value : [$value];
+        };
+
+    $jsonHandler = static function ($self, string $property, $value, array $typeDefinition = []) {
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new VersaORMException("Invalid JSON for property {$property}: " . json_last_error_msg());
+                }
+                return $decoded;
+            }
+            return $value;
+        };
+
+    $uuidHandler = static function ($self, string $property, $value) {
+            $uuidValue = (string) $value;
+            if (!$self->isValidUuid($uuidValue)) {
+                if ($property === 'uuid') {
+                    throw new VersaORMException("Invalid UUID format for property {$property}: {$uuidValue}");
+                }
+                throw new \InvalidArgumentException('Invalid UUID format');
+            }
+            return $uuidValue;
+        };
+
+    $datetimeHandler = static function ($self, string $property, $value) {
+            if (is_string($value)) {
+                return new \DateTime($value);
+            }
+            if ($value instanceof \DateTime) {
+                return $value;
+            }
+            return new \DateTime('@' . (int) $value);
+        };
+
+    $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
+            $enumValue     = (string) $value;
+            $allowedValues = $typeDefinition['values'] ?? [];
+            if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
+                throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
+            }
+            return $enumValue;
+        };
+
+    $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $setValue = $decoded;
+                } else {
+                    $setValue = $value === '' ? [] : explode(',', $value);
+                }
+            } else {
+                $setValue = (array) $value;
+            }
+            $allowedValues = $typeDefinition['values'] ?? [];
+            if (!empty($allowedValues)) {
+                foreach ($setValue as $val) {
+                    if (!in_array($val, $allowedValues, true)) {
+                        throw new VersaORMException("Invalid set value '{$val}' for property {$property}. Allowed: " . implode(', ', $allowedValues));
+                    }
+                }
+            }
+            return $setValue;
+        };
+
+    $blobHandler = static function ($self, string $property, $value) {
+            return $value; // sin transformación
+        };
+
+    $inetHandler = static function ($self, string $property, $value) {
+            $inetValue = (string) $value;
+            if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
+                throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
+            }
+            return $inetValue;
+        };
+
+        // Registrar sinónimos apuntando al mismo handler
+        $map = [
+            'int' => $intHandler,
+            'integer' => $intHandler,
+            'float' => $floatHandler,
+            'real' => $floatHandler,
+            'double' => $floatHandler,
+            'decimal' => $floatHandler,
+            'string' => $stringHandler,
+            'bool' => $boolHandler,
+            'boolean' => $boolHandler,
+            'array' => $arrayHandler,
+            'collection' => $arrayHandler,
+            'json' => $jsonHandler,
+            'uuid' => $uuidHandler,
+            'datetime' => $datetimeHandler,
+            'date' => $datetimeHandler,
+            'timestamp' => $datetimeHandler,
+            'enum' => $enumHandler,
+            'set' => $setHandler,
+            'blob' => $blobHandler,
+            'inet' => $inetHandler,
+        ];
+
+        self::$phpCastHandlers = $map;
+        return self::$phpCastHandlers;
     }
 
     /**
-     * Define los tipos de propiedades del modelo.
-     * Este método debe ser implementado por las clases que usen este trait.
-     * No proporciona implementación por defecto para evitar conflictos.
-     *
-     * @return array<string, array<string, mixed>>
+     * Inicializa (si es necesario) y devuelve los handlers de casting a DB.
+     * Cada handler firma: function(self $self, string $property, mixed $value, array $typeDefinition): mixed
+     * @return array<string, callable>
      */
-    // NOTA: Este método debe ser implementado en las clases que usen el trait
-    // protected static function definePropertyTypes(): array;
+    private static function getDbCastHandlers(): array
+    {
+        if (self::$dbCastHandlers) {
+            return self::$dbCastHandlers;
+        }
+
+    $intHandler = static function ($self, string $property, $value) {
+            return (int) $value;
+        };
+
+    $floatHandler = static function ($self, string $property, $value) {
+            return (float) $value;
+        };
+
+    $stringHandler = static function ($self, string $property, $value, array $typeDefinition) {
+            $stringValue = (string) $value;
+            $maxLength   = $typeDefinition['max_length'] ?? null;
+            if ($maxLength && strlen($stringValue) > $maxLength) {
+                throw new VersaORMException("String too long for property {$property}. Max: {$maxLength}, got: " . strlen($stringValue));
+            }
+            return $stringValue;
+        };
+
+    $boolHandler = static function ($self, string $property, $value) {
+            return (bool) $value ? 1 : 0;
+        };
+
+    $jsonLikeHandler = static function ($self, string $property, $value) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        };
+
+    $uuidHandler = static function ($self, string $property, $value) {
+            $uuidValue = (string) $value;
+            if (!$self->isValidUuid($uuidValue)) {
+                throw new VersaORMException("Invalid UUID format for property {$property}: {$uuidValue}");
+            }
+            return $uuidValue;
+        };
+
+    $datetimeHandler = static function ($self, string $property, $value) {
+            if ($value instanceof \DateTime) {
+                return $value->format('Y-m-d H:i:s');
+            }
+            if (is_string($value)) {
+                return (new \DateTime($value))->format('Y-m-d H:i:s');
+            }
+            return date('Y-m-d H:i:s', (int) $value);
+        };
+
+    $enumHandler = static function ($self, string $property, $value, array $typeDefinition) {
+            $enumValue     = (string) $value;
+            $allowedValues = $typeDefinition['values'] ?? [];
+            if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
+                throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
+            }
+            return $enumValue;
+        };
+
+    $setHandler = static function ($self, string $property, $value, array $typeDefinition) {
+            $setValue      = is_array($value) ? $value : [$value];
+            $allowedValues = $typeDefinition['values'] ?? [];
+            if (!empty($allowedValues)) {
+                foreach ($setValue as $val) {
+                    if (!in_array($val, $allowedValues, true)) {
+                        throw new VersaORMException("Invalid set value '{$val}' for property {$property}. Allowed: " . implode(', ', $allowedValues));
+                    }
+                }
+            }
+            return implode(',', $setValue);
+        };
+
+    $blobHandler = static function ($self, string $property, $value) {
+            return $value;
+        };
+
+    $inetHandler = static function ($self, string $property, $value) {
+            $inetValue = (string) $value;
+            if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
+                throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
+            }
+            return $inetValue;
+        };
+
+        $map = [
+            'int' => $intHandler,
+            'integer' => $intHandler,
+            'float' => $floatHandler,
+            'real' => $floatHandler,
+            'double' => $floatHandler,
+            'decimal' => $floatHandler,
+            'string' => $stringHandler,
+            'bool' => $boolHandler,
+            'boolean' => $boolHandler,
+            'array' => $jsonLikeHandler,
+            'collection' => $jsonLikeHandler,
+            'json' => $jsonLikeHandler,
+            'uuid' => $uuidHandler,
+            'datetime' => $datetimeHandler,
+            'date' => $datetimeHandler,
+            'timestamp' => $datetimeHandler,
+            'enum' => $enumHandler,
+            'set' => $setHandler,
+            'blob' => $blobHandler,
+            'inet' => $inetHandler,
+        ];
+
+        self::$dbCastHandlers = $map;
+        return self::$dbCastHandlers;
+    }
 
     /**
-     * Convierte un valor de la base de datos al tipo PHP apropiado.
+     * Obtiene los tipos de propiedades definidos para el modelo.
+     * Los modelos concretos normalmente sobreescriben este método.
+     * Aquí devolvemos (y cacheamos) un array vacío por defecto para cumplir la interfaz.
+     *
+     * @return array<string, array<string,mixed>>
+     */
+    public static function getPropertyTypes(): array
+    {
+        $called = static::class;
+        if (isset(self::$cachedPropertyTypes[$called])) {
+            return self::$cachedPropertyTypes[$called];
+        }
+
+        $types = [];
+        // Permitimos que el modelo defina un método protegido/privado static definePropertyTypes()
+        if (method_exists($called, 'definePropertyTypes')) {
+            try {
+                $refMethod = new \ReflectionMethod($called, 'definePropertyTypes');
+                if (!$refMethod->isPublic()) {
+                    $refMethod->setAccessible(true);
+                }
+                // Invocar método estático sin instancia
+                $result = $refMethod->invoke(null);
+                if (is_array($result)) {
+                    $types = $result;
+                }
+            } catch (\Throwable $e) {
+                // Silencioso: en caso de fallo, devolvemos array vacío y dejamos que tests detecten
+                $types = [];
+            }
+        }
+
+        // Normalización simple: asegurar 'type' en minúsculas si existe
+        foreach ($types as $prop => &$def) {
+            if (isset($def['type']) && is_string($def['type'])) {
+                $def['type'] = strtolower($def['type']);
+            }
+        }
+        unset($def);
+
+        return self::$cachedPropertyTypes[$called] = $types;
+    }
+
+    /**
+     * Convierte un valor crudo de la base de datos al tipo PHP apropiado.
+     * Implementación basada en un mapa de handlers para evitar grandes switch.
      *
      * @param string $property
-     * @param mixed $value
+     * @param mixed  $value
      * @return mixed
      * @throws VersaORMException
      */
@@ -151,22 +403,21 @@ trait HasStrongTyping
         $propertyTypes = static::getPropertyTypes();
 
         if (!isset($propertyTypes[$property])) {
-            // Heurísticas: intentar decodificar JSON y manejar DateTime básicos
+            // Heurística ligera: intentar decodificar JSON y detectar DateTime
             if (is_string($value)) {
                 $trim = trim($value);
-                if (($trim !== '' && ($trim[0] === '{' || $trim[0] === '['))) {
+                if ($trim !== '' && ($trim[0] === '{' || $trim[0] === '[')) {
                     $decoded = json_decode($value, true);
                     if (json_last_error() === JSON_ERROR_NONE) {
                         return $decoded;
                     }
                 }
-                // Intento simple de DateTime (YYYY-mm-dd HH:ii:ss o ISO 8601)
                 try {
                     if (preg_match('/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2})?/', $trim) === 1) {
                         return new \DateTime($trim);
                     }
                 } catch (\Throwable $e) {
-                    // ignorar y devolver valor original
+                    // ignorar y retornar valor original
                 }
             }
             return $value; // Sin conversión si no hay tipo definido
@@ -175,115 +426,14 @@ trait HasStrongTyping
         $typeDefinition = $propertyTypes[$property];
         $type           = $typeDefinition['type'] ?? 'string';
 
+        $handlers = self::getPhpCastHandlers();
+        $handler  = $handlers[$type] ?? static function ($self, string $property, $value) {
+            return $value; // fallback
+        };
+
         try {
-            switch ($type) {
-                case 'int':
-                case 'integer':
-                    return is_numeric($value) ? (int) $value : 0;
-
-                case 'float':
-                case 'real':
-                case 'double':
-                case 'decimal':
-                    return is_numeric($value) ? (float) $value : 0.0;
-
-                case 'string':
-                    return is_scalar($value) ? (string) $value : '';
-
-                case 'bool':
-                case 'boolean':
-                    if (is_string($value)) {
-                        return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
-                    }
-                    return (bool) $value;
-
-                case 'array':
-                case 'collection':
-                    if (is_string($value)) {
-                        $decoded = json_decode($value, true);
-                        return $decoded !== null ? $decoded : [];
-                    }
-                    return is_array($value) ? $value : [$value];
-
-                case 'json':
-                    if (is_string($value)) {
-                        $decoded = json_decode($value, true);
-                        if (json_last_error() !== JSON_ERROR_NONE) {
-                            throw new VersaORMException("Invalid JSON for property {$property}: " . json_last_error_msg());
-                        }
-                        return $decoded;
-                    }
-                    return $value;
-
-                case 'uuid':
-                    $uuidValue = (string) $value;
-                    if (!$this->isValidUuid($uuidValue)) {
-                        // Para compatibilidad de tests: si la propiedad es exactamente 'uuid', lanzar VersaORMException
-                        if ($property === 'uuid') {
-                            throw new VersaORMException("Invalid UUID format for property {$property}: {$uuidValue}");
-                        }
-                        // En otros casos, lanzar InvalidArgumentException con mensaje genérico
-                        throw new \InvalidArgumentException('Invalid UUID format');
-                    }
-                    return $uuidValue;
-
-                case 'datetime':
-                case 'date':
-                case 'timestamp':
-                    if (is_string($value)) {
-                        return new \DateTime($value);
-                    } elseif ($value instanceof \DateTime) {
-                        return $value;
-                    }
-                    return new \DateTime('@' . (int) $value);
-
-                case 'enum':
-                    $enumValue     = (string) $value;
-                    $allowedValues = $typeDefinition['values'] ?? [];
-                    if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
-                        throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
-                    }
-                    return $enumValue;
-
-                case 'set':
-                    if (is_string($value)) {
-                        // Try to decode as JSON first
-                        $decoded = json_decode($value, true);
-                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                            $setValue = $decoded;
-                        } else {
-                            // Fall back to comma-separated values
-                            $setValue = explode(',', $value);
-                        }
-                    } else {
-                        $setValue = (array) $value;
-                    }
-
-                    $allowedValues = $typeDefinition['values'] ?? [];
-                    if (!empty($allowedValues)) {
-                        foreach ($setValue as $val) {
-                            if (!in_array($val, $allowedValues, true)) {
-                                throw new VersaORMException("Invalid set value '{$val}' for property {$property}. Allowed: " . implode(', ', $allowedValues));
-                            }
-                        }
-                    }
-                    return $setValue;
-
-                case 'blob':
-                    return $value; // Los BLOBs se mantienen como están
-
-                case 'inet':
-                    $inetValue = (string) $value;
-                    if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
-                        throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
-                    }
-                    return $inetValue;
-
-                default:
-                    return $value;
-            }
+            return $handler($this, $property, $value, $typeDefinition);
         } catch (\Exception $e) {
-            // No envolver errores ya tipados esperados
             if ($e instanceof VersaORMException || $e instanceof \InvalidArgumentException) {
                 throw $e;
             }
@@ -327,87 +477,14 @@ trait HasStrongTyping
         $typeDefinition = $propertyTypes[$property];
         $type           = $typeDefinition['type'] ?? 'string';
 
+        $handlers = self::getDbCastHandlers();
+    $handler  = $handlers[$type] ?? static function ($self, string $property, $value) {
+            return $value; // fallback
+        };
+
         try {
-            switch ($type) {
-                case 'int':
-                case 'integer':
-                    return (int) $value;
-
-                case 'float':
-                case 'real':
-                case 'double':
-                case 'decimal':
-                    return (float) $value;
-
-                case 'string':
-                    $stringValue = (string) $value;
-                    $maxLength   = $typeDefinition['max_length'] ?? null;
-                    if ($maxLength && strlen($stringValue) > $maxLength) {
-                        throw new VersaORMException("String too long for property {$property}. Max: {$maxLength}, got: " . strlen($stringValue));
-                    }
-                    return $stringValue;
-
-                case 'bool':
-                case 'boolean':
-                    return (bool) $value ? 1 : 0;
-
-                case 'array':
-                case 'collection':
-                case 'json':
-                    return json_encode($value, JSON_UNESCAPED_UNICODE);
-
-                case 'uuid':
-                    $uuidValue = (string) $value;
-                    if (!$this->isValidUuid($uuidValue)) {
-                        throw new VersaORMException("Invalid UUID format for property {$property}: {$uuidValue}");
-                    }
-                    return $uuidValue;
-
-                case 'datetime':
-                case 'date':
-                case 'timestamp':
-                    if ($value instanceof \DateTime) {
-                        return $value->format('Y-m-d H:i:s');
-                    } elseif (is_string($value)) {
-                        return (new \DateTime($value))->format('Y-m-d H:i:s');
-                    }
-                    return date('Y-m-d H:i:s', (int) $value);
-
-                case 'enum':
-                    $enumValue     = (string) $value;
-                    $allowedValues = $typeDefinition['values'] ?? [];
-                    if (!empty($allowedValues) && !in_array($enumValue, $allowedValues, true)) {
-                        throw new VersaORMException("Invalid enum value for property {$property}. Allowed: " . implode(', ', $allowedValues));
-                    }
-                    return $enumValue;
-
-                case 'set':
-                    $setValue      = is_array($value) ? $value : [$value];
-                    $allowedValues = $typeDefinition['values'] ?? [];
-                    if (!empty($allowedValues)) {
-                        foreach ($setValue as $val) {
-                            if (!in_array($val, $allowedValues, true)) {
-                                throw new VersaORMException("Invalid set value '{$val}' for property {$property}. Allowed: " . implode(', ', $allowedValues));
-                            }
-                        }
-                    }
-                    return implode(',', $setValue);
-
-                case 'blob':
-                    return $value; // Los BLOBs se mantienen como están
-
-                case 'inet':
-                    $inetValue = (string) $value;
-                    if (!filter_var($inetValue, FILTER_VALIDATE_IP)) {
-                        throw new VersaORMException("Invalid IP address for property {$property}: {$inetValue}");
-                    }
-                    return $inetValue;
-
-                default:
-                    return $value;
-            }
+            return $handler($this, $property, $value, $typeDefinition);
         } catch (\Exception $e) {
-            // No envolver errores ya tipados esperados
             if ($e instanceof VersaORMException || $e instanceof \InvalidArgumentException) {
                 throw $e;
             }
