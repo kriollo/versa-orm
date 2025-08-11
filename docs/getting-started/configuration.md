@@ -1,6 +1,6 @@
 # ⚙️ Configuración de VersaORM
 
-🎉 **¡Ya casi estás listo!** Solo necesitas decirle a VersaORM cómo conectarse a tu base de datos. Es súper fácil.
+🎉 **¡Ya casi estás listo!** Solo necesitas decirle a VersaORM cómo conectarse a tu base de datos. Todo funciona sobre PDO estándar.
 
 ## 🤔 ¿Qué información necesita VersaORM?
 

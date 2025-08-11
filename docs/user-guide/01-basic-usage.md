@@ -1,6 +1,6 @@
 # 📚 Uso Básico (Operaciones CRUD)
 
-¡Bienvenido al mundo sin SQL! Una vez que hayas [configurado VersaORM](../getting-started/configuration.md), puedes realizar todas las operaciones de base de datos usando código PHP natural.
+¡Bienvenido al mundo sin SQL! Esta guía asume el **Modo PHP / PDO** (sin núcleo nativo). Una vez que hayas [configurado VersaORM](../getting-started/configuration.md), puedes realizar todas las operaciones usando código PHP natural.
 
 ## 🤔 ¿Por qué VersaORM es mejor que SQL?
 

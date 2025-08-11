@@ -1,16 +1,12 @@
-# 🚀 VersaORM-PHP
+# 🚀 VersaORM-PHP (Modo PHP / PDO)
 
-
-**El ORM más rápido y seguro para PHP - Nunca más escribas SQL a mano**
+**ORM sencillo y seguro para PHP – minimiza SQL manual y acelera tu desarrollo.**
 
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)](#)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4.svg)](#)
-[![Rust](https://img.shields.io/badge/Rust-2021-orange.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
-
-
-El ORM para PHP que combina un uso simple con un motor ultra rápido en Rust. Escribe PHP claro, evita SQL manual y gana rendimiento real en producción.
+> Esta documentación está enfocada al **modo PHP puro (PDO)**. El núcleo nativo (binario) se encuentra en revisión y se re‑integrará más adelante. Nada de lo aquí descrito requiere compilar nada: solo PHP + tu base de datos.
 
 - 📚 Documentación: [docs/README.md](docs/README.md)
 - 🧭 Primeros pasos: [docs/getting-started/README.md](docs/getting-started/README.md)
@@ -19,11 +15,11 @@ El ORM para PHP que combina un uso simple con un motor ultra rápido en Rust. Es
 
 ## 📋 ¿Qué es VersaORM?
 
-VersaORM te permite interactuar con tu base de datos usando PHP familiar, sin SQL manual, con seguridad por defecto y alto rendimiento.
+VersaORM te permite interactuar con tu base de datos usando **objetos PHP** y un **Query Builder fluido**, apoyándose internamente en **PDO**. Así reduces errores, previenes inyecciones SQL y escribes código expresivo.
 
 ### 🤔 ¿Qué es un ORM?
 
-Un **ORM** (Object-Relational Mapping) es como un "traductor" entre tu código PHP y tu base de datos. En lugar de escribir SQL como esto:
+Un **ORM** (Object-Relational Mapping) traduce tus objetos PHP a filas en la base de datos. En vez de escribir SQL como esto:
 
 ```sql
 -- SQL tradicional (complicado y propenso a errores)
@@ -32,7 +28,7 @@ INSERT INTO users (name, email, password) VALUES ('Juan', 'juan@email.com', 'has
 UPDATE users SET status = 'inactive' WHERE id = 1;
 ```
 
-Con VersaORM escribes código PHP natural y fácil de entender:
+Con VersaORM escribes código PHP natural y seguro:
 
 ```php
 // Con VersaORM (fácil y seguro)
@@ -60,51 +56,49 @@ $users = $orm->table('users')
     ->collect();                       // ✅ Ejecuta consulta optimizada
 ```
 
-### 🏆 ¿Por qué VersaORM es tu mejor opción?
+### 🏆 ¿Por qué elegir VersaORM (Modo PDO)?
 
-#### 🚀 **Rendimiento Extremo**
-- **10x más rápido** que otros ORMs PHP (Eloquent, Doctrine)
-- Motor de consultas escrito en **Rust** (el lenguaje más rápido del mundo)
-- Optimización automática de consultas y memoria
+| Necesidad | Sin ORM (solo PDO) | Con VersaORM |
+|-----------|--------------------|--------------|
+| Seguridad | Debes escribir y parametrizar cada sentencia | Parámetros preparados siempre |
+| Mantenimiento | SQL repetido en muchos archivos | Lógica centralizada y fluida |
+| Curva de aprendizaje | Conocer bien SQL + PDO | API consistente (where, join, order, etc.) |
+| Refactors | Buscar/editar cadenas SQL | Cambias métodos encadenados |
+| Errores típicos | Inyección, comas, orden de placeholders | Minimizado por API tipada básica |
 
-#### 🛡️ **Seguridad de Grado Militar**
-- **100% protegido** contra inyecciones SQL automáticamente
-- Validación de datos integrada
-- Protección contra Mass Assignment vulnerabilities
+### Características Clave (Modo PHP)
 
-#### 🧠 **Inteligencia Artificial**
-- **Detección automática de tipos** de datos
-- Conversiones inteligentes entre PHP y base de datos
-- Optimización automática de consultas complejas
+- ✅ Construido sobre PDO (sin dependencias complicadas)
+- 🛡️ Protección por defecto contra inyección SQL (prepared statements internos)
+- 🧩 Modelos Active Record sencillos (`dispense`, `load`, `store`, `trash`)
+- 🔍 Query Builder fluido (`where`, `join`, `groupBy`, `having`, `orderBy`, `limit`)
+- � Relaciones básicas implementables con métodos de conveniencia
+- 💾 Conversión de tipos común (fechas, booleanos) y helpers
+- 🚫 Cero necesidad de compilar binarios
 
-#### 🌐 **Flexibilidad Total**
-- Compatible con **MySQL, PostgreSQL y SQLite**
-- Fácil migración desde otros ORMs
-- Se integra en cualquier proyecto PHP existente
+> Cuando el núcleo nativo vuelva a estar disponible podrás activar rendimiento adicional sin cambiar tu código de aplicación.
 
-#### 💡 **Desarrollo Más Rápido**
-- Código más limpio y mantenible
-- Menos bugs y errores
-- Documentación completa con ejemplos
-- Curva de aprendizaje suave
-## ✨ Arquitectura
+## ✨ Arquitectura (Modo PHP)
 
 ```
-┌─────────────────┐    JSON    ┌─────────────────┐
-│   PHP Layer     │◄──────────►│   Rust Core     │
-│                 │   over     │                 │
-│ - VersaORM.php  │   Binary   │ - Query Engine  │
-│ - Model.php     │    IPC     │ - Type System   │
-│ - QueryBuilder  │            │ - DB Drivers    │
-└─────────────────┘            └─────────────────┘
+┌──────────────────────────┐
+│        Tu Código         │
+│  (Modelos + Consultas)   │
+└────────────┬────────────┘
+             │ API PHP
+┌────────────▼────────────┐
+│       VersaORM PHP       │
+│ - VersaORM.php           │
+│ - VersaModel.php         │
+│ - QueryBuilder.php       │
+└────────────┬────────────┘
+             │ PDO
+┌────────────▼────────────┐
+│     Base de Datos        │
+└──────────────────────────┘
 ```
 
-### Componentes Principales
-
-- **PHP Layer**: Interfaz familiar para desarrolladores PHP
-- **Rust Core**: Motor de consultas optimizado y drivers de base de datos
-- **IPC Bridge**: Comunicación eficiente via JSON sobre procesos
-- **Type System**: Conversión automática de tipos entre PHP y bases de datos
+Sin procesos externos; todo fluye a través de PDO.
 
 ## 🛠️ Instalación
 
@@ -152,26 +146,30 @@ $orm = new VersaORM([
 Model::setORM($orm);
 ```
 
-### 2. Ejemplos de Uso
+### 2. Ejemplos de Uso (Side‑by‑Side SQL vs ORM)
 
-#### CRUD Básico con ORM
+#### CRUD Básico con ORM vs SQL Manual
 ```php
-// Crear un nuevo registro
-$user = $orm->dispense('users');
-$user->name = 'Juan Pérez';
-$user->email = 'juan@example.com';
-$orm->store($user);
+// SQL Manual (PDO)
+$stmt = $pdo->prepare("INSERT INTO users (name,email) VALUES (?,?)");
+$stmt->execute(['Juan Pérez','juan@example.com']);
+$id = $pdo->lastInsertId();
 
-// Leer un registro
-$user = $orm->findOne('users', 1);
-echo $user->name; // Juan Pérez
+// VersaORM
+$user = VersaModel::dispense('users');
+$user->name  = 'Juan Pérez';
+$user->email = 'juan@example.com';
+$user->store(); // id asignado
+
+// Leer
+$user = VersaModel::load('users', $user->id);
 
 // Actualizar
 $user->email = 'nuevo@example.com';
-$orm->store($user);
+$user->store();
 
 // Eliminar
-$orm->trash($user);
+$user->trash();
 ```
 
 #### 🛠️ Query Builder - Consultas Potentes y Seguras
@@ -210,7 +208,7 @@ $orm->table('products')
     ->update(['status' => 'available']);
 ```
 
-#### 🆕 Operaciones CRUD Avanzadas (Nuevo!)
+#### Operaciones CRUD Avanzadas
 ```php
 // UPSERT: Insertar si no existe, actualizar si existe
 $result = $orm->table('products')->upsert(
@@ -273,45 +271,9 @@ try {
 ```
 ```
 
-## 🔧 Desarrollador
+## 🔧 Desarrollador (Modo PHP)
 
-### Compilar desde Código Fuente
-
-#### Requisitos de Desarrollo
-- Rust 1.70.0 o superior
-- Cargo (incluido con Rust)
-- Compiladores C/C++ (gcc, clang, o MSVC)
-
-#### Compilación del Núcleo Rust
-```bash
-# Clonar el repositorio completo
-git clone https://github.com/kriollo/versa-orm.git
-cd versa-orm/versaorm_cli
-
-# Compilar para tu plataforma
-cargo build --release
-
-# Compilación cruzada (opcional)
-cargo build --release --target x86_64-pc-windows-gnu
-cargo build --release --target x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-apple-darwin
-```
-
-#### Estructura del Código Rust
-```
-versaorm_cli/
-├── src/
-│   ├── main.rs           # Punto de entrada y manejo de IPC
-│   ├── query_engine.rs   # Motor de consultas SQL
-│   ├── type_system.rs    # Sistema de tipos y conversiones
-│   ├── database/         # Drivers de base de datos
-│   │   ├── mysql.rs
-│   │   ├── postgres.rs
-│   │   └── sqlite.rs
-│   └── utils/            # Utilidades y helpers
-├── Cargo.toml
-└── README.md
-```
+En este modo no necesitas compilar nada. Basta con instalar mediante Composer y comenzar.
 
 ## 🛠️ Configuración
 
@@ -352,10 +314,7 @@ versaORM-PHP/
 │   ├── VersaORM.php       # Clase principal
 │   ├── Model.php          # Modelos Active Record
 │   ├── QueryBuilder.php   # Constructor de consultas
-│   └── binary/            # Binarios Rust por OS
-│       ├── versaorm_cli_windows.exe
-│       ├── versaorm_cli_linux
-│       └── versaorm_cli_darwin
+│   └── (binarios opcionales próximos)
 ├── composer.json         # Configuración Composer
 └── README.md            # Esta documentación
 ```
@@ -426,9 +385,7 @@ try {
 - La base de datos `tu_base` se crea automáticamente
 
 ### Binario VersaORM no encontrado
-- El binario debe estar en `src/binary/`
-- Se incluye precompilado para Windows, Linux y macOS
-- Si necesitas recompilar: `cd versaorm_cli && cargo build --release`
+En modo PHP / PDO puedes ignorar este mensaje. Cuando el núcleo nativo esté disponible se documentará nuevamente su uso.
 
 ## 📚 Documentación
 
@@ -444,21 +401,16 @@ try {
 
 ## 🌟 Características Principales
 
-### ⚡ Alto Rendimiento
-- **Núcleo en Rust**: Motor de consultas compilado para velocidad extrema
-- **🆕 Modo Lazy**: Planificador de consultas que optimiza automáticamente las operaciones complejas
-- **Optimización automática**: Combina WHERE clauses y optimiza JOINs automáticamente
-- **Conexiones optimizadas**: Pool de conexiones inteligente
-- **Caché integrado**: Sistema de caché automático para consultas frecuentes
+### ⚡ Alto Rendimiento (Enfoque Actual)
+- Construido sobre PDO con prepared statements reutilizables
+- API fluida que reduce código repetitivo y errores
+- (Opcional futuro) Núcleo nativo para acelerar aún más sin cambiar tu código
 
-### 🛡️ Seguridad Avanzada
-- **Consultas preparadas**: Protección contra inyección SQL por defecto
-- **Mass Assignment Protection**: Sistema de `$fillable` y `$guarded` integrado
-- **Validación automática**: Reglas de validación por modelo con excepciones descriptivas
-- **Validación de tipos**: Sistema de tipos estricto en Rust
-- **Sanitización automática**: Limpieza de datos de entrada
-- **🔒 Modo Freeze**: Protección de esquema contra modificaciones DDL accidentales
-- **🆕 Creación Automática de Campos**: Estilo RedBeanPHP para desarrollo ágil
+### 🛡️ Seguridad
+- Prepared statements automáticos
+- Protección Mass Assignment (`$fillable` / `$guarded`)
+- Validación declarativa por modelo
+- Modo Freeze para bloquear cambios accidentales de esquema
 
 ### 🚀 Desarrollo Ágil
 - **Creación automática de campos**: Cuando freeze está desactivado, crea columnas automáticamente
@@ -499,6 +451,6 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles.
 
 ---
 
-🚀 **VersaORM: El futuro de los ORMs PHP está aquí**
+🚀 **VersaORM (Modo PHP) listo para producción ligera y aprendizaje.**
 
-*Potenciado por Rust • Diseñado para PHP • Construido para el rendimiento*
+*Diseñado para claridad • Seguro por defecto • Preparado para crecer*

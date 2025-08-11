@@ -1,3 +1,6 @@
+# ⚠️ Nota Modo PHP / PDO
+Esta guía funciona íntegramente en modo PHP. Cuando el núcleo nativo vuelva, los mismos métodos aprovecharán optimizaciones internas automáticamente.
+
 # 🔄 Operaciones UPSERT y REPLACE INTO - Guía Completa
 
 ¡Descubre las poderosas operaciones de inserción/actualización inteligente de VersaORM! Estas funcionalidades te permiten manejar datos de manera eficiente cuando no sabes si un registro existe o no.

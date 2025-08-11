@@ -1,3 +1,6 @@
+# ⚠️ Nota Modo PHP / PDO
+Actualmente estás en modo PHP puro. El planificador avanzado (Lazy) puede ofrecer optimizaciones adicionales cuando el núcleo nativo esté disponible. Las APIs aquí descritas funcionan, pero algunas ganancias de rendimiento aparecerán más adelante sin que tengas que cambiar tu código.
+
 # ⚡ Modo Lazy y Planificador de Consultas
 
 ¡Bienvenido al Modo Lazy de VersaORM! Esta funcionalidad revolucionaria optimiza automáticamente tus consultas para obtener el máximo rendimiento con el mínimo esfuerzo.

@@ -36,4 +36,6 @@ Bienvenido. Aquí tienes todo lo necesario para usar VersaORM desde cero hasta n
 
 ---
 
-VersaORM te permite trabajar con tu base de datos usando PHP claro y seguro, con un motor en Rust para máximo rendimiento. Si es tu primera vez, sigue la ruta 1 → 2 → 3. Si ya lo usas a diario, guarda 2 y 4 como referencia.
+VersaORM te permite trabajar con tu base de datos usando PHP claro y seguro. Actualmente esta documentación prioriza el **Modo PHP / PDO** (sin núcleo nativo) mientras el binario se estabiliza. Para un resumen práctico de este modo visita: [Modo PHP / PDO](../pdo-mode/README.md).
+
+Si es tu primera vez, sigue la ruta 1 → 2 → 3. Si ya lo usas a diario, guarda 2 y 4 como referencia.

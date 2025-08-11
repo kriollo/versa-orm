@@ -1,3 +1,6 @@
+# ⚠️ Nota Modo PHP / PDO
+Las operaciones de lote funcionan usando transacciones y lógica en PHP. Posteriormente podrán acelerarse con el núcleo nativo sin cambios en tu código.
+
 # 🚀 Operaciones de Lote (Batch Operations) - Guía Completa
 
 ¡Bienvenido a la documentación de las Operaciones de Lote de VersaORM! Esta funcionalidad revoluciona la forma en que manejas grandes volúmenes de datos con máximo rendimiento y seguridad.

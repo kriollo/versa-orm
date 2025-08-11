@@ -1,6 +1,6 @@
 # 📦 Instalación de VersaORM
 
-🎉 **¡Instalar VersaORM es súper fácil!** En menos de 5 minutos tendrás el ORM más rápido del mundo funcionando en tu proyecto.
+🎉 **¡Instalar VersaORM es súper fácil!** En menos de 5 minutos tendrás el ORM funcionando en tu proyecto (modo PHP / PDO).
 
 ## 📋 ¿Qué necesitas antes de empezar?
 
@@ -13,8 +13,8 @@
   - 📁 **SQLite 3.6+** (perfecto para desarrollo y aplicaciones simples)
 
 ### 🔧 Extensiones PHP (se instalan automáticamente)
-- `json` - Para comunicación con el motor Rust
-- `mbstring` - Para manejo de texto internacional
+- `json`
+- `mbstring`
 
 > 💡 **¿No tienes base de datos?** ¡No problem! SQLite se instala automáticamente y no necesita configuración.
 
@@ -39,9 +39,8 @@ composer require versaorm/versaorm-php
 
 ¡Eso es todo! Composer descargará automáticamente:
 - ✅ VersaORM completo
-- ✅ Todas las dependencias
-- ✅ Binarios Rust pre-compilados
-- ✅ Configuración de autoload
+- ✅ Dependencias
+- ✅ Autoload listo
 
 ### 📝 Usar VersaORM en tu código
 
@@ -89,18 +88,7 @@ Si prefieres no usar Composer, puedes instalar VersaORM manualmente.
 
     Asegúrate de reemplazar `path/to/versa-orm/` con la ruta correcta donde hayas clonado o descomprimido el repositorio.
 
-3.  **Verificar el binario de Rust:**
-    VersaORM depende de un binario precompilado de Rust para su rendimiento. Estos binarios se encuentran en el directorio `src/binary/`.
-
-    - `versaorm_cli_windows.exe` para Windows
-    - `versaorm_cli_linux` para Linux
-    - `versaorm_cli_darwin` para macOS
-
-    Asegúrate de que el binario correspondiente a tu sistema operativo tenga permisos de ejecución. En Linux y macOS, puedes hacerlo con:
-
-    ```bash
-    chmod +x src/binary/versaorm_cli_linux
-    ```
+3.  **(Opcional Futuro) Núcleo Nativo**: Por ahora lo omitimos. Cuando se reactive, tu código no necesitará cambios.
 
 ## Siguientes Pasos
 

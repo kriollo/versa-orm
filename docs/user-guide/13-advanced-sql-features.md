@@ -1,3 +1,6 @@
+# ⚠️ Nota Modo PHP / PDO
+Estas características avanzadas se ejecutan hoy a través de PDO. Las optimizaciones internas adicionales del núcleo nativo se aplicarán automáticamente más adelante.
+
 # 🚀 Funcionalidades SQL Avanzadas - VersaORM
 
 ¡Descubre las capacidades SQL más avanzadas de VersaORM! Esta guía te muestra cómo aprovechar funciones SQL complejas de manera fácil y segura usando el QueryBuilder.

@@ -1,3 +1,6 @@
+# ⚠️ Nota Modo PHP / PDO
+Las diferencias específicas por motor se gestionan actualmente vía PDO estándar. Optimización futura nativa no requerirá cambios de API.
+
 # Funcionalidades SQL Avanzadas por Motor de Base de Datos
 
 ## MySQL - Características Específicas
