@@ -835,56 +835,58 @@ class VersaModel implements TypedModelInterface
                 );
             }
 
-            $fields       = array_keys($filteredAttributes);
-            $placeholders = array_fill(0, count($fields), '?');
-
-            $sql    = "INSERT INTO {$this->table} (" . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
-            $result = $orm->exec($sql, array_values($filteredAttributes));
-
-            // DEBUG: Ver qué retorna exec()
-            error_log('=== DEBUG INSERT RESULT ===');
-            error_log('Result type: ' . gettype($result));
-            error_log('Result content: ' . var_export($result, true));
-            error_log('==========================');
-
-            // Obtener el ID del registro recién insertado
-            // Para PostgreSQL/MySQL con nuestro nuevo sistema, el resultado puede contener el ID
-            if (is_array($result) && isset($result['id'])) {
-                // Resultado con ID retornado directamente (PostgreSQL RETURNING, MySQL last_insert_id)
-                $this->attributes['id'] = $result['id'];
-            } elseif (is_array($result) && !empty($result) && is_array($result[0]) && isset($result[0]['id'])) {
-                // Resultado estándar de SELECT con ID
-                $this->attributes['id'] = $result[0]['id'];
-            } else {
-                // Fallback: buscar el registro más reciente que coincida con los datos insertados
-                $whereConditions = [];
-                $whereParams     = [];
-
-                // Usar campos únicos para encontrar el registro
-                if (isset($filteredAttributes['email'])) {
-                    $whereConditions[] = 'email = ?';
-                    $whereParams[]     = $filteredAttributes['email'];
-                } else {
-                    // Si no hay email, usar otros campos como fallback
-                    foreach ($filteredAttributes as $key => $value) {
-                        if (is_string($value) || is_numeric($value)) {
-                            $whereConditions[] = "{$key} = ?";
-                            $whereParams[]     = $value;
-                            break; // Solo usar el primer campo válido
-                        }
-                    }
+            // Intentar obtener el ID en forma nativa usando el QueryBuilder
+            try {
+                /** @var int|string|null $newId */
+                $newId = $orm->table($this->table)->insertGetId($filteredAttributes);
+                if ($newId !== null && $newId !== '') {
+                    // Normalizar a int si es numérico
+                    $this->attributes['id'] = is_numeric($newId) ? (int)$newId : $newId;
+                    return; // Insert completado con ID asignado
                 }
+            } catch (\Throwable $e) {
+                // Continuar con fallback silencioso
+            }
 
-                if (!empty($whereConditions)) {
-                    $whereClause    = implode(' AND ', $whereConditions);
-                    $fallbackResult = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
+            // Fallback: buscar el registro más reciente que coincida con los datos insertados
+            $whereConditions = [];
+            $whereParams     = [];
 
-                    if (is_array($fallbackResult) && !empty($fallbackResult) && is_array($fallbackResult[0])) {
-                        $this->attributes = array_merge($this->attributes, $fallbackResult[0]);
+            // Usar campos únicos comunes para encontrar el registro
+            if (isset($filteredAttributes['email'])) {
+                $whereConditions[] = 'email = ?';
+                $whereParams[]     = $filteredAttributes['email'];
+            } else {
+                // Si no hay un campo único obvio, usar el primer campo escalar
+                foreach ($filteredAttributes as $key => $value) {
+                    if (is_string($value) || is_numeric($value)) {
+                        $whereConditions[] = "{$key} = ?";
+                        $whereParams[]     = $value;
+                        break; // Solo usar el primer campo válido
                     }
                 }
             }
+
+            if (!empty($whereConditions)) {
+                $whereClause    = implode(' AND ', $whereConditions);
+                $fallbackResult = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
+
+                if (is_array($fallbackResult) && !empty($fallbackResult) && is_array($fallbackResult[0])) {
+                    $this->attributes = array_merge($this->attributes, $fallbackResult[0]);
+                }
+            }
         }
+    }
+
+    /**
+     * Guarda el modelo y devuelve el ID insertado (si aplica). En updates devuelve el ID existente.
+     * No lanza excepción adicional más allá de las de store().
+     * @return int|string|null
+     */
+    public function storeAndGetId()
+    {
+        $this->store();
+        return $this->attributes['id'] ?? null;
     }
 
     /**
