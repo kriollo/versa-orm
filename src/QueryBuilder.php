@@ -1159,6 +1159,8 @@ class QueryBuilder
                     // Dado que no hay relaciones en fast-path, podemos setear attributes internamente usando reflexión simple.
                     // Para mantener compatibilidad, reutilizamos loadInstance (micro-optimización posible a futuro si es hotspot).
                     $m->loadInstance($row);
+                    // Aplicar casting tipo a nivel de export ahora para asegurar consistencia inmediata
+                    $m->export(); // export realiza casting; atributos internos siguen crudos pero acceso externo es consistente
                     $models[] = $m;
                 }
                 if ($this->orm instanceof VersaORM) {
@@ -1228,6 +1230,7 @@ class QueryBuilder
             try {
                 $m = new $modelClass($this->table, $this->orm);
                 $m->loadInstance($row);
+                // Export aplica casting; garantizar consistencia
                 $exported[] = $m->export();
             } catch (\Throwable $e) {
                 // Fallback al row original si algo falla
@@ -1264,7 +1267,7 @@ class QueryBuilder
         try {
             $m = new $modelClass($this->table, $this->orm);
             $m->loadInstance($row);
-            return $m->export();
+            return $m->export(); // export con casting
         } catch (\Throwable $e) {
             return $row; // fallback sin casting
         }

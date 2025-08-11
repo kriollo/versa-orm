@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaModel;
-use VersaORM\VersaORMException;
 
 require_once __DIR__ . '/TestCase.php';
 

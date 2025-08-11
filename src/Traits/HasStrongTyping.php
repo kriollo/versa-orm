@@ -231,6 +231,14 @@ trait HasStrongTyping
             if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
             }
+            // Normaliza (comprime) IPv6 y asegura forma canónica usando inet_pton/inet_ntop
+            $packed = @inet_pton($ip);
+            if ($packed !== false) {
+                $normalized = @inet_ntop($packed);
+                if (is_string($normalized) && $normalized !== '') {
+                    $ip = $normalized;
+                }
+            }
             return $ip;
         };
         self::$phpCastHandlers = ['int' => $int, 'integer' => $int, 'float' => $float, 'real' => $float, 'double' => $float, 'decimal' => $float, 'string' => $string, 'bool' => $bool, 'boolean' => $bool, 'array' => $array, 'collection' => $array, 'json' => $json, 'uuid' => $uuid, 'datetime' => $dt, 'date' => $dt, 'timestamp' => $dt, 'enum' => $enum, 'set' => $set, 'blob' => $blob, 'inet' => $inet];
@@ -340,6 +348,13 @@ trait HasStrongTyping
             $ip = (string)$v;
             if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
+            }
+            $packed = @inet_pton($ip);
+            if ($packed !== false) {
+                $normalized = @inet_ntop($packed);
+                if (is_string($normalized) && $normalized !== '') {
+                    $ip = $normalized;
+                }
             }
             return $ip;
         };

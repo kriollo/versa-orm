@@ -1612,7 +1612,28 @@ class VersaModel implements TypedModelInterface
         }
         $result = self::$ormInstance->exec($sql, $bindings);
         if (is_array($result) && isset($result[0]) && is_array($result[0])) {
-            return $result[0];
+            $row = $result[0];
+            // Intentar aplicar casting fuerte si la clase define property types
+            try {
+                if (method_exists(static::class, 'getPropertyTypes')) {
+                    /** @var array<string,array<string,mixed>> $types */
+                    $types = static::getPropertyTypes();
+                    if ($types !== []) {
+                        $tmp = new static($row['_table'] ?? '', self::$ormInstance);
+                        foreach ($row as $k => $v) {
+                            if (isset($types[$k])) {
+                                try {
+                                    $row[$k] = $tmp->castToPhpType($k, $v);
+                                } catch (\Throwable) {
+                                    // fallback silencioso
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+            }
+            return $row;
         }
         return null;
     }
@@ -1631,7 +1652,25 @@ class VersaModel implements TypedModelInterface
         }
         $result = self::$ormInstance->exec($sql, $bindings);
         if (is_array($result) && !empty($result) && is_array($result[0])) {
-            return array_values($result[0])[0] ?? null;
+            $row = $result[0];
+            $value = array_values($row)[0] ?? null;
+            // Intentar caster el primer valor si tenemos tipos
+            try {
+                if (method_exists(static::class, 'getPropertyTypes')) {
+                    $types = static::getPropertyTypes();
+                    // Encontrar la primera clave asociada al valor
+                    $firstKey = array_key_first($row);
+                    if ($firstKey !== null && isset($types[$firstKey])) {
+                        $tmp = new static($row['_table'] ?? '', self::$ormInstance);
+                        try {
+                            $value = $tmp->castToPhpType($firstKey, $value);
+                        } catch (\Throwable) {
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+            }
+            return $value;
         }
         return null;
     }

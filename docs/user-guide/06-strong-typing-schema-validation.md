@@ -295,3 +295,22 @@ Una vez resuelto el mapa, los tipos (clave `type`) se normalizan a minúsculas y
 5. Añade pruebas unitarias para un campo representativo de cada tipo avanzado (json, enum, set, uuid) validando tanto valores válidos como inválidos.
 
 ---
+## ♻️ Consistencia de Tipos en Todas las Rutas de Lectura
+
+VersaORM garantiza ahora que el casting definido en tu modelo (tipos, enum, set, json, datetime, bool, inet, etc.) se aplica de forma uniforme sin importar cómo recuperes los datos:
+
+| Método | Retorno | Casting aplicado |
+|--------|---------|------------------|
+| `QueryBuilder->get()` | array<array> | Sí (cada fila se hidrata y se exporta con casting) |
+| `QueryBuilder->firstArray()` | array|null | Sí |
+| `QueryBuilder->findAll()` | array<Model> | Sí (al acceder / export) |
+| `QueryBuilder->findOne()` | Model|null | Sí |
+| `VersaModel::getRow()` | array|null | Sí (post-proceso) |
+| `VersaModel::getCell()` | mixed | Sí (si el campo está tipado) |
+| `Model->export()` | array | Sí (ahora fuerza accessor/cast por atributo) |
+
+Incluso el camino de hidratación optimizado (fast-path) ejecuta la fase de export con casting para asegurar que flags booleanos, fechas y colecciones mantengan consistencia. Si agregas nuevos tipos soportados en `HasStrongTyping`, heredarás esta consistencia automáticamente.
+
+Recomendación: define siempre tus tipos críticos (uuid, bool, enum, set, json, datetime, inet) para evitar depender de valores crudos de PDO y asegurar serialización JSON estable.
+
+---
