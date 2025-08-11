@@ -26,17 +26,15 @@ class User extends BaseModel
         'email' => ['required', 'email', 'max:150'],
     ];
 
-    /** Crear usuario con defaults y casting consistente. */
-    public static function create(array $attributes): static
+    /** Crear usuario con defaults y casting consistente (instancia). */
+    public function createOne(array $attributes): self
     {
         if (!isset($attributes['avatar_color'])) {
             $attributes['avatar_color'] = static::generateRandomColor();
         }
-        /** @var static $user */
-        $user = static::dispense('users');
-        $user->fill($attributes);
-        $user->store();
-        return $user;
+        $this->fill($attributes);
+        $this->store();
+        return $this;
     }
 
     /**
@@ -73,7 +71,7 @@ class User extends BaseModel
             $allProjects = [];
 
             // Proyectos donde es propietario
-            $ownedProjects = static::orm()->table('projects', Project::class)
+            $ownedProjects = $this->getOrm()->table('projects', Project::class)
                 ->where('owner_id', '=', $this->id)
                 ->get();
 
@@ -82,7 +80,7 @@ class User extends BaseModel
             }
 
             // Proyectos donde es miembro
-            $memberProjects = static::orm()->table('projects', Project::class)
+            $memberProjects = $this->getOrm()->table('projects', Project::class)
                 ->join('project_users', 'projects.id', '=', 'project_users.project_id')
                 ->where('project_users.user_id', '=', $this->id)
                 ->select(['projects.*'])
@@ -108,7 +106,7 @@ class User extends BaseModel
         } catch (\Exception $e) {
             // Si falla el join, intentar solo los proyectos propios
             try {
-                $projects = static::orm()->table('projects', Project::class)
+                $projects = $this->getOrm()->table('projects', Project::class)
                     ->where('owner_id', '=', $this->id)
                     ->get();
                 return $projects ?: [];
@@ -124,7 +122,7 @@ class User extends BaseModel
     public function tasks(): array
     {
         try {
-            $tasks = static::orm()->table('tasks', Task::class)
+            $tasks = $this->getOrm()->table('tasks', Task::class)
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')
                 ->get();

@@ -44,11 +44,11 @@
 
                     <!-- Estadísticas del proyecto -->
                     <?php
-                    $projectObj = \App\Models\Project::find($project->id);
-            $tasks              = $projectObj ? $projectObj->tasks() : [];
-            $members            = $projectObj ? $projectObj->members() : [];
-            $completedTasks     = array_filter($tasks, fn ($t) => $t['status'] === 'done');
-            ?>
+                    // Usar directamente el modelo de proyecto ya provisto (instancia), evitando llamadas estáticas
+                    $tasks          = $project->tasks();
+                    $members        = $project->members();
+                    $completedTasks = array_filter($tasks, fn($t) => $t['status'] === 'done');
+                    ?>
 
                     <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                         <div class="flex items-center space-x-4">

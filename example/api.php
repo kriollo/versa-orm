@@ -6,10 +6,8 @@ require_once __DIR__ . '/bootstrap.php';
 
 header('Content-Type: application/json');
 
-// Obtener la instancia del ORM que fue configurada en bootstrap.php
-use App\Models\Task;
-
-$orm = Task::getGlobalORM();
+// Instancia del ORM por petición
+$orm = app()->orm();
 
 $resource = $_GET['resource'] ?? null;
 

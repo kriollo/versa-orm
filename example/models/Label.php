@@ -25,23 +25,15 @@ class Label extends BaseModel
         'color' => ['required'],
     ];
 
-    /** Atajo para buscar por ID (modelo tipado) compatible con BaseModel. */
-    public static function find(int $id, string $pk = 'id'): ?static
-    {
-        return parent::find($id, $pk);
-    }
-
-    /** Crear etiqueta usando strong typing y mass-assignment seguro. */
-    public static function create(array $attributes): static
+    /** Crear etiqueta (instancia) usando strong typing y mass-assignment seguro. */
+    public function createOne(array $attributes): self
     {
         if (!isset($attributes['color'])) {
             $attributes['color'] = static::generateRandomColor();
         }
-        /** @var static $label */
-        $label = static::dispense('labels');
-        $label->fill($attributes);
-        $label->store();
-        return $label;
+        $this->fill($attributes);
+        $this->store();
+        return $this;
     }
 
     /**
@@ -74,7 +66,7 @@ class Label extends BaseModel
      */
     public function tasks(): array
     {
-        return static::orm()
+        return $this->getOrm()
             ->table('tasks', Task::class)
             ->join('task_labels', 'tasks.id', '=', 'task_labels.task_id')
             ->where('task_labels.label_id', '=', $this->id)
@@ -88,7 +80,7 @@ class Label extends BaseModel
      */
     public function tasksCount(): int
     {
-        $rows = static::orm()
+        $rows = $this->getOrm()
             ->table('task_labels')
             ->select(['COUNT(*) AS count'])
             ->where('label_id', '=', $this->id)

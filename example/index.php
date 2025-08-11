@@ -32,7 +32,7 @@ try {
             // $totalLabels = count(Label::all());
 
             // ✅ DESPUÉS (Optimizado con consultas agregadas):
-            $orm = Task::getGlobalORM();
+            $orm = app()->orm();
 
             // Conteos eficientes usando el ORM
             $totalProjects = $orm->table('projects')->count();
@@ -58,8 +58,8 @@ try {
         // ======================
         case 'projects':
             // Usar modelos para que las vistas sigan accediendo con ->propiedad
-            $projects = Project::all();
-            $users    = User::all();
+            $projects = models()->project()->all();
+            $users    = models()->user()->all();
             render('projects/index', compact('projects', 'users'));
             break;
 
@@ -69,7 +69,7 @@ try {
                 redirect('?action=projects');
             }
 
-            $project = Project::find($id);
+            $project = models()->project()->find($id);
             if (!$project) {
                 flash('error', 'Proyecto no encontrado');
                 redirect('?action=projects');
@@ -79,7 +79,7 @@ try {
             // $tasks = Task::getAll('SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC', [$id]);
 
             // ✅ DESPUÉS (Modo Lazy con información relacionada):
-            $orm   = Task::getGlobalORM();
+            $orm   = app()->orm();
             $tasks = $orm->table('tasks as t')
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'u.email as user_email'])
@@ -111,11 +111,11 @@ try {
             unset($task); // Romper la referencia
 
             $members = $project->members();
-            $owner   = User::findArray($project->owner_id);
+            $owner   = models()->user()->findArray($project->owner_id);
 
             // Obtener usuarios disponibles de forma eficiente
-            $allUsers    = User::all();
-            $allUsers    = User::all();
+            $allUsers    = models()->user()->all();
+            $allUsers    = models()->user()->all();
             $memberIds   = array_column($members, 'id');
             $memberIds[] = $project->owner_id;
 
@@ -129,7 +129,7 @@ try {
         case 'project_create':
             if ($_POST) {
                 try {
-                    $project = Project::create($_POST);
+                    $project = models()->project()->createOne($_POST);
                     flash('success', 'Proyecto creado exitosamente');
                     redirect('?action=project_show&id=' . $project->id);
                 } catch (Exception $e) {
@@ -137,7 +137,7 @@ try {
                 }
             }
             // Mantener usuarios como objetos de modelo para consistencia en las vistas
-            $users = User::all();
+            $users = models()->user()->all();
             render('projects/create', compact('users'));
             break;
 
@@ -147,7 +147,7 @@ try {
                 redirect('?action=projects');
             }
 
-            $project = Project::find($id);
+            $project = models()->project()->find($id);
             if (!$project) {
                 flash('error', 'Proyecto no encontrado');
                 redirect('?action=projects');
@@ -164,21 +164,21 @@ try {
                 }
             }
             // Mantener usuarios como objetos (no arrays exportados) para evitar warnings en la vista edit
-            $users = User::all();
+            $users = models()->user()->all();
             render('projects/edit', compact('project', 'users'));
             break;
 
         case 'project_add_member':
             if ($_POST && isset($_POST['project_id']) && isset($_POST['user_id'])) {
                 try {
-                    $project = Project::find($_POST['project_id']);
+                    $project = models()->project()->find((int)$_POST['project_id']);
                     if (!$project) {
                         flash('error', 'Proyecto no encontrado');
                         redirect('?action=projects');
                         break;
                     }
 
-                    $user = User::find($_POST['user_id']);
+                    $user = models()->user()->find((int)$_POST['user_id']);
                     if (!$user) {
                         flash('error', 'Usuario no encontrado');
                         redirect('?action=project_show&id=' . $_POST['project_id']);
@@ -186,7 +186,7 @@ try {
                     }
 
                     // Verificar que el usuario no sea ya miembro
-                    $exists = Project::orm()->table('project_users')
+                    $exists = app()->orm()->table('project_users')
                         ->where('project_id', '=', (int)$_POST['project_id'])
                         ->where('user_id', '=', (int)$_POST['user_id'])
                         ->exists();
@@ -194,7 +194,7 @@ try {
                     if ($exists) {
                         flash('warning', 'El usuario ya es miembro del proyecto');
                     } else {
-                        $pivot = Project::dispense('project_users');
+                        $pivot = $project->dispenseInstance('project_users');
                         $pivot->project_id = (int)$_POST['project_id'];
                         $pivot->user_id    = (int)$_POST['user_id'];
                         $pivot->store();
@@ -215,7 +215,7 @@ try {
         case 'project_remove_member':
             if ($_POST && isset($_POST['project_id']) && isset($_POST['user_id'])) {
                 try {
-                    $project = Project::find($_POST['project_id']);
+                    $project = models()->project()->find((int)$_POST['project_id']);
                     if (!$project) {
                         flash('error', 'Proyecto no encontrado');
                         redirect('?action=projects');
@@ -223,15 +223,15 @@ try {
                     }
 
                     // Remover el miembro usando el ORM global
-                    $orm = Project::getGlobalORM();
-                    $rows = Project::orm()->table('project_users')
+                    $orm = app()->orm();
+                    $rows = app()->orm()->table('project_users')
                         ->select(['id'])
                         ->where('project_id', '=', (int)$_POST['project_id'])
                         ->where('user_id', '=', (int)$_POST['user_id'])
                         ->get();
                     foreach ($rows as $row) {
                         if (!isset($row['id'])) continue;
-                        $pivot = Project::load('project_users', (int)$row['id']);
+                        $pivot = $project->load('project_users', (int)$row['id']);
                         $pivot?->trash();
                     }
 
@@ -253,7 +253,7 @@ try {
                 redirect('?action=projects');
             }
 
-            $project = Project::find($id);
+            $project = models()->project()->find($id);
             if ($project) {
                 $project->trash();
                 flash('success', 'Proyecto eliminado exitosamente');
@@ -287,7 +287,7 @@ try {
             // $filteredTasks = array_filter($allTasks, function ($task) use (...) { ... });
 
             // ✅ DESPUÉS (Modo Lazy - Ultra optimizado):
-            $orm = Task::getGlobalORM();
+            $orm = app()->orm();
 
             // Construcción dinámica de consulta con filtros aplicados en DB
             $queryBuilder = $orm->table('tasks as t')
@@ -413,7 +413,7 @@ try {
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
-                    $task = Task::create($taskData);
+                    $task = models()->task()->createOne($taskData);
 
                     // Asignar etiquetas si se enviaron
                     if (!empty($labels) && is_array($labels)) {
@@ -427,9 +427,9 @@ try {
                 }
             }
 
-            $projects = array_map(fn($p) => $p->export(), Project::all());
-            $users    = array_map(fn($u) => $u->export(), User::all());
-            $labels   = array_map(fn($l) => $l->export(), Label::all());
+            $projects = array_map(fn($p) => $p->export(), models()->project()->all());
+            $users    = array_map(fn($u) => $u->export(), models()->user()->all());
+            $labels   = array_map(fn($l) => $l->export(), app()->orm()->table('labels')->findAll());
             render('tasks/create', compact('projects', 'users', 'labels'));
             break;
 
@@ -439,7 +439,7 @@ try {
                 redirect('?action=tasks');
             }
 
-            $task = Task::find($id);
+            $task = models()->task()->find($id);
             if (!$task) {
                 flash('error', 'Tarea no encontrada');
                 redirect('?action=tasks');
@@ -469,9 +469,9 @@ try {
                 }
             }
 
-            $projects   = array_map(fn($p) => $p->export(), Project::all());
-            $users      = array_map(fn($u) => $u->export(), User::all());
-            $labels     = array_map(fn($l) => $l->export(), Label::all());
+            $projects   = array_map(fn($p) => $p->export(), models()->project()->all());
+            $users      = array_map(fn($u) => $u->export(), models()->user()->all());
+            $labels     = array_map(fn($l) => $l->export(), app()->orm()->table('labels')->findAll());
             $taskLabels = $task->getLabelIds();
             render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
             break;
@@ -482,7 +482,7 @@ try {
                 redirect('?action=tasks');
             }
 
-            $task = Task::find($id);
+            $task = models()->task()->find($id);
             if ($task) {
                 $projectId = $task->project_id;
                 $task->trash();
@@ -500,7 +500,7 @@ try {
                 redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             }
 
-            $task = Task::find($id);
+            $task = models()->task()->find($id);
             if ($task) {
                 try {
                     $task->changeStatus($_POST['status']);
@@ -518,14 +518,14 @@ try {
         // USUARIOS
         // ======================
         case 'users':
-            $users = User::all();
+            $users = models()->user()->all();
             render('users/index', compact('users'));
             break;
 
         case 'user_create':
             if ($_POST) {
                 try {
-                    $user = User::create($_POST);
+                    $user = models()->user()->createOne($_POST);
                     flash('success', 'Usuario creado exitosamente');
                     redirect('?action=users');
                 } catch (Exception $e) {
@@ -542,7 +542,7 @@ try {
                 redirect('?action=users');
             }
 
-            $user = User::find($id);
+            $user = models()->user()->find($id);
             if (!$user) {
                 flash('error', 'Usuario no encontrado');
                 redirect('?action=users');
@@ -568,7 +568,7 @@ try {
                 redirect('?action=users');
             }
 
-            $user = User::find($id);
+            $user = models()->user()->find($id);
             if ($user) {
                 $user->trash();
                 flash('success', 'Usuario eliminado exitosamente');
@@ -582,10 +582,10 @@ try {
         // ETIQUETAS
         // ======================
         case 'labels':
-            $labels = Label::all();
+            $labels = app()->orm()->table('labels')->findAll();
             if ($labels) {
                 $labelIds   = array_map(fn($l) => $l->id, $labels);
-                $countsRows = Label::orm()->table('task_labels')
+                $countsRows = app()->orm()->table('task_labels')
                     ->select(['label_id', 'COUNT(*) as c'])
                     ->whereIn('label_id', $labelIds)
                     ->groupBy('label_id')
@@ -620,7 +620,7 @@ try {
             // ', [$labelId]);
 
             // ✅ DESPUÉS (Modo Lazy optimizado automáticamente):
-            $orm   = Task::getGlobalORM();
+            $orm   = app()->orm();
             $tasks = $orm->table('tasks as t')
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
@@ -638,7 +638,8 @@ try {
         case 'label_create':
             if ($_POST) {
                 try {
-                    $label = Label::create($_POST);
+                    $label = new Label(Label::tableName(), app()->orm());
+                    $label->createOne($_POST);
                     flash('success', 'Etiqueta creada exitosamente');
                     redirect('?action=labels');
                 } catch (Exception $e) {
@@ -655,19 +656,18 @@ try {
                 redirect('?action=labels');
             }
 
-            $label = Label::find($id);
+            $label = (new Label(Label::tableName(), app()->orm()))->find($id);
             if (!$label) {
                 flash('error', 'Etiqueta no encontrada');
                 redirect('?action=labels');
             }
 
             // Añadir conteo de tareas
-            $count              = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
-            $countRow = Label::orm()->table('task_labels')
+            $countRow = app()->orm()->table('task_labels')
                 ->select(['COUNT(*) as c'])
                 ->where('label_id', '=', $label->id)
-                ->first();
-            $label->tasks_count = $countRow->c ?? 0; // @phpstan-ignore-line acceso dinámico
+                ->firstArray();
+            $label->tasks_count = (int)($countRow['c'] ?? 0);
 
             if ($_POST) {
                 try {
@@ -689,7 +689,7 @@ try {
                 redirect('?action=labels');
             }
 
-            $label = Label::find($id);
+            $label = (new Label(Label::tableName(), app()->orm()))->find($id);
             if ($label) {
                 $label->trash();
                 flash('success', 'Etiqueta eliminada exitosamente');

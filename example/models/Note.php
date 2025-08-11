@@ -26,29 +26,24 @@ class Note extends BaseModel
         'user_id' => ['required'],
     ];
 
-    /** Buscar por ID (modelo tipado) compatible con BaseModel. */
-    public static function find(int $id, string $pk = 'id'): ?static
-    {
-        return parent::find($id, $pk);
-    }
+    // Buscar por ID se hace vía instancia heredada de BaseModel: (new Note(...))->find($id)
 
-    /** Listar notas por task_id como arrays exportados. */
-    public static function findByTask(int $taskId): array
+    /** Listar notas por task_id como arrays exportados (instancia). */
+    public function findByTask(int $taskId): array
     {
-        return static::orm()->table('task_notes', static::class)
+        return $this->getOrm()
+            ->table('task_notes', static::class)
             ->where('task_id', '=', $taskId)
             ->orderBy('created_at', 'DESC')
             ->get();
     }
 
-    /** Crear nueva nota usando strong typing. */
-    public static function create(array $attributes): static
+    /** Crear nueva nota usando strong typing (instancia). */
+    public function createOne(array $attributes): self
     {
-        /** @var static $note */
-        $note = static::dispense('task_notes');
-        $note->fill($attributes);
-        $note->store();
-        return $note;
+        $this->fill($attributes);
+        $this->store();
+        return $this;
     }
 
     /**
@@ -56,8 +51,8 @@ class Note extends BaseModel
      */
     public function task(): ?array
     {
-        $task = Task::findOne('tasks', (int)$this->task_id);
-        return $task?->export();
+        $task = $this->getOrm()->table('tasks', Task::class)->where('id', '=', (int)$this->task_id)->findOne();
+        return $task ? $task->export() : null;
     }
 
     /**
@@ -65,8 +60,8 @@ class Note extends BaseModel
      */
     public function user(): ?array
     {
-        $user = User::findOne('users', (int)$this->user_id);
-        return $user?->export();
+        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int)$this->user_id)->findOne();
+        return $user ? $user->export() : null;
     }
 
     /**

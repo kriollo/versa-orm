@@ -13,17 +13,20 @@ $taskId = $_POST['task_id'] ?? $_GET['task_id'] ?? null;
 switch ($action) {
     case 'get_notes':
         if ($taskId) {
-            // findByTask retorna arrays ya exportados
-            $notes = Note::findByTask((int)$taskId); // array<int,array>
+            // Obtener ORM perezosamente y consultar notas como arrays
+            $orm   = app()->orm();
+            $notes = $orm->table('task_notes')
+                ->where('task_id', '=', (int)$taskId)
+                ->orderBy('created_at', 'DESC')
+                ->get(); // array<int,array>
             $notesData = [];
             foreach ($notes as $noteArr) {
                 // Obtener usuario de la nota (user_id en array)
                 $userName = 'Usuario desconocido';
                 if (isset($noteArr['user_id'])) {
-                    $user = \App\Models\User::findOne('users', (int)$noteArr['user_id']);
+                    $user = app()->orm()->table('users')->where('id', '=', (int)$noteArr['user_id'])->firstArray();
                     if ($user) {
-                        $userExp  = $user->export();
-                        $userName = $userExp['name'] ?? $userName;
+                        $userName = $user['name'] ?? $userName;
                     }
                 }
                 $noteArr['user_name'] = $userName;
@@ -45,15 +48,18 @@ switch ($action) {
                 if (session_status() === PHP_SESSION_NONE) {
                     session_start();
                 }
-                $orm    = Note::getGlobalORM();
-                $task   = Task::find((int)$taskId);
+                $orm    = app()->orm();
+                $task   = (new Task(Task::tableName(), $orm))->find((int)$taskId);
                 $userId = $task ? $task->getUserIdByTaskId((int)$taskId) : 1; // Asignar usuario por defecto si no se encuentra
 
-                Note::create([
+                // Crear nota usando el ORM directamente
+                $note = (new Note(Note::tableName(), $orm));
+                $note->fill([
                     'task_id' => (int)$taskId,
                     'content' => $content,
                     'user_id' => $userId,
                 ]);
+                $note->store();
                 echo json_encode(['success' => true]);
             } catch (Exception $e) {
                 echo json_encode(['success' => false, 'message' => 'Error al guardar la nota: ' . $e->getMessage()]);
@@ -68,7 +74,7 @@ switch ($action) {
         $content = $_POST['content'] ?? null;
         if ($noteId && $content) {
             try {
-                $note = Note::find((int)$noteId);
+                $note = (new Note(Note::tableName(), app()->orm()))->find((int)$noteId);
                 if ($note) {
                     $note->content = $content;
                     $note->store();
@@ -88,7 +94,7 @@ switch ($action) {
         $noteId = $_POST['note_id'] ?? null;
         if ($noteId) {
             try {
-                $note = Note::find((int)$noteId);
+                $note = (new Note(Note::tableName(), app()->orm()))->find((int)$noteId);
                 if ($note) {
                     $note->trash();
                     echo json_encode(['success' => true]);

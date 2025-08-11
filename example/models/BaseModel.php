@@ -19,6 +19,8 @@ abstract class BaseModel extends VersaModel
     /** Cache de nombres de tabla por clase para evitar reflection repetido. */
     private static array $tableNameCache = [];
 
+    /* (sin constructor personalizado para compatibilidad con QueryBuilder) */
+
     /* ===================== Boot helpers ===================== */
     public static function boot(array $config): void
     {
@@ -30,7 +32,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /* ===================== Table helpers ===================== */
-    protected static function tableName(): string
+    public static function tableName(): string
     {
         $cls = static::class;
         if (isset(self::$tableNameCache[$cls])) return self::$tableNameCache[$cls];
@@ -57,53 +59,44 @@ abstract class BaseModel extends VersaModel
     }
     public function querySelf(): QueryBuilder
     {
-        return self::orm()->table(static::tableName(), static::class);
+        return $this->query();
     }
 
-    /* ===================== Compatibilidad (find/all) ===================== */
+    /* ===================== Métodos instancia (no estáticos) ===================== */
+    /** Obtener todos los registros como modelos tipados (instancia). */
+    public function all(): array
+    {
+        return $this->querySelf()->findAll();
+    }
+    /** Buscar por ID (instancia). */
     /**
-     * Compat: encontrar por ID devolviendo el modelo tipado o null.
+     * Buscar por ID (instancia) devolviendo el modelo tipado concreto.
      */
-    public static function find(int $id, string $pk = 'id'): ?static
+    public function find(int $id, string $pk = 'id'): ?static
     {
         /** @var static|null $m */
-        $m = static::findOne(static::tableName(), $id, $pk);
+        $m = $this->querySelf()->where($pk, '=', $id)->findOne();
         return $m;
     }
-    /**
-     * Compat: obtener todos los registros como modelos tipados.
-     * (Evita tener que definir all() manualmente en cada modelo de ejemplo.)
-     * @return array<int, static>
-     */
-    public static function all(): array
+    /** Obtener todos como arrays (instancia). */
+    public function allArray(): array
     {
-        /** @var array<int, static> $rows */
-        $rows = static::findAll(static::tableName());
-        return $rows;
+        return $this->querySelf()->getAll();
     }
-
-    /* ===================== Common operations ===================== */
-    public static function allArray(): array
+    /** Buscar fila por ID como array (instancia). */
+    public function findArray(int $id, string $pk = 'id'): ?array
     {
-        return static::qb()->getAll();
-    }
-    public static function allModels(): array
-    {
-        return static::qb()->findAll();
-    }
-    public static function findArray(int $id, string $pk = 'id'): ?array
-    {
-        $row = static::qb()->where($pk, '=', $id)->firstArray();
+        $row = $this->querySelf()->where($pk, '=', $id)->firstArray();
         return $row ?: null;
     }
-    public static function paginate(int $page = 1, int $perPage = 10): array
+    /** Paginación simple (instancia). */
+    public function paginate(int $page = 1, int $perPage = 10): array
     {
-        $page     = max(1, $page);
-        $perPage  = max(1, $perPage);
-        $offset   = ($page - 1) * $perPage;
-        $qb       = static::qb();
-        $items    = $qb->limit($perPage)->offset($offset)->getAll();
-        $total    = static::qb()->count();
+        $page    = max(1, $page);
+        $perPage = max(1, $perPage);
+        $offset  = ($page - 1) * $perPage;
+        $items   = $this->querySelf()->limit($perPage)->offset($offset)->getAll();
+        $total   = $this->querySelf()->count();
         return [
             'items'      => $items,
             'total'      => $total,
@@ -112,6 +105,8 @@ abstract class BaseModel extends VersaModel
             'totalPages' => (int)ceil($total / $perPage),
         ];
     }
+
+    /* ===================== Compatibilidad (find/all) eliminada en modo instancia ===================== */
 
     /* ===================== Normalización helper (se mantienen) ===================== */
 

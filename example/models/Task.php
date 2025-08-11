@@ -45,15 +45,13 @@ class Task extends BaseModel
     public const PRIORITY_URGENT = 'urgent';
 
     /** Crear nueva tarea con defaults delegando validación a store(). */
-    public static function create(array $attributes): static
+    public function createOne(array $attributes): self
     {
         $attributes['status']   = $attributes['status']   ?? self::STATUS_TODO;
         $attributes['priority'] = $attributes['priority'] ?? self::PRIORITY_MEDIUM;
-        /** @var static $task */
-        $task = static::dispense('tasks');
-        $task->fill($attributes);
-        $task->store();
-        return $task;
+        $this->fill($attributes);
+        $this->store();
+        return $this;
     }
 
     /**
@@ -61,7 +59,7 @@ class Task extends BaseModel
      */
     public function project(): ?array
     {
-        $project = Project::findOne('projects', (int)$this->project_id);
+        $project = $this->getOrm()->table('projects', Project::class)->where('id', '=', (int)$this->project_id)->findOne();
         return $project ? $project->export() : null;
     }
 
@@ -73,7 +71,7 @@ class Task extends BaseModel
         if (!$this->user_id) {
             return null;
         }
-        $user = User::findOne('users', (int)$this->user_id);
+        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int)$this->user_id)->findOne();
         return $user ? $user->export() : null;
     }
 
@@ -82,7 +80,7 @@ class Task extends BaseModel
      */
     public function labels(): array
     {
-        return static::orm()
+        return $this->getOrm()
             ->table('labels', Label::class)
             ->join('task_labels', 'labels.id', '=', 'task_labels.label_id')
             ->where('task_labels.task_id', '=', $this->id)
@@ -96,7 +94,7 @@ class Task extends BaseModel
      */
     public function getLabelIds(): array
     {
-        $rows = static::orm()
+        $rows = $this->getOrm()
             ->table('task_labels')
             ->select(['label_id'])
             ->where('task_id', '=', $this->id)
@@ -110,13 +108,13 @@ class Task extends BaseModel
     public function setLabels(array $labelIds): void
     {
         // Eliminar etiquetas actuales usando VersaModel
-        $existingLabels = static::orm()
+        $existingLabels = $this->getOrm()
             ->table('task_labels')
             ->where('task_id', '=', $this->id)
             ->get();
         foreach ($existingLabels as $existing) {
             if (isset($existing['id'])) {
-                $taskLabel = static::load('task_labels', (int)$existing['id']);
+                $taskLabel = $this->load('task_labels', (int)$existing['id']);
                 if ($taskLabel) {
                     $taskLabel->trash();
                 }
@@ -126,7 +124,7 @@ class Task extends BaseModel
         // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
             if (!empty($labelId)) {
-                $taskLabel           = static::dispense('task_labels');
+                $taskLabel           = $this->dispenseInstance('task_labels');
                 $taskLabel->task_id  = $this->id;
                 $taskLabel->label_id = $labelId;
                 $taskLabel->store();
@@ -180,7 +178,7 @@ class Task extends BaseModel
 
     public function getUserIdByTaskId(int $taskId): ?int
     {
-        $task = static::findOne('tasks', $taskId);
+        $task = $this->getOrm()->table('tasks', Task::class)->where('id', '=', $taskId)->findOne();
         return $task ? $task->user_id : null;
     }
 

@@ -9,24 +9,7 @@ declare(strict_types=1);
 // Cargar Composer autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
-
-// Cargar configuración
-$config = require_once __DIR__ . '/config.php';
-
-// Configurar zona horaria
-date_default_timezone_set($config['app']['timezone'] ?? 'UTC');
-// Inicializar VersaORM
-use VersaORM\VersaModel;
-use VersaORM\VersaORM;
-
-try {
-    $orm = new VersaORM($config['versaorm'] + $config['database']);
-    VersaModel::setORM($orm);
-} catch (Exception $e) {
-    die('Error al inicializar VersaORM: ' . $e->getMessage());
-}
-
-// Autoloader para modelos
+// Autoload temprano para App\ (Request, OrmFactory, App, ModelManager) y App\Models\
 spl_autoload_register(function ($class): void {
     if (strpos($class, 'App\\Models\\') === 0) {
         $className = str_replace('App\\Models\\', '', $class);
@@ -35,7 +18,33 @@ spl_autoload_register(function ($class): void {
             require_once $file;
         }
     }
+    if (strpos($class, 'App\\') === 0) {
+        $relative = str_replace('App\\', '', $class);
+        $relative = str_replace('\\', '/', $relative);
+        $file = __DIR__ . '/app/' . $relative . '.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    }
 });
+
+
+// Cargar configuración
+$config = require_once __DIR__ . '/config.php';
+
+// Configurar zona horaria
+date_default_timezone_set($config['app']['timezone'] ?? 'UTC');
+// Inicializar VersaORM por petición
+use App\Request;
+use App\OrmFactory;
+use App\App;
+
+// Construir una Request y un ORM por cada ejecución (request-scoped)
+$request = Request::fromGlobals();
+// Construir contenedor con inicialización perezosa del ORM
+$app = new App($request, $config);
+
+// Autoloader ya registrado arriba
 
 // Función helper para renderizar vistas
 function render($view, $data = []): void
@@ -81,6 +90,24 @@ function getFlash()
         return $flash;
     }
     return null;
+}
+
+// Exponer request actual para el ejemplo
+function request(): \App\Request
+{
+    global $request;
+    return $request;
+}
+
+function app(): \App\App
+{
+    global $app;
+    return $app;
+}
+
+function models(): \App\ModelManager
+{
+    return app()->models();
 }
 
 // Iniciar sesión
