@@ -209,6 +209,25 @@ $orm->table('products')
     ->update(['status' => 'available']);
 ```
 
+#### 🔗 Joins Compuestos (Nuevo patrón sencillo)
+Necesitas unir por más de una columna? Usa el encadenado `join()->on()->on()` para mantenerlo claro:
+```php
+$rows = $orm->table('orders AS o')
+    ->join('invoices AS i')
+    ->on('o.id','=','i.order_id')
+    ->on('o.company_id','=','i.company_id')
+    ->where('i.status','=','paid')
+    ->getAll();
+
+// Con mezcla AND / OR
+$sessions = $orm->table('sessions AS s')
+    ->join('users AS u')
+    ->on('s.user_id','=','u.id')
+    ->on('s.admin_id','=','u.id','OR')
+    ->getAll();
+```
+Regla simple: lo que define el emparejamiento va en `on()`, lo que filtra el resultado final va en `where()`.
+
 #### Operaciones CRUD Avanzadas
 ```php
 // UPSERT: Insertar si no existe, actualizar si existe

@@ -672,15 +672,28 @@ class QueryBuilder
      * @param string $secondCol
      * @return self
      */
-    public function join(string $table, string $firstCol, string $operator, string $secondCol): self
+    public function join(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
-        $this->joins[] = [
+        $entry = [
             'type'       => 'inner',
             'table'      => $table,
-            'first_col'  => $firstCol,
-            'operator'   => $operator,
-            'second_col' => $secondCol,
+            'first_col'  => '',
+            'operator'   => '=',
+            'second_col' => '',
+            'conditions' => [],
         ];
+        if ($firstCol !== '' && $secondCol !== '') {
+            $entry['first_col']  = $firstCol;
+            $entry['operator']   = $operator;
+            $entry['second_col'] = $secondCol;
+            $entry['conditions'][] = [
+                'local'    => $firstCol,
+                'operator' => $operator,
+                'foreign'  => $secondCol,
+                'boolean'  => 'AND',
+            ];
+        }
+        $this->joins[] = $entry;
         return $this;
     }
 
@@ -693,15 +706,28 @@ class QueryBuilder
      * @param string $secondCol
      * @return self
      */
-    public function leftJoin(string $table, string $firstCol, string $operator, string $secondCol): self
+    public function leftJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
-        $this->joins[] = [
+        $entry = [
             'type'       => 'left',
             'table'      => $table,
-            'first_col'  => $firstCol,
-            'operator'   => $operator,
-            'second_col' => $secondCol,
+            'first_col'  => '',
+            'operator'   => '=',
+            'second_col' => '',
+            'conditions' => [],
         ];
+        if ($firstCol !== '' && $secondCol !== '') {
+            $entry['first_col']  = $firstCol;
+            $entry['operator']   = $operator;
+            $entry['second_col'] = $secondCol;
+            $entry['conditions'][] = [
+                'local'    => $firstCol,
+                'operator' => $operator,
+                'foreign'  => $secondCol,
+                'boolean'  => 'AND',
+            ];
+        }
+        $this->joins[] = $entry;
         return $this;
     }
 
@@ -714,15 +740,28 @@ class QueryBuilder
      * @param string $secondCol
      * @return self
      */
-    public function rightJoin(string $table, string $firstCol, string $operator, string $secondCol): self
+    public function rightJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
-        $this->joins[] = [
+        $entry = [
             'type'       => 'right',
             'table'      => $table,
-            'first_col'  => $firstCol,
-            'operator'   => $operator,
-            'second_col' => $secondCol,
+            'first_col'  => '',
+            'operator'   => '=',
+            'second_col' => '',
+            'conditions' => [],
         ];
+        if ($firstCol !== '' && $secondCol !== '') {
+            $entry['first_col']  = $firstCol;
+            $entry['operator']   = $operator;
+            $entry['second_col'] = $secondCol;
+            $entry['conditions'][] = [
+                'local'    => $firstCol,
+                'operator' => $operator,
+                'foreign'  => $secondCol,
+                'boolean'  => 'AND',
+            ];
+        }
+        $this->joins[] = $entry;
         return $this;
     }
 
@@ -735,15 +774,28 @@ class QueryBuilder
      * @param string $secondCol
      * @return self
      */
-    public function fullOuterJoin(string $table, string $firstCol, string $operator, string $secondCol): self
+    public function fullOuterJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
-        $this->joins[] = [
+        $entry = [
             'type'       => 'full_outer',
             'table'      => $table,
-            'first_col'  => $firstCol,
-            'operator'   => $operator,
-            'second_col' => $secondCol,
+            'first_col'  => '',
+            'operator'   => '=',
+            'second_col' => '',
+            'conditions' => [],
         ];
+        if ($firstCol !== '' && $secondCol !== '') {
+            $entry['first_col']  = $firstCol;
+            $entry['operator']   = $operator;
+            $entry['second_col'] = $secondCol;
+            $entry['conditions'][] = [
+                'local'    => $firstCol,
+                'operator' => $operator,
+                'foreign'  => $secondCol,
+                'boolean'  => 'AND',
+            ];
+        }
+        $this->joins[] = $entry;
         return $this;
     }
 
@@ -761,6 +813,7 @@ class QueryBuilder
             'first_col'  => '',
             'operator'   => '',
             'second_col' => '',
+            'conditions' => [],
         ];
         return $this;
     }
@@ -780,6 +833,7 @@ class QueryBuilder
             'first_col'  => '',
             'operator'   => '',
             'second_col' => '',
+            'conditions' => [],
         ];
         return $this;
     }
@@ -816,7 +870,42 @@ class QueryBuilder
             'subquery'          => $subqueryData['sql'],
             'subquery_bindings' => $subqueryData['bindings'],
             'alias'             => $alias,
+            'conditions'        => [
+                [
+                    'local'    => $firstCol,
+                    'operator' => $operator,
+                    'foreign'  => $secondCol,
+                    'boolean'  => 'AND',
+                ],
+            ],
         ];
+        return $this;
+    }
+
+    /**
+     * Añade condición adicional a la última cláusula JOIN (patrón encadenado on()).
+     */
+    public function on(string $local, string $operator, string $foreign, string $boolean = 'AND'): self
+    {
+        $count = count($this->joins);
+        if ($count === 0) {
+            throw new VersaORMException('Cannot add ON condition: no JOIN defined yet.');
+        }
+        $idx = $count - 1;
+        if (!isset($this->joins[$idx]['conditions']) || !is_array($this->joins[$idx]['conditions'])) {
+            $this->joins[$idx]['conditions'] = [];
+        }
+        $this->joins[$idx]['conditions'][] = [
+            'local'    => $local,
+            'operator' => $operator,
+            'foreign'  => $foreign,
+            'boolean'  => strtoupper($boolean) === 'OR' ? 'OR' : 'AND',
+        ];
+        if (empty($this->joins[$idx]['first_col'])) {
+            $this->joins[$idx]['first_col']  = $local;
+            $this->joins[$idx]['operator']   = $operator;
+            $this->joins[$idx]['second_col'] = $foreign;
+        }
         return $this;
     }
 
@@ -2570,12 +2659,21 @@ class QueryBuilder
     {
         $joinConditions = [];
         foreach ($this->joins as $join) {
+            $local   = $join['first_col'] ?? '';
+            $foreign = $join['second_col'] ?? '';
+            $op      = $join['operator'] ?? '=';
+            if (isset($join['conditions'][0]) && is_array($join['conditions'][0])) {
+                $c = $join['conditions'][0];
+                $local   = isset($c['local']) ? (string)$c['local'] : $local;
+                $foreign = isset($c['foreign']) ? (string)$c['foreign'] : $foreign;
+                $op      = isset($c['operator']) ? (string)$c['operator'] : $op;
+            }
             $joinConditions[] = [
                 'table'          => $join['table'] ?? '',
                 'join_type'      => strtoupper($join['type'] ?? 'INNER'),
-                'local_column'   => $join['first'] ?? '',
-                'foreign_column' => $join['second'] ?? '',
-                'operator'       => $join['operator'] ?? '=',
+                'local_column'   => $local,
+                'foreign_column' => $foreign,
+                'operator'       => $op,
             ];
         }
         return $joinConditions;

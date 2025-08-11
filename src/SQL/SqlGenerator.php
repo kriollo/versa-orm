@@ -174,14 +174,40 @@ class SqlGenerator
                 $tableRef = self::compileTableReference((string)$join['table'], $dialect);
             }
 
-            $jt     = strtoupper($type) . ' JOIN ' . $tableRef;
-            $first  = (string)($join['first_col'] ?? '');
-            $op     = (string)($join['operator'] ?? '=');
-            $second = (string)($join['second_col'] ?? '');
-            if ($first === '' || $second === '') {
-                throw new VersaORMException('Invalid JOIN columns');
+            $jt = strtoupper($type) . ' JOIN ' . $tableRef;
+            // Soporte de condiciones múltiples
+            $conditions = [];
+            if (isset($join['conditions']) && is_array($join['conditions'])) {
+                foreach ($join['conditions'] as $idx => $c) {
+                    if (!is_array($c)) {
+                        continue;
+                    }
+                    $loc = (string)($c['local'] ?? '');
+                    $opr = (string)($c['operator'] ?? '=');
+                    $for = (string)($c['foreign'] ?? '');
+                    if ($loc === '' || $for === '') {
+                        continue;
+                    }
+                    $fragment = self::compileJoinColumn($loc, $dialect) . ' ' . $opr . ' ' . self::compileJoinColumn($for, $dialect);
+                    // Primer fragmento sin boolean inicial
+                    if ($idx > 0) {
+                        $bool = strtoupper((string)($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
+                        $fragment = $bool . ' ' . $fragment;
+                    }
+                    $conditions[] = $fragment;
+                }
             }
-            $sql .= ' ' . $jt . ' ON ' . self::compileJoinColumn($first, $dialect) . ' ' . $op . ' ' . self::compileJoinColumn($second, $dialect);
+            if ($conditions === []) {
+                // Fallback a first_col/operator/second_col
+                $first  = (string)($join['first_col'] ?? '');
+                $op     = (string)($join['operator'] ?? '=');
+                $second = (string)($join['second_col'] ?? '');
+                if ($first === '' || $second === '') {
+                    throw new VersaORMException('Invalid JOIN columns');
+                }
+                $conditions[] = self::compileJoinColumn($first, $dialect) . ' ' . $op . ' ' . self::compileJoinColumn($second, $dialect);
+            }
+            $sql .= ' ' . $jt . ' ON ' . implode(' ', $conditions);
         }
 
         // WHERE

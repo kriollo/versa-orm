@@ -114,6 +114,23 @@ class QueryBuilderJoinTest extends TestCase
         }
     }
 
+    public function testCompositeJoinViaOn(): void
+    {
+        // Simular join compuesto: posts/user y adicionalmente asegurar otra igualdad artificial (posts.user_id = users.id AND posts.user_id = users.id)
+        $results = self::$orm->table('posts as p')
+            ->select(['p.title', 'u.name as author'])
+            ->join('users as u')
+            ->on('p.user_id', '=', 'u.id')
+            ->on('p.user_id', '=', 'u.id') // segunda condición redundante para probar encadenamiento
+            ->where('u.status', '=', 'active')
+            ->getAll();
+
+        $this->assertGreaterThanOrEqual(1, count($results));
+        foreach ($results as $r) {
+            $this->assertArrayHasKey('author', $r);
+        }
+    }
+
     public function testJoinWithComplexConditions(): void
     {
         $results = self::$orm->table('users')

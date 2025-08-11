@@ -47,15 +47,139 @@ Where encadenables, order, limit. Todos los valores se enlazan de forma segura.
 `=`, `!=`, `>`, `>=`, `<`, `<=`, `LIKE`, `IN`, `NOT IN`, `BETWEEN`, `IS NULL`, `IS NOT NULL`.
 
 ---
-## 4. Joins y Selección Parcial
+## 4. Joins (Guía Completa y Didáctica)
+Los JOINs permiten combinar filas de varias tablas. VersaORM busca que el uso sea **explícito y simple** incluso para quien recién empieza.
+
+### 4.1. Inner Join básico
 ```php
-$posts = $orm->table('posts')
-  ->select(['posts.id','posts.title','u.name AS author'])
-  ->join('users AS u','u.id','=','posts.user_id')
-  ->where('posts.published','=',1)
-  ->orderBy('posts.created_at','desc')
+$rows = $orm->table('posts')
+  ->select(['posts.id','posts.title','users.name AS author'])
+  ->join('users','users.id','=','posts.user_id') // INNER JOIN
   ->getAll();
 ```
+Equivalente SQL:
+```sql
+SELECT posts.id, posts.title, users.name AS author
+FROM posts
+INNER JOIN users ON users.id = posts.user_id;
+```
+
+### 4.2. Con alias (buena práctica en consultas largas)
+```php
+$rows = $orm->table('posts AS p')
+  ->select(['p.id','p.title','u.name AS author'])
+  ->join('users AS u','u.id','=','p.user_id')
+  ->getAll();
+```
+
+### 4.3. Joins compuestos (varias condiciones ON)
+Ahora puedes construir JOINs con múltiples comparaciones usando el patrón encadenado `->join()->on()->on()`.
+```php
+$rows = $orm->table('orders AS o')
+  ->join('invoices AS i')                 // Declaras la tabla a unir
+  ->on('o.id','=','i.order_id')           // Primera condición
+  ->on('o.company_id','=','i.company_id') // Segunda condición (AND por defecto)
+  ->getAll();
+```
+SQL resultante:
+```sql
+SELECT * FROM orders AS o
+INNER JOIN invoices AS i
+  ON o.id = i.order_id AND o.company_id = i.company_id;
+```
+
+#### 4.3.1. Usando OR entre condiciones
+```php
+$rows = $orm->table('sessions AS s')
+  ->join('users AS u')
+  ->on('s.user_id','=','u.id')
+  ->on('s.admin_id','=','u.id','OR') // Mezcla lógica
+  ->getAll();
+```
+
+### 4.4. Left / Right Join (diferencia clave)
+```php
+// LEFT JOIN: conserva filas de la izquierda aunque no haya coincidencia
+$rows = $orm->table('users AS u')
+  ->leftJoin('profiles AS p','u.id','=','p.user_id')
+  ->getAll();
+```
+IMPORTANTE: Si filtras columnas de la tabla derecha en el **WHERE**, puedes convertir el LEFT en un INNER sin querer. Para mantener filas sin perfil, filtra con `whereNull('p.id')` o mueve condiciones adicionales al `ON` usando `->on()`.
+
+### 4.5. Right Join
+Si tu base lo soporta:
+```php
+$rows = $orm->table('profiles AS p')
+  ->rightJoin('users AS u','u.id','=','p.user_id')
+  ->getAll();
+```
+
+### 4.6. Full Outer Join (Emulado)
+Cuando llamas a `fullOuterJoin()` VersaORM emula la operación (UNION de LEFT + RIGHT) en modo PDO. Úsalo sólo si realmente necesitas todos los registros de ambas tablas sin perder no coincidencias.
+```php
+$rows = $orm->table('users AS u')
+  ->fullOuterJoin('posts AS p','u.id','=','p.user_id')
+  ->getAll();
+```
+Limitaciones: No mezclar con más JOINs complejos (se recomienda una segunda consulta si necesitas lógica adicional).
+
+### 4.7. Cross Join (Producto cartesiano)
+```php
+$pairs = $orm->table('currencies')
+  ->crossJoin('countries')
+  ->limit(100)
+  ->getAll();
+```
+
+### 4.8. Join con Subconsulta
+```php
+$sub = $orm->table('posts')
+  ->select(['user_id','COUNT(*) AS total_posts'])
+  ->groupBy('user_id')
+  ->having('total_posts','>',1);
+
+$rows = $orm->table('users AS u')
+  ->select(['u.name','t.total_posts'])
+  ->joinSub($sub,'t','u.id','=','t.user_id')
+  ->getAll();
+```
+
+### 4.9. Patrón completo join()->on()->on() con mezcla AND/OR
+```php
+$rows = $orm->table('documents AS d')
+  ->join('revisions AS r')
+  ->on('d.id','=','r.document_id')
+  ->on('d.language','=','r.language')
+  ->on('r.is_last','=',1,'AND')
+  ->getAll();
+```
+
+### 4.10. ¿Cuándo usar ON vs WHERE?
+| Quiero | Usa |
+|--------|-----|
+| Restringir cómo se emparejan las filas | `on()` |
+| Filtrar filas finales después del JOIN | `where()` |
+| Mantener filas sin coincidencia (LEFT) | Condiciones extra en `on()` |
+| Forzar sólo coincidencias | `where()` sobre la tabla derecha |
+
+### 4.11. Errores comunes
+| Error | Causa | Solución |
+|-------|-------|----------|
+| LEFT actúa como INNER | Pusiste condición de la tabla derecha en WHERE | Mover a `on()` o usar `whereNull()` para conservar vacíos |
+| Ambiguous column | Falta de alias/ prefijo | Pre-fija con `u.id`, `p.id` |
+| JOIN sin columnas | Olvidaste encadenar `on()` | Añade al menos una `on()` después de `join()` |
+
+### 4.12. Resumen rápido
+```php
+// Minimal
+$qb->join('t2','t2.id','=','t1.ref_id');
+// Compuesto
+$qb->join('t2')->on('t2.id','=','t1.ref_id')->on('t2.type','=','t1.type');
+// Con OR
+$qb->join('t2')->on('t2.id','=','t1.ref_id')->on('t2.alt_id','=','t1.ref_id','OR');
+```
+
+Consejo: empieza simple; añade condiciones sólo cuando realmente describan la integridad entre las tablas.
 
 ---
 ## 5. Agregaciones
