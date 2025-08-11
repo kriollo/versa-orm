@@ -44,50 +44,13 @@ class Task extends BaseModel
     public const PRIORITY_HIGH   = 'high';
     public const PRIORITY_URGENT = 'urgent';
 
-    /**
-     * Buscar por ID.
-     */
-    public static function find($id): ?self
-    {
-        return static::findOne('tasks', (int) $id);
-    }
-
-    /**
-     * Obtener todas las tareas.
-     */
-    public static function all(): array
-    {
-        return static::findAll('tasks');
-    }
-
-    /**
-     * Crear nueva tarea.
-     */
+    /** Crear nueva tarea con defaults delegando validación a store(). */
     public static function create(array $attributes): static
     {
-        // Aplicar valores por defecto
-        if (!isset($attributes['status'])) {
-            $attributes['status'] = self::STATUS_TODO;
-        }
-        if (!isset($attributes['priority'])) {
-            $attributes['priority'] = self::PRIORITY_MEDIUM;
-        }
-
-        // Validar antes de crear
-        $errors = [];
-        if (empty($attributes['title'])) {
-            $errors[] = 'El título es requerido';
-        }
-        if (empty($attributes['project_id'])) {
-            $errors[] = 'El proyecto es requerido';
-        }
-
-        if (!empty($errors)) {
-            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
-        }
-
-        // Crear instancia correctamente con el nombre de tabla
-        $task = new static('tasks', static::orm());
+        $attributes['status']   = $attributes['status']   ?? self::STATUS_TODO;
+        $attributes['priority'] = $attributes['priority'] ?? self::PRIORITY_MEDIUM;
+        /** @var static $task */
+        $task = static::dispense('tasks');
         $task->fill($attributes);
         $task->store();
         return $task;
@@ -98,7 +61,7 @@ class Task extends BaseModel
      */
     public function project(): ?array
     {
-        $project = Project::find($this->project_id);
+        $project = Project::findOne('projects', (int)$this->project_id);
         return $project ? $project->export() : null;
     }
 
@@ -110,7 +73,7 @@ class Task extends BaseModel
         if (!$this->user_id) {
             return null;
         }
-        $user = User::find($this->user_id);
+        $user = User::findOne('users', (int)$this->user_id);
         return $user ? $user->export() : null;
     }
 
@@ -120,7 +83,7 @@ class Task extends BaseModel
     public function labels(): array
     {
         return static::orm()
-            ->table('labels')
+            ->table('labels', Label::class)
             ->join('task_labels', 'labels.id', '=', 'task_labels.label_id')
             ->where('task_labels.task_id', '=', $this->id)
             ->orderBy('labels.created_at', 'DESC')
@@ -217,7 +180,7 @@ class Task extends BaseModel
 
     public function getUserIdByTaskId(int $taskId): ?int
     {
-        $task = static::find($taskId);
+        $task = static::findOne('tasks', $taskId);
         return $task ? $task->user_id : null;
     }
 

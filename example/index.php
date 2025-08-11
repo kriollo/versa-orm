@@ -53,10 +53,11 @@ try {
             render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
             break;
 
-            // ======================
-            // PROYECTOS
-            // ======================
+        // ======================
+        // PROYECTOS
+        // ======================
         case 'projects':
+            // Usar modelos para que las vistas sigan accediendo con ->propiedad
             $projects = Project::all();
             $users    = User::all();
             render('projects/index', compact('projects', 'users'));
@@ -114,6 +115,7 @@ try {
 
             // Obtener usuarios disponibles de forma eficiente
             $allUsers    = User::all();
+            $allUsers    = User::all();
             $memberIds   = array_column($members, 'id');
             $memberIds[] = $project->owner_id;
 
@@ -134,7 +136,7 @@ try {
                     flash('error', 'Error al crear proyecto: ' . $e->getMessage());
                 }
             }
-
+            // Mantener usuarios como objetos de modelo para consistencia en las vistas
             $users = User::all();
             render('projects/create', compact('users'));
             break;
@@ -161,7 +163,7 @@ try {
                     flash('error', 'Error al actualizar proyecto: ' . $e->getMessage());
                 }
             }
-
+            // Mantener usuarios como objetos (no arrays exportados) para evitar warnings en la vista edit
             $users = User::all();
             render('projects/edit', compact('project', 'users'));
             break;
@@ -184,20 +186,18 @@ try {
                     }
 
                     // Verificar que el usuario no sea ya miembro
-                    $existing = Project::getAll(
-                        'SELECT * FROM project_users WHERE project_id = ? AND user_id = ? LIMIT 1',
-                        [$_POST['project_id'], $_POST['user_id']]
-                    );
+                    $exists = Project::orm()->table('project_users')
+                        ->where('project_id', '=', (int)$_POST['project_id'])
+                        ->where('user_id', '=', (int)$_POST['user_id'])
+                        ->exists();
 
-                    if (!empty($existing)) {
+                    if ($exists) {
                         flash('warning', 'El usuario ya es miembro del proyecto');
                     } else {
-                        // Agregar el miembro usando el ORM global
-                        $orm = Project::getGlobalORM();
-                        $orm->exec(
-                            'INSERT INTO project_users (project_id, user_id, created_at) VALUES (?, ?, NOW())',
-                            [$_POST['project_id'], $_POST['user_id']]
-                        );
+                        $pivot = Project::dispense('project_users');
+                        $pivot->project_id = (int)$_POST['project_id'];
+                        $pivot->user_id    = (int)$_POST['user_id'];
+                        $pivot->store();
                         flash('success', 'Miembro agregado exitosamente');
                     }
 
@@ -224,10 +224,16 @@ try {
 
                     // Remover el miembro usando el ORM global
                     $orm = Project::getGlobalORM();
-                    $orm->exec(
-                        'DELETE FROM project_users WHERE project_id = ? AND user_id = ?',
-                        [$_POST['project_id'], $_POST['user_id']]
-                    );
+                    $rows = Project::orm()->table('project_users')
+                        ->select(['id'])
+                        ->where('project_id', '=', (int)$_POST['project_id'])
+                        ->where('user_id', '=', (int)$_POST['user_id'])
+                        ->get();
+                    foreach ($rows as $row) {
+                        if (!isset($row['id'])) continue;
+                        $pivot = Project::load('project_users', (int)$row['id']);
+                        $pivot?->trash();
+                    }
 
                     flash('success', 'Miembro removido exitosamente');
                     redirect('?action=project_show&id=' . $_POST['project_id']);
@@ -257,9 +263,9 @@ try {
             redirect('?action=projects');
             break;
 
-            // ======================
-            // TAREAS
-            // ======================
+        // ======================
+        // TAREAS
+        // ======================
         case 'tasks':
             // Parámetros de paginación y filtros
             $page         = max(1, (int)($_GET['page'] ?? 1));
@@ -421,9 +427,9 @@ try {
                 }
             }
 
-            $projects = array_map(fn ($p) => $p->export(), Project::all());
-            $users    = array_map(fn ($u) => $u->export(), User::all());
-            $labels   = array_map(fn ($l) => $l->export(), Label::all());
+            $projects = array_map(fn($p) => $p->export(), Project::all());
+            $users    = array_map(fn($u) => $u->export(), User::all());
+            $labels   = array_map(fn($l) => $l->export(), Label::all());
             render('tasks/create', compact('projects', 'users', 'labels'));
             break;
 
@@ -463,9 +469,9 @@ try {
                 }
             }
 
-            $projects   = array_map(fn ($p) => $p->export(), Project::all());
-            $users      = array_map(fn ($u) => $u->export(), User::all());
-            $labels     = array_map(fn ($l) => $l->export(), Label::all());
+            $projects   = array_map(fn($p) => $p->export(), Project::all());
+            $users      = array_map(fn($u) => $u->export(), User::all());
+            $labels     = array_map(fn($l) => $l->export(), Label::all());
             $taskLabels = $task->getLabelIds();
             render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
             break;
@@ -508,9 +514,9 @@ try {
             redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             break;
 
-            // ======================
-            // USUARIOS
-            // ======================
+        // ======================
+        // USUARIOS
+        // ======================
         case 'users':
             $users = User::all();
             render('users/index', compact('users'));
@@ -526,7 +532,7 @@ try {
                     flash('error', 'Error al crear usuario: ' . $e->getMessage());
                 }
             }
-
+            // Render único (se había duplicado por error)
             render('users/create');
             break;
 
@@ -552,7 +558,7 @@ try {
                     flash('error', 'Error al actualizar usuario: ' . $e->getMessage());
                 }
             }
-
+            // Render único (se había duplicado por error)
             render('users/edit', compact('user'));
             break;
 
@@ -572,15 +578,25 @@ try {
             redirect('?action=users');
             break;
 
-            // ======================
-            // ETIQUETAS
-            // ======================
+        // ======================
+        // ETIQUETAS
+        // ======================
         case 'labels':
             $labels = Label::all();
-            // Agregar conteo de tareas para cada etiqueta
-            foreach ($labels as &$label) {
-                $count              = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
-                $label->tasks_count = $count[0]['count'] ?? 0;
+            if ($labels) {
+                $labelIds   = array_map(fn($l) => $l->id, $labels);
+                $countsRows = Label::orm()->table('task_labels')
+                    ->select(['label_id', 'COUNT(*) as c'])
+                    ->whereIn('label_id', $labelIds)
+                    ->groupBy('label_id')
+                    ->getAll();
+                $map = [];
+                foreach ($countsRows as $r) {
+                    $map[$r['label_id']] = (int)$r['c'];
+                }
+                foreach ($labels as $l) {
+                    $l->tasks_count = $map[$l->id] ?? 0;
+                }
             }
             render('labels/index', compact('labels'));
             break;
@@ -647,7 +663,11 @@ try {
 
             // Añadir conteo de tareas
             $count              = Label::getAll('SELECT COUNT(*) as count FROM task_labels WHERE label_id = ?', [$label->id]);
-            $label->tasks_count = $count[0]['count'] ?? 0;
+            $countRow = Label::orm()->table('task_labels')
+                ->select(['COUNT(*) as c'])
+                ->where('label_id', '=', $label->id)
+                ->first();
+            $label->tasks_count = $countRow->c ?? 0; // @phpstan-ignore-line acceso dinámico
 
             if ($_POST) {
                 try {

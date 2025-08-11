@@ -140,10 +140,10 @@
         <?php
         // Calcular estadísticas basadas en el total filtrado (antes de paginación)
         $totalFiltered = $pagination['total'] ?? 0;
-$todoTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 'todo'));
-$inProgressTasks       = count(array_filter($tasks, fn ($t) => $t['status'] === 'in_progress'));
-$doneTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 'done'));
-?>
+        $todoTasks             = count(array_filter($tasks, fn($t) => $t['status'] === 'todo'));
+        $inProgressTasks       = count(array_filter($tasks, fn($t) => $t['status'] === 'in_progress'));
+        $doneTasks             = count(array_filter($tasks, fn($t) => $t['status'] === 'done'));
+        ?>
 
         <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition-colors">
             <div class="flex items-center">
@@ -248,36 +248,36 @@ $doneTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
-                        $statusClasses = [
-                            'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-                            'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                            'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                        ];
-                        $statusNames = [
-                            'todo'        => 'Por Hacer',
-                            'in_progress' => 'En Progreso',
-                            'done'        => 'Completada',
-                        ];
-                        ?>
+                                $statusClasses = [
+                                    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+                                    'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                ];
+                                $statusNames = [
+                                    'todo'        => 'Por Hacer',
+                                    'in_progress' => 'En Progreso',
+                                    'done'        => 'Completada',
+                                ];
+                                ?>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $statusClasses[$task['status']] ?>">
                                     <?= $statusNames[$task['status']] ?>
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
-                        $priorityClasses = [
-                            'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                            'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                            'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                            'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                        ];
-                        $priorityNames = [
-                            'urgent' => 'Urgente',
-                            'high'   => 'Alta',
-                            'medium' => 'Media',
-                            'low'    => 'Baja',
-                        ];
-                        ?>
+                                $priorityClasses = [
+                                    'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                                    'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                                    'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                                    'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                ];
+                                $priorityNames = [
+                                    'urgent' => 'Urgente',
+                                    'high'   => 'Alta',
+                                    'medium' => 'Media',
+                                    'low'    => 'Baja',
+                                ];
+                                ?>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $priorityClasses[$task['priority']] ?>">
                                     <?= $priorityNames[$task['priority']] ?>
                                 </span>
@@ -285,25 +285,37 @@ $doneTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white transition-colors">
                                 <?php if ($task['due_date']): ?>
                                     <?php
-                            $dueDate           = new DateTime($task['due_date']);
+                                    $rawDue = $task['due_date'];
+                                    if ($rawDue instanceof \DateTimeInterface) {
+                                        $dueDate = $rawDue;
+                                    } else {
+                                        try {
+                                            $dueDate = new DateTime((string)$rawDue);
+                                        } catch (\Throwable) {
+                                            $dueDate = null; // fallback silencioso
+                                        }
+                                    }
                                     $today     = new DateTime();
-                                    $diff      = $today->diff($dueDate);
-                                    $isOverdue = $today > $dueDate;
+                                    $isOverdue = $dueDate ? ($today > $dueDate) : false;
                                     ?>
-                                    <span class="<?= $isOverdue ? 'text-red-600' : '' ?>">
-                                        <?= $dueDate->format('d/m/Y') ?>
-                                        <?php if ($isOverdue): ?>
-                                            <i class="fas fa-exclamation-triangle ml-1"></i>
-                                        <?php endif; ?>
-                                    </span>
+                                    <?php if ($dueDate): ?>
+                                        <span class="<?= $isOverdue ? 'text-red-600' : '' ?>">
+                                            <?= htmlspecialchars($dueDate->format('d/m/Y')) ?>
+                                            <?php if ($isOverdue): ?>
+                                                <i class="fas fa-exclamation-triangle ml-1"></i>
+                                            <?php endif; ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-gray-400">-</span>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <span class="text-gray-400">-</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white transition-colors">
                                 <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal <?= ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : '' ?>"
-                                        data-task-id="<?= $task['id'] ?>" 
-                                        data-task-title="<?= htmlspecialchars($task['title']) ?>">
+                                    data-task-id="<?= $task['id'] ?>"
+                                    data-task-title="<?= htmlspecialchars($task['title']) ?>">
                                     <i class="fas fa-sticky-note"></i>
                                     <?php if (($task['notes_count'] ?? 0) > 0): ?>
                                         <span class="note-count-badge"><?= $task['notes_count'] ?></span>
@@ -398,10 +410,10 @@ $doneTasks             = count(array_filter($tasks, fn ($t) => $t['status'] === 
                     <!-- Números de página -->
                     <?php
                     $start_page = max(1, $pagination['current_page'] - 2);
-$end_page                       = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                    $end_page                       = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
-// Mostrar primera página si no está en el rango
-if ($start_page > 1): ?>
+                    // Mostrar primera página si no está en el rango
+                    if ($start_page > 1): ?>
                         <a href="?action=tasks&page=1&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
                             class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                             1
@@ -506,44 +518,44 @@ if ($start_page > 1): ?>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('notes-modal');
-    const closeButton = document.getElementById('close-notes-modal');
-    const notesContainer = document.getElementById('notes-container');
-    const modalTaskTitle = document.getElementById('modal-task-title');
-    const addNoteForm = document.getElementById('add-note-form');
-    const noteTaskIdInput = document.getElementById('note-task-id');
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('notes-modal');
+        const closeButton = document.getElementById('close-notes-modal');
+        const notesContainer = document.getElementById('notes-container');
+        const modalTaskTitle = document.getElementById('modal-task-title');
+        const addNoteForm = document.getElementById('add-note-form');
+        const noteTaskIdInput = document.getElementById('note-task-id');
 
-    document.querySelectorAll('.open-notes-modal').forEach(button => {
-        button.addEventListener('click', function () {
-            const taskId = this.dataset.taskId;
-            const taskTitle = this.dataset.taskTitle;
-            
-            modalTaskTitle.textContent = taskTitle;
-            noteTaskIdInput.value = taskId; // <-- Aquí está la corrección
-            
-            // Cargar notas
-            loadNotes(taskId);
+        document.querySelectorAll('.open-notes-modal').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.dataset.taskId;
+                const taskTitle = this.dataset.taskTitle;
 
-            modal.classList.remove('hidden');
+                modalTaskTitle.textContent = taskTitle;
+                noteTaskIdInput.value = taskId; // <-- Aquí está la corrección
+
+                // Cargar notas
+                loadNotes(taskId);
+
+                modal.classList.remove('hidden');
+            });
         });
-    });
 
-    closeButton.addEventListener('click', function () {
-        modal.classList.add('hidden');
-        window.location.reload(); // <-- Recargar la página
-    });
+        closeButton.addEventListener('click', function() {
+            modal.classList.add('hidden');
+            window.location.reload(); // <-- Recargar la página
+        });
 
-    function loadNotes(taskId) {
-        fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
-            .then(response => response.json())
-            .then(data => {
-                notesContainer.innerHTML = '';
-                if (data.success && data.notes.length > 0) {
-                    data.notes.forEach(note => {
-                        const noteElement = document.createElement('div');
-                        noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'dark:bg-gray-800', 'rounded', 'transition-colors');
-                        noteElement.innerHTML = `
+        function loadNotes(taskId) {
+            fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
+                .then(response => response.json())
+                .then(data => {
+                    notesContainer.innerHTML = '';
+                    if (data.success && data.notes.length > 0) {
+                        data.notes.forEach(note => {
+                            const noteElement = document.createElement('div');
+                            noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'dark:bg-gray-800', 'rounded', 'transition-colors');
+                            noteElement.innerHTML = `
                             <div class="flex justify-between items-start">
                                 <p class="text-sm text-gray-800 dark:text-gray-200">${note.content}</p>
                                 <div class="flex-shrink-0 ml-2">
@@ -553,41 +565,41 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                             <p class="text-xs text-gray-500 dark:text-gray-400">- ${note.user_name} en ${note.created_at}</p>
                         `;
-                        notesContainer.appendChild(noteElement);
-                    });
-                } else {
-                    notesContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 transition-colors">No hay notas para esta tarea.</p>';
-                }
-            });
-    }
+                            notesContainer.appendChild(noteElement);
+                        });
+                    } else {
+                        notesContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 transition-colors">No hay notas para esta tarea.</p>';
+                    }
+                });
+        }
 
-    addNoteForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        formData.append('action', 'add_note');
+        addNoteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('action', 'add_note');
 
-        fetch('notes_ajax.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadNotes(noteTaskIdInput.value);
-                this.reset();
-            } else {
-                alert(data.message);
-            }
+            fetch('notes_ajax.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadNotes(noteTaskIdInput.value);
+                        this.reset();
+                    } else {
+                        alert(data.message);
+                    }
+                });
         });
-    });
 
-    notesContainer.addEventListener('click', function (e) {
-        if (e.target.closest('.edit-note')) {
-            const button = e.target.closest('.edit-note');
-            const noteId = button.dataset.noteId;
-            const noteContent = button.dataset.noteContent;
-            
-            const editForm = `
+        notesContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-note')) {
+                const button = e.target.closest('.edit-note');
+                const noteId = button.dataset.noteId;
+                const noteContent = button.dataset.noteContent;
+
+                const editForm = `
                 <form class="edit-note-form">
                     <input type="hidden" name="note_id" value="${noteId}">
                     <textarea name="content" class="w-full border border-gray-300 rounded-md px-3 py-2">${noteContent}</textarea>
@@ -595,60 +607,60 @@ document.addEventListener('DOMContentLoaded', function () {
                     <button type="button" class="mt-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors cancel-edit">Cancelar</button>
                 </form>
             `;
-            
-            const noteItem = button.closest('.note-item');
-            noteItem.innerHTML = editForm;
-        }
 
-        if (e.target.closest('.cancel-edit')) {
-            loadNotes(noteTaskIdInput.value);
-        }
-
-        if (e.target.closest('.delete-note')) {
-            const button = e.target.closest('.delete-note');
-            const noteId = button.dataset.noteId;
-            
-            if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
-                fetch('notes_ajax.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: `action=delete_note&note_id=${noteId}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        loadNotes(noteTaskIdInput.value);
-                    } else {
-                        alert(data.message);
-                    }
-                });
+                const noteItem = button.closest('.note-item');
+                noteItem.innerHTML = editForm;
             }
-        }
-    });
 
-    notesContainer.addEventListener('submit', function (e) {
-        if (e.target.classList.contains('edit-note-form')) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            formData.append('action', 'update_note');
+            if (e.target.closest('.cancel-edit')) {
+                loadNotes(noteTaskIdInput.value);
+            }
 
-            fetch('notes_ajax.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadNotes(noteTaskIdInput.value);
-                } else {
-                    alert(data.message);
+            if (e.target.closest('.delete-note')) {
+                const button = e.target.closest('.delete-note');
+                const noteId = button.dataset.noteId;
+
+                if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
+                    fetch('notes_ajax.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: `action=delete_note&note_id=${noteId}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                loadNotes(noteTaskIdInput.value);
+                            } else {
+                                alert(data.message);
+                            }
+                        });
                 }
-            });
-        }
+            }
+        });
+
+        notesContainer.addEventListener('submit', function(e) {
+            if (e.target.classList.contains('edit-note-form')) {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                formData.append('action', 'update_note');
+
+                fetch('notes_ajax.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadNotes(noteTaskIdInput.value);
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+            }
+        });
     });
-});
 </script>
 
 <style>

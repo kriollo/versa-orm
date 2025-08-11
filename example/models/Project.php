@@ -38,42 +38,32 @@ class Project extends BaseModel
 
     /* ===================== Métodos CRUD estáticos ===================== */
 
-    /** Buscar por ID. */
-    public static function find($id): ?self
+    /** Buscar por ID (casting consistente) compatible con BaseModel. */
+    public static function find(int $id, string $pk = 'id'): ?static
     {
-        return static::findOne('projects', (int)$id);
+        return parent::find($id, $pk);
     }
 
-    /** Obtener todos los proyectos. */
+    /** Obtener todos los proyectos como modelos tipados. */
     public static function all(): array
     {
         return static::findAll('projects');
     }
 
-    /** Crear nuevo proyecto usando fill + store. */
+    /** Crear nuevo proyecto (usa reglas y strong typing internos). */
     public static function create(array $attributes): static
     {
         static::ensureColor($attributes);
-
-        $errors = [];
-        if (empty($attributes['name'])) {
-            $errors[] = 'El nombre es requerido';
-        }
-        if (empty($attributes['owner_id'])) {
-            $errors[] = 'El propietario es requerido';
-        }
-        if ($errors) {
-            throw new \InvalidArgumentException('Errores de validación: ' . implode(', ', $errors));
-        }
-
-        $project = new static('projects', static::orm());
-        $project->fill($attributes);
+        // Validación mínima delegada a $rules dentro de store(); store lanzará excepción si falla.
+        /** @var static $project */
+        $project = static::dispense('projects');
+        $project->fill($attributes); // respeta $fillable / $guarded
         $project->store();
-
-        // Añadir propietario como miembro (pivot project_users)
-        static::addMemberToProject((int)$project->id, (int)$attributes['owner_id']);
-
-        return $project;
+        // Vincular owner como miembro (ignora si ya existe)
+        if (isset($project->owner_id)) {
+            $project->addMember((int)$project->owner_id);
+        }
+        return $project; // @phpstan-ignore-line (psalm generic inference)
     }
 
     /* ===================== Relaciones y consultas ===================== */
@@ -81,7 +71,8 @@ class Project extends BaseModel
     /** Propietario del proyecto como array exportado. */
     public function owner(): ?array
     {
-        $user = User::find($this->owner_id);
+        if (!isset($this->owner_id)) return null;
+        $user = User::find((int)$this->owner_id);
         return $user?->export();
     }
 
@@ -89,17 +80,17 @@ class Project extends BaseModel
     public function members(): array
     {
         return static::orm()
-            ->table('users')
+            ->table('users', User::class)
             ->join('project_users', 'users.id', '=', 'project_users.user_id')
             ->where('project_users.project_id', '=', $this->id)
-            ->get();
+            ->get(); // arrays ya casteados
     }
 
     /** Tareas asociadas al proyecto ordenadas por creación desc. */
     public function tasks(): array
     {
         return static::orm()
-            ->table('tasks')
+            ->table('tasks', Task::class)
             ->where('project_id', '=', $this->id)
             ->orderBy('created_at', 'DESC')
             ->get();
@@ -109,17 +100,14 @@ class Project extends BaseModel
     public function addMember(int $userId): void
     {
         $exists = static::orm()->table('project_users')
-            ->select(['id'])
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
-            ->limit(1)
-            ->get();
-        if (!$exists) {
-            $pivot = static::dispense('project_users');
-            $pivot->project_id = $this->id;
-            $pivot->user_id    = $userId;
-            $pivot->store();
-        }
+            ->exists();
+        if ($exists) return;
+        $pivot = static::dispense('project_users');
+        $pivot->project_id = $this->id;
+        $pivot->user_id    = $userId;
+        $pivot->store();
     }
 
     /** Remover miembro del proyecto eliminando fila pivot. */
@@ -131,20 +119,21 @@ class Project extends BaseModel
             ->where('user_id', '=', $userId)
             ->get();
         foreach ($rows as $row) {
-            if (isset($row['id'])) {
-                $pivot = static::load('project_users', (int)$row['id']);
-                $pivot?->trash();
-            }
+            if (!isset($row['id'])) continue;
+            $pivot = static::load('project_users', (int)$row['id']);
+            $pivot?->trash();
         }
     }
 
     /* ===================== Helpers pivot ===================== */
     private static function addMemberToProject(int $projectId, int $userId): void
     {
-        $pivot = static::dispense('project_users');
-        $pivot->project_id = $projectId;
-        $pivot->user_id    = $userId;
-        $pivot->store();
+        /** @var static $tmp */
+        $tmp      = static::dispense('projects');
+        $tmp->id  = $projectId; // establecer contexto
+        if (method_exists($tmp, 'addMember')) {
+            $tmp->addMember($userId);
+        }
     }
 
     /* ===================== Tipado fuerte / esquema ===================== */

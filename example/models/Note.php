@@ -26,43 +26,26 @@ class Note extends BaseModel
         'user_id' => ['required'],
     ];
 
-    /**
-     * Buscar por ID.
-     */
-    public static function find($id): ?self
+    /** Buscar por ID (modelo tipado) compatible con BaseModel. */
+    public static function find(int $id, string $pk = 'id'): ?static
     {
-        return static::findOne('task_notes', (int) $id);
+        return parent::find($id, $pk);
     }
 
-    /**
-     * Obtener todas las notas de una tarea.
-     */
+    /** Listar notas por task_id como arrays exportados. */
     public static function findByTask(int $taskId): array
     {
-        return static::findAll('task_notes', 'task_id = ?', [$taskId]);
+        return static::orm()->table('task_notes', static::class)
+            ->where('task_id', '=', $taskId)
+            ->orderBy('created_at', 'DESC')
+            ->get();
     }
 
-    /**
-     * Crear nueva nota.
-     */
+    /** Crear nueva nota usando strong typing. */
     public static function create(array $attributes): static
     {
-        $errors = [];
-        if (empty($attributes['content'])) {
-            $errors[] = 'El contenido es requerido';
-        }
-        if (empty($attributes['task_id'])) {
-            $errors[] = 'La tarea es requerida';
-        }
-        if (empty($attributes['user_id'])) {
-            $errors[] = 'El usuario es requerido';
-        }
-
-        if (!empty($errors)) {
-            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
-        }
-
-        $note = new static('task_notes', static::orm());
+        /** @var static $note */
+        $note = static::dispense('task_notes');
         $note->fill($attributes);
         $note->store();
         return $note;
@@ -71,17 +54,19 @@ class Note extends BaseModel
     /**
      * Obtener tarea de la nota.
      */
-    public function task(): ?Task
+    public function task(): ?array
     {
-        return Task::find($this->task_id);
+        $task = Task::findOne('tasks', (int)$this->task_id);
+        return $task?->export();
     }
 
     /**
      * Obtener usuario que creó la nota.
      */
-    public function user(): ?User
+    public function user(): ?array
     {
-        return User::find($this->user_id);
+        $user = User::findOne('users', (int)$this->user_id);
+        return $user?->export();
     }
 
     /**

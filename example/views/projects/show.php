@@ -119,7 +119,7 @@
                 <!-- Progreso general -->
                 <?php if (count($tasks) > 0): ?>
                     <?php
-                    $completedTasks  = array_filter($tasks, fn ($t) => $t['status'] === 'done');
+                    $completedTasks  = array_filter($tasks, fn($t) => $t['status'] === 'done');
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
                     <div class="mb-6">
@@ -136,21 +136,21 @@
                 <!-- Lista de tareas por estado -->
                 <?php
                 $tasksByStatus = [
-                    'todo'        => array_filter($tasks, fn ($t) => $t['status'] === 'todo'),
-                    'in_progress' => array_filter($tasks, fn ($t) => $t['status'] === 'in_progress'),
-                    'done'        => array_filter($tasks, fn ($t) => $t['status'] === 'done'),
+                    'todo'        => array_filter($tasks, fn($t) => $t['status'] === 'todo'),
+                    'in_progress' => array_filter($tasks, fn($t) => $t['status'] === 'in_progress'),
+                    'done'        => array_filter($tasks, fn($t) => $t['status'] === 'done'),
                 ];
-$statusNames = [
-    'todo'        => 'Por Hacer',
-    'in_progress' => 'En Progreso',
-    'done'        => 'Completadas',
-];
-$statusColors = [
-    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-    'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-];
-?>
+                $statusNames = [
+                    'todo'        => 'Por Hacer',
+                    'in_progress' => 'En Progreso',
+                    'done'        => 'Completadas',
+                ];
+                $statusColors = [
+                    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+                    'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                ];
+                ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <?php foreach ($tasksByStatus as $status => $statusTasks): ?>
@@ -176,8 +176,16 @@ $statusColors = [
                                                             <?= ucfirst($task['priority']) ?>
                                                         </span>
                                                         <?php if ($task['due_date']): ?>
+                                                            <?php
+                                                            $dueRaw = $task['due_date'];
+                                                            if ($dueRaw instanceof DateTimeInterface) {
+                                                                $fmt = $dueRaw->format('d/m');
+                                                            } else {
+                                                                $fmt = safe_date_format($dueRaw, 'd/m');
+                                                            }
+                                                            ?>
                                                             <span class="text-xs text-gray-500 dark:text-gray-400 transition-colors">
-                                                                <?= date('d/m', strtotime($task['due_date'])) ?>
+                                                                <?= htmlspecialchars($fmt) ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
@@ -186,8 +194,8 @@ $statusColors = [
                                                     <i class="fas fa-edit text-xs"></i>
                                                 </a>
                                                 <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal <?= ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : '' ?> ml-2 transition-colors"
-                                                        data-task-id="<?= $task['id'] ?>" 
-                                                        data-task-title="<?= htmlspecialchars($task['title']) ?>">
+                                                    data-task-id="<?= $task['id'] ?>"
+                                                    data-task-title="<?= htmlspecialchars($task['title']) ?>">
                                                     <i class="fas fa-sticky-note text-xs"></i>
                                                     <?php if (($task['notes_count'] ?? 0) > 0): ?>
                                                         <span class="note-count-badge"><?= $task['notes_count'] ?></span>
@@ -348,43 +356,43 @@ function getPriorityClass($priority)
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('notes-modal');
-    const closeButton = document.getElementById('close-notes-modal');
-    const notesContainer = document.getElementById('notes-container');
-    const modalTaskTitle = document.getElementById('modal-task-title');
-    const addNoteForm = document.getElementById('add-note-form');
-    const noteTaskIdInput = document.getElementById('note-task-id');
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('notes-modal');
+        const closeButton = document.getElementById('close-notes-modal');
+        const notesContainer = document.getElementById('notes-container');
+        const modalTaskTitle = document.getElementById('modal-task-title');
+        const addNoteForm = document.getElementById('add-note-form');
+        const noteTaskIdInput = document.getElementById('note-task-id');
 
-    document.querySelectorAll('.open-notes-modal').forEach(button => {
-        button.addEventListener('click', function () {
-            const taskId = this.dataset.taskId;
-            const taskTitle = this.dataset.taskTitle;
-            modalTaskTitle.textContent = taskTitle;
-            noteTaskIdInput.value = taskId;
-            
-            // Cargar notas
-            loadNotes(taskId);
+        document.querySelectorAll('.open-notes-modal').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.dataset.taskId;
+                const taskTitle = this.dataset.taskTitle;
+                modalTaskTitle.textContent = taskTitle;
+                noteTaskIdInput.value = taskId;
 
-            modal.classList.remove('hidden');
+                // Cargar notas
+                loadNotes(taskId);
+
+                modal.classList.remove('hidden');
+            });
         });
-    });
 
-    closeButton.addEventListener('click', function () {
-        modal.classList.add('hidden');
-        window.location.reload(); // <-- Recargar la página
-    });
+        closeButton.addEventListener('click', function() {
+            modal.classList.add('hidden');
+            window.location.reload(); // <-- Recargar la página
+        });
 
-    function loadNotes(taskId) {
-        fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
-            .then(response => response.json())
-            .then(data => {
-                notesContainer.innerHTML = '';
-                if (data.success && data.notes.length > 0) {
-                    data.notes.forEach(note => {
-                        const noteElement = document.createElement('div');
-                        noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'dark:bg-gray-800', 'rounded', 'transition-colors');
-                        noteElement.innerHTML = `
+        function loadNotes(taskId) {
+            fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
+                .then(response => response.json())
+                .then(data => {
+                    notesContainer.innerHTML = '';
+                    if (data.success && data.notes.length > 0) {
+                        data.notes.forEach(note => {
+                            const noteElement = document.createElement('div');
+                            noteElement.classList.add('note-item', 'mb-2', 'p-2', 'bg-gray-100', 'dark:bg-gray-800', 'rounded', 'transition-colors');
+                            noteElement.innerHTML = `
                             <div class="flex justify-between items-start">
                                 <p class="text-sm text-gray-800 dark:text-gray-200">${note.content}</p>
                                 <div class="flex-shrink-0 ml-2">
@@ -394,41 +402,41 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                             <p class="text-xs text-gray-500 dark:text-gray-400">- ${note.user_name} en ${note.created_at}</p>
                         `;
-                        notesContainer.appendChild(noteElement);
-                    });
-                } else {
-                    notesContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 transition-colors">No hay notas para esta tarea.</p>';
-                }
-            });
-    }
+                            notesContainer.appendChild(noteElement);
+                        });
+                    } else {
+                        notesContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 transition-colors">No hay notas para esta tarea.</p>';
+                    }
+                });
+        }
 
-    addNoteForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        formData.append('action', 'add_note');
+        addNoteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('action', 'add_note');
 
-        fetch('notes_ajax.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadNotes(noteTaskIdInput.value);
-                this.reset();
-            } else {
-                alert(data.message);
-            }
+            fetch('notes_ajax.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadNotes(noteTaskIdInput.value);
+                        this.reset();
+                    } else {
+                        alert(data.message);
+                    }
+                });
         });
-    });
 
-    notesContainer.addEventListener('click', function (e) {
-        if (e.target.closest('.edit-note')) {
-            const button = e.target.closest('.edit-note');
-            const noteId = button.dataset.noteId;
-            const noteContent = button.dataset.noteContent;
-            
-            const editForm = `
+        notesContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-note')) {
+                const button = e.target.closest('.edit-note');
+                const noteId = button.dataset.noteId;
+                const noteContent = button.dataset.noteContent;
+
+                const editForm = `
                 <form class="edit-note-form">
                     <input type="hidden" name="note_id" value="${noteId}">
                     <textarea name="content" class="w-full border border-gray-300 rounded-md px-3 py-2">${noteContent}</textarea>
@@ -436,60 +444,60 @@ document.addEventListener('DOMContentLoaded', function () {
                     <button type="button" class="mt-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors cancel-edit">Cancelar</button>
                 </form>
             `;
-            
-            const noteItem = button.closest('.note-item');
-            noteItem.innerHTML = editForm;
-        }
 
-        if (e.target.closest('.cancel-edit')) {
-            loadNotes(noteTaskIdInput.value);
-        }
-
-        if (e.target.closest('.delete-note')) {
-            const button = e.target.closest('.delete-note');
-            const noteId = button.dataset.noteId;
-            
-            if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
-                fetch('notes_ajax.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: `action=delete_note&note_id=${noteId}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        loadNotes(noteTaskIdInput.value);
-                    } else {
-                        alert(data.message);
-                    }
-                });
+                const noteItem = button.closest('.note-item');
+                noteItem.innerHTML = editForm;
             }
-        }
-    });
 
-    notesContainer.addEventListener('submit', function (e) {
-        if (e.target.classList.contains('edit-note-form')) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            formData.append('action', 'update_note');
+            if (e.target.closest('.cancel-edit')) {
+                loadNotes(noteTaskIdInput.value);
+            }
 
-            fetch('notes_ajax.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadNotes(noteTaskIdInput.value);
-                } else {
-                    alert(data.message);
+            if (e.target.closest('.delete-note')) {
+                const button = e.target.closest('.delete-note');
+                const noteId = button.dataset.noteId;
+
+                if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
+                    fetch('notes_ajax.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: `action=delete_note&note_id=${noteId}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                loadNotes(noteTaskIdInput.value);
+                            } else {
+                                alert(data.message);
+                            }
+                        });
                 }
-            });
-        }
+            }
+        });
+
+        notesContainer.addEventListener('submit', function(e) {
+            if (e.target.classList.contains('edit-note-form')) {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                formData.append('action', 'update_note');
+
+                fetch('notes_ajax.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadNotes(noteTaskIdInput.value);
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+            }
+        });
     });
-});
 </script>
 
 <style>

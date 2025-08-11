@@ -25,44 +25,20 @@ class Label extends BaseModel
         'color' => ['required'],
     ];
 
-    /**
-     * Buscar por ID.
-     */
-    public static function find($id): ?self
+    /** Atajo para buscar por ID (modelo tipado) compatible con BaseModel. */
+    public static function find(int $id, string $pk = 'id'): ?static
     {
-        return static::findOne('labels', (int) $id);
+        return parent::find($id, $pk);
     }
 
-    /**
-     * Obtener todas las etiquetas.
-     */
-    public static function all(): array
-    {
-        return static::findAll('labels');
-    }
-
-    /**
-     * Crear nueva etiqueta.
-     */
+    /** Crear etiqueta usando strong typing y mass-assignment seguro. */
     public static function create(array $attributes): static
     {
-        // Aplicar valores por defecto
         if (!isset($attributes['color'])) {
             $attributes['color'] = static::generateRandomColor();
         }
-
-        // Validar antes de crear
-        $errors = [];
-        if (empty($attributes['name'])) {
-            $errors[] = 'El nombre es requerido';
-        }
-
-        if (!empty($errors)) {
-            throw new \Exception('Errores de validación: ' . implode(', ', $errors));
-        }
-
-        // Crear instancia correctamente con el nombre de tabla
-        $label = new static('labels', static::orm());
+        /** @var static $label */
+        $label = static::dispense('labels');
         $label->fill($attributes);
         $label->store();
         return $label;
@@ -99,7 +75,7 @@ class Label extends BaseModel
     public function tasks(): array
     {
         return static::orm()
-            ->table('tasks')
+            ->table('tasks', Task::class)
             ->join('task_labels', 'tasks.id', '=', 'task_labels.task_id')
             ->where('task_labels.label_id', '=', $this->id)
             ->orderBy('tasks.created_at', 'DESC')

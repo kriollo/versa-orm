@@ -13,13 +13,21 @@ $taskId = $_POST['task_id'] ?? $_GET['task_id'] ?? null;
 switch ($action) {
     case 'get_notes':
         if ($taskId) {
-            $notes     = Note::findByTask((int)$taskId);
+            // findByTask retorna arrays ya exportados
+            $notes = Note::findByTask((int)$taskId); // array<int,array>
             $notesData = [];
-            foreach ($notes as $note) {
-                $user                  = $note->user();
-                $noteData              = $note->export();
-                $noteData['user_name'] = $user ? $user->name : 'Usuario desconocido';
-                $notesData[]           = $noteData;
+            foreach ($notes as $noteArr) {
+                // Obtener usuario de la nota (user_id en array)
+                $userName = 'Usuario desconocido';
+                if (isset($noteArr['user_id'])) {
+                    $user = \App\Models\User::findOne('users', (int)$noteArr['user_id']);
+                    if ($user) {
+                        $userExp  = $user->export();
+                        $userName = $userExp['name'] ?? $userName;
+                    }
+                }
+                $noteArr['user_name'] = $userName;
+                $notesData[] = $noteArr;
             }
             echo json_encode(['success' => true, 'notes' => $notesData]);
         } else {
