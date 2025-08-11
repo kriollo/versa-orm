@@ -79,6 +79,47 @@ class User extends BaseModel
 }
 ```
 
+> Nota rápida (modo sólo PDO): Toda la lógica de `$fillable`, `$guarded` y `$rules` funciona al 100% usando únicamente el motor PDO (sin compilar el binario Rust). El núcleo Rust sólo añade (en el futuro) reglas automáticas más ricas derivadas del esquema; la protección de Mass Assignment y las reglas personalizadas ya son completas.
+
+## Resumen de Precedencia y Códigos de Error
+
+### Precedencia de Mass Assignment
+
+| Paso | Condición | Resultado | Guarded evaluado |
+|------|-----------|-----------|------------------|
+| 1 | `$fillable` NO está vacío | Sólo campos listados aceptados | Ignorado totalmente |
+| 2 | `$fillable` vacío y `'*'` presente en `$guarded` | Se bloquea toda asignación masiva | N/A (bloque total) |
+| 3 | `$fillable` vacío y no hay `'*'` en `$guarded` | Se aceptan todos salvo los listados en `$guarded` | Sí |
+
+Flujo simplificado:
+```text
+if (!empty($fillable)) {
+    // whitelist estricta
+} elseif (in_array('*', $guarded)) {
+    // bloqueo total
+} else {
+    // blacklist parcial
+}
+```
+
+### Códigos de Error Relacionados
+
+| Código | Situación | Mensaje típico | Acción recomendada |
+|--------|-----------|----------------|--------------------|
+| `MASS_ASSIGNMENT_ERROR` | Campo no está en `$fillable` (whitelist activa) | "Field 'x' is not fillable" | Añadirlo a `$fillable` o retirarlo del input |
+| `MASS_ASSIGNMENT_BLOCKED` | `$guarded` contiene `'*'` y `$fillable` vacío | "Mass assignment is not allowed" | Definir `$fillable` o quitar `'*'` |
+| `GUARDED_FIELD_ERROR` | Campo aparece en `$guarded` (sin whitelist activa) | "Field 'x' is guarded" | Eliminar del input o sacarlo de `$guarded` |
+
+Estas excepciones incluyen contexto adicional (`field`, `fillable`, `guarded`, `attempted_fields`) que puedes registrar para depuración.
+
+### Buenas Prácticas Rápidas
+1. Prefiere siempre whitelist (`$fillable`) para superficies públicas (formularios HTTP / APIs).
+2. Usa `'*'` en `$guarded` sólo temporalmente mientras defines un set mínimo de `$fillable`.
+3. Revisa logs por patrones repetidos de `MASS_ASSIGNMENT_ERROR` como indicador de payloads inesperados o probes maliciosos.
+4. Combina `$fillable` + `$rules` para doble capa (filtrado y validación).
+
+---
+
 ## Sistema de Validación
 
 VersaORM incluye un sistema de validación completo que se ejecuta automáticamente antes de guardar datos.

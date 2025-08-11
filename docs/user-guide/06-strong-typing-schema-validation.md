@@ -139,7 +139,7 @@ $user->uuid = 'invalid-uuid'; // ❌ Error: formato UUID inválido
 protected static function definePropertyTypes(): array {
     return [
         'status' => [
-            'type' => 'enum', 
+            'type' => 'enum',
             'values' => ['draft', 'published', 'archived'],
             'default' => 'draft'
         ],
@@ -235,3 +235,63 @@ if (!empty($errors)) {
 
 Cualquier discrepancia resultará en un error detallado que incluye el tipo de fallo y la acción recomendada para solucionarlo.
 
+## 🔍 Formas de Declarar Tipos: `propertyTypes()` vs `definePropertyTypes()`
+
+El trait `HasStrongTyping` descubre el mapa de tipos de tu modelo en este orden de prioridad:
+
+1. Método estático público `propertyTypes()` (si existe).
+2. Método estático `definePropertyTypes()` (puede ser `protected` o `private`).
+3. Si ninguno existe o no devuelve un array válido → no se aplican casts avanzados.
+
+### ¿Por qué dos métodos?
+
+| Método | Visibilidad típica | Caso de uso | Ventaja |
+|--------|--------------------|-------------|---------|
+| `propertyTypes()` | public static | Quieres exponer la definición a herramientas externas | Inspección directa sin reflexión |
+| `definePropertyTypes()` | protected/private static | Prefieres encapsular la definición (API interna) | No “contamina” el API público |
+
+El trait usa reflexión segura para invocar `definePropertyTypes()` incluso si es protegido/privado:
+
+```php
+class User extends VersaModel {
+    // Opción A (pública)
+    public static function propertyTypes(): array {
+        return [
+            'id' => ['type' => 'int'],
+            'uuid' => ['type' => 'uuid'],
+            'status' => ['type' => 'enum', 'values' => ['active','inactive']],
+        ];
+    }
+}
+
+class Product extends VersaModel {
+    // Opción B (encapsulada)
+    protected static function definePropertyTypes(): array {
+        return [
+            'id' => ['type' => 'int'],
+            'price' => ['type' => 'float'],
+            'tags' => ['type' => 'set', 'values' => ['new','sale','hot']],
+        ];
+    }
+}
+```
+
+### Normalización y Cache
+Una vez resuelto el mapa, los tipos (clave `type`) se normalizan a minúsculas y se almacenan en una caché interna por clase, evitando recomputar en cada acceso/cast.
+
+### Qué pasa si no defines ninguno
+- El trait devuelve un array vacío → no hay casting especial (los valores pasan “tal cual”).
+- Puedes seguir usando `$rules` para validaciones, pero pierdes conversiones automáticas (json → array, set/enum → arrays, uuid validado, etc.).
+
+### Interacción con Validación
+- El casting aplica al leer y asignar propiedades antes de que otras validaciones del modelo se disparen.
+- Errores de formato (JSON inválido, UUID incorrecto, valor fuera de enum/set) lanzan `VersaORMException` (o `InvalidArgumentException` en casos no críticos) con mensaje contextual.
+
+### Buenas Prácticas
+1. Usa `definePropertyTypes()` cuando quieras mantener limpia la superficie pública de la clase.
+2. Usa `propertyTypes()` si esperas que tooling externo (generadores, introspectores) lea ese mapa sin reflexión.
+3. Declara siempre `uuid`, `enum`, `set`, `json` y campos numéricos críticos para evitar sorpresas de tipo.
+4. Mantén sincronizados `values` de enum/set con la base de datos; si cambian, CI debería detectar inconsistencias en validación de esquema.
+5. Añade pruebas unitarias para un campo representativo de cada tipo avanzado (json, enum, set, uuid) validando tanto valores válidos como inválidos.
+
+---

@@ -1213,12 +1213,28 @@ class QueryBuilder
      */
     public function get(): array
     {
-        $result = $this->execute('get');
-        if (!is_array($result)) {
+        $raw = $this->execute('get');
+        if (!is_array($raw)) {
             return [];
         }
-        // Forzar tipo correcto para PHPStan
-        return array_values(array_filter($result, 'is_array'));
+        $rows = array_values(array_filter($raw, 'is_array'));
+        // Construir modelo (base o personalizado) para aplicar casting/accessors consistente
+        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+            ? $this->modelClass
+            : VersaModel::class;
+        /** @var class-string<VersaModel> $modelClass */
+        $exported = [];
+        foreach ($rows as $row) {
+            try {
+                $m = new $modelClass($this->table, $this->orm);
+                $m->loadInstance($row);
+                $exported[] = $m->export();
+            } catch (\Throwable $e) {
+                // Fallback al row original si algo falla
+                $exported[] = $row;
+            }
+        }
+        return $exported;
     }
 
     /**
@@ -1238,8 +1254,20 @@ class QueryBuilder
      */
     public function firstArray(): ?array
     {
-        $result = $this->execute('first');
-        return is_array($result) ? $result : null;
+        $row = $this->execute('first');
+        if (!is_array($row)) {
+            return null;
+        }
+        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+            ? $this->modelClass
+            : VersaModel::class;
+        try {
+            $m = new $modelClass($this->table, $this->orm);
+            $m->loadInstance($row);
+            return $m->export();
+        } catch (\Throwable $e) {
+            return $row; // fallback sin casting
+        }
     }
 
     /**

@@ -1387,7 +1387,21 @@ class VersaModel implements TypedModelInterface
      */
     public function export(): array
     {
-        return $this->attributes;
+        // Aplicar accessors/casting a cada atributo para garantizar consistencia
+        $out = [];
+        foreach ($this->attributes as $k => $v) {
+            if (method_exists($this, 'applyAccessor')) {
+                try {
+                    $out[$k] = $this->applyAccessor($k, $v);
+                } catch (\Throwable $e) {
+                    // Fallback silencioso al valor crudo si hubiera una excepción en cast
+                    $out[$k] = $v;
+                }
+            } else {
+                $out[$k] = $v;
+            }
+        }
+        return $out;
     }
 
     /**
