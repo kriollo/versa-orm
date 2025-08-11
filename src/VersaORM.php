@@ -204,6 +204,21 @@ class VersaORM
     }
 
     /**
+     * Desconecta explícitamente la conexión subyacente (usado en servidores persistentes/CLI largos).
+     */
+    public function disconnect(): void
+    {
+        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        if ($engine !== 'pdo') {
+            return; // Para backend Rust podría añadirse lógica futura.
+        }
+        if ($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine) {
+            $this->pdoEngine->forceDisconnect();
+        }
+        $this->pdoEngine = null; // permitir GC
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param string $action
@@ -1008,16 +1023,7 @@ class VersaORM
         return '1.0.0';
     }
 
-    /**
-     * Cierra la conexión a la base de datos (limpia la configuración).
-     *
-     * @return bool
-     */
-    public function disconnect(): bool
-    {
-        $this->config = [];
-        return true;
-    }
+    // Método disconnect unificado se declara más arriba (limpia conexión PDO y GC)
 
     /**
      * Activa o desactiva el modo freeze global.

@@ -57,10 +57,10 @@ Modelos siguen usando `VersaModel::setORM()` si deseas métodos estáticos.
 | Framework | Integración Recomendada |
 |----------|-------------------------|
 | Laravel  | Service Provider que registre `VersaORM` como singleton; llamada a `VersaModel::setORM` en `boot()` |
-| Symfony  | Definir servicio en `services.yaml`; autowire en controladores | 
-| Slim     | Añadir a `$app->getContainer()`; middleware inicial para setear ORM global | 
-| Mezzio   | ConfigProvider retornando factory para `VersaORM` | 
-| CodeIgniter / Laminas | Crear librería / factory y registrar | 
+| Symfony  | Definir servicio en `services.yaml`; autowire en controladores |
+| Slim     | Añadir a `$app->getContainer()`; middleware inicial para setear ORM global |
+| Mezzio   | ConfigProvider retornando factory para `VersaORM` |
+| CodeIgniter / Laminas | Crear librería / factory y registrar |
 
 Ejemplo (Laravel Service Provider simplificado):
 ```php

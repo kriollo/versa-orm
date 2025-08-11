@@ -87,6 +87,16 @@ class PdoEngine
         return self::$metrics;
     }
 
+    /** Fuerza el cierre de la conexión PDO actual (si existe). */
+    public function forceDisconnect(): void
+    {
+        try {
+            $this->connector->close();
+        } catch (\Throwable $e) {
+            // silencioso: no debe romper aplicación
+        }
+    }
+
     /** Resetea métricas + caché de sentencias (instancia) */
     public function resetAllMetrics(): void
     {

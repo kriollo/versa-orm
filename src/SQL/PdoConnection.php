@@ -125,4 +125,12 @@ class PdoConnection
 
         return $this->pdo;
     }
+
+    /**
+     * Cierra (libera) la conexión establecida. La próxima llamada a getPdo() reabrirá.
+     */
+    public function close(): void
+    {
+        $this->pdo = null;
+    }
 }

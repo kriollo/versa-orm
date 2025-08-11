@@ -24,6 +24,16 @@ Aprende VersaORM paso a paso. Te recomendamos leer en este orden:
 ## 4) Herramientas
 - [Guía de la Herramienta CLI](04-cli-tool.md)
 
+## 5) Arquitectura y Ciclo de Vida
+- [Arquitecturas y Ciclo de Vida de Conexión](16-architectures-and-lifecycles.md)
+
+La nueva guía cubre:
+- Integración en MVC, frameworks (Laravel, Symfony, Slim, etc.)
+- Uso estático vs inyectado
+- Ciclo de vida en PHP-FPM, Swoole/RoadRunner, CLI y workers
+- Fast-path de hidratación y métricas (`$orm->metrics()`, `$orm->metricsReset()`)
+- Desconexión explícita (`$orm->disconnect()`) para procesos persistentes
+
 ## 🆕 Novedades destacadas
 - **[UPSERT Individual](11-upsert-replace-operations.md#operación-upsert-individual)**
 - **[REPLACE INTO (MySQL)](11-upsert-replace-operations.md#operación-replace-into-solo-mysql)**
