@@ -1489,6 +1489,25 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Atajo fluido para construir un QueryBuilder asociado a ESTE modelo (mantiene modelClass para casting).
+     * Ejemplo: $this->query()->where('activo', true)->getAll();
+     * Permite también sobrescribir tabla opcionalmente: $this->query('otra_tabla')->getAll();
+     */
+    public function query(?string $table = null): QueryBuilder
+    {
+        $orm = $this->orm instanceof VersaORM ? $this->orm : self::orm();
+        return $orm->table($table ?? $this->table, static::class);
+    }
+
+    /**
+     * Variante estática para conveniencia cuando no se tiene instancia: UserModel::queryTable()->where(...)
+     */
+    public static function queryTable(?string $table = null): QueryBuilder
+    {
+        return self::orm()->table($table ?? (new static('', self::orm()))->getTable(), static::class);
+    }
+
+    /**
      * Obtiene todos los datos del modelo.
      *
      * @return array<string, mixed>
