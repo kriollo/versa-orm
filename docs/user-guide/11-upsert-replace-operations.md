@@ -35,11 +35,11 @@ Las operaciones **UPSERT** y **REPLACE INTO** resuelven el problema común de "i
 SELECT COUNT(*) FROM products WHERE sku = 'PROD001';
 
 -- 2a. Si no existe, insertar
-INSERT INTO products (sku, name, price, stock) 
+INSERT INTO products (sku, name, price, stock)
 VALUES ('PROD001', 'Laptop Pro', 1500.00, 10);
 
 -- 2b. Si existe, actualizar
-UPDATE products 
+UPDATE products
 SET name = 'Laptop Pro', price = 1500.00, stock = 10, updated_at = NOW()
 WHERE sku = 'PROD001';
 ```
@@ -168,7 +168,7 @@ function syncProductFromAPI($orm, $apiProduct) {
         'supplier_id' => $apiProduct['supplier'],
         'last_sync' => date('Y-m-d H:i:s')
     ];
-    
+
     return $orm->table('products')->upsert(
         $productData,
         ['sku'],
@@ -188,7 +188,7 @@ function updatePageStats($orm, $pageId, $views = 1) {
         'last_viewed' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s')
     ];
-    
+
     return $orm->table('page_statistics')->upsert(
         $statsData,
         ['page_id'],
@@ -208,7 +208,7 @@ function saveUserPreference($orm, $userId, $key, $value) {
         'preference_value' => $value,
         'updated_at' => date('Y-m-d H:i:s')
     ];
-    
+
     return $orm->table('user_preferences')->upsert(
         $preferenceData,
         ['user_id', 'preference_key'],
@@ -242,7 +242,7 @@ function saveUserPreference($orm, $userId, $key, $value) {
 
 ```sql
 -- SQL (MySQL)
-REPLACE INTO products (sku, name, price, description) 
+REPLACE INTO products (sku, name, price, description)
 VALUES ('PROD001', 'Laptop Pro Updated', 1600.00, 'Nueva descripción completa');
 ```
 
@@ -350,7 +350,7 @@ $result = $orm->table('products')->upsert(
 [
     'sku' => 'PROD001',
     'name' => 'Laptop Actualizado',      // ✅ Actualizado
-    'price' => 1300.00,                  // ✅ Actualizado  
+    'price' => 1300.00,                  // ✅ Actualizado
     'description' => 'Descripción original', // ✅ Preservado
     'category' => 'Electronics',         // ✅ Preservado
     'stock' => 15,                       // ✅ Preservado
@@ -421,7 +421,7 @@ $result = $orm->table('products')->upsert(
 ### Validación de Identificadores
 
 ```php
-// ❌ Error: Nombre de clave única inválido  
+// ❌ Error: Nombre de clave única inválido
 $result = $orm->table('users')->upsert(
     ['username' => 'john', 'email' => 'john@example.com'],
     ['user; DROP TABLE users; --'] // Clave única maliciosa
@@ -532,7 +532,7 @@ try {
     if (strpos($e->getMessage(), 'only supported for MySQL') !== false) {
         echo "Error: REPLACE INTO solo funciona en MySQL\n";
         echo "Solución: Usar upsert() en su lugar\n";
-        
+
         // Alternativa segura
         $result = $orm->table('products')->upsert($data, ['sku']);
     }
@@ -566,20 +566,20 @@ function safeUpsert($orm, $table, $data, $uniqueKeys, $updateColumns = []) {
                 throw new InvalidArgumentException("Missing required unique key: {$key}");
             }
         }
-        
+
         // Ejecutar upsert
         $result = $orm->table($table)->upsert($data, $uniqueKeys, $updateColumns);
-        
+
         // Log exitoso
         error_log("UPSERT successful for {$table}: " . json_encode($result));
-        
+
         return $result;
-        
+
     } catch (VersaORMException $e) {
         // Log error específico de VersaORM
         error_log("VersaORM UPSERT error in {$table}: " . $e->getMessage());
         return ['status' => 'error', 'message' => 'Database operation failed', 'details' => $e->getMessage()];
-        
+
     } catch (Exception $e) {
         // Log error general
         error_log("General UPSERT error in {$table}: " . $e->getMessage());
@@ -603,11 +603,11 @@ if ($result['status'] === 'error') {
 ```php
 class SmartCache {
     private $orm;
-    
+
     public function __construct($orm) {
         $this->orm = $orm;
     }
-    
+
     public function set($key, $value, $ttl = 3600) {
         $cacheData = [
             'cache_key' => $key,
@@ -616,14 +616,14 @@ class SmartCache {
             'created_at' => date('Y-m-d H:i:s'),
             'hit_count' => 1
         ];
-        
+
         return $this->orm->table('cache')->upsert(
             $cacheData,
             ['cache_key'],
             ['cache_value', 'expires_at', 'created_at'] // Preservar hit_count en updates
         );
     }
-    
+
     public function incrementHits($key) {
         // Usar SQL raw para incremento atómico
         return $this->orm->table('cache')
@@ -644,13 +644,13 @@ function updateUserScore($orm, $userId, $points, $reason) {
         'last_updated' => date('Y-m-d H:i:s'),
         'update_reason' => $reason
     ];
-    
+
     $scoreResult = $orm->table('user_scores')->upsert(
         $scoreData,
         ['user_id'],
         ['total_points', 'last_updated', 'update_reason']
     );
-    
+
     // Registrar el cambio en el historial
     $historyData = [
         'user_id' => $userId,
@@ -659,9 +659,9 @@ function updateUserScore($orm, $userId, $points, $reason) {
         'timestamp' => date('Y-m-d H:i:s'),
         'previous_total' => 0 // Se calculará después
     ];
-    
+
     $orm->table('score_history')->insert($historyData);
-    
+
     return $scoreResult;
 }
 ```
@@ -671,7 +671,7 @@ function updateUserScore($orm, $userId, $points, $reason) {
 ```php
 class HierarchicalConfig {
     private $orm;
-    
+
     public function set($category, $key, $value, $scope = 'global') {
         $configData = [
             'config_category' => $category,
@@ -681,14 +681,14 @@ class HierarchicalConfig {
             'updated_at' => date('Y-m-d H:i:s'),
             'is_active' => true
         ];
-        
+
         return $this->orm->table('app_config')->upsert(
             $configData,
             ['config_category', 'config_key', 'config_scope'],
             ['config_value', 'updated_at']
         );
     }
-    
+
     public function get($category, $key, $scope = 'global') {
         $config = $this->orm->table('app_config')
             ->where('config_category', '=', $category)
@@ -696,7 +696,7 @@ class HierarchicalConfig {
             ->where('config_scope', '=', $scope)
             ->where('is_active', '=', true)
             ->firstArray();
-            
+
         return $config ? json_decode($config['config_value'], true) : null;
     }
 }
@@ -725,7 +725,7 @@ class HierarchicalConfig {
 
 - No usar claves únicas sin índices (rendimiento)
 - No ignorar manejo de errores
-- No usar REPLACE INTO con datos incompletos  
+- No usar REPLACE INTO con datos incompletos
 - No asumir compatibilidad entre bases de datos
 - No usar operaciones individuales para grandes volúmenes
 

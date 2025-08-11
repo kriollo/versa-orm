@@ -125,19 +125,21 @@ class VersaORM
      */
     public function __construct(array $config = [])
     {
-        $this->setBinaryPath();
-
-        // Establecer configuración primero para poder decidir sobre el motor
+        // Establecer configuración primero para decidir motor. Por defecto: PDO.
         if (!empty($config)) {
             /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $normalized */
             $normalized   = $config;
             $this->config = $normalized;
         }
-
-        // Si el motor es PDO, no exigir la presencia del binario Rust
-        // Por defecto, usar PDO si no se especifica motor ni variable de entorno
+        // Forzar engine por defecto a 'pdo' si no se indica explícitamente 'rust'
         $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
-        if ($engine !== 'pdo') {
+        if ($engine === '' || $engine === 'default') {
+            $engine = 'pdo';
+            $this->config['engine'] = 'pdo';
+        }
+        // Inicializar binario solo si se solicita backend rust explícitamente
+        if ($engine === 'rust') {
+            $this->setBinaryPath();
             $this->checkRustBinary();
         }
     }
@@ -243,9 +245,9 @@ class VersaORM
         // Log de la acción ejecutada
         $this->logDebug("Executing action: {$action}", ['params' => $params]);
 
-        // Si está configurado el motor PDO, ejecutar por ahí (usar pdo por defecto)
+        // Elegir backend: por defecto PDO; sólo usar binario si engine === 'rust'
         $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
-        if ($engine === 'pdo') {
+        if ($engine === 'pdo' || $engine === '') {
             try {
                 // Reutilizar la misma instancia para mantener la conexión viva
                 if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {

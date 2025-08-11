@@ -284,7 +284,7 @@ $result = $orm->table('products')->replaceIntoMany($records, $batchSize);
 #### Diferencia con upsertMany()
 ```php
 // REPLACE INTO - Reemplaza COMPLETAMENTE el registro
-// Si el producto existe con columnas 'description' y 'category', 
+// Si el producto existe con columnas 'description' y 'category',
 // estas se perderán si no se incluyen en los datos nuevos
 $replaceResult = $orm->table('products')->replaceIntoMany([
     ['sku' => 'PROD001', 'name' => 'New Name', 'price' => 100]
@@ -356,7 +356,7 @@ $result = $orm->table('users')
 // Para datasets pequeños (< 1000 registros)
 $batchSize = 500;
 
-// Para datasets medianos (1000-10000 registros)  
+// Para datasets medianos (1000-10000 registros)
 $batchSize = 1000;
 
 // Para datasets grandes (> 10000 registros)
@@ -378,7 +378,7 @@ foreach (array_chunk($allRecords, $chunkSize) as $chunk) {
             'created_at' => date('Y-m-d H:i:s')
         ];
     }, $chunk);
-    
+
     $result = $orm->table('users')->insertMany($records, 1000);
     echo "Processed chunk: {$result['total_inserted']} records\n";
 }
@@ -421,7 +421,7 @@ try {
         ['name' => 'User 1', 'email' => 'user1@example.com'],
         ['name' => 'User 2'] // Falta campo email
     ];
-    
+
     $result = $orm->table('users')->insertMany($records);
 } catch (VersaORMException $e) {
     if (strpos($e->getMessage(), 'different columns') !== false) {
@@ -449,7 +449,7 @@ try {
 function safeInsertMany($orm, $table, $records, $batchSize = 1000) {
     $totalInserted = 0;
     $errors = [];
-    
+
     // Procesar en chunks para manejar errores por lote
     foreach (array_chunk($records, $batchSize) as $index => $chunk) {
         try {
@@ -461,7 +461,7 @@ function safeInsertMany($orm, $table, $records, $batchSize = 1000) {
             echo "Chunk {$index} failed, continuing with next chunk...\n";
         }
     }
-    
+
     return [
         'total_inserted' => $totalInserted,
         'errors' => $errors,
@@ -479,7 +479,7 @@ function safeInsertMany($orm, $table, $records, $batchSize = 1000) {
 // Migrar usuarios desde un sistema legacy
 function migrateUsersFromLegacy($legacyData) {
     $users = [];
-    
+
     foreach ($legacyData as $legacy) {
         $users[] = [
             'name' => $legacy['full_name'],
@@ -489,7 +489,7 @@ function migrateUsersFromLegacy($legacyData) {
             'migrated_from' => 'legacy_system_v1'
         ];
     }
-    
+
     return $orm->table('users')->insertMany($users, 2000);
 }
 ```
@@ -499,17 +499,17 @@ function migrateUsersFromLegacy($legacyData) {
 // Procesar y limpiar logs antiguos
 function cleanupOldLogs($orm, $retentionDays = 30) {
     $cutoffDate = date('Y-m-d', strtotime("-{$retentionDays} days"));
-    
+
     // Primero, archivar logs importantes
     $importantLogs = $orm->table('application_logs')
         ->where('level', 'IN', ['error', 'critical'])
         ->where('created_at', '<', $cutoffDate)
         ->get();
-    
+
     if (!empty($importantLogs)) {
         $orm->table('archived_logs')->insertMany($importantLogs, 1000);
     }
-    
+
     // Luego, eliminar logs antiguos
     return $orm->table('application_logs')
         ->where('created_at', '<', $cutoffDate)
@@ -526,11 +526,11 @@ function applyMassSaleDiscount($orm, $categoryId, $discountPercent) {
         ->where('category_id', '=', $categoryId)
         ->where('is_active', '=', true)
         ->count();
-    
+
     if ($affectedCount > 10000) {
         throw new Exception("Too many products would be affected: {$affectedCount}");
     }
-    
+
     return $orm->table('products')
         ->where('category_id', '=', $categoryId)
         ->where('is_active', '=', true)
@@ -547,7 +547,7 @@ function applyMassSaleDiscount($orm, $categoryId, $discountPercent) {
 // Sincronizar inventario desde API externa
 function syncInventoryFromAPI($orm, $apiData) {
     $products = [];
-    
+
     foreach ($apiData as $item) {
         $products[] = [
             'sku' => $item['product_code'],
@@ -557,7 +557,7 @@ function syncInventoryFromAPI($orm, $apiData) {
             'updated_at' => date('Y-m-d H:i:s')
         ];
     }
-    
+
     // Usar upsert para actualizar existentes e insertar nuevos
     return $orm->table('products')->upsertMany(
         $products,
@@ -591,19 +591,19 @@ function benchmarkBatchOperation($orm, $operation, $records) {
         'peak_memory' => 0,
         'sql_queries' => 0
     ];
-    
+
     try {
         $result = $operation($orm, $records);
-        
+
         $metrics['end_time'] = microtime(true);
         $metrics['memory_end'] = memory_get_usage(true);
         $metrics['peak_memory'] = memory_get_peak_usage(true);
         $metrics['execution_time'] = $metrics['end_time'] - $metrics['start_time'];
         $metrics['memory_used'] = $metrics['memory_end'] - $metrics['memory_start'];
         $metrics['records_per_second'] = count($records) / $metrics['execution_time'];
-        
+
         return array_merge($result, ['metrics' => $metrics]);
-        
+
     } catch (Exception $e) {
         $metrics['error'] = $e->getMessage();
         return ['status' => 'error', 'metrics' => $metrics];

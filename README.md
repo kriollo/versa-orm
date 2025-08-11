@@ -11,7 +11,8 @@
 - 📚 Documentación: [docs/README.md](docs/README.md)
 - 🧭 Primeros pasos: [docs/getting-started/README.md](docs/getting-started/README.md)
 - 📘 Guía de uso (básico → avanzado): [docs/user-guide/README.md](docs/user-guide/README.md)
-- 🤝 Contribuir: [docs/contributor-guide/README.md](docs/contributor-guide/README.md)
+- � Modo PHP / PDO: [docs/pdo-mode/README.md](docs/pdo-mode/README.md)
+- �🤝 Contribuir: [docs/contributor-guide/README.md](docs/contributor-guide/README.md)
 
 ## 📋 ¿Qué es VersaORM?
 
@@ -130,7 +131,7 @@ composer require versaorm/versaorm-php
 ### 1. Configuración Básica
 ```php
 use VersaORM\VersaORM;
-use VersaORM\Model;
+use VersaORM\VersaModel;
 
 // Configurar la conexión
 $orm = new VersaORM([
@@ -143,7 +144,7 @@ $orm = new VersaORM([
 ]);
 
 // Configurar modelos
-Model::setORM($orm);
+VersaModel::setORM($orm);
 ```
 
 ### 2. Ejemplos de Uso (Side‑by‑Side SQL vs ORM)
@@ -324,7 +325,7 @@ versaORM-PHP/
 ### 1. Usar Métodos ORM para Operaciones Básicas
 ```php
 // ✅ CORRECTO - Usar métodos ORM
-$task = Model::dispense('tasks');
+$task = VersaModel::dispense('tasks');
 $task->title = 'Nueva tarea';
 $task->store();
 
@@ -340,13 +341,13 @@ $stats = $orm->exec("SELECT COUNT(*) as total, AVG(rating) as avg_rating FROM ta
 // ❌ INCORRECTO - Operación simple con SQL
 $task = $orm->exec("SELECT * FROM tasks WHERE id = ?", [1])[0];
 // MEJOR:
-$task = Model::load('tasks', 1);
+$task = VersaModel::load('tasks', 1);
 ```
 
 ### 3. Manejo de Errores Apropiado
 ```php
 try {
-    $task = Model::dispense('tasks');
+    $task = VersaModel::dispense('tasks');
     $task->title = $title;
     $task->store();
     echo "✅ Tarea creada exitosamente";
@@ -385,14 +386,16 @@ try {
 - La base de datos `tu_base` se crea automáticamente
 
 ### Binario VersaORM no encontrado
-En modo PHP / PDO puedes ignorar este mensaje. Cuando el núcleo nativo esté disponible se documentará nuevamente su uso.
+Ignóralo en modo PHP. Cuando el núcleo nativo se reactive se documentará aquí.
 
 ## 📚 Documentación
 
 ### 📚 Guías de Usuario
-- [🚀 Inicio Rápido](docs/docs/getting-started/configuration.md) - Primeros pasos con VersaORM
-- [📝 Guía Completa](docs/user-guide/README.md) - Documentación detallada de todos los métodos
-- [🛠️ Instalación](docs/getting-started/installation.md) - Guía de instalación y configuración
+- [🚀 Inicio Rápido](docs/getting-started/README.md)
+- [�️ Instalación](docs/getting-started/installation.md)
+- [⚙️ Configuración](docs/getting-started/configuration.md)
+- [📝 Guía Completa](docs/user-guide/README.md)
+- [Modo PHP / PDO](docs/pdo-mode/README.md)
 
 ### 🔧 Documentación para Desarrolladores
 - [🏗️ Guía del Desarrollador](docs/contributor-guide/README.md) - Contribuir al proyecto
@@ -451,6 +454,27 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles.
 
 ---
 
-🚀 **VersaORM (Modo PHP) listo para producción ligera y aprendizaje.**
+## �️ SQL vs VersaORM (Cheat Sheet Rápido)
+| Objetivo | SQL | VersaORM |
+|----------|-----|----------|
+| Insert | `INSERT INTO users (name) VALUES (?)` | `$u=VersaModel::dispense('users');$u->name='Ana';$u->store();` |
+| Select por ID | `SELECT * FROM users WHERE id=?` | `$u=VersaModel::load('users',1);` |
+| Filtro múltiple | `... WHERE status='a' AND age>=18` | `$orm->table('users')->where('status','=','a')->where('age','>=',18)->getAll();` |
+| Orden + Límite | `ORDER BY created_at DESC LIMIT 10` | `->orderBy('created_at','desc')->limit(10)` |
+| Join simple | `SELECT u.*,p.bio FROM users u JOIN profiles p ON p.user_id=u.id` | `$orm->table('users')->join('profiles','users.id','=','profiles.user_id')->select(['users.*','profiles.bio'])->getAll();` |
+| Agregación | `SELECT status,COUNT(*) c FROM users GROUP BY status` | `$orm->table('users')->select(['status','COUNT(*) c'])->groupBy('status')->getAll();` |
+| Delete cond. | `DELETE FROM sessions WHERE last_seen < ?` | `$orm->table('sessions')->where('last_seen','<',$cut)->delete();` |
+| Update masivo | `UPDATE products SET active=0 WHERE stock=0` | `$orm->table('products')->where('stock','=',0)->update(['active'=>0]);` |
+| Upsert | `INSERT ... ON DUPLICATE KEY UPDATE` | `$orm->table('cfg')->upsert($data,['key'],['value']);` |
 
-*Diseñado para claridad • Seguro por defecto • Preparado para crecer*
+## 🧭 Roadmap Breve
+- Reintegración opcional de núcleo nativo
+- Generador de migraciones y seeders
+- Caché configurable de resultados
+- Tipos enriquecidos (UUID, Money, JSON helpers)
+- Auditoría automática (created_by / updated_by)
+
+---
+🚀 **VersaORM (Modo PHP)** listo para producción ligera, prototipos y aprendizaje.
+
+*Claridad • Seguridad por defecto • Preparado para crecer*

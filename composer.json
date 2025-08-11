@@ -1,6 +1,6 @@
 {
   "name": "versaorm/versaorm-php",
-  "description": "ORM de alto rendimiento para PHP con núcleo en Rust - Tipado correcto, ultra rápido, seguro por diseño",
+  "description": "ORM ligero y seguro para PHP (modo PDO por defecto) - Query Builder fluido, Active Record simple, preparado para núcleo nativo opcional",
   "type": "library",
   "keywords": [
     "orm",

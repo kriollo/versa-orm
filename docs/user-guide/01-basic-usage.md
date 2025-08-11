@@ -212,7 +212,7 @@ if ($user) {
     $user->name = 'Juan Carlos Pérez';
     $user->status = 'inactive';
     $user->store(); // ¡Eso es todo!
-    
+
     echo "Usuario actualizado.";
 }
 

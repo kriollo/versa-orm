@@ -22,7 +22,7 @@
 
 ## 📦 Instalación con Composer (Recomendado - La Más Fácil)
 
-**Composer** es como una "tienda de aplicaciones" para PHP que instala librerías automáticamente. 
+**Composer** es como una "tienda de aplicaciones" para PHP que instala librerías automáticamente.
 
 ### 🤔 ¿No tienes Composer? ¡No problem!
 
