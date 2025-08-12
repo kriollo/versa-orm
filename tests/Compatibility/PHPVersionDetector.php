@@ -204,10 +204,14 @@ class PHPVersionDetector
         $extensionStatus = [];
 
         foreach ($relevantExtensions as $extension) {
+            // Check both lowercase and uppercase versions for case-insensitive matching
+            $isLoaded = in_array($extension, $loadedExtensions) ||
+                       in_array(strtoupper($extension), $loadedExtensions) ||
+                       in_array(ucfirst($extension), $loadedExtensions);
+
             $extensionStatus[$extension] = [
-                'loaded' => in_array($extension, $loadedExtensions),
-                'version' => in_array($extension, $loadedExtensions) ?
-                    phpversion($extension) : null
+                'loaded' => $isLoaded,
+                'version' => $isLoaded ? phpversion($extension) : null
             ];
         }
 

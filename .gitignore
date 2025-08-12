@@ -12,6 +12,7 @@ composer.lock
 /coverage/
 /.phpunit.cache/
 /tests/results.xml
+/tests/reports/*
 
 # IDEs
 .vscode/

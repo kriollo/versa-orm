@@ -52,12 +52,16 @@
     }
   },
   "scripts": {
-    "test-mysql": "phpunit --configuration phpunit-mysql.xml --testdox --display-warnings --display-notices --display-deprecations",
-    "test-postgresql": "phpunit --configuration phpunit-postgresql.xml --testdox --display-warnings --display-notices --display-deprecations",
-    "test-sqlite": "phpunit --configuration phpunit-sqlite.xml --testdox --display-warnings --display-notices --display-deprecations",
+    "test-mysql": "phpunit --configuration phpunit-mysql.xml --testdox",
+    "test-postgresql": "phpunit --configuration phpunit-postgresql.xml --testdox",
+    "test-sqlite": "phpunit --configuration phpunit-sqlite.xml --testdox",
     "psalm-check": "psalm --no-cache --show-info=true",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "php-cs-fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
+    "qa-full": "php tests/bin/qa-runner.php full",
+    "qa-unit": "php tests/bin/qa-runner.php unit",
+    "qa-quality": "php tests/bin/qa-runner.php quality",
+    "qa-benchmarks": "php tests/bin/qa-runner.php benchmarks",
     "post-install-cmd": [
       "@php -r \"if (file_exists('versaorm_cli/target/release/versaorm_cli') || file_exists('versaorm_cli/target/release/versaorm_cli.exe')) { echo 'VersaORM binary found.\\n'; } else { echo 'Warning: VersaORM binary not found. Please compile it with: cd versaorm_cli && cargo build --release\\n'; }\""
     ]

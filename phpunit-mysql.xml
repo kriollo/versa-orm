@@ -3,15 +3,149 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
          bootstrap="testMysql/bootstrap.php"
          colors="true"
-         cacheResult="false">
+         cacheResult="false"
+         stopOnFailure="false"
+         stopOnError="false"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutChangesToGlobalState="true">
+
     <testsuites>
-        <testsuite name="VersaORM Test Suite">
+        <!-- Core functionality tests -->
+        <testsuite name="Core">
+            <file>./testMysql/VersaORMTest.php</file>
+            <file>./testMysql/VersaModelTest.php</file>
+            <file>./testMysql/QueryBuilderTest.php</file>
+        </testsuite>
+
+        <!-- MySQL-specific functionality tests -->
+        <testsuite name="MySQL-Specific">
+            <file>./testMysql/MySQLAdvancedSQLTest.php</file>
+            <file>./testMysql/DatabaseSpecificTypesTest.php</file>
+            <file>./testMysql/JsonCastingConsistencyTest.php</file>
+        </testsuite>
+
+        <!-- Advanced SQL operations -->
+        <testsuite name="Advanced-SQL">
+            <file>./testMysql/AdvancedSQLTest.php</file>
+            <file>./testMysql/QueryBuilderSubqueriesTest.php</file>
+            <file>./testMysql/QueryBuilderJoinTest.php</file>
+            <file>./testMysql/QueryBuilderBatchTest.php</file>
+        </testsuite>
+
+        <!-- Data type and casting tests -->
+        <testsuite name="Type-Mapping">
+            <file>./testMysql/AdvancedTypeMappingTest.php</file>
+            <file>./testMysql/StrongTypingTest.php</file>
+            <file>./testMysql/BooleanCastingConsistencyTest.php</file>
+            <file>./testMysql/DateTimeCastingConsistencyTest.php</file>
+            <file>./testMysql/EnumSetCastingConsistencyTest.php</file>
+            <file>./testMysql/InetCastingConsistencyTest.php</file>
+        </testsuite>
+
+        <!-- Relationship and join tests -->
+        <testsuite name="Relationships">
+            <file>./testMysql/RelationshipsTest.php</file>
+            <file>./testMysql/JoinSubDiagnosticTest.php</file>
+        </testsuite>
+
+        <!-- Performance and optimization tests -->
+        <testsuite name="Performance">
+            <file>./testMysql/CacheTest.php</file>
+            <file>./testMysql/LazyQueryPlannerTest.php</file>
+            <file>./testMysql/HydrationMetricsTest.php</file>
+            <file>./testMysql/StressTest.php</file>
+        </testsuite>
+
+        <!-- Security tests -->
+        <testsuite name="Security">
+            <file>./testMysql/SecurityTest.php</file>
+            <file>./testMysql/QAHardeningTest.php</file>
+            <file>./testMysql/QAHardeningStrongTest.php</file>
+        </testsuite>
+
+        <!-- Schema and DDL tests -->
+        <testsuite name="Schema">
+            <file>./testMysql/SchemaConsistencyTest.php</file>
+            <file>./testMysql/SchemaValidationTest.php</file>
+            <file>./testMysql/DDLAlterOperationsTest.php</file>
+        </testsuite>
+
+        <!-- Transaction tests -->
+        <testsuite name="Transactions">
+            <file>./testMysql/TransactionsRollbackTest.php</file>
+            <file>./testMysql/UpsertOperationsTest.php</file>
+            <file>./testMysql/ReplaceIntoTest.php</file>
+            <file>./testMysql/QueryBuilderReplaceAndUpsertTest.php</file>
+        </testsuite>
+
+        <!-- Validation tests -->
+        <testsuite name="Validation">
+            <file>./testMysql/ValidationTest.php</file>
+            <file>./testMysql/ValidationUnitTest.php</file>
+            <file>./testMysql/ValidationSchemaTest.php</file>
+            <file>./testMysql/AliasValidationTest.php</file>
+        </testsuite>
+
+        <!-- Batch operations -->
+        <testsuite name="Batch-Operations">
+            <file>./testMysql/BatchOperationsTypedBindTest.php</file>
+            <file>./testMysql/HavingParameterizedTest.php</file>
+        </testsuite>
+
+        <!-- All tests suite -->
+        <testsuite name="All">
             <directory>./testMysql</directory>
         </testsuite>
     </testsuites>
-    <source>
+
+    <!-- Test groups configuration -->
+    <groups>
         <include>
-            <directory suffix=".php">./src</directory>
+            <group>mysql</group>
+            <group>core</group>
+            <group>advanced</group>
+            <group>performance</group>
+            <group>security</group>
+            <group>fulltext</group>
+            <group>json</group>
+            <group>storage-engines</group>
         </include>
-    </source>
+        <exclude>
+            <group>postgresql</group>
+            <group>sqlite</group>
+            <group>slow</group>
+        </exclude>
+    </groups>
+
+    <!-- Code coverage configuration -->
+    <coverage includeUncoveredFiles="true"
+              ignoreDeprecatedCodeUnits="true"
+              disableCodeCoverageIgnore="false">
+        <report>
+            <html outputDirectory="./tests/reports/coverage/mysql/html" lowUpperBound="50" highLowerBound="90"/>
+            <xml outputDirectory="./tests/reports/coverage/mysql/xml"/>
+            <clover outputFile="./tests/reports/coverage/mysql/clover.xml"/>
+            <text outputFile="./tests/reports/coverage/mysql/coverage.txt" showUncoveredFiles="true"/>
+        </report>
+    </coverage>
+
+    <!-- Logging configuration -->
+    <logging>
+        <junit outputFile="./tests/reports/mysql/junit.xml"/>
+        <teamcity outputFile="./tests/reports/mysql/teamcity.txt"/>
+        <testdoxHtml outputFile="./tests/reports/mysql/testdox.html"/>
+        <testdoxText outputFile="./tests/reports/mysql/testdox.txt"/>
+    </logging>
+
+    <!-- PHP configuration -->
+    <php>
+        <env name="DB_ENGINE" value="mysql"/>
+        <env name="PHPUNIT_RUNNING" value="1"/>
+        <env name="TEST_ENVIRONMENT" value="testing"/>
+        <ini name="memory_limit" value="512M"/>
+        <ini name="error_reporting" value="E_ALL"/>
+        <ini name="display_errors" value="1"/>
+        <ini name="display_startup_errors" value="1"/>
+    </php>
 </phpunit>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="tests/Compatibility/bootstrap.php"
+         colors="true"
+         verbose="true"
+         stopOnFailure="false"
+         processIsolation="false"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutTodoAnnotatedTests="true"
+         beStrictAboutCoversAnnotation="false"
+         enforceTimeLimit="true"
+         defaultTimeLimit="30"
+         timeoutForSmallTests="10"
+         timeoutForMediumTests="30"
+         timeoutForLargeTests="60">
+
+    <testsuites>
+        <testsuite name="PHP Compatibility Tests">
+            <directory>tests/Compatibility</directory>
+        </testsuite>
+    </testsuites>
+
+    <groups>
+        <include>
+            <group>php-compatibility</group>
+        </include>
+    </groups>
+
+    <php>
+        <ini name="memory_limit" value="256M"/>
+        <ini name="error_reporting" value="E_ALL"/>
+        <ini name="display_errors" value="1"/>
+        <ini name="display_startup_errors" value="1"/>
+        <server name="ENVIRONMENT" value="testing"/>
+    </php>
+
+    <logging>
+        <junit outputFile="tests/reports/php-compatibility/junit.xml"/>
+        <teamcity outputFile="tests/reports/php-compatibility/teamcity.txt"/>
+        <testdoxHtml outputFile="tests/reports/php-compatibility/testdox.html"/>
+        <testdoxText outputFile="tests/reports/php-compatibility/testdox.txt"/>
+    </logging>
+
+    <coverage includeUncoveredFiles="true"
+              processUncoveredFiles="true"
+              pathCoverage="false"
+              ignoreDeprecatedCodeUnits="true"
+              disableCodeCoverageIgnore="false">
+        <include>
+            <directory suffix=".php">tests/Compatibility</directory>
+        </include>
+        <exclude>
+            <directory>tests/Compatibility/bootstrap.php</directory>
+            <file>tests/bin/run-php-compatibility.php</file>
+        </exclude>
+        <report>
+            <html outputDirectory="tests/reports/php-compatibility/coverage-html" lowUpperBound="50" highLowerBound="80"/>
+            <xml outputDirectory="tests/reports/php-compatibility/coverage-xml"/>
+            <clover outputFile="tests/reports/php-compatibility/clover.xml"/>
+            <text outputFile="tests/reports/php-compatibility/coverage.txt" showUncoveredFiles="true" showOnlySummary="false"/>
+        </report>
+    </coverage>
+</phpunit>

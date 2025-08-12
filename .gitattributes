@@ -12,6 +12,7 @@
 /tests export-ignore
 /example export-ignore
 /versaorm_cli export-ignore
+/test export-ignore
 
 # Infraestructura CI/CD, IDE y metadatos
 /.github export-ignore

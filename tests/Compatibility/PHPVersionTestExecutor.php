@@ -496,13 +496,21 @@ class PHPVersionTestExecutor
                 'details' => ['config' => $config]
             ];
 
-            // Test 2: Conexión a base de datos
-            $isConnected = $orm->isConnected();
-            $tests['database_connection'] = [
-                'status' => $isConnected ? 'pass' : 'fail',
-                'message' => $isConnected ? 'Database connection successful' : 'Database connection failed',
-                'details' => ['connected' => $isConnected]
-            ];
+            // Test 2: Conexión a base de datos (test básico de funcionalidad)
+            try {
+                $orm->exec("SELECT 1");
+                $tests['database_connection'] = [
+                    'status' => 'pass',
+                    'message' => 'Database connection successful',
+                    'details' => ['connected' => true]
+                ];
+            } catch (\Exception $e) {
+                $tests['database_connection'] = [
+                    'status' => 'fail',
+                    'message' => 'Database connection failed: ' . $e->getMessage(),
+                    'details' => ['connected' => false, 'error' => $e->getMessage()]
+                ];
+            }
 
             // Test 3: QueryBuilder básico
             $qb = $orm->table('test');
@@ -513,7 +521,7 @@ class PHPVersionTestExecutor
             ];
 
             // Test 4: Creación de tabla básica
-            $orm->execute("CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, name TEXT)");
+            $orm->exec("CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, name TEXT)");
             $tests['table_creation'] = [
                 'status' => 'pass',
                 'message' => 'Table creation successful',

@@ -119,7 +119,8 @@ class TestManager implements TestManagerInterface
 
         // Ejecutar PHPUnit para el motor específico
         $configFile = "phpunit-{$engine}.xml";
-        $command = "vendor/bin/phpunit --configuration {$configFile} --testdox --coverage-text";
+        $phpunitPath = PHP_OS_FAMILY === 'Windows' ? 'vendor\\bin\\phpunit.bat' : 'vendor/bin/phpunit';
+        $command = "{$phpunitPath} --configuration {$configFile} --testdox --no-coverage";
 
         $output = [];
         $returnCode = 0;
@@ -128,23 +129,23 @@ class TestManager implements TestManagerInterface
         $executionTime = microtime(true) - $startTime;
         $this->metrics->recordExecutionTime("unit_tests_{$engine}", $executionTime);
 
-        $result = new TestResult(
-            testType: 'unit',
-            engine: $engine,
-            totalTests: $this->parseTestCount($output),
-            passedTests: $this->parsePassedTests($output),
-            failedTests: $this->parseFailedTests($output),
-            skippedTests: $this->parseSkippedTests($output),
-            executionTime: $executionTime,
-            failures: $this->parseFailures($output),
-            metrics: $this->extractMetrics($output),
-            timestamp: new DateTime()
-        );
+        $result = new TestResult([
+            'test_type' => 'unit',
+            'engine' => $engine,
+            'total_tests' => $this->parseTestCount($output),
+            'passed_tests' => $this->parsePassedTests($output),
+            'failed_tests' => $this->parseFailedTests($output),
+            'skipped_tests' => $this->parseSkippedTests($output),
+            'execution_time' => $executionTime,
+            'failures' => $this->parseFailures($output),
+            'metrics' => $this->extractMetrics($output),
+            'timestamp' => new DateTime()
+        ]);
 
         $this->logger->info("Unit tests completed for {$engine}", [
-            'total' => $result->totalTests,
-            'passed' => $result->passedTests,
-            'failed' => $result->failedTests,
+            'total' => $result->total_tests,
+            'passed' => $result->passed_tests,
+            'failed' => $result->failed_tests,
             'execution_time' => $executionTime
         ]);
 
@@ -162,7 +163,7 @@ class TestManager implements TestManagerInterface
         // Por ahora, los tests de integración son los mismos que los unitarios
         // pero con configuración específica para validar integración entre componentes
         $result = $this->runUnitTests($engine);
-        $result->testType = 'integration';
+        $result->test_type = 'integration';
 
         $executionTime = microtime(true) - $startTime;
         $this->metrics->recordExecutionTime("integration_tests_{$engine}", $executionTime);
@@ -256,17 +257,21 @@ class TestManager implements TestManagerInterface
         $summary = $this->generateSummary($results);
         $alerts = $this->generateAlerts($results);
 
-        $report = new Report(
-            reportId: uniqid('report_', true),
-            version: $this->getProjectVersion(),
-            testResults: $results['unit_tests'] ?? [],
-            benchmarkResults: $results['benchmarks'] ?? [],
-            qualityResults: $results['quality_analysis'] ?? [],
-            summary: $summary,
-            trends: [], // Placeholder para análisis de tendencias
-            alerts: $alerts,
-            generatedAt: new DateTime()
-        );
+        $report = new Report([
+            'report_id' => uniqid('report_', true),
+            'test_type' => 'full_suite',
+            'php_version' => PHP_VERSION,
+            'results' => [
+                'unit_tests' => $results['unit_tests'] ?? [],
+                'integration_tests' => $results['integration_tests'] ?? [],
+                'benchmarks' => $results['benchmarks'] ?? [],
+                'quality_analysis' => $results['quality_analysis'] ?? []
+            ],
+            'summary' => $summary,
+            'execution_time' => $this->calculateTotalExecutionTime($results),
+            'timestamp' => new DateTime(),
+            'recommendations' => $alerts
+        ]);
 
         // Guardar reporte en archivo
         $reportPath = $this->config['reports']['output_dir'] . '/report_' . date('Y-m-d_H-i-s') . '.json';
@@ -363,31 +368,35 @@ class TestManager implements TestManagerInterface
 
     private function mergeTestResults(array $results, string $type): TestResult
     {
-        $totalTests = array_sum(array_map(fn($r) => $r->totalTests, $results));
-        $passedTests = array_sum(array_map(fn($r) => $r->passedTests, $results));
-        $failedTests = array_sum(array_map(fn($r) => $r->failedTests, $results));
-        $skippedTests = array_sum(array_map(fn($r) => $r->skippedTests, $results));
-        $executionTime = array_sum(array_map(fn($r) => $r->executionTime, $results));
+        $totalTests = array_sum(array_map(fn($r) => $r->total_tests, $results));
+        $passedTests = array_sum(array_map(fn($r) => $r->passed_tests, $results));
+        $failedTests = array_sum(array_map(fn($r) => $r->failed_tests, $results));
+        $skippedTests = array_sum(array_map(fn($r) => $r->skipped_tests, $results));
+        $executionTime = array_sum(array_map(fn($r) => $r->execution_time, $results));
 
-        return new TestResult(
-            testType: $type,
-            engine: 'all',
-            totalTests: $totalTests,
-            passedTests: $passedTests,
-            failedTests: $failedTests,
-            skippedTests: $skippedTests,
-            executionTime: $executionTime,
-            failures: array_merge(...array_map(fn($r) => $r->failures, $results)),
-            metrics: ['merged_results' => $results],
-            timestamp: new DateTime()
-        );
+        return new TestResult([
+            'test_type' => $type,
+            'engine' => 'all',
+            'total_tests' => $totalTests,
+            'passed_tests' => $passedTests,
+            'failed_tests' => $failedTests,
+            'skipped_tests' => $skippedTests,
+            'execution_time' => $executionTime,
+            'failures' => array_merge(...array_map(fn($r) => $r->failures, $results)),
+            'metrics' => ['merged_results' => $results],
+            'timestamp' => new DateTime()
+        ]);
     }
 
     private function runQualityTool(string $tool): array
     {
+        $isWindows = PHP_OS_FAMILY === 'Windows';
+
         switch ($tool) {
             case 'phpstan':
-                exec('vendor/bin/phpstan analyse src --level=8 --no-progress --error-format=json', $output, $code);
+                $phpstanPath = $isWindows ? 'vendor\\bin\\phpstan.bat' : 'vendor/bin/phpstan';
+                $command = "{$phpstanPath} analyse src --level=8 --no-progress --error-format=json";
+                exec($command, $output, $code);
                 return [
                     'passed' => $code === 0,
                     'score' => $code === 0 ? 100 : 50,
@@ -395,7 +404,9 @@ class TestManager implements TestManagerInterface
                 ];
 
             case 'psalm':
-                exec('vendor/bin/psalm --no-cache --output-format=json', $output, $code);
+                $psalmPath = $isWindows ? 'vendor\\bin\\psalm.bat' : 'vendor/bin/psalm';
+                $command = "{$psalmPath} --no-cache --output-format=json";
+                exec($command, $output, $code);
                 return [
                     'passed' => $code === 0,
                     'score' => $code === 0 ? 100 : 50,
@@ -403,7 +414,9 @@ class TestManager implements TestManagerInterface
                 ];
 
             case 'php-cs-fixer':
-                exec('vendor/bin/php-cs-fixer fix --dry-run --diff', $output, $code);
+                $csFixerPath = $isWindows ? 'vendor\\bin\\php-cs-fixer.bat' : 'vendor/bin/php-cs-fixer';
+                $command = "{$csFixerPath} fix --dry-run --diff";
+                exec($command, $output, $code);
                 return [
                     'passed' => $code === 0,
                     'score' => $code === 0 ? 100 : 80,
@@ -452,10 +465,10 @@ class TestManager implements TestManagerInterface
 
         // Verificar fallos críticos
         foreach ($results['unit_tests'] ?? [] as $engine => $result) {
-            if ($result->failedTests > 0) {
+            if ($result->failed_tests > 0) {
                 $alerts[] = [
                     'level' => 'error',
-                    'message' => "Unit tests failed for {$engine}: {$result->failedTests} failures",
+                    'message' => "Unit tests failed for {$engine}: {$result->failed_tests} failures",
                     'engine' => $engine
                 ];
             }
@@ -494,7 +507,7 @@ class TestManager implements TestManagerInterface
     {
         $total = 0;
         foreach ($results['unit_tests'] ?? [] as $result) {
-            $total += $result->totalTests;
+            $total += $result->total_tests;
         }
         return $total;
     }
