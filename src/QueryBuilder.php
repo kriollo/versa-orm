@@ -1597,17 +1597,11 @@ class QueryBuilder
      */
     private function execute(string $method, ?array $data = null)
     {
-        error_log('[DEBUG] Executing query from QueryBuilder...');
         if (!($this->orm instanceof VersaORM)) {
             throw new \Exception('VersaORM instance is required for QueryBuilder execution.');
         }
 
         $params = $this->buildPayload($method, $data);
-
-        // Llamar al método execute de VersaORM usando reflexión
-        $reflection    = new \ReflectionClass($this->orm);
-        $executeMethod = $reflection->getMethod('execute');
-        $executeMethod->setAccessible(true);
 
         // Determinar la acción principal. Para operaciones de escritura, es el método mismo.
         // Para lectura, es 'query'.
@@ -1627,7 +1621,8 @@ class QueryBuilder
             $params['method'] = $method;
         }
 
-        return $executeMethod->invoke($this->orm, $action, $params);
+        // Usar el método público executeQuery en lugar de reflexión
+        return $this->orm->executeQuery($action, $params);
     }
 
     /**

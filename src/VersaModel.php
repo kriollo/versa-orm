@@ -1614,7 +1614,33 @@ class VersaModel implements TypedModelInterface
         }
         $result = self::$ormInstance->exec($sql, $bindings);
         if (is_array($result)) {
-            return array_filter($result, 'is_array');
+            $rows = array_filter($result, 'is_array');
+
+            // Aplicar casting de tipos si la clase define property types
+            try {
+                if (method_exists(static::class, 'getPropertyTypes')) {
+                    /** @var array<string,array<string,mixed>> $types */
+                    $types = static::getPropertyTypes();
+                    if ($types !== []) {
+                        $tmp = new static('', self::$ormInstance);
+                        foreach ($rows as $index => $row) {
+                            foreach ($row as $k => $v) {
+                                if (isset($types[$k])) {
+                                    try {
+                                        $rows[$index][$k] = $tmp->castToPhpType($k, $v);
+                                    } catch (\Throwable) {
+                                        // fallback silencioso al valor original
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+                // Si algo falla, devolver sin casting
+            }
+
+            return $rows;
         }
         return [];
     }

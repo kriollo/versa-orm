@@ -412,6 +412,18 @@ class VersaORM
         return new QueryBuilder($this, $table, $modelClass);
     }
 
+    /**
+     * Método público para que QueryBuilder ejecute consultas estructuradas.
+     *
+     * @param string $action
+     * @param array<string, mixed> $params
+     * @return mixed
+     */
+    public function executeQuery(string $action, array $params)
+    {
+        return $this->execute($action, $params);
+    }
+
 
 
     /**
