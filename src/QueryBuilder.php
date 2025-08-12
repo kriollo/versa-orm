@@ -1523,13 +1523,16 @@ class QueryBuilder
      * Inserta un registro y devuelve su ID autoincremental.
      *
      * @param array<string, mixed> $data
-     * @return int|string|null
+     * @return int|null El ID del registro insertado (como entero), o null si no se pudo obtener el ID
      */
     public function insertGetId(array $data)
     {
         $result = $this->execute('insertGetId', $data);
-        if (is_int($result) || is_string($result)) {
+        if (is_int($result)) {
             return $result;
+        }
+        if (is_string($result) && $result !== '' && is_numeric($result)) {
+            return (int)$result;
         }
         return null;
     }

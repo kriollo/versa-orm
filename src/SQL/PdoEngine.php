@@ -1087,7 +1087,13 @@ class PdoEngine
             $elapsed = (microtime(true) - $start) * 1000;
             self::recordQuery(true, $elapsed);
             self::clearAllCache();
-            return $pdo->lastInsertId() ?: null;
+
+            // Convertir lastInsertId a int, con fallback a null si falla
+            $lastId = $pdo->lastInsertId();
+            if ($lastId === false || $lastId === '') {
+                return null;
+            }
+            return (int)$lastId;
         }
 
         if ($action === 'update' || $action === 'delete') {

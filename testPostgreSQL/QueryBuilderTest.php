@@ -293,8 +293,13 @@ class QueryBuilderTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->assertIsNumeric($id);
+        // Verificar que el ID devuelto es un entero, no un string
+        $this->assertIsInt($id, 'insertGetId() should return an integer');
+        $this->assertGreaterThan(0, $id, 'insertGetId() should return a positive integer');
+
+        // Verificar que el registro se insertó correctamente
         $grace = self::$orm->table('users')->find($id);
+        $this->assertNotNull($grace, 'Should be able to find the inserted record');
         $this->assertEquals('Grace', $grace->name);
     }
 

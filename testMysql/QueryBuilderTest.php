@@ -304,8 +304,13 @@ class QueryBuilderTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->assertIsNumeric($id);
+        // Verificar que el ID devuelto es un entero, no un string
+        $this->assertIsInt($id, 'insertGetId() should return an integer');
+        $this->assertGreaterThan(0, $id, 'insertGetId() should return a positive integer');
+
+        // Verificar que el registro se insertó correctamente
         $grace = self::$orm->table('users')->find($id);
+        $this->assertNotNull($grace, 'Should be able to find the inserted record');
         $this->assertEquals('Grace', $grace->name);
     }
 
@@ -330,5 +335,40 @@ class QueryBuilderTest extends TestCase
         $this->assertNull($deleted);
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
         $this->assertNull($bob);
+    }
+
+    /**
+     * Test adicional para verificar comportamiento de insertGetId en casos edge
+     */
+    public function testInsertGetIdReturnTypes(): void
+    {
+        // Test 1: Verificar que devuelve int, no string
+        $id1 = self::$orm->table('users')->insertGetId([
+            'name'   => 'TypeTest1',
+            'email'  => 'type1@example.com',
+            'status' => 'active',
+        ]);
+
+        $this->assertIsInt($id1, 'First insertGetId should return int');
+        $this->assertNotEmpty($id1, 'ID should not be empty');
+
+        // Test 2: Múltiples inserciones deben devolver IDs incrementales
+        $id2 = self::$orm->table('users')->insertGetId([
+            'name'   => 'TypeTest2',
+            'email'  => 'type2@example.com',
+            'status' => 'active',
+        ]);
+
+        $this->assertIsInt($id2, 'Second insertGetId should return int');
+        $this->assertGreaterThan($id1, $id2, 'Second ID should be greater than first');
+
+        // Test 3: Verificar que el ID es utilizable directamente en operaciones
+        $foundUser = self::$orm->table('users')->where('id', '=', $id1)->findOne();
+        $this->assertNotNull($foundUser, 'Should find user by returned ID');
+        $this->assertEquals('TypeTest1', $foundUser->name);
+
+        // Test 4: Verificar que no hay problemas de tipo en comparaciones
+        $this->assertTrue($id1 === (int)$id1, 'ID should be strict int type');
+        $this->assertTrue(is_int($id1), 'ID should pass is_int() check');
     }
 }

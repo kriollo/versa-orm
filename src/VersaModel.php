@@ -701,6 +701,7 @@ class VersaModel implements TypedModelInterface
                 }
             }
 
+            // Aplicar casting solo en puntos seguros, no durante la carga inicial
             $this->attributes = $attributes;
 
             // Cargar las relaciones encontradas
@@ -1372,7 +1373,7 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Obtiene el valor de un atributo del modelo.
+     * Obtiene el valor de un atributo del modelo (valor crudo).
      *
      * @param string $key
      * @return mixed|null
@@ -1389,21 +1390,8 @@ class VersaModel implements TypedModelInterface
      */
     public function export(): array
     {
-        // Aplicar accessors/casting a cada atributo para garantizar consistencia
-        $out = [];
-        foreach ($this->attributes as $k => $v) {
-            if (method_exists($this, 'applyAccessor')) {
-                try {
-                    $out[$k] = $this->applyAccessor($k, $v);
-                } catch (\Throwable $e) {
-                    // Fallback silencioso al valor crudo si hubiera una excepción en cast
-                    $out[$k] = $v;
-                }
-            } else {
-                $out[$k] = $v;
-            }
-        }
-        return $out;
+        // Usar el método seguro que acabamos de crear
+        return $this->getDataCasted();
     }
 
     /**
@@ -1510,13 +1498,32 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Obtiene todos los datos del modelo.
+     * Obtiene todos los datos del modelo (atributos crudos).
      *
      * @return array<string, mixed>
      */
     public function getData(): array
     {
         return $this->attributes;
+    }
+
+    /**
+     * Obtiene todos los datos del modelo con casting de tipos aplicado.
+     *
+     * @return array<string, mixed>
+     */
+    public function getDataCasted(): array
+    {
+        $data = [];
+        foreach ($this->attributes as $key => $value) {
+            try {
+                $data[$key] = $this->applyAccessor($key, $value);
+            } catch (\Throwable) {
+                // Fallback al valor original si el casting falla
+                $data[$key] = $value;
+            }
+        }
+        return $data;
     }
 
     /**
