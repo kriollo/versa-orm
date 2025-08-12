@@ -1,0 +1,21 @@
+# Archivos generados por el sistema de QA
+logs/*.log
+metrics/*.jsonl
+reports/*.json
+reports/*.html
+cache/*
+
+# Mantener directorios pero ignorar contenido
+!logs/.gitkeep
+!metrics/.gitkeep
+!reports/.gitkeep
+!cache/.gitkeep
+
+# Archivos temporales
+*.tmp
+*.temp
+.phpunit.result.cache
+
+# Archivos de cobertura
+coverage/
+*.coverage

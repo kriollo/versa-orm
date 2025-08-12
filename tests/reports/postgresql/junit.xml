@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\Users\jjara\Desktop\proyectos\versaORM-PHP\phpunit-postgresql.xml" tests="2" assertions="12" errors="0" failures="0" skipped="0" time="0.292846">
+    <testsuite name="PostgreSQL-Specific" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.223215">
+      <testsuite name="VersaORM\Tests\PostgreSQL\DatabaseSpecificTypesTest" file="C:\Users\jjara\Desktop\proyectos\versaORM-PHP\testPostgreSQL\DatabaseSpecificTypesTest.php" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.223215">
+        <testcase name="testPostgreSQLSpecificTypes" file="C:\Users\jjara\Desktop\proyectos\versaORM-PHP\testPostgreSQL\DatabaseSpecificTypesTest.php" line="102" class="VersaORM\Tests\PostgreSQL\DatabaseSpecificTypesTest" classname="VersaORM.Tests.PostgreSQL.DatabaseSpecificTypesTest" assertions="6" time="0.223215"/>
+      </testsuite>
+    </testsuite>
+    <testsuite name="All" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.069631">
+      <testsuite name="VersaORM\Tests\PostgreSQL\DatabaseSpecificTypesTest" file="C:\Users\jjara\Desktop\proyectos\versaORM-PHP\testPostgreSQL\DatabaseSpecificTypesTest.php" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.069631">
+        <testcase name="testPostgreSQLSpecificTypes" file="C:\Users\jjara\Desktop\proyectos\versaORM-PHP\testPostgreSQL\DatabaseSpecificTypesTest.php" line="102" class="VersaORM\Tests\PostgreSQL\DatabaseSpecificTypesTest" classname="VersaORM.Tests.PostgreSQL.DatabaseSpecificTypesTest" assertions="6" time="0.069631"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>
