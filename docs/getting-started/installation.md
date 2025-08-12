@@ -65,6 +65,25 @@ echo "🎉 ¡VersaORM instalado y funcionando!";
 
 🎆 **¡Listo! Tienes el ORM más rápido del mundo instalado.**
 
+### ℹ️ Notas rápidas
+- VersaORM usa **PDO como motor por defecto**. No necesitas activar nada extra.
+- Drivers soportados vía PDO: `mysql`, `pgsql`, `sqlite`.
+
+#### 🧱 Compatibilidad con SQLite (evitar bloqueos)
+Para mejorar la concurrencia y minimizar el clásico error `database is locked`, VersaORM configura automáticamente SQLite con:
+- `PRAGMA journal_mode = WAL`
+- `PRAGMA synchronous = NORMAL`
+- `PRAGMA busy_timeout = 5000` (ms)
+- Además, establece `PDO::ATTR_TIMEOUT = 5` segundos
+
+No necesitas hacer nada: estos ajustes se aplican al abrir la conexión. Si prefieres otros valores, puedes ejecutarlos al inicio de tu app con una sentencia manual:
+
+```php
+// Opcional: sobreescribir PRAGMAs por tu cuenta
+$orm->raw('PRAGMA busy_timeout = 10000');
+$orm->raw('PRAGMA synchronous = FULL');
+```
+
 ## Instalación Manual
 
 Si prefieres no usar Composer, puedes instalar VersaORM manualmente.

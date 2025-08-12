@@ -115,15 +115,27 @@ class PdoConnection
                 // Ajustes post-conexión por driver
                 if ($driver === 'sqlite') {
                     // Modo WAL mejora concurrencia y reduce bloqueos
-                    try { $this->pdo->exec('PRAGMA journal_mode = WAL'); } catch (\Throwable $e) { /* ignore */ }
+                    try {
+                        $this->pdo->exec('PRAGMA journal_mode = WAL');
+                    } catch (\Throwable $e) { /* ignore */
+                    }
                     // Sincronización normal (trade-off rendimiento/seguridad)
-                    try { $this->pdo->exec('PRAGMA synchronous = NORMAL'); } catch (\Throwable $e) { /* ignore */ }
+                    try {
+                        $this->pdo->exec('PRAGMA synchronous = NORMAL');
+                    } catch (\Throwable $e) { /* ignore */
+                    }
                     // Tiempo de espera para locks (ms)
-                    try { $this->pdo->exec('PRAGMA busy_timeout = 5000'); } catch (\Throwable $e) { /* ignore */ }
+                    try {
+                        $this->pdo->exec('PRAGMA busy_timeout = 5000');
+                    } catch (\Throwable $e) { /* ignore */
+                    }
                     // Habilitar claves foráneas si se pidió
                     $enableFK = (bool)($this->config['options']['enable_foreign_keys'] ?? false);
                     if ($enableFK) {
-                        try { $this->pdo->exec('PRAGMA foreign_keys = ON'); } catch (\Throwable $e) { /* ignore */ }
+                        try {
+                            $this->pdo->exec('PRAGMA foreign_keys = ON');
+                        } catch (\Throwable $e) { /* ignore */
+                        }
                     }
                 }
                 if ($poolKey !== '') {
