@@ -118,9 +118,9 @@ class TestManager implements TestManagerInterface
         }
 
         // Ejecutar PHPUnit para el motor específico
-        $configFile = "phpunit-{$engine}.xml";
+        $testDir = "test" . ucfirst($engine === 'mysql' ? 'Mysql' : ($engine === 'postgresql' ? 'PostgreSQL' : 'SQLite'));
         $phpunitPath = PHP_OS_FAMILY === 'Windows' ? 'vendor\\bin\\phpunit.bat' : 'vendor/bin/phpunit';
-        $command = "{$phpunitPath} --configuration {$configFile} --testdox --no-coverage";
+        $command = "{$phpunitPath} {$testDir} --testdox --no-coverage";
 
         $output = [];
         $returnCode = 0;
