@@ -78,6 +78,16 @@ class PdoEngine
     /** @var int límite de sentencias en caché */
     private static int $stmtCacheLimit = 100;
 
+    /** Limpia la caché de sentencias y cierra cursores para liberar locks (especialmente en SQLite) */
+    private static function clearStmtCache(): void
+    {
+        foreach (self::$stmtCache as $k => $st) {
+            try { $st->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
+            unset(self::$stmtCache[$k]);
+        }
+        self::$stmtCache = [];
+    }
+
     /**
      * Devuelve métricas actuales.
      * @return array<string,int|float>
@@ -252,6 +262,8 @@ class PdoEngine
         $stmt = $this->prepareCached($pdo, $sql);
         $this->bindAndExecute($stmt, $bindings);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Cerrar cursor para liberar locks en SQLite
+        try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
         return is_array($rows) ? array_values($rows) : [];
     }
 
@@ -954,6 +966,7 @@ class PdoEngine
                 $elapsed = (microtime(true) - $start) * 1000;
                 self::recordQuery(false, $elapsed);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
                 if (self::$cacheEnabled) {
                     self::storeInCache($sql, $bindings, 'first', $row);
                 }
@@ -972,6 +985,7 @@ class PdoEngine
             $elapsed = (microtime(true) - $start) * 1000;
             self::recordQuery(false, $elapsed);
             $rows   = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
             $result = is_array($rows) ? $rows : [];
             if (self::$cacheEnabled) {
                 self::storeInCache($sql, $bindings, 'get', $result);
@@ -990,27 +1004,40 @@ class PdoEngine
                 $pdo->commit();
                 // Al confirmar cambios, invalidar caché por seguridad
                 self::clearAllCache();
+                self::clearStmtCache();
                 return null;
             }
             if (str_starts_with($normalized, 'ROLLBACK')) {
                 $pdo->rollBack();
                 // Tras rollback, el caché puede quedar inconsistente si se cachearon lecturas intermedias
                 self::clearAllCache();
+                self::clearStmtCache();
                 return null;
             }
 
             // Detectar si es una sentencia de escritura antes de intentar fetchAll
-            $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER)\b/i', $sql) === 1;
+            $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql) === 1;
+            $isDDL  = preg_match('/^\s*(CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql) === 1;
+            if ($isDDL) {
+                // Antes de DDL, limpiar sentencias preparadas que referencian esquema previo
+                self::clearStmtCache();
+            }
             $stmt    = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, $bindings);
             if ($isWrite) {
                 // Invalidar todo el caché en operaciones de escritura para mantener coherencia
                 self::clearAllCache();
                 // Normalizar: devolver null para no-SELECT (los tests aceptan null/[])
+                try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
+                if ($isDDL) {
+                    // Tras DDL, volver a limpiar por si alguna sentencia quedó asociada
+                    self::clearStmtCache();
+                }
                 return null;
             }
             // Lecturas: devolver filas y cachear si corresponde
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
             if (self::$cacheEnabled) {
                 self::storeInCache($sql, $bindings, 'raw', $rows);
             }
@@ -1091,6 +1118,7 @@ class PdoEngine
             ], $this->dialect);
             $st = $this->prepareCached($pdo, $chunkSql);
             $st->execute($chunkBindings);
+            try { $st->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
             $totalInserted += count($chunk);
         }
         self::clearAllCache();
@@ -1132,9 +1160,10 @@ class PdoEngine
             'where'  => $params['where'] ?? [],
             'data'   => $params['data'] ?? [],
         ], $this->dialect);
-        $stmt = $this->prepareCached($pdo, $sqlU);
-        $this->bindAndExecute($stmt, $bindU);
+    $stmt = $this->prepareCached($pdo, $sqlU);
+    $this->bindAndExecute($stmt, $bindU);
         $affected = (int)$stmt->rowCount();
+    try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
         self::clearAllCache();
         return [
             'status'        => 'success',
@@ -1172,9 +1201,10 @@ class PdoEngine
             'table'  => $params['table'] ?? '',
             'where'  => $params['where'] ?? [],
         ], $this->dialect);
-        $stmt = $this->prepareCached($pdo, $sqlD);
-        $this->bindAndExecute($stmt, $bindD);
+    $stmt = $this->prepareCached($pdo, $sqlD);
+    $this->bindAndExecute($stmt, $bindD);
         $affected = (int)$stmt->rowCount();
+    try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
         self::clearAllCache();
         return [
             'status'        => 'success',
@@ -1197,9 +1227,10 @@ class PdoEngine
             'unique_keys'    => $params['unique_keys'] ?? [],
             'update_columns' => $params['update_columns'] ?? [],
         ], $this->dialect);
-        $stmt = $this->prepareCached($pdo, $sqlUp);
-        $this->bindAndExecute($stmt, $bindUp);
+    $stmt = $this->prepareCached($pdo, $sqlUp);
+    $this->bindAndExecute($stmt, $bindUp);
         $affected = (int)$stmt->rowCount();
+    try { $stmt->closeCursor(); } catch (\Throwable $e) { /* ignore */ }
         self::clearAllCache();
         return [
             'status'          => 'success',
