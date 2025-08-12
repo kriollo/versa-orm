@@ -126,6 +126,11 @@ class TestManager implements TestManagerInterface
         $returnCode = 0;
         exec($command, $output, $returnCode);
 
+        // Debug: Log the actual output for troubleshooting
+        $this->logger->info("PHPUnit command: {$command}");
+        $this->logger->info("PHPUnit output: " . implode("\n", $output));
+        $this->logger->info("PHPUnit return code: {$returnCode}");
+
         $executionTime = microtime(true) - $startTime;
         $this->metrics->recordExecutionTime("unit_tests_{$engine}", $executionTime);
 
@@ -315,6 +320,11 @@ class TestManager implements TestManagerInterface
     private function parseTestCount(array $output): int
     {
         foreach ($output as $line) {
+            // Buscar patrones como "OK (399 tests, 1176 assertions)"
+            if (preg_match('/OK \((\d+) tests?/', $line, $matches)) {
+                return (int) $matches[1];
+            }
+            // Buscar patrones como "Tests: 399, Assertions: 1176"
             if (preg_match('/Tests: (\d+)/', $line, $matches)) {
                 return (int) $matches[1];
             }
@@ -325,8 +335,15 @@ class TestManager implements TestManagerInterface
     private function parsePassedTests(array $output): int
     {
         foreach ($output as $line) {
+            // Si encontramos "OK (X tests)" significa que todos pasaron
             if (preg_match('/OK \((\d+) tests?/', $line, $matches)) {
                 return (int) $matches[1];
+            }
+            // Buscar patrones de fallos para calcular los que pasaron
+            if (preg_match('/FAILURES!.*Tests: (\d+), Assertions: \d+, Failures: (\d+)/', $line, $matches)) {
+                $total = (int) $matches[1];
+                $failures = (int) $matches[2];
+                return $total - $failures;
             }
         }
         return 0;
@@ -335,6 +352,10 @@ class TestManager implements TestManagerInterface
     private function parseFailedTests(array $output): int
     {
         foreach ($output as $line) {
+            // Buscar patrones como "FAILURES! Tests: 10, Assertions: 20, Failures: 2"
+            if (preg_match('/FAILURES!.*Failures: (\d+)/', $line, $matches)) {
+                return (int) $matches[1];
+            }
             if (preg_match('/Failures: (\d+)/', $line, $matches)) {
                 return (int) $matches[1];
             }
@@ -451,8 +472,36 @@ class TestManager implements TestManagerInterface
 
     private function generateSummary(array $results): array
     {
+        $totalTests = 0;
+        $passedTests = 0;
+        $failedTests = 0;
+        $skippedTests = 0;
+
+        // Contar tests unitarios
+        foreach ($results['unit_tests'] ?? [] as $result) {
+            $totalTests += $result->total_tests;
+            $passedTests += $result->passed_tests;
+            $failedTests += $result->failed_tests;
+            $skippedTests += $result->skipped_tests;
+        }
+
+        // Contar tests de integración
+        foreach ($results['integration_tests'] ?? [] as $result) {
+            $totalTests += $result->total_tests;
+            $passedTests += $result->passed_tests;
+            $failedTests += $result->failed_tests;
+            $skippedTests += $result->skipped_tests;
+        }
+
+        $successRate = $totalTests > 0 ? ($passedTests / $totalTests) * 100 : 0;
+
         return [
             'total_test_suites' => count($results['unit_tests'] ?? []),
+            'total_tests' => $totalTests,
+            'passed_tests' => $passedTests,
+            'failed_tests' => $failedTests,
+            'skipped_tests' => $skippedTests,
+            'success_rate' => $successRate,
             'overall_status' => $this->calculateOverallStatus($results),
             'execution_time' => $this->calculateTotalExecutionTime($results),
             'quality_score' => $this->extractQualityScore($results)
