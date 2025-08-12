@@ -111,6 +111,14 @@ class Report
         $failedTests = $this->getFailedTests();
         $successRate = $this->getSuccessRate();
 
+        // Contar alertas críticas
+        $criticalAlerts = 0;
+        foreach ($this->recommendations as $recommendation) {
+            if (is_array($recommendation) && isset($recommendation['level']) && $recommendation['level'] === 'error') {
+                $criticalAlerts++;
+            }
+        }
+
         return [
             'overall_status' => $this->getOverallStatus(),
             'total_tests' => $totalTests,
@@ -124,6 +132,7 @@ class Report
             'has_failures' => $failedTests > 0,
             'quality_score' => $this->getQualityScore(),
             'recommendations_count' => count($this->recommendations),
+            'critical_alerts' => $criticalAlerts,
         ];
     }
 
@@ -138,6 +147,33 @@ class Report
             return $this->results['quality_analysis']->score;
         }
         return null;
+    }
+
+    /**
+     * Obtiene las recomendaciones del reporte
+     */
+    public function getRecommendations(): array
+    {
+        $recommendations = [];
+
+        // Agregar recomendaciones del array de recomendaciones
+        foreach ($this->recommendations as $recommendation) {
+            if (is_array($recommendation) && isset($recommendation['message'])) {
+                $recommendations[] = $recommendation['message'];
+            } elseif (is_string($recommendation)) {
+                $recommendations[] = $recommendation;
+            }
+        }
+
+        // Agregar recomendaciones basadas en resultados de calidad
+        if (isset($this->results['quality_analysis']) &&
+            is_object($this->results['quality_analysis']) &&
+            method_exists($this->results['quality_analysis'], 'getRecommendations')) {
+            $qualityRecommendations = $this->results['quality_analysis']->getRecommendations();
+            $recommendations = array_merge($recommendations, $qualityRecommendations);
+        }
+
+        return array_unique($recommendations);
     }
 
     /**
