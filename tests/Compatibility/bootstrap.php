@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Bootstrap para tests de compatibilidad PHP
+ * Bootstrap para tests de compatibilidad PHP.
  */
 
 // Configurar timezone por defecto
@@ -25,6 +25,7 @@ $autoloadPaths = [
 ];
 
 $autoloaded = false;
+
 foreach ($autoloadPaths as $autoloadPath) {
     if (file_exists($autoloadPath)) {
         require_once $autoloadPath;
@@ -58,18 +59,19 @@ if (!$autoloaded) {
 
 // Crear directorio de reportes si no existe
 $reportsDir = __DIR__ . '/../reports/php-compatibility';
+
 if (!is_dir($reportsDir)) {
     mkdir($reportsDir, 0755, true);
 }
 
 // Configurar variables de entorno para tests
-$_ENV['TESTING'] = true;
+$_ENV['TESTING']             = true;
 $_ENV['PHP_VERSION_TESTING'] = true;
 
 // Función helper para logging de tests
 function logCompatibilityTest(string $message, string $level = 'INFO'): void
 {
-    $timestamp = date('Y-m-d H:i:s');
+    $timestamp  = date('Y-m-d H:i:s');
     $phpVersion = PHP_VERSION;
     $logMessage = "[{$timestamp}] [{$level}] [PHP {$phpVersion}] {$message}" . PHP_EOL;
 
@@ -78,17 +80,17 @@ function logCompatibilityTest(string $message, string $level = 'INFO'): void
 }
 
 // Log inicio de tests
-logCompatibilityTest("PHP Compatibility tests bootstrap loaded");
-logCompatibilityTest("PHP Version: " . PHP_VERSION);
-logCompatibilityTest("PHP Version ID: " . PHP_VERSION_ID);
-logCompatibilityTest("SAPI: " . PHP_SAPI);
-logCompatibilityTest("OS: " . PHP_OS_FAMILY);
-logCompatibilityTest("Memory Limit: " . ini_get('memory_limit'));
-logCompatibilityTest("Max Execution Time: " . ini_get('max_execution_time'));
+logCompatibilityTest('PHP Compatibility tests bootstrap loaded');
+logCompatibilityTest('PHP Version: ' . PHP_VERSION);
+logCompatibilityTest('PHP Version ID: ' . PHP_VERSION_ID);
+logCompatibilityTest('SAPI: ' . PHP_SAPI);
+logCompatibilityTest('OS: ' . PHP_OS_FAMILY);
+logCompatibilityTest('Memory Limit: ' . ini_get('memory_limit'));
+logCompatibilityTest('Max Execution Time: ' . ini_get('max_execution_time'));
 
 // Verificar extensiones requeridas
 $requiredExtensions = ['pdo', 'json', 'mbstring'];
-$missingExtensions = [];
+$missingExtensions  = [];
 
 foreach ($requiredExtensions as $extension) {
     if (!extension_loaded($extension)) {
@@ -97,12 +99,12 @@ foreach ($requiredExtensions as $extension) {
 }
 
 if (!empty($missingExtensions)) {
-    logCompatibilityTest("Missing required extensions: " . implode(', ', $missingExtensions), 'WARNING');
+    logCompatibilityTest('Missing required extensions: ' . implode(', ', $missingExtensions), 'WARNING');
 }
 
 // Verificar extensiones recomendadas
 $recommendedExtensions = ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite', 'openssl', 'curl'];
-$missingRecommended = [];
+$missingRecommended    = [];
 
 foreach ($recommendedExtensions as $extension) {
     if (!extension_loaded($extension)) {
@@ -111,33 +113,35 @@ foreach ($recommendedExtensions as $extension) {
 }
 
 if (!empty($missingRecommended)) {
-    logCompatibilityTest("Missing recommended extensions: " . implode(', ', $missingRecommended), 'INFO');
+    logCompatibilityTest('Missing recommended extensions: ' . implode(', ', $missingRecommended), 'INFO');
 }
 
 // Configurar handler de errores para tests
-set_error_handler(function ($severity, $message, $file, $line) {
+set_error_handler(static function ($severity, $message, $file, $line) {
     // Solo log errores críticos durante tests
     if ($severity & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR)) {
         logCompatibilityTest("PHP Error: {$message} in {$file}:{$line}", 'ERROR');
     }
+
     return false; // Permitir que el handler por defecto también procese el error
 });
 
 // Configurar handler de excepciones no capturadas
-set_exception_handler(function ($exception) {
-    logCompatibilityTest("Uncaught Exception: " . $exception->getMessage() . " in " .
-                        $exception->getFile() . ":" . $exception->getLine(), 'ERROR');
-    logCompatibilityTest("Stack trace: " . $exception->getTraceAsString(), 'ERROR');
+set_exception_handler(static function ($exception) {
+    logCompatibilityTest('Uncaught Exception: ' . $exception->getMessage() . ' in ' .
+                        $exception->getFile() . ':' . $exception->getLine(), 'ERROR');
+    logCompatibilityTest('Stack trace: ' . $exception->getTraceAsString(), 'ERROR');
 });
 
 // Configurar shutdown handler para cleanup
-register_shutdown_function(function () {
+register_shutdown_function(static function () {
     $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         logCompatibilityTest("Fatal Error: {$error['message']} in {$error['file']}:{$error['line']}", 'FATAL');
     }
 
-    logCompatibilityTest("PHP Compatibility tests completed");
+    logCompatibilityTest('PHP Compatibility tests completed');
 
     // Limpiar memoria
     if (function_exists('gc_collect_cycles')) {
@@ -148,22 +152,22 @@ register_shutdown_function(function () {
 // Configuraciones específicas por versión PHP
 if (PHP_VERSION_ID >= 80000) {
     // PHP 8.0+ configuraciones
-    logCompatibilityTest("PHP 8.0+ features available");
+    logCompatibilityTest('PHP 8.0+ features available');
 }
 
 if (PHP_VERSION_ID >= 80100) {
     // PHP 8.1+ configuraciones
-    logCompatibilityTest("PHP 8.1+ features available");
+    logCompatibilityTest('PHP 8.1+ features available');
 }
 
 if (PHP_VERSION_ID >= 80200) {
     // PHP 8.2+ configuraciones
-    logCompatibilityTest("PHP 8.2+ features available");
+    logCompatibilityTest('PHP 8.2+ features available');
 }
 
 if (PHP_VERSION_ID >= 80300) {
     // PHP 8.3+ configuraciones
-    logCompatibilityTest("PHP 8.3+ features available");
+    logCompatibilityTest('PHP 8.3+ features available');
 }
 
-logCompatibilityTest("Bootstrap completed successfully");
+logCompatibilityTest('Bootstrap completed successfully');

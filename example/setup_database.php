@@ -20,6 +20,7 @@ try {
 
     // Obtener instancia de VersaORM
     $orm = VersaModel::getGlobalORM();
+
     if (!$orm) {
         throw new Exception('No se pudo obtener la instancia de VersaORM');
     }
@@ -36,7 +37,6 @@ try {
         'DROP TABLE IF EXISTS labels',
         'DROP TABLE IF EXISTS projects',
         'DROP TABLE IF EXISTS users',
-
 
         // Tabla usuarios
         "CREATE TABLE IF NOT EXISTS users (

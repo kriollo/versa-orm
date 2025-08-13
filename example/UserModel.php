@@ -6,8 +6,11 @@ namespace App\Models;
 
 use VersaORM\VersaORMException;
 
+use function count;
+use function strlen;
+
 /**
- * UserModel - Ejemplo de modelo específico con manejo de errores
+ * UserModel - Ejemplo de modelo específico con manejo de errores.
  */
 class UserModel extends BaseModel
 {
@@ -19,17 +22,143 @@ class UserModel extends BaseModel
         'password',
         'status',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     protected array $guarded = [
         'id',
         'password_reset_token',
-        'email_verified_at'
+        'email_verified_at',
     ];
 
     /**
-     * Validaciones personalizadas para el modelo User
+     * Crear usuario con validación completa.
+     */
+    public static function createUser(array $userData): array
+    {
+        $user = new static($userData);
+
+        // Validar datos antes de guardar
+        $validationErrors = $user->validateModel();
+
+        if (!empty($validationErrors)) {
+            return [
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validationErrors,
+            ];
+        }
+
+        // Hash password si está presente
+        if (isset($userData['password'])) {
+            $user->setAttribute('password', password_hash($userData['password'], PASSWORD_DEFAULT));
+        }
+
+        // Intentar guardar
+        $result = $user->safeSave();
+
+        return $user->createApiResponse();
+    }
+
+    /**
+     * Actualizar usuario con validación.
+     */
+    public function updateUser(array $userData): array
+    {
+        // Hash password si está presente
+        if (isset($userData['password'])) {
+            $userData['password'] = password_hash($userData['password'], PASSWORD_DEFAULT);
+        }
+
+        $result = $this->safeUpdate($userData);
+
+        return $this->updateApiResponse();
+    }
+
+    /**
+     * Buscar usuario por email con manejo de errores.
+     */
+    public static function findByEmail(string $email): ?static
+    {
+        try {
+            $users = static::findAllWithErrorHandling(['email' => $email]);
+
+            return !empty($users) ? $users[0] : null;
+        } catch (VersaORMException $e) {
+            ErrorHandler::handleException($e, [
+                'model_class' => static::class,
+                'operation'   => 'findByEmail',
+                'email'       => $email,
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Verificar si el email ya existe.
+     */
+    public function emailExists(string $email): bool
+    {
+        $existingUser = static::findByEmail($email);
+
+        return $existingUser !== null;
+    }
+
+    /**
+     * Activar usuario.
+     */
+    public function activate(): array
+    {
+        return $this->executeWithLogging('activate', function () {
+            $this->setAttribute('status', 'active');
+            $this->setAttribute('email_verified_at', date('Y-m-d H:i:s'));
+
+            return $this->save();
+        });
+    }
+
+    /**
+     * Desactivar usuario.
+     */
+    public function deactivate(): array
+    {
+        return $this->executeWithLogging('deactivate', function () {
+            $this->setAttribute('status', 'inactive');
+
+            return $this->save();
+        });
+    }
+
+    /**
+     * Obtener estadísticas específicas del modelo User.
+     */
+    public static function getUserStats(): array
+    {
+        $baseStats = static::getPerformanceStats();
+
+        try {
+            // Contar usuarios activos
+            $activeUsers   = static::findAllWithErrorHandling(['status' => 'active']);
+            $inactiveUsers = static::findAllWithErrorHandling(['status' => 'inactive']);
+
+            $baseStats['user_stats'] = [
+                'active_users'   => count($activeUsers),
+                'inactive_users' => count($inactiveUsers),
+                'total_users'    => count($activeUsers) + count($inactiveUsers),
+            ];
+        } catch (VersaORMException $e) {
+            $baseStats['user_stats'] = [
+                'error'      => 'Could not retrieve user statistics',
+                'error_code' => $e->getErrorCode(),
+            ];
+        }
+
+        return $baseStats;
+    }
+
+    /**
+     * Validaciones personalizadas para el modelo User.
      */
     protected function customValidation(): array
     {
@@ -57,125 +186,5 @@ class UserModel extends BaseModel
         }
 
         return $errors;
-    }
-
-    /**
-     * Crear usuario con validación completa
-     */
-    public static function createUser(array $userData): array
-    {
-        $user = new static($userData);
-
-        // Validar datos antes de guardar
-        $validationErrors = $user->validateModel();
-        if (!empty($validationErrors)) {
-            return [
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validationErrors,
-            ];
-        }
-
-        // Hash password si está presente
-        if (isset($userData['password'])) {
-            $user->setAttribute('password', password_hash($userData['password'], PASSWORD_DEFAULT));
-        }
-
-        // Intentar guardar
-        $result = $user->safeSave();
-
-        return $user->createApiResponse();
-    }
-
-    /**
-     * Actualizar usuario con validación
-     */
-    public function updateUser(array $userData): array
-    {
-        // Hash password si está presente
-        if (isset($userData['password'])) {
-            $userData['password'] = password_hash($userData['password'], PASSWORD_DEFAULT);
-        }
-
-        $result = $this->safeUpdate($userData);
-
-        return $this->updateApiResponse();
-    }
-
-    /**
-     * Buscar usuario por email con manejo de errores
-     */
-    public static function findByEmail(string $email): ?static
-    {
-        try {
-            $users = static::findAllWithErrorHandling(['email' => $email]);
-            return !empty($users) ? $users[0] : null;
-        } catch (VersaORMException $e) {
-            ErrorHandler::handleException($e, [
-                'model_class' => static::class,
-                'operation' => 'findByEmail',
-                'email' => $email,
-            ]);
-            return null;
-        }
-    }
-
-    /**
-     * Verificar si el email ya existe
-     */
-    public function emailExists(string $email): bool
-    {
-        $existingUser = static::findByEmail($email);
-        return $existingUser !== null;
-    }
-
-    /**
-     * Activar usuario
-     */
-    public function activate(): array
-    {
-        return $this->executeWithLogging('activate', function () {
-            $this->setAttribute('status', 'active');
-            $this->setAttribute('email_verified_at', date('Y-m-d H:i:s'));
-            return $this->save();
-        });
-    }
-
-    /**
-     * Desactivar usuario
-     */
-    public function deactivate(): array
-    {
-        return $this->executeWithLogging('deactivate', function () {
-            $this->setAttribute('status', 'inactive');
-            return $this->save();
-        });
-    }
-
-    /**
-     * Obtener estadísticas específicas del modelo User
-     */
-    public static function getUserStats(): array
-    {
-        $baseStats = static::getPerformanceStats();
-
-        try {
-            // Contar usuarios activos
-            $activeUsers = static::findAllWithErrorHandling(['status' => 'active']);
-            $inactiveUsers = static::findAllWithErrorHandling(['status' => 'inactive']);
-
-            $baseStats['user_stats'] = [
-                'active_users' => count($activeUsers),
-                'inactive_users' => count($inactiveUsers),
-                'total_users' => count($activeUsers) + count($inactiveUsers),
-            ];
-        } catch (VersaORMException $e) {
-            $baseStats['user_stats'] = [
-                'error' => 'Could not retrieve user statistics',
-                'error_code' => $e->getErrorCode(),
-            ];
-        }
-
-        return $baseStats;
     }
 }

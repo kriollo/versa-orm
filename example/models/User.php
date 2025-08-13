@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Exception;
+
+use function count;
+use function in_array;
+
 /**
  * Modelo User
  * Gestiona usuarios del sistema.
@@ -34,32 +39,8 @@ class User extends BaseModel
         }
         $this->fill($attributes);
         $this->store();
-        return $this;
-    }
 
-    /**
-     * Generar color aleatorio para avatar.
-     */
-    private static function generateRandomColor(): string
-    {
-        $colors = [
-            '#ff6b6b',
-            '#4ecdc4',
-            '#45b7d1',
-            '#96ceb4',
-            '#ffeaa7',
-            '#dda0dd',
-            '#98d8c8',
-            '#fdcb6e',
-            '#6c5ce7',
-            '#fd79a8',
-            '#e17055',
-            '#00b894',
-            '#0984e3',
-            '#a29bfe',
-            '#fd79a8',
-        ];
-        return $colors[array_rand($colors)];
+        return $this;
     }
 
     /**
@@ -73,7 +54,8 @@ class User extends BaseModel
             // Proyectos donde es propietario
             $ownedProjects = $this->getOrm()->table('projects', Project::class)
                 ->where('owner_id', '=', $this->id)
-                ->get();
+                ->get()
+            ;
 
             if ($ownedProjects) {
                 $allProjects = array_merge($allProjects, $ownedProjects);
@@ -84,7 +66,8 @@ class User extends BaseModel
                 ->join('project_users', 'projects.id', '=', 'project_users.project_id')
                 ->where('project_users.user_id', '=', $this->id)
                 ->select(['projects.*'])
-                ->get();
+                ->get()
+            ;
 
             if ($memberProjects) {
                 $allProjects = array_merge($allProjects, $memberProjects);
@@ -95,22 +78,25 @@ class User extends BaseModel
             $seenIds        = [];
 
             foreach ($allProjects as $project) {
-                $projectId = isset($project['id']) ? $project['id'] : null;
-                if ($projectId && !in_array($projectId, $seenIds)) {
+                $projectId = $project['id'] ?? null;
+
+                if ($projectId && !in_array($projectId, $seenIds, true)) {
                     $uniqueProjects[] = $project;
                     $seenIds[]        = $projectId;
                 }
             }
 
             return $uniqueProjects;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Si falla el join, intentar solo los proyectos propios
             try {
                 $projects = $this->getOrm()->table('projects', Project::class)
                     ->where('owner_id', '=', $this->id)
-                    ->get();
+                    ->get()
+                ;
+
                 return $projects ?: [];
-            } catch (\Exception $e2) {
+            } catch (Exception $e2) {
                 return [];
             }
         }
@@ -125,10 +111,11 @@ class User extends BaseModel
             $tasks = $this->getOrm()->table('tasks', Task::class)
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+            ;
 
             return $tasks ?: [];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [];
         }
     }
@@ -141,7 +128,7 @@ class User extends BaseModel
         try {
             $projects       = $this->projects();
             $tasks          = $this->tasks();
-            $completedTasks = array_filter($tasks, function ($task) {
+            $completedTasks = array_filter($tasks, static function ($task) {
                 return isset($task['status']) && $task['status'] === 'done';
             });
 
@@ -154,7 +141,7 @@ class User extends BaseModel
                 'tasks'                 => $tasks,
                 'completed_tasks'       => $completedTasks,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'projects_count'        => 0,
                 'tasks_count'           => 0,
@@ -181,5 +168,31 @@ class User extends BaseModel
             'created_at'   => ['type' => 'datetime', 'nullable' => false],
             'updated_at'   => ['type' => 'datetime', 'nullable' => false],
         ];
+    }
+
+    /**
+     * Generar color aleatorio para avatar.
+     */
+    private static function generateRandomColor(): string
+    {
+        $colors = [
+            '#ff6b6b',
+            '#4ecdc4',
+            '#45b7d1',
+            '#96ceb4',
+            '#ffeaa7',
+            '#dda0dd',
+            '#98d8c8',
+            '#fdcb6e',
+            '#6c5ce7',
+            '#fd79a8',
+            '#e17055',
+            '#00b894',
+            '#0984e3',
+            '#a29bfe',
+            '#fd79a8',
+        ];
+
+        return $colors[array_rand($colors)];
     }
 }

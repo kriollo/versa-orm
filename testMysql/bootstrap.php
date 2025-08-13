@@ -12,13 +12,13 @@ global $config;
 $config = [
     'DB' => [
         // Motor de ejecución: 'pdo' para fallback SQL generator, 'rust' para binario
-        'engine'   => getenv('VOR_ENGINE') ?: 'pdo',
-        'DB_DRIVER'=> getenv('DB_TYPE') ?: (getenv('DB_DRIVER') ?: 'mysql'),
-        'DB_HOST'  => getenv('DB_HOST') ?: 'localhost',
-        'DB_PORT'  => getenv('DB_PORT') ?: 3306,
-        'DB_NAME'  => getenv('DB_NAME') ?: 'versaorm_test',
-        'DB_USER'  => getenv('DB_USER') ?: 'local',
-        'DB_PASS'  => getenv('DB_PASS') ?: 'local',
-        'debug'    => true,
+        'engine'    => getenv('VOR_ENGINE') ?: 'pdo',
+        'DB_DRIVER' => getenv('DB_TYPE') ?: (getenv('DB_DRIVER') ?: 'mysql'),
+        'DB_HOST'   => getenv('DB_HOST') ?: 'localhost',
+        'DB_PORT'   => getenv('DB_PORT') ?: 3306,
+        'DB_NAME'   => getenv('DB_NAME') ?: 'versaorm_test',
+        'DB_USER'   => getenv('DB_USER') ?: 'local',
+        'DB_PASS'   => getenv('DB_PASS') ?: 'local',
+        'debug'     => true,
     ],
 ];

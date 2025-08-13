@@ -22,7 +22,7 @@
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-red-700 dark:text-red-300">
-                                <?= htmlspecialchars($message ?? 'Error desconocido') ?>
+                                <?php echo htmlspecialchars($message ?? 'Error desconocido'); ?>
                             </p>
                         </div>
                     </div>
@@ -50,17 +50,17 @@
             </div>
         </div>
 
-        <?php if (isset($config['app']['debug']) && $config['app']['debug']): ?>
+        <?php if (isset($config['app']['debug']) && $config['app']['debug']) { ?>
             <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
                 <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Información de Debug:</h4>
                 <div class="text-xs text-gray-600 dark:text-gray-400 font-mono">
-                    <p><strong>Timestamp:</strong> <?= date('Y-m-d H:i:s') ?></p>
-                    <p><strong>Método:</strong> <?= $_SERVER['REQUEST_METHOD'] ?? 'N/A' ?></p>
-                    <p><strong>URI:</strong> <?= $_SERVER['REQUEST_URI'] ?? 'N/A' ?></p>
-                    <p><strong>User Agent:</strong> <?= substr($_SERVER['HTTP_USER_AGENT'] ?? 'N/A', 0, 100) ?>...</p>
+                    <p><strong>Timestamp:</strong> <?php echo date('Y-m-d H:i:s'); ?></p>
+                    <p><strong>Método:</strong> <?php echo $_SERVER['REQUEST_METHOD'] ?? 'N/A'; ?></p>
+                    <p><strong>URI:</strong> <?php echo $_SERVER['REQUEST_URI'] ?? 'N/A'; ?></p>
+                    <p><strong>User Agent:</strong> <?php echo substr($_SERVER['HTTP_USER_AGENT'] ?? 'N/A', 0, 100); ?>...</p>
                 </div>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <div class="text-center">
             <p class="text-xs text-gray-500 dark:text-gray-400">

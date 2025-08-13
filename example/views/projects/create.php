@@ -24,7 +24,7 @@
                     required
                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     placeholder="Ej: Sistema de Gestión"
-                    value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
+                    value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
             </div>
 
             <!-- Descripción -->
@@ -36,7 +36,7 @@
                     id="description"
                     rows="4"
                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="Describe el propósito y objetivos del proyecto..."><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+                    placeholder="Describe el propósito y objetivos del proyecto..."><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
             </div>
 
             <!-- Color del proyecto -->
@@ -44,7 +44,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                     Color del Proyecto
                 </label>
-                <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?= $_POST['color'] ?? '#3498db' ?>' }">
+                <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?php echo $_POST['color'] ?? '#3498db'; ?>' }">
                     <?php
                     $colors = [
                         '#e74c3c' => 'Rojo',
@@ -59,21 +59,21 @@
                         '#16a085' => 'Verde mar',
                     ];
 ?>
-                    <?php foreach ($colors as $color => $name): ?>
+                    <?php foreach ($colors as $color => $name) { ?>
                         <label class="flex items-center cursor-pointer">
                             <input type="radio"
                                 name="color"
-                                value="<?= $color ?>"
-                                <?= ($_POST['color'] ?? '#3498db') === $color ? 'checked' : '' ?>
+                                value="<?php echo $color; ?>"
+                                <?php echo ($_POST['color'] ?? '#3498db') === $color ? 'checked' : ''; ?>
                                 class="sr-only"
                                 x-model="selectedColor">
                             <div class="w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
-                                style="background-color: <?= $color ?>"
-                                :class="selectedColor === '<?= $color ?>' ? 'ring-2 ring-offset-2 ring-gray-400' : ''"
-                                title="<?= $name ?>">
+                                style="background-color: <?php echo $color; ?>"
+                                :class="selectedColor === '<?php echo $color; ?>' ? 'ring-2 ring-offset-2 ring-gray-400' : ''"
+                                title="<?php echo $name; ?>">
                             </div>
                         </label>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </div>
             </div>
 
@@ -87,16 +87,16 @@
                     required
                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                     <option value="">Selecciona un propietario</option>
-                    <?php foreach ($users as $user): ?>
-                        <option value="<?= $user->id ?>" <?= ($_POST['owner_id'] ?? '') == $user->id ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($user->name) ?> (<?= htmlspecialchars($user->email) ?>)
+                    <?php foreach ($users as $user) { ?>
+                        <option value="<?php echo $user->id; ?>" <?php echo ($_POST['owner_id'] ?? '') === $user->id ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($user->name); ?> (<?php echo htmlspecialchars($user->email); ?>)
                         </option>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </select>
             </div>
 
             <!-- Vista previa -->
-            <div x-data="{ previewName: '<?= htmlspecialchars($_POST['name'] ?? 'Nombre del Proyecto') ?>', previewColor: '<?= $_POST['color'] ?? '#3498db' ?>' }">
+            <div x-data="{ previewName: '<?php echo htmlspecialchars($_POST['name'] ?? 'Nombre del Proyecto'); ?>', previewColor: '<?php echo $_POST['color'] ?? '#3498db'; ?>' }">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                     Vista Previa
                 </label>

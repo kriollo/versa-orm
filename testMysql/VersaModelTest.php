@@ -23,23 +23,23 @@ class VersaModelTest extends TestCase
         $user->status = 'active';
         $user->store();
 
-        $this->assertNotNull($user->id, 'ID should be set after storing.');
+        self::assertNotNull($user->id, 'ID should be set after storing.');
 
         $dbUser = VersaModel::load('users', $user->id);
-        $this->assertEquals('Heidi', $dbUser->name);
+        self::assertSame('Heidi', $dbUser->name);
     }
 
     public function testLoad(): void
     {
         $user = VersaModel::load('users', 1);
-        $this->assertInstanceOf(VersaModel::class, $user);
-        $this->assertEquals('Alice', $user->name);
+        self::assertInstanceOf(VersaModel::class, $user);
+        self::assertSame('Alice', $user->name);
     }
 
     public function testLoadReturnsNullForNonExistent(): void
     {
         $user = VersaModel::load('users', 999);
-        $this->assertNull($user);
+        self::assertNull($user);
     }
 
     public function testUpdate(): void
@@ -50,32 +50,32 @@ class VersaModelTest extends TestCase
         $user->store();
 
         $updatedUser = VersaModel::load('users', 1);
-        $this->assertEquals('Alicia', $updatedUser->name);
-        $this->assertEquals('away', $updatedUser->status);
+        self::assertSame('Alicia', $updatedUser->name);
+        self::assertSame('away', $updatedUser->status);
     }
 
     public function testTrash(): void
     {
         $user = VersaModel::load('users', 2);
-        $this->assertNotNull($user);
+        self::assertNotNull($user);
 
         $user->trash();
 
         $deletedUser = VersaModel::load('users', 2);
-        $this->assertNull($deletedUser);
+        self::assertNull($deletedUser);
     }
 
     public function testMagicMethods(): void
     {
         $user       = VersaModel::dispense('users');
         $user->name = 'Test';
-        $this->assertEquals('Test', $user->name);
+        self::assertSame('Test', $user->name);
 
-        $this->assertTrue(isset($user->name));
-        $this->assertFalse(isset($user->non_existent_prop));
+        self::assertTrue(isset($user->name));
+        self::assertFalse(isset($user->non_existent_prop));
 
-        unset($user->name);
-        $this->assertFalse(isset($user->name));
+        $user->name = null;
+        self::assertFalse(isset($user->name));
     }
 
     public function testExport(): void
@@ -83,9 +83,9 @@ class VersaModelTest extends TestCase
         $user = VersaModel::load('users', 1);
         $data = $user->export();
 
-        $this->assertIsArray($data);
-        $this->assertEquals(1, $data['id']);
-        $this->assertEquals('Alice', $data['name']);
+        self::assertIsArray($data);
+        self::assertSame(1, $data['id']);
+        self::assertSame('Alice', $data['name']);
     }
 
     public function testExportAll(): void
@@ -93,28 +93,28 @@ class VersaModelTest extends TestCase
         $users = VersaModel::findAll('users', 'status = ?', ['active']);
         $data  = VersaModel::exportAll($users);
 
-        $this->assertCount(2, $data);
-        $this->assertIsArray($data[0]);
-        $this->assertEquals('Alice', $data[0]['name']);
+        self::assertCount(2, $data);
+        self::assertIsArray($data[0]);
+        self::assertSame('Alice', $data[0]['name']);
     }
 
     public function testFindAllStatic(): void
     {
         $users = VersaModel::findAll('users', 'id > ?', [1]);
-        $this->assertCount(2, $users);
-        $this->assertInstanceOf(VersaModel::class, $users[0]);
+        self::assertCount(2, $users);
+        self::assertInstanceOf(VersaModel::class, $users[0]);
     }
 
     public function testFindOneStatic(): void
     {
         $user = VersaModel::findOne('users', 1);
-        $this->assertInstanceOf(VersaModel::class, $user);
-        $this->assertEquals(1, $user->id);
+        self::assertInstanceOf(VersaModel::class, $user);
+        self::assertSame(1, $user->id);
     }
 
     public function testCountStatic(): void
     {
         $count = VersaModel::count('users', 'status = ?', ['active']);
-        $this->assertEquals(2, $count);
+        self::assertSame(2, $count);
     }
 }

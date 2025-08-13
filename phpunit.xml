@@ -1,19 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd" bootstrap="testSQLite/bootstrap.php" colors="true" cacheResult="false">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="testSQLite/bootstrap.php"
+         colors="true"
+         cacheResult="false"
+         stopOnFailure="false"
+         stopOnError="false"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutChangesToGlobalState="true">
+
   <testsuites>
     <testsuite name="VersaORM SQLite Test Suite">
       <directory>./testSQLite</directory>
     </testsuite>
   </testsuites>
+
   <groups>
+    <include>
+      <group>sqlite</group>
+      <group>core</group>
+      <group>performance</group>
+      <group>security</group>
+    </include>
     <exclude>
       <group>mysql</group>
       <group>postgresql</group>
+      <group>slow</group>
     </exclude>
   </groups>
+
+  <!-- Code coverage configuration -->
+  <coverage includeUncoveredFiles="true"
+            ignoreDeprecatedCodeUnits="true"
+            disableCodeCoverageIgnore="false">
+    <report>
+      <html outputDirectory="./tests/reports/coverage/sqlite/html" lowUpperBound="50" highLowerBound="90"/>
+      <xml outputDirectory="./tests/reports/coverage/sqlite/xml"/>
+      <clover outputFile="./tests/reports/coverage/sqlite/clover.xml"/>
+      <text outputFile="./tests/reports/coverage/sqlite/coverage.txt" showUncoveredFiles="true"/>
+    </report>
+  </coverage>
+
+  <!-- Logging configuration -->
+  <logging>
+    <junit outputFile="./tests/reports/sqlite/junit.xml"/>
+    <teamcity outputFile="./tests/reports/sqlite/teamcity.txt"/>
+    <testdoxHtml outputFile="./tests/reports/sqlite/testdox.html"/>
+    <testdoxText outputFile="./tests/reports/sqlite/testdox.txt"/>
+  </logging>
+
+  <!-- Source code configuration -->
   <source>
     <include>
       <directory suffix=".php">./src</directory>
     </include>
+    <exclude>
+      <directory>./src/binary</directory>
+      <file>./src/Console/deprecated.php</file>
+    </exclude>
   </source>
+
+  <!-- PHP configuration -->
+  <php>
+    <env name="DB_ENGINE" value="sqlite"/>
+    <env name="PHPUNIT_RUNNING" value="1"/>
+    <env name="TEST_ENVIRONMENT" value="testing"/>
+    <env name="SQLITE_LIMITATIONS_AWARE" value="1"/>
+    <ini name="memory_limit" value="256M"/>
+    <ini name="error_reporting" value="E_ALL"/>
+    <ini name="display_errors" value="1"/>
+    <ini name="display_startup_errors" value="1"/>
+  </php>
 </phpunit>

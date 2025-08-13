@@ -22,94 +22,84 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 {
     /** @var array<string, mixed> */
     protected static array $config;
-
-    /**
-     * @before
-     */
-    protected function setUpConfig(): void
-    {
-        if (!isset(self::$config)) {
-            self::$config = self::$orm->getConfig();
-        }
-    }
-    //======================================================================
+    // ======================================================================
     // REPLACE INTO TESTS (MySQL específico)
-    //======================================================================
+    // ======================================================================
 
     public function testReplaceIntoBasic(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         // Insertar un registro inicial
         $initialData = [
             'sku'   => 'REPLACE001',
             'name'  => 'Original Product',
-            'price' => 100.0
+            'price' => 100.0,
         ];
         self::$orm->table('products')->insert($initialData);
 
         // Verificar que se insertó
         $original = self::$orm->table('products')->where('sku', '=', 'REPLACE001')->firstArray();
-        $this->assertEquals('Original Product', $original['name']);
-        $this->assertEquals(100.0, (float) $original['price']);
+        self::assertSame('Original Product', $original['name']);
+        self::assertSame(100.0, (float) $original['price']);
 
         // Ahora usar replaceInto para reemplazar completamente el registro
         $replaceData = [
             'sku'         => 'REPLACE001',
             'name'        => 'Replaced Product',
             'price'       => 200.0,
-            'description' => 'New description' // Campo adicional
+            'description' => 'New description', // Campo adicional
         ];
 
         $result = self::$orm->table('products')->replaceInto($replaceData);
 
-        $this->assertIsArray($result);
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals('replaced', $result['operation']);
-        $this->assertEquals(1, $result['rows_affected']);
-        $this->assertEquals('products', $result['table']);
+        self::assertIsArray($result);
+        self::assertSame('success', $result['status']);
+        self::assertSame('replaced', $result['operation']);
+        self::assertSame(1, $result['rows_affected']);
+        self::assertSame('products', $result['table']);
 
         // Verificar que el registro fue completamente reemplazado
         $replaced = self::$orm->table('products')->where('sku', '=', 'REPLACE001')->firstArray();
-        $this->assertEquals('Replaced Product', $replaced['name']);
-        $this->assertEquals(200.0, (float) $replaced['price']);
-        $this->assertEquals('New description', $replaced['description']);
+        self::assertSame('Replaced Product', $replaced['name']);
+        self::assertSame(200.0, (float) $replaced['price']);
+        self::assertSame('New description', $replaced['description']);
     }
 
     public function testReplaceIntoNewRecord(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         // Usar replaceInto para insertar un registro completamente nuevo
         $newData = [
             'sku'   => 'REPLACE_NEW001',
             'name'  => 'New Product via Replace',
-            'price' => 150.0
+            'price' => 150.0,
         ];
 
         $result = self::$orm->table('products')->replaceInto($newData);
 
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals('replaced', $result['operation']);
-        $this->assertEquals(1, $result['rows_affected']);
+        self::assertSame('success', $result['status']);
+        self::assertSame('replaced', $result['operation']);
+        self::assertSame(1, $result['rows_affected']);
 
         // Verificar que se creó el nuevo registro
         $new = self::$orm->table('products')->where('sku', '=', 'REPLACE_NEW001')->firstArray();
-        $this->assertEquals('New Product via Replace', $new['name']);
-        $this->assertEquals(150.0, (float) $new['price']);
+        self::assertSame('New Product via Replace', $new['name']);
+        self::assertSame(150.0, (float) $new['price']);
     }
 
     public function testReplaceIntoEmptyData(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         $this->expectException(VersaORMException::class);
@@ -122,7 +112,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         $this->expectException(VersaORMException::class);
@@ -130,19 +120,19 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         self::$orm->table('products')->replaceInto([
             'sku; DROP TABLE products; --' => 'malicious',
-            'name'                         => 'Test Product'
+            'name'                         => 'Test Product',
         ]);
     }
 
-    //======================================================================
+    // ======================================================================
     // REPLACE INTO MANY TESTS (MySQL específico)
-    //======================================================================
+    // ======================================================================
 
     public function testReplaceIntoManyBasic(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         // Insertar algunos registros iniciales
@@ -161,31 +151,32 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->replaceIntoMany($replaceRecords);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(3, $result['total_replaced']);
-        $this->assertEquals(1, $result['batches_processed']);
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(3, $result['total_records']);
+        self::assertIsArray($result);
+        self::assertSame(3, $result['total_replaced']);
+        self::assertSame(1, $result['batches_processed']);
+        self::assertSame('success', $result['status']);
+        self::assertSame(3, $result['total_records']);
 
         // Verificar que los registros fueron reemplazados correctamente
         $replaced1 = self::$orm->table('products')->where('sku', '=', 'REPLACE_MANY001')->firstArray();
-        $this->assertEquals('Replaced 1', $replaced1['name']);
-        $this->assertEquals('Updated 1', $replaced1['description']);
+        self::assertSame('Replaced 1', $replaced1['name']);
+        self::assertSame('Updated 1', $replaced1['description']);
 
         $newProduct = self::$orm->table('products')->where('sku', '=', 'REPLACE_MANY003')->firstArray();
-        $this->assertEquals('New Product 3', $newProduct['name']);
-        $this->assertEquals('New 3', $newProduct['description']);
+        self::assertSame('New Product 3', $newProduct['name']);
+        self::assertSame('New 3', $newProduct['description']);
     }
 
     public function testReplaceIntoManyWithBatchSize(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         $records = [];
-        for ($i = 1; $i <= 5; $i++) {
+
+        for ($i = 1; $i <= 5; ++$i) {
             $records[] = [
                 'sku'   => "BATCH_REPLACE{$i}",
                 'name'  => "Batch Replace Product {$i}",
@@ -196,21 +187,21 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         // Usar un batch size de 2
         $result = self::$orm->table('products')->replaceIntoMany($records, 2);
 
-        $this->assertEquals(5, $result['total_replaced']);
-        $this->assertEquals(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
-        $this->assertEquals(2, $result['batch_size']);
-        $this->assertEquals('success', $result['status']);
+        self::assertSame(5, $result['total_replaced']);
+        self::assertSame(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
+        self::assertSame(2, $result['batch_size']);
+        self::assertSame('success', $result['status']);
 
         // Verificar que todos los registros se crearon
         $count = self::$orm->table('products')->where('sku', 'LIKE', 'BATCH_REPLACE%')->count();
-        $this->assertEquals(5, $count);
+        self::assertSame(5, $count);
     }
 
     public function testReplaceIntoManyEmptyRecords(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         $this->expectException(VersaORMException::class);
@@ -223,7 +214,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         $records = [
@@ -241,7 +232,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO is only supported in MySQL');
+            self::markTestSkipped('REPLACE INTO is only supported in MySQL');
         }
 
         $records = [
@@ -254,9 +245,9 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->replaceIntoMany($records, 0);
     }
 
-    //======================================================================
+    // ======================================================================
     // UPSERT INDIVIDUAL TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testUpsertInsertNewRecord(): void
     {
@@ -264,22 +255,22 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $data = [
             'sku'   => 'UPSERT_NEW001',
             'name'  => 'New Upsert Product',
-            'price' => 199.99
+            'price' => 199.99,
         ];
 
         $result = self::$orm->table('products')->upsert($data, ['sku']);
 
-        $this->assertIsArray($result);
-        $this->assertEquals('success', $result['status']);
-        $this->assertContains($result['operation'], ['inserted', 'updated']);
-        $this->assertEquals(1, $result['rows_affected']);
-        $this->assertEquals(['sku'], $result['unique_keys']);
-        $this->assertEquals('products', $result['table']);
+        self::assertIsArray($result);
+        self::assertSame('success', $result['status']);
+        self::assertContains($result['operation'], ['inserted', 'updated']);
+        self::assertSame(1, $result['rows_affected']);
+        self::assertSame(['sku'], $result['unique_keys']);
+        self::assertSame('products', $result['table']);
 
         // Verificar que el registro se creó
         $created = self::$orm->table('products')->where('sku', '=', 'UPSERT_NEW001')->firstArray();
-        $this->assertEquals('New Upsert Product', $created['name']);
-        $this->assertEquals(199.99, (float) $created['price']);
+        self::assertSame('New Upsert Product', $created['name']);
+        self::assertSame(199.99, (float) $created['price']);
     }
 
     public function testUpsertUpdateExistingRecord(): void
@@ -288,7 +279,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $initialData = [
             'sku'   => 'UPSERT_UPDATE001',
             'name'  => 'Original Upsert Product',
-            'price' => 100.0
+            'price' => 100.0,
         ];
         self::$orm->table('products')->insert($initialData);
 
@@ -296,20 +287,20 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $updateData = [
             'sku'   => 'UPSERT_UPDATE001',
             'name'  => 'Updated Upsert Product',
-            'price' => 150.0
+            'price' => 150.0,
         ];
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['name', 'price']);
 
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(1, $result['rows_affected']);
-        $this->assertEquals(['sku'], $result['unique_keys']);
-        $this->assertEquals(['name', 'price'], $result['update_columns']);
+        self::assertSame('success', $result['status']);
+        self::assertSame(1, $result['rows_affected']);
+        self::assertSame(['sku'], $result['unique_keys']);
+        self::assertSame(['name', 'price'], $result['update_columns']);
 
         // Verificar que el registro se actualizó
         $updated = self::$orm->table('products')->where('sku', '=', 'UPSERT_UPDATE001')->firstArray();
-        $this->assertEquals('Updated Upsert Product', $updated['name']);
-        $this->assertEquals(150.0, (float) $updated['price']);
+        self::assertSame('Updated Upsert Product', $updated['name']);
+        self::assertSame(150.0, (float) $updated['price']);
     }
 
     public function testUpsertWithMultipleUniqueKeys(): void
@@ -319,20 +310,21 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
             'sku'      => 'MULTI_KEY001',
             'category' => 'electronics',
             'name'     => 'Multi Key Product',
-            'price'    => 299.99
+            'price'    => 299.99,
         ];
 
         $result = self::$orm->table('products')->upsert($data, ['sku', 'category']);
 
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(['sku', 'category'], $result['unique_keys']);
+        self::assertSame('success', $result['status']);
+        self::assertSame(['sku', 'category'], $result['unique_keys']);
 
         // Verificar que el registro se creó
         $created = self::$orm->table('products')
             ->where('sku', '=', 'MULTI_KEY001')
             ->where('category', '=', 'electronics')
-            ->firstArray();
-        $this->assertEquals('Multi Key Product', $created['name']);
+            ->firstArray()
+        ;
+        self::assertSame('Multi Key Product', $created['name']);
     }
 
     public function testUpsertEmptyData(): void
@@ -383,7 +375,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->upsert(
             $data,
             ['sku'],
-            ['name; DROP TABLE products; --']
+            ['name; DROP TABLE products; --'],
         );
     }
 
@@ -394,7 +386,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
             'sku'         => 'SPECIFIC_UPDATE001',
             'name'        => 'Original Name',
             'price'       => 100.0,
-            'description' => 'Original Description'
+            'description' => 'Original Description',
         ];
         self::$orm->table('products')->insert($initialData);
 
@@ -403,28 +395,28 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
             'sku'         => 'SPECIFIC_UPDATE001',
             'name'        => 'New Name', // Este no debería actualizarse
             'price'       => 200.0,     // Este sí debería actualizarse
-            'description' => 'New Description' // Este no debería actualizarse
+            'description' => 'New Description', // Este no debería actualizarse
         ];
 
         $result = self::$orm->table('products')->upsert(
             $updateData,
             ['sku'],
-            ['price'] // Solo actualizar el precio
+            ['price'], // Solo actualizar el precio
         );
 
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(['price'], $result['update_columns']);
+        self::assertSame('success', $result['status']);
+        self::assertSame(['price'], $result['update_columns']);
 
         // Verificar que solo se actualizó el precio
         $updated = self::$orm->table('products')->where('sku', '=', 'SPECIFIC_UPDATE001')->firstArray();
-        $this->assertEquals('Original Name', $updated['name']); // No debería cambiar
-        $this->assertEquals(200.0, (float) $updated['price']); // Debería cambiar
-        $this->assertEquals('Original Description', $updated['description']); // No debería cambiar
+        self::assertSame('Original Name', $updated['name']); // No debería cambiar
+        self::assertSame(200.0, (float) $updated['price']); // Debería cambiar
+        self::assertSame('Original Description', $updated['description']); // No debería cambiar
     }
 
-    //======================================================================
+    // ======================================================================
     // INTEGRATION AND EDGE CASES
-    //======================================================================
+    // ======================================================================
 
     public function testUpsertWithSpecialCharacters(): void
     {
@@ -432,27 +424,27 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
             'sku'         => 'SPECIAL_CHARS001',
             'name'        => "Product with 'quotes' and \"double quotes\"",
             'price'       => 99.99,
-            'description' => 'Unicode: áéíóú ñ 测试 🚀💻'
+            'description' => 'Unicode: áéíóú ñ 测试 🚀💻',
         ];
 
         $result = self::$orm->table('products')->upsert($data, ['sku']);
 
-        $this->assertEquals('success', $result['status']);
+        self::assertSame('success', $result['status']);
 
         // Verificar que los caracteres especiales se guardaron correctamente
         $saved = self::$orm->table('products')->where('sku', '=', 'SPECIAL_CHARS001')->firstArray();
-        $this->assertStringContainsString("'quotes'", $saved['name']);
-        $this->assertStringContainsString('"double quotes"', $saved['name']);
-        $this->assertStringContainsString('áéíóú', $saved['description']);
-        $this->assertStringContainsString('测试', $saved['description']);
-        $this->assertStringContainsString('🚀', $saved['description']);
+        self::assertStringContainsString("'quotes'", $saved['name']);
+        self::assertStringContainsString('"double quotes"', $saved['name']);
+        self::assertStringContainsString('áéíóú', $saved['description']);
+        self::assertStringContainsString('测试', $saved['description']);
+        self::assertStringContainsString('🚀', $saved['description']);
     }
 
     public function testReplaceIntoVsUpsertBehaviorDifference(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('REPLACE INTO comparison is only relevant for MySQL');
+            self::markTestSkipped('REPLACE INTO comparison is only relevant for MySQL');
         }
 
         // Insertar registro inicial con campo extra
@@ -461,7 +453,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
             'name'        => 'Original Product',
             'price'       => 100.0,
             'description' => 'Original Description',
-            'category'    => 'original_category'
+            'category'    => 'original_category',
         ];
         self::$orm->table('products')->insert($initialData);
 
@@ -469,18 +461,18 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $replaceData = [
             'sku'   => 'BEHAVIOR_TEST001',
             'name'  => 'Replaced Product',
-            'price' => 200.0
+            'price' => 200.0,
             // Nota: no incluimos description ni category
         ];
 
         self::$orm->table('products')->replaceInto($replaceData);
 
         $afterReplace = self::$orm->table('products')->where('sku', '=', 'BEHAVIOR_TEST001')->firstArray();
-        $this->assertEquals('Replaced Product', $afterReplace['name']);
-        $this->assertEquals(200.0, (float) $afterReplace['price']);
+        self::assertSame('Replaced Product', $afterReplace['name']);
+        self::assertSame(200.0, (float) $afterReplace['price']);
         // REPLACE INTO debería haber eliminado los campos no especificados o ponerlos en NULL
-        $this->assertNull($afterReplace['description']);
-        $this->assertNull($afterReplace['category']);
+        self::assertNull($afterReplace['description']);
+        self::assertNull($afterReplace['category']);
 
         // Reinsertar registro inicial para test de upsert
         self::$orm->table('products')->delete(['sku' => 'BEHAVIOR_TEST001']);
@@ -490,35 +482,36 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $upsertData = [
             'sku'   => 'BEHAVIOR_TEST001',
             'name'  => 'Upserted Product',
-            'price' => 300.0
+            'price' => 300.0,
             // Nota: no incluimos description ni category
         ];
 
         self::$orm->table('products')->upsert($upsertData, ['sku'], ['name', 'price']);
 
         $afterUpsert = self::$orm->table('products')->where('sku', '=', 'BEHAVIOR_TEST001')->firstArray();
-        $this->assertEquals('Upserted Product', $afterUpsert['name']);
-        $this->assertEquals(300.0, (float) $afterUpsert['price']);
+        self::assertSame('Upserted Product', $afterUpsert['name']);
+        self::assertSame(300.0, (float) $afterUpsert['price']);
         // UPSERT debería haber preservado los campos no especificados
-        $this->assertEquals('Original Description', $afterUpsert['description']);
-        $this->assertEquals('original_category', $afterUpsert['category']);
+        self::assertSame('Original Description', $afterUpsert['description']);
+        self::assertSame('original_category', $afterUpsert['category']);
     }
 
     public function testLargeDatasetPerformance(): void
     {
         // Solo ejecutar si estamos usando MySQL
         if (self::$config['driver'] !== 'mysql') {
-            $this->markTestSkipped('Performance test is MySQL specific');
+            self::markTestSkipped('Performance test is MySQL specific');
         }
 
         // Test de rendimiento con dataset mediano
         $records = [];
-        for ($i = 1; $i <= 50; $i++) {
+
+        for ($i = 1; $i <= 50; ++$i) {
             $records[] = [
                 'sku'         => "PERF_REPLACE{$i}",
                 'name'        => "Performance Test Product {$i}",
                 'price'       => $i * 10.0,
-                'description' => "Performance test description for product {$i}"
+                'description' => "Performance test description for product {$i}",
             ];
         }
 
@@ -526,19 +519,29 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $result    = self::$orm->table('products')->replaceIntoMany($records, 10);
         $endTime   = microtime(true);
 
-        $this->assertEquals(50, $result['total_replaced']);
-        $this->assertEquals(5, $result['batches_processed']); // 50/10 = 5 lotes
-        $this->assertEquals('success', $result['status']);
+        self::assertSame(50, $result['total_replaced']);
+        self::assertSame(5, $result['batches_processed']); // 50/10 = 5 lotes
+        self::assertSame('success', $result['status']);
 
         // Verificar que la operación fue razonablemente rápida (menos de 3 segundos)
         $executionTime = $endTime - $startTime;
-        $this->assertLessThan(3.0, $executionTime, 'ReplaceIntoMany should complete in reasonable time');
+        self::assertLessThan(3.0, $executionTime, 'ReplaceIntoMany should complete in reasonable time');
 
         // Verificar que todos los registros se crearon
         $count = self::$orm->table('products')->where('sku', 'LIKE', 'PERF_REPLACE%')->count();
-        $this->assertEquals(50, $count);
+        self::assertSame(50, $count);
 
         // Limpiar
         self::$orm->table('products')->where('sku', 'LIKE', 'PERF_REPLACE%')->deleteMany(100);
+    }
+
+    /**
+     * @before
+     */
+    protected function setUpConfig(): void
+    {
+        if (!isset(self::$config)) {
+            self::$config = self::$orm->getConfig();
+        }
     }
 }

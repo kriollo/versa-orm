@@ -12,6 +12,7 @@ use VersaORM\VersaModel;
 class UserTestModel extends VersaModel
 {
     use HasRelationships;
+
     protected string $table = 'users';
 
     public function profile()
@@ -33,6 +34,7 @@ class UserTestModel extends VersaModel
 class ProfileTestModel extends VersaModel
 {
     use HasRelationships;
+
     protected string $table = 'profiles';
 
     public function user()
@@ -44,6 +46,7 @@ class ProfileTestModel extends VersaModel
 class PostTestModel extends VersaModel
 {
     use HasRelationships;
+
     protected string $table = 'posts';
 
     public function user()
@@ -55,6 +58,7 @@ class PostTestModel extends VersaModel
 class RoleTestModel extends VersaModel
 {
     use HasRelationships;
+
     protected string $table = 'roles';
 
     public function users()
@@ -63,57 +67,56 @@ class RoleTestModel extends VersaModel
     }
 }
 
-
 class RelationshipsTest extends TestCase
 {
     public function testHasOneRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
-        $this->assertInstanceOf(ProfileTestModel::class, $user->profile);
-        $this->assertEquals('Alice bio', $user->profile->bio);
+        self::assertInstanceOf(ProfileTestModel::class, $user->profile);
+        self::assertSame('Alice bio', $user->profile->bio);
     }
 
     public function testBelongsToRelationship(): void
     {
         $profile = ProfileTestModel::findOne('profiles', 1);
-        $this->assertInstanceOf(UserTestModel::class, $profile->user);
-        $this->assertEquals('Alice', $profile->user->name);
+        self::assertInstanceOf(UserTestModel::class, $profile->user);
+        self::assertSame('Alice', $profile->user->name);
     }
 
     public function testHasManyRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
-        $this->assertIsArray($user->posts);
-        $this->assertCount(2, $user->posts);
-        $this->assertInstanceOf(PostTestModel::class, $user->posts[0]);
-        $this->assertEquals('Alice Post 1', $user->posts[0]->title);
+        self::assertIsArray($user->posts);
+        self::assertCount(2, $user->posts);
+        self::assertInstanceOf(PostTestModel::class, $user->posts[0]);
+        self::assertSame('Alice Post 1', $user->posts[0]->title);
     }
 
     public function testBelongsToManyRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
-        $this->assertIsArray($user->roles);
-        $this->assertCount(2, $user->roles);
-        $this->assertInstanceOf(RoleTestModel::class, $user->roles[0]);
-        $this->assertEquals('Admin', $user->roles[0]->name);
+        self::assertIsArray($user->roles);
+        self::assertCount(2, $user->roles);
+        self::assertInstanceOf(RoleTestModel::class, $user->roles[0]);
+        self::assertSame('Admin', $user->roles[0]->name);
     }
 
     public function testEagerLoadingWithHasMany(): void
     {
         $user = parent::$orm->table('users', UserTestModel::class)->with('posts')->findOne();
-        $this->assertNotNull($user);
-        $this->assertArrayHasKey('posts', $user->getRelations());
-        $this->assertCount(2, $user->getRelations()['posts']);
-        $this->assertEquals('Alice Post 1', $user->getRelations()['posts'][0]->title);
+        self::assertNotNull($user);
+        self::assertArrayHasKey('posts', $user->getRelations());
+        self::assertCount(2, $user->getRelations()['posts']);
+        self::assertSame('Alice Post 1', $user->getRelations()['posts'][0]->title);
     }
 
     public function testEagerLoadingWithBelongsTo(): void
     {
         $post = parent::$orm->table('posts', PostTestModel::class)->with('user')->findOne();
-        $this->assertNotNull($post);
-        $this->assertArrayHasKey('user', $post->getRelations());
-        $this->assertInstanceOf(UserTestModel::class, $post->getRelations()['user']);
-        $this->assertEquals('Alice', $post->getRelations()['user']->name);
+        self::assertNotNull($post);
+        self::assertArrayHasKey('user', $post->getRelations());
+        self::assertInstanceOf(UserTestModel::class, $post->getRelations()['user']);
+        self::assertSame('Alice', $post->getRelations()['user']->name);
     }
 
     public function testDatabaseTransactionsCommit(): void
@@ -123,9 +126,9 @@ class RelationshipsTest extends TestCase
         parent::$orm->commit();
 
         $user = parent::$orm->table('users')->where('name', '=', 'Test Commit')->findOne();
-        $this->assertNotNull($user);
-        $this->assertEquals('Test Commit', $user->name);
-        $this->assertEquals('test.commit@example.com', $user->email);
+        self::assertNotNull($user);
+        self::assertSame('Test Commit', $user->name);
+        self::assertSame('test.commit@example.com', $user->email);
     }
 
     // TODO: Comentado temporalmente - requiere mejoras en conexión CLI para transacciones

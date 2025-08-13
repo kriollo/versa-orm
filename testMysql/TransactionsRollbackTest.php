@@ -49,15 +49,15 @@ class TransactionsRollbackTest extends TestCase
         $this->orm->commit();
 
         $found = $this->orm->table('tx_users')->where('email', '=', 'tx.commit@example.com')->findOne();
-        $this->assertNotNull($found);
-        $this->assertEquals('Tx Commit', $found->name);
+        self::assertNotNull($found);
+        self::assertSame('Tx Commit', $found->name);
     }
 
     public function testRollbackRevertsChanges(): void
     {
         // Estado inicial vacío
         $pre = $this->orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
-        $this->assertNull($pre);
+        self::assertNull($pre);
 
         // Iniciar transacción y generar un cambio
         $this->orm->beginTransaction();
@@ -65,13 +65,13 @@ class TransactionsRollbackTest extends TestCase
 
         // Verificar que el cambio se ve dentro de la transacción (si el aislamiento lo permite)
         $mid = $this->orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
-        $this->assertNotNull($mid);
+        self::assertNotNull($mid);
 
         // Revertir
         $this->orm->rollBack();
 
         // Debe no existir al final
         $post = $this->orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
-        $this->assertNull($post);
+        self::assertNull($post);
     }
 }

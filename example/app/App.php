@@ -9,6 +9,10 @@ use VersaORM\VersaORM;
 
 class App
 {
+    private ?VersaORM $orm = null;
+
+    private ?ModelManager $models = null;
+
     public function __construct(
         private Request $request,
         private array $config,
@@ -18,7 +22,7 @@ class App
     {
         return $this->request;
     }
-    private ?VersaORM $orm = null;
+
     public function orm(): VersaORM
     {
         if ($this->orm === null) {
@@ -27,16 +31,17 @@ class App
             // Registrar global para compatibilidad interna (QueryBuilder que no recibe explícito)
             VersaModel::setORM($this->orm);
         }
+
         return $this->orm;
     }
 
-    private ?ModelManager $models = null;
     public function models(): ModelManager
     {
         if ($this->models === null) {
             // Entregar el ORM perezosamente al manager
             $this->models = new ModelManager($this->orm());
         }
+
         return $this->models;
     }
 }

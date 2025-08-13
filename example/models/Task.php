@@ -4,12 +4,31 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Exception;
+
+use function in_array;
+
 /**
  * Modelo Task
  * Gestiona tareas del sistema.
  */
 class Task extends BaseModel
 {
+    /**
+     * Estados disponibles para las tareas.
+     */
+    public const STATUS_TODO        = 'todo';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_DONE        = 'done';
+
+    /**
+     * Prioridades disponibles.
+     */
+    public const PRIORITY_LOW    = 'low';
+    public const PRIORITY_MEDIUM = 'medium';
+    public const PRIORITY_HIGH   = 'high';
+    public const PRIORITY_URGENT = 'urgent';
+
     protected string $table = 'tasks';
 
     protected array $fillable = [
@@ -29,28 +48,14 @@ class Task extends BaseModel
         'project_id' => ['required'],
     ];
 
-    /**
-     * Estados disponibles para las tareas.
-     */
-    public const STATUS_TODO        = 'todo';
-    public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_DONE        = 'done';
-
-    /**
-     * Prioridades disponibles.
-     */
-    public const PRIORITY_LOW    = 'low';
-    public const PRIORITY_MEDIUM = 'medium';
-    public const PRIORITY_HIGH   = 'high';
-    public const PRIORITY_URGENT = 'urgent';
-
     /** Crear nueva tarea con defaults delegando validación a store(). */
     public function createOne(array $attributes): self
     {
-        $attributes['status']   = $attributes['status']   ?? self::STATUS_TODO;
-        $attributes['priority'] = $attributes['priority'] ?? self::PRIORITY_MEDIUM;
+        $attributes['status'] ??= self::STATUS_TODO;
+        $attributes['priority'] ??= self::PRIORITY_MEDIUM;
         $this->fill($attributes);
         $this->store();
+
         return $this;
     }
 
@@ -59,7 +64,8 @@ class Task extends BaseModel
      */
     public function project(): ?array
     {
-        $project = $this->getOrm()->table('projects', Project::class)->where('id', '=', (int)$this->project_id)->findOne();
+        $project = $this->getOrm()->table('projects', Project::class)->where('id', '=', (int) $this->project_id)->findOne();
+
         return $project ? $project->export() : null;
     }
 
@@ -71,7 +77,8 @@ class Task extends BaseModel
         if (!$this->user_id) {
             return null;
         }
-        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int)$this->user_id)->findOne();
+        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int) $this->user_id)->findOne();
+
         return $user ? $user->export() : null;
     }
 
@@ -86,7 +93,8 @@ class Task extends BaseModel
             ->where('task_labels.task_id', '=', $this->id)
             ->orderBy('labels.created_at', 'DESC')
             ->select(['labels.*'])
-            ->get();
+            ->get()
+        ;
     }
 
     /**
@@ -98,7 +106,9 @@ class Task extends BaseModel
             ->table('task_labels')
             ->select(['label_id'])
             ->where('task_id', '=', $this->id)
-            ->get();
+            ->get()
+        ;
+
         return array_column($rows, 'label_id');
     }
 
@@ -111,10 +121,13 @@ class Task extends BaseModel
         $existingLabels = $this->getOrm()
             ->table('task_labels')
             ->where('task_id', '=', $this->id)
-            ->get();
+            ->get()
+        ;
+
         foreach ($existingLabels as $existing) {
             if (isset($existing['id'])) {
-                $taskLabel = $this->load('task_labels', (int)$existing['id']);
+                $taskLabel = $this->load('task_labels', (int) $existing['id']);
+
                 if ($taskLabel) {
                     $taskLabel->trash();
                 }
@@ -138,8 +151,9 @@ class Task extends BaseModel
     public function changeStatus(string $status): void
     {
         $validStatuses = [self::STATUS_TODO, self::STATUS_IN_PROGRESS, self::STATUS_DONE];
-        if (!in_array($status, $validStatuses)) {
-            throw new \Exception('Estado inválido');
+
+        if (!in_array($status, $validStatuses, true)) {
+            throw new Exception('Estado inválido');
         }
 
         $this->status = $status;
@@ -178,7 +192,8 @@ class Task extends BaseModel
 
     public function getUserIdByTaskId(int $taskId): ?int
     {
-        $task = $this->getOrm()->table('tasks', Task::class)->where('id', '=', $taskId)->findOne();
+        $task = $this->getOrm()->table('tasks', self::class)->where('id', '=', $taskId)->findOne();
+
         return $task ? $task->user_id : null;
     }
 
@@ -228,12 +243,13 @@ class Task extends BaseModel
         $this->normalizeOptionalDateFields($attributes, ['due_date']);
 
         // Procesar description vacía (convertir a null si está vacía para consistencia)
-        if (isset($attributes['description']) && trim((string)$attributes['description']) === '') {
+        if (isset($attributes['description']) && trim((string) $attributes['description']) === '') {
             $attributes['description'] = null;
         }
 
         // Llamar al método padre
         parent::fill($attributes);
+
         return $this;
     }
 
@@ -250,13 +266,13 @@ class Task extends BaseModel
                 'type'     => 'enum',
                 'values'   => ['todo', 'in_progress', 'done'],
                 'nullable' => false,
-                'default'  => 'todo'
+                'default'  => 'todo',
             ],
             'priority' => [
                 'type'     => 'enum',
                 'values'   => ['low', 'medium', 'high', 'urgent'],
                 'nullable' => false,
-                'default'  => 'medium'
+                'default'  => 'medium',
             ],
             'due_date'   => ['type' => 'date', 'nullable' => true],
             'project_id' => ['type' => 'int', 'nullable' => false],

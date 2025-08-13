@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
+use Exception;
 use VersaORM\VersaORMException;
 
 /**
@@ -17,9 +18,9 @@ use VersaORM\VersaORMException;
  */
 class QueryBuilderBatchTest extends TestCase
 {
-    //======================================================================
+    // ======================================================================
     // INSERT MANY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testInsertManyBasic(): void
     {
@@ -31,20 +32,21 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')->insertMany($records);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(3, $result['total_inserted']);
-        $this->assertEquals(1, $result['batches_processed']);
-        $this->assertEquals('success', $result['status']);
+        self::assertIsArray($result);
+        self::assertSame(3, $result['total_inserted']);
+        self::assertSame(1, $result['batches_processed']);
+        self::assertSame('success', $result['status']);
 
         // Verificar que los registros se insertaron
         $count = self::$orm->table('users')->where('name', 'LIKE', 'Test User%')->count();
-        $this->assertEquals(3, $count);
+        self::assertSame(3, $count);
     }
 
     public function testInsertManyWithBatchSize(): void
     {
         $records = [];
-        for ($i = 1; $i <= 5; $i++) {
+
+        for ($i = 1; $i <= 5; ++$i) {
             $records[] = [
                 'name'   => "Batch User {$i}",
                 'email'  => "batch{$i}@example.com",
@@ -55,10 +57,10 @@ class QueryBuilderBatchTest extends TestCase
         // Usar un batch size de 2 para probar el procesamiento en lotes
         $result = self::$orm->table('users')->insertMany($records, 2);
 
-        $this->assertEquals(5, $result['total_inserted']);
-        $this->assertEquals(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
-        $this->assertEquals(2, $result['batch_size']);
-        $this->assertEquals('success', $result['status']);
+        self::assertSame(5, $result['total_inserted']);
+        self::assertSame(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
+        self::assertSame(2, $result['batch_size']);
+        self::assertSame('success', $result['status']);
     }
 
     public function testInsertManyEmptyRecords(): void
@@ -119,9 +121,9 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany($records);
     }
 
-    //======================================================================
+    // ======================================================================
     // UPDATE MANY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testUpdateManyBasic(): void
     {
@@ -135,15 +137,16 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')
             ->where('status', '=', $uniqueMarker . '_inactive')
-            ->updateMany(['status' => $uniqueMarker . '_updated'], 1000);
+            ->updateMany(['status' => $uniqueMarker . '_updated'], 1000)
+        ;
 
-        $this->assertIsArray($result);
-        $this->assertEquals(2, $result['rows_affected']);
-        $this->assertEquals('success', $result['status']);
+        self::assertIsArray($result);
+        self::assertSame(2, $result['rows_affected']);
+        self::assertSame('success', $result['status']);
 
         // Verificar que se actualizaron los registros correctos
         $updatedCount = self::$orm->table('users')->where('status', '=', $uniqueMarker . '_updated')->count();
-        $this->assertEquals(2, $updatedCount);
+        self::assertSame(2, $updatedCount);
     }
 
     public function testUpdateManyWithMaxRecordsLimit(): void
@@ -151,7 +154,8 @@ class QueryBuilderBatchTest extends TestCase
         // Insertar varios registros con marcador único
         $uniqueMarker = 'limit_test_' . time() . '_' . mt_rand(1000, 9999);
         $records      = [];
-        for ($i = 1; $i <= 5; $i++) {
+
+        for ($i = 1; $i <= 5; ++$i) {
             $records[] = [
                 'name'   => "Limit Test {$i}",
                 'email'  => "limit{$i}@example.com",
@@ -161,12 +165,13 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany($records);
 
         // Intentar actualizar con un límite menor
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessageMatches('/exceeds the maximum limit/');
 
         self::$orm->table('users')
             ->where('status', '=', $uniqueMarker . '_pending')
-            ->updateMany(['status' => 'active'], 2); // Límite de 2, pero hay 5 registros
+            ->updateMany(['status' => 'active'], 2) // Límite de 2, pero hay 5 registros
+        ;
     }
 
     public function testUpdateManyNoWhereCondition(): void
@@ -192,23 +197,25 @@ class QueryBuilderBatchTest extends TestCase
 
         self::$orm->table('users')
             ->where('id', '>', 0)
-            ->updateMany(['name; DROP TABLE users; --' => 'malicious']);
+            ->updateMany(['name; DROP TABLE users; --' => 'malicious'])
+        ;
     }
 
     public function testUpdateManyNoMatchingRecords(): void
     {
         $result = self::$orm->table('users')
             ->where('email', '=', 'nonexistent@example.com')
-            ->updateMany(['status' => 'updated']);
+            ->updateMany(['status' => 'updated'])
+        ;
 
-        $this->assertEquals(0, $result['rows_affected']);
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals('No records matched the WHERE conditions', $result['message']);
+        self::assertSame(0, $result['rows_affected']);
+        self::assertSame('success', $result['status']);
+        self::assertSame('No records matched the WHERE conditions', $result['message']);
     }
 
-    //======================================================================
+    // ======================================================================
     // DELETE MANY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testDeleteManyBasic(): void
     {
@@ -221,25 +228,27 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')
             ->where('status', '=', 'to_delete')
-            ->deleteMany(1000);
+            ->deleteMany(1000)
+        ;
 
-        $this->assertIsArray($result);
-        $this->assertEquals(2, $result['rows_affected']);
-        $this->assertEquals('success', $result['status']);
+        self::assertIsArray($result);
+        self::assertSame(2, $result['rows_affected']);
+        self::assertSame('success', $result['status']);
 
         // Verificar que se eliminaron los registros correctos
         $deletedCount = self::$orm->table('users')->where('status', '=', 'to_delete')->count();
-        $this->assertEquals(0, $deletedCount);
+        self::assertSame(0, $deletedCount);
 
         $remainingCount = self::$orm->table('users')->where('status', '=', 'keep')->count();
-        $this->assertEquals(1, $remainingCount);
+        self::assertSame(1, $remainingCount);
     }
 
     public function testDeleteManyWithMaxRecordsLimit(): void
     {
         // Insertar varios registros
         $records = [];
-        for ($i = 1; $i <= 5; $i++) {
+
+        for ($i = 1; $i <= 5; ++$i) {
             $records[] = [
                 'name'   => "Delete Limit Test {$i}",
                 'email'  => "delete_limit{$i}@example.com",
@@ -249,12 +258,13 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany($records);
 
         // Intentar eliminar con un límite menor
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessageMatches('/exceeds the maximum limit/');
 
         self::$orm->table('users')
             ->where('status', '=', 'bulk_delete')
-            ->deleteMany(2); // Límite de 2, pero hay 5 registros
+            ->deleteMany(2) // Límite de 2, pero hay 5 registros
+        ;
     }
 
     public function testDeleteManyNoWhereCondition(): void
@@ -269,16 +279,17 @@ class QueryBuilderBatchTest extends TestCase
     {
         $result = self::$orm->table('users')
             ->where('email', '=', 'nonexistent_delete@example.com')
-            ->deleteMany();
+            ->deleteMany()
+        ;
 
-        $this->assertEquals(0, $result['rows_affected']);
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals('No records matched the WHERE conditions', $result['message']);
+        self::assertSame(0, $result['rows_affected']);
+        self::assertSame('success', $result['status']);
+        self::assertSame('No records matched the WHERE conditions', $result['message']);
     }
 
-    //======================================================================
+    // ======================================================================
     // UPSERT MANY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testUpsertManyBasic(): void
     {
@@ -299,24 +310,25 @@ class QueryBuilderBatchTest extends TestCase
         ];
 
         $result = self::$orm->table('products')
-            ->upsertMany($records, ['sku'], ['name', 'price']);
+            ->upsertMany($records, ['sku'], ['name', 'price'])
+        ;
 
-        $this->assertIsArray($result);
-        $this->assertEquals(3, $result['total_processed']);
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(['sku'], $result['unique_keys']);
-        $this->assertEquals(['name', 'price'], $result['update_columns']);
+        self::assertIsArray($result);
+        self::assertSame(3, $result['total_processed']);
+        self::assertSame('success', $result['status']);
+        self::assertSame(['sku'], $result['unique_keys']);
+        self::assertSame(['name', 'price'], $result['update_columns']);
 
         // Verificar que los registros se actualizaron/crearon correctamente
         $updatedProduct1 = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
 
         // Debug removido
 
-        $this->assertEquals('Updated Product 1', $updatedProduct1['name']);
-        $this->assertEquals(150.0, (float) $updatedProduct1['price']);
+        self::assertSame('Updated Product 1', $updatedProduct1['name']);
+        self::assertSame(150.0, (float) $updatedProduct1['price']);
 
         $newProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT003')->firstArray();
-        $this->assertEquals('New Product 3', $newProduct['name']);
+        self::assertSame('New Product 3', $newProduct['name']);
     }
 
     public function testUpsertManyEmptyRecords(): void
@@ -375,13 +387,13 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->upsertMany(
             $records,
             ['sku'],
-            ['name; DROP TABLE products; --']
+            ['name; DROP TABLE products; --'],
         );
     }
 
-    //======================================================================
+    // ======================================================================
     // UPSERT INDIVIDUAL TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testUpsertIndividualBasic(): void
     {
@@ -389,21 +401,21 @@ class QueryBuilderBatchTest extends TestCase
         $data = [
             'sku'   => 'INDIVIDUAL_UPSERT001',
             'name'  => 'Individual Upsert Product',
-            'price' => 199.99
+            'price' => 199.99,
         ];
 
         $result = self::$orm->table('products')->upsert($data, ['sku']);
 
-        $this->assertIsArray($result);
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(1, $result['rows_affected']);
-        $this->assertEquals(['sku'], $result['unique_keys']);
-        $this->assertEquals('products', $result['table']);
+        self::assertIsArray($result);
+        self::assertSame('success', $result['status']);
+        self::assertSame(1, $result['rows_affected']);
+        self::assertSame(['sku'], $result['unique_keys']);
+        self::assertSame('products', $result['table']);
 
         // Verificar que el registro se creó
         $created = self::$orm->table('products')->where('sku', '=', 'INDIVIDUAL_UPSERT001')->firstArray();
-        $this->assertEquals('Individual Upsert Product', $created['name']);
-        $this->assertEquals(199.99, (float) $created['price']);
+        self::assertSame('Individual Upsert Product', $created['name']);
+        self::assertSame(199.99, (float) $created['price']);
     }
 
     public function testUpsertIndividualUpdate(): void
@@ -412,26 +424,26 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->insert([
             'sku'   => 'INDIVIDUAL_UPDATE001',
             'name'  => 'Original Individual Product',
-            'price' => 100.0
+            'price' => 100.0,
         ]);
 
         // Hacer upsert para actualizar
         $updateData = [
             'sku'   => 'INDIVIDUAL_UPDATE001',
             'name'  => 'Updated Individual Product',
-            'price' => 150.0
+            'price' => 150.0,
         ];
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['name', 'price']);
 
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals(1, $result['rows_affected']);
-        $this->assertEquals(['name', 'price'], $result['update_columns']);
+        self::assertSame('success', $result['status']);
+        self::assertSame(1, $result['rows_affected']);
+        self::assertSame(['name', 'price'], $result['update_columns']);
 
         // Verificar que se actualizó
         $updated = self::$orm->table('products')->where('sku', '=', 'INDIVIDUAL_UPDATE001')->firstArray();
-        $this->assertEquals('Updated Individual Product', $updated['name']);
-        $this->assertEquals(150.0, (float) $updated['price']);
+        self::assertSame('Updated Individual Product', $updated['name']);
+        self::assertSame(150.0, (float) $updated['price']);
     }
 
     public function testUpsertIndividualWithoutUpdateColumns(): void
@@ -440,35 +452,36 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->insert([
             'sku'   => 'NO_UPDATE_COLS001',
             'name'  => 'Original Product',
-            'price' => 100.0
+            'price' => 100.0,
         ]);
 
         $updateData = [
             'sku'   => 'NO_UPDATE_COLS001',
             'name'  => 'Updated Product',
-            'price' => 200.0
+            'price' => 200.0,
         ];
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku']);
 
-        $this->assertEquals('success', $result['status']);
-        $this->assertEquals([], $result['update_columns']); // Sin columnas específicas
+        self::assertSame('success', $result['status']);
+        self::assertSame([], $result['update_columns']); // Sin columnas específicas
 
         // Verificar que se actualizó
         $updated = self::$orm->table('products')->where('sku', '=', 'NO_UPDATE_COLS001')->firstArray();
-        $this->assertEquals('Updated Product', $updated['name']);
-        $this->assertEquals(200.0, (float) $updated['price']);
+        self::assertSame('Updated Product', $updated['name']);
+        self::assertSame(200.0, (float) $updated['price']);
     }
 
-    //======================================================================
+    // ======================================================================
     // EDGE CASES AND SECURITY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testBatchOperationsWithLargeDatasets(): void
     {
         // Test con un dataset más grande para verificar el rendimiento
         $records = [];
-        for ($i = 1; $i <= 100; $i++) {
+
+        for ($i = 1; $i <= 100; ++$i) {
             $records[] = [
                 'name'   => "Performance Test User {$i}",
                 'email'  => "perf{$i}@example.com",
@@ -480,13 +493,13 @@ class QueryBuilderBatchTest extends TestCase
         $result    = self::$orm->table('users')->insertMany($records, 25); // Lotes de 25
         $endTime   = microtime(true);
 
-        $this->assertEquals(100, $result['total_inserted']);
-        $this->assertEquals(4, $result['batches_processed']); // 100/25 = 4 lotes
-        $this->assertEquals('success', $result['status']);
+        self::assertSame(100, $result['total_inserted']);
+        self::assertSame(4, $result['batches_processed']); // 100/25 = 4 lotes
+        self::assertSame('success', $result['status']);
 
         // Verificar que la operación fue razonablemente rápida (menos de 5 segundos)
         $executionTime = $endTime - $startTime;
-        $this->assertLessThan(5.0, $executionTime, 'Batch operation should complete in reasonable time');
+        self::assertLessThan(5.0, $executionTime, 'Batch operation should complete in reasonable time');
 
         // Limpiar después del test
         self::$orm->table('users')->where('status', '=', 'performance_test')->deleteMany(200);
@@ -507,11 +520,11 @@ class QueryBuilderBatchTest extends TestCase
             self::$orm->table('users')->insertMany($records, 3); // Un solo lote
             // Si no falla, verificar que todos se insertaron
             $count = self::$orm->table('users')->where('status', '=', 'test')->count();
-            $this->assertEquals(3, $count);
-        } catch (\Exception $e) {
+            self::assertSame(3, $count);
+        } catch (Exception $e) {
             // Si falla, verificar que ninguno se insertó
             $count = self::$orm->table('users')->where('status', '=', 'test')->count();
-            $this->assertEquals(0, $count, 'No records should be inserted if batch fails');
+            self::assertSame(0, $count, 'No records should be inserted if batch fails');
         }
     }
 
@@ -526,16 +539,16 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')->insertMany($records);
 
-        $this->assertEquals(4, $result['total_inserted']);
-        $this->assertEquals('success', $result['status']);
+        self::assertSame(4, $result['total_inserted']);
+        self::assertSame('success', $result['status']);
 
         // Verificar que los caracteres especiales se guardaron correctamente
         $unicodeUser = self::$orm->table('users')->where('email', '=', 'unicode@example.com')->firstArray();
-        $this->assertStringContainsString('áéíóú', $unicodeUser['name']);
-        $this->assertStringContainsString('测试', $unicodeUser['name']);
+        self::assertStringContainsString('áéíóú', $unicodeUser['name']);
+        self::assertStringContainsString('测试', $unicodeUser['name']);
 
         $emojiUser = self::$orm->table('users')->where('email', '=', 'emoji@example.com')->firstArray();
-        $this->assertStringContainsString('🚀', $emojiUser['name']);
+        self::assertStringContainsString('🚀', $emojiUser['name']);
 
         // Limpiar
         self::$orm->table('users')->where('status', '=', 'special')->deleteMany(10);
@@ -551,19 +564,20 @@ class QueryBuilderBatchTest extends TestCase
 
         // Insertar registros válidos primero
         $result = self::$orm->table('users')->insertMany($validRecords);
-        $this->assertEquals(2, $result['total_inserted']);
+        self::assertSame(2, $result['total_inserted']);
 
         // Ahora intentar actualización con condiciones que no matchean
         $updateResult = self::$orm->table('users')
             ->where('status', '=', 'nonexistent_status')
-            ->updateMany(['name' => 'Updated']);
+            ->updateMany(['name' => 'Updated'])
+        ;
 
-        $this->assertEquals(0, $updateResult['rows_affected']);
-        $this->assertEquals('No records matched the WHERE conditions', $updateResult['message']);
+        self::assertSame(0, $updateResult['rows_affected']);
+        self::assertSame('No records matched the WHERE conditions', $updateResult['message']);
 
         // Verificar que los registros originales siguen intactos
         $count = self::$orm->table('users')->where('status', '=', 'recovery')->count();
-        $this->assertEquals(2, $count);
+        self::assertSame(2, $count);
 
         // Limpiar
         self::$orm->table('users')->where('status', '=', 'recovery')->deleteMany(5);

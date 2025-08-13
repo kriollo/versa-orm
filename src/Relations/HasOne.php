@@ -10,6 +10,7 @@ use VersaORM\VersaModel;
 class HasOne extends Relation
 {
     public string $foreignKey;
+
     public string $localKey;
 
     public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $localKey)
@@ -19,14 +20,15 @@ class HasOne extends Relation
         parent::__construct($query, $parent);
     }
 
-    protected function addConstraints(): void
-    {
-        $this->query->where($this->foreignKey, '=', $this->parent->getAttribute($this->localKey));
-    }
-
     public function getResults()
     {
         $this->addConstraints();
+
         return $this->query->findOne();
+    }
+
+    protected function addConstraints(): void
+    {
+        $this->query->where($this->foreignKey, '=', $this->parent->getAttribute($this->localKey));
     }
 }

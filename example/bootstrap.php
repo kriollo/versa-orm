@@ -11,23 +11,25 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // Autoload temprano para App\ (Request, OrmFactory, App, ModelManager) y App\Models\
 spl_autoload_register(function ($class): void {
-    if (strpos($class, 'App\\Models\\') === 0) {
-        $className = str_replace('App\\Models\\', '', $class);
+    if (strpos($class, 'App\Models\\') === 0) {
+        $className = str_replace('App\Models\\', '', $class);
         $file      = __DIR__ . '/models/' . $className . '.php';
+
         if (file_exists($file)) {
             require_once $file;
         }
     }
+
     if (strpos($class, 'App\\') === 0) {
         $relative = str_replace('App\\', '', $class);
         $relative = str_replace('\\', '/', $relative);
-        $file = __DIR__ . '/app/' . $relative . '.php';
+        $file     = __DIR__ . '/app/' . $relative . '.php';
+
         if (file_exists($file)) {
             require_once $file;
         }
     }
 });
-
 
 // Cargar configuración
 $config = require_once __DIR__ . '/config.php';
@@ -35,9 +37,10 @@ $config = require_once __DIR__ . '/config.php';
 // Configurar zona horaria
 date_default_timezone_set($config['app']['timezone'] ?? 'UTC');
 // Inicializar VersaORM por petición
-use App\Request;
-use App\OrmFactory;
 use App\App;
+use App\ModelManager;
+use App\OrmFactory;
+use App\Request;
 
 // Construir una Request y un ORM por cada ejecución (request-scoped)
 $request = Request::fromGlobals();
@@ -54,7 +57,7 @@ function render($view, $data = []): void
     $viewFile = __DIR__ . '/views/' . $view . '.php';
 
     if (!file_exists($viewFile)) {
-        die("Vista no encontrada: {$view}");
+        exit("Vista no encontrada: {$view}");
     }
 
     ob_start();
@@ -87,25 +90,29 @@ function getFlash()
     if (isset($_SESSION['flash'])) {
         $flash = $_SESSION['flash'];
         unset($_SESSION['flash']);
+
         return $flash;
     }
+
     return null;
 }
 
 // Exponer request actual para el ejemplo
-function request(): \App\Request
+function request(): Request
 {
     global $request;
+
     return $request;
 }
 
-function app(): \App\App
+function app(): App
 {
     global $app;
+
     return $app;
 }
 
-function models(): \App\ModelManager
+function models(): ModelManager
 {
     return app()->models();
 }
@@ -116,30 +123,40 @@ session_start();
 /**
  * Helper para convertir fechas a timestamp de manera segura.
  * Maneja tanto strings como objetos DateTime.
+ *
+ * @param mixed $date
  */
 function safe_strtotime($date)
 {
     if ($date instanceof DateTime) {
         return $date->getTimestamp();
     }
+
     return strtotime($date);
 }
 
 /**
  * Helper para formatear fechas de manera segura.
  * Maneja tanto strings como objetos DateTime.
+ *
+ * @param mixed $format
+ * @param mixed $date
  */
 function safe_date($format, $date)
 {
     if ($date instanceof DateTime) {
         return $date->format($format);
     }
+
     return date($format, strtotime($date));
 }
 
 /**
  * Helper para formatear fechas de manera segura con manejo de errores.
  * Maneja tanto strings como objetos DateTime.
+ *
+ * @param mixed $date
+ * @param mixed $format
  */
 function safe_date_format($date, $format = 'Y-m-d H:i:s')
 {
@@ -153,9 +170,11 @@ function safe_date_format($date, $format = 'Y-m-d H:i:s')
 
     if (is_string($date)) {
         $timestamp = strtotime($date);
+
         if ($timestamp === false) {
             return $date; // Devolver el valor original si no se puede parsear
         }
+
         return date($format, $timestamp);
     }
 

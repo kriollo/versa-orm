@@ -6,6 +6,8 @@ namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaModel;
 
+use function get_class;
+
 require_once __DIR__ . '/TestCase.php';
 /**
  * @group mysql
@@ -33,34 +35,36 @@ class EnumSetCastingConsistencyTest extends TestCase
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id' => ['type' => 'int'],
+                    'id'     => ['type' => 'int'],
                     'status' => ['type' => 'enum', 'values' => ['active', 'inactive']],
-                    'tags' => ['type' => 'set', 'values' => ['work', 'urgent', 'personal']],
+                    'tags'   => ['type' => 'set', 'values' => ['work', 'urgent', 'personal']],
                 ];
             }
         };
 
         $rows = self::$orm->table('labels_enum_cast', get_class($model))->get();
-        $this->assertCount(2, $rows);
+        self::assertCount(2, $rows);
+
         foreach ($rows as $r) {
-            $this->assertIsString($r['status']);
-            $this->assertIsArray($r['tags']);
+            self::assertIsString($r['status']);
+            self::assertIsArray($r['tags']);
         }
 
         $first = self::$orm->table('labels_enum_cast', get_class($model))->firstArray();
-        $this->assertNotNull($first);
-        $this->assertIsString($first['status']);
-        $this->assertIsArray($first['tags']);
+        self::assertNotNull($first);
+        self::assertIsString($first['status']);
+        self::assertIsArray($first['tags']);
 
         $objects = self::$orm->table('labels_enum_cast', get_class($model))->findAll();
+
         foreach ($objects as $o) {
             $data = $o->export();
-            $this->assertIsString($data['status']);
-            $this->assertIsArray($data['tags']);
+            self::assertIsString($data['status']);
+            self::assertIsArray($data['tags']);
         }
 
         $one = self::$orm->table('labels_enum_cast', get_class($model))->where('status', '=', 'active')->findOne();
-        $this->assertNotNull($one);
-        $this->assertIsArray($one->export()['tags']);
+        self::assertNotNull($one);
+        self::assertIsArray($one->export()['tags']);
     }
 }

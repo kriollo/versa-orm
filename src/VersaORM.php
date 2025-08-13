@@ -4,6 +4,26 @@ declare(strict_types=1);
 
 namespace VersaORM;
 
+use Exception;
+use InvalidArgumentException;
+use JsonException;
+use RuntimeException;
+use Throwable;
+use Traversable;
+use VersaORM\SQL\PdoEngine;
+
+use function array_key_exists;
+use function in_array;
+use function is_array;
+use function is_bool;
+use function is_int;
+use function is_object;
+use function is_resource;
+use function is_scalar;
+use function is_string;
+use function sprintf;
+use function strlen;
+
 /**
  * Definiciones de tipos Psalm para estructuras internas de esquema y operaciones.
  * Se usan para eliminar usages "mixed" y dar forma explícita a arrays asociativos.
@@ -69,8 +89,8 @@ namespace VersaORM;
  * NOTA: Todos los métodos de consulta y manipulación de datos
  * están ahora en VersaModel para una arquitectura más limpia.
  *
- * @package VersaORM
  * @version 1.0.0
+ *
  * @author  VersaORM Team
  * @license MIT
  */
@@ -81,6 +101,7 @@ class VersaORM
 
     /**
      * Configuración principal del ORM (forma parcial esperada).
+     *
      * @var array{
      *   engine?:string,
      *   driver?:string,
@@ -103,7 +124,8 @@ class VersaORM
     private bool $isFrozen = false;
 
     /**
-     * Estados freeze por modelo (class-string => bool)
+     * Estados freeze por modelo (class-string => bool).
+     *
      * @var array<string,bool>
      */
     private array $frozenModels = [];
@@ -111,9 +133,8 @@ class VersaORM
     /**
      * Instancia persistente del motor PDO para esta instancia de ORM.
      * Permite reutilizar la misma conexión (crítico para SQLite :memory:).
-     * @var \VersaORM\SQL\PdoEngine|null
      */
-    private ?\VersaORM\SQL\PdoEngine $pdoEngine = null;
+    private ?PdoEngine $pdoEngine = null;
 
     /**
      * Constructor de la clase VersaORM.
@@ -136,11 +157,13 @@ class VersaORM
         ErrorHandler::configureFromVersaORM($this->config);
 
         // Forzar engine por defecto a 'pdo' si no se indica explícitamente 'rust'
-        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+
         if ($engine === '' || $engine === 'default') {
-            $engine = 'pdo';
+            $engine                 = 'pdo';
             $this->config['engine'] = 'pdo';
         }
+
         // Inicializar binario solo si se solicita backend rust explícitamente
         if ($engine === 'rust') {
             $this->setBinaryPath();
@@ -152,7 +175,6 @@ class VersaORM
      * Configura la conexión de la instancia.
      *
      * @param array<string, mixed> $config
-     * @return void
      */
     /** @param array<string,mixed> $config */
     public function setConfig(array $config): void
@@ -175,21 +197,25 @@ class VersaORM
 
     /**
      * Devuelve métricas internas del motor PDO (si está en uso).
-     * @return array<string,int|float>|null
+     *
+     * @return array<string,float|int>|null
      */
     public function metrics(): ?array
     {
-        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+
         if ($engine !== 'pdo') {
             return null; // Métricas actuales sólo para motor PDO
         }
-        if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {
+
+        if (!$this->pdoEngine instanceof PdoEngine) {
             // Forzar inicialización perezosa para disponer de métricas
-            $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config, function (string $message, array $context = []): void {
+            $this->pdoEngine = new PdoEngine($this->config, function (string $message, array $context = []): void {
                 $this->logDebug($message, $context);
             });
         }
-        return \VersaORM\SQL\PdoEngine::getMetrics();
+
+        return PdoEngine::getMetrics();
     }
 
     /**
@@ -197,12 +223,14 @@ class VersaORM
      */
     public function metricsReset(): void
     {
-        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+
         if ($engine !== 'pdo') {
             return;
         }
-        if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {
-            $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config, function (string $message, array $context = []): void {
+
+        if (!$this->pdoEngine instanceof PdoEngine) {
+            $this->pdoEngine = new PdoEngine($this->config, function (string $message, array $context = []): void {
                 $this->logDebug($message, $context);
             });
         }
@@ -214,27 +242,716 @@ class VersaORM
      */
     public function disconnect(): void
     {
-        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+
         if ($engine !== 'pdo') {
             return; // Para backend Rust podría añadirse lógica futura.
         }
-        if ($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine) {
+
+        if ($this->pdoEngine instanceof PdoEngine) {
             $this->pdoEngine->forceDisconnect();
         }
         $this->pdoEngine = null; // permitir GC
     }
 
     /**
+     * Crea un QueryBuilder para la tabla especificada.
+     */
+    public function table(string $table, ?string $modelClass = null): QueryBuilder
+    {
+        return new QueryBuilder($this, $table, $modelClass);
+    }
+
+    /**
+     * Método público para que QueryBuilder ejecute consultas estructuradas.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @return mixed
+     */
+    public function executeQuery(string $action, array $params)
+    {
+        return $this->execute($action, $params);
+    }
+
+    /**
+     * Ejecuta una consulta SQL personalizada.
+     *
+     * @param array<int, mixed> $bindings
+     *
+     * @return mixed
+     */
+    public function exec(string $query, array $bindings = [])
+    {
+        /** @var mixed $result */
+        $result = $this->execute('raw', ['query' => $query, 'bindings' => $bindings]);
+
+        // Normalizar: para sentencias no-SELECT devolver null o [] (tests aceptan null/array vacío)
+        if (is_int($result)) {
+            return null;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Método alias para compatibilidad con código existente.
+     *
+     * @param array<int, mixed> $bindings
+     *
+     * @return mixed
+     *
+     * @deprecated Usa exec() en su lugar
+     */
+    public function raw(string $query, array $bindings = [])
+    {
+        return $this->exec($query, $bindings);
+    }
+
+    /**
+     * Obtiene el esquema de la base de datos.
+     *
+     * @return mixed
+     */
+    public function schema(string $subject, ?string $tableName = null)
+    {
+        $params = ['subject' => $subject];
+
+        if ($tableName !== null) {
+            $params['table_name'] = $tableName;
+        }
+
+        return $this->execute('schema', $params);
+    }
+
+    /**
+     * Crea una tabla usando definiciones portables de columnas.
+     * columns: lista de arrays con claves: name, type, nullable?, default?, primary?, autoIncrement?
+     * options:
+     *  - primary_key: string|string[]
+     *  - if_not_exists: bool
+     *  - engine, charset, collation (MySQL)
+     *  - constraints: [
+     *      'unique' => [ { name, columns[] }... ],
+     *      'foreign' => [ { name, columns[], refTable, refColumns[], onDelete?, onUpdate? } ... ]
+     *    ]
+     *  - indexes: [ { name, columns[], unique?, using?, where?, concurrently? } ... ].
+     */
+    /**
+     * @param array<int, array<string, mixed>> $columns
+     * @param array<string, mixed> $options
+     */
+    public function schemaCreate(string $table, array $columns, array $options = []): void
+    {
+        $this->validateFreezeOperation('createTable');
+        $driver      = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q           = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $ifNotExists = !empty($options['if_not_exists']);
+
+        $colSql             = [];
+        $pkCols             = [];
+        $sqliteInlinePkUsed = false; // Para SQLite, usamos PK inline solo cuando es INTEGER PRIMARY KEY autoincremental
+
+        /** @var list<ColumnDef> $columns */
+        foreach ($columns as $col) {
+            $name = (string) ($col['name'] ?? '');
+            $type = (string) ($col['type'] ?? 'VARCHAR(255)');
+
+            if ($name === '') {
+                continue;
+            }
+            $nullable      = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
+            $defaultExists = array_key_exists('default', $col);
+            /** @var mixed $default */
+            $default = $col['default'] ?? null;
+            $primary = !empty($col['primary']);
+            $auto    = !empty($col['autoIncrement']);
+
+            // Ajustes por dialecto para autoincrement
+            $colType = $type;
+
+            if ($auto) {
+                if ($driver === 'mysql' || $driver === 'mariadb') {
+                    $colType = 'INT';
+                } elseif ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                    $colType = 'SERIAL';
+                } elseif ($driver === 'sqlite') {
+                    $colType = 'INTEGER';
+                }
+            }
+
+            $parts = [$q($name) . ' ' . $colType];
+
+            if ($primary && $driver === 'sqlite' && $auto) {
+                // En SQLite la PK autoincremental debe ser exactamente INTEGER PRIMARY KEY
+                $parts              = [$q($name) . ' INTEGER PRIMARY KEY'];
+                $sqliteInlinePkUsed = true;
+            } else {
+                if (!$nullable) {
+                    $parts[] = 'NOT NULL';
+                }
+
+                if ($defaultExists) {
+                    $parts[] = 'DEFAULT ' . $this->formatDefault($default, $driver);
+                }
+
+                if ($auto && ($driver === 'mysql' || $driver === 'mariadb')) {
+                    $parts[] = 'AUTO_INCREMENT';
+                }
+
+                if ($primary) {
+                    $pkCols[] = $q($name);
+                }
+            }
+
+            $colSql[] = implode(' ', $parts);
+        }
+
+        if (!empty($options['primary_key'])) {
+            $pk     = (array) $options['primary_key'];
+            $pkCols = array_map($q, $pk);
+        }
+
+        // Para SQLite, permitimos PRIMARY KEY a nivel de tabla cuando no se usó inline (INTEGER PRIMARY KEY)
+        if (!empty($pkCols) && ($driver !== 'sqlite' || ($driver === 'sqlite' && !$sqliteInlinePkUsed))) {
+            $colSql[] = 'PRIMARY KEY (' . implode(', ', $pkCols) . ')';
+        }
+
+        // Table-level constraints: UNIQUE, FOREIGN KEYS (portables)
+        /** @var TableConstraintsDef $constraints */
+        $constraints = (array) ($options['constraints'] ?? []);
+        /** @var list<UniqueConstraintDef> $uniqueList */
+        $uniqueList = (array) ($constraints['unique'] ?? []);
+
+        foreach ($uniqueList as $uq) {
+            $cname = isset($uq['name']) ? $q((string) $uq['name']) : null;
+            /** @var list<string> $uqCols */
+            $uqCols = (array) ($uq['columns'] ?? []);
+            $cols   = array_map($q, $uqCols);
+
+            if (!empty($cols)) {
+                $colSql[] = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'UNIQUE (' . implode(', ', $cols) . ')';
+            }
+        }
+        /** @var list<ForeignConstraintDef> $foreignList */
+        $foreignList = (array) ($constraints['foreign'] ?? []);
+
+        foreach ($foreignList as $fk) {
+            $cname = isset($fk['name']) ? $q((string) $fk['name']) : null;
+            /** @var list<string> $fkCols */
+            $fkCols   = (array) ($fk['columns'] ?? []);
+            $cols     = array_map($q, $fkCols);
+            $refTable = isset($fk['refTable']) ? $q((string) $fk['refTable']) : null;
+            /** @var list<string> $fkRefCols */
+            $fkRefCols = (array) ($fk['refColumns'] ?? []);
+            $refCols   = array_map($q, $fkRefCols);
+
+            if (!empty($cols) && $refTable && !empty($refCols)) {
+                $line = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'FOREIGN KEY (' . implode(', ', $cols) . ') REFERENCES ' . $refTable . ' (' . implode(', ', $refCols) . ')';
+
+                if (!empty($fk['onDelete'])) {
+                    $line .= ' ON DELETE ' . strtoupper((string) $fk['onDelete']);
+                }
+
+                if (!empty($fk['onUpdate'])) {
+                    $line .= ' ON UPDATE ' . strtoupper((string) $fk['onUpdate']);
+                }
+                $colSql[] = $line;
+            }
+        }
+
+        $tableIdent = $q($table);
+        $createHead = 'CREATE TABLE ' . ($ifNotExists ? 'IF NOT EXISTS ' : '') . $tableIdent;
+        $sql        = $createHead . ' (' . implode(', ', $colSql) . ')';
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            if (!empty($options['engine'])) {
+                $sql .= ' ENGINE=' . $options['engine'];
+            }
+
+            if (!empty($options['charset'])) {
+                $sql .= ' DEFAULT CHARSET=' . $options['charset'];
+            }
+
+            if (!empty($options['collation'])) {
+                $sql .= ' COLLATE=' . $options['collation'];
+            }
+        }
+
+        $this->exec($sql);
+
+        // Indexes (post-create portable)
+        /** @var list<IndexDef> $indexesList */
+        $indexesList = (array) ($options['indexes'] ?? []);
+
+        foreach ($indexesList as $idx) {
+            $this->createIndexPortable($table, $idx, $driver);
+        }
+    }
+
+    /**
+     * Modifica una tabla (MVP: soporta add columns). changes: ['add' => [colDefs...]].
+     */
+    /**
+     * @param array<string, mixed> $changes
+     */
+    public function schemaAlter(string $table, array $changes): void
+    {
+        $this->validateFreezeOperation('alterTable');
+        $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q      = fn (string $id): string => $this->quoteIdent($id, $driver);
+
+        $tableIdent = $q($table);
+        /** @var AlterChanges $changes */
+        /** @var list<ColumnDef> $addCols */
+        $addCols = (array) ($changes['add'] ?? []);
+
+        if (!empty($addCols)) {
+            $clauses = [];
+
+            foreach ($addCols as $col) {
+                $name = (string) ($col['name'] ?? '');
+                $type = (string) ($col['type'] ?? 'VARCHAR(255)');
+
+                if ($name === '') {
+                    continue;
+                }
+                $nullable      = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
+                $defaultExists = array_key_exists('default', $col);
+                /** @var mixed $default */
+                $default = $col['default'] ?? null;
+
+                $parts = ['ADD COLUMN ' . $q($name) . ' ' . $type];
+
+                if (!$nullable) {
+                    $parts[] = 'NOT NULL';
+                }
+
+                if ($defaultExists) {
+                    $parts[] = 'DEFAULT ' . $this->formatDefault($default, $driver);
+                }
+                $clauses[] = implode(' ', $parts);
+            }
+
+            if (!empty($clauses)) {
+                $sql = 'ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses);
+                $this->exec($sql);
+            }
+        }
+
+        // Índices: addIndex / dropIndex
+        if (!empty($changes['addIndex'])) {
+            /** @var list<IndexDef> $idxList */
+            $idxList = (array) $changes['addIndex'];
+
+            foreach ($idxList as $idx) {
+                $this->createIndexPortable($table, $idx, $driver);
+            }
+        }
+
+        if (!empty($changes['dropIndex'])) {
+            /** @var list<string> $dropIdx */
+            $dropIdx = (array) $changes['dropIndex'];
+
+            foreach ($dropIdx as $idxName) {
+                $this->dropIndexPortable($table, (string) $idxName, $driver);
+            }
+        }
+
+        // Foreign keys: addForeign / dropForeign
+        if (!empty($changes['addForeign'])) {
+            /** @var list<ForeignConstraintDef> $addForeign */
+            $addForeign = (array) $changes['addForeign'];
+
+            foreach ($addForeign as $fk) {
+                $name     = (string) ($fk['name'] ?? '');
+                $cols     = (array) ($fk['columns'] ?? []);
+                $refTable = (string) ($fk['refTable'] ?? '');
+                $refCols  = (array) ($fk['refColumns'] ?? []);
+
+                if ($name && $cols && $refTable && $refCols) {
+                    $line = 'ALTER TABLE ' . $tableIdent . ' ADD CONSTRAINT ' . $q($name) . ' FOREIGN KEY (' . implode(', ', array_map($q, $cols)) . ') REFERENCES ' . $q($refTable) . ' (' . implode(', ', array_map($q, $refCols)) . ')';
+
+                    if (!empty($fk['onDelete'])) {
+                        $line .= ' ON DELETE ' . strtoupper((string) $fk['onDelete']);
+                    }
+
+                    if (!empty($fk['onUpdate'])) {
+                        $line .= ' ON UPDATE ' . strtoupper((string) $fk['onUpdate']);
+                    }
+                    // MySQL/PG: OK; SQLite: limitado (aceptamos que pueda fallar)
+                    $this->exec($line);
+                }
+            }
+        }
+
+        if (!empty($changes['dropForeign'])) {
+            /** @var list<string> $dropForeign */
+            $dropForeign = (array) $changes['dropForeign'];
+
+            foreach ($dropForeign as $fkName) {
+                $fk = $q((string) $fkName);
+
+                if ($driver === 'mysql' || $driver === 'mariadb') {
+                    $sql = 'ALTER TABLE ' . $tableIdent . ' DROP FOREIGN KEY ' . $fk;
+                } else {
+                    $sql = 'ALTER TABLE ' . $tableIdent . ' DROP CONSTRAINT ' . $fk;
+                }
+                $this->exec($sql);
+            }
+        }
+
+        // Rename columns
+        if (!empty($changes['rename'])) {
+            $clauses = [];
+            /** @var list<AlterRenameDef> $renameDefs */
+            $renameDefs = (array) $changes['rename'];
+
+            foreach ($renameDefs as $rc) {
+                $from = (string) ($rc['from'] ?? '');
+                $to   = (string) ($rc['to'] ?? '');
+
+                if ($from !== '' && $to !== '') {
+                    if ($driver === 'mysql' || $driver === 'mariadb' || $driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                        $clauses[] = 'RENAME COLUMN ' . $q($from) . ' TO ' . $q($to);
+                    } elseif ($driver === 'sqlite') {
+                        // SQLite soporta RENAME COLUMN (3.25+). Intentar y dejar que falle si no.
+                        $clauses[] = 'RENAME COLUMN ' . $q($from) . ' TO ' . $q($to);
+                    }
+                }
+            }
+
+            if (!empty($clauses)) {
+                $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+            }
+        }
+
+        // Drop columns
+        if (!empty($changes['drop'])) {
+            /** @var list<string> $cols */
+            $cols    = (array) $changes['drop'];
+            $clauses = [];
+
+            foreach ($cols as $c) {
+                $name = (string) $c;
+
+                if ($name !== '') {
+                    $clauses[] = 'DROP COLUMN ' . $q($name);
+                }
+            }
+
+            if (!empty($clauses)) {
+                $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+            }
+        }
+
+        // Modify columns (tipo/null/default)
+        if (!empty($changes['modify'])) {
+            /** @var list<AlterModifyDef> $mods */
+            $mods    = (array) $changes['modify'];
+            $clauses = [];
+
+            if ($driver === 'mysql' || $driver === 'mariadb') {
+                foreach ($mods as $m) {
+                    $name = (string) ($m['name'] ?? '');
+                    $type = (string) ($m['type'] ?? '');
+
+                    if ($name === '' || $type === '') {
+                        continue;
+                    }
+                    $nullable      = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
+                    $defaultExists = array_key_exists('default', $m);
+                    /** @var mixed $default */
+                    $default = $m['default'] ?? null;
+                    $part    = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
+
+                    if ($nullable !== null) {
+                        $part .= $nullable ? '' : ' NOT NULL';
+                    }
+
+                    if ($defaultExists) {
+                        $part .= ' DEFAULT ' . $this->formatDefault($default, $driver);
+                    }
+                    $clauses[] = $part;
+                }
+
+                if (!empty($clauses)) {
+                    $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+                }
+            } else {
+                // PostgreSQL/SQLite estilo ALTER COLUMN por aspecto
+                foreach ($mods as $m) {
+                    $name = (string) ($m['name'] ?? '');
+                    $type = (string) ($m['type'] ?? '');
+
+                    if ($name === '' || $type === '') {
+                        continue;
+                    }
+                    $nullable      = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
+                    $defaultExists = array_key_exists('default', $m);
+                    /** @var mixed $default */
+                    $default   = $m['default'] ?? null;
+                    $clauses[] = 'ALTER COLUMN ' . $q($name) . ' TYPE ' . $type;
+
+                    if ($nullable !== null) {
+                        $clauses[] = 'ALTER COLUMN ' . $q($name) . ($nullable ? ' DROP NOT NULL' : ' SET NOT NULL');
+                    }
+
+                    if ($defaultExists) {
+                        if ($default === null) {
+                            $clauses[] = 'ALTER COLUMN ' . $q($name) . ' DROP DEFAULT';
+                        } else {
+                            $clauses[] = 'ALTER COLUMN ' . $q($name) . ' SET DEFAULT ' . $this->formatDefault($default, $driver);
+                        }
+                    }
+                }
+
+                if (!empty($clauses)) {
+                    $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
+                }
+            }
+        }
+        // Futuro: rename column, drop column, modify type, add constraint types adicionales.
+    }
+
+    /**
+     * Elimina una tabla (DROP TABLE [IF EXISTS]).
+     */
+    public function schemaDrop(string $table, bool $ifExists = true): void
+    {
+        $this->validateFreezeOperation('dropTable');
+        $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q      = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $sql    = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
+        $this->exec($sql);
+    }
+
+    /**
+     * Renombra una tabla a un nuevo nombre (dialecto-aware).
+     */
+    public function schemaRename(string $from, string $to): void
+    {
+        $this->validateFreezeOperation('alterTable');
+        $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q      = fn (string $id): string => $this->quoteIdent($id, $driver);
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $sql = 'RENAME TABLE ' . $q($from) . ' TO ' . $q($to);
+        } else {
+            // PostgreSQL y SQLite
+            $sql = 'ALTER TABLE ' . $q($from) . ' RENAME TO ' . $q($to);
+        }
+        $this->exec($sql);
+    }
+
+    /**
+     * Administra el caché interno.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @return array<string, mixed>
+     */
+    public function cache(string $action, array $params = []): array
+    {
+        $cacheParams = ['action' => $action] + $params;
+        $result      = $this->execute('cache', $cacheParams);
+
+        return [
+            'status' => 'success',
+            'data'   => $result,
+        ];
+    }
+
+    /**
+     * Inicia una transacción.
+     */
+    public function beginTransaction(): void
+    {
+        $this->exec('BEGIN');
+    }
+
+    /**
+     * Confirma una transacción.
+     */
+    public function commit(): void
+    {
+        $this->exec('COMMIT');
+    }
+
+    /**
+     * Revierte una transacción.
+     */
+    public function rollBack(): void
+    {
+        $this->exec('ROLLBACK');
+    }
+
+    /**
+     * Obtiene la versión actual de VersaORM.
+     */
+    public function version(): string
+    {
+        return '1.0.0';
+    }
+
+    // Método disconnect unificado se declara más arriba (limpia conexión PDO y GC)
+
+    /**
+     * Activa o desactiva el modo freeze global.
+     * En modo freeze, se bloquean todas las operaciones DDL que alteran el esquema.
+     *
+     * @param bool $frozen Estado del modo freeze
+     *
+     * @throws VersaORMException
+     *
+     * @return $this
+     */
+    public function freeze(bool $frozen = true): self
+    {
+        $this->isFrozen = $frozen;
+
+        // Log de seguridad
+        $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
+        $this->logSecurityEvent(
+            "FREEZE_MODE_{$status}",
+            [
+                'global_freeze' => $frozen,
+                'timestamp'     => date('Y-m-d H:i:s'),
+                'trace'         => $this->getDebugStackTrace(),
+            ],
+        );
+
+        return $this;
+    }
+
+    /**
+     * Verifica si el modo freeze global está activo.
+     */
+    public function isFrozen(): bool
+    {
+        return $this->isFrozen;
+    }
+
+    /**
+     * Congela un modelo específico.
+     *
+     * @param string $modelClass Nombre de la clase del modelo
+     * @param bool $frozen Estado del freeze para el modelo
+     *
+     * @return $this
+     */
+    public function freezeModel(string $modelClass, bool $frozen = true): self
+    {
+        if (empty($modelClass)) {
+            throw new InvalidArgumentException('Model class cannot be empty');
+        }
+
+        $this->frozenModels[$modelClass] = $frozen;
+
+        // Log de seguridad
+        $status = $frozen ? 'FROZEN' : 'UNFROZEN';
+        $this->logSecurityEvent(
+            "MODEL_{$status}",
+            [
+                'model_class' => $modelClass,
+                'frozen'      => $frozen,
+                'timestamp'   => date('Y-m-d H:i:s'),
+            ],
+        );
+
+        return $this;
+    }
+
+    /**
+     * Verifica si un modelo específico está congelado.
+     *
+     * @param string $modelClass Nombre de la clase del modelo
+     */
+    public function isModelFrozen(string $modelClass): bool
+    {
+        if (empty($modelClass)) {
+            throw new InvalidArgumentException('Model class cannot be empty');
+        }
+
+        // Verificar freeze global primero
+        if ($this->isFrozen) {
+            return true;
+        }
+
+        return $this->frozenModels[$modelClass] ?? false;
+    }
+
+    /**
+     * Valida que una operación sea permitida en modo freeze.
+     *
+     * @param string $operation Nombre de la
+     *                          operación
+     * @param string|null $modelClass Clase del modelo si aplica
+     * @param array<string, mixed> $context Contexto adicional
+     *
+     * @throws VersaORMException
+     */
+    public function validateFreezeOperation(string $operation, ?string $modelClass = null, array $context = []): void
+    {
+        $isDdlOperation   = $this->isDdlOperation($operation);
+        $isGloballyFrozen = $this->isFrozen();
+        $isModelFrozen    = $modelClass ? $this->isModelFrozen($modelClass) : false;
+
+        // Si es una operación DDL y hay freeze activo, bloquear
+        if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
+            // Log del intento de alteración
+            $this->logSecurityEvent(
+                'FREEZE_VIOLATION_ATTEMPT',
+                [
+                    'operation'     => $operation,
+                    'model_class'   => $modelClass,
+                    'global_frozen' => $isGloballyFrozen,
+                    'model_frozen'  => $isModelFrozen,
+                    'context'       => $context,
+                    'timestamp'     => date('Y-m-d H:i:s'),
+                    'trace'         => $this->getDebugStackTrace(),
+                ],
+            );
+
+            $freezeType     = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
+            $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
+
+            // Mostrar advertencia en modo desarrollo
+            if ($this->isDebugMode()) {
+                $warningMessage .= "\n\nDDL operations are not allowed when freeze mode is active.";
+                $warningMessage .= "\nThis is a security measure to prevent schema modifications.";
+                $warningMessage .= "\n\nTo allow this operation:";
+
+                if ($isGloballyFrozen) {
+                    $warningMessage .= "\n- Disable global freeze: \$orm->freeze(false)";
+                } else {
+                    $warningMessage .= "\n- Disable model freeze: \$orm->freezeModel('{$modelClass}', false)";
+                }
+            }
+
+            throw new VersaORMException(
+                $warningMessage,
+                'FREEZE_VIOLATION',
+                null,
+                [],
+            );
+        }
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
-     * @param string $action
      * @param array<string, mixed> $params
-     * @return mixed
+     *
      * @throws VersaORMException
+     *
+     * @return mixed
      */
     /**
      * Ejecutor interno que decide backend (PDO / Rust).
+     *
      * @param array<string,mixed> $params
+     *
      * @return mixed
      */
     private function execute(string $action, array $params)
@@ -250,17 +967,19 @@ class VersaORM
         $this->logDebug("Executing action: {$action}", ['params' => $params]);
 
         // Elegir backend: por defecto PDO; sólo usar binario si engine === 'rust'
-        $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+        $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+
         if ($engine === 'pdo' || $engine === '') {
             try {
                 // Reutilizar la misma instancia para mantener la conexión viva
-                if (!($this->pdoEngine instanceof \VersaORM\SQL\PdoEngine)) {
-                    $this->pdoEngine = new \VersaORM\SQL\PdoEngine($this->config, function (string $message, array $context = []): void {
+                if (!$this->pdoEngine instanceof PdoEngine) {
+                    $this->pdoEngine = new PdoEngine($this->config, function (string $message, array $context = []): void {
                         $this->logDebug($message, $context);
                     });
                 }
+
                 return $this->pdoEngine->execute($action, $params);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Incluir la palabra 'error' para tests que lo validan
                 throw new VersaORMException('PDO engine execution error: ' . $e->getMessage(), 'PDO_ENGINE_FAILED');
             }
@@ -285,6 +1004,7 @@ class VersaORM
             // Convertir configuración para compatibilidad con Rust
             /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $rustConfig */
             $rustConfig = $this->config; // copia superficial para normalizar claves
+
             if (isset($rustConfig['database_type']) && !isset($rustConfig['driver'])) {
                 $rustConfig['driver'] = $rustConfig['database_type'];
                 unset($rustConfig['database_type']);
@@ -293,9 +1013,9 @@ class VersaORM
             $payload = json_encode(
                 [
                     // Config normalizada para el binario
-                    'config'       => $rustConfig,
+                    'config' => $rustConfig,
                     // Acción solicitada
-                    'action'       => $action,
+                    'action' => $action,
                     // Parámetros (shape depende de la acción; mantener mixed tipado)
                     'params'       => $params,
                     'freeze_state' => [
@@ -303,7 +1023,7 @@ class VersaORM
                         'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
                     ],
                 ],
-                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE,
             );
 
             // Debug: Log the JSON payload being sent to Rust
@@ -321,13 +1041,13 @@ class VersaORM
                 echo "========================\n";
                 exit(0);
             }
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new VersaORMException(
                 sprintf(
                     'Failed to encode JSON payload: %s. Data contains invalid characters or circular references.',
-                    $e->getMessage()
+                    $e->getMessage(),
                 ),
-                'JSON_ENCODE_ERROR'
+                'JSON_ENCODE_ERROR',
             );
         }
 
@@ -337,9 +1057,9 @@ class VersaORM
             throw new VersaORMException(
                 sprintf(
                     'VersaORM binary not found at: %s. Please ensure the binary is compiled and accessible.',
-                    $binaryPath
+                    $binaryPath,
                 ),
-                'BINARY_NOT_FOUND'
+                'BINARY_NOT_FOUND',
             );
         }
 
@@ -348,9 +1068,9 @@ class VersaORM
             throw new VersaORMException(
                 sprintf(
                     'VersaORM binary is not executable: %s. Please check file permissions.',
-                    $binaryPath
+                    $binaryPath,
                 ),
-                'BINARY_NOT_EXECUTABLE'
+                'BINARY_NOT_EXECUTABLE',
             );
         }
 
@@ -364,7 +1084,7 @@ class VersaORM
                     '- System resource limitations\n' .
                     '- Security restrictions\n' .
                     '- Missing system dependencies',
-                'BINARY_EXECUTION_FAILED'
+                'BINARY_EXECUTION_FAILED',
             );
         }
 
@@ -373,7 +1093,7 @@ class VersaORM
             // Limpiar la salida de logs de debug del binario Rust
             $cleanOutput = $this->cleanRustDebugOutput($output);
             /** @var array{status?:string,data?:mixed,error?:array{code?:string,message?:string,details?:array<string,mixed>,sql_state?:string,query?:string,bindings?:array<int,mixed>}}|null $response */
-            $response    = json_decode($cleanOutput, true, 512, JSON_THROW_ON_ERROR);
+            $response = json_decode($cleanOutput, true, 512, JSON_THROW_ON_ERROR);
 
             // Debug temporal para advanced_sql
             if ($action === 'advanced_sql') {
@@ -382,14 +1102,14 @@ class VersaORM
                 // echo "Clean output: " . substr($cleanOutput, 0, 1000) . "\n";
                 // echo "Response: " . json_encode($response, JSON_PRETTY_PRINT) . "\n";
             }
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new VersaORMException(
                 sprintf(
                     'Failed to decode JSON response from binary: %s\nRaw output: %s',
                     $e->getMessage(),
-                    substr($output, 0, 500) // Limitar la salida para evitar spam
+                    substr($output, 0, 500), // Limitar la salida para evitar spam
                 ),
-                'JSON_DECODE_ERROR'
+                'JSON_DECODE_ERROR',
             );
         }
 
@@ -404,465 +1124,59 @@ class VersaORM
         return is_array($response) ? ($response['data'] ?? null) : null;
     }
 
-
-    /**
-     * Crea un QueryBuilder para la tabla especificada.
-     *
-     * @param string $table
-     * @return QueryBuilder
-     */
-    public function table(string $table, ?string $modelClass = null): QueryBuilder
-    {
-        return new QueryBuilder($this, $table, $modelClass);
-    }
-
-    /**
-     * Método público para que QueryBuilder ejecute consultas estructuradas.
-     *
-     * @param string $action
-     * @param array<string, mixed> $params
-     * @return mixed
-     */
-    public function executeQuery(string $action, array $params)
-    {
-        return $this->execute($action, $params);
-    }
-
-
-
-    /**
-     * Ejecuta una consulta SQL personalizada.
-     *
-     * @param string $query
-     * @param array<int, mixed> $bindings
-     * @return mixed
-     */
-    public function exec(string $query, array $bindings = [])
-    {
-        /** @var mixed $result */
-        $result = $this->execute('raw', ['query' => $query, 'bindings' => $bindings]);
-        // Normalizar: para sentencias no-SELECT devolver null o [] (tests aceptan null/array vacío)
-        if (is_int($result)) {
-            return null;
-        }
-        return $result;
-    }
-
-    /**
-     * Método alias para compatibilidad con código existente.
-     *
-     * @param string $query
-     * @param array<int, mixed> $bindings
-     * @return mixed
-     * @deprecated Usa exec() en su lugar
-     */
-    public function raw(string $query, array $bindings = [])
-    {
-        return $this->exec($query, $bindings);
-    }
-
-    /**
-     * Obtiene el esquema de la base de datos.
-     *
-     * @param string $subject
-     * @param string|null $tableName
-     * @return mixed
-     */
-    public function schema(string $subject, ?string $tableName = null)
-    {
-        $params = ['subject' => $subject];
-        if ($tableName !== null) {
-            $params['table_name'] = $tableName;
-        }
-        return $this->execute('schema', $params);
-    }
-
-    /**
-     * Crea una tabla usando definiciones portables de columnas.
-     * columns: lista de arrays con claves: name, type, nullable?, default?, primary?, autoIncrement?
-     * options:
-     *  - primary_key: string|string[]
-     *  - if_not_exists: bool
-     *  - engine, charset, collation (MySQL)
-     *  - constraints: [
-     *      'unique' => [ { name, columns[] }... ],
-     *      'foreign' => [ { name, columns[], refTable, refColumns[], onDelete?, onUpdate? } ... ]
-     *    ]
-     *  - indexes: [ { name, columns[], unique?, using?, where?, concurrently? } ... ]
-     */
-    /**
-     * @param array<int, array<string, mixed>> $columns
-     * @param array<string, mixed> $options
-     */
-    public function schemaCreate(string $table, array $columns, array $options = []): void
-    {
-        $this->validateFreezeOperation('createTable');
-        $driver      = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q           = fn(string $id): string => $this->quoteIdent($id, $driver);
-        $ifNotExists = !empty($options['if_not_exists']);
-
-        $colSql             = [];
-        $pkCols             = [];
-        $sqliteInlinePkUsed = false; // Para SQLite, usamos PK inline solo cuando es INTEGER PRIMARY KEY autoincremental
-        /** @var list<ColumnDef> $columns */
-        foreach ($columns as $col) {
-            $name = (string)($col['name'] ?? '');
-            $type = (string)($col['type'] ?? 'VARCHAR(255)');
-            if ($name === '') {
-                continue;
-            }
-            $nullable      = array_key_exists('nullable', $col) ? (bool)$col['nullable'] : true;
-            $defaultExists = array_key_exists('default', $col);
-            /** @var mixed $default */
-            $default       = $col['default'] ?? null;
-            $primary       = !empty($col['primary']);
-            $auto          = !empty($col['autoIncrement']);
-
-            // Ajustes por dialecto para autoincrement
-            $colType = $type;
-            if ($auto) {
-                if ($driver === 'mysql' || $driver === 'mariadb') {
-                    $colType = 'INT';
-                } elseif ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
-                    $colType = 'SERIAL';
-                } elseif ($driver === 'sqlite') {
-                    $colType = 'INTEGER';
-                }
-            }
-
-            $parts = [$q($name) . ' ' . $colType];
-            if ($primary && $driver === 'sqlite' && $auto) {
-                // En SQLite la PK autoincremental debe ser exactamente INTEGER PRIMARY KEY
-                $parts              = [$q($name) . ' INTEGER PRIMARY KEY'];
-                $sqliteInlinePkUsed = true;
-            } else {
-                if (!$nullable) {
-                    $parts[] = 'NOT NULL';
-                }
-                if ($defaultExists) {
-                    $parts[] = 'DEFAULT ' . $this->formatDefault($default, $driver);
-                }
-                if ($auto && ($driver === 'mysql' || $driver === 'mariadb')) {
-                    $parts[] = 'AUTO_INCREMENT';
-                }
-                if ($primary) {
-                    $pkCols[] = $q($name);
-                }
-            }
-
-            $colSql[] = implode(' ', $parts);
-        }
-
-        if (!empty($options['primary_key'])) {
-            $pk     = (array)$options['primary_key'];
-            $pkCols = array_map($q, $pk);
-        }
-        // Para SQLite, permitimos PRIMARY KEY a nivel de tabla cuando no se usó inline (INTEGER PRIMARY KEY)
-        if (!empty($pkCols) && ($driver !== 'sqlite' || ($driver === 'sqlite' && !$sqliteInlinePkUsed))) {
-            $colSql[] = 'PRIMARY KEY (' . implode(', ', $pkCols) . ')';
-        }
-
-        // Table-level constraints: UNIQUE, FOREIGN KEYS (portables)
-        /** @var TableConstraintsDef $constraints */
-        $constraints = (array)($options['constraints'] ?? []);
-        /** @var list<UniqueConstraintDef> $uniqueList */
-        $uniqueList = (array)($constraints['unique'] ?? []);
-        foreach ($uniqueList as $uq) {
-            $cname = isset($uq['name']) ? $q((string)$uq['name']) : null;
-            /** @var list<string> $uqCols */
-            $uqCols = (array)($uq['columns'] ?? []);
-            $cols  = array_map($q, $uqCols);
-            if (!empty($cols)) {
-                $colSql[] = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'UNIQUE (' . implode(', ', $cols) . ')';
-            }
-        }
-        /** @var list<ForeignConstraintDef> $foreignList */
-        $foreignList = (array)($constraints['foreign'] ?? []);
-        foreach ($foreignList as $fk) {
-            $cname    = isset($fk['name']) ? $q((string)$fk['name']) : null;
-            /** @var list<string> $fkCols */
-            $fkCols   = (array)($fk['columns'] ?? []);
-            $cols     = array_map($q, $fkCols);
-            $refTable = isset($fk['refTable']) ? $q((string)$fk['refTable']) : null;
-            /** @var list<string> $fkRefCols */
-            $fkRefCols = (array)($fk['refColumns'] ?? []);
-            $refCols  = array_map($q, $fkRefCols);
-            if (!empty($cols) && $refTable && !empty($refCols)) {
-                $line = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'FOREIGN KEY (' . implode(', ', $cols) . ') REFERENCES ' . $refTable . ' (' . implode(', ', $refCols) . ')';
-                if (!empty($fk['onDelete'])) {
-                    $line .= ' ON DELETE ' . strtoupper((string)$fk['onDelete']);
-                }
-                if (!empty($fk['onUpdate'])) {
-                    $line .= ' ON UPDATE ' . strtoupper((string)$fk['onUpdate']);
-                }
-                $colSql[] = $line;
-            }
-        }
-
-        $tableIdent = $q($table);
-        $createHead = 'CREATE TABLE ' . ($ifNotExists ? 'IF NOT EXISTS ' : '') . $tableIdent;
-        $sql        = $createHead . ' (' . implode(', ', $colSql) . ')';
-
-        if ($driver === 'mysql' || $driver === 'mariadb') {
-            if (!empty($options['engine'])) {
-                $sql .= ' ENGINE=' . $options['engine'];
-            }
-            if (!empty($options['charset'])) {
-                $sql .= ' DEFAULT CHARSET=' . $options['charset'];
-            }
-            if (!empty($options['collation'])) {
-                $sql .= ' COLLATE=' . $options['collation'];
-            }
-        }
-
-        $this->exec($sql);
-
-        // Indexes (post-create portable)
-        /** @var list<IndexDef> $indexesList */
-        $indexesList = (array)($options['indexes'] ?? []);
-        foreach ($indexesList as $idx) {
-            $this->createIndexPortable($table, $idx, $driver);
-        }
-    }
-
-    /**
-     * Modifica una tabla (MVP: soporta add columns). changes: ['add' => [colDefs...]]
-     */
-    /**
-     * @param array<string, mixed> $changes
-     */
-    public function schemaAlter(string $table, array $changes): void
-    {
-        $this->validateFreezeOperation('alterTable');
-        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn(string $id): string => $this->quoteIdent($id, $driver);
-
-        $tableIdent = $q($table);
-        /** @var AlterChanges $changes */
-        /** @var list<ColumnDef> $addCols */
-        $addCols    = (array)($changes['add'] ?? []);
-        if (!empty($addCols)) {
-            $clauses = [];
-            foreach ($addCols as $col) {
-                $name = (string)($col['name'] ?? '');
-                $type = (string)($col['type'] ?? 'VARCHAR(255)');
-                if ($name === '') {
-                    continue;
-                }
-                $nullable      = array_key_exists('nullable', $col) ? (bool)$col['nullable'] : true;
-                $defaultExists = array_key_exists('default', $col);
-                /** @var mixed $default */
-                $default       = $col['default'] ?? null;
-
-                $parts = ['ADD COLUMN ' . $q($name) . ' ' . $type];
-                if (!$nullable) {
-                    $parts[] = 'NOT NULL';
-                }
-                if ($defaultExists) {
-                    $parts[] = 'DEFAULT ' . $this->formatDefault($default, $driver);
-                }
-                $clauses[] = implode(' ', $parts);
-            }
-            if (!empty($clauses)) {
-                $sql = 'ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses);
-                $this->exec($sql);
-            }
-        }
-        // Índices: addIndex / dropIndex
-        if (!empty($changes['addIndex'])) {
-            /** @var list<IndexDef> $idxList */
-            $idxList = (array)$changes['addIndex'];
-            foreach ($idxList as $idx) {
-                $this->createIndexPortable($table, $idx, $driver);
-            }
-        }
-        if (!empty($changes['dropIndex'])) {
-            /** @var list<string> $dropIdx */
-            $dropIdx = (array)$changes['dropIndex'];
-            foreach ($dropIdx as $idxName) {
-                $this->dropIndexPortable($table, (string)$idxName, $driver);
-            }
-        }
-
-        // Foreign keys: addForeign / dropForeign
-        if (!empty($changes['addForeign'])) {
-            /** @var list<ForeignConstraintDef> $addForeign */
-            $addForeign = (array)$changes['addForeign'];
-            foreach ($addForeign as $fk) {
-                $name     = (string)($fk['name'] ?? '');
-                $cols     = (array)($fk['columns'] ?? []);
-                $refTable = (string)($fk['refTable'] ?? '');
-                $refCols  = (array)($fk['refColumns'] ?? []);
-                if ($name && $cols && $refTable && $refCols) {
-                    $line = 'ALTER TABLE ' . $tableIdent . ' ADD CONSTRAINT ' . $q($name) . ' FOREIGN KEY (' . implode(', ', array_map($q, $cols)) . ') REFERENCES ' . $q($refTable) . ' (' . implode(', ', array_map($q, $refCols)) . ')';
-                    if (!empty($fk['onDelete'])) {
-                        $line .= ' ON DELETE ' . strtoupper((string)$fk['onDelete']);
-                    }
-                    if (!empty($fk['onUpdate'])) {
-                        $line .= ' ON UPDATE ' . strtoupper((string)$fk['onUpdate']);
-                    }
-                    // MySQL/PG: OK; SQLite: limitado (aceptamos que pueda fallar)
-                    $this->exec($line);
-                }
-            }
-        }
-        if (!empty($changes['dropForeign'])) {
-            /** @var list<string> $dropForeign */
-            $dropForeign = (array)$changes['dropForeign'];
-            foreach ($dropForeign as $fkName) {
-                $fk = $q((string)$fkName);
-                if ($driver === 'mysql' || $driver === 'mariadb') {
-                    $sql = 'ALTER TABLE ' . $tableIdent . ' DROP FOREIGN KEY ' . $fk;
-                } else {
-                    $sql = 'ALTER TABLE ' . $tableIdent . ' DROP CONSTRAINT ' . $fk;
-                }
-                $this->exec($sql);
-            }
-        }
-        // Rename columns
-        if (!empty($changes['rename'])) {
-            $clauses = [];
-            /** @var list<AlterRenameDef> $renameDefs */
-            $renameDefs = (array)$changes['rename'];
-            foreach ($renameDefs as $rc) {
-                $from = (string)($rc['from'] ?? '');
-                $to   = (string)($rc['to'] ?? '');
-                if ($from !== '' && $to !== '') {
-                    if ($driver === 'mysql' || $driver === 'mariadb' || $driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
-                        $clauses[] = 'RENAME COLUMN ' . $q($from) . ' TO ' . $q($to);
-                    } elseif ($driver === 'sqlite') {
-                        // SQLite soporta RENAME COLUMN (3.25+). Intentar y dejar que falle si no.
-                        $clauses[] = 'RENAME COLUMN ' . $q($from) . ' TO ' . $q($to);
-                    }
-                }
-            }
-            if (!empty($clauses)) {
-                $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
-            }
-        }
-
-        // Drop columns
-        if (!empty($changes['drop'])) {
-            /** @var list<string> $cols */
-            $cols    = (array)$changes['drop'];
-            $clauses = [];
-            foreach ($cols as $c) {
-                $name = (string)$c;
-                if ($name !== '') {
-                    $clauses[] = 'DROP COLUMN ' . $q($name);
-                }
-            }
-            if (!empty($clauses)) {
-                $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
-            }
-        }
-
-        // Modify columns (tipo/null/default)
-        if (!empty($changes['modify'])) {
-            /** @var list<AlterModifyDef> $mods */
-            $mods    = (array)$changes['modify'];
-            $clauses = [];
-            if ($driver === 'mysql' || $driver === 'mariadb') {
-                foreach ($mods as $m) {
-                    $name = (string)($m['name'] ?? '');
-                    $type = (string)($m['type'] ?? '');
-                    if ($name === '' || $type === '') {
-                        continue;
-                    }
-                    $nullable      = array_key_exists('nullable', $m) ? (bool)$m['nullable'] : null;
-                    $defaultExists = array_key_exists('default', $m);
-                    /** @var mixed $default */
-                    $default       = $m['default'] ?? null;
-                    $part          = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
-                    if ($nullable !== null) {
-                        $part .= $nullable ? '' : ' NOT NULL';
-                    }
-                    if ($defaultExists) {
-                        $part .= ' DEFAULT ' . $this->formatDefault($default, $driver);
-                    }
-                    $clauses[] = $part;
-                }
-                if (!empty($clauses)) {
-                    $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
-                }
-            } else {
-                // PostgreSQL/SQLite estilo ALTER COLUMN por aspecto
-                foreach ($mods as $m) {
-                    $name = (string)($m['name'] ?? '');
-                    $type = (string)($m['type'] ?? '');
-                    if ($name === '' || $type === '') {
-                        continue;
-                    }
-                    $nullable      = array_key_exists('nullable', $m) ? (bool)$m['nullable'] : null;
-                    $defaultExists = array_key_exists('default', $m);
-                    /** @var mixed $default */
-                    $default       = $m['default'] ?? null;
-                    $clauses[]     = 'ALTER COLUMN ' . $q($name) . ' TYPE ' . $type;
-                    if ($nullable !== null) {
-                        $clauses[] = 'ALTER COLUMN ' . $q($name) . ($nullable ? ' DROP NOT NULL' : ' SET NOT NULL');
-                    }
-                    if ($defaultExists) {
-                        if ($default === null) {
-                            $clauses[] = 'ALTER COLUMN ' . $q($name) . ' DROP DEFAULT';
-                        } else {
-                            $clauses[] = 'ALTER COLUMN ' . $q($name) . ' SET DEFAULT ' . $this->formatDefault($default, $driver);
-                        }
-                    }
-                }
-                if (!empty($clauses)) {
-                    $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
-                }
-            }
-        }
-        // Futuro: rename column, drop column, modify type, add constraint types adicionales.
-    }
-
     /**
      * Crea índice portable según driver.
+     *
      * @param array<string, mixed> $idx
      */
     private function createIndexPortable(string $table, array $idx, string $driver): void
     {
-        $q    = fn(string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
         /** @var IndexDef $idx */
-        $name = (string)($idx['name'] ?? '');
+        $name = (string) ($idx['name'] ?? '');
         /** @var list<IndexColumn> $cols */
-        $cols = (array)($idx['columns'] ?? []);
+        $cols = (array) ($idx['columns'] ?? []);
+
         if ($name === '' || empty($cols)) {
             return;
         }
         // Validar identificador del índice para evitar inyección por nombre malicioso
         $this->assertSafeIdentifier($name, 'index');
         $unique       = !empty($idx['unique']);
-        $using        = strtoupper((string)($idx['using'] ?? ''));
-        $where        = (string)($idx['where'] ?? '');
+        $using        = strtoupper((string) ($idx['using'] ?? ''));
+        $where        = (string) ($idx['where'] ?? '');
         $ifNotExists  = !empty($idx['if_not_exists']);
         $concurrently = !empty($idx['concurrently']);
 
         $sql = 'CREATE ' . ($unique ? 'UNIQUE ' : '') . 'INDEX ';
+
         if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $ifNotExists) {
             $sql .= 'IF NOT EXISTS ';
         }
+
         if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $concurrently) {
             $sql .= 'CONCURRENTLY ';
         }
         $sql .= $q($name) . ' ON ' . $q($table);
+
         if ($using !== '') {
             // MySQL: USING BTREE/HASH; Postgres: USING GIN/GIST/...
             $sql .= ' USING ' . $using;
         }
         $colsSql = [];
+
         foreach ($cols as $c) {
             if (is_array($c) && isset($c['raw'])) {
-                $colsSql[] = (string)$c['raw'];
+                $colsSql[] = (string) $c['raw'];
             } else {
-                $colName = (string)$c;
+                $colName = (string) $c;
                 // Validar nombres de columnas simples (no RAW)
                 $this->assertSafeIdentifier($colName, 'column');
                 $colsSql[] = $q($colName);
             }
         }
         $sql .= ' (' . implode(', ', $colsSql) . ')';
+
         if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $where !== '') {
             $sql .= ' WHERE ' . $where;
         }
@@ -872,8 +1186,9 @@ class VersaORM
     /** Elimina índice portable según driver. */
     private function dropIndexPortable(string $table, string $indexName, string $driver): void
     {
-        $q     = fn(string $id): string => $this->quoteIdent($id, $driver);
+        $q     = fn (string $id): string => $this->quoteIdent($id, $driver);
         $iname = $q($indexName);
+
         if ($driver === 'mysql' || $driver === 'mariadb') {
             $this->exec('ALTER TABLE ' . $q($table) . ' DROP INDEX ' . $iname);
         } elseif ($driver === 'sqlite') {
@@ -884,35 +1199,6 @@ class VersaORM
     }
 
     /**
-     * Elimina una tabla (DROP TABLE [IF EXISTS]).
-     */
-    public function schemaDrop(string $table, bool $ifExists = true): void
-    {
-        $this->validateFreezeOperation('dropTable');
-        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn(string $id): string => $this->quoteIdent($id, $driver);
-        $sql    = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
-        $this->exec($sql);
-    }
-
-    /**
-     * Renombra una tabla a un nuevo nombre (dialecto-aware).
-     */
-    public function schemaRename(string $from, string $to): void
-    {
-        $this->validateFreezeOperation('alterTable');
-        $driver = strtolower((string)($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn(string $id): string => $this->quoteIdent($id, $driver);
-        if ($driver === 'mysql' || $driver === 'mariadb') {
-            $sql = 'RENAME TABLE ' . $q($from) . ' TO ' . $q($to);
-        } else {
-            // PostgreSQL y SQLite
-            $sql = 'ALTER TABLE ' . $q($from) . ' RENAME TO ' . $q($to);
-        }
-        $this->exec($sql);
-    }
-
-    /**
      * Quota identificadores según el driver.
      */
     private function quoteIdent(string $ident, string $driver): string
@@ -920,6 +1206,7 @@ class VersaORM
         if ($driver === 'mysql' || $driver === 'mariadb') {
             return '`' . str_replace('`', '``', $ident) . '`';
         }
+
         // PostgreSQL y SQLite usan comillas dobles
         return '"' . str_replace('"', '""', $ident) . '"';
     }
@@ -929,24 +1216,27 @@ class VersaORM
      * Permite: letras, números y guion bajo; debe iniciar con letra o guion bajo.
      * Rechaza: comillas, backticks, punto y coma, comentarios SQL, espacios, paréntesis.
      *
-     * @param string $ident
      * @param string $context Contexto (table|column|index|constraint)
+     *
      * @throws VersaORMException
      */
     private function assertSafeIdentifier(string $ident, string $context = 'identifier'): void
     {
         $trim = trim($ident);
+
         // Vacío o diferente tras trim => sospechoso
         if ($trim === '' || $trim !== $ident) {
             throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
         }
         // Caracteres o patrones peligrosos (chequeo simple por fragmentos)
         $bad = ['`', '"', "'", '(', ')', ';', '.', ' ', "\t", "\n", "\r", '--', '/*', '*/'];
+
         foreach ($bad as $frag) {
             if (strpos($ident, $frag) !== false) {
                 throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
             }
         }
+
         // Solo permitir [A-Za-z_][A-Za-z0-9_]*
         if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $ident) !== 1) {
             throw new VersaORMException("Invalid {$context} format: '{$ident}'", 'INVALID_IDENTIFIER');
@@ -955,6 +1245,8 @@ class VersaORM
 
     /**
      * Formatea valores DEFAULT según el driver/tipo.
+     *
+     * @param mixed $value
      */
     /**
      * @param mixed $value
@@ -964,224 +1256,30 @@ class VersaORM
         if ($value === null) {
             return 'NULL';
         }
+
         if (is_bool($value)) {
             if ($driver === 'mysql' || $driver === 'mariadb') {
                 return $value ? '1' : '0';
             }
+
             return $value ? 'TRUE' : 'FALSE';
         }
+
         if (is_numeric($value)) {
-            return (string)$value;
+            return (string) $value;
         }
+
         // Cadenas: detectar funciones/constantes temporales conocidas
         if (is_string($value)) {
             $v = trim($value);
+
             if (preg_match('/^(CURRENT_TIMESTAMP(?:\(\))?|NOW\(\)|CURRENT_DATE|CURRENT_TIME)$/i', $v) === 1) {
                 return strtoupper($v);
             }
         }
+
         // Por defecto, comillar
-        return '\'' . str_replace('\'', '\'\'', (string)$value) . '\'';
-    }
-
-    /**
-     * Administra el caché interno.
-     *
-     * @param array<string, mixed> $params
-     * @return array<string, mixed>
-     */
-    public function cache(string $action, array $params = []): array
-    {
-        $cacheParams = ['action' => $action] + $params;
-        $result      = $this->execute('cache', $cacheParams);
-
-        return [
-            'status' => 'success',
-            'data'   => $result,
-        ];
-    }
-
-    /**
-     * Inicia una transacción.
-     *
-     * @return void
-     */
-    public function beginTransaction(): void
-    {
-        $this->exec('BEGIN');
-    }
-
-    /**
-     * Confirma una transacción.
-     *
-     * @return void
-     */
-    public function commit(): void
-    {
-        $this->exec('COMMIT');
-    }
-
-    /**
-     * Revierte una transacción.
-     *
-     * @return void
-     */
-    public function rollBack(): void
-    {
-        $this->exec('ROLLBACK');
-    }
-
-    /**
-     * Obtiene la versión actual de VersaORM.
-     *
-     * @return string
-     */
-    public function version(): string
-    {
-        return '1.0.0';
-    }
-
-    // Método disconnect unificado se declara más arriba (limpia conexión PDO y GC)
-
-    /**
-     * Activa o desactiva el modo freeze global.
-     * En modo freeze, se bloquean todas las operaciones DDL que alteran el esquema.
-     *
-     * @param bool $frozen Estado del modo freeze
-     * @return $this
-     * @throws VersaORMException
-     */
-    public function freeze(bool $frozen = true): self
-    {
-        $this->isFrozen = $frozen;
-
-        // Log de seguridad
-        $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
-        $this->logSecurityEvent(
-            "FREEZE_MODE_{$status}",
-            [
-                'global_freeze' => $frozen,
-                'timestamp'     => date('Y-m-d H:i:s'),
-                'trace'         => $this->getDebugStackTrace(),
-            ]
-        );
-
-        return $this;
-    }
-
-    /**
-     * Verifica si el modo freeze global está activo.
-     *
-     * @return bool
-     */
-    public function isFrozen(): bool
-    {
-        return $this->isFrozen;
-    }
-
-    /**
-     * Congela un modelo específico.
-     *
-     * @param string $modelClass Nombre de la clase del modelo
-     * @param bool $frozen Estado del freeze para el modelo
-     * @return $this
-     */
-    public function freezeModel(string $modelClass, bool $frozen = true): self
-    {
-        if (empty($modelClass)) {
-            throw new \InvalidArgumentException('Model class cannot be empty');
-        }
-
-        $this->frozenModels[$modelClass] = $frozen;
-
-        // Log de seguridad
-        $status = $frozen ? 'FROZEN' : 'UNFROZEN';
-        $this->logSecurityEvent(
-            "MODEL_{$status}",
-            [
-                'model_class' => $modelClass,
-                'frozen'      => $frozen,
-                'timestamp'   => date('Y-m-d H:i:s'),
-            ]
-        );
-
-        return $this;
-    }
-
-    /**
-     * Verifica si un modelo específico está congelado.
-     *
-     * @param string $modelClass Nombre de la clase del modelo
-     * @return bool
-     */
-    public function isModelFrozen(string $modelClass): bool
-    {
-        if (empty($modelClass)) {
-            throw new \InvalidArgumentException('Model class cannot be empty');
-        }
-
-        // Verificar freeze global primero
-        if ($this->isFrozen) {
-            return true;
-        }
-
-        return $this->frozenModels[$modelClass] ?? false;
-    }
-
-    /**
-     * Valida que una operación sea permitida en modo freeze.
-     *
-     * @param string $operation Nombre de la
-     *                          operación
-     * @param string|null $modelClass Clase del modelo si aplica
-     * @param array<string, mixed> $context Contexto adicional
-     * @return void
-     * @throws VersaORMException
-     */
-    public function validateFreezeOperation(string $operation, ?string $modelClass = null, array $context = []): void
-    {
-        $isDdlOperation   = $this->isDdlOperation($operation);
-        $isGloballyFrozen = $this->isFrozen();
-        $isModelFrozen    = $modelClass ? $this->isModelFrozen($modelClass) : false;
-
-        // Si es una operación DDL y hay freeze activo, bloquear
-        if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
-            // Log del intento de alteración
-            $this->logSecurityEvent(
-                'FREEZE_VIOLATION_ATTEMPT',
-                [
-                    'operation'     => $operation,
-                    'model_class'   => $modelClass,
-                    'global_frozen' => $isGloballyFrozen,
-                    'model_frozen'  => $isModelFrozen,
-                    'context'       => $context,
-                    'timestamp'     => date('Y-m-d H:i:s'),
-                    'trace'         => $this->getDebugStackTrace(),
-                ]
-            );
-
-            $freezeType     = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
-            $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
-
-            // Mostrar advertencia en modo desarrollo
-            if ($this->isDebugMode()) {
-                $warningMessage .= "\n\nDDL operations are not allowed when freeze mode is active.";
-                $warningMessage .= "\nThis is a security measure to prevent schema modifications.";
-                $warningMessage .= "\n\nTo allow this operation:";
-                if ($isGloballyFrozen) {
-                    $warningMessage .= "\n- Disable global freeze: \$orm->freeze(false)";
-                } else {
-                    $warningMessage .= "\n- Disable model freeze: \$orm->freezeModel('{$modelClass}', false)";
-                }
-            }
-
-            throw new VersaORMException(
-                $warningMessage,
-                'FREEZE_VIOLATION',
-                null,
-                []
-            );
-        }
+        return '\'' . str_replace('\'', '\'\'', (string) $value) . '\'';
     }
 
     private function isDdlOperation(string $operation): bool
@@ -1219,11 +1317,11 @@ class VersaORM
             'truncate_table',
         ];
 
-        return in_array(strtolower($operation), array_map('strtolower', $ddlOperations));
+        return in_array(strtolower($operation), array_map('strtolower', $ddlOperations), true);
     }
 
     /**
-     * Obtiene el directorio de logs configurado
+     * Obtiene el directorio de logs configurado.
      */
     private function getLogDirectory(): string
     {
@@ -1239,17 +1337,16 @@ class VersaORM
     /**
      * Registra eventos de seguridad relacionados con el modo freeze.
      *
-     * @param string $event
      * @param array<string, mixed> $data
-     * @return void
      */
     private function logSecurityEvent(string $event, array $data): void
     {
         try {
             $logDir = $this->getLogDirectory();
+
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
                 }
             }
 
@@ -1260,7 +1357,7 @@ class VersaORM
                 "[%s] [SECURITY] [%s] %s\n",
                 $timestamp,
                 $event,
-                json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+                json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
             );
 
             file_put_contents($securityLogFile, $logEntry, FILE_APPEND | LOCK_EX);
@@ -1269,7 +1366,7 @@ class VersaORM
             if ($this->isDebugMode()) {
                 $this->logDebug("Security Event: {$event}", $data);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Silenciar errores de logging para no interferir con la operación principal
         }
     }
@@ -1277,9 +1374,8 @@ class VersaORM
     /**
      * Valida los parámetros de entrada antes de ejecutar comandos.
      *
-     * @param string $action
      * @param array<string, mixed> $params
-     * @return void
+     *
      * @throws VersaORMException
      */
     private function validateInput(string $action, array $params): void
@@ -1310,13 +1406,14 @@ class VersaORM
             'deleteMany',
             'advanced_sql',
         ];
-        if (!in_array($action, $validActions)) {
+
+        if (!in_array($action, $validActions, true)) {
             throw new VersaORMException(
                 sprintf(
                     'Invalid action: %s. Valid actions are: %s',
                     $action,
-                    implode(', ', $validActions)
-                )
+                    implode(', ', $validActions),
+                ),
             );
         }
 
@@ -1326,6 +1423,7 @@ class VersaORM
                 if (!isset($params['query']) || !is_string($params['query'])) {
                     throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
                 }
+
                 if (strlen($params['query']) > 1000000) { // 1MB limit
                     throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
                 }
@@ -1348,14 +1446,12 @@ class VersaORM
         $this->checkCircularReferences($params);
     }
 
-
     /**
      * Maneja errores devueltos por el binario de Rust.
      *
      * @param array<string, mixed> $response
-     * @param string $action
      * @param array<string, mixed> $params
-     * @return void
+     *
      * @throws VersaORMException
      */
     /**
@@ -1396,8 +1492,10 @@ class VersaORM
             $limit   = isset($params['limit']) && (is_int($params['limit']) || is_string($params['limit'])) ? $params['limit'] : null;
 
             $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $select);
+
             if (!empty($where)) {
                 $whereDesc = [];
+
                 foreach ($where as $w) {
                     if (is_array($w) && (($w['operator'] ?? null) === 'RAW') && isset($w['value']) && is_array($w['value'])) {
                         // Manejo especial para whereRaw
@@ -1415,11 +1513,13 @@ class VersaORM
                 }
                 $query .= ', where=[' . implode(' AND ', $whereDesc) . ']';
             }
+
             if (!empty($orderBy) && isset($orderBy[0]) && is_array($orderBy[0])) {
                 $query .= ", orderBy={$orderBy[0]['column']} {$orderBy[0]['direction']}";
             }
+
             if ($limit) {
-                $query .= ', limit=' . strval($limit);
+                $query .= ', limit=' . (string) $limit;
             }
         }
 
@@ -1435,7 +1535,7 @@ class VersaORM
                 $sqlState,
                 $action,
                 $query,
-                $bindings
+                $bindings,
             );
 
             // En modo debug, agregar stack trace
@@ -1455,21 +1555,15 @@ class VersaORM
             $query,
             $bindings,
             $errorDetails,
-            $sqlState
+            $sqlState,
         );
     }
 
     /**
      * Construye un mensaje de error detallado.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
      * @param array<string, mixed> $errorDetails
-     * @param string|null $sqlState
-     * @param string $action
-     * @param string|null $query
      * @param array<int, mixed> $bindings
-     * @return string
      */
     private function buildDetailedErrorMessage(
         string $errorCode,
@@ -1478,7 +1572,7 @@ class VersaORM
         ?string $sqlState,
         string $action,
         ?string $query,
-        array $bindings = []
+        array $bindings = [],
     ): string {
         $message = sprintf('VersaORM Error [%s]: %s', $errorCode, $errorMessage);
 
@@ -1486,6 +1580,7 @@ class VersaORM
         if ($query !== null) {
             $message .= sprintf('\n\nQuery: %s', $query);
         }
+
         if (!empty($bindings)) {
             $message .= sprintf('\n\nBindings: %s', json_encode($bindings));
         }
@@ -1496,8 +1591,10 @@ class VersaORM
 
         // Agregar sugerencias basadas en el tipo de error
         $suggestions = $this->getErrorSuggestions($errorCode, $errorMessage);
+
         if (!empty($suggestions)) {
             $message .= '\n\nSuggestions:';
+
             foreach ($suggestions as $suggestion) {
                 $message .= '\n- ' . $suggestion;
             }
@@ -1506,6 +1603,7 @@ class VersaORM
         // Agregar detalles adicionales si están disponibles
         if (!empty($errorDetails)) {
             $message .= '\n\nDetails:';
+
             foreach ($errorDetails as $key => $value) {
                 $message .= sprintf('\n- %s: %s', $key, is_scalar($value) ? (string) $value : json_encode($value));
             }
@@ -1513,6 +1611,7 @@ class VersaORM
 
         // Agregar información de contexto
         $message .= sprintf('\n\nContext: Action=%s', $action);
+
         if ($query !== null) {
             if (strlen($query) < 200) {
                 $message .= sprintf(', Query=%s', $query);
@@ -1526,10 +1625,6 @@ class VersaORM
 
     /**
      * Construye un mensaje de error simple para modo producción.
-     *
-     * @param string $errorCode
-     * @param string $errorMessage
-     * @return string
      */
     private function buildSimpleErrorMessage(string $errorCode, string $errorMessage): string
     {
@@ -1538,8 +1633,6 @@ class VersaORM
 
     /**
      * Verifica si está habilitado el modo debug.
-     *
-     * @return bool
      */
     private function isDebugMode(): bool
     {
@@ -1548,8 +1641,6 @@ class VersaORM
 
     /**
      * Obtiene el stack trace para modo debug.
-     *
-     * @return string
      */
     private function getDebugStackTrace(): string
     {
@@ -1557,7 +1648,7 @@ class VersaORM
         $traceStr = '';
 
         foreach ($trace as $i => $frame) {
-            if (isset($frame['file']) && isset($frame['line'])) {
+            if (isset($frame['file'], $frame['line'])) {
                 $file     = basename($frame['file']);
                 $line     = $frame['line'];
                 $function = $frame['function'];
@@ -1573,9 +1664,7 @@ class VersaORM
     /**
      * Registra información de debug en log.
      *
-     * @param string $message
      * @param array<string, mixed> $context
-     * @return void
      */
     private function logDebug(string $message, array $context = []): void
     {
@@ -1585,9 +1674,10 @@ class VersaORM
 
         try {
             $logDir = $this->getLogDirectory();
+
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
                 }
             }
 
@@ -1597,19 +1687,19 @@ class VersaORM
             $logEntry = sprintf(
                 "[%s] [PHP] [DEBUG] %s\n",
                 $timestamp,
-                $message
+                $message,
             );
 
             if (!empty($context)) {
                 $logEntry .= sprintf(
                     "[%s] [PHP] [CONTEXT] %s\n",
                     $timestamp,
-                    json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+                    json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
                 );
             }
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Silenciar errores de logging para no interferir con la ejecución principal
         }
     }
@@ -1617,12 +1707,7 @@ class VersaORM
     /**
      * Registra el error en log si está en modo debug.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
-     * @param string|null $query
      * @param array<int, mixed> $bindings
-     * @param string $fullMessage
-     * @return void
      */
     private function logError(string $errorCode, string $errorMessage, ?string $query, array $bindings, string $fullMessage): void
     {
@@ -1632,9 +1717,10 @@ class VersaORM
 
         try {
             $logDir = $this->getLogDirectory();
+
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+                    throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
                 }
             }
 
@@ -1655,28 +1741,26 @@ class VersaORM
                 $timestamp,
                 json_encode($bindings),
                 $timestamp,
-                str_replace("\n", ' | ', $fullMessage)
+                str_replace("\n", ' | ', $fullMessage),
             );
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
 
             // Limpiar logs antiguos (mantener solo 7 días)
             $this->cleanOldLogs($logDir);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Silenciar errores de logging para no interferir con el error principal
         }
     }
 
     /**
      * Limpia archivos de log antiguos (más de 7 días).
-     *
-     * @param string $logDir
-     * @return void
      */
     private function cleanOldLogs(string $logDir): void
     {
         try {
             $files = glob($logDir . '/*.log');
+
             if ($files === false) {
                 return;
             }
@@ -1688,12 +1772,13 @@ class VersaORM
                 // Si es un archivo con formato de fecha YYYY-MM-DD
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename)) {
                     $fileDate = strtotime($filename);
+
                     if ($fileDate !== false && $sevenDaysAgo !== false && $fileDate < $sevenDaysAgo) {
                         unlink($file);
                     }
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Silenciar errores de limpieza de logs
         }
     }
@@ -1701,8 +1786,6 @@ class VersaORM
     /**
      * Proporciona sugerencias basadas en el tipo de error.
      *
-     * @param string $errorCode
-     * @param string $errorMessage
      * @return array<int, string>
      */
     private function getErrorSuggestions(string $errorCode, string $errorMessage): array
@@ -1769,7 +1852,7 @@ class VersaORM
      *
      * @param mixed $data
      * @param array<int, string> $visited
-     * @return void
+     *
      * @throws VersaORMException
      */
     private function checkCircularReferences($data, array &$visited = []): void
@@ -1777,14 +1860,15 @@ class VersaORM
         // Solo verificar objetos reales, no arrays convertidos
         if (is_object($data)) {
             $hash = spl_object_hash($data);
-            if (in_array($hash, $visited)) {
+
+            if (in_array($hash, $visited, true)) {
                 throw new VersaORMException('Circular reference detected in parameters.');
             }
             $visited[] = $hash;
 
             if (method_exists($data, 'toArray')) {
                 $this->checkCircularReferences($data->toArray(), $visited);
-            } elseif ($data instanceof \Traversable) {
+            } elseif ($data instanceof Traversable) {
                 foreach ($data as $value) {
                     $this->checkCircularReferences($value, $visited);
                 }
@@ -1803,10 +1887,6 @@ class VersaORM
 
     /**
      * Ejecuta el binario usando un archivo temporal para evitar problemas de escape.
-     *
-     * @param string $binaryPath
-     * @param string $payload
-     * @return string|null
      */
     private function executeBinaryWithTempFile(string $binaryPath, string $payload): ?string
     {
@@ -1820,6 +1900,7 @@ class VersaORM
             ];
 
             $process = proc_open($binaryPath, $descriptorspec, $pipes);
+
             if (!is_resource($process)) {
                 throw new VersaORMException('Failed to start PowerShell mock process.', 'PROCESS_START_ERROR');
             }
@@ -1845,7 +1926,7 @@ class VersaORM
                 }
 
                 return $output !== false ? $output : null;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Cerrar recursos en caso de error
                 foreach ($pipes as $pipe) {
                     if (is_resource($pipe)) {
@@ -1853,12 +1934,14 @@ class VersaORM
                     }
                 }
                 proc_close($process);
+
                 throw $e;
             }
         }
 
         // Comportamiento original para binarios reales
         $tempFile = tempnam(sys_get_temp_dir(), 'versaorm_');
+
         if ($tempFile === false) {
             throw new VersaORMException('Failed to create temporary file for binary execution.', 'TEMP_FILE_ERROR');
         }
@@ -1884,11 +1967,8 @@ class VersaORM
         }
     }
 
-
     /**
      * Establece la ruta del binario según el sistema operativo.
-     *
-     * @return void
      */
     private function setBinaryPath(): void
     {
@@ -1914,8 +1994,7 @@ class VersaORM
     /**
      * Verifica la existencia del binario de Rust.
      *
-     * @return void
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function checkRustBinary(): void
     {
@@ -1923,7 +2002,7 @@ class VersaORM
             $osName       = strtolower(PHP_OS_FAMILY);
             $expectedName = 'versaorm_cli_{$osName}' . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
 
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "VersaORM binary not found at: {
                 {$this->binaryPath}}
 \n\n" .
@@ -1934,18 +2013,18 @@ class VersaORM
                     "1. Compile the binary: cd versaorm_cli && cargo build --release\n" .
                     "2. Copy to: src/binary/{
                     {$expectedName}}\n\n" .
-                    'For cross-compilation, see src/binary/README.md'
+                    'For cross-compilation, see src/binary/README.md',
             );
         }
 
         // En sistemas Unix, verificar permisos de ejecución
         if (PHP_OS_FAMILY !== 'Windows' && !is_executable($this->binaryPath)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "VersaORM binary exists but is not executable: {
                 {$this->binaryPath}}
 \n\n" .
                     "Fix with: chmod +x {
-                    {$this->binaryPath}}"
+                    {$this->binaryPath}}",
             );
         }
     }
@@ -1955,6 +2034,7 @@ class VersaORM
      * para extraer solo el JSON válido.
      *
      * @param string $output Salida cruda del binario
+     *
      * @return string JSON limpio
      */
     private function cleanRustDebugOutput(string $output): string
@@ -1966,6 +2046,7 @@ class VersaORM
 
         // Buscar el inicio del JSON válido (primera llave de apertura)
         $jsonStart = strpos($output, '{');
+
         if ($jsonStart === false) {
             // Si no hay JSON, devolver la salida original
             return $output;
@@ -1979,11 +2060,12 @@ class VersaORM
         $jsonEnd    = -1;
         $length     = strlen($jsonCandidate);
 
-        for ($i = 0; $i < $length; $i++) {
+        for ($i = 0; $i < $length; ++$i) {
             if ($jsonCandidate[$i] === '{') {
-                $braceCount++;
+                ++$braceCount;
             } elseif ($jsonCandidate[$i] === '}') {
-                $braceCount--;
+                --$braceCount;
+
                 if ($braceCount === 0) {
                     $jsonEnd = $i;
                     break;

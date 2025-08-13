@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="testMysql/bootstrap.php"
+         colors="true"
+         cacheResult="false"
+         stopOnFailure="false"
+         stopOnError="false">
+
+    <testsuites>
+        <testsuite name="MySQL Tests">
+            <directory>./testMysql</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Code coverage configuration -->
+    <coverage includeUncoveredFiles="true"
+              ignoreDeprecatedCodeUnits="true"
+              disableCodeCoverageIgnore="false">
+        <report>
+            <html outputDirectory="./tests/reports/coverage/mysql/html" lowUpperBound="50" highLowerBound="95"/>
+            <xml outputDirectory="./tests/reports/coverage/mysql/xml"/>
+            <clover outputFile="./tests/reports/coverage/mysql/clover.xml"/>
+            <text outputFile="./tests/reports/coverage/mysql/coverage.txt" showUncoveredFiles="true"/>
+        </report>
+    </coverage>
+
+    <!-- Source code configuration -->
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+        <exclude>
+            <directory>./src/binary</directory>
+        </exclude>
+    </source>
+
+    <!-- PHP configuration -->
+    <php>
+        <env name="DB_ENGINE" value="mysql"/>
+        <env name="PHPUNIT_RUNNING" value="1"/>
+        <env name="TEST_ENVIRONMENT" value="testing"/>
+        <ini name="memory_limit" value="512M"/>
+        <ini name="error_reporting" value="E_ALL"/>
+        <ini name="display_errors" value="1"/>
+    </php>
+</phpunit>

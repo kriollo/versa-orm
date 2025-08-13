@@ -6,7 +6,13 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+use Exception;
+use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
+
+use function count;
+use function is_array;
+use function is_string;
 
 require_once __DIR__ . '/TestCase.php';
 
@@ -17,16 +23,16 @@ class VersaORMTest extends TestCase
 {
     public function testConnection(): void
     {
-        $this->assertNotNull(self::$orm, 'ORM instance should not be null');
-        $this->assertInstanceOf(\VersaORM\VersaORM::class, self::$orm);
+        self::assertNotNull(self::$orm, 'ORM instance should not be null');
+        self::assertInstanceOf(VersaORM::class, self::$orm);
     }
 
     public function testExecSelect(): void
     {
         $users = self::$orm->exec('SELECT * FROM users WHERE status = ? ORDER BY id ASC', ['active']);
-        $this->assertCount(2, $users);
-        $this->assertEquals('Alice', $users[0]['name']);
-        $this->assertEquals('Charlie', $users[1]['name']);
+        self::assertCount(2, $users);
+        self::assertSame('Alice', $users[0]['name']);
+        self::assertSame('Charlie', $users[1]['name']);
     }
 
     public function testExecInsert()
@@ -34,9 +40,9 @@ class VersaORMTest extends TestCase
         $query  = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
         $result = self::$orm->exec($query);
 
-        $this->assertTrue(
+        self::assertTrue(
             $result === null || (is_array($result) && count($result) === 0),
-            'exec() should return null or empty array for non-select statements'
+            'exec() should return null or empty array for non-select statements',
         );
     }
 
@@ -44,14 +50,14 @@ class VersaORMTest extends TestCase
     {
         self::$orm->exec('UPDATE users SET status = ? WHERE email = ?', ['banned', 'alice@example.com']);
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-        $this->assertEquals('banned', $user->status);
+        self::assertSame('banned', $user->status);
     }
 
     public function testExecDelete(): void
     {
         self::$orm->exec('DELETE FROM users WHERE email = ?', ['alice@example.com']);
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-        $this->assertNull($user);
+        self::assertNull($user);
     }
 
     public function testTransactionSuccess(): void
@@ -64,8 +70,8 @@ class VersaORMTest extends TestCase
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
         $bob   = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
 
-        $this->assertEquals('pending', $alice->status);
-        $this->assertEquals('pending', $bob->status);
+        self::assertSame('pending', $alice->status);
+        self::assertSame('pending', $bob->status);
     }
 
     public function testTransactionRollback(): void
@@ -81,33 +87,33 @@ class VersaORMTest extends TestCase
 
             // Verificar que el cambio temporal existe
             $tempAlice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-            $this->assertEquals('rollback_test', $tempAlice->status);
+            self::assertSame('rollback_test', $tempAlice->status);
 
             // Hacer rollback
             self::$orm->exec('ROLLBACK');
 
             // Verificar que volvió al estado original
             $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-            $this->assertEquals($originalStatus, $alice->status);
-        } catch (\Exception $e) {
+            self::assertSame($originalStatus, $alice->status);
+        } catch (Exception $e) {
             // Si las transacciones no funcionan en el binario actual, simplemente marcamos el test como incompleto
-            $this->markTestIncomplete('Transactions may not be fully supported in current binary version');
+            self::markTestIncomplete('Transactions may not be fully supported in current binary version');
         }
     }
 
     public function testSchemaGetTables(): void
     {
         $tables = self::$orm->schema('tables');
-        $this->assertContains('users', $tables);
-        $this->assertContains('posts', $tables);
-        $this->assertContains('products', $tables);
+        self::assertContains('users', $tables);
+        self::assertContains('posts', $tables);
+        self::assertContains('products', $tables);
     }
 
     public function testSchemaGetColumns(): void
     {
         $columns = self::$orm->schema('columns', 'users');
-        $this->assertIsArray($columns, 'Schema should return an array');
-        $this->assertNotEmpty($columns, 'Schema should not be empty');
+        self::assertIsArray($columns, 'Schema should return an array');
+        self::assertNotEmpty($columns, 'Schema should not be empty');
 
         // The schema can return different structures - check for column names as values or keys
         $hasIdColumn    = false;
@@ -121,9 +127,11 @@ class VersaORMTest extends TestCase
                 if (strtolower($key) === 'id') {
                     $hasIdColumn = true;
                 }
+
                 if (strtolower($key) === 'name') {
                     $hasNameColumn = true;
                 }
+
                 if (strtolower($key) === 'email') {
                     $hasEmailColumn = true;
                 }
@@ -132,9 +140,11 @@ class VersaORMTest extends TestCase
                 if (strtolower($value) === 'id') {
                     $hasIdColumn = true;
                 }
+
                 if (strtolower($value) === 'name') {
                     $hasNameColumn = true;
                 }
+
                 if (strtolower($value) === 'email') {
                     $hasEmailColumn = true;
                 }
@@ -143,18 +153,20 @@ class VersaORMTest extends TestCase
                 if (strtolower($value['name']) === 'id') {
                     $hasIdColumn = true;
                 }
+
                 if (strtolower($value['name']) === 'name') {
                     $hasNameColumn = true;
                 }
+
                 if (strtolower($value['name']) === 'email') {
                     $hasEmailColumn = true;
                 }
             }
         }
 
-        $this->assertTrue($hasIdColumn, 'Schema should include id column');
-        $this->assertTrue($hasNameColumn, 'Schema should include name column');
-        $this->assertTrue($hasEmailColumn, 'Schema should include email column');
+        self::assertTrue($hasIdColumn, 'Schema should include id column');
+        self::assertTrue($hasNameColumn, 'Schema should include name column');
+        self::assertTrue($hasEmailColumn, 'Schema should include email column');
     }
 
     public function testThrowsExceptionOnInvalidQuery(): void

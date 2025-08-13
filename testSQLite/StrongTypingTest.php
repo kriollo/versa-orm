@@ -26,13 +26,13 @@ class StrongTypingTest extends TestCase
 
     public function testCastInt(): void
     {
-        $this->assertSame(123, $this->model->castToPhpType('id', '123'));
+        self::assertSame(123, $this->model->castToPhpType('id', '123'));
     }
 
     public function testCastJson(): void
     {
         $arr = $this->model->castToPhpType('settings', '{"a":1}');
-        $this->assertEquals(['a' => 1], $arr);
+        self::assertSame(['a' => 1], $arr);
     }
 
     public function testInvalidJson(): void
@@ -44,7 +44,7 @@ class StrongTypingTest extends TestCase
     public function testUuidValidation(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
-        $this->assertSame($uuid, $this->model->castToPhpType('uuid', $uuid));
+        self::assertSame($uuid, $this->model->castToPhpType('uuid', $uuid));
     }
 
     public function testInvalidUuid(): void
@@ -55,7 +55,7 @@ class StrongTypingTest extends TestCase
 
     public function testEnumValid(): void
     {
-        $this->assertSame('active', $this->model->castToPhpType('status', 'active'));
+        self::assertSame('active', $this->model->castToPhpType('status', 'active'));
     }
 
     public function testEnumInvalid(): void
@@ -66,7 +66,7 @@ class StrongTypingTest extends TestCase
 
     public function testSetValid(): void
     {
-        $this->assertEquals(['work', 'personal'], $this->model->castToPhpType('tags', 'work,personal'));
+        self::assertSame(['work', 'personal'], $this->model->castToPhpType('tags', 'work,personal'));
     }
 
     public function testSetInvalid(): void

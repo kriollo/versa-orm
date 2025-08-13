@@ -48,14 +48,15 @@ try {
                 ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // JOIN optimizado
                 ->orderBy('t.created_at', 'desc')                         // ORDER BY optimizado
                 ->limit(5)                                                 // LIMIT optimizado
-                ->collect();                                               // ✅ UNA consulta optimizada
+                ->collect()                                               // ✅ UNA consulta optimizada
+            ;
 
             render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
             break;
 
-        // ======================
-        // PROYECTOS
-        // ======================
+            // ======================
+            // PROYECTOS
+            // ======================
         case 'projects':
             // Usar modelos para que las vistas sigan accediendo con ->propiedad
             $projects = models()->project()->all();
@@ -70,6 +71,7 @@ try {
             }
 
             $project = models()->project()->find($id);
+
             if (!$project) {
                 flash('error', 'Proyecto no encontrado');
                 redirect('?action=projects');
@@ -87,17 +89,20 @@ try {
                 ->where('t.project_id', '=', $id)                         // WHERE optimizado
                 ->orderBy('t.status')                                     // ORDER BY optimizado
                 ->orderBy('t.created_at', 'desc')                         // ORDER BY secundario optimizado
-                ->collect();                                               // ✅ UNA consulta optimizada
+                ->collect()                                               // ✅ UNA consulta optimizada
+            ;
 
             // Obtener el recuento de notas para las tareas obtenidas
             $taskIds    = array_column($tasks, 'id');
             $noteCounts = [];
+
             if (!empty($taskIds)) {
                 $noteCountsData = $orm->table('task_notes')
                     ->select(['task_id', 'COUNT(*) as count'])
                     ->whereIn('task_id', $taskIds)
                     ->groupBy('task_id')
-                    ->getAll();
+                    ->getAll()
+                ;
 
                 foreach ($noteCountsData as $row) {
                     $noteCounts[$row['task_id']] = $row['count'];
@@ -119,8 +124,8 @@ try {
             $memberIds   = array_column($members, 'id');
             $memberIds[] = $project->owner_id;
 
-            $availableUsers = array_filter($allUsers, function ($user) use ($memberIds) {
-                return !in_array($user->id, $memberIds);
+            $availableUsers = array_filter($allUsers, static function ($user) use ($memberIds) {
+                return !in_array($user->id, $memberIds, true);
             });
 
             render('projects/show', compact('project', 'tasks', 'members', 'owner', 'availableUsers'));
@@ -148,6 +153,7 @@ try {
             }
 
             $project = models()->project()->find($id);
+
             if (!$project) {
                 flash('error', 'Proyecto no encontrado');
                 redirect('?action=projects');
@@ -169,16 +175,18 @@ try {
             break;
 
         case 'project_add_member':
-            if ($_POST && isset($_POST['project_id']) && isset($_POST['user_id'])) {
+            if ($_POST && isset($_POST['project_id'], $_POST['user_id'])) {
                 try {
-                    $project = models()->project()->find((int)$_POST['project_id']);
+                    $project = models()->project()->find((int) $_POST['project_id']);
+
                     if (!$project) {
                         flash('error', 'Proyecto no encontrado');
                         redirect('?action=projects');
                         break;
                     }
 
-                    $user = models()->user()->find((int)$_POST['user_id']);
+                    $user = models()->user()->find((int) $_POST['user_id']);
+
                     if (!$user) {
                         flash('error', 'Usuario no encontrado');
                         redirect('?action=project_show&id=' . $_POST['project_id']);
@@ -187,16 +195,17 @@ try {
 
                     // Verificar que el usuario no sea ya miembro
                     $exists = app()->orm()->table('project_users')
-                        ->where('project_id', '=', (int)$_POST['project_id'])
-                        ->where('user_id', '=', (int)$_POST['user_id'])
-                        ->exists();
+                        ->where('project_id', '=', (int) $_POST['project_id'])
+                        ->where('user_id', '=', (int) $_POST['user_id'])
+                        ->exists()
+                    ;
 
                     if ($exists) {
                         flash('warning', 'El usuario ya es miembro del proyecto');
                     } else {
-                        $pivot = $project->dispenseInstance('project_users');
-                        $pivot->project_id = (int)$_POST['project_id'];
-                        $pivot->user_id    = (int)$_POST['user_id'];
+                        $pivot             = $project->dispenseInstance('project_users');
+                        $pivot->project_id = (int) $_POST['project_id'];
+                        $pivot->user_id    = (int) $_POST['user_id'];
                         $pivot->store();
                         flash('success', 'Miembro agregado exitosamente');
                     }
@@ -213,9 +222,10 @@ try {
             break;
 
         case 'project_remove_member':
-            if ($_POST && isset($_POST['project_id']) && isset($_POST['user_id'])) {
+            if ($_POST && isset($_POST['project_id'], $_POST['user_id'])) {
                 try {
-                    $project = models()->project()->find((int)$_POST['project_id']);
+                    $project = models()->project()->find((int) $_POST['project_id']);
+
                     if (!$project) {
                         flash('error', 'Proyecto no encontrado');
                         redirect('?action=projects');
@@ -223,15 +233,19 @@ try {
                     }
 
                     // Remover el miembro usando el ORM global
-                    $orm = app()->orm();
+                    $orm  = app()->orm();
                     $rows = app()->orm()->table('project_users')
                         ->select(['id'])
-                        ->where('project_id', '=', (int)$_POST['project_id'])
-                        ->where('user_id', '=', (int)$_POST['user_id'])
-                        ->get();
+                        ->where('project_id', '=', (int) $_POST['project_id'])
+                        ->where('user_id', '=', (int) $_POST['user_id'])
+                        ->get()
+                    ;
+
                     foreach ($rows as $row) {
-                        if (!isset($row['id'])) continue;
-                        $pivot = $project->load('project_users', (int)$row['id']);
+                        if (!isset($row['id'])) {
+                            continue;
+                        }
+                        $pivot = $project->load('project_users', (int) $row['id']);
                         $pivot?->trash();
                     }
 
@@ -254,6 +268,7 @@ try {
             }
 
             $project = models()->project()->find($id);
+
             if ($project) {
                 $project->trash();
                 flash('success', 'Proyecto eliminado exitosamente');
@@ -263,14 +278,14 @@ try {
             redirect('?action=projects');
             break;
 
-        // ======================
-        // TAREAS
-        // ======================
+            // ======================
+            // TAREAS
+            // ======================
         case 'tasks':
             // Parámetros de paginación y filtros
-            $page         = max(1, (int)($_GET['page'] ?? 1));
+            $page         = max(1, (int) ($_GET['page'] ?? 1));
             $perPageParam = $_GET['per_page'] ?? 10;
-            $perPage      = in_array((int)$perPageParam, [1, 5, 10, 20, 50, 100]) ? (int)$perPageParam : 10;
+            $perPage      = in_array((int) $perPageParam, [1, 5, 10, 20, 50, 100], true) ? (int) $perPageParam : 10;
             $offset       = ($page - 1) * $perPage;
 
             // Filtros
@@ -294,20 +309,24 @@ try {
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'u.avatar_color', 'p.name as project_name', 'p.color as project_color'])
                 ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // JOIN optimizado
-                ->leftJoin('projects as p', 't.project_id', '=', 'p.id');  // JOIN optimizado
+                ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // JOIN optimizado
+            ;
 
             // Aplicar filtros dinámicamente (solo si están presentes)
             if ($statusFilter) {
                 $queryBuilder->where('t.status', '=', $statusFilter);
             }
+
             if ($priorityFilter) {
                 $queryBuilder->where('t.priority', '=', $priorityFilter);
             }
+
             if ($projectFilter) {
-                $queryBuilder->where('t.project_id', '=', (int)$projectFilter);
+                $queryBuilder->where('t.project_id', '=', (int) $projectFilter);
             }
+
             if ($userFilter) {
-                $queryBuilder->where('t.user_id', '=', (int)$userFilter);
+                $queryBuilder->where('t.user_id', '=', (int) $userFilter);
             }
 
             // Contar total para paginación (consulta simple sin JOINs)
@@ -317,14 +336,17 @@ try {
             if ($statusFilter) {
                 $countQueryBuilder->where('t.status', '=', $statusFilter);
             }
+
             if ($priorityFilter) {
                 $countQueryBuilder->where('t.priority', '=', $priorityFilter);
             }
+
             if ($projectFilter) {
-                $countQueryBuilder->where('t.project_id', '=', (int)$projectFilter);
+                $countQueryBuilder->where('t.project_id', '=', (int) $projectFilter);
             }
+
             if ($userFilter) {
-                $countQueryBuilder->where('t.user_id', '=', (int)$userFilter);
+                $countQueryBuilder->where('t.user_id', '=', (int) $userFilter);
             }
 
             $totalTasks = $countQueryBuilder->count();                      // Conteo optimizado sin JOINs
@@ -335,17 +357,20 @@ try {
                 ->orderBy('t.created_at', 'desc')                          // ORDER BY optimizado
                 ->limit($perPage)                                          // LIMIT optimizado
                 ->offset($offset)                                          // OFFSET optimizado
-                ->collect();                                               // ✅ UNA consulta optimizada
+                ->collect()                                               // ✅ UNA consulta optimizada
+            ;
 
             // Obtener el recuento de notas para las tareas obtenidas
             $taskIds    = array_column($tasks, 'id');
             $noteCounts = [];
+
             if (!empty($taskIds)) {
                 $noteCountsData = $orm->table('task_notes')
                     ->select(['task_id', 'COUNT(*) as count'])
                     ->whereIn('task_id', $taskIds)
                     ->groupBy('task_id')
-                    ->getAll();
+                    ->getAll()
+                ;
 
                 foreach ($noteCountsData as $row) {
                     $noteCounts[$row['task_id']] = $row['count'];
@@ -375,7 +400,7 @@ try {
                 'start'        => $totalTasks > 0 ? $offset + 1 : 0,
                 'end'          => min($offset + $perPage, $totalTasks),
                 'showing_from' => $totalTasks > 0 ? $offset + 1 : 0,
-                'showing_to'   => min($offset + $perPage, $totalTasks)
+                'showing_to'   => min($offset + $perPage, $totalTasks),
             ];
 
             // Datos de filtros actuales
@@ -383,20 +408,24 @@ try {
                 'status'     => $statusFilter,
                 'priority'   => $priorityFilter,
                 'project_id' => $projectFilter,
-                'user_id'    => $userFilter
+                'user_id'    => $userFilter,
             ];
 
             // Construir query string para filtros
             $filterParams = [];
+
             if ($statusFilter) {
                 $filterParams['status'] = $statusFilter;
             }
+
             if ($priorityFilter) {
                 $filterParams['priority'] = $priorityFilter;
             }
+
             if ($projectFilter) {
                 $filterParams['project_id'] = $projectFilter;
             }
+
             if ($userFilter) {
                 $filterParams['user_id'] = $userFilter;
             }
@@ -409,7 +438,7 @@ try {
             if ($_POST) {
                 try {
                     // Extraer las etiquetas del POST antes de crear la tarea
-                    $labels   = isset($_POST['labels']) ? $_POST['labels'] : [];
+                    $labels   = $_POST['labels'] ?? [];
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
@@ -427,9 +456,9 @@ try {
                 }
             }
 
-            $projects = array_map(fn($p) => $p->export(), models()->project()->all());
-            $users    = array_map(fn($u) => $u->export(), models()->user()->all());
-            $labels   = array_map(fn($l) => $l->export(), app()->orm()->table('labels')->findAll());
+            $projects = array_map(static fn ($p) => $p->export(), models()->project()->all());
+            $users    = array_map(static fn ($u) => $u->export(), models()->user()->all());
+            $labels   = array_map(static fn ($l) => $l->export(), app()->orm()->table('labels')->findAll());
             render('tasks/create', compact('projects', 'users', 'labels'));
             break;
 
@@ -440,6 +469,7 @@ try {
             }
 
             $task = models()->task()->find($id);
+
             if (!$task) {
                 flash('error', 'Tarea no encontrada');
                 redirect('?action=tasks');
@@ -448,7 +478,7 @@ try {
             if ($_POST) {
                 try {
                     // Extraer las etiquetas del POST antes de actualizar la tarea
-                    $labels   = isset($_POST['labels']) ? $_POST['labels'] : [];
+                    $labels   = $_POST['labels'] ?? [];
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
@@ -469,9 +499,9 @@ try {
                 }
             }
 
-            $projects   = array_map(fn($p) => $p->export(), models()->project()->all());
-            $users      = array_map(fn($u) => $u->export(), models()->user()->all());
-            $labels     = array_map(fn($l) => $l->export(), app()->orm()->table('labels')->findAll());
+            $projects   = array_map(static fn ($p) => $p->export(), models()->project()->all());
+            $users      = array_map(static fn ($u) => $u->export(), models()->user()->all());
+            $labels     = array_map(static fn ($l) => $l->export(), app()->orm()->table('labels')->findAll());
             $taskLabels = $task->getLabelIds();
             render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
             break;
@@ -483,6 +513,7 @@ try {
             }
 
             $task = models()->task()->find($id);
+
             if ($task) {
                 $projectId = $task->project_id;
                 $task->trash();
@@ -501,6 +532,7 @@ try {
             }
 
             $task = models()->task()->find($id);
+
             if ($task) {
                 try {
                     $task->changeStatus($_POST['status']);
@@ -514,9 +546,9 @@ try {
             redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             break;
 
-        // ======================
-        // USUARIOS
-        // ======================
+            // ======================
+            // USUARIOS
+            // ======================
         case 'users':
             $users = models()->user()->all();
             render('users/index', compact('users'));
@@ -543,6 +575,7 @@ try {
             }
 
             $user = models()->user()->find($id);
+
             if (!$user) {
                 flash('error', 'Usuario no encontrado');
                 redirect('?action=users');
@@ -569,6 +602,7 @@ try {
             }
 
             $user = models()->user()->find($id);
+
             if ($user) {
                 $user->trash();
                 flash('success', 'Usuario eliminado exitosamente');
@@ -578,22 +612,26 @@ try {
             redirect('?action=users');
             break;
 
-        // ======================
-        // ETIQUETAS
-        // ======================
+            // ======================
+            // ETIQUETAS
+            // ======================
         case 'labels':
             $labels = app()->orm()->table('labels')->findAll();
+
             if ($labels) {
-                $labelIds   = array_map(fn($l) => $l->id, $labels);
+                $labelIds   = array_map(static fn ($l) => $l->id, $labels);
                 $countsRows = app()->orm()->table('task_labels')
                     ->select(['label_id', 'COUNT(*) as c'])
                     ->whereIn('label_id', $labelIds)
                     ->groupBy('label_id')
-                    ->getAll();
+                    ->getAll()
+                ;
                 $map = [];
+
                 foreach ($countsRows as $r) {
-                    $map[$r['label_id']] = (int)$r['c'];
+                    $map[$r['label_id']] = (int) $r['c'];
                 }
+
                 foreach ($labels as $l) {
                     $l->tasks_count = $map[$l->id] ?? 0;
                 }
@@ -603,6 +641,7 @@ try {
 
         case 'label_tasks':
             $labelId = $_GET['label_id'] ?? null;
+
             if (!$labelId) {
                 echo json_encode(['error' => 'ID de etiqueta requerido']);
                 exit;
@@ -629,7 +668,8 @@ try {
                 ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // LEFT JOIN optimizado
                 ->where('tl.label_id', '=', $labelId)                     // WHERE optimizado
                 ->orderBy('t.created_at', 'desc')                         // ORDER BY optimizado
-                ->collect();                                               // ✅ Ejecuta UNA consulta optimizada
+                ->collect()                                               // ✅ Ejecuta UNA consulta optimizada
+            ;
 
             header('Content-Type: application/json');
             echo json_encode($tasks);
@@ -657,6 +697,7 @@ try {
             }
 
             $label = (new Label(Label::tableName(), app()->orm()))->find($id);
+
             if (!$label) {
                 flash('error', 'Etiqueta no encontrada');
                 redirect('?action=labels');
@@ -666,8 +707,9 @@ try {
             $countRow = app()->orm()->table('task_labels')
                 ->select(['COUNT(*) as c'])
                 ->where('label_id', '=', $label->id)
-                ->firstArray();
-            $label->tasks_count = (int)($countRow['c'] ?? 0);
+                ->firstArray()
+            ;
+            $label->tasks_count = (int) ($countRow['c'] ?? 0);
 
             if ($_POST) {
                 try {
@@ -690,6 +732,7 @@ try {
             }
 
             $label = (new Label(Label::tableName(), app()->orm()))->find($id);
+
             if ($label) {
                 $label->trash();
                 flash('success', 'Etiqueta eliminada exitosamente');

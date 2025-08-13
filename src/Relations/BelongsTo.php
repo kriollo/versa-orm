@@ -10,7 +10,9 @@ use VersaORM\VersaModel;
 class BelongsTo extends Relation
 {
     public string $foreignKey;
+
     public string $ownerKey;
+
     public string $relationName;
 
     public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $ownerKey, string $relationName)
@@ -21,14 +23,15 @@ class BelongsTo extends Relation
         parent::__construct($query, $parent);
     }
 
-    protected function addConstraints(): void
-    {
-        $this->query->where($this->ownerKey, '=', $this->parent->getAttribute($this->foreignKey));
-    }
-
     public function getResults()
     {
         $this->addConstraints();
+
         return $this->query->findOne();
+    }
+
+    protected function addConstraints(): void
+    {
+        $this->query->where($this->ownerKey, '=', $this->parent->getAttribute($this->foreignKey));
     }
 }

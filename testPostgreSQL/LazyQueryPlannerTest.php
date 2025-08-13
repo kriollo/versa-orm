@@ -4,22 +4,32 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
+use Exception;
+use ReflectionClass;
 use VersaORM\QueryBuilder;
 
+use function count;
+
 /**
- * Tests para modo lazy y planificador de consultas
+ * Tests para modo lazy y planificador de consultas.
  */
 class LazyQueryPlannerTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        // El TestCase base ya maneja la limpieza
+        parent::tearDown();
+    }
+
     public function testLazyModeActivation(): void
     {
         $query = self::$orm->table('users')->lazy();
 
-        $reflection     = new \ReflectionClass($query);
+        $reflection     = new ReflectionClass($query);
         $isLazyProperty = $reflection->getProperty('isLazy');
         $isLazyProperty->setAccessible(true);
 
-        $this->assertTrue($isLazyProperty->getValue($query));
+        self::assertTrue($isLazyProperty->getValue($query));
     }
 
     public function testLazyQueryBuilding(): void
@@ -29,10 +39,11 @@ class LazyQueryPlannerTest extends TestCase
             ->select(['id', 'name'])
             ->where('active', '=', true)
             ->orderBy('name', 'ASC')
-            ->limit(10);
+            ->limit(10)
+        ;
 
         // La consulta no se ejecuta hasta collect()
-        $this->assertInstanceOf(QueryBuilder::class, $query);
+        self::assertInstanceOf(QueryBuilder::class, $query);
     }
 
     public function testCollectExecutesLazyQuery(): void
@@ -44,11 +55,12 @@ class LazyQueryPlannerTest extends TestCase
             ->lazy()
             ->select(['name', 'email'])
             ->where('status', '=', 'active')
-            ->collect();
+            ->collect()
+        ;
 
-        $this->assertIsArray($results);
-        $this->assertNotEmpty($results);
-        $this->assertArrayHasKey('name', $results[0]);
+        self::assertIsArray($results);
+        self::assertNotEmpty($results);
+        self::assertArrayHasKey('name', $results[0]);
     }
 
     public function testChainMultipleQueries(): void
@@ -58,7 +70,7 @@ class LazyQueryPlannerTest extends TestCase
 
         $chainedQuery = $query1->chain($query2);
 
-        $this->assertInstanceOf(QueryBuilder::class, $chainedQuery);
+        self::assertInstanceOf(QueryBuilder::class, $chainedQuery);
     }
 
     public function testExplainPlan(): void
@@ -68,12 +80,13 @@ class LazyQueryPlannerTest extends TestCase
             ->select(['id', 'name'])
             ->where('status', '=', 'active')
             ->join('posts', 'users.id', '=', 'posts.user_id')
-            ->explain();
+            ->explain()
+        ;
 
-        $this->assertIsArray($explanation);
-        $this->assertArrayHasKey('plan', $explanation);
-        $this->assertArrayHasKey('generated_sql', $explanation);
-        $this->assertArrayHasKey('estimated_cost', $explanation['plan']);
+        self::assertIsArray($explanation);
+        self::assertArrayHasKey('plan', $explanation);
+        self::assertArrayHasKey('generated_sql', $explanation);
+        self::assertArrayHasKey('estimated_cost', $explanation['plan']);
     }
 
     public function testComplexLazyQuery(): void
@@ -91,12 +104,13 @@ class LazyQueryPlannerTest extends TestCase
             ->where('users.name', 'LIKE', 'User%')
             ->orderBy('users.name', 'ASC')
             ->limit(5)
-            ->collect();
+            ->collect()
+        ;
 
-        $this->assertIsArray($results);
-        $this->assertCount(2, $results); // Solo usuarios activos
-        $this->assertEquals('User 1', $results[0]['name']);
-        $this->assertEquals('User 2', $results[1]['name']);
+        self::assertIsArray($results);
+        self::assertCount(2, $results); // Solo usuarios activos
+        self::assertSame('User 1', $results[0]['name']);
+        self::assertSame('User 2', $results[1]['name']);
     }
 
     public function testLazyQueryWithJoins(): void
@@ -116,13 +130,15 @@ class LazyQueryPlannerTest extends TestCase
             ->select(['users.name', 'posts.title'])
             ->join('posts', 'users.id', '=', 'posts.user_id')
             ->where('users.status', '=', 'active')
-            ->collect();
+            ->collect()
+        ;
 
-        $this->assertIsArray($results);
-        $this->assertNotEmpty($results);
-        $this->assertArrayHasKey('name', $results[0]);
-        $this->assertArrayHasKey('title', $results[0]);
+        self::assertIsArray($results);
+        self::assertNotEmpty($results);
+        self::assertArrayHasKey('name', $results[0]);
+        self::assertArrayHasKey('title', $results[0]);
     }
+
     public function testQueryOptimization(): void
     {
         $explanation = self::$orm->table('users')
@@ -130,23 +146,24 @@ class LazyQueryPlannerTest extends TestCase
             ->select(['id'])
             ->where('status', '=', 'active')
             ->where('verified', '=', true)
-            ->explain();
+            ->explain()
+        ;
 
-        $this->assertIsArray($explanation);
-        $this->assertArrayHasKey('plan', $explanation);
+        self::assertIsArray($explanation);
+        self::assertArrayHasKey('plan', $explanation);
 
         // Verificar que se aplicaron optimizaciones
         if (isset($explanation['optimizations_applied'])) {
-            $this->assertIsBool($explanation['optimizations_applied']);
+            self::assertIsBool($explanation['optimizations_applied']);
         }
     }
 
     public function testPerformanceComparison(): void
     {
         // Crear más datos de prueba para comparación
-        for ($i = 1; $i <= 100; $i++) {
+        for ($i = 1; $i <= 100; ++$i) {
             self::$orm->exec("INSERT INTO users (name, email, status) VALUES
-                ('User $i', 'user$i@example.com', '" . (($i % 2 == 0) ? 'active' : 'inactive') . "')");
+                ('User {$i}', 'user{$i}@example.com', '" . (($i % 2 === 0) ? 'active' : 'inactive') . "')");
         }
 
         // Consulta normal
@@ -154,7 +171,8 @@ class LazyQueryPlannerTest extends TestCase
         $normalResults = self::$orm->table('users')
             ->select(['id', 'name'])
             ->where('status', '=', 'active')
-            ->get();
+            ->get()
+        ;
         $normalTime = microtime(true) - $start;
 
         // Consulta lazy
@@ -163,15 +181,16 @@ class LazyQueryPlannerTest extends TestCase
             ->lazy()
             ->select(['id', 'name'])
             ->where('status', '=', 'active')
-            ->collect();
+            ->collect()
+        ;
         $lazyTime = microtime(true) - $start;
 
         // Verificar que los resultados son equivalentes
-        $this->assertCount(count($normalResults), $lazyResults);
+        self::assertCount(count($normalResults), $lazyResults);
 
         // Para consultas simples, la diferencia de tiempo no debería ser muy grande
         $timeDifference = abs($normalTime - $lazyTime);
-        $this->assertLessThan(1.0, $timeDifference, 'Time difference should be minimal for simple queries');
+        self::assertLessThan(1.0, $timeDifference, 'Time difference should be minimal for simple queries');
     }
 
     public function testLazyQueryWithComplexOperations(): void
@@ -185,20 +204,22 @@ class LazyQueryPlannerTest extends TestCase
             ->having('COUNT(posts.id)', '>=', 0)
             ->orderBy('post_count', 'DESC')
             ->limit(10)
-            ->collect();
+            ->collect()
+        ;
 
-        $this->assertIsArray($results);
+        self::assertIsArray($results);
     }
 
     public function testErrorHandlingInLazyMode(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         // Intentar usar una tabla que no existe
         self::$orm->table('nonexistent_table')
             ->lazy()
             ->select(['id'])
-            ->collect();
+            ->collect()
+        ;
     }
 
     public function testLazyQuerySQLGeneration(): void
@@ -209,21 +230,16 @@ class LazyQueryPlannerTest extends TestCase
             ->where('status', '=', 'active')
             ->where('verified', '=', true)
             ->orderBy('name', 'ASC')
-            ->explain();
+            ->explain()
+        ;
 
         $sql = $explanation['generated_sql'];
 
-        $this->assertIsString($sql);
-        $this->assertStringContainsString('SELECT', $sql);
+        self::assertIsString($sql);
+        self::assertStringContainsString('SELECT', $sql);
         // Aceptar FROM users o FROM "users" segun dialecto
-        $this->assertMatchesRegularExpression('/FROM\s+"?users"?/i', $sql);
-        $this->assertStringContainsString('WHERE', $sql);
-        $this->assertStringContainsString('ORDER BY', $sql);
-    }
-
-    protected function tearDown(): void
-    {
-        // El TestCase base ya maneja la limpieza
-        parent::tearDown();
+        self::assertMatchesRegularExpression('/FROM\s+"?users"?/i', $sql);
+        self::assertStringContainsString('WHERE', $sql);
+        self::assertStringContainsString('ORDER BY', $sql);
     }
 }

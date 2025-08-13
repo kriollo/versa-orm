@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VersaORM\Tests\SQLite;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use VersaORM\QueryBuilder;
 use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
@@ -15,6 +16,7 @@ use VersaORM\VersaORMException;
 class QueryBuilderSubqueriesTest extends TestCase
 {
     private QueryBuilder $queryBuilder;
+
     private VersaORM $orm;
 
     protected function setUp(): void
@@ -25,8 +27,8 @@ class QueryBuilderSubqueriesTest extends TestCase
 
     public function testSelectRawWithSafeExpressions(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectRaw('COUNT(*) as total_users'));
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectRaw('UPPER(name) as upper_name', ['test']));
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectRaw('COUNT(*) as total_users'));
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectRaw('UPPER(name) as upper_name', ['test']));
     }
 
     public function testSelectRawWithUnsafeExpressions(): void
@@ -43,7 +45,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
     public function testOrderByRawWithSafeExpressions(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['active']));
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['active']));
     }
 
     public function testOrderByRawWithUnsafeExpressions(): void
@@ -54,7 +56,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
     public function testGroupByRawWithSafeExpressions(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->groupByRaw('strftime("%Y", created_at)'));
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->groupByRaw('strftime("%Y", created_at)'));
     }
 
     public function testGroupByRawWithUnsafeExpressions(): void
@@ -65,7 +67,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
     public function testWhereRawWithSafeExpressions(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereRaw('age > ? AND status = ?', [18, 'active']));
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereRaw('age > ? AND status = ?', [18, 'active']));
     }
 
     public function testWhereRawWithUnsafeExpressions(): void
@@ -76,7 +78,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
     public function testSelectSubQueryWithClosure(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectSubQuery(function (QueryBuilder $q): void {
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectSubQuery(static function (QueryBuilder $q): void {
             $q->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
         }, 'posts_count'));
     }
@@ -84,14 +86,14 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function testSelectSubQueryWithInvalidAlias(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->queryBuilder->selectSubQuery(function (QueryBuilder $q): void {
+        $this->queryBuilder->selectSubQuery(static function (QueryBuilder $q): void {
             $q->select(['COUNT(*)']);
         }, 'invalid--alias');
     }
 
     public function testWhereSubQueryWithValidOperators(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereSubQuery('id', 'IN', function (QueryBuilder $q): void {
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereSubQuery('id', 'IN', static function (QueryBuilder $q): void {
             $q->select(['user_id'])->where('status', '=', 'active');
         }));
     }
@@ -99,7 +101,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function testWhereSubQueryWithInvalidOperator(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->queryBuilder->whereSubQuery('id', 'LIKE', function (QueryBuilder $q): void {
+        $this->queryBuilder->whereSubQuery('id', 'LIKE', static function (QueryBuilder $q): void {
             $q->select(['user_id']);
         });
     }
@@ -107,21 +109,21 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function testWhereSubQueryWithInvalidColumn(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->queryBuilder->whereSubQuery('id; DROP TABLE users', '=', function (QueryBuilder $q): void {
+        $this->queryBuilder->whereSubQuery('id; DROP TABLE users', '=', static function (QueryBuilder $q): void {
             $q->select(['user_id']);
         });
     }
 
     public function testWhereExists(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereExists(function (QueryBuilder $q): void {
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereExists(static function (QueryBuilder $q): void {
             $q->from('posts')->where('user_id', '=', 'users.id');
         }));
     }
 
     public function testWhereNotExists(): void
     {
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereNotExists(function (QueryBuilder $q): void {
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereNotExists(static function (QueryBuilder $q): void {
             $q->from('banned_users')->where('user_id', '=', 'users.id');
         }));
     }
@@ -130,13 +132,13 @@ class QueryBuilderSubqueriesTest extends TestCase
     {
         $sub = new QueryBuilder($this->orm, 'posts');
         $sub->select(['user_id'])->where('status', '=', 'published');
-        $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereSubQuery('id', 'IN', $sub));
+        self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->whereSubQuery('id', 'IN', $sub));
     }
 
     public function testBuildSubQueryWithInvalidType(): void
     {
         $this->expectException(VersaORMException::class);
-        $ref = new \ReflectionClass($this->queryBuilder);
+        $ref = new ReflectionClass($this->queryBuilder);
         $m   = $ref->getMethod('buildSubQuery');
         $m->setAccessible(true);
         $m->invoke($this->queryBuilder, 'invalid_type');
@@ -181,29 +183,30 @@ class QueryBuilderSubqueriesTest extends TestCase
                 'MAX(created_at)',
                 'MIN(price)',
                 'UPPER(name)',
-                'LOWER(email)'
+                'LOWER(email)',
             ] as $fn
         ) {
-            $this->assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectRaw($fn . ' as result'));
+            self::assertInstanceOf(QueryBuilder::class, $this->queryBuilder->selectRaw($fn . ' as result'));
         }
     }
 
     public function testComplexSubqueryWithMultipleConditions(): void
     {
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             QueryBuilder::class,
             $this->queryBuilder
                 ->select(['id', 'name'])
-                ->selectSubQuery(function (QueryBuilder $q): void {
+                ->selectSubQuery(static function (QueryBuilder $q): void {
                     $q->select(['COUNT(*)'])
                         ->where('user_id', '=', 'users.id')
-                        ->where('status', '=', 'published');
+                        ->where('status', '=', 'published')
+                    ;
                 }, 'published_posts_count')
-                ->whereExists(function (QueryBuilder $q): void {
+                ->whereExists(static function (QueryBuilder $q): void {
                     $q->from('user_roles')->where('user_id', '=', 'users.id');
                 })
                 ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['premium'])
-                ->groupByRaw('status')
+                ->groupByRaw('status'),
         );
     }
 }

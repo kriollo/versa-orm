@@ -24,7 +24,7 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Información de la Etiqueta</h2>
         </div>
 
-        <form method="POST" action="?action=label_edit&id=<?= $label->id ?>" class="p-6">
+        <form method="POST" action="?action=label_edit&id=<?php echo $label->id; ?>" class="p-6">
             <!-- Nombre -->
             <div class="mb-6">
                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
@@ -34,7 +34,7 @@
                     type="text"
                     id="name"
                     name="name"
-                    value="<?= htmlspecialchars($label->name ?? '') ?>"
+                    value="<?php echo htmlspecialchars($label->name ?? ''); ?>"
                     class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     required
                     maxlength="50"
@@ -52,7 +52,7 @@
                         type="color"
                         id="color"
                         name="color"
-                        value="<?= htmlspecialchars($label->color ?? '#3498db') ?>"
+                        value="<?php echo htmlspecialchars($label->color ?? '#3498db'); ?>"
                         class="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer bg-white dark:bg-gray-700 transition-colors"
                         required>
                     <div class="flex-1">
@@ -60,9 +60,9 @@
                             <span
                                 id="color-preview"
                                 class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                                style="background-color: <?= htmlspecialchars($label->color ?? '#3498db') ?>20; color: <?= htmlspecialchars($label->color ?? '#3498db') ?>">
-                                <div class="w-2 h-2 rounded-full mr-2" style="background-color: <?= htmlspecialchars($label->color ?? '#3498db') ?>"></div>
-                                <span id="preview-text"><?= htmlspecialchars($label->name ?? 'Vista previa') ?></span>
+                                style="background-color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>20; color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>">
+                                <div class="w-2 h-2 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>"></div>
+                                <span id="preview-text"><?php echo htmlspecialchars($label->name ?? 'Vista previa'); ?></span>
                             </span>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">Vista previa de cómo se verá la etiqueta</p>
                         </div>
@@ -87,17 +87,18 @@
                         '#34495E',
                         '#95A5A6',
                         '#E91E63',
-                        '#FF5722'
+                        '#FF5722',
                     ];
-foreach ($suggestedColors as $suggestedColor):
+
+foreach ($suggestedColors as $suggestedColor) {
     ?>
                         <button
                             type="button"
                             class="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-                            style="background-color: <?= $suggestedColor ?>"
-                            onclick="selectColor('<?= $suggestedColor ?>')"
-                            title="<?= $suggestedColor ?>"></button>
-                    <?php endforeach; ?>
+                            style="background-color: <?php echo $suggestedColor; ?>"
+                            onclick="selectColor('<?php echo $suggestedColor; ?>')"
+                            title="<?php echo $suggestedColor; ?>"></button>
+                    <?php } ?>
                 </div>
             </div>
 
@@ -111,7 +112,7 @@ foreach ($suggestedColors as $suggestedColor):
                     name="description"
                     rows="3"
                     class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="Descripción opcional de la etiqueta..."><?= htmlspecialchars($label->description ?? '') ?></textarea>
+                    placeholder="Descripción opcional de la etiqueta..."><?php echo htmlspecialchars($label->description ?? ''); ?></textarea>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">Opcional: describe el propósito de esta etiqueta</p>
             </div>
 
@@ -120,18 +121,18 @@ foreach ($suggestedColors as $suggestedColor):
                 <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Información del Sistema</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-400 transition-colors">
                     <div>
-                        <span class="font-medium">ID:</span> <?= $label->id ?>
+                        <span class="font-medium">ID:</span> <?php echo $label->id; ?>
                     </div>
                     <div>
-                        <span class="font-medium">Tareas asignadas:</span> <?= $label->tasks_count ?? 0 ?>
+                        <span class="font-medium">Tareas asignadas:</span> <?php echo $label->tasks_count ?? 0; ?>
                     </div>
                     <div>
                         <span class="font-medium">Creada:</span>
-                        <?= safe_date_format($label->created_at, 'd/m/Y H:i') ?>
+                        <?php echo safe_date_format($label->created_at, 'd/m/Y H:i'); ?>
                     </div>
                     <div>
                         <span class="font-medium">Actualizada:</span>
-                        <?= safe_date_format($label->updated_at, 'd/m/Y H:i') ?>
+                        <?php echo safe_date_format($label->updated_at, 'd/m/Y H:i'); ?>
                     </div>
                 </div>
             </div>
@@ -139,7 +140,7 @@ foreach ($suggestedColors as $suggestedColor):
             <!-- Botones -->
             <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
                 <div>
-                    <a href="?action=label_delete&id=<?= $label->id ?>"
+                    <a href="?action=label_delete&id=<?php echo $label->id; ?>"
                         class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded dark:hover:bg-red-500 transition-colors"
                         onclick="return confirm('¿Estás seguro de que deseas eliminar esta etiqueta? Esta acción no se puede deshacer.')">
                         <i class="fas fa-trash mr-2"></i>Eliminar Etiqueta

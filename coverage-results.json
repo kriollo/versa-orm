@@ -1,0 +1,628 @@
+{
+    "tool": "coverage",
+    "score": 23,
+    "passed": false,
+    "issues": [
+        "Coverage 23.551791850761% is below minimum 95%"
+    ],
+    "metrics": {
+        "overall_coverage": 23.55179185076092,
+        "minimum_required": 95,
+        "total_lines": 16296,
+        "covered_lines": 3838,
+        "engine_results": {
+            "mysql": {
+                "success": true,
+                "engine": "mysql",
+                "coverage_percentage": 59.52,
+                "coverage_data": {
+                    "coverage_percentage": 59.52,
+                    "total_lines": 5442,
+                    "covered_lines": 3239,
+                    "uncovered_lines": 2203,
+                    "files_analyzed": 22,
+                    "classes_analyzed": 20,
+                    "methods_analyzed": 363,
+                    "covered_methods": 105,
+                    "file_details": [
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\ErrorHandler.php",
+                            "coverage_percentage": 2.27,
+                            "total_lines": 220,
+                            "covered_lines": 5,
+                            "uncovered_lines": 215
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Interfaces\\TypedModelInterface.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 0,
+                            "covered_lines": 0,
+                            "uncovered_lines": 0
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\QueryBuilder.php",
+                            "coverage_percentage": 74.75,
+                            "total_lines": 1497,
+                            "covered_lines": 1119,
+                            "uncovered_lines": 378
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\BelongsTo.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 7,
+                            "covered_lines": 0,
+                            "uncovered_lines": 7
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\BelongsToMany.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 10,
+                            "covered_lines": 0,
+                            "uncovered_lines": 10
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\HasMany.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 2,
+                            "covered_lines": 0,
+                            "uncovered_lines": 2
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\HasOne.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 6,
+                            "covered_lines": 0,
+                            "uncovered_lines": 6
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\Relation.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 4,
+                            "covered_lines": 0,
+                            "uncovered_lines": 4
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\MySQLDialect.php",
+                            "coverage_percentage": 66.67,
+                            "total_lines": 15,
+                            "covered_lines": 10,
+                            "uncovered_lines": 5
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\PostgreSQLDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\SQLiteDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\PdoConnection.php",
+                            "coverage_percentage": 56.34,
+                            "total_lines": 71,
+                            "covered_lines": 40,
+                            "uncovered_lines": 31
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\PdoEngine.php",
+                            "coverage_percentage": 71.66,
+                            "total_lines": 995,
+                            "covered_lines": 713,
+                            "uncovered_lines": 282
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\SqlDialectInterface.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 0,
+                            "covered_lines": 0,
+                            "uncovered_lines": 0
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\SqlGenerator.php",
+                            "coverage_percentage": 87.85,
+                            "total_lines": 354,
+                            "covered_lines": 311,
+                            "uncovered_lines": 43
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HandlesErrors.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 119,
+                            "covered_lines": 0,
+                            "uncovered_lines": 119
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HasRelationships.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 50,
+                            "covered_lines": 0,
+                            "uncovered_lines": 50
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HasStrongTyping.php",
+                            "coverage_percentage": 76.24,
+                            "total_lines": 303,
+                            "covered_lines": 231,
+                            "uncovered_lines": 72
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\VersaORMTrait.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 26,
+                            "covered_lines": 0,
+                            "uncovered_lines": 26
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaModel.php",
+                            "coverage_percentage": 50.53,
+                            "total_lines": 855,
+                            "covered_lines": 432,
+                            "uncovered_lines": 423
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaORM.php",
+                            "coverage_percentage": 42.91,
+                            "total_lines": 867,
+                            "covered_lines": 372,
+                            "uncovered_lines": 495
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaORMException.php",
+                            "coverage_percentage": 54.55,
+                            "total_lines": 11,
+                            "covered_lines": 6,
+                            "uncovered_lines": 5
+                        }
+                    ]
+                },
+                "reports_generated": {
+                    "html": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/mysql\/html\/index.html",
+                        "exists": true,
+                        "size": 16409
+                    },
+                    "xml": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/mysql\/xml\/index.xml",
+                        "exists": true,
+                        "size": 59289
+                    },
+                    "clover": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/mysql\/clover.xml",
+                        "exists": true,
+                        "size": 308866
+                    },
+                    "text": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/mysql\/coverage.txt",
+                        "exists": true,
+                        "size": 1837
+                    }
+                },
+                "command_output": "PHPUnit 10.5.48 by Sebastian Bergmann and contributors.\n\nRuntime:       PHP 8.3.0 with Xdebug 3.3.0alpha3\nConfiguration: C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\phpunit-mysql.xml\n\n...............................................................  63 \/ 788 (  7%)\n............................................................... 126 \/ 788 ( 15%)\n............................................................... 189 \/ 788 ( 23%)\n............................................................... 252 \/ 788 ( 31%)\n............................................................... 315 \/ 788 ( 39%)\n............................................................... 378 \/ 788 ( 47%)\n............................................................... 441 \/ 788 ( 55%)\n............................................................... 504 \/ 788 ( 63%)\n............................................................... 567 \/ 788 ( 71%)\n............................................................... 630 \/ 788 ( 79%)\n............................................................... 693 \/ 788 ( 87%)\n............................................................... 756 \/ 788 ( 95%)\n................................                                788 \/ 788 (100%)\n\nTime: 03:18.517, Memory: 74.00 MB\n\nOK (788 tests, 2350 assertions)\n\nGenerating code coverage report in Clover XML format ... done [00:00.262]\n\nGenerating code coverage report in Cobertura XML format ... done [00:00.059]\n\nGenerating code coverage report in HTML format ... done [00:02.808]\n\nGenerating code coverage report in PHPUnit XML format ... done [00:09.691]"
+            },
+            "postgresql": {
+                "success": true,
+                "engine": "postgresql",
+                "coverage_percentage": 11.07,
+                "coverage_data": {
+                    "coverage_percentage": 11.07,
+                    "total_lines": 5412,
+                    "covered_lines": 599,
+                    "uncovered_lines": 4813,
+                    "files_analyzed": 22,
+                    "classes_analyzed": 20,
+                    "methods_analyzed": 363,
+                    "covered_methods": 22,
+                    "file_details": [
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\ErrorHandler.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 220,
+                            "covered_lines": 0,
+                            "uncovered_lines": 220
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Interfaces\\TypedModelInterface.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 0,
+                            "covered_lines": 0,
+                            "uncovered_lines": 0
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\QueryBuilder.php",
+                            "coverage_percentage": 5.88,
+                            "total_lines": 1497,
+                            "covered_lines": 88,
+                            "uncovered_lines": 1409
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\BelongsTo.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 7,
+                            "covered_lines": 0,
+                            "uncovered_lines": 7
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\BelongsToMany.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 10,
+                            "covered_lines": 0,
+                            "uncovered_lines": 10
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\HasMany.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 2,
+                            "covered_lines": 0,
+                            "uncovered_lines": 2
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\HasOne.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 6,
+                            "covered_lines": 0,
+                            "uncovered_lines": 6
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\Relation.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 4,
+                            "covered_lines": 0,
+                            "uncovered_lines": 4
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\MySQLDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\PostgreSQLDialect.php",
+                            "coverage_percentage": 26.67,
+                            "total_lines": 15,
+                            "covered_lines": 4,
+                            "uncovered_lines": 11
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\SQLiteDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\PdoConnection.php",
+                            "coverage_percentage": 43.66,
+                            "total_lines": 71,
+                            "covered_lines": 31,
+                            "uncovered_lines": 40
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\PdoEngine.php",
+                            "coverage_percentage": 11.46,
+                            "total_lines": 995,
+                            "covered_lines": 114,
+                            "uncovered_lines": 881
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\SqlDialectInterface.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 0,
+                            "covered_lines": 0,
+                            "uncovered_lines": 0
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\SqlGenerator.php",
+                            "coverage_percentage": 5.37,
+                            "total_lines": 354,
+                            "covered_lines": 19,
+                            "uncovered_lines": 335
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HandlesErrors.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 119,
+                            "covered_lines": 0,
+                            "uncovered_lines": 119
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HasRelationships.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 50,
+                            "covered_lines": 0,
+                            "uncovered_lines": 50
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HasStrongTyping.php",
+                            "coverage_percentage": 11.36,
+                            "total_lines": 273,
+                            "covered_lines": 31,
+                            "uncovered_lines": 242
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\VersaORMTrait.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 26,
+                            "covered_lines": 0,
+                            "uncovered_lines": 26
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaModel.php",
+                            "coverage_percentage": 16.96,
+                            "total_lines": 855,
+                            "covered_lines": 145,
+                            "uncovered_lines": 710
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaORM.php",
+                            "coverage_percentage": 19.26,
+                            "total_lines": 867,
+                            "covered_lines": 167,
+                            "uncovered_lines": 700
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaORMException.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 11,
+                            "covered_lines": 0,
+                            "uncovered_lines": 11
+                        }
+                    ]
+                },
+                "reports_generated": {
+                    "html": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/postgresql\/html\/index.html",
+                        "exists": true,
+                        "size": 16333
+                    },
+                    "xml": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/postgresql\/xml\/index.xml",
+                        "exists": true,
+                        "size": 13153
+                    },
+                    "clover": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/postgresql\/clover.xml",
+                        "exists": true,
+                        "size": 304756
+                    },
+                    "text": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/postgresql\/coverage.txt",
+                        "exists": true,
+                        "size": 1834
+                    }
+                },
+                "command_output": "PHPUnit 10.5.48 by Sebastian Bergmann and contributors.\n\nRuntime:       PHP 8.3.0 with Xdebug 3.3.0alpha3\nConfiguration: C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\phpunit-postgresql.xml\n\n.S.S                                                                4 \/ 4 (100%)\n\nTime: 00:03.693, Memory: 40.00 MB\n\nOK, but some tests were skipped!\nTests: 4, Assertions: 12, Skipped: 2.\n\nGenerating code coverage report in Clover XML format ... done [00:00.230]\n\nGenerating code coverage report in Cobertura XML format ... done [00:00.051]\n\nGenerating code coverage report in HTML format ... done [00:00.865]\n\nGenerating code coverage report in PHPUnit XML format ... done [00:02.038]"
+            },
+            "sqlite": {
+                "success": true,
+                "engine": "sqlite",
+                "coverage_percentage": 0,
+                "coverage_data": {
+                    "coverage_percentage": 0,
+                    "total_lines": 5442,
+                    "covered_lines": 0,
+                    "uncovered_lines": 5442,
+                    "files_analyzed": 22,
+                    "classes_analyzed": 20,
+                    "methods_analyzed": 363,
+                    "covered_methods": 0,
+                    "file_details": [
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\ErrorHandler.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 220,
+                            "covered_lines": 0,
+                            "uncovered_lines": 220
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Interfaces\\TypedModelInterface.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 0,
+                            "covered_lines": 0,
+                            "uncovered_lines": 0
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\QueryBuilder.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 1497,
+                            "covered_lines": 0,
+                            "uncovered_lines": 1497
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\BelongsTo.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 7,
+                            "covered_lines": 0,
+                            "uncovered_lines": 7
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\BelongsToMany.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 10,
+                            "covered_lines": 0,
+                            "uncovered_lines": 10
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\HasMany.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 2,
+                            "covered_lines": 0,
+                            "uncovered_lines": 2
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\HasOne.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 6,
+                            "covered_lines": 0,
+                            "uncovered_lines": 6
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Relations\\Relation.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 4,
+                            "covered_lines": 0,
+                            "uncovered_lines": 4
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\MySQLDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\PostgreSQLDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\Dialects\\SQLiteDialect.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 15,
+                            "covered_lines": 0,
+                            "uncovered_lines": 15
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\PdoConnection.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 71,
+                            "covered_lines": 0,
+                            "uncovered_lines": 71
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\PdoEngine.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 995,
+                            "covered_lines": 0,
+                            "uncovered_lines": 995
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\SqlDialectInterface.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 0,
+                            "covered_lines": 0,
+                            "uncovered_lines": 0
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\SQL\\SqlGenerator.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 354,
+                            "covered_lines": 0,
+                            "uncovered_lines": 354
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HandlesErrors.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 119,
+                            "covered_lines": 0,
+                            "uncovered_lines": 119
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HasRelationships.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 50,
+                            "covered_lines": 0,
+                            "uncovered_lines": 50
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\HasStrongTyping.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 303,
+                            "covered_lines": 0,
+                            "uncovered_lines": 303
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\Traits\\VersaORMTrait.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 26,
+                            "covered_lines": 0,
+                            "uncovered_lines": 26
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaModel.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 855,
+                            "covered_lines": 0,
+                            "uncovered_lines": 855
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaORM.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 867,
+                            "covered_lines": 0,
+                            "uncovered_lines": 867
+                        },
+                        {
+                            "name": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\src\\VersaORMException.php",
+                            "coverage_percentage": 0,
+                            "total_lines": 11,
+                            "covered_lines": 0,
+                            "uncovered_lines": 11
+                        }
+                    ]
+                },
+                "reports_generated": {
+                    "html": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/sqlite\/html\/index.html",
+                        "exists": true,
+                        "size": 16302
+                    },
+                    "xml": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/sqlite\/xml\/index.xml",
+                        "exists": true,
+                        "size": 12979
+                    },
+                    "clover": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/sqlite\/clover.xml",
+                        "exists": true,
+                        "size": 305997
+                    },
+                    "text": {
+                        "path": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\/tests\/reports\/coverage\/sqlite\/coverage.txt",
+                        "exists": true,
+                        "size": 1831
+                    }
+                },
+                "command_output": "PHPUnit 10.5.48 by Sebastian Bergmann and contributors.\n\nRuntime:       PHP 8.3.0 with Xdebug 3.3.0alpha3\nConfiguration: C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\phpunit-sqlite.xml\n\nNo tests executed!\n\nGenerating code coverage report in Clover XML format ... done [00:03.648]\n\nGenerating code coverage report in Cobertura XML format ... done [00:00.057]\n\nGenerating code coverage report in HTML format ... done [00:01.061]\n\nGenerating code coverage report in PHPUnit XML format ... done [00:02.133]"
+            }
+        },
+        "consolidated_report": {
+            "timestamp": "2025-08-13 20:48:31",
+            "overall_coverage": 23.55179185076092,
+            "minimum_required": 95,
+            "status": "FAIL",
+            "engines": {
+                "mysql": {
+                    "coverage_percentage": 59.52,
+                    "status": "FAIL",
+                    "total_lines": 5442,
+                    "covered_lines": 3239,
+                    "files_analyzed": 22
+                },
+                "postgresql": {
+                    "coverage_percentage": 11.07,
+                    "status": "FAIL",
+                    "total_lines": 5412,
+                    "covered_lines": 599,
+                    "files_analyzed": 22
+                },
+                "sqlite": {
+                    "coverage_percentage": 0,
+                    "status": "FAIL",
+                    "total_lines": 5442,
+                    "covered_lines": 0,
+                    "files_analyzed": 22
+                }
+            }
+        }
+    },
+    "timestamp": "2025-08-13 20:48:31"
+}

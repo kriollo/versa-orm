@@ -30,7 +30,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationWithRequiredFields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance', 'bio', 'is_active'];
 
             protected function getTableValidationSchema(): array
@@ -68,12 +68,12 @@ class ValidationSchemaTest extends TestCase
         // Test: Datos válidos
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com', 'age' => 30, 'balance' => 1000.50]);
         $errors = $model->validate();
-        $this->assertEmpty($errors, 'Valid data should not produce validation errors');
+        self::assertEmpty($errors, 'Valid data should not produce validation errors');
     }
 
     public function testSchemaValidationFailsOnRequiredFields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance'];
 
             protected function getTableValidationSchema(): array
@@ -98,13 +98,13 @@ class ValidationSchemaTest extends TestCase
         // Test: Campo requerido vacío
         $model->fill(['name' => '', 'email' => 'john@example.com']);
         $errors = $model->validate();
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name field is required.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name field is required.', $errors);
     }
 
     public function testSchemaValidationMaxLength(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -123,13 +123,13 @@ class ValidationSchemaTest extends TestCase
         // Test: Exceder longitud máxima
         $model->fill(['name' => 'This is a very long name that exceeds the limit']);
         $errors = $model->validate();
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name may not be greater than 10 characters.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name may not be greater than 10 characters.', $errors);
     }
 
     public function testSchemaValidationDataTypes(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['age', 'balance'];
 
             protected function getTableValidationSchema(): array
@@ -152,19 +152,19 @@ class ValidationSchemaTest extends TestCase
         // Test: Tipo de datos incorrecto para entero
         $model->fill(['age' => 'not-a-number']);
         $errors = $model->validate();
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The age must be an integer.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The age must be an integer.', $errors);
 
         // Test: Tipo de datos incorrecto para decimal
         $model->fill(['balance' => 'not-a-decimal']);
         $errors = $model->validate();
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The balance must be a number.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The balance must be a number.', $errors);
     }
 
     public function testSchemaValidationWithNullableFields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'age', 'bio'];
 
             protected function getTableValidationSchema(): array
@@ -193,12 +193,12 @@ class ValidationSchemaTest extends TestCase
         // Test: Campos nullable con valores null
         $model->fill(['name' => 'John Doe', 'age' => null, 'bio' => null]);
         $errors = $model->validate();
-        $this->assertEmpty($errors, 'Nullable fields with null values should be valid');
+        self::assertEmpty($errors, 'Nullable fields with null values should be valid');
     }
 
     public function testSchemaValidationFallbackToBasic(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -212,14 +212,15 @@ class ValidationSchemaTest extends TestCase
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com']);
         $errors = $model->validate();
         // La validación básica no debería generar errores para estos datos
-        $this->assertEmpty($errors);
+        self::assertEmpty($errors);
     }
 
     public function testSchemaValidationWithCustomRules(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'name' => ['min:5'], // Regla personalizada adicional
             ];
 
@@ -246,14 +247,14 @@ class ValidationSchemaTest extends TestCase
         // Test: Combinación de validación de esquema y reglas personalizadas
         $model->fill(['name' => 'Jo', 'email' => 'invalid-email']);
         $errors = $model->validate();
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name must be at least 5 characters.', $errors);
-        $this->assertContains('The email must be a valid email address.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name must be at least 5 characters.', $errors);
+        self::assertContains('The email must be a valid email address.', $errors);
     }
 
     public function testSchemaValidationMissingRequiredFields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -280,7 +281,7 @@ class ValidationSchemaTest extends TestCase
         // Test: Campos requeridos no enviados
         $model->fill(['name' => 'John Doe']); // email falta
         $errors = $model->validate();
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The email field is required.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The email field is required.', $errors);
     }
 }

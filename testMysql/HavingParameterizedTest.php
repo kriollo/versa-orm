@@ -15,11 +15,12 @@ final class HavingParameterizedTest extends TestCase
             ->select(['status', 'COUNT(*) as cnt'])
             ->groupBy('status')
             ->having('COUNT(*)', '>', 1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertCount(1, $results);
-        $this->assertEquals('active', $results[0]['status']);
-        $this->assertEquals(2, $results[0]['cnt']);
+        self::assertCount(1, $results);
+        self::assertSame('active', $results[0]['status']);
+        self::assertSame(2, $results[0]['cnt']);
     }
 
     public function testHavingCountBetweenParametrized(): void
@@ -30,10 +31,11 @@ final class HavingParameterizedTest extends TestCase
             ->having('COUNT(*)', '>=', 1)
             ->having('COUNT(*)', '<=', 2)
             ->orderBy('status', 'asc')
-            ->get();
+            ->get()
+        ;
 
-        $this->assertCount(2, $results);
-        $this->assertEquals('active', $results[0]['status']);
-        $this->assertEquals('inactive', $results[1]['status']);
+        self::assertCount(2, $results);
+        self::assertSame('active', $results[0]['status']);
+        self::assertSame('inactive', $results[1]['status']);
     }
 }

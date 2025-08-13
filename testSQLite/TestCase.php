@@ -12,7 +12,8 @@ require_once __DIR__ . '/bootstrap.php';
 
 class TestCase extends BaseTestCase
 {
-    public static ?VersaORM $orm       = null;
+    public static ?VersaORM $orm = null;
+
     private static bool $schemaCreated = false;
 
     public static function setUpBeforeClass(): void
@@ -25,7 +26,7 @@ class TestCase extends BaseTestCase
                 'database' => $config['DB']['DB_NAME'],
                 'debug'    => $config['DB']['debug'],
                 'host'     => $config['DB']['DB_HOST'] ?? '',
-                'port'     => (int)($config['DB']['DB_PORT'] ?? 0),
+                'port'     => (int) ($config['DB']['DB_PORT'] ?? 0),
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];
@@ -33,6 +34,14 @@ class TestCase extends BaseTestCase
             self::$orm = new VersaORM($dbConfig);
             VersaModel::setORM(self::$orm);
         }
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        if (self::$schemaCreated) {
+            self::$schemaCreated = false;
+        }
+        self::$orm = null;
     }
 
     protected function setUp(): void
@@ -52,14 +61,6 @@ class TestCase extends BaseTestCase
         self::$orm->schemaDrop('users');
         self::$orm->schemaDrop('products');
         self::$orm->schemaDrop('test_users');
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        if (self::$schemaCreated) {
-            self::$schemaCreated = false;
-        }
-        self::$orm = null;
     }
 
     protected static function createSchema(): void

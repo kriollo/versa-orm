@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace VersaORM\SQL;
 
 use PDO;
+use PDOException;
+use Throwable;
 use VersaORM\VersaORMException;
+
+use function sprintf;
 
 class PdoConnection
 {
     /**
      * Configuración de conexión esperada (parcial):
+     *
      * @var array{
      *   driver?:string,
      *   host?:string,
@@ -23,10 +28,13 @@ class PdoConnection
      * }
      */
     private array $config;
+
     private ?PDO $pdo = null;
+
     /**
      * Pool de conexiones compartidas por DSN+credenciales.
      * Esto permite que varias instancias reutilicen la misma conexión (útil para SQLite :memory:).
+     *
      * @var array<string, PDO>
      */
     private static array $pool = [];
@@ -37,7 +45,7 @@ class PdoConnection
     public function __construct(array $config)
     {
         /** @var array{driver?:string,host?:string,port?:int|string,database?:string,charset?:string,username?:string,password?:string,options?:array{enable_foreign_keys?:bool}} $normalized */
-        $normalized = $config;
+        $normalized   = $config;
         $this->config = $normalized;
     }
 
@@ -47,43 +55,48 @@ class PdoConnection
             return $this->pdo;
         }
 
-        $driver = strtolower((string)($this->config['driver'] ?? 'mysql'));
+        $driver = strtolower((string) ($this->config['driver'] ?? 'mysql'));
+
         try {
             $poolKey         = '';
             [$dsn, $poolKey] = match ($driver) {
                 'mysql', 'mariadb' => (function () {
-                    $host     = (string)($this->config['host'] ?? 'localhost');
-                    $port     = (string)($this->config['port'] ?? '3306');
-                    $database = (string)($this->config['database'] ?? '');
-                    $charset  = (string)($this->config['charset'] ?? 'utf8mb4');
-                    $dsn = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
-                    $poolKey = 'mysql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
+                    $host     = (string) ($this->config['host'] ?? 'localhost');
+                    $port     = (string) ($this->config['port'] ?? '3306');
+                    $database = (string) ($this->config['database'] ?? '');
+                    $charset  = (string) ($this->config['charset'] ?? 'utf8mb4');
+                    $dsn      = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
+                    $poolKey  = 'mysql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
+
                     return [$dsn, $poolKey];
                 })(),
                 'pgsql', 'postgres', 'postgresql' => (function () {
-                    $host     = (string)($this->config['host'] ?? 'localhost');
-                    $port     = (string)($this->config['port'] ?? '5432');
-                    $database = (string)($this->config['database'] ?? '');
-                    $dsn = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
-                    $poolKey = 'pgsql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
+                    $host     = (string) ($this->config['host'] ?? 'localhost');
+                    $port     = (string) ($this->config['port'] ?? '5432');
+                    $database = (string) ($this->config['database'] ?? '');
+                    $dsn      = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
+                    $poolKey  = 'pgsql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
+
                     return [$dsn, $poolKey];
                 })(),
                 'sqlite' => (function () {
-                    $path    = (string)($this->config['database'] ?? ':memory:');
+                    $path    = (string) ($this->config['database'] ?? ':memory:');
                     $dsn     = sprintf('sqlite:%s', $path);
                     $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
+
                     return [$dsn, $poolKey];
                 })(),
                 default => throw new VersaORMException('Unsupported PDO driver: ' . $driver),
             };
 
-            $username = (string)($this->config['username'] ?? '');
-            $password = (string)($this->config['password'] ?? '');
+            $username = (string) ($this->config['username'] ?? '');
+            $password = (string) ($this->config['password'] ?? '');
             $options  = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ];
+
             // Ajustes específicos para SQLite
             if ($driver === 'sqlite') {
                 // Timeout (segundos) para esperar desbloqueo de BD
@@ -96,11 +109,12 @@ class PdoConnection
             } else {
                 try {
                     $this->pdo = new PDO($dsn, $username, $password, $options);
-                } catch (\PDOException $ex) {
+                } catch (PDOException $ex) {
                     // Fallback para entornos de test MySQL: intentar con usuario local/local si root falla
                     if (str_contains(strtolower($ex->getMessage()), 'access denied') && ($driver === 'mysql' || $driver === 'mariadb')) {
                         $fallbackUser = $this->config['username'] ?? '';
                         $fallbackPass = $this->config['password'] ?? '';
+
                         if ($fallbackUser !== 'local') {
                             $fallbackUser = 'local';
                             $fallbackPass = 'local';
@@ -112,37 +126,42 @@ class PdoConnection
                         throw $ex;
                     }
                 }
+
                 // Ajustes post-conexión por driver
                 if ($driver === 'sqlite') {
                     // Modo WAL mejora concurrencia y reduce bloqueos
                     try {
                         $this->pdo->exec('PRAGMA journal_mode = WAL');
-                    } catch (\Throwable $e) { /* ignore */
+                    } catch (Throwable $e) { // ignore
                     }
+
                     // Sincronización normal (trade-off rendimiento/seguridad)
                     try {
                         $this->pdo->exec('PRAGMA synchronous = NORMAL');
-                    } catch (\Throwable $e) { /* ignore */
+                    } catch (Throwable $e) { // ignore
                     }
+
                     // Tiempo de espera para locks (ms)
                     try {
                         $this->pdo->exec('PRAGMA busy_timeout = 5000');
-                    } catch (\Throwable $e) { /* ignore */
+                    } catch (Throwable $e) { // ignore
                     }
                     // Habilitar claves foráneas si se pidió
-                    $enableFK = (bool)($this->config['options']['enable_foreign_keys'] ?? false);
+                    $enableFK = (bool) ($this->config['options']['enable_foreign_keys'] ?? false);
+
                     if ($enableFK) {
                         try {
                             $this->pdo->exec('PRAGMA foreign_keys = ON');
-                        } catch (\Throwable $e) { /* ignore */
+                        } catch (Throwable $e) { // ignore
                         }
                     }
                 }
+
                 if ($poolKey !== '') {
                     self::$pool[$poolKey] = $this->pdo;
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             throw new VersaORMException('PDO connection failed: ' . $e->getMessage(), 'PDO_CONNECTION_FAILED');
         }
 

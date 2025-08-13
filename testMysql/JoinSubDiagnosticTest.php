@@ -6,6 +6,14 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+use Exception;
+use PDO;
+use VersaORM\QueryBuilder;
+use VersaORM\VersaORM;
+
+use function count;
+use function sprintf;
+
 /**
  * Tests específicos para diagnosticar el problema de joinSub
  * Estos tests están diseñados para aislar el problema paso a paso.
@@ -15,9 +23,9 @@ namespace VersaORM\Tests\Mysql;
  */
 class JoinSubDiagnosticTest extends TestCase
 {
-    //======================================================================
+    // ======================================================================
     // Test 1: Verificar que las tablas base funcionan correctamente
-    //======================================================================
+    // ======================================================================
 
     public function testBasicTablesExist(): void
     {
@@ -25,110 +33,116 @@ class JoinSubDiagnosticTest extends TestCase
         $users = self::$orm->table('users')->getAll();
         $posts = self::$orm->table('posts')->getAll();
 
-        $this->assertGreaterThan(0, count($users));
-        $this->assertGreaterThan(0, count($posts));
+        self::assertGreaterThan(0, count($users));
+        self::assertGreaterThan(0, count($posts));
 
         // Verificar datos base: usuarios y posts encontrados
-        $this->assertGreaterThan(2, count($users), 'Should have at least 3 users');
-        $this->assertGreaterThan(2, count($posts), 'Should have at least 3 posts');
+        self::assertGreaterThan(2, count($users), 'Should have at least 3 users');
+        self::assertGreaterThan(2, count($posts), 'Should have at least 3 posts');
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 2: Verificar que los joins básicos funcionan
-    //======================================================================
+    // ======================================================================
 
     public function testBasicJoinWorks(): void
     {
         $results = self::$orm->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
-            ->getAll();
+            ->getAll()
+        ;
 
-        $this->assertGreaterThan(0, count($results));
-        $this->assertGreaterThanOrEqual(3, count($results), 'Join should return at least 3 results');
+        self::assertGreaterThan(0, count($results));
+        self::assertGreaterThanOrEqual(3, count($results), 'Join should return at least 3 results');
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 3: Verificar que las subconsultas simples funcionan
-    //======================================================================
+    // ======================================================================
 
     public function testBasicSubqueryWorks(): void
     {
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id');
+            ->groupBy('user_id')
+        ;
 
         // Verificar que podemos construir la subconsulta
-        $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $subquery);
+        self::assertInstanceOf(QueryBuilder::class, $subquery);
 
         // Intentar ejecutar la subconsulta directamente
         try {
             $subResults = $subquery->getAll();
-            $this->assertGreaterThan(0, count($subResults));
-            $this->assertGreaterThanOrEqual(2, count($subResults), 'Subquery should return at least 2 results');
-        } catch (\Exception $e) {
-            $this->fail('Subquery execution failed: ' . $e->getMessage());
+            self::assertGreaterThan(0, count($subResults));
+            self::assertGreaterThanOrEqual(2, count($subResults), 'Subquery should return at least 2 results');
+        } catch (Exception $e) {
+            self::fail('Subquery execution failed: ' . $e->getMessage());
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 4: Verificar que el método joinSub existe
-    //======================================================================
+    // ======================================================================
 
     public function testJoinSubMethodExists(): void
     {
         $query = self::$orm->table('users');
-        $this->assertTrue(method_exists($query, 'joinSub'));
+        self::assertTrue(method_exists($query, 'joinSub'));
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 5: Test mínimo de joinSub - solo construcción
-    //======================================================================
+    // ======================================================================
 
     public function testJoinSubConstruction(): void
     {
         $subquery = self::$orm->table('posts')
             ->select(['user_id'])
-            ->limit(1);
+            ->limit(1)
+        ;
 
         try {
             $query = self::$orm->table('users')
                 ->select(['users.name'])
-                ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id');
+                ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id')
+            ;
 
-            $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $query);
-        } catch (\Exception $e) {
+            self::assertInstanceOf(QueryBuilder::class, $query);
+        } catch (Exception $e) {
             throw $e;
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 6: Test mínimo de joinSub - ejecución simple
-    //======================================================================
+    // ======================================================================
 
     public function testJoinSubMinimalExecution(): void
     {
         // Subconsulta lo más simple posible
         $subquery = self::$orm->table('posts')
             ->select(['user_id'])
-            ->where('id', '=', 1); // Solo un post específico
+            ->where('id', '=', 1) // Solo un post específico
+        ;
 
         try {
             $results = self::$orm->table('users')
                 ->select(['users.name'])
                 ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id')
-                ->getAll();
+                ->getAll()
+            ;
 
             // Agregar debug para ver el SQL generado
-            $this->assertIsArray($results);
-        } catch (\Exception $e) {
+            self::assertIsArray($results);
+        } catch (Exception $e) {
             throw $e;
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 7: Test de joinSub con COUNT - similar al original que falla
-    //======================================================================
+    // ======================================================================
 
     public function testJoinSubWithCount(): void
     {
@@ -136,37 +150,38 @@ class JoinSubDiagnosticTest extends TestCase
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
-            ->having('post_count', '>', 1);
+            ->having('post_count', '>', 1)
+        ;
 
         try {
             $results = self::$orm->table('users')
                 ->select(['users.name', 'active_users.post_count'])
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
-                ->getAll();
+                ->getAll()
+            ;
 
-            $this->assertIsArray($results);
+            self::assertIsArray($results);
 
             foreach ($results as $result) {
-                $this->assertArrayHasKey('name', $result);
-                $this->assertArrayHasKey('post_count', $result);
-                $this->assertGreaterThan(1, $result['post_count']);
+                self::assertArrayHasKey('name', $result);
+                self::assertArrayHasKey('post_count', $result);
+                self::assertGreaterThan(1, $result['post_count']);
             }
-        } catch (\Exception $e) {
-
+        } catch (Exception $e) {
 
             throw $e;
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 8: Verificar SQL generado (debug)
-    //======================================================================
+    // ======================================================================
 
     public function testJoinSubSqlGeneration(): void
     {
         // Crear ORM con debug para ver el SQL
         global $config;
-        $debugOrm = new \VersaORM\VersaORM([
+        $debugOrm = new VersaORM([
             'driver'   => $config['DB']['DB_DRIVER'],
             'host'     => $config['DB']['DB_HOST'],
             'port'     => $config['DB']['DB_PORT'],
@@ -178,25 +193,27 @@ class JoinSubDiagnosticTest extends TestCase
 
         $subquery = $debugOrm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id');
+            ->groupBy('user_id')
+        ;
 
         try {
             // Esto debería mostrar el SQL generado
 
             $query = $debugOrm->table('users')
                 ->select(['users.name', 'active_users.post_count'])
-                ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
+                ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
+            ;
 
             // Intentar capturar el SQL sin ejecutar
-            $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $query);
-        } catch (\Exception $e) {
+            self::assertInstanceOf(QueryBuilder::class, $query);
+        } catch (Exception $e) {
             throw $e;
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // Test 9: Test directo en MySQL (bypass del ORM)
-    //======================================================================
+    // ======================================================================
 
     public function testDirectMysqlExecution(): void
     {
@@ -209,15 +226,15 @@ class JoinSubDiagnosticTest extends TestCase
             $config['DB']['DB_DRIVER'],
             $config['DB']['DB_HOST'],
             $config['DB']['DB_PORT'],
-            $config['DB']['DB_NAME']
+            $config['DB']['DB_NAME'],
         );
 
         try {
-            $connection = new \PDO(
+            $connection = new PDO(
                 $dsn,
                 $config['DB']['DB_USER'],
                 $config['DB']['DB_PASS'],
-                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
             );
 
             // SQL manual equivalente a lo que debería generar joinSub
@@ -232,19 +249,19 @@ class JoinSubDiagnosticTest extends TestCase
 
             $stmt = $connection->prepare($sql);
             $stmt->execute([1]);
-            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $this->assertIsArray($results);
+            self::assertIsArray($results);
 
             // Verificar estructura de datos
             if (!empty($results)) {
                 foreach ($results as $result) {
-                    $this->assertArrayHasKey('name', $result);
-                    $this->assertArrayHasKey('post_count', $result);
-                    $this->assertGreaterThan(1, $result['post_count']);
+                    self::assertArrayHasKey('name', $result);
+                    self::assertArrayHasKey('post_count', $result);
+                    self::assertGreaterThan(1, $result['post_count']);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -256,8 +273,8 @@ class JoinSubDiagnosticTest extends TestCase
             $simpleQuery = self::$orm->table('users')->limit(1);
             $result      = $simpleQuery->getAll();
 
-            $this->assertIsArray($result);
-        } catch (\Exception $e) {
+            self::assertIsArray($result);
+        } catch (Exception $e) {
             throw $e;
         }
     }

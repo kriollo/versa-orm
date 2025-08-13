@@ -21,8 +21,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('json_field', $jsonString, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['key' => 'value'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['key' => 'value'], $result);
     }
 
     public function testJsonTypeConversionWithAlreadyDecodedData(): void
@@ -33,8 +33,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('json_field', $arrayData, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['key' => 'value'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['key' => 'value'], $result);
     }
 
     public function testUuidTypeConversion(): void
@@ -45,8 +45,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('uuid_field', $uuid, $fieldSchema);
 
-        $this->assertIsString($result);
-        $this->assertEquals($uuid, $result);
+        self::assertIsString($result);
+        self::assertSame($uuid, $result);
     }
 
     public function testArrayTypeConversionFromJsonString(): void
@@ -57,8 +57,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('array_field', $arrayData, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['value1', 'value2'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['value1', 'value2'], $result);
     }
 
     public function testArrayTypeConversionFromArray(): void
@@ -69,8 +69,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('array_field', $arrayData, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['value1', 'value2'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['value1', 'value2'], $result);
     }
 
     public function testArrayTypeConversionFromScalarValue(): void
@@ -81,8 +81,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('array_field', $scalarValue, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['single_value'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['single_value'], $result);
     }
 
     public function testSetTypeConversionFromCommaSeparated(): void
@@ -93,8 +93,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('set_field', $setValue, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['option1', 'option2', 'option3'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['option1', 'option2', 'option3'], $result);
     }
 
     public function testEnumTypeConversionFromCommaSeparated(): void
@@ -105,8 +105,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('enum_field', $enumValue, $fieldSchema);
 
-        $this->assertIsArray($result);
-        $this->assertEquals(['active', 'pending'], $result);
+        self::assertIsArray($result);
+        self::assertSame(['active', 'pending'], $result);
     }
 
     public function testUnknownTypeReturnsOriginalValue(): void
@@ -117,7 +117,7 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('unknown_field', $value, $fieldSchema);
 
-        $this->assertEquals('some_value', $result);
+        self::assertSame('some_value', $result);
     }
 
     public function testTypeMappingThrowsExceptionWhenTypeNotDefined(): void
@@ -148,8 +148,8 @@ class AdvancedTypeMappingTest extends TestCase
             'total' => 2,
         ];
 
-        $this->assertIsArray($result);
-        $this->assertEquals($expected, $result);
+        self::assertIsArray($result);
+        self::assertSame($expected, $result);
     }
 
     public function testLoadTypeMappingConfig(): void
@@ -157,13 +157,13 @@ class AdvancedTypeMappingTest extends TestCase
         $configPath = __DIR__ . '/type_mapping_config.json';
         $config     = VersaModel::loadTypeMappingConfig($configPath);
 
-        $this->assertIsArray($config);
-        $this->assertArrayHasKey('json_field', $config);
-        $this->assertArrayHasKey('uuid_field', $config);
-        $this->assertArrayHasKey('array_field', $config);
-        $this->assertEquals('json', $config['json_field']['type']);
-        $this->assertEquals('uuid', $config['uuid_field']['type']);
-        $this->assertEquals('array', $config['array_field']['type']);
+        self::assertIsArray($config);
+        self::assertArrayHasKey('json_field', $config);
+        self::assertArrayHasKey('uuid_field', $config);
+        self::assertArrayHasKey('array_field', $config);
+        self::assertSame('json', $config['json_field']['type']);
+        self::assertSame('uuid', $config['uuid_field']['type']);
+        self::assertSame('array', $config['array_field']['type']);
     }
 
     public function testLoadTypeMappingConfigFileNotFound(): void

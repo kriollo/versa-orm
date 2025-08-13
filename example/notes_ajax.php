@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/bootstrap.php';
 
 use App\Models\Note;
@@ -16,21 +18,25 @@ switch ($action) {
             // Obtener ORM perezosamente y consultar notas como arrays
             $orm   = app()->orm();
             $notes = $orm->table('task_notes')
-                ->where('task_id', '=', (int)$taskId)
+                ->where('task_id', '=', (int) $taskId)
                 ->orderBy('created_at', 'DESC')
-                ->get(); // array<int,array>
+                ->get() // array<int,array>
+            ;
             $notesData = [];
+
             foreach ($notes as $noteArr) {
                 // Obtener usuario de la nota (user_id en array)
                 $userName = 'Usuario desconocido';
+
                 if (isset($noteArr['user_id'])) {
-                    $user = app()->orm()->table('users')->where('id', '=', (int)$noteArr['user_id'])->firstArray();
+                    $user = app()->orm()->table('users')->where('id', '=', (int) $noteArr['user_id'])->firstArray();
+
                     if ($user) {
                         $userName = $user['name'] ?? $userName;
                     }
                 }
                 $noteArr['user_name'] = $userName;
-                $notesData[] = $noteArr;
+                $notesData[]          = $noteArr;
             }
             echo json_encode(['success' => true, 'notes' => $notesData]);
         } else {
@@ -49,13 +55,13 @@ switch ($action) {
                     session_start();
                 }
                 $orm    = app()->orm();
-                $task   = (new Task(Task::tableName(), $orm))->find((int)$taskId);
-                $userId = $task ? $task->getUserIdByTaskId((int)$taskId) : 1; // Asignar usuario por defecto si no se encuentra
+                $task   = (new Task(Task::tableName(), $orm))->find((int) $taskId);
+                $userId = $task ? $task->getUserIdByTaskId((int) $taskId) : 1; // Asignar usuario por defecto si no se encuentra
 
                 // Crear nota usando el ORM directamente
                 $note = (new Note(Note::tableName(), $orm));
                 $note->fill([
-                    'task_id' => (int)$taskId,
+                    'task_id' => (int) $taskId,
                     'content' => $content,
                     'user_id' => $userId,
                 ]);
@@ -72,9 +78,11 @@ switch ($action) {
     case 'update_note':
         $noteId  = $_POST['note_id'] ?? null;
         $content = $_POST['content'] ?? null;
+
         if ($noteId && $content) {
             try {
-                $note = (new Note(Note::tableName(), app()->orm()))->find((int)$noteId);
+                $note = (new Note(Note::tableName(), app()->orm()))->find((int) $noteId);
+
                 if ($note) {
                     $note->content = $content;
                     $note->store();
@@ -92,9 +100,11 @@ switch ($action) {
 
     case 'delete_note':
         $noteId = $_POST['note_id'] ?? null;
+
         if ($noteId) {
             try {
-                $note = (new Note(Note::tableName(), app()->orm()))->find((int)$noteId);
+                $note = (new Note(Note::tableName(), app()->orm()))->find((int) $noteId);
+
                 if ($note) {
                     $note->trash();
                     echo json_encode(['success' => true]);

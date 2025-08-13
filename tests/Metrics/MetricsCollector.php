@@ -6,8 +6,11 @@ namespace VersaORM\Tests\Metrics;
 
 use DateTime;
 
+use function array_slice;
+use function count;
+
 /**
- * Sistema de recolección de métricas para el framework de testing
+ * Sistema de recolección de métricas para el framework de testing.
  *
  * Recolecta, almacena y analiza métricas de rendimiento, calidad y ejecución
  * del sistema de QA para generar insights y tendencias.
@@ -15,15 +18,19 @@ use DateTime;
 class MetricsCollector
 {
     private bool $enabled;
+
     private string $outputDir;
+
     private int $retentionDays;
+
     private array $metrics = [];
+
     private string $currentMetricsFile;
 
     public function __construct(array $config = [])
     {
-        $this->enabled = $config['enabled'] ?? true;
-        $this->outputDir = $config['output_dir'] ?? 'tests/metrics';
+        $this->enabled       = $config['enabled'] ?? true;
+        $this->outputDir     = $config['output_dir'] ?? 'tests/metrics';
         $this->retentionDays = $config['retention_days'] ?? 30;
 
         if ($this->enabled) {
@@ -34,7 +41,7 @@ class MetricsCollector
     }
 
     /**
-     * Registra el tiempo de ejecución de una operación
+     * Registra el tiempo de ejecución de una operación.
      */
     public function recordExecutionTime(string $operation, float $time): void
     {
@@ -43,14 +50,14 @@ class MetricsCollector
         }
 
         $this->recordMetric('execution_time', [
-            'operation' => $operation,
+            'operation'    => $operation,
             'time_seconds' => $time,
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u')
+            'timestamp'    => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
     /**
-     * Registra métricas de memoria
+     * Registra métricas de memoria.
      */
     public function recordMemoryUsage(string $operation, int $peakMemory, int $currentMemory): void
     {
@@ -59,17 +66,17 @@ class MetricsCollector
         }
 
         $this->recordMetric('memory_usage', [
-            'operation' => $operation,
-            'peak_memory_bytes' => $peakMemory,
-            'current_memory_bytes' => $currentMemory,
-            'peak_memory_formatted' => $this->formatBytes($peakMemory),
+            'operation'                => $operation,
+            'peak_memory_bytes'        => $peakMemory,
+            'current_memory_bytes'     => $currentMemory,
+            'peak_memory_formatted'    => $this->formatBytes($peakMemory),
             'current_memory_formatted' => $this->formatBytes($currentMemory),
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u')
+            'timestamp'                => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
     /**
-     * Registra métricas de tests
+     * Registra métricas de tests.
      */
     public function recordTestMetrics(string $testType, string $engine, array $metrics): void
     {
@@ -79,14 +86,14 @@ class MetricsCollector
 
         $this->recordMetric('test_execution', [
             'test_type' => $testType,
-            'engine' => $engine,
-            'metrics' => $metrics,
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u')
+            'engine'    => $engine,
+            'metrics'   => $metrics,
+            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
     /**
-     * Registra métricas de calidad
+     * Registra métricas de calidad.
      */
     public function recordQualityMetrics(string $tool, int $score, int $issueCount, array $details = []): void
     {
@@ -95,16 +102,16 @@ class MetricsCollector
         }
 
         $this->recordMetric('quality_analysis', [
-            'tool' => $tool,
-            'score' => $score,
+            'tool'        => $tool,
+            'score'       => $score,
             'issue_count' => $issueCount,
-            'details' => $details,
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u')
+            'details'     => $details,
+            'timestamp'   => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
     /**
-     * Registra métricas de benchmark
+     * Registra métricas de benchmark.
      */
     public function recordBenchmarkMetrics(string $benchmark, string $engine, array $metrics): void
     {
@@ -114,14 +121,14 @@ class MetricsCollector
 
         $this->recordMetric('benchmark', [
             'benchmark_name' => $benchmark,
-            'engine' => $engine,
-            'metrics' => $metrics,
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u')
+            'engine'         => $engine,
+            'metrics'        => $metrics,
+            'timestamp'      => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
     /**
-     * Registra una métrica personalizada
+     * Registra una métrica personalizada.
      */
     public function recordCustomMetric(string $name, array $data): void
     {
@@ -131,39 +138,15 @@ class MetricsCollector
 
         $this->recordMetric('custom', [
             'metric_name' => $name,
-            'data' => $data,
-            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u')
+            'data'        => $data,
+            'timestamp'   => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
     /**
-     * Método interno para registrar métricas
+     * Obtiene métricas por tipo y rango de fechas.
      */
-    private function recordMetric(string $type, array $data): void
-    {
-        $metric = [
-            'type' => $type,
-            'data' => $data,
-            'recorded_at' => (new DateTime())->format('Y-m-d H:i:s.u')
-        ];
-
-        $this->metrics[] = $metric;
-        $this->persistMetric($metric);
-    }
-
-    /**
-     * Persiste una métrica al archivo
-     */
-    private function persistMetric(array $metric): void
-    {
-        $jsonLine = json_encode($metric, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
-        file_put_contents($this->currentMetricsFile, $jsonLine, FILE_APPEND | LOCK_EX);
-    }
-
-    /**
-     * Obtiene métricas por tipo y rango de fechas
-     */
-    public function getMetrics(string $type = null, DateTime $from = null, DateTime $to = null): array
+    public function getMetrics(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): array
     {
         if (!$this->enabled) {
             return [];
@@ -171,7 +154,7 @@ class MetricsCollector
 
         $allMetrics = $this->loadAllMetrics();
 
-        return array_filter($allMetrics, function ($metric) use ($type, $from, $to) {
+        return array_filter($allMetrics, static function ($metric) use ($type, $from, $to) {
             // Filtrar por tipo
             if ($type && $metric['type'] !== $type) {
                 return false;
@@ -195,48 +178,50 @@ class MetricsCollector
     }
 
     /**
-     * Obtiene estadísticas de rendimiento
+     * Obtiene estadísticas de rendimiento.
      */
     public function getPerformanceStats(int $days = 7): array
     {
-        $from = new DateTime("-{$days} days");
+        $from             = new DateTime("-{$days} days");
         $executionMetrics = $this->getMetrics('execution_time', $from);
-        $memoryMetrics = $this->getMetrics('memory_usage', $from);
+        $memoryMetrics    = $this->getMetrics('memory_usage', $from);
 
         $stats = [
-            'period_days' => $days,
+            'period_days'      => $days,
             'total_executions' => count($executionMetrics),
-            'execution_times' => [],
-            'memory_usage' => [],
-            'operations' => []
+            'execution_times'  => [],
+            'memory_usage'     => [],
+            'operations'       => [],
         ];
 
         // Analizar tiempos de ejecución
-        $executionTimes = array_map(fn($m) => $m['data']['time_seconds'], $executionMetrics);
+        $executionTimes = array_map(static fn ($m) => $m['data']['time_seconds'], $executionMetrics);
+
         if (!empty($executionTimes)) {
             $stats['execution_times'] = [
-                'min' => min($executionTimes),
-                'max' => max($executionTimes),
-                'avg' => array_sum($executionTimes) / count($executionTimes),
-                'median' => $this->calculateMedian($executionTimes)
+                'min'    => min($executionTimes),
+                'max'    => max($executionTimes),
+                'avg'    => array_sum($executionTimes) / count($executionTimes),
+                'median' => $this->calculateMedian($executionTimes),
             ];
         }
 
         // Analizar uso de memoria
-        $memoryUsages = array_map(fn($m) => $m['data']['peak_memory_bytes'], $memoryMetrics);
+        $memoryUsages = array_map(static fn ($m) => $m['data']['peak_memory_bytes'], $memoryMetrics);
+
         if (!empty($memoryUsages)) {
             $stats['memory_usage'] = [
-                'min_bytes' => min($memoryUsages),
-                'max_bytes' => max($memoryUsages),
-                'avg_bytes' => (int) (array_sum($memoryUsages) / count($memoryUsages)),
+                'min_bytes'     => min($memoryUsages),
+                'max_bytes'     => max($memoryUsages),
+                'avg_bytes'     => (int) (array_sum($memoryUsages) / count($memoryUsages)),
                 'min_formatted' => $this->formatBytes(min($memoryUsages)),
                 'max_formatted' => $this->formatBytes(max($memoryUsages)),
-                'avg_formatted' => $this->formatBytes((int) (array_sum($memoryUsages) / count($memoryUsages)))
+                'avg_formatted' => $this->formatBytes((int) (array_sum($memoryUsages) / count($memoryUsages))),
             ];
         }
 
         // Analizar operaciones más frecuentes
-        $operations = array_count_values(array_map(fn($m) => $m['data']['operation'], $executionMetrics));
+        $operations = array_count_values(array_map(static fn ($m) => $m['data']['operation'], $executionMetrics));
         arsort($operations);
         $stats['operations'] = array_slice($operations, 0, 10, true);
 
@@ -244,25 +229,27 @@ class MetricsCollector
     }
 
     /**
-     * Obtiene tendencias de calidad
+     * Obtiene tendencias de calidad.
      */
     public function getQualityTrends(int $days = 30): array
     {
-        $from = new DateTime("-{$days} days");
+        $from           = new DateTime("-{$days} days");
         $qualityMetrics = $this->getMetrics('quality_analysis', $from);
 
         $trends = [
-            'period_days' => $days,
+            'period_days'    => $days,
             'total_analyses' => count($qualityMetrics),
-            'tools' => [],
-            'score_trend' => [],
-            'issue_trend' => []
+            'tools'          => [],
+            'score_trend'    => [],
+            'issue_trend'    => [],
         ];
 
         // Agrupar por herramienta
         $toolMetrics = [];
+
         foreach ($qualityMetrics as $metric) {
             $tool = $metric['data']['tool'];
+
             if (!isset($toolMetrics[$tool])) {
                 $toolMetrics[$tool] = [];
             }
@@ -271,17 +258,17 @@ class MetricsCollector
 
         // Analizar cada herramienta
         foreach ($toolMetrics as $tool => $metrics) {
-            $scores = array_map(fn($m) => $m['data']['score'], $metrics);
-            $issues = array_map(fn($m) => $m['data']['issue_count'], $metrics);
+            $scores = array_map(static fn ($m) => $m['data']['score'], $metrics);
+            $issues = array_map(static fn ($m) => $m['data']['issue_count'], $metrics);
 
             $trends['tools'][$tool] = [
                 'total_runs' => count($metrics),
-                'avg_score' => array_sum($scores) / count($scores),
-                'min_score' => min($scores),
-                'max_score' => max($scores),
+                'avg_score'  => array_sum($scores) / count($scores),
+                'min_score'  => min($scores),
+                'max_score'  => max($scores),
                 'avg_issues' => array_sum($issues) / count($issues),
                 'min_issues' => min($issues),
-                'max_issues' => max($issues)
+                'max_issues' => max($issues),
             ];
         }
 
@@ -289,7 +276,7 @@ class MetricsCollector
     }
 
     /**
-     * Genera un resumen de métricas
+     * Genera un resumen de métricas.
      */
     public function getSummary(): array
     {
@@ -297,40 +284,88 @@ class MetricsCollector
             return ['enabled' => false];
         }
 
-        $allMetrics = $this->loadAllMetrics();
+        $allMetrics    = $this->loadAllMetrics();
         $metricsByType = [];
 
         foreach ($allMetrics as $metric) {
             $type = $metric['type'];
+
             if (!isset($metricsByType[$type])) {
                 $metricsByType[$type] = 0;
             }
-            $metricsByType[$type]++;
+            ++$metricsByType[$type];
         }
 
         return [
-            'enabled' => true,
-            'total_metrics' => count($allMetrics),
-            'metrics_by_type' => $metricsByType,
-            'current_file' => $this->currentMetricsFile,
+            'enabled'          => true,
+            'total_metrics'    => count($allMetrics),
+            'metrics_by_type'  => $metricsByType,
+            'current_file'     => $this->currentMetricsFile,
             'output_directory' => $this->outputDir,
-            'retention_days' => $this->retentionDays,
-            'file_count' => count(glob($this->outputDir . '/metrics-*.jsonl'))
+            'retention_days'   => $this->retentionDays,
+            'file_count'       => count(glob($this->outputDir . '/metrics-*.jsonl')),
         ];
     }
 
     /**
-     * Carga todas las métricas desde archivos
+     * Exporta métricas a formato CSV.
+     */
+    public function exportToCsv(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): string
+    {
+        $metrics = $this->getMetrics($type, $from, $to);
+
+        if (empty($metrics)) {
+            return '';
+        }
+
+        $csv = "type,recorded_at,data\n";
+
+        foreach ($metrics as $metric) {
+            $dataJson = json_encode($metric['data'], JSON_UNESCAPED_UNICODE);
+            $csv .= "{$metric['type']},{$metric['recorded_at']},\"{$dataJson}\"\n";
+        }
+
+        return $csv;
+    }
+
+    /**
+     * Método interno para registrar métricas.
+     */
+    private function recordMetric(string $type, array $data): void
+    {
+        $metric = [
+            'type'        => $type,
+            'data'        => $data,
+            'recorded_at' => (new DateTime())->format('Y-m-d H:i:s.u'),
+        ];
+
+        $this->metrics[] = $metric;
+        $this->persistMetric($metric);
+    }
+
+    /**
+     * Persiste una métrica al archivo.
+     */
+    private function persistMetric(array $metric): void
+    {
+        $jsonLine = json_encode($metric, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+        file_put_contents($this->currentMetricsFile, $jsonLine, FILE_APPEND | LOCK_EX);
+    }
+
+    /**
+     * Carga todas las métricas desde archivos.
      */
     private function loadAllMetrics(): array
     {
-        $allMetrics = [];
+        $allMetrics  = [];
         $metricFiles = glob($this->outputDir . '/metrics-*.jsonl');
 
         foreach ($metricFiles as $file) {
             $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
             foreach ($lines as $line) {
                 $metric = json_decode($line, true);
+
                 if ($metric) {
                     $allMetrics[] = $metric;
                 }
@@ -341,7 +376,7 @@ class MetricsCollector
     }
 
     /**
-     * Asegura que el directorio de métricas existe
+     * Asegura que el directorio de métricas existe.
      */
     private function ensureMetricsDirectory(): void
     {
@@ -351,26 +386,29 @@ class MetricsCollector
     }
 
     /**
-     * Obtiene el archivo de métricas actual
+     * Obtiene el archivo de métricas actual.
      */
     private function getCurrentMetricsFile(): string
     {
         $date = date('Y-m-d');
+
         return $this->outputDir . "/metrics-{$date}.jsonl";
     }
 
     /**
-     * Limpia métricas antiguas
+     * Limpia métricas antiguas.
      */
     private function cleanupOldMetrics(): void
     {
-        $cutoffDate = new DateTime("-{$this->retentionDays} days");
+        $cutoffDate  = new DateTime("-{$this->retentionDays} days");
         $metricFiles = glob($this->outputDir . '/metrics-*.jsonl');
 
         foreach ($metricFiles as $file) {
             $filename = basename($file);
+
             if (preg_match('/metrics-(\d{4}-\d{2}-\d{2})\.jsonl/', $filename, $matches)) {
                 $fileDate = DateTime::createFromFormat('Y-m-d', $matches[1]);
+
                 if ($fileDate && $fileDate < $cutoffDate) {
                     unlink($file);
                 }
@@ -379,7 +417,7 @@ class MetricsCollector
     }
 
     /**
-     * Calcula la mediana de un array de números
+     * Calcula la mediana de un array de números.
      */
     private function calculateMedian(array $numbers): float
     {
@@ -388,42 +426,23 @@ class MetricsCollector
 
         if ($count % 2 === 0) {
             return ($numbers[$count / 2 - 1] + $numbers[$count / 2]) / 2;
-        } else {
-            return $numbers[intval($count / 2)];
         }
+
+        return $numbers[(int) ($count / 2)];
+
     }
 
     /**
-     * Formatea bytes en unidades legibles
+     * Formatea bytes en unidades legibles.
      */
     private function formatBytes(int $bytes): string
     {
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; ++$i) {
             $bytes /= 1024;
         }
 
         return round($bytes, 2) . ' ' . $units[$i];
-    }
-
-    /**
-     * Exporta métricas a formato CSV
-     */
-    public function exportToCsv(string $type = null, DateTime $from = null, DateTime $to = null): string
-    {
-        $metrics = $this->getMetrics($type, $from, $to);
-
-        if (empty($metrics)) {
-            return '';
-        }
-
-        $csv = "type,recorded_at,data\n";
-        foreach ($metrics as $metric) {
-            $dataJson = json_encode($metric['data'], JSON_UNESCAPED_UNICODE);
-            $csv .= "{$metric['type']},{$metric['recorded_at']},\"{$dataJson}\"\n";
-        }
-
-        return $csv;
     }
 }

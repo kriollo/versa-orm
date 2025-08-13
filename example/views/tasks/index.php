@@ -27,41 +27,41 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 transition-colors">Estado</label>
                     <select name="status" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 transition-colors">
                         <option value="">Todos los estados</option>
-                        <option value="todo" <?= ($filters['status'] ?? '') === 'todo' ? 'selected' : '' ?>>Por Hacer</option>
-                        <option value="in_progress" <?= ($filters['status'] ?? '') === 'in_progress' ? 'selected' : '' ?>>En Progreso</option>
-                        <option value="done" <?= ($filters['status'] ?? '') === 'done' ? 'selected' : '' ?>>Completadas</option>
+                        <option value="todo" <?php echo ($filters['status'] ?? '') === 'todo' ? 'selected' : ''; ?>>Por Hacer</option>
+                        <option value="in_progress" <?php echo ($filters['status'] ?? '') === 'in_progress' ? 'selected' : ''; ?>>En Progreso</option>
+                        <option value="done" <?php echo ($filters['status'] ?? '') === 'done' ? 'selected' : ''; ?>>Completadas</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 transition-colors">Prioridad</label>
                     <select name="priority" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 transition-colors">
                         <option value="">Todas las prioridades</option>
-                        <option value="urgent" <?= ($filters['priority'] ?? '') === 'urgent' ? 'selected' : '' ?>>Urgente</option>
-                        <option value="high" <?= ($filters['priority'] ?? '') === 'high' ? 'selected' : '' ?>>Alta</option>
-                        <option value="medium" <?= ($filters['priority'] ?? '') === 'medium' ? 'selected' : '' ?>>Media</option>
-                        <option value="low" <?= ($filters['priority'] ?? '') === 'low' ? 'selected' : '' ?>>Baja</option>
+                        <option value="urgent" <?php echo ($filters['priority'] ?? '') === 'urgent' ? 'selected' : ''; ?>>Urgente</option>
+                        <option value="high" <?php echo ($filters['priority'] ?? '') === 'high' ? 'selected' : ''; ?>>Alta</option>
+                        <option value="medium" <?php echo ($filters['priority'] ?? '') === 'medium' ? 'selected' : ''; ?>>Media</option>
+                        <option value="low" <?php echo ($filters['priority'] ?? '') === 'low' ? 'selected' : ''; ?>>Baja</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 transition-colors">Proyecto</label>
                     <select name="project_id" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 transition-colors">
                         <option value="">Todos los proyectos</option>
-                        <?php foreach ($projects as $project): ?>
-                            <option value="<?= $project['id'] ?>" <?= ($filters['project_id'] ?? '') == $project['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($project['name']) ?>
+                        <?php foreach ($projects as $project) { ?>
+                            <option value="<?php echo $project['id']; ?>" <?php echo ($filters['project_id'] ?? '') === $project['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($project['name']); ?>
                             </option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 transition-colors">Asignado a</label>
                     <select name="user_id" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 transition-colors">
                         <option value="">Todos los usuarios</option>
-                        <?php foreach ($users as $user): ?>
-                            <option value="<?= $user['id'] ?>" <?= ($filters['user_id'] ?? '') == $user['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($user['name']) ?>
+                        <?php foreach ($users as $user) { ?>
+                            <option value="<?php echo $user['id']; ?>" <?php echo ($filters['user_id'] ?? '') === $user['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($user['name']); ?>
                             </option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
                 </div>
                 <div class="flex items-end space-x-2">
@@ -81,57 +81,57 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div class="flex items-center space-x-4">
                 <span class="text-sm text-gray-700 dark:text-gray-300 transition-colors">
-                    Mostrando <?= $pagination['showing_from'] ?? 0 ?> - <?= $pagination['showing_to'] ?? 0 ?>
-                    de <?= $pagination['total'] ?? 0 ?> tareas
+                    Mostrando <?php echo $pagination['showing_from'] ?? 0; ?> - <?php echo $pagination['showing_to'] ?? 0; ?>
+                    de <?php echo $pagination['total'] ?? 0; ?> tareas
                 </span>
                 <form method="GET" action="?action=tasks" class="flex items-center space-x-2">
                     <input type="hidden" name="action" value="tasks">
-                    <?php if (!empty($filters['status'])): ?>
-                        <input type="hidden" name="status" value="<?= htmlspecialchars($filters['status']) ?>">
-                    <?php endif; ?>
-                    <?php if (!empty($filters['priority'])): ?>
-                        <input type="hidden" name="priority" value="<?= htmlspecialchars($filters['priority']) ?>">
-                    <?php endif; ?>
-                    <?php if (!empty($filters['project_id'])): ?>
-                        <input type="hidden" name="project_id" value="<?= htmlspecialchars($filters['project_id']) ?>">
-                    <?php endif; ?>
-                    <?php if (!empty($filters['user_id'])): ?>
-                        <input type="hidden" name="user_id" value="<?= htmlspecialchars($filters['user_id']) ?>">
-                    <?php endif; ?>
+                    <?php if (!empty($filters['status'])) { ?>
+                        <input type="hidden" name="status" value="<?php echo htmlspecialchars($filters['status']); ?>">
+                    <?php } ?>
+                    <?php if (!empty($filters['priority'])) { ?>
+                        <input type="hidden" name="priority" value="<?php echo htmlspecialchars($filters['priority']); ?>">
+                    <?php } ?>
+                    <?php if (!empty($filters['project_id'])) { ?>
+                        <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($filters['project_id']); ?>">
+                    <?php } ?>
+                    <?php if (!empty($filters['user_id'])) { ?>
+                        <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($filters['user_id']); ?>">
+                    <?php } ?>
                     <label class="text-sm text-gray-700 dark:text-gray-300 transition-colors">Por página:</label>
                     <select name="per_page" onchange="this.form.submit()" class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded px-2 py-1 text-sm transition-colors">
-                        <option value="1" <?= ($pagination['per_page'] ?? 10) == 1 ? 'selected' : '' ?>>1</option>
-                        <option value="5" <?= ($pagination['per_page'] ?? 10) == 5 ? 'selected' : '' ?>>5</option>
-                        <option value="10" <?= ($pagination['per_page'] ?? 10) == 10 ? 'selected' : '' ?>>10</option>
-                        <option value="20" <?= ($pagination['per_page'] ?? 10) == 20 ? 'selected' : '' ?>>20</option>
-                        <option value="50" <?= ($pagination['per_page'] ?? 10) == 50 ? 'selected' : '' ?>>50</option>
-                        <option value="100" <?= ($pagination['per_page'] ?? 10) == 100 ? 'selected' : '' ?>>100</option>
+                        <option value="1" <?php echo ($pagination['per_page'] ?? 10) === 1 ? 'selected' : ''; ?>>1</option>
+                        <option value="5" <?php echo ($pagination['per_page'] ?? 10) === 5 ? 'selected' : ''; ?>>5</option>
+                        <option value="10" <?php echo ($pagination['per_page'] ?? 10) === 10 ? 'selected' : ''; ?>>10</option>
+                        <option value="20" <?php echo ($pagination['per_page'] ?? 10) === 20 ? 'selected' : ''; ?>>20</option>
+                        <option value="50" <?php echo ($pagination['per_page'] ?? 10) === 50 ? 'selected' : ''; ?>>50</option>
+                        <option value="100" <?php echo ($pagination['per_page'] ?? 10) === 100 ? 'selected' : ''; ?>>100</option>
                     </select>
                 </form>
             </div>
 
             <!-- Paginación -->
-            <?php if (($pagination['total_pages'] ?? 1) > 1): ?>
+            <?php if (($pagination['total_pages'] ?? 1) > 1) { ?>
                 <div class="flex items-center space-x-2">
-                    <?php if ($pagination['has_prev'] ?? false): ?>
-                        <a href="?action=tasks&page=<?= $pagination['prev_page'] ?>&per_page=<?= $pagination['per_page'] ?><?= !empty($filters['status']) ? '&status=' . urlencode($filters['status']) : '' ?><?= !empty($filters['priority']) ? '&priority=' . urlencode($filters['priority']) : '' ?><?= !empty($filters['project_id']) ? '&project_id=' . urlencode($filters['project_id']) : '' ?><?= !empty($filters['user_id']) ? '&user_id=' . urlencode($filters['user_id']) : '' ?>"
+                    <?php if ($pagination['has_prev'] ?? false) { ?>
+                        <a href="?action=tasks&page=<?php echo $pagination['prev_page']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo !empty($filters['status']) ? '&status=' . urlencode($filters['status']) : ''; ?><?php echo !empty($filters['priority']) ? '&priority=' . urlencode($filters['priority']) : ''; ?><?php echo !empty($filters['project_id']) ? '&project_id=' . urlencode($filters['project_id']) : ''; ?><?php echo !empty($filters['user_id']) ? '&user_id=' . urlencode($filters['user_id']) : ''; ?>"
                             class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </a>
-                    <?php endif; ?>
+                    <?php } ?>
 
                     <span class="px-3 py-2 bg-blue-600 text-white rounded">
-                        <?= $pagination['current_page'] ?? 1 ?> / <?= $pagination['total_pages'] ?? 1 ?>
+                        <?php echo $pagination['current_page'] ?? 1; ?> / <?php echo $pagination['total_pages'] ?? 1; ?>
                     </span>
 
-                    <?php if ($pagination['has_next'] ?? false): ?>
-                        <a href="?action=tasks&page=<?= $pagination['next_page'] ?>&per_page=<?= $pagination['per_page'] ?><?= !empty($filters['status']) ? '&status=' . urlencode($filters['status']) : '' ?><?= !empty($filters['priority']) ? '&priority=' . urlencode($filters['priority']) : '' ?><?= !empty($filters['project_id']) ? '&project_id=' . urlencode($filters['project_id']) : '' ?><?= !empty($filters['user_id']) ? '&user_id=' . urlencode($filters['user_id']) : '' ?>"
+                    <?php if ($pagination['has_next'] ?? false) { ?>
+                        <a href="?action=tasks&page=<?php echo $pagination['next_page']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo !empty($filters['status']) ? '&status=' . urlencode($filters['status']) : ''; ?><?php echo !empty($filters['priority']) ? '&priority=' . urlencode($filters['priority']) : ''; ?><?php echo !empty($filters['project_id']) ? '&project_id=' . urlencode($filters['project_id']) : ''; ?><?php echo !empty($filters['user_id']) ? '&user_id=' . urlencode($filters['user_id']) : ''; ?>"
                             class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </a>
-                    <?php endif; ?>
+                    <?php } ?>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
     </div>
 
@@ -140,10 +140,10 @@
         <?php
         // Calcular estadísticas basadas en el total filtrado (antes de paginación)
         $totalFiltered = $pagination['total'] ?? 0;
-        $todoTasks             = count(array_filter($tasks, fn($t) => $t['status'] === 'todo'));
-        $inProgressTasks       = count(array_filter($tasks, fn($t) => $t['status'] === 'in_progress'));
-        $doneTasks             = count(array_filter($tasks, fn($t) => $t['status'] === 'done'));
-        ?>
+$todoTasks             = count(array_filter($tasks, static fn ($t) => $t['status'] === 'todo'));
+$inProgressTasks       = count(array_filter($tasks, static fn ($t) => $t['status'] === 'in_progress'));
+$doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status'] === 'done'));
+?>
 
         <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition-colors">
             <div class="flex items-center">
@@ -151,8 +151,8 @@
                     <i class="fas fa-tasks text-gray-600 dark:text-gray-300"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?= $totalFiltered ?></p>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">Total<?= !empty(array_filter($filters)) ? ' (Filtrado)' : '' ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo $totalFiltered; ?></p>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">Total<?php echo !empty(array_filter($filters)) ? ' (Filtrado)' : ''; ?></p>
                 </div>
             </div>
         </div>
@@ -164,7 +164,7 @@
                     <i class="fas fa-clock text-gray-600 dark:text-gray-300"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?= $todoTasks ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo $todoTasks; ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">Por Hacer</p>
                 </div>
             </div>
@@ -176,7 +176,7 @@
                     <i class="fas fa-spinner text-blue-600 dark:text-blue-400"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?= $inProgressTasks ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo $inProgressTasks; ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">En Progreso</p>
                 </div>
             </div>
@@ -188,7 +188,7 @@
                     <i class="fas fa-check text-green-600 dark:text-green-400"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?= $doneTasks ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo $doneTasks; ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">Completadas</p>
                 </div>
             </div>
@@ -197,7 +197,7 @@
 </div>
 
 <!-- Lista de tareas -->
-<?php if (!empty($tasks)): ?>
+<?php if (!empty($tasks)) { ?>
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -214,120 +214,121 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
-                    <?php foreach ($tasks as $task): ?>
+                    <?php foreach ($tasks as $task) { ?>
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div>
-                                    <div class="font-medium text-gray-900 dark:text-white transition-colors"><?= htmlspecialchars($task['title']) ?></div>
-                                    <?php if ($task['description']): ?>
-                                        <div class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?= htmlspecialchars(substr($task['description'], 0, 60)) ?><?= strlen($task['description']) > 60 ? '...' : '' ?></div>
-                                    <?php endif; ?>
+                                    <div class="font-medium text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($task['title']); ?></div>
+                                    <?php if ($task['description']) { ?>
+                                        <div class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?php echo htmlspecialchars(substr($task['description'], 0, 60)); ?><?php echo strlen($task['description']) > 60 ? '...' : ''; ?></div>
+                                    <?php } ?>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <?php if ($task['project_name']): ?>
+                                <?php if ($task['project_name']) { ?>
                                     <div class="flex items-center">
-                                        <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($task['project_color'] ?? '#6B7280') ?>"></div>
-                                        <span class="text-sm text-gray-900 dark:text-white transition-colors"><?= htmlspecialchars($task['project_name']) ?></span>
+                                        <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($task['project_color'] ?? '#6B7280'); ?>"></div>
+                                        <span class="text-sm text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($task['project_name']); ?></span>
                                     </div>
-                                <?php else: ?>
+                                <?php } else { ?>
                                     <span class="text-gray-400">-</span>
-                                <?php endif; ?>
+                                <?php } ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <?php if ($task['user_name']): ?>
+                                <?php if ($task['user_name']) { ?>
                                     <div class="flex items-center">
-                                        <div class="avatar-sm mr-2" style="background-color: <?= htmlspecialchars($task['avatar_color'] ?? '#6B7280') ?>">
-                                            <?= strtoupper(substr($task['user_name'], 0, 2)) ?>
+                                        <div class="avatar-sm mr-2" style="background-color: <?php echo htmlspecialchars($task['avatar_color'] ?? '#6B7280'); ?>">
+                                            <?php echo strtoupper(substr($task['user_name'], 0, 2)); ?>
                                         </div>
-                                        <span class="text-sm text-gray-900 dark:text-white transition-colors"><?= htmlspecialchars($task['user_name']) ?></span>
+                                        <span class="text-sm text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($task['user_name']); ?></span>
                                     </div>
-                                <?php else: ?>
+                                <?php } else { ?>
                                     <span class="text-gray-400">Sin asignar</span>
-                                <?php endif; ?>
+                                <?php } ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
-                                $statusClasses = [
-                                    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-                                    'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                ];
-                                $statusNames = [
-                                    'todo'        => 'Por Hacer',
-                                    'in_progress' => 'En Progreso',
-                                    'done'        => 'Completada',
-                                ];
-                                ?>
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $statusClasses[$task['status']] ?>">
-                                    <?= $statusNames[$task['status']] ?>
+                        $statusClasses = [
+                            'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+                            'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                            'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                        ];
+                        $statusNames = [
+                            'todo'        => 'Por Hacer',
+                            'in_progress' => 'En Progreso',
+                            'done'        => 'Completada',
+                        ];
+                        ?>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?php echo $statusClasses[$task['status']]; ?>">
+                                    <?php echo $statusNames[$task['status']]; ?>
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
-                                $priorityClasses = [
-                                    'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                    'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                    'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                    'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                ];
-                                $priorityNames = [
-                                    'urgent' => 'Urgente',
-                                    'high'   => 'Alta',
-                                    'medium' => 'Media',
-                                    'low'    => 'Baja',
-                                ];
-                                ?>
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= $priorityClasses[$task['priority']] ?>">
-                                    <?= $priorityNames[$task['priority']] ?>
+                        $priorityClasses = [
+                            'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                            'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                            'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                            'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                        ];
+                        $priorityNames = [
+                            'urgent' => 'Urgente',
+                            'high'   => 'Alta',
+                            'medium' => 'Media',
+                            'low'    => 'Baja',
+                        ];
+                        ?>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?php echo $priorityClasses[$task['priority']]; ?>">
+                                    <?php echo $priorityNames[$task['priority']]; ?>
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white transition-colors">
-                                <?php if ($task['due_date']): ?>
+                                <?php if ($task['due_date']) { ?>
                                     <?php
-                                    $rawDue = $task['due_date'];
-                                    if ($rawDue instanceof \DateTimeInterface) {
+                            $rawDue = $task['due_date'];
+
+                                    if ($rawDue instanceof DateTimeInterface) {
                                         $dueDate = $rawDue;
                                     } else {
                                         try {
-                                            $dueDate = new DateTime((string)$rawDue);
-                                        } catch (\Throwable) {
+                                            $dueDate = new DateTime((string) $rawDue);
+                                        } catch (Throwable) {
                                             $dueDate = null; // fallback silencioso
                                         }
                                     }
                                     $today     = new DateTime();
                                     $isOverdue = $dueDate ? ($today > $dueDate) : false;
                                     ?>
-                                    <?php if ($dueDate): ?>
-                                        <span class="<?= $isOverdue ? 'text-red-600' : '' ?>">
-                                            <?= htmlspecialchars($dueDate->format('d/m/Y')) ?>
-                                            <?php if ($isOverdue): ?>
+                                    <?php if ($dueDate) { ?>
+                                        <span class="<?php echo $isOverdue ? 'text-red-600' : ''; ?>">
+                                            <?php echo htmlspecialchars($dueDate->format('d/m/Y')); ?>
+                                            <?php if ($isOverdue) { ?>
                                                 <i class="fas fa-exclamation-triangle ml-1"></i>
-                                            <?php endif; ?>
+                                            <?php } ?>
                                         </span>
-                                    <?php else: ?>
+                                    <?php } else { ?>
                                         <span class="text-gray-400">-</span>
-                                    <?php endif; ?>
-                                <?php else: ?>
+                                    <?php } ?>
+                                <?php } else { ?>
                                     <span class="text-gray-400">-</span>
-                                <?php endif; ?>
+                                <?php } ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white transition-colors">
-                                <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal <?= ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : '' ?>"
-                                    data-task-id="<?= $task['id'] ?>"
-                                    data-task-title="<?= htmlspecialchars($task['title']) ?>">
+                                <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal <?php echo ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : ''; ?>"
+                                    data-task-id="<?php echo $task['id']; ?>"
+                                    data-task-title="<?php echo htmlspecialchars($task['title']); ?>">
                                     <i class="fas fa-sticky-note"></i>
-                                    <?php if (($task['notes_count'] ?? 0) > 0): ?>
-                                        <span class="note-count-badge"><?= $task['notes_count'] ?></span>
-                                    <?php endif; ?>
+                                    <?php if (($task['notes_count'] ?? 0) > 0) { ?>
+                                        <span class="note-count-badge"><?php echo $task['notes_count']; ?></span>
+                                    <?php } ?>
                                 </button>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-2">
-                                    <a href="?action=task_edit&id=<?= $task['id'] ?>" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors">
+                                    <a href="?action=task_edit&id=<?php echo $task['id']; ?>" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="?action=task_delete&id=<?= $task['id'] ?>"
+                                    <a href="?action=task_delete&id=<?php echo $task['id']; ?>"
                                         onclick="return confirm('¿Estás seguro de que quieres eliminar esta tarea?')"
                                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors">
                                         <i class="fas fa-trash"></i>
@@ -335,12 +336,12 @@
                                 </div>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </tbody>
             </table>
         </div>
     </div>
-<?php else: ?>
+<?php } else { ?>
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center transition-colors">
         <i class="fas fa-tasks text-4xl text-gray-300 dark:text-gray-500 mb-4 transition-colors"></i>
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2 transition-colors">No hay tareas</h3>
@@ -350,125 +351,125 @@
             Crear Tarea
         </a>
     </div>
-<?php endif; ?>
+<?php } ?>
 
 <!-- Controles de Paginación -->
-<?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
+<?php if (isset($pagination) && $pagination['total_pages'] > 1) { ?>
     <div class="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6 mt-4 rounded-lg shadow transition-colors">
         <div class="flex-1 flex justify-between sm:hidden">
-            <?php if ($pagination['current_page'] > 1): ?>
-                <a href="?action=tasks&page=<?= $pagination['current_page'] - 1 ?>&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+            <?php if ($pagination['current_page'] > 1) { ?>
+                <a href="?action=tasks&page=<?php echo $pagination['current_page'] - 1; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                     class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     Anterior
                 </a>
-            <?php endif; ?>
-            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                <a href="?action=tasks&page=<?= $pagination['current_page'] + 1 ?>&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+            <?php } ?>
+            <?php if ($pagination['current_page'] < $pagination['total_pages']) { ?>
+                <a href="?action=tasks&page=<?php echo $pagination['current_page'] + 1; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                     class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     Siguiente
                 </a>
-            <?php endif; ?>
+            <?php } ?>
         </div>
         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
                 <p class="text-sm text-gray-700 dark:text-gray-300 transition-colors">
                     Mostrando
-                    <span class="font-medium"><?= $pagination['start'] ?></span>
+                    <span class="font-medium"><?php echo $pagination['start']; ?></span>
                     a
-                    <span class="font-medium"><?= $pagination['end'] ?></span>
+                    <span class="font-medium"><?php echo $pagination['end']; ?></span>
                     de
-                    <span class="font-medium"><?= $pagination['total'] ?></span>
+                    <span class="font-medium"><?php echo $pagination['total']; ?></span>
                     resultados
                 </p>
             </div>
             <div class="flex items-center space-x-2">
                 <!-- Selector de elementos por página -->
                 <select onchange="changePerPage(this.value)" class="form-select border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md text-sm transition-colors">
-                    <option value="1" <?= $pagination['per_page'] == 1 ? 'selected' : '' ?>>1 por página</option>
-                    <option value="5" <?= $pagination['per_page'] == 5 ? 'selected' : '' ?>>5 por página</option>
-                    <option value="10" <?= $pagination['per_page'] == 10 ? 'selected' : '' ?>>10 por página</option>
-                    <option value="20" <?= $pagination['per_page'] == 20 ? 'selected' : '' ?>>20 por página</option>
-                    <option value="50" <?= $pagination['per_page'] == 50 ? 'selected' : '' ?>>50 por página</option>
-                    <option value="100" <?= $pagination['per_page'] == 100 ? 'selected' : '' ?>>100 por página</option>
+                    <option value="1" <?php echo $pagination['per_page'] === 1 ? 'selected' : ''; ?>>1 por página</option>
+                    <option value="5" <?php echo $pagination['per_page'] === 5 ? 'selected' : ''; ?>>5 por página</option>
+                    <option value="10" <?php echo $pagination['per_page'] === 10 ? 'selected' : ''; ?>>10 por página</option>
+                    <option value="20" <?php echo $pagination['per_page'] === 20 ? 'selected' : ''; ?>>20 por página</option>
+                    <option value="50" <?php echo $pagination['per_page'] === 50 ? 'selected' : ''; ?>>50 por página</option>
+                    <option value="100" <?php echo $pagination['per_page'] === 100 ? 'selected' : ''; ?>>100 por página</option>
                 </select>
 
                 <!-- Navegación de páginas -->
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                     <!-- Botón Anterior -->
-                    <?php if ($pagination['current_page'] > 1): ?>
-                        <a href="?action=tasks&page=<?= $pagination['current_page'] - 1 ?>&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+                    <?php if ($pagination['current_page'] > 1) { ?>
+                        <a href="?action=tasks&page=<?php echo $pagination['current_page'] - 1; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                             class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <span class="sr-only">Anterior</span>
                             <i class="fas fa-chevron-left"></i>
                         </a>
-                    <?php else: ?>
+                    <?php } else { ?>
                         <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-sm font-medium text-gray-300">
                             <i class="fas fa-chevron-left"></i>
                         </span>
-                    <?php endif; ?>
+                    <?php } ?>
 
                     <!-- Números de página -->
                     <?php
                     $start_page = max(1, $pagination['current_page'] - 2);
-                    $end_page                       = min($pagination['total_pages'], $pagination['current_page'] + 2);
+    $end_page                   = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
-                    // Mostrar primera página si no está en el rango
-                    if ($start_page > 1): ?>
-                        <a href="?action=tasks&page=1&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+    // Mostrar primera página si no está en el rango
+    if ($start_page > 1) { ?>
+                        <a href="?action=tasks&page=1&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                             class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                             1
                         </a>
-                        <?php if ($start_page > 2): ?>
+                        <?php if ($start_page > 2) { ?>
                             <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
                                 ...
                             </span>
-                        <?php endif; ?>
-                    <?php endif; ?>
+                        <?php } ?>
+                    <?php } ?>
 
                     <!-- Páginas en el rango actual -->
-                    <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
-                        <?php if ($i == $pagination['current_page']): ?>
+                    <?php for ($i = $start_page; $i <= $end_page; ++$i) { ?>
+                        <?php if ($i === $pagination['current_page']) { ?>
                             <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                                <?= $i ?>
+                                <?php echo $i; ?>
                             </span>
-                        <?php else: ?>
-                            <a href="?action=tasks&page=<?= $i ?>&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+                        <?php } else { ?>
+                            <a href="?action=tasks&page=<?php echo $i; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                                 class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                <?= $i ?>
+                                <?php echo $i; ?>
                             </a>
-                        <?php endif; ?>
-                    <?php endfor; ?>
+                        <?php } ?>
+                    <?php } ?>
 
                     <!-- Mostrar última página si no está en el rango -->
-                    <?php if ($end_page < $pagination['total_pages']): ?>
-                        <?php if ($end_page < $pagination['total_pages'] - 1): ?>
+                    <?php if ($end_page < $pagination['total_pages']) { ?>
+                        <?php if ($end_page < $pagination['total_pages'] - 1) { ?>
                             <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
                                 ...
                             </span>
-                        <?php endif; ?>
-                        <a href="?action=tasks&page=<?= $pagination['total_pages'] ?>&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+                        <?php } ?>
+                        <a href="?action=tasks&page=<?php echo $pagination['total_pages']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                             class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <?= $pagination['total_pages'] ?>
+                            <?php echo $pagination['total_pages']; ?>
                         </a>
-                    <?php endif; ?>
+                    <?php } ?>
 
                     <!-- Botón Siguiente -->
-                    <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                        <a href="?action=tasks&page=<?= $pagination['current_page'] + 1 ?>&per_page=<?= $pagination['per_page'] ?><?= $filterQueryString ?>"
+                    <?php if ($pagination['current_page'] < $pagination['total_pages']) { ?>
+                        <a href="?action=tasks&page=<?php echo $pagination['current_page'] + 1; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo $filterQueryString; ?>"
                             class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span class="sr-only">Siguiente</span>
                             <i class="fas fa-chevron-right"></i>
                         </a>
-                    <?php else: ?>
+                    <?php } else { ?>
                         <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300">
                             <i class="fas fa-chevron-right"></i>
                         </span>
-                    <?php endif; ?>
+                    <?php } ?>
                 </nav>
             </div>
         </div>
     </div>
-<?php endif; ?>
+<?php } ?>
 </div>
 
 <!-- JavaScript para funcionalidad de paginación -->

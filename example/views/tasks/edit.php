@@ -18,7 +18,7 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 border border-transparent dark:border-gray-700 transition-colors">
-        <form method="POST" action="?action=task_edit&id=<?= $task->id ?>">
+        <form method="POST" action="?action=task_edit&id=<?php echo $task->id; ?>">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Información básica -->
                 <div class="md:col-span-2">
@@ -33,7 +33,7 @@
                         id="title"
                         name="title"
                         required
-                        value="<?= htmlspecialchars($task->title) ?>"
+                        value="<?php echo htmlspecialchars($task->title); ?>"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Ingresa el título de la tarea">
                 </div>
@@ -44,7 +44,7 @@
                         name="description"
                         rows="4"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Describe los detalles de la tarea"><?= htmlspecialchars($task->description ?? '') ?></textarea>
+                        placeholder="Describe los detalles de la tarea"><?php echo htmlspecialchars($task->description ?? ''); ?></textarea>
                 </div>
 
                 <!-- Asignación y configuración -->
@@ -61,11 +61,11 @@
                         required
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Selecciona un proyecto</option>
-                        <?php foreach ($projects as $project): ?>
-                            <option value="<?= $project['id'] ?>" <?= $task->project_id == $project['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($project['name']) ?>
+                        <?php foreach ($projects as $project) { ?>
+                            <option value="<?php echo $project['id']; ?>" <?php echo $task->project_id === $project['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($project['name']); ?>
                             </option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
                 </div>
 
@@ -75,11 +75,11 @@
                         name="user_id"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Sin asignar</option>
-                        <?php foreach ($users as $user): ?>
-                            <option value="<?= $user['id'] ?>" <?= $task->user_id == $user['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)
+                        <?php foreach ($users as $user) { ?>
+                            <option value="<?php echo $user['id']; ?>" <?php echo $task->user_id === $user['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo htmlspecialchars($user['email']); ?>)
                             </option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
                 </div>
 
@@ -88,9 +88,9 @@
                     <select id="status"
                         name="status"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                        <option value="todo" <?= $task->status === 'todo' ? 'selected' : '' ?>>Por Hacer</option>
-                        <option value="in_progress" <?= $task->status === 'in_progress' ? 'selected' : '' ?>>En Progreso</option>
-                        <option value="done" <?= $task->status === 'done' ? 'selected' : '' ?>>Completada</option>
+                        <option value="todo" <?php echo $task->status === 'todo' ? 'selected' : ''; ?>>Por Hacer</option>
+                        <option value="in_progress" <?php echo $task->status === 'in_progress' ? 'selected' : ''; ?>>En Progreso</option>
+                        <option value="done" <?php echo $task->status === 'done' ? 'selected' : ''; ?>>Completada</option>
                     </select>
                 </div>
 
@@ -99,10 +99,10 @@
                     <select id="priority"
                         name="priority"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                        <option value="low" <?= $task->priority === 'low' ? 'selected' : '' ?>>Baja</option>
-                        <option value="medium" <?= $task->priority === 'medium' ? 'selected' : '' ?>>Media</option>
-                        <option value="high" <?= $task->priority === 'high' ? 'selected' : '' ?>>Alta</option>
-                        <option value="urgent" <?= $task->priority === 'urgent' ? 'selected' : '' ?>>Urgente</option>
+                        <option value="low" <?php echo $task->priority === 'low' ? 'selected' : ''; ?>>Baja</option>
+                        <option value="medium" <?php echo $task->priority === 'medium' ? 'selected' : ''; ?>>Media</option>
+                        <option value="high" <?php echo $task->priority === 'high' ? 'selected' : ''; ?>>Alta</option>
+                        <option value="urgent" <?php echo $task->priority === 'urgent' ? 'selected' : ''; ?>>Urgente</option>
                     </select>
                 </div>
 
@@ -111,7 +111,7 @@
                     <input type="date"
                         id="due_date"
                         name="due_date"
-                        value="<?= $task->due_date ? safe_date('Y-m-d', $task->due_date) : '' ?>"
+                        value="<?php echo $task->due_date ? safe_date('Y-m-d', $task->due_date) : ''; ?>"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                 </div>
 
@@ -121,19 +121,19 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors">Selecciona las etiquetas que se aplicarán a esta tarea</p>
 
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <?php foreach ($labels as $label): ?>
+                        <?php foreach ($labels as $label) { ?>
                             <label class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
                                 <input type="checkbox"
                                     name="labels[]"
-                                    value="<?= $label['id'] ?>"
-                                    <?= in_array($label['id'], $taskLabels ?? []) ? 'checked' : '' ?>
+                                    value="<?php echo $label['id']; ?>"
+                                    <?php echo in_array($label['id'], $taskLabels ?? [], true) ? 'checked' : ''; ?>
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
-                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?= htmlspecialchars($label['color']) ?>"></div>
-                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?= htmlspecialchars($label['name']) ?></span>
+                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($label['color']); ?>"></div>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo htmlspecialchars($label['name']); ?></span>
                                 </div>
                             </label>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -142,10 +142,10 @@
             <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <div>
-                        <strong>Creada:</strong> <?= isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : '' ?>
+                        <strong>Creada:</strong> <?php echo isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : ''; ?>
                     </div>
                     <div>
-                        <strong>Actualizada:</strong> <?= isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : '' ?>
+                        <strong>Actualizada:</strong> <?php echo isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''; ?>
                     </div>
                 </div>
             </div>

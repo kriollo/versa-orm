@@ -6,6 +6,8 @@ namespace VersaORM\SQL\Dialects;
 
 use VersaORM\SQL\SqlDialectInterface;
 
+use function sprintf;
+
 class SQLiteDialect implements SqlDialectInterface
 {
     public function quoteIdentifier(string $name): string
@@ -13,12 +15,15 @@ class SQLiteDialect implements SqlDialectInterface
         if ($name === '*') {
             return '*';
         }
+
         if (str_contains($name, '.')) {
             [$t, $c] = explode('.', $name, 2);
+
             if ($c === '*') {
                 return sprintf('"%s".*', $t);
             }
         }
+
         return '"' . str_replace('"', '""', $name) . '"';
     }
 
@@ -30,12 +35,15 @@ class SQLiteDialect implements SqlDialectInterface
     public function compileLimitOffset(?int $limit, ?int $offset): string
     {
         $sql = '';
+
         if ($limit !== null) {
             $sql .= ' LIMIT ' . (int) $limit;
         }
+
         if ($offset !== null) {
             $sql .= ' OFFSET ' . (int) $offset;
         }
+
         return $sql;
     }
 

@@ -6,8 +6,13 @@ namespace VersaORM\Tests\Results;
 
 use DateTime;
 
+use function count;
+use function is_array;
+use function is_string;
+use function sprintf;
+
 /**
- * Clase que representa el resultado de análisis de calidad de código
+ * Clase que representa el resultado de análisis de calidad de código.
  *
  * Contiene información sobre herramientas de análisis estático,
  * puntuaciones de calidad, issues encontrados y métricas.
@@ -15,11 +20,17 @@ use DateTime;
 class QualityResult
 {
     public string $tool;
+
     public int $score;
+
     public array $issues;
+
     public array $metrics;
+
     public bool $passed;
+
     public string $output;
+
     public DateTime $timestamp;
 
     public function __construct(
@@ -29,37 +40,44 @@ class QualityResult
         array $metrics,
         bool $passed,
         string $output,
-        DateTime $timestamp
+        DateTime $timestamp,
     ) {
-        $this->tool = $tool;
-        $this->score = $score;
-        $this->issues = $issues;
-        $this->metrics = $metrics;
-        $this->passed = $passed;
-        $this->output = $output;
+        $this->tool      = $tool;
+        $this->score     = $score;
+        $this->issues    = $issues;
+        $this->metrics   = $metrics;
+        $this->passed    = $passed;
+        $this->output    = $output;
         $this->timestamp = $timestamp;
     }
 
     /**
-     * Obtiene el nivel de calidad basado en la puntuación
+     * Obtiene el nivel de calidad basado en la puntuación.
      */
     public function getQualityLevel(): string
     {
         if ($this->score >= 95) {
             return 'excellent';
-        } elseif ($this->score >= 85) {
-            return 'good';
-        } elseif ($this->score >= 70) {
-            return 'fair';
-        } elseif ($this->score >= 50) {
-            return 'poor';
-        } else {
-            return 'critical';
         }
+
+        if ($this->score >= 85) {
+            return 'good';
+        }
+
+        if ($this->score >= 70) {
+            return 'fair';
+        }
+
+        if ($this->score >= 50) {
+            return 'poor';
+        }
+
+        return 'critical';
+
     }
 
     /**
-     * Obtiene el número total de issues
+     * Obtiene el número total de issues.
      */
     public function getIssueCount(): int
     {
@@ -67,7 +85,7 @@ class QualityResult
     }
 
     /**
-     * Determina si hay issues críticos
+     * Determina si hay issues críticos.
      */
     public function hasCriticalIssues(): bool
     {
@@ -75,28 +93,31 @@ class QualityResult
             if (is_array($issue) && isset($issue['severity']) && $issue['severity'] === 'critical') {
                 return true;
             }
+
             if (is_string($issue) && str_contains(strtolower($issue), 'critical')) {
                 return true;
             }
         }
+
         return false;
     }
 
     /**
-     * Filtra issues por severidad
+     * Filtra issues por severidad.
      */
     public function getIssuesBySeverity(string $severity): array
     {
-        return array_filter($this->issues, function ($issue) use ($severity) {
+        return array_filter($this->issues, static function ($issue) use ($severity) {
             if (is_array($issue) && isset($issue['severity'])) {
                 return $issue['severity'] === $severity;
             }
+
             return false;
         });
     }
 
     /**
-     * Obtiene métricas específicas de una herramienta
+     * Obtiene métricas específicas de una herramienta.
      */
     public function getToolMetrics(string $tool): array
     {
@@ -104,13 +125,13 @@ class QualityResult
     }
 
     /**
-     * Obtiene un resumen textual del análisis
+     * Obtiene un resumen textual del análisis.
      */
     public function getSummary(): string
     {
-        $level = $this->getQualityLevel();
+        $level      = $this->getQualityLevel();
         $issueCount = $this->getIssueCount();
-        $status = $this->passed ? 'PASSED' : 'FAILED';
+        $status     = $this->passed ? 'PASSED' : 'FAILED';
 
         return sprintf(
             '%s analysis: %s (score: %d/100, level: %s, issues: %d)',
@@ -118,12 +139,12 @@ class QualityResult
             $status,
             $this->score,
             $level,
-            $issueCount
+            $issueCount,
         );
     }
 
     /**
-     * Genera recomendaciones basadas en los resultados
+     * Genera recomendaciones basadas en los resultados.
      */
     public function getRecommendations(): array
     {
@@ -142,6 +163,7 @@ class QualityResult
         }
 
         $level = $this->getQualityLevel();
+
         if ($level === 'poor' || $level === 'critical') {
             $recommendations[] = 'Code quality is below acceptable standards, immediate action required';
         }
@@ -150,22 +172,22 @@ class QualityResult
     }
 
     /**
-     * Convierte el resultado a array para serialización
+     * Convierte el resultado a array para serialización.
      */
     public function toArray(): array
     {
         return [
-            'tool' => $this->tool,
-            'score' => $this->score,
-            'quality_level' => $this->getQualityLevel(),
-            'passed' => $this->passed,
-            'issue_count' => $this->getIssueCount(),
+            'tool'                => $this->tool,
+            'score'               => $this->score,
+            'quality_level'       => $this->getQualityLevel(),
+            'passed'              => $this->passed,
+            'issue_count'         => $this->getIssueCount(),
             'has_critical_issues' => $this->hasCriticalIssues(),
-            'issues' => $this->issues,
-            'metrics' => $this->metrics,
-            'recommendations' => $this->getRecommendations(),
-            'output' => $this->output,
-            'timestamp' => $this->timestamp->format('Y-m-d H:i:s')
+            'issues'              => $this->issues,
+            'metrics'             => $this->metrics,
+            'recommendations'     => $this->getRecommendations(),
+            'output'              => $this->output,
+            'timestamp'           => $this->timestamp->format('Y-m-d H:i:s'),
         ];
     }
 }

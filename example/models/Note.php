@@ -35,7 +35,8 @@ class Note extends BaseModel
             ->table('task_notes', static::class)
             ->where('task_id', '=', $taskId)
             ->orderBy('created_at', 'DESC')
-            ->get();
+            ->get()
+        ;
     }
 
     /** Crear nueva nota usando strong typing (instancia). */
@@ -43,6 +44,7 @@ class Note extends BaseModel
     {
         $this->fill($attributes);
         $this->store();
+
         return $this;
     }
 
@@ -51,7 +53,8 @@ class Note extends BaseModel
      */
     public function task(): ?array
     {
-        $task = $this->getOrm()->table('tasks', Task::class)->where('id', '=', (int)$this->task_id)->findOne();
+        $task = $this->getOrm()->table('tasks', Task::class)->where('id', '=', (int) $this->task_id)->findOne();
+
         return $task ? $task->export() : null;
     }
 
@@ -60,7 +63,8 @@ class Note extends BaseModel
      */
     public function user(): ?array
     {
-        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int)$this->user_id)->findOne();
+        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int) $this->user_id)->findOne();
+
         return $user ? $user->export() : null;
     }
 

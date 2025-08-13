@@ -125,12 +125,24 @@
               ignoreDeprecatedCodeUnits="true"
               disableCodeCoverageIgnore="false">
         <report>
-            <html outputDirectory="./tests/reports/coverage/postgresql/html" lowUpperBound="50" highLowerBound="90"/>
+            <html outputDirectory="./tests/reports/coverage/postgresql/html" lowUpperBound="50" highLowerBound="95"/>
             <xml outputDirectory="./tests/reports/coverage/postgresql/xml"/>
             <clover outputFile="./tests/reports/coverage/postgresql/clover.xml"/>
             <text outputFile="./tests/reports/coverage/postgresql/coverage.txt" showUncoveredFiles="true"/>
+            <cobertura outputFile="./tests/reports/coverage/postgresql/cobertura.xml"/>
         </report>
     </coverage>
+
+    <!-- Source code configuration -->
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+        <exclude>
+            <directory>./src/binary</directory>
+            <file>./src/Console/deprecated.php</file>
+        </exclude>
+    </source>
 
     <!-- Logging configuration -->
     <logging>

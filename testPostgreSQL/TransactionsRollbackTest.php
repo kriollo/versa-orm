@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
+use Throwable;
+
 /**
  * Pruebas de transacciones: commit y rollback usando las APIs del ORM/QueryBuilder.
  */
@@ -15,7 +17,7 @@ class TransactionsRollbackTest extends TestCase
         // Asegurar estado limpio e independiente del driver
         try {
             self::$orm->schemaDrop('tx_users');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // ignorar si no existe
         }
 
@@ -27,9 +29,9 @@ class TransactionsRollbackTest extends TestCase
         ], [
             'constraints' => [
                 'unique' => [
-                    ['name' => 'uniq_tx_users_email', 'columns' => ['email']]
-                ]
-            ]
+                    ['name' => 'uniq_tx_users_email', 'columns' => ['email']],
+                ],
+            ],
         ]);
     }
 
@@ -37,7 +39,7 @@ class TransactionsRollbackTest extends TestCase
     {
         try {
             self::$orm->schemaDrop('tx_users');
-        } catch (\Throwable $e) { /* ignore */
+        } catch (Throwable $e) { // ignore
         }
     }
 
@@ -48,15 +50,15 @@ class TransactionsRollbackTest extends TestCase
         self::$orm->commit();
 
         $found = self::$orm->table('tx_users')->where('email', '=', 'tx.commit@example.com')->findOne();
-        $this->assertNotNull($found);
-        $this->assertEquals('Tx Commit', $found->name);
+        self::assertNotNull($found);
+        self::assertSame('Tx Commit', $found->name);
     }
 
     public function testRollbackRevertsChanges(): void
     {
         // Estado inicial vacío
         $pre = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
-        $this->assertNull($pre);
+        self::assertNull($pre);
 
         // Iniciar transacción y generar un cambio
         self::$orm->beginTransaction();
@@ -64,13 +66,13 @@ class TransactionsRollbackTest extends TestCase
 
         // Verificar que el cambio se ve dentro de la transacción (si el aislamiento lo permite)
         $mid = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
-        $this->assertNotNull($mid);
+        self::assertNotNull($mid);
 
         // Revertir
         self::$orm->rollBack();
 
         // Debe no existir al final
         $post = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
-        $this->assertNull($post);
+        self::assertNull($post);
     }
 }

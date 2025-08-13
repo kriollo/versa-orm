@@ -10,16 +10,16 @@ class MetricsTest extends TestCase
     {
         $orm = self::$orm; // instancia compartida
         $m0  = $orm->metrics();
-        $this->assertIsArray($m0);
-        $initial = (int)($m0['queries'] ?? 0);
+        self::assertIsArray($m0);
+        $initial = (int) ($m0['queries'] ?? 0);
 
         // Ejecutar dos lecturas simples
         $orm->table('users')->count();
         $orm->table('users')->first();
 
         $m1 = $orm->metrics();
-        $this->assertIsArray($m1);
-        $after = (int)($m1['queries'] ?? 0);
-        $this->assertGreaterThanOrEqual($initial + 2, $after, 'El contador de queries debe incrementarse al menos por 2');
+        self::assertIsArray($m1);
+        $after = (int) ($m1['queries'] ?? 0);
+        self::assertGreaterThanOrEqual($initial + 2, $after, 'El contador de queries debe incrementarse al menos por 2');
     }
 }

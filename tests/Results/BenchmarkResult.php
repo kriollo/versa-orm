@@ -6,8 +6,11 @@ namespace VersaORM\Tests\Results;
 
 use DateTime;
 
+use function count;
+use function sprintf;
+
 /**
- * Clase que representa el resultado de benchmarks de rendimiento
+ * Clase que representa el resultado de benchmarks de rendimiento.
  *
  * Contiene métricas de rendimiento, comparaciones con otros ORMs
  * y datos de análisis de performance.
@@ -21,11 +24,11 @@ class BenchmarkResult
         public readonly array $comparisons,
         public readonly array $dataPoints,
         public readonly float $executionTime,
-        public readonly DateTime $timestamp
+        public readonly DateTime $timestamp,
     ) {}
 
     /**
-     * Obtiene el throughput en operaciones por segundo
+     * Obtiene el throughput en operaciones por segundo.
      */
     public function getThroughput(): float
     {
@@ -33,7 +36,7 @@ class BenchmarkResult
     }
 
     /**
-     * Obtiene la latencia promedio en segundos
+     * Obtiene la latencia promedio en segundos.
      */
     public function getLatency(): float
     {
@@ -41,7 +44,7 @@ class BenchmarkResult
     }
 
     /**
-     * Obtiene el uso de memoria en bytes
+     * Obtiene el uso de memoria en bytes.
      */
     public function getMemoryUsage(): int
     {
@@ -49,14 +52,14 @@ class BenchmarkResult
     }
 
     /**
-     * Obtiene el uso de memoria formateado
+     * Obtiene el uso de memoria formateado.
      */
     public function getFormattedMemoryUsage(): string
     {
         $bytes = $this->getMemoryUsage();
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; ++$i) {
             $bytes /= 1024;
         }
 
@@ -64,7 +67,7 @@ class BenchmarkResult
     }
 
     /**
-     * Compara el rendimiento con otro ORM
+     * Compara el rendimiento con otro ORM.
      */
     public function getComparisonWith(string $orm): ?array
     {
@@ -72,19 +75,20 @@ class BenchmarkResult
     }
 
     /**
-     * Calcula el factor de mejora respecto a otro ORM
+     * Calcula el factor de mejora respecto a otro ORM.
      */
     public function getImprovementFactor(string $orm): ?float
     {
         $comparison = $this->getComparisonWith($orm);
+
         if (!$comparison || !isset($comparison['throughput'])) {
             return null;
         }
 
-        $ourThroughput = $this->getThroughput();
+        $ourThroughput   = $this->getThroughput();
         $theirThroughput = $comparison['throughput'];
 
-        if ($theirThroughput == 0) {
+        if ($theirThroughput === 0) {
             return null;
         }
 
@@ -92,7 +96,7 @@ class BenchmarkResult
     }
 
     /**
-     * Obtiene un resumen textual del benchmark
+     * Obtiene un resumen textual del benchmark.
      */
     public function getSummary(): string
     {
@@ -103,27 +107,27 @@ class BenchmarkResult
             $this->getThroughput(),
             $this->getLatency(),
             $this->getFormattedMemoryUsage(),
-            $this->executionTime
+            $this->executionTime,
         );
     }
 
     /**
-     * Convierte el resultado a array para serialización
+     * Convierte el resultado a array para serialización.
      */
     public function toArray(): array
     {
         return [
-            'benchmark_name' => $this->benchmarkName,
-            'engine' => $this->engine,
-            'metrics' => $this->metrics,
-            'comparisons' => $this->comparisons,
-            'data_points' => $this->dataPoints,
-            'execution_time' => $this->executionTime,
-            'throughput' => $this->getThroughput(),
-            'latency' => $this->getLatency(),
-            'memory_usage' => $this->getMemoryUsage(),
+            'benchmark_name'   => $this->benchmarkName,
+            'engine'           => $this->engine,
+            'metrics'          => $this->metrics,
+            'comparisons'      => $this->comparisons,
+            'data_points'      => $this->dataPoints,
+            'execution_time'   => $this->executionTime,
+            'throughput'       => $this->getThroughput(),
+            'latency'          => $this->getLatency(),
+            'memory_usage'     => $this->getMemoryUsage(),
             'formatted_memory' => $this->getFormattedMemoryUsage(),
-            'timestamp' => $this->timestamp->format('Y-m-d H:i:s')
+            'timestamp'        => $this->timestamp->format('Y-m-d H:i:s'),
         ];
     }
 }

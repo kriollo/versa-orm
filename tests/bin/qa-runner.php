@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /**
- * CLI Runner para el sistema de QA de VersaORM
+ * CLI Runner para el sistema de QA de VersaORM.
  *
  * Proporciona una interfaz de línea de comandos para ejecutar
  * diferentes tipos de tests y análisis de calidad.
@@ -63,7 +63,7 @@ try {
         case 'benchmarks':
             echo "⚡ Ejecutando benchmarks...\n";
             $comparisons = isset($options['compare']) ? explode(',', $options['compare']) : [];
-            $result = $testManager->runBenchmarks($comparisons);
+            $result      = $testManager->runBenchmarks($comparisons);
             echo $result->getSummary() . "\n";
             exit(0);
 
@@ -85,7 +85,7 @@ try {
 
         echo "\n📊 Resumen Ejecutivo:\n";
         echo "==================\n";
-        echo "Estado General: " . getStatusEmoji($summary['overall_status']) . " {$summary['overall_status']}\n";
+        echo 'Estado General: ' . getStatusEmoji($summary['overall_status']) . " {$summary['overall_status']}\n";
         echo "Tests Totales: {$summary['total_tests']}\n";
         echo "Tasa de Éxito: {$summary['success_rate']}%\n";
         echo "Puntuación de Calidad: {$summary['quality_score']}/100\n";
@@ -97,8 +97,10 @@ try {
 
         // Mostrar recomendaciones si las hay
         $recommendations = $report->getRecommendations();
+
         if (!empty($recommendations)) {
             echo "\n💡 Recomendaciones:\n";
+
             foreach ($recommendations as $recommendation) {
                 echo "  • {$recommendation}\n";
             }
@@ -137,25 +139,25 @@ try {
 }
 
 /**
- * Parsea los argumentos de línea de comandos
+ * Parsea los argumentos de línea de comandos.
  */
 function parseArguments(array $argv): array
 {
     $options = [];
     $command = null;
 
-    for ($i = 1; $i < count($argv); $i++) {
+    for ($i = 1; $i < count($argv); ++$i) {
         $arg = $argv[$i];
 
         if (substr($arg, 0, 2) === '--') {
             // Argumento largo
-            $parts = explode('=', substr($arg, 2), 2);
-            $key = $parts[0];
-            $value = $parts[1] ?? true;
+            $parts         = explode('=', substr($arg, 2), 2);
+            $key           = $parts[0];
+            $value         = $parts[1] ?? true;
             $options[$key] = $value;
         } elseif (substr($arg, 0, 1) === '-') {
             // Argumento corto
-            $key = substr($arg, 1);
+            $key   = substr($arg, 1);
             $value = true;
 
             // Verificar si el siguiente argumento es un valor
@@ -180,46 +182,46 @@ function parseArguments(array $argv): array
 }
 
 /**
- * Muestra la ayuda del comando
+ * Muestra la ayuda del comando.
  */
 function showHelp(): void
 {
-    echo <<<HELP
-VersaORM QA Runner - Sistema de Testing y QA
+    echo <<<'HELP'
+        VersaORM QA Runner - Sistema de Testing y QA
 
-USAGE:
-    php tests/bin/qa-runner.php [COMMAND] [OPTIONS]
+        USAGE:
+            php tests/bin/qa-runner.php [COMMAND] [OPTIONS]
 
-COMMANDS:
-    full, all           Ejecuta la suite completa de QA (por defecto)
-    unit               Ejecuta tests unitarios
-    integration        Ejecuta tests de integración
-    benchmarks         Ejecuta benchmarks de rendimiento
-    quality            Ejecuta análisis de calidad
+        COMMANDS:
+            full, all           Ejecuta la suite completa de QA (por defecto)
+            unit               Ejecuta tests unitarios
+            integration        Ejecuta tests de integración
+            benchmarks         Ejecuta benchmarks de rendimiento
+            quality            Ejecuta análisis de calidad
 
-OPTIONS:
-    --engine=ENGINE    Motor de BD para tests (mysql, postgresql, sqlite, all)
-    --compare=ORMS     ORMs para comparar en benchmarks (eloquent,doctrine,pdo)
-    --debug, -d        Mostrar información de debug
-    --help, -h         Mostrar esta ayuda
-    --version, -v      Mostrar versión
+        OPTIONS:
+            --engine=ENGINE    Motor de BD para tests (mysql, postgresql, sqlite, all)
+            --compare=ORMS     ORMs para comparar en benchmarks (eloquent,doctrine,pdo)
+            --debug, -d        Mostrar información de debug
+            --help, -h         Mostrar esta ayuda
+            --version, -v      Mostrar versión
 
-EXAMPLES:
-    php tests/bin/qa-runner.php full
-    php tests/bin/qa-runner.php unit --engine=mysql
-    php tests/bin/qa-runner.php benchmarks --compare=eloquent,doctrine
-    php tests/bin/qa-runner.php quality --debug
+        EXAMPLES:
+            php tests/bin/qa-runner.php full
+            php tests/bin/qa-runner.php unit --engine=mysql
+            php tests/bin/qa-runner.php benchmarks --compare=eloquent,doctrine
+            php tests/bin/qa-runner.php quality --debug
 
-EXIT CODES:
-    0    Éxito
-    1    Fallos en tests o errores
-    2    Fallos críticos
+        EXIT CODES:
+            0    Éxito
+            1    Fallos en tests o errores
+            2    Fallos críticos
 
-HELP;
+        HELP;
 }
 
 /**
- * Obtiene emoji para el estado
+ * Obtiene emoji para el estado.
  */
 function getStatusEmoji(string $status): string
 {

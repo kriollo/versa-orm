@@ -10,9 +10,13 @@ use VersaORM\VersaModel;
 class BelongsToMany extends Relation
 {
     public string $pivotTable;
+
     public string $foreignPivotKey;
+
     public string $relatedPivotKey;
+
     public string $parentKey;
+
     public string $relatedKey;
 
     public function __construct(
@@ -22,7 +26,7 @@ class BelongsToMany extends Relation
         string $foreignPivotKey,
         string $relatedPivotKey,
         string $parentKey,
-        string $relatedKey
+        string $relatedKey,
     ) {
         $this->pivotTable      = $pivotTable;
         $this->foreignPivotKey = $foreignPivotKey;
@@ -33,15 +37,16 @@ class BelongsToMany extends Relation
         parent::__construct($query, $parent);
     }
 
+    public function getResults()
+    {
+        $this->addConstraints();
+
+        return $this->query->findAll();
+    }
+
     protected function addConstraints(): void
     {
         $this->query->join($this->pivotTable, $this->query->getTable() . '.' . $this->relatedKey, '=', $this->pivotTable . '.' . $this->relatedPivotKey);
         $this->query->where($this->pivotTable . '.' . $this->foreignPivotKey, '=', $this->parent->getAttribute($this->parentKey));
-    }
-
-    public function getResults()
-    {
-        $this->addConstraints();
-        return $this->query->findAll();
     }
 }

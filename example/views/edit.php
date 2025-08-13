@@ -21,48 +21,48 @@
             <p class="text-green-100 mt-2">Modifica los detalles de la tarea</p>
         </div>
         <form method="post" action="?action=update" class="p-6 space-y-6">
-            <input type="hidden" name="id" value="<?= is_array($task) ? $task['id'] : $task->id ?>" />
+            <input type="hidden" name="id" value="<?php echo is_array($task) ? $task['id'] : $task->id; ?>" />
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Título de la tarea *</label>
-                <input type="text" name="title" value="<?= htmlspecialchars(is_array($task) ? $task['title'] : $task->title) ?>" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="Ej: Implementar login" />
+                <input type="text" name="title" value="<?php echo htmlspecialchars(is_array($task) ? $task['title'] : $task->title); ?>" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="Ej: Implementar login" />
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Descripción</label>
-                <textarea name="description" rows="3" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="Detalles de la tarea..."><?= htmlspecialchars(is_array($task) ? $task['description'] : $task->description) ?></textarea>
+                <textarea name="description" rows="3" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" placeholder="Detalles de la tarea..."><?php echo htmlspecialchars(is_array($task) ? $task['description'] : $task->description); ?></textarea>
             </div>
             <div class="flex gap-4">
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Proyecto</label>
                     <select name="project_id" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
-                        <?php foreach ($allProjects as $proj): ?>
-                            <option value="<?= $proj['id'] ?>" <?= $proj['id'] == (is_array($task) ? $task['project_id'] : $task->project_id) ? 'selected' : '' ?>><?= htmlspecialchars($proj['name']) ?></option>
-                        <?php endforeach; ?>
+                        <?php foreach ($allProjects as $proj) { ?>
+                            <option value="<?php echo $proj['id']; ?>" <?php echo $proj['id'] === (is_array($task) ? $task['project_id'] : $task->project_id) ? 'selected' : ''; ?>><?php echo htmlspecialchars($proj['name']); ?></option>
+                        <?php } ?>
                     </select>
                 </div>
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Usuario asignado</label>
                     <select name="user_id" class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
                         <option value="">Sin asignar</option>
-                        <?php foreach ($allUsers as $user): ?>
-                            <option value="<?= $user['id'] ?>" <?= $user['id'] == (is_array($task) ? $task['user_id'] : $task->user_id) ? 'selected' : '' ?>><?= htmlspecialchars($user['name']) ?></option>
-                        <?php endforeach; ?>
+                        <?php foreach ($allUsers as $user) { ?>
+                            <option value="<?php echo $user['id']; ?>" <?php echo $user['id'] === (is_array($task) ? $task['user_id'] : $task->user_id) ? 'selected' : ''; ?>><?php echo htmlspecialchars($user['name']); ?></option>
+                        <?php } ?>
                     </select>
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Etiquetas</label>
                 <div class="flex flex-wrap gap-2">
-                    <?php foreach ($allLabels as $label): ?>
-                        <label class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold" style="background:<?= htmlspecialchars($label['color'] ?? '#eee') ?>;color:#222;">
-                            <input type="checkbox" name="labels[]" value="<?= $label['id'] ?>" <?= in_array($label['id'], is_array($task) ? ($task['label_ids'] ?? []) : $task->getLabelIds()) ? 'checked' : '' ?> />
-                            <?= htmlspecialchars($label['name']) ?>
+                    <?php foreach ($allLabels as $label) { ?>
+                        <label class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold" style="background:<?php echo htmlspecialchars($label['color'] ?? '#eee'); ?>;color:#222;">
+                            <input type="checkbox" name="labels[]" value="<?php echo $label['id']; ?>" <?php echo in_array($label['id'], is_array($task) ? ($task['label_ids'] ?? []) : $task->getLabelIds(), true) ? 'checked' : ''; ?> />
+                            <?php echo htmlspecialchars($label['name']); ?>
                         </label>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </div>
             </div>
             <div class="flex items-center gap-4">
                 <label class="flex items-center gap-2">
-                    <input type="checkbox" name="completed" value="1" <?= (is_array($task) ? (isset($task['completed']) && $task['completed']) : (isset($task->completed) && $task->completed)) ? 'checked' : '' ?> />
+                    <input type="checkbox" name="completed" value="1" <?php echo (is_array($task) ? (isset($task['completed']) && $task['completed']) : (isset($task->completed) && $task->completed)) ? 'checked' : ''; ?> />
                     <span class="text-sm text-gray-700 dark:text-gray-300 transition-colors">Completada</span>
                 </label>
                 <button type="submit" class="bg-green-600 hover:bg-green-700 dark:hover:bg-green-500 text-white px-6 py-2 rounded shadow font-bold transition-colors">Guardar cambios</button>

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+use DateTime;
 use VersaORM\VersaModel;
+
+use function get_class;
 
 require_once __DIR__ . '/TestCase.php';
 /**
@@ -23,10 +26,10 @@ class LoadCastingTest extends TestCase
             ['name' => 'active', 'type' => 'TINYINT', 'nullable' => false, 'default' => 0],
             ['name' => 'created_at', 'type' => 'DATETIME', 'nullable' => true],
         ]);
-        self::$orm->exec("INSERT INTO load_cast_test (name, active, created_at) VALUES (?, ?, ?)", [
+        self::$orm->exec('INSERT INTO load_cast_test (name, active, created_at) VALUES (?, ?, ?)', [
             'Test User',
             1,
-            '2025-08-12 10:30:00'
+            '2025-08-12 10:30:00',
         ]);
     }
 
@@ -37,9 +40,9 @@ class LoadCastingTest extends TestCase
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id' => ['type' => 'integer'],
-                    'name' => ['type' => 'string'],
-                    'active' => ['type' => 'bool'],
+                    'id'         => ['type' => 'integer'],
+                    'name'       => ['type' => 'string'],
+                    'active'     => ['type' => 'bool'],
                     'created_at' => ['type' => 'datetime'],
                 ];
             }
@@ -48,22 +51,22 @@ class LoadCastingTest extends TestCase
         // Usar el método load() que tenía el bug
         $loaded = $model::load('load_cast_test', 1);
 
-        $this->assertNotNull($loaded, 'load() should return an instance');
-        $this->assertInstanceOf(get_class($model), $loaded, 'load() should return instance of correct class');
+        self::assertNotNull($loaded, 'load() should return an instance');
+        self::assertInstanceOf(get_class($model), $loaded, 'load() should return instance of correct class');
 
         // Verificar que export() aplica casting correctamente
         $data = $loaded->export();
 
-        $this->assertIsInt($data['id'], 'id should be cast to integer');
-        $this->assertIsString($data['name'], 'name should be cast to string');
-        $this->assertIsBool($data['active'], 'active should be cast to boolean');
-        $this->assertTrue($data['active'], 'active should be true when value is 1');
-        $this->assertInstanceOf(\DateTime::class, $data['created_at'], 'created_at should be cast to DateTime');
+        self::assertIsInt($data['id'], 'id should be cast to integer');
+        self::assertIsString($data['name'], 'name should be cast to string');
+        self::assertIsBool($data['active'], 'active should be cast to boolean');
+        self::assertTrue($data['active'], 'active should be true when value is 1');
+        self::assertInstanceOf(DateTime::class, $data['created_at'], 'created_at should be cast to DateTime');
 
         // Verificar valores específicos
-        $this->assertEquals(1, $data['id']);
-        $this->assertEquals('Test User', $data['name']);
-        $this->assertEquals('2025-08-12 10:30:00', $data['created_at']->format('Y-m-d H:i:s'));
+        self::assertSame(1, $data['id']);
+        self::assertSame('Test User', $data['name']);
+        self::assertSame('2025-08-12 10:30:00', $data['created_at']->format('Y-m-d H:i:s'));
     }
 
     public function testLoadMethodWithUpdate(): void
@@ -73,9 +76,9 @@ class LoadCastingTest extends TestCase
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id' => ['type' => 'integer'],
-                    'name' => ['type' => 'string'],
-                    'active' => ['type' => 'bool'],
+                    'id'         => ['type' => 'integer'],
+                    'name'       => ['type' => 'string'],
+                    'active'     => ['type' => 'bool'],
                     'created_at' => ['type' => 'datetime'],
                 ];
             }
@@ -83,22 +86,22 @@ class LoadCastingTest extends TestCase
 
         // Cargar, modificar y guardar
         $loaded = $model::load('load_cast_test', 1);
-        $this->assertNotNull($loaded);
+        self::assertNotNull($loaded);
 
         // Verificar que active se carga correctamente como boolean true
         $loadedData = $loaded->export();
-        $this->assertTrue($loadedData['active']);
+        self::assertTrue($loadedData['active']);
 
         $loaded->name = 'Updated User';
         $loaded->store(); // Esto debe manejar DateTime correctamente y preservar otros campos
 
         // Recargar y verificar que el valor active se preservó
         $reloaded = $model::load('load_cast_test', 1);
-        $this->assertNotNull($reloaded);
+        self::assertNotNull($reloaded);
 
         $data = $reloaded->export();
-        $this->assertEquals('Updated User', $data['name']);
-        $this->assertIsBool($data['active']);
-        $this->assertTrue($data['active'], 'El campo active debe preservarse cuando solo se modifica otro campo');
+        self::assertSame('Updated User', $data['name']);
+        self::assertIsBool($data['active']);
+        self::assertTrue($data['active'], 'El campo active debe preservarse cuando solo se modifica otro campo');
     }
 }

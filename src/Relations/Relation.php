@@ -26,14 +26,14 @@ abstract class Relation
     }
 
     /**
-     * Set the base constraints on the relation query.
-     */
-    abstract protected function addConstraints(): void;
-
-    /**
      * Execute the query and get the results.
      *
      * @return mixed
      */
     abstract public function getResults();
+
+    /**
+     * Set the base constraints on the relation query.
+     */
+    abstract protected function addConstraints(): void;
 }

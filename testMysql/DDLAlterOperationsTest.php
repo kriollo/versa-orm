@@ -25,11 +25,11 @@ final class DDLAlterOperationsTest extends TestCase
 
         // add index simple
         $orm->schemaAlter('emp', [
-            'addIndex' => [['name' => 'idx_emp_email', 'columns' => ['email']]]
+            'addIndex' => [['name' => 'idx_emp_email', 'columns' => ['email']]],
         ]);
         $idx = $orm->schema('indexes', 'emp');
-        $this->assertIsArray($idx);
-        $this->assertNotEmpty($idx);
+        self::assertIsArray($idx);
+        self::assertNotEmpty($idx);
 
         // add foreign key
         $orm->schemaAlter('emp', [
@@ -39,7 +39,7 @@ final class DDLAlterOperationsTest extends TestCase
                 'refTable'   => 'dept',
                 'refColumns' => ['id'],
                 'onDelete'   => 'cascade',
-            ]]
+            ]],
         ]);
         $orm->table('dept')->insert(['name' => 'IT']);
         $orm->table('emp')->insert(['dept_id' => 1, 'email' => 'x@x.com']);
@@ -48,7 +48,7 @@ final class DDLAlterOperationsTest extends TestCase
         $orm->schemaAlter('emp', ['dropIndex' => ['idx_emp_email']]);
         $orm->schemaAlter('emp', ['dropForeign' => ['fk_emp_dept']]);
         $idx2 = $orm->schema('indexes', 'emp');
-        $this->assertIsArray($idx2);
+        self::assertIsArray($idx2);
 
         // cleanup
         $orm->schemaDrop('emp');
@@ -71,10 +71,10 @@ final class DDLAlterOperationsTest extends TestCase
         $orm->schemaAlter('tddl', ['drop' => ['b']]);
 
         $cols  = $orm->schema('columns', 'tddl');
-        $names = array_map(fn ($c) => (string)($c['name'] ?? $c['column_name'] ?? ''), $cols);
-        $this->assertContains('a_id', $names);
-        $this->assertNotContains('a', $names);
-        $this->assertNotContains('b', $names);
+        $names = array_map(static fn ($c) => (string) ($c['name'] ?? $c['column_name'] ?? ''), $cols);
+        self::assertContains('a_id', $names);
+        self::assertNotContains('a', $names);
+        self::assertNotContains('b', $names);
 
         $orm->schemaDrop('tddl');
     }

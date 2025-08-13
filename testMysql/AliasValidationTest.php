@@ -14,7 +14,7 @@ use VersaORM\VersaORMException;
 class AliasValidationTest extends TestCase
 {
     /**
-     * Test para alias de tabla simples
+     * Test para alias de tabla simples.
      */
     public function testTableAliasSimple(): void
     {
@@ -22,13 +22,14 @@ class AliasValidationTest extends TestCase
         $result = self::$orm->table('users as u')
             ->select(['u.*'])
             ->limit(1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     /**
-     * Test para patrones de columna con asterisco (el caso que estaba fallando)
+     * Test para patrones de columna con asterisco (el caso que estaba fallando).
      */
     public function testColumnWildcardPatterns(): void
     {
@@ -36,21 +37,23 @@ class AliasValidationTest extends TestCase
         $result = self::$orm->table('users as u')
             ->select(['u.*'])
             ->limit(1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
 
         // Asterisco simple
         $result = self::$orm->table('users')
             ->select(['*'])
             ->limit(1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
 
     /**
-     * Test para alias de columna
+     * Test para alias de columna.
      */
     public function testColumnAliases(): void
     {
@@ -58,16 +61,18 @@ class AliasValidationTest extends TestCase
         $result = self::$orm->table('users')
             ->select(['name as user_name'])
             ->limit(1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
+
         if (!empty($result)) {
-            $this->assertArrayHasKey('user_name', $result[0]);
+            self::assertArrayHasKey('user_name', $result[0]);
         }
     }
 
     /**
-     * Test para JOINs básicos con alias (usando esquema más simple)
+     * Test para JOINs básicos con alias (usando esquema más simple).
      */
     public function testBasicJoinWithAliases(): void
     {
@@ -75,20 +80,23 @@ class AliasValidationTest extends TestCase
         $result = self::$orm->table('users as u')
             ->select(['u.id', 'u.name'])
             ->limit(1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
 
         // Test de alias con self-join en users si necesario
         $result = self::$orm->table('users as u1')
             ->select(['u1.name as user1_name'])
             ->limit(1)
-            ->get();
+            ->get()
+        ;
 
-        $this->assertIsArray($result);
+        self::assertIsArray($result);
     }
+
     /**
-     * Test para casos que DEBEN fallar (seguridad)
+     * Test para casos que DEBEN fallar (seguridad).
      */
     public function testInvalidAliasesShouldFail(): void
     {
@@ -104,12 +112,13 @@ class AliasValidationTest extends TestCase
                 self::$orm->table($maliciousAlias)
                     ->select(['*'])
                     ->limit(1)
-                    ->get();
+                    ->get()
+                ;
 
-                $this->fail("Se esperaba que el alias malicioso fallara: $maliciousAlias");
+                self::fail("Se esperaba que el alias malicioso fallara: {$maliciousAlias}");
             } catch (VersaORMException $e) {
                 // Se espera que falle
-                $this->assertStringContainsString('Invalid', $e->getMessage());
+                self::assertStringContainsString('Invalid', $e->getMessage());
             }
         }
     }

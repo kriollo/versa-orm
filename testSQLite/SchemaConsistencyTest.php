@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\SQLite;
 
+use ReflectionClass;
 use VersaORM\VersaModel;
 
 /**
@@ -20,19 +21,19 @@ class SchemaConsistencyTest extends TestCase
     {
         $model  = new EmptySchemaModel('empty_table', null);
         $errors = $model->validateSchemaConsistency();
-        $this->assertCount(1, $errors);
+        self::assertCount(1, $errors);
     }
 
     public function testPropertyConsistencyValidationTypeMismatch(): void
     {
         $model = new TestSchemaModel('test_table', null);
-        $ref   = new \ReflectionClass($model);
+        $ref   = new ReflectionClass($model);
         $m     = $ref->getMethod('validatePropertyConsistency');
         $m->setAccessible(true);
         $propertyDef = ['type' => 'string', 'nullable' => false];
         $dbColumn    = ['data_type' => 'int', 'is_nullable' => 'NO'];
         $errors      = $m->invokeArgs($model, ['id', $propertyDef, $dbColumn]);
-        $this->assertNotEmpty($errors);
+        self::assertNotEmpty($errors);
     }
 }
 

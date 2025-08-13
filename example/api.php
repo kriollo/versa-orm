@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/bootstrap.php';
-
-
 
 header('Content-Type: application/json');
 
@@ -13,6 +13,7 @@ $resource = $_GET['resource'] ?? null;
 
 try {
     $tableName = null;
+
     switch ($resource) {
         case 'projects':
             $tableName = 'projects';

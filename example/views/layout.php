@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? 'VersaORM Trello Demo' ?></title>
+    <title><?php echo $title ?? 'VersaORM Trello Demo'; ?></title>
     <script>
         // Apply theme ASAP to avoid FOUC
         (function () {
@@ -95,18 +95,18 @@
 
     <!-- Mensajes Flash -->
     <?php $flash = getFlash(); ?>
-    <?php if ($flash): ?>
+    <?php if ($flash) { ?>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            <div class="alert alert-<?= $flash['type'] ?> p-4 rounded-md transition-colors duration-200 <?= $flash['type'] === 'success' ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300' ?>">
-                <i class="fas fa-<?= $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle' ?> mr-2"></i>
-                <?= htmlspecialchars($flash['message']) ?>
+            <div class="alert alert-<?php echo $flash['type']; ?> p-4 rounded-md transition-colors duration-200 <?php echo $flash['type'] === 'success' ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'; ?>">
+                <i class="fas fa-<?php echo $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle'; ?> mr-2"></i>
+                <?php echo htmlspecialchars($flash['message']); ?>
             </div>
         </div>
-    <?php endif; ?>
+    <?php } ?>
 
     <!-- Contenido principal -->
     <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors duration-200 w-full">
-        <?= $content ?>
+        <?php echo $content; ?>
     </main>
 
     <!-- Footer -->

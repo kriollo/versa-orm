@@ -34,7 +34,6 @@ $config = [
     'debug'    => true,
 ];
 
-
 try {
     $orm = new VersaORM($config);
 
@@ -153,7 +152,7 @@ try {
     exit(1);
 }
 
-/**
+/*
  * Test de simulación de operaciones DDL bloqueadas
  * Nota: Estos tests requieren una conexión real a base de datos
  * para probar el bloqueo de operaciones DDL en el lado Rust.

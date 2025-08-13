@@ -25,38 +25,32 @@ class Project extends BaseModel
         'owner_id' => ['required'],
     ];
 
-    /* ===================== Factores internos ===================== */
-    // Helpers orm()/qb() heredados de BaseModel
-
-    /** Genera color aleatorio si no viene definido. */
-    private static function ensureColor(array &$attributes): void
-    {
-        if (!isset($attributes['color'])) {
-            $attributes['color'] = static::generateRandomColor();
-        }
-    }
-
-    /* ===================== Métodos CRUD de instancia ===================== */
+    // ===================== Métodos CRUD de instancia =====================
     /** Crear nuevo proyecto (usa reglas y strong typing internos). */
     public function createOne(array $attributes): self
     {
         self::ensureColor($attributes);
         $this->fill($attributes);
         $this->store();
+
         if (isset($this->owner_id)) {
-            $this->addMember((int)$this->owner_id);
+            $this->addMember((int) $this->owner_id);
         }
+
         return $this;
     }
 
-    /* ===================== Relaciones y consultas ===================== */
+    // ===================== Relaciones y consultas =====================
 
     /** Propietario del proyecto como array exportado. */
     public function owner(): ?array
     {
-        if (!isset($this->owner_id)) return null;
+        if (!isset($this->owner_id)) {
+            return null;
+        }
         // Obtener usuario vía QueryBuilder usando el ORM inyectado en la instancia
-        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int)$this->owner_id)->findOne();
+        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int) $this->owner_id)->findOne();
+
         return $user?->export();
     }
 
@@ -67,7 +61,8 @@ class Project extends BaseModel
             ->table('users', User::class)
             ->join('project_users', 'users.id', '=', 'project_users.user_id')
             ->where('project_users.project_id', '=', $this->id)
-            ->get(); // arrays ya casteados
+            ->get() // arrays ya casteados
+        ;
     }
 
     /** Tareas asociadas al proyecto ordenadas por creación desc. */
@@ -77,7 +72,8 @@ class Project extends BaseModel
             ->table('tasks', Task::class)
             ->where('project_id', '=', $this->id)
             ->orderBy('created_at', 'DESC')
-            ->get();
+            ->get()
+        ;
     }
 
     /** Añadir miembro (inserta en project_users si no existe ya). */
@@ -86,9 +82,13 @@ class Project extends BaseModel
         $exists = $this->getOrm()->table('project_users')
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
-            ->exists();
-        if ($exists) return;
-        $pivot = $this->dispenseInstance('project_users');
+            ->exists()
+        ;
+
+        if ($exists) {
+            return;
+        }
+        $pivot             = $this->dispenseInstance('project_users');
         $pivot->project_id = $this->id;
         $pivot->user_id    = $userId;
         $pivot->store();
@@ -101,26 +101,19 @@ class Project extends BaseModel
             ->select(['id'])
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
-            ->get();
+            ->get()
+        ;
+
         foreach ($rows as $row) {
-            if (!isset($row['id'])) continue;
-            $pivot = $this->load('project_users', (int)$row['id']);
+            if (!isset($row['id'])) {
+                continue;
+            }
+            $pivot = $this->load('project_users', (int) $row['id']);
             $pivot?->trash();
         }
     }
 
-    /* ===================== Helpers pivot ===================== */
-    private static function addMemberToProject(int $projectId, int $userId): void
-    {
-        /** @var static $tmp */
-        $tmp      = new static(self::tableName(), self::orm());
-        $tmp->id  = $projectId; // establecer contexto
-        if (method_exists($tmp, 'addMember')) {
-            $tmp->addMember($userId);
-        }
-    }
-
-    /* ===================== Tipado fuerte / esquema ===================== */
+    // ===================== Tipado fuerte / esquema =====================
     public static function definePropertyTypes(): array
     {
         return [
@@ -134,7 +127,30 @@ class Project extends BaseModel
         ];
     }
 
-    /* ===================== Utilidades internas ===================== */
+    // ===================== Factores internos =====================
+    // Helpers orm()/qb() heredados de BaseModel
+
+    /** Genera color aleatorio si no viene definido. */
+    private static function ensureColor(array &$attributes): void
+    {
+        if (!isset($attributes['color'])) {
+            $attributes['color'] = static::generateRandomColor();
+        }
+    }
+
+    // ===================== Helpers pivot =====================
+    private static function addMemberToProject(int $projectId, int $userId): void
+    {
+        /** @var static $tmp */
+        $tmp     = new static(self::tableName(), self::orm());
+        $tmp->id = $projectId; // establecer contexto
+
+        if (method_exists($tmp, 'addMember')) {
+            $tmp->addMember($userId);
+        }
+    }
+
+    // ===================== Utilidades internas =====================
     private static function generateRandomColor(): string
     {
         $colors = [
@@ -149,6 +165,7 @@ class Project extends BaseModel
             '#95a5a6',
             '#16a085',
         ];
+
         return $colors[array_rand($colors)];
     }
 }

@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use DateTime;
 use VersaORM\Interfaces\TypedModelInterface;
 use VersaORM\Traits\HasStrongTyping;
 use VersaORM\VersaModel;
 
+use function count;
+use function is_array;
+use function sprintf;
+
 /**
  * Modelo de ejemplo con tipado fuerte PHP 8+
- * Demuestra el uso completo del sistema de tipos avanzados
+ * Demuestra el uso completo del sistema de tipos avanzados.
  */
 class TypedProduct extends VersaModel implements TypedModelInterface
 {
     use HasStrongTyping;
-
-    protected string $table = 'products';
 
     // Propiedades con tipado en PHPDoc (compatibilidad amplia)
     /** @var int */
@@ -34,10 +37,10 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     /** @var bool */
     public $active;
 
-    /** @var \DateTime|null */
+    /** @var DateTime|null */
     public $created_at;
 
-    /** @var \DateTime|null */
+    /** @var DateTime|null */
     public $updated_at;
 
     // Tipos avanzados con PHPDoc
@@ -59,6 +62,8 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     /** @var array PostgreSQL array */
     public $specifications;
 
+    protected string $table = 'products';
+
     protected array $fillable = [
         'name',
         'description',
@@ -73,7 +78,17 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     ];
 
     /**
-     * Define los tipos de propiedades del modelo
+     * Validaciones personalizadas.
+     */
+    protected array $rules = [
+        'name'   => ['required', 'min:2', 'max:255'],
+        'price'  => ['required', 'numeric', 'min:0'],
+        'uuid'   => ['required', 'uuid'],
+        'status' => ['required', 'in:draft,published,archived'],
+    ];
+
+    /**
+     * Define los tipos de propiedades del modelo.
      */
     public static function getPropertyTypes(): array
     {
@@ -145,25 +160,25 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     }
 
     /**
-     * Mutadores personalizados
+     * Mutadores personalizados.
      */
     public function getMutators(): array
     {
         return [
-            'price' => function ($value) {
-                return number_format((float)$value, 2, '.', '');
+            'price' => static function ($value) {
+                return number_format((float) $value, 2, '.', '');
             },
-            'uuid' => function ($value) {
+            'uuid' => static function ($value) {
                 return strtolower($value);
             },
-            'name' => function ($value) {
+            'name' => static function ($value) {
                 return ucfirst(trim($value));
             },
         ];
     }
 
     /**
-     * Accesorios personalizados
+     * Accesorios personalizados.
      */
     public function getAccessors(): array
     {
@@ -181,17 +196,7 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     }
 
     /**
-     * Validaciones personalizadas
-     */
-    protected array $rules = [
-        'name'   => ['required', 'min:2', 'max:255'],
-        'price'  => ['required', 'numeric', 'min:0'],
-        'uuid'   => ['required', 'uuid'],
-        'status' => ['required', 'in:draft,published,archived'],
-    ];
-
-    /**
-     * Genera un UUID automáticamente si no existe
+     * Genera un UUID automáticamente si no existe.
      */
     protected function boot(): void
     {
@@ -201,20 +206,20 @@ class TypedProduct extends VersaModel implements TypedModelInterface
     }
 
     /**
-     * Genera un UUID v4
+     * Genera un UUID v4.
      */
     private function generateUuid(): string
     {
         return sprintf(
             '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff)
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0x0FFF) | 0x4000,
+            mt_rand(0, 0x3FFF) | 0x8000,
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
+            mt_rand(0, 0xFFFF),
         );
     }
 }

@@ -21,14 +21,17 @@ class ModelManager
     {
         return new Project(Project::tableName(), $this->orm);
     }
+
     public function task(): Task
     {
         return new Task(Task::tableName(), $this->orm);
     }
+
     public function user(): User
     {
         return new User(User::tableName(), $this->orm);
     }
+
     public function label(): Label
     {
         return new Label(Label::tableName(), $this->orm);

@@ -6,6 +6,8 @@ namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaModel;
 
+use function get_class;
+
 require_once __DIR__ . '/TestCase.php';
 /**
  * @group mysql
@@ -33,8 +35,8 @@ class BooleanCastingConsistencyTest extends TestCase
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id' => ['type' => 'int'],
-                    'name' => ['type' => 'string'],
+                    'id'     => ['type' => 'int'],
+                    'name'   => ['type' => 'string'],
                     'status' => ['type' => 'bool'],
                 ];
             }
@@ -42,28 +44,30 @@ class BooleanCastingConsistencyTest extends TestCase
 
         // 1. Obtener arrays (API) -> debe devolver bool
         $rows = self::$orm->table('users_bool_cast', get_class($model))->get();
-        $this->assertIsArray($rows);
-        $this->assertCount(2, $rows);
+        self::assertIsArray($rows);
+        self::assertCount(2, $rows);
+
         foreach ($rows as $r) {
-            $this->assertIsBool($r['status'], 'El campo status no fue casteado a boolean en get()');
+            self::assertIsBool($r['status'], 'El campo status no fue casteado a boolean en get()');
         }
 
         // 2. firstArray()
         $first = self::$orm->table('users_bool_cast', get_class($model))->firstArray();
-        $this->assertNotNull($first);
-        $this->assertIsBool($first['status'], 'El campo status no fue casteado a boolean en firstArray()');
+        self::assertNotNull($first);
+        self::assertIsBool($first['status'], 'El campo status no fue casteado a boolean en firstArray()');
 
         // 3. findAll() (objetos) -> export() debe dar bool
         $objects = self::$orm->table('users_bool_cast', get_class($model))->findAll();
-        $this->assertCount(2, $objects);
+        self::assertCount(2, $objects);
+
         foreach ($objects as $o) {
             $data = $o->export();
-            $this->assertIsBool($data['status'], 'El campo status no fue casteado a boolean en export()');
+            self::assertIsBool($data['status'], 'El campo status no fue casteado a boolean en export()');
         }
 
         // 4. findOne()
         $one = self::$orm->table('users_bool_cast', get_class($model))->where('name', '=', 'A')->findOne();
-        $this->assertNotNull($one);
-        $this->assertIsBool($one->export()['status'], 'El campo status no fue casteado a boolean en findOne()');
+        self::assertNotNull($one);
+        self::assertIsBool($one->export()['status'], 'El campo status no fue casteado a boolean en findOne()');
     }
 }

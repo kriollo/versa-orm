@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+use DateTimeInterface;
 use VersaORM\VersaModel;
+
+use function get_class;
 
 require_once __DIR__ . '/TestCase.php';
 /**
@@ -31,36 +34,40 @@ class DateTimeCastingConsistencyTest extends TestCase
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id' => ['type' => 'int'],
-                    'title' => ['type' => 'string'],
+                    'id'           => ['type' => 'int'],
+                    'title'        => ['type' => 'string'],
                     'published_at' => ['type' => 'datetime', 'nullable' => true],
                 ];
             }
         };
 
         $rows = self::$orm->table('posts_dt_cast', get_class($model))->get();
-        $this->assertCount(2, $rows);
+        self::assertCount(2, $rows);
+
         foreach ($rows as $r) {
             if ($r['published_at'] !== null) {
-                $this->assertInstanceOf(\DateTimeInterface::class, $r['published_at']);
+                self::assertInstanceOf(DateTimeInterface::class, $r['published_at']);
             }
         }
 
         $first = self::$orm->table('posts_dt_cast', get_class($model))->firstArray();
+
         if ($first && $first['published_at'] !== null) {
-            $this->assertInstanceOf(\DateTimeInterface::class, $first['published_at']);
+            self::assertInstanceOf(DateTimeInterface::class, $first['published_at']);
         }
 
         $objects = self::$orm->table('posts_dt_cast', get_class($model))->findAll();
+
         foreach ($objects as $o) {
             $data = $o->export();
+
             if ($data['published_at'] !== null) {
-                $this->assertInstanceOf(\DateTimeInterface::class, $data['published_at']);
+                self::assertInstanceOf(DateTimeInterface::class, $data['published_at']);
             }
         }
 
         $one = self::$orm->table('posts_dt_cast', get_class($model))->where('title', '=', 'P1')->findOne();
-        $this->assertNotNull($one);
-        $this->assertInstanceOf(\DateTimeInterface::class, $one->export()['published_at']);
+        self::assertNotNull($one);
+        self::assertInstanceOf(DateTimeInterface::class, $one->export()['published_at']);
     }
 }

@@ -9,6 +9,7 @@ class HasMany extends HasOne // Extends HasOne because the constraint logic is i
     public function getResults()
     {
         $this->addConstraints();
+
         return $this->query->findAll();
     }
 }

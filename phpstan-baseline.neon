@@ -1,0 +1,2471 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\BaseModel\\:\\:toArray\\(\\)\\.$#"
+			count: 3
+			path: example/BaseModel.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\BaseModel\\:\\:find\\(\\)\\.$#"
+			count: 3
+			path: example/BaseModel.php
+
+		-
+			message: "#^Call to an undefined static method VersaORM\\\\VersaModel\\:\\:delete\\(\\)\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Call to method VersaORM\\\\VersaModel\\:\\:getOrm\\(\\) with incorrect case\\: getORM$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 3
+			path: example/BaseModel.php
+
+		-
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:__construct\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:configureErrorHandling\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:createApiResponse\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:customValidation\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:deleteApiResponse\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:executeWithLogging\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:executeWithLogging\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:findAllWithErrorHandling\\(\\) has parameter \\$conditions with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:findAllWithErrorHandling\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:findWithErrorHandling\\(\\) has parameter \\$id with no type specified\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:formatErrorForApi\\(\\) has parameter \\$errorData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:formatErrorForApi\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:getErrorStats\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:getLastError\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:getLastErrorSuggestions\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:getPerformanceStats\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:handleModelError\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:logOperation\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:safeFind\\(\\) has parameter \\$id with no type specified\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:safeFindAll\\(\\) has parameter \\$conditions with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:safeUpdate\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:safeUpsert\\(\\) has parameter \\$uniqueKeys with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:safeUpsert\\(\\) has parameter \\$updateColumns with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:toApiResponse\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:updateApiResponse\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:validateModel\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:withErrorHandling\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:withErrorHandling\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:withStaticErrorHandling\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, VersaORM\\\\VersaORMException\\|null given\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, string\\|null given\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Parameter \\#1 \\$errorData of static method VersaORM\\\\ErrorHandler\\:\\:formatForDevelopment\\(\\) expects array, array\\|null given\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Parameter \\#1 \\$message of function error_log expects string, string\\|false given\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Parameter \\#1 \\$table of static method VersaORM\\\\VersaModel\\:\\:findAll\\(\\) expects string, array given\\.$#"
+			count: 2
+			path: example/BaseModel.php
+
+		-
+			message: "#^Property App\\\\Models\\\\BaseModel\\:\\:\\$errorConfig type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Property App\\\\Models\\\\BaseModel\\:\\:\\$lastError type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Result of method App\\\\Models\\\\BaseModel\\:\\:delete\\(\\) \\(void\\) is used\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Result of method App\\\\Models\\\\BaseModel\\:\\:store\\(\\) \\(void\\) is used\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and true will always evaluate to true\\.$#"
+			count: 1
+			path: example/BaseModel.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\UserModel\\:\\:findAllWithErrorHandling\\(\\)\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\UserModel\\:\\:findWithErrorHandling\\(\\)\\.$#"
+			count: 4
+			path: example/UserController.php
+
+		-
+			message: "#^Call to static method getErrorLog\\(\\) on an unknown class App\\\\Controllers\\\\ErrorHandler\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Call to static method getLogPath\\(\\) on an unknown class App\\\\Controllers\\\\ErrorHandler\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Call to static method handleException\\(\\) on an unknown class App\\\\Controllers\\\\ErrorHandler\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Call to static method setDebugMode\\(\\) on an unknown class App\\\\Controllers\\\\ErrorHandler\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:activate\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:create\\(\\) has parameter \\$requestData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:create\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:debugErrors\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:delete\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:handleControllerError\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:handleControllerError\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:index\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:index\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:logControllerAction\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:sanitizeLogData\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:sanitizeLogData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:show\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:stats\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:summarizeErrors\\(\\) has parameter \\$errors with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:summarizeErrors\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:update\\(\\) has parameter \\$requestData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Method App\\\\Controllers\\\\UserController\\:\\:update\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Parameter \\#1 \\$message of function error_log expects string, string\\|false given\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function md5 expects string, string\\|false given\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and true will always evaluate to true\\.$#"
+			count: 1
+			path: example/UserController.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:createApiResponse\\(\\)\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:executeWithLogging\\(\\)\\.$#"
+			count: 2
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:safeSave\\(\\)\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:safeUpdate\\(\\)\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:setAttribute\\(\\)\\.$#"
+			count: 4
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:updateApiResponse\\(\\)\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:validateModel\\(\\)\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\UserModel\\:\\:findAllWithErrorHandling\\(\\)\\.$#"
+			count: 3
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\UserModel\\:\\:getPerformanceStats\\(\\)\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Call to static method handleException\\(\\) on an unknown class App\\\\Models\\\\ErrorHandler\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:activate\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:createUser\\(\\) has parameter \\$userData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:createUser\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:customValidation\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:deactivate\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:getUserStats\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:updateUser\\(\\) has parameter \\$userData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\UserModel\\:\\:updateUser\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, string\\|false given\\.$#"
+			count: 1
+			path: example/UserModel.php
+
+		-
+			message: "#^Method App\\\\App\\:\\:__construct\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/App.php
+
+		-
+			message: "#^Method App\\\\OrmFactory\\:\\:make\\(\\) has parameter \\$appConfig with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/OrmFactory.php
+
+		-
+			message: "#^Method App\\\\Request\\:\\:__construct\\(\\) has parameter \\$cookies with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Method App\\\\Request\\:\\:__construct\\(\\) has parameter \\$files with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Method App\\\\Request\\:\\:__construct\\(\\) has parameter \\$get with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Method App\\\\Request\\:\\:__construct\\(\\) has parameter \\$headers with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Method App\\\\Request\\:\\:__construct\\(\\) has parameter \\$post with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Method App\\\\Request\\:\\:__construct\\(\\) has parameter \\$server with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Property App\\\\Request\\:\\:\\$cookies type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Property App\\\\Request\\:\\:\\$files type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Property App\\\\Request\\:\\:\\$get type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Property App\\\\Request\\:\\:\\$headers type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Property App\\\\Request\\:\\:\\$post type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Property App\\\\Request\\:\\:\\$server type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 1
+			path: example/app/Request.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function flash\\(\\) has parameter \\$message with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function flash\\(\\) has parameter \\$type with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function getFlash\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function redirect\\(\\) has parameter \\$url with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function render\\(\\) has parameter \\$data with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function render\\(\\) has parameter \\$view with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_date\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_date\\(\\) has parameter \\$date with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_date\\(\\) has parameter \\$format with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_date_format\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_date_format\\(\\) has parameter \\$date with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_date_format\\(\\) has parameter \\$format with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_strtotime\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Function safe_strtotime\\(\\) has parameter \\$date with no type specified\\.$#"
+			count: 1
+			path: example/bootstrap.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 2
+			path: example/index.php
+
+		-
+			message: "#^Cannot access property \\$id on App\\\\Models\\\\Label\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot access property \\$id on App\\\\Models\\\\Project\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot access property \\$owner_id on App\\\\Models\\\\Project\\|null\\.$#"
+			count: 2
+			path: example/index.php
+
+		-
+			message: "#^Cannot access property \\$project_id on App\\\\Models\\\\Task\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot access property \\$tasks_count on App\\\\Models\\\\Label\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method fill\\(\\) on App\\\\Models\\\\Label\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method fill\\(\\) on App\\\\Models\\\\Project\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method fill\\(\\) on App\\\\Models\\\\Task\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method fill\\(\\) on App\\\\Models\\\\User\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method getLabelIds\\(\\) on App\\\\Models\\\\Task\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method members\\(\\) on App\\\\Models\\\\Project\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method setLabels\\(\\) on App\\\\Models\\\\Task\\|null\\.$#"
+			count: 2
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method store\\(\\) on App\\\\Models\\\\Label\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method store\\(\\) on App\\\\Models\\\\Project\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method store\\(\\) on App\\\\Models\\\\Task\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Cannot call method store\\(\\) on App\\\\Models\\\\User\\|null\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between 1\\|5\\|10\\|20\\|50\\|100 and 0 is always true\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 5
+			path: example/index.php
+
+		-
+			message: "#^Dynamic call to static method VersaORM\\\\VersaModel\\:\\:load\\(\\)\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in &&, array given on the left side\\.$#"
+			count: 2
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, App\\\\Models\\\\Label\\|null given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, App\\\\Models\\\\Project\\|null given\\.$#"
+			count: 4
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, App\\\\Models\\\\Task\\|null given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, App\\\\Models\\\\User\\|null given\\.$#"
+			count: 2
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, int\\|null given\\.$#"
+			count: 10
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, array\\<string, mixed\\> given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, App\\\\Models\\\\Label\\|null given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, App\\\\Models\\\\Project\\|null given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, App\\\\Models\\\\Task\\|null given\\.$#"
+			count: 2
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, App\\\\Models\\\\User\\|null given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, array given\\.$#"
+			count: 8
+			path: example/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, array\\<int, VersaORM\\\\VersaModel\\> given\\.$#"
+			count: 1
+			path: example/index.php
+
+		-
+			message: "#^Parameter \\#1 \\$id of method App\\\\Models\\\\BaseModel\\:\\:find\\(\\) expects int, int\\|null given\\.$#"
+			count: 10
+			path: example/index.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:all\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:allArray\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:boot\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:definePropertyTypes\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:findArray\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:normalizeOptionalDateFields\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:normalizeOptionalDateFields\\(\\) has parameter \\$dateFields with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:normalizeOptionalFields\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:normalizeOptionalFields\\(\\) has parameter \\$optionalFields with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Method App\\\\Models\\\\BaseModel\\:\\:paginate\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Property App\\\\Models\\\\BaseModel\\:\\:\\$tableNameCache type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 1
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between mixed and null will always evaluate to false\\.$#"
+			count: 2
+			path: example/models/BaseModel.php
+
+		-
+			message: "#^Cannot call method table\\(\\) on array\\<string, mixed\\>\\|VersaORM\\\\VersaORM\\|null\\.$#"
+			count: 2
+			path: example/models/Label.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Label\\:\\:createOne\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Label.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Label\\:\\:definePropertyTypes\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Label.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Label\\:\\:tasks\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Label.php
+
+		-
+			message: "#^Unsafe call to private method App\\\\Models\\\\Label\\:\\:generateRandomColor\\(\\) through static\\:\\:\\.$#"
+			count: 1
+			path: example/models/Label.php
+
+		-
+			message: "#^Cannot call method table\\(\\) on array\\<string, mixed\\>\\|VersaORM\\\\VersaORM\\|null\\.$#"
+			count: 3
+			path: example/models/Note.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Note\\:\\:createOne\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Note.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Note\\:\\:definePropertyTypes\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Note.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Note\\:\\:findByTask\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Note.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Note\\:\\:task\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Note.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Note\\:\\:user\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Note.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, VersaORM\\\\VersaModel\\|null given\\.$#"
+			count: 2
+			path: example/models/Note.php
+
+		-
+			message: "#^Cannot call method table\\(\\) on array\\<string, mixed\\>\\|VersaORM\\\\VersaORM\\|null\\.$#"
+			count: 5
+			path: example/models/Project.php
+
+		-
+			message: "#^Dynamic call to static method VersaORM\\\\VersaModel\\:\\:load\\(\\)\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Project\\:\\:createOne\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Project\\:\\:definePropertyTypes\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Project\\:\\:ensureColor\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Project\\:\\:members\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Project\\:\\:owner\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Project\\:\\:tasks\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Static method App\\\\Models\\\\Project\\:\\:addMemberToProject\\(\\) is unused\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Unsafe call to private method App\\\\Models\\\\Project\\:\\:generateRandomColor\\(\\) through static\\:\\:\\.$#"
+			count: 1
+			path: example/models/Project.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Cannot call method table\\(\\) on array\\<string, mixed\\>\\|VersaORM\\\\VersaORM\\|null\\.$#"
+			count: 6
+			path: example/models/Task.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Dynamic call to static method VersaORM\\\\VersaModel\\:\\:load\\(\\)\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:createOne\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:definePropertyTypes\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:getLabelIds\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:labels\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:project\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:setLabels\\(\\) has parameter \\$labelIds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Method App\\\\Models\\\\Task\\:\\:user\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, mixed given\\.$#"
+			count: 2
+			path: example/models/Task.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, VersaORM\\\\VersaModel\\|null given\\.$#"
+			count: 3
+			path: example/models/Task.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, VersaORM\\\\VersaModel\\|null given\\.$#"
+			count: 1
+			path: example/models/Task.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:applyAccessor\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:applyAccessor\\(\\) has parameter \\$v with no type specified\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:applyMutator\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:applyMutator\\(\\) has parameter \\$v with no type specified\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:propertyTypeRegistry\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:validatePropertyConsistency\\(\\) has parameter \\$col with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Method App\\\\Models\\\\TypedProduct\\:\\:validatePropertyConsistency\\(\\) has parameter \\$def with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, array\\<int, array\\<string, int\\|string\\>\\>\\|false given\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, string\\|false given\\.$#"
+			count: 2
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, array\\<string, callable\\> given\\.$#"
+			count: 2
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$decoded has no value type specified in iterable type array\\.$#"
+			count: 3
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Property App\\\\Models\\\\TypedProduct\\:\\:\\$metadata type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Property App\\\\Models\\\\TypedProduct\\:\\:\\$specifications type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Property App\\\\Models\\\\TypedProduct\\:\\:\\$tags type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 2
+			path: example/models/TypedProduct.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Cannot call method table\\(\\) on array\\<string, mixed\\>\\|VersaORM\\\\VersaORM\\|null\\.$#"
+			count: 4
+			path: example/models/User.php
+
+		-
+			message: "#^Method App\\\\Models\\\\User\\:\\:createOne\\(\\) has parameter \\$attributes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Method App\\\\Models\\\\User\\:\\:definePropertyTypes\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Method App\\\\Models\\\\User\\:\\:getStats\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Method App\\\\Models\\\\User\\:\\:projects\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Method App\\\\Models\\\\User\\:\\:tasks\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Only booleans are allowed in &&, mixed given on the left side\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, array\\<int, array\\<string, mixed\\>\\> given\\.$#"
+			count: 2
+			path: example/models/User.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 2
+			path: example/models/User.php
+
+		-
+			message: "#^Unsafe call to private method App\\\\Models\\\\User\\:\\:generateRandomColor\\(\\) through static\\:\\:\\.$#"
+			count: 1
+			path: example/models/User.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, App\\\\Models\\\\Task\\|null given\\.$#"
+			count: 1
+			path: example/notes_ajax.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, App\\\\Models\\\\Note\\|null given\\.$#"
+			count: 2
+			path: example/notes_ajax.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, array\\<string, mixed\\>\\|null given\\.$#"
+			count: 1
+			path: example/notes_ajax.php
+
+		-
+			message: "#^Only booleans are allowed in &&, mixed given on the left side\\.$#"
+			count: 1
+			path: example/setup_database.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, VersaORM\\\\VersaORM\\|null given\\.$#"
+			count: 1
+			path: example/setup_database.php
+
+		-
+			message: "#^Static call to instance method App\\\\Models\\\\BaseModel\\:\\:allArray\\(\\)\\.$#"
+			count: 4
+			path: example/setup_database.php
+
+		-
+			message: "#^Argument of an invalid type array\\<int, string\\>\\|false supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Class App\\\\Models\\\\UserModel constructor invoked with 1 parameter, 2 required\\.$#"
+			count: 3
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Only booleans are allowed in &&, string\\|null given on the left side\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, mixed given\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Parameter \\#1 \\$array of function array_slice expects array, array\\<int, string\\>\\|false given\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Parameter \\#1 \\$table of class App\\\\Models\\\\UserModel constructor expects string, array\\<string, string\\> given\\.$#"
+			count: 3
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Parameter \\#1 \\$value of function count expects array\\|Countable, array\\<int, string\\>\\|false given\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 1
+			path: example/simple_log_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:debugLastError\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:getLastErrorCode\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:getLastErrorMessage\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:getLastErrorSuggestions\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:hasError\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:safeSave\\(\\)\\.$#"
+			count: 2
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:setAttribute\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Models\\\\UserModel\\:\\:toApiResponse\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\UserModel\\:\\:configureErrorHandling\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Call to an undefined static method App\\\\Models\\\\UserModel\\:\\:getErrorStats\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Cannot call method toArray\\(\\) on App\\\\Models\\\\UserModel\\|null\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Caught class VersaORM\\\\VersaORM\\\\VersaORMException not found\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Class App\\\\Models\\\\UserModel constructor invoked with 0 parameters, 2 required\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Class App\\\\Models\\\\UserModel constructor invoked with 1 parameter, 2 required\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: example/usage_example.php
+
+		-
+			message: "#^Only booleans are allowed in &&, string\\|null given on the left side\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, mixed given\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Parameter \\#1 \\$array of function array_slice expects array, array\\<int, string\\>\\|false given\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Parameter \\#1 \\$exception of static method VersaORM\\\\ErrorHandler\\:\\:handleException\\(\\) expects VersaORM\\\\VersaORMException, Throwable&VersaORM\\\\VersaORM\\\\VersaORMException given\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Parameter \\#1 \\$table of class App\\\\Models\\\\UserModel constructor expects string, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Static call to instance method App\\\\Models\\\\BaseModel\\:\\:find\\(\\)\\.$#"
+			count: 1
+			path: example/usage_example.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 1
+			path: example/views/dashboard.php
+
+		-
+			message: "#^Variable \\$totalLabels might not be defined\\.$#"
+			count: 1
+			path: example/views/dashboard.php
+
+		-
+			message: "#^Variable \\$totalProjects might not be defined\\.$#"
+			count: 1
+			path: example/views/dashboard.php
+
+		-
+			message: "#^Variable \\$totalTasks might not be defined\\.$#"
+			count: 1
+			path: example/views/dashboard.php
+
+		-
+			message: "#^Variable \\$totalUsers might not be defined\\.$#"
+			count: 1
+			path: example/views/dashboard.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 1
+			path: example/views/edit.php
+
+		-
+			message: "#^Variable \\$allLabels might not be defined\\.$#"
+			count: 1
+			path: example/views/edit.php
+
+		-
+			message: "#^Variable \\$allProjects might not be defined\\.$#"
+			count: 1
+			path: example/views/edit.php
+
+		-
+			message: "#^Variable \\$allUsers might not be defined\\.$#"
+			count: 1
+			path: example/views/edit.php
+
+		-
+			message: "#^Variable \\$task might not be defined\\.$#"
+			count: 1
+			path: example/views/edit.php
+
+		-
+			message: "#^Variable \\$label might not be defined\\.$#"
+			count: 5
+			path: example/views/labels/edit.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: example/views/labels/index.php
+
+		-
+			message: "#^Variable \\$labels might not be defined\\.$#"
+			count: 4
+			path: example/views/labels/index.php
+
+		-
+			message: "#^Variable \\$content might not be defined\\.$#"
+			count: 1
+			path: example/views/layout.php
+
+		-
+			message: "#^Variable \\$users might not be defined\\.$#"
+			count: 1
+			path: example/views/projects/create.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, \\(array\\|null\\) given\\.$#"
+			count: 1
+			path: example/views/projects/edit.php
+
+		-
+			message: "#^Variable \\$users might not be defined\\.$#"
+			count: 2
+			path: example/views/projects/edit.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between int\\<1, max\\> and 0 is always true\\.$#"
+			count: 1
+			path: example/views/projects/index.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: example/views/projects/index.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: example/views/projects/index.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Function getPriorityClass\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Function getPriorityClass\\(\\) has parameter \\$priority with no type specified\\.$#"
+			count: 1
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Variable \\$members might not be defined\\.$#"
+			count: 1
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Variable \\$owner might not be defined\\.$#"
+			count: 1
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Variable \\$project might not be defined\\.$#"
+			count: 10
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Variable \\$tasks might not be defined\\.$#"
+			count: 8
+			path: example/views/projects/show.php
+
+		-
+			message: "#^Variable \\$labels might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/create.php
+
+		-
+			message: "#^Variable \\$projects might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/create.php
+
+		-
+			message: "#^Variable \\$users might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/create.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 1
+			path: example/views/tasks/edit.php
+
+		-
+			message: "#^Variable \\$labels might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/edit.php
+
+		-
+			message: "#^Variable \\$projects might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/edit.php
+
+		-
+			message: "#^Variable \\$task might not be defined\\.$#"
+			count: 13
+			path: example/views/tasks/edit.php
+
+		-
+			message: "#^Variable \\$users might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/edit.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 14
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, DateTimeInterface\\|null given\\.$#"
+			count: 1
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, DateTimeInterface\\|null given\\.$#"
+			count: 1
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$filterQueryString might not be defined\\.$#"
+			count: 7
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$filters might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$pagination might not be defined\\.$#"
+			count: 4
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$projects might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$tasks might not be defined\\.$#"
+			count: 3
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$users might not be defined\\.$#"
+			count: 1
+			path: example/views/tasks/index.php
+
+		-
+			message: "#^Variable \\$user might not be defined\\.$#"
+			count: 7
+			path: example/views/users/edit.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between int\\<1, max\\> and 0 is always true\\.$#"
+			count: 1
+			path: example/views/users/index.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: example/views/users/index.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: example/views/users/index.php
+
+		-
+			message: "#^Variable \\$users might not be defined\\.$#"
+			count: 3
+			path: example/views/users/index.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 5
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:configureFromVersaORM\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:extractErrorData\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:extractErrorData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:findOriginLocation\\(\\) has parameter \\$trace with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:findOriginLocation\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:formatForDevelopment\\(\\) has parameter \\$errorData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:formatForProduction\\(\\) has parameter \\$errorData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:formatForProduction\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:formatQuery\\(\\) has parameter \\$bindings with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:generateSuggestions\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:getErrorLog\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:getSimplifiedTrace\\(\\) has parameter \\$trace with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:getSimplifiedTrace\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:handleException\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:handleException\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:logError\\(\\) has parameter \\$errorData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:setCustomHandler\\(\\) has parameter \\$handler with no type specified\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:wrap\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:wrap\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Method VersaORM\\\\ErrorHandler\\:\\:writeErrorToFile\\(\\) has parameter \\$errorData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Only booleans are allowed in &&, string\\|null given on the left side\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, string\\|null given\\.$#"
+			count: 2
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, string\\|null given\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function md5 expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, string\\|null given\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Property VersaORM\\\\ErrorHandler\\:\\:\\$config type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Property VersaORM\\\\ErrorHandler\\:\\:\\$customHandler has no type specified\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Property VersaORM\\\\ErrorHandler\\:\\:\\$errorLog type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 1
+			path: src/ErrorHandler.php
+
+		-
+			message: "#^Access to offset 'bindings' on an unknown class VersaORM\\\\WhereEntry\\.$#"
+			count: 3
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Access to offset 'column' on an unknown class VersaORM\\\\WhereEntry\\.$#"
+			count: 4
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Access to offset 'operator' on an unknown class VersaORM\\\\WhereEntry\\.$#"
+			count: 4
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Access to offset 'sql' on an unknown class VersaORM\\\\WhereEntry\\.$#"
+			count: 3
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Access to offset 'type' on an unknown class VersaORM\\\\WhereEntry\\.$#"
+			count: 2
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Access to offset 'value' on an unknown class VersaORM\\\\WhereEntry\\.$#"
+			count: 2
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 6
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Call to function is_array\\(\\) with array will always evaluate to true\\.$#"
+			count: 2
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 56
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Only booleans are allowed in &&, array\\<string, array\\|string\\>\\|null given on the left side\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, class\\-string\\<VersaORM\\\\VersaModel\\>\\|null given\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, int\\|false given\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, array\\<string, array\\|string\\>\\|null given\\.$#"
+			count: 2
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, int\\|false given\\.$#"
+			count: 3
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, int\\|null given\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$having type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$selects \\(array\\<int, string\\|VersaORM\\\\SelectRaw\\|VersaORM\\\\SelectSub\\>\\) does not accept array\\<int, array\\<string, array\\<int, mixed\\>\\|string\\>\\|string\\|VersaORM\\\\SelectRaw\\|VersaORM\\\\SelectSub\\>\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$selects \\(array\\<int, string\\|VersaORM\\\\SelectRaw\\|VersaORM\\\\SelectSub\\>\\) does not accept array\\<int, array\\<string, array\\<string, mixed\\>\\|string\\>\\|string\\|VersaORM\\\\SelectRaw\\|VersaORM\\\\SelectSub\\>\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$selects has unknown class VersaORM\\\\SelectRaw as its type\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$selects has unknown class VersaORM\\\\SelectSub as its type\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$wheres \\(array\\<int, VersaORM\\\\WhereEntry\\>\\) does not accept array\\<int, array\\<string, array\\<string, mixed\\>\\|bool\\|string\\>\\|VersaORM\\\\WhereEntry\\>\\.$#"
+			count: 3
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$wheres \\(array\\<int, VersaORM\\\\WhereEntry\\>\\) does not accept array\\<int, array\\<string, mixed\\>\\|VersaORM\\\\WhereEntry\\>\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$wheres has unknown class VersaORM\\\\WhereEntry as its type\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Property VersaORM\\\\QueryBuilder\\:\\:\\$with \\(array\\<int, array\\{name\\: string, type\\?\\: non\\-empty\\-string, related_table\\?\\: string, foreign_key\\?\\: string, local_key\\?\\: string, owner_key\\?\\: string, pivot_table\\?\\: string, foreign_pivot_key\\?\\: string, \\.\\.\\.\\}\\>\\) does not accept array\\<int\\<0, max\\>, array\\{name\\: string, type\\: string, related_table\\: string, foreign_key\\: string, local_key\\: string\\}\\|array\\{name\\: string, type\\: string, related_table\\: string, foreign_key\\: string, owner_key\\: string\\}\\|array\\{name\\: string, type\\: string, related_table\\: string, pivot_table\\: string, foreign_pivot_key\\: string, related_pivot_key\\: string, parent_key\\: string, related_key\\: string\\}\\|array\\{name\\: string, type\\: string, related_table\\: string\\}\\>\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 9
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Variable method call on VersaORM\\\\VersaModel\\.$#"
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: "#^Casting to int something that's already int\\.$#"
+			count: 2
+			path: src/SQL/Dialects/MySQLDialect.php
+
+		-
+			message: "#^Casting to int something that's already int\\.$#"
+			count: 2
+			path: src/SQL/Dialects/PostgreSQLDialect.php
+
+		-
+			message: "#^Casting to int something that's already int\\.$#"
+			count: 2
+			path: src/SQL/Dialects/SQLiteDialect.php
+
+		-
+			message: "#^Call to function is_string\\(\\) with string will always evaluate to true\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Casting to int something that's already int\\<0, max\\>\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Casting to string something that's already string\\.$#"
+			count: 5
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 15
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Method VersaORM\\\\SQL\\\\PdoEngine\\:\\:executeFetchAll\\(\\) is unused\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'hydration_fastpath…' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float, hydration_fastpath_uses\\: \\(float\\|int\\), \\.\\.\\.\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'hydration_fastpath…' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float, hydration_fastpath_uses\\: \\(float\\|int\\)\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'hydration_fastpath…' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'hydration_ms' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float, objects_hydrated\\: \\(float\\|int\\)\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'objects_hydrated' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'stmt_cache_hits' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'stmt_cache_misses' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Offset 'total_prepare_ms' does not exist on array\\{queries\\: int, writes\\: int, transactions\\: int, cache_hits\\: int, cache_misses\\: int, last_query_ms\\: float, total_query_ms\\: float, stmt_cache_misses\\: \\(float\\|int\\)\\}\\.$#"
+			count: 1
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, PDOStatement\\|false given\\.$#"
+			count: 4
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, string given\\.$#"
+			count: 2
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 25
+			path: src/SQL/PdoEngine.php
+
+		-
+			message: "#^Call to function method_exists\\(\\) with VersaORM\\\\SQL\\\\SqlDialectInterface and 'getName' will always evaluate to true\\.$#"
+			count: 1
+			path: src/SQL/SqlGenerator.php
+
+		-
+			message: "#^Cannot cast array\\<int, mixed\\>\\|string to string\\.$#"
+			count: 1
+			path: src/SQL/SqlGenerator.php
+
+		-
+			message: "#^Casting to string something that's already string\\.$#"
+			count: 6
+			path: src/SQL/SqlGenerator.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 9
+			path: src/SQL/SqlGenerator.php
+
+		-
+			message: "#^Parameter \\#1 \\$wheres of static method VersaORM\\\\SQL\\\\SqlGenerator\\:\\:compileWhere\\(\\) expects array\\<int, array\\{type\\?\\: string, operator\\?\\: string, column\\?\\: string, value\\: mixed\\}\\>, array\\<int, array\\> given\\.$#"
+			count: 1
+			path: src/SQL/SqlGenerator.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 3
+			path: src/VersaModel.php
+
+		-
+			message: "#^Call to function method_exists\\(\\) with \\$this\\(VersaORM\\\\VersaModel\\) and 'applyAccessor' will always evaluate to true\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Call to function method_exists\\(\\) with \\$this\\(VersaORM\\\\VersaModel\\) and 'applyMutator' will always evaluate to true\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Call to function method_exists\\(\\) with class\\-string\\<static\\(VersaORM\\\\VersaModel\\)\\> and 'getPropertyTypes' will always evaluate to true\\.$#"
+			count: 3
+			path: src/VersaModel.php
+
+		-
+			message: "#^Casting to bool something that's already bool\\.$#"
+			count: 3
+			path: src/VersaModel.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 28
+			path: src/VersaModel.php
+
+		-
+			message: "#^Foreach overwrites \\$columnName with its key variable\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Foreach overwrites \\$columnType with its value variable\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Foreach overwrites \\$key with its key variable\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Foreach overwrites \\$value with its value variable\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:applyAccessor\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:applyAccessor\\(\\) has parameter \\$v with no type specified\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:applyMutator\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:applyMutator\\(\\) has parameter \\$v with no type specified\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:propertyTypeRegistry\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:validatePropertyConsistency\\(\\) has parameter \\$col with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Method VersaORM\\\\VersaModel\\:\\:validatePropertyConsistency\\(\\) has parameter \\$def with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in &&, array\\<string, mixed\\>\\|null given on the left side\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in &&, int\\|false given on the right side\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in &&, mixed given on the left side\\.$#"
+			count: 2
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in &&, mixed given on the right side\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, VersaORM\\\\VersaORM\\|null given\\.$#"
+			count: 9
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, array\\<int, array\\<string, int\\|string\\>\\>\\|false given\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, mixed given\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in a negated boolean, string\\|false given\\.$#"
+			count: 3
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, array\\<string, callable\\> given\\.$#"
+			count: 2
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, mixed given\\.$#"
+			count: 3
+			path: src/VersaModel.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, string\\|null given\\.$#"
+			count: 2
+			path: src/VersaModel.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$decoded has no value type specified in iterable type array\\.$#"
+			count: 3
+			path: src/VersaModel.php
+
+		-
+			message: "#^Parameter \\#1 \\$property of method VersaORM\\\\VersaModel\\:\\:castToPhpType\\(\\) expects string, int\\|string given\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 2
+			path: src/VersaModel.php
+
+		-
+			message: "#^Unsafe call to private method VersaORM\\\\VersaModel\\:\\:traitGetPropertyTypes\\(\\) through static\\:\\:\\.$#"
+			count: 1
+			path: src/VersaModel.php
+
+		-
+			message: "#^Variable method call on \\$this\\(VersaORM\\\\VersaModel\\)\\.$#"
+			count: 2
+			path: src/VersaModel.php
+
+		-
+			message: "#^Access to offset 'add' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'addForeign' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'addIndex' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'autoIncrement' on an unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'columns' on an unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'columns' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'columns' on an unknown class VersaORM\\\\UniqueConstraintDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'concurrently' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'default' on an unknown class VersaORM\\\\AlterModifyDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'default' on an unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'drop' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'dropForeign' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'dropIndex' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'foreign' on an unknown class VersaORM\\\\TableConstraintsDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'from' on an unknown class VersaORM\\\\AlterRenameDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'if_not_exists' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'modify' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'name' on an unknown class VersaORM\\\\AlterModifyDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'name' on an unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'name' on an unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 3
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'name' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'name' on an unknown class VersaORM\\\\UniqueConstraintDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'onDelete' on an unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 4
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'onUpdate' on an unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 4
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'primary' on an unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'refColumns' on an unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'refTable' on an unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 3
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'rename' on an unknown class VersaORM\\\\AlterChanges\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'to' on an unknown class VersaORM\\\\AlterRenameDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'type' on an unknown class VersaORM\\\\AlterModifyDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'type' on an unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'unique' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'unique' on an unknown class VersaORM\\\\TableConstraintsDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'using' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Access to offset 'where' on an unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Call to function in_array\\(\\) requires parameter \\#3 to be set\\.$#"
+			count: 3
+			path: src/VersaORM.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 47
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in &&, array given on the right side\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in &&, string given on the left side\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in &&, string given on the right side\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in &&, string\\|null given on the right side\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in a ternary operator condition, string\\|null given\\.$#"
+			count: 3
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, int\\|false given\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, int\\|string\\|null given\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Only booleans are allowed in an if condition, string\\|null given\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$addCols contains unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$addForeign contains unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$cols contains unknown class VersaORM\\\\IndexColumn\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$columns contains unknown class VersaORM\\\\ColumnDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$constraints contains unknown class VersaORM\\\\TableConstraintsDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$foreignList contains unknown class VersaORM\\\\ForeignConstraintDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$idx contains unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$idxList contains unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$indexesList contains unknown class VersaORM\\\\IndexDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$mods contains unknown class VersaORM\\\\AlterModifyDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$renameDefs contains unknown class VersaORM\\\\AlterRenameDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^PHPDoc tag @var for variable \\$uniqueList contains unknown class VersaORM\\\\UniqueConstraintDef\\.$#"
+			count: 1
+			path: src/VersaORM.php
+
+		-
+			message: "#^Parameter \\#2 \\$array of function array_key_exists expects array, VersaORM\\\\AlterModifyDef given\\.$#"
+			count: 4
+			path: src/VersaORM.php
+
+		-
+			message: "#^Parameter \\#2 \\$array of function array_key_exists expects array, VersaORM\\\\ColumnDef given\\.$#"
+			count: 4
+			path: src/VersaORM.php
+
+		-
+			message: "#^Parameter \\#2 \\$idx of method VersaORM\\\\VersaORM\\:\\:createIndexPortable\\(\\) expects array\\<string, mixed\\>, VersaORM\\\\IndexDef given\\.$#"
+			count: 2
+			path: src/VersaORM.php
+
+		-
+			message: "#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#"
+			count: 5
+			path: src/VersaORM.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between 'sqlite' and 'sqlite' will always evaluate to true\\.$#"
+			count: 1
+			path: src/VersaORM.php

@@ -25,8 +25,8 @@ class ValidationUnitTest extends TestCase
 
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com']);
 
-        $this->assertEquals('John Doe', $model->name);
-        $this->assertEquals('john@example.com', $model->email);
+        self::assertSame('John Doe', $model->name);
+        self::assertSame('john@example.com', $model->email);
     }
 
     public function testFillableAttributesBlockUnallowedFields(): void
@@ -45,7 +45,8 @@ class ValidationUnitTest extends TestCase
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = [];
-            protected array $guarded  = ['id', 'created_at'];
+
+            protected array $guarded = ['id', 'created_at'];
         };
 
         $this->expectException(VersaORMException::class);
@@ -58,7 +59,8 @@ class ValidationUnitTest extends TestCase
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = [];
-            protected array $guarded  = ['*'];
+
+            protected array $guarded = ['*'];
         };
 
         $this->expectException(VersaORMException::class);
@@ -71,7 +73,8 @@ class ValidationUnitTest extends TestCase
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'name'  => ['required', 'min:3'],
                 'email' => ['required', 'email'],
             ];
@@ -81,16 +84,17 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name must be at least 3 characters.', $errors);
-        $this->assertContains('The email must be a valid email address.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name must be at least 3 characters.', $errors);
+        self::assertContains('The email must be a valid email address.', $errors);
     }
 
     public function testValidModelPassesValidation(): void
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'name'  => ['required'],
                 'email' => ['required', 'email'],
             ];
@@ -100,7 +104,7 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        $this->assertEmpty($errors);
+        self::assertEmpty($errors);
     }
 
     public function testIsFillableMethod(): void
@@ -109,9 +113,9 @@ class ValidationUnitTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        $this->assertTrue($model->isFillable('name'));
-        $this->assertTrue($model->isFillable('email'));
-        $this->assertFalse($model->isFillable('id'));
+        self::assertTrue($model->isFillable('name'));
+        self::assertTrue($model->isFillable('email'));
+        self::assertFalse($model->isFillable('id'));
     }
 
     public function testIsGuardedMethod(): void
@@ -120,16 +124,17 @@ class ValidationUnitTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        $this->assertFalse($model->isGuarded('name'));
-        $this->assertFalse($model->isGuarded('email'));
-        $this->assertTrue($model->isGuarded('id'));
+        self::assertFalse($model->isGuarded('name'));
+        self::assertFalse($model->isGuarded('email'));
+        self::assertTrue($model->isGuarded('id'));
     }
 
     public function testMaxLengthValidationRule(): void
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'name' => ['max:10'],
             ];
         };
@@ -138,15 +143,16 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name may not be greater than 10 characters.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name may not be greater than 10 characters.', $errors);
     }
 
     public function testNumericValidationRule(): void
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = ['age'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'age' => ['numeric'],
             ];
         };
@@ -155,15 +161,16 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The age must be numeric.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The age must be numeric.', $errors);
     }
 
     public function testRequiredValidationRule(): void
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'name' => ['required'],
             ];
         };
@@ -172,15 +179,16 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name field is required.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name field is required.', $errors);
     }
 
     public function testMinLengthValidationRule(): void
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
-            protected array $rules    = [
+
+            protected array $rules = [
                 'name' => ['min:5'],
             ];
         };
@@ -189,8 +197,8 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        $this->assertNotEmpty($errors);
-        $this->assertContains('The name must be at least 5 characters.', $errors);
+        self::assertNotEmpty($errors);
+        self::assertContains('The name must be at least 5 characters.', $errors);
     }
 
     public function testGetFillableMethod(): void
@@ -199,16 +207,17 @@ class ValidationUnitTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        $this->assertEquals(['name', 'email'], $model->getFillable());
+        self::assertSame(['name', 'email'], $model->getFillable());
     }
 
     public function testGetGuardedMethod(): void
     {
         $model = new class('test_users', null) extends VersaModel {
             protected array $fillable = [];
-            protected array $guarded  = ['id', 'created_at'];
+
+            protected array $guarded = ['id', 'created_at'];
         };
 
-        $this->assertEquals(['id', 'created_at'], $model->getGuarded());
+        self::assertSame(['id', 'created_at'], $model->getGuarded());
     }
 }

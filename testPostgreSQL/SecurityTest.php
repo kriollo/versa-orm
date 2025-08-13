@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\PostgreSQL;
 
+use VersaORM\VersaORMException;
+
+use function count;
+
 /**
  * Tests de Seguridad para VersaORM-PHP.
  *
@@ -16,9 +20,9 @@ namespace VersaORM\Tests\PostgreSQL;
  */
 class SecurityTest extends TestCase
 {
-    //======================================================================
+    // ======================================================================
     // SQL INJECTION TESTS - WHERE CLAUSES
-    //======================================================================
+    // ======================================================================
 
     public function testSqlInjectionInWhereClause(): void
     {
@@ -26,7 +30,7 @@ class SecurityTest extends TestCase
         $users          = self::$orm->table('users')->where('email', '=', $maliciousInput)->getAll();
 
         // La consulta debe estar parametrizada, así que no debe retornar usuarios.
-        $this->assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
+        self::assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
     }
 
     public function testSqlInjectionUnionAttack(): void
@@ -36,7 +40,7 @@ class SecurityTest extends TestCase
         $users = self::$orm->table('users')->where('status', '=', $unionAttack)->getAll();
 
         // No debe retornar datos debido a parametrización (ID 999 no existe)
-        $this->assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
+        self::assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
     }
 
     public function testSqlInjectionBooleanAttack(): void
@@ -51,7 +55,7 @@ class SecurityTest extends TestCase
         // En PostgreSQL, comparar id (int) con string lanza error de tipo; usamos columna texto 'status'
         foreach ($booleanAttacks as $attack) {
             $users = self::$orm->table('users')->where('status', '=', $attack)->getAll();
-            $this->assertCount(0, $users, "Boolean SQL injection was not prevented for: {$attack}");
+            self::assertCount(0, $users, "Boolean SQL injection was not prevented for: {$attack}");
         }
     }
 
@@ -65,19 +69,19 @@ class SecurityTest extends TestCase
 
         foreach ($stackedAttacks as $attack) {
             $users = self::$orm->table('users')->where('name', '=', $attack)->getAll();
-            $this->assertCount(0, $users, "Stacked query injection was not prevented for: {$attack}");
+            self::assertCount(0, $users, "Stacked query injection was not prevented for: {$attack}");
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // SQL INJECTION TESTS - WHERE RAW CLAUSES
-    //======================================================================
+    // ======================================================================
 
     public function testWhereRawWithProperParameterization(): void
     {
         // Uso correcto de whereRaw con parámetros
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
-        $this->assertCount(1, $users, 'Properly parameterized whereRaw should work.');
+        self::assertCount(1, $users, 'Properly parameterized whereRaw should work.');
     }
 
     public function testWhereRawInjectionPrevention(): void
@@ -87,13 +91,13 @@ class SecurityTest extends TestCase
 
         // Este caso debería estar parametrizado; no debe devolver resultados
         $users = self::$orm->table('users')->whereRaw('status = ?', [$maliciousInput])->getAll();
-        $this->assertIsArray($users);
-        $this->assertCount(0, $users, 'whereRaw injection was not prevented.');
+        self::assertIsArray($users);
+        self::assertCount(0, $users, 'whereRaw injection was not prevented.');
     }
 
-    //======================================================================
+    // ======================================================================
     // IDENTIFIER VALIDATION TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testMaliciousTableNames(): void
     {
@@ -110,10 +114,10 @@ class SecurityTest extends TestCase
         foreach ($maliciousTableNames as $tableName) {
             try {
                 self::$orm->table($tableName)->getAll();
-                $this->fail("Malicious table name '{$tableName}' should have been rejected.");
-            } catch (\VersaORM\VersaORMException $e) {
+                self::fail("Malicious table name '{$tableName}' should have been rejected.");
+            } catch (VersaORMException $e) {
                 // Se espera que lance excepción
-                $this->assertStringContainsString('error', strtolower($e->getMessage()));
+                self::assertStringContainsString('error', strtolower($e->getMessage()));
             }
         }
     }
@@ -131,10 +135,10 @@ class SecurityTest extends TestCase
         foreach ($maliciousColumns as $column) {
             try {
                 self::$orm->table('users')->select([$column])->getAll();
-                $this->fail("Malicious column name '{$column}' should have been rejected.");
-            } catch (\VersaORM\VersaORMException $e) {
+                self::fail("Malicious column name '{$column}' should have been rejected.");
+            } catch (VersaORMException $e) {
                 // Se espera que lance excepción
-                $this->assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+                self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
             }
         }
     }
@@ -156,16 +160,16 @@ class SecurityTest extends TestCase
             try {
                 // No debe lanzar excepción
                 self::$orm->table($identifier)->count();
-            } catch (\VersaORM\VersaORMException $e) {
+            } catch (VersaORMException $e) {
                 // En Postgres el mensaje puede variar; sólo verificamos que NO sea por identificador inválido
-                $this->assertStringNotContainsString('invalid or malicious', strtolower($e->getMessage()));
+                self::assertStringNotContainsString('invalid or malicious', strtolower($e->getMessage()));
             }
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // ORDER BY, LIMIT, OFFSET INJECTION TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testOrderByInjection(): void
     {
@@ -173,9 +177,9 @@ class SecurityTest extends TestCase
 
         try {
             self::$orm->table('users')->orderBy($maliciousOrderBy, 'asc')->getAll();
-            $this->fail('Malicious ORDER BY should have been rejected.');
-        } catch (\VersaORM\VersaORMException $e) {
-            $this->assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+            self::fail('Malicious ORDER BY should have been rejected.');
+        } catch (VersaORMException $e) {
+            self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
         }
     }
 
@@ -183,16 +187,16 @@ class SecurityTest extends TestCase
     {
         // LIMIT debe aceptar solo números enteros
         $users = self::$orm->table('users')->limit(1)->getAll();
-        $this->assertCount(1, $users);
+        self::assertCount(1, $users);
 
         // Test con string numérico (debería convertirse)
         $users = self::$orm->table('users')->limit('2')->getAll();
-        $this->assertLessThanOrEqual(2, count($users));
+        self::assertLessThanOrEqual(2, count($users));
     }
 
-    //======================================================================
+    // ======================================================================
     // INSERT/UPDATE DATA SANITIZATION TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testXssInInsertData(): void
     {
@@ -213,7 +217,7 @@ class SecurityTest extends TestCase
             $user = self::$orm->table('users')->find($id);
 
             // El ORM debe almacenar el input tal como viene - es responsabilidad del desarrollador escapar en salida
-            $this->assertEquals($payload, $user->status, "XSS input should be stored as-is for payload: {$payload}");
+            self::assertSame($payload, $user->status, "XSS input should be stored as-is for payload: {$payload}");
 
             // Limpiar después del test
             self::$orm->table('users')->where('id', '=', $id)->delete();
@@ -238,14 +242,15 @@ class SecurityTest extends TestCase
             ]);
 
             $user = self::$orm->table('users')->find($id);
+
             // Comparación laxa: para entradas con bytes nulos, confirmamos que la longitud coincide
             if (strpos($input, "\x00") !== false) {
-                $stored = (string)$user->status;
-                $this->assertNotSame('', $stored);
+                $stored = (string) $user->status;
+                self::assertNotSame('', $stored);
                 // Debe mantener el resto de caracteres visibles
-                $this->assertStringContainsString('test', $stored);
+                self::assertStringContainsString('test', $stored);
             } else {
-                $this->assertEquals($input, $user->status, "Special characters should be preserved: {$input}");
+                self::assertSame($input, $user->status, "Special characters should be preserved: {$input}");
             }
 
             // Limpiar
@@ -253,9 +258,9 @@ class SecurityTest extends TestCase
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // NUMERIC INJECTION TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testNumericInjectionAttempts(): void
     {
@@ -269,13 +274,13 @@ class SecurityTest extends TestCase
         foreach ($numericAttacks as $attack) {
             // Usar columna de texto para evitar error de tipo en Postgres
             $users = self::$orm->table('users')->where('status', '=', $attack)->getAll();
-            $this->assertCount(0, $users, "Numeric injection was not prevented for: {$attack}");
+            self::assertCount(0, $users, "Numeric injection was not prevented for: {$attack}");
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // BIND PARAMETER SECURITY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testBindParameterInjection(): void
     {
@@ -288,14 +293,14 @@ class SecurityTest extends TestCase
 
         foreach ($maliciousBinds as $bind) {
             $result = self::$orm->exec('SELECT * FROM users WHERE email = ?', [$bind]);
-            $this->assertIsArray($result, "Bind parameter injection test failed for: {$bind}");
-            $this->assertCount(0, $result, "Malicious bind should not return results: {$bind}");
+            self::assertIsArray($result, "Bind parameter injection test failed for: {$bind}");
+            self::assertCount(0, $result, "Malicious bind should not return results: {$bind}");
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // TYPE CASTING SECURITY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testTypeCastingSecurity(): void
     {
@@ -316,18 +321,18 @@ class SecurityTest extends TestCase
 
             // Si la inserción es exitosa, verificar que los datos están seguros
             $user = self::$orm->table('users')->where('email', '=', 'typecast@example.com')->firstArray();
-            $this->assertNotNull($user);
+            self::assertNotNull($user);
             // Limpiar
             self::$orm->table('users')->where('email', '=', 'typecast@example.com')->delete();
-        } catch (\VersaORM\VersaORMException $e) {
+        } catch (VersaORMException $e) {
             // Es aceptable que falle si detecta el problema
-            $this->assertStringContainsString('error', strtolower($e->getMessage()));
+            self::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // TRANSACTION SECURITY TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testTransactionInjectionPrevention(): void
     {
@@ -338,18 +343,18 @@ class SecurityTest extends TestCase
             $maliciousInput = "'; COMMIT; DROP TABLE users; START TRANSACTION; --";
             $users          = self::$orm->table('users')->where('name', '=', $maliciousInput)->getAll();
 
-            $this->assertCount(0, $users, 'Transaction injection was not prevented.');
+            self::assertCount(0, $users, 'Transaction injection was not prevented.');
 
             self::$orm->exec('ROLLBACK');
-        } catch (\VersaORM\VersaORMException $e) {
+        } catch (VersaORMException $e) {
             // Las transacciones pueden fallar en el entorno de pruebas, eso está bien
-            $this->assertStringContainsString('error', strtolower($e->getMessage()));
+            self::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
-    //======================================================================
+    // ======================================================================
     // EDGE CASES AND STRESS TESTS
-    //======================================================================
+    // ======================================================================
 
     public function testExtremeLengthInputs(): void
     {
@@ -365,14 +370,14 @@ class SecurityTest extends TestCase
 
             $user = self::$orm->table('users')->find($id);
             // El string puede ser cortado por límites de la base de datos, eso está bien
-            $this->assertNotEmpty($user->status, 'Long string should be stored (even if truncated).');
-            $this->assertStringStartsWith('AAA', $user->status, 'Long string should start correctly.');
+            self::assertNotEmpty($user->status, 'Long string should be stored (even if truncated).');
+            self::assertStringStartsWith('AAA', $user->status, 'Long string should start correctly.');
 
             // Limpiar
             self::$orm->table('users')->where('id', '=', $id)->delete();
-        } catch (\VersaORM\VersaORMException $e) {
+        } catch (VersaORMException $e) {
             // Es aceptable que falle por límites de columna
-            $this->assertStringContainsString('error', strtolower($e->getMessage()));
+            self::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -382,7 +387,7 @@ class SecurityTest extends TestCase
         $nullByteAttack = "admin\x00'; DROP TABLE users; --";
 
         $users = self::$orm->table('users')->where('name', '=', $nullByteAttack)->getAll();
-        $this->assertCount(0, $users, 'Null byte injection was not prevented.');
+        self::assertCount(0, $users, 'Null byte injection was not prevented.');
     }
 
     public function testConcurrentSecurityOperations(): void
@@ -390,7 +395,7 @@ class SecurityTest extends TestCase
         // Test que operaciones concurrentes no introducen vulnerabilidades de race condition
         $results = [];
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             $maliciousInput = "'; DROP TABLE users; -- attempt {$i}";
             $result         = self::$orm->table('users')->where('email', '=', $maliciousInput)->count();
             $results[]      = $result;
@@ -398,7 +403,7 @@ class SecurityTest extends TestCase
 
         // Todos los resultados deben ser 0 (sin inyección exitosa)
         foreach ($results as $result) {
-            $this->assertEquals(0, $result, 'Concurrent security test failed.');
+            self::assertSame(0, $result, 'Concurrent security test failed.');
         }
     }
 }

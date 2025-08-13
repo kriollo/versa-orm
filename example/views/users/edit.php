@@ -18,7 +18,7 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 border border-transparent dark:border-gray-700 transition-colors">
-        <form method="POST" action="?action=user_edit&id=<?= $user->id ?>">
+        <form method="POST" action="?action=user_edit&id=<?php echo $user->id; ?>">
             <div class="space-y-6">
                 <!-- Información básica -->
                 <div>
@@ -33,7 +33,7 @@
                                 id="name"
                                 name="name"
                                 required
-                                value="<?= htmlspecialchars($user->name) ?>"
+                                value="<?php echo htmlspecialchars($user->name); ?>"
                                 class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                 placeholder="Ingresa el nombre completo">
                         </div>
@@ -46,7 +46,7 @@
                                 id="email"
                                 name="email"
                                 required
-                                value="<?= htmlspecialchars($user->email) ?>"
+                                value="<?php echo htmlspecialchars($user->email); ?>"
                                 class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                 placeholder="usuario@ejemplo.com">
                         </div>
@@ -58,8 +58,8 @@
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 transition-colors">Avatar</h3>
 
                     <div class="flex items-center space-x-4">
-                        <div class="avatar-lg" style="background-color: <?= htmlspecialchars($user->avatar_color) ?>">
-                            <?= strtoupper(substr($user->name, 0, 2)) ?>
+                        <div class="avatar-lg" style="background-color: <?php echo htmlspecialchars($user->avatar_color); ?>">
+                            <?php echo strtoupper(substr($user->name, 0, 2)); ?>
                         </div>
 
                         <div class="flex-1">
@@ -70,7 +70,7 @@
                                 <input type="color"
                                     id="avatar_color"
                                     name="avatar_color"
-                                    value="<?= htmlspecialchars($user->avatar_color) ?>"
+                                    value="<?php echo htmlspecialchars($user->avatar_color); ?>"
                                     class="w-12 h-10 border border-gray-300 dark:border-gray-600 rounded cursor-pointer bg-white dark:bg-gray-700 transition-colors">
                                 <span class="text-sm text-gray-500 dark:text-gray-400 transition-colors">Selecciona un color para el avatar</span>
                             </div>
@@ -87,7 +87,7 @@
                             id="active"
                             name="active"
                             value="1"
-                            <?= isset($user->active) && $user->active ? 'checked' : '' ?>
+                            <?php echo isset($user->active) && $user->active ? 'checked' : ''; ?>
                             class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 transition-colors">
                         <label for="active" class="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                             Usuario activo
@@ -101,10 +101,10 @@
             <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                     <div>
-                        <strong>Creado:</strong> <?= isset($user->created_at) ? safe_date_format($user->created_at, 'd/m/Y H:i') : 'N/A' ?>
+                        <strong>Creado:</strong> <?php echo isset($user->created_at) ? safe_date_format($user->created_at, 'd/m/Y H:i') : 'N/A'; ?>
                     </div>
                     <div>
-                        <strong>Actualizado:</strong> <?= isset($user->updated_at) ? safe_date_format($user->updated_at, 'd/m/Y H:i') : 'N/A' ?>
+                        <strong>Actualizado:</strong> <?php echo isset($user->updated_at) ? safe_date_format($user->updated_at, 'd/m/Y H:i') : 'N/A'; ?>
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@
             <!-- Botones de acción -->
             <div class="mt-8 flex items-center justify-between">
                 <button type="button"
-                    onclick="if(confirm('¿Estás seguro de que quieres eliminar este usuario?')) { window.location.href = '?action=user_delete&id=<?= $user->id ?>'; }"
+                    onclick="if(confirm('¿Estás seguro de que quieres eliminar este usuario?')) { window.location.href = '?action=user_delete&id=<?php echo $user->id; ?>'; }"
                     class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
                     <i class="fas fa-trash mr-2"></i>
                     Eliminar Usuario

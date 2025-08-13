@@ -17,12 +17,12 @@ $config = [
         'engine'    => 'pdo',
         'DB_DRIVER' => getenv('DB_DRIVER') ?: 'sqlite',
         // Para archivo local persistente usa ruta absoluta; por defecto en la raíz del repo
-        'DB_NAME'   => getenv('DB_NAME') ?: (getenv('SQLITE_PATH') ?: (__DIR__ . '/../tests.sqlite')),
-        'DB_HOST'   => '',
-        'DB_PORT'   => 0,
-        'DB_USER'   => '',
-        'DB_PASS'   => '',
-        'debug'     => true,
+        'DB_NAME' => getenv('DB_NAME') ?: (getenv('SQLITE_PATH') ?: (__DIR__ . '/../tests.sqlite')),
+        'DB_HOST' => '',
+        'DB_PORT' => 0,
+        'DB_USER' => '',
+        'DB_PASS' => '',
+        'debug'   => true,
     ],
 ];
 

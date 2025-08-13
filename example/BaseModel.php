@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use VersaORM\VersaModel;
-use VersaORM\Traits\HandlesErrors;
 use VersaORM\ErrorHandler;
+use VersaORM\Traits\HandlesErrors;
+use VersaORM\VersaModel;
 use VersaORM\VersaORMException;
 
+use function defined;
+
+use const DIRECTORY_SEPARATOR;
+
 /**
- * BaseModel - Clase base para todos los modelos de tu aplicación
+ * BaseModel - Clase base para todos los modelos de tu aplicación.
  *
  * Incluye manejo automático de errores y funcionalidades comunes.
  */
@@ -21,7 +25,7 @@ abstract class BaseModel extends VersaModel
     // La configuración de errores se hereda del trait HandlesErrors
 
     /**
-     * Inicialización del modelo
+     * Inicialización del modelo.
      */
     public function __construct(array $attributes = [])
     {
@@ -34,9 +38,9 @@ abstract class BaseModel extends VersaModel
 
         // Configurar el manejo de errores para este modelo
         static::configureErrorHandling([
-            'log_errors' => true,
-            'throw_on_error' => false, // No lanzar excepciones por defecto
-            'format_for_api' => true,  // Formatear para respuestas de API
+            'log_errors'          => true,
+            'throw_on_error'      => false, // No lanzar excepciones por defecto
+            'format_for_api'      => true,  // Formatear para respuestas de API
             'include_suggestions' => true,
         ]);
 
@@ -48,84 +52,15 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Determina si estamos en modo debug
+     * Override de métodos principales con manejo de errores mejorado.
      */
-    protected function isDebugMode(): bool
-    {
-        // Puedes personalizar esto según tu framework
-        return defined('APP_DEBUG') && APP_DEBUG === true;
-    }
-
-    /**
-     * Método para operaciones de base de datos con logging automático
-     */
-    protected function executeWithLogging(string $operation, callable $callback, array $context = [])
-    {
-        $startTime = microtime(true);
-
-        try {
-            $result = $this->withErrorHandling($callback, array_merge($context, [
-                'operation' => $operation,
-                'start_time' => $startTime,
-            ]));
-
-            // Log operación exitosa
-            $this->logOperation($operation, true, microtime(true) - $startTime, $context);
-
-            return $result;
-        } catch (VersaORMException $e) {
-            // Log operación fallida
-            $this->logOperation($operation, false, microtime(true) - $startTime, $context, $e);
-            throw $e;
-        }
-    }
-
-    /**
-     * Log de operaciones
-     */
-    protected function logOperation(string $operation, bool $success, float $duration, array $context = [], ?VersaORMException $exception = null): void
-    {
-        $logData = [
-            'model' => static::class,
-            'table' => $this->getTable(),
-            'operation' => $operation,
-            'success' => $success,
-            'duration_ms' => round($duration * 1000, 2),
-            'timestamp' => date('Y-m-d H:i:s'),
-            'context' => $context,
-        ];
-
-        if ($exception) {
-            $logData['error'] = [
-                'message' => $exception->getMessage(),
-                'code' => $exception->getErrorCode(),
-                'query' => $exception->getQuery(),
-                'bindings' => $exception->getBindings(),
-            ];
-        }
-
-        // Escribir al log configurado en VersaORM si está disponible
-        $logPath = ErrorHandler::getLogPath();
-        if ($logPath) {
-            $logFile = $logPath . DIRECTORY_SEPARATOR . 'versaorm_operations_' . date('Y-m-d') . '.log';
-            $logLine = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
-            file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
-        } else {
-            // Fallback al error_log del sistema
-            error_log(json_encode($logData));
-        }
-    }
-
-    /**
-     * Override de métodos principales con manejo de errores mejorado
-     */
-
     public function save(string $primaryKey = 'id'): array
     {
         return $this->executeWithLogging('save', function () use ($primaryKey) {
             if (!$this->validateBeforeOperation('save')) {
                 return [];
             }
+
             return parent::save($primaryKey);
         });
     }
@@ -146,6 +81,7 @@ abstract class BaseModel extends VersaModel
             if (!$this->validateBeforeOperation('update')) {
                 return $this;
             }
+
             return parent::update($data);
         }, ['update_data' => $data]);
     }
@@ -161,23 +97,23 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Métodos de conveniencia para respuestas de API
+     * Métodos de conveniencia para respuestas de API.
      */
 
     /**
-     * Convierte el modelo a array para respuesta de API
+     * Convierte el modelo a array para respuesta de API.
      */
     public function toApiResponse(): array
     {
         $response = [
             'success' => !$this->hasError(),
-            'data' => $this->hasError() ? null : $this->toArray(),
+            'data'    => $this->hasError() ? null : $this->toArray(),
         ];
 
         if ($this->hasError()) {
             $response['error'] = [
-                'message' => $this->getLastErrorMessage(),
-                'code' => $this->getLastErrorCode(),
+                'message'     => $this->getLastErrorMessage(),
+                'code'        => $this->getLastErrorCode(),
                 'suggestions' => $this->getLastErrorSuggestions(),
             ];
         }
@@ -186,7 +122,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Respuesta de API para operaciones de creación
+     * Respuesta de API para operaciones de creación.
      */
     public function createApiResponse(): array
     {
@@ -194,9 +130,9 @@ abstract class BaseModel extends VersaModel
             return [
                 'success' => false,
                 'message' => 'Failed to create record',
-                'error' => [
-                    'message' => $this->getLastErrorMessage(),
-                    'code' => $this->getLastErrorCode(),
+                'error'   => [
+                    'message'     => $this->getLastErrorMessage(),
+                    'code'        => $this->getLastErrorCode(),
                     'suggestions' => $this->getLastErrorSuggestions(),
                 ],
             ];
@@ -205,13 +141,13 @@ abstract class BaseModel extends VersaModel
         return [
             'success' => true,
             'message' => 'Record created successfully',
-            'data' => $this->toArray(),
-            'id' => $this->getAttribute('id'),
+            'data'    => $this->toArray(),
+            'id'      => $this->getAttribute('id'),
         ];
     }
 
     /**
-     * Respuesta de API para operaciones de actualización
+     * Respuesta de API para operaciones de actualización.
      */
     public function updateApiResponse(): array
     {
@@ -219,9 +155,9 @@ abstract class BaseModel extends VersaModel
             return [
                 'success' => false,
                 'message' => 'Failed to update record',
-                'error' => [
-                    'message' => $this->getLastErrorMessage(),
-                    'code' => $this->getLastErrorCode(),
+                'error'   => [
+                    'message'     => $this->getLastErrorMessage(),
+                    'code'        => $this->getLastErrorCode(),
                     'suggestions' => $this->getLastErrorSuggestions(),
                 ],
             ];
@@ -230,12 +166,12 @@ abstract class BaseModel extends VersaModel
         return [
             'success' => true,
             'message' => 'Record updated successfully',
-            'data' => $this->toArray(),
+            'data'    => $this->toArray(),
         ];
     }
 
     /**
-     * Respuesta de API para operaciones de eliminación
+     * Respuesta de API para operaciones de eliminación.
      */
     public function deleteApiResponse(): array
     {
@@ -243,9 +179,9 @@ abstract class BaseModel extends VersaModel
             return [
                 'success' => false,
                 'message' => 'Failed to delete record',
-                'error' => [
-                    'message' => $this->getLastErrorMessage(),
-                    'code' => $this->getLastErrorCode(),
+                'error'   => [
+                    'message'     => $this->getLastErrorMessage(),
+                    'code'        => $this->getLastErrorCode(),
                     'suggestions' => $this->getLastErrorSuggestions(),
                 ],
             ];
@@ -258,9 +194,10 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Métodos estáticos con manejo de errores
+     * Métodos estáticos con manejo de errores.
+     *
+     * @param mixed $id
      */
-
     public static function findWithErrorHandling($id): ?static
     {
         try {
@@ -268,9 +205,10 @@ abstract class BaseModel extends VersaModel
         } catch (VersaORMException $e) {
             ErrorHandler::handleException($e, [
                 'model_class' => static::class,
-                'operation' => 'find',
-                'id' => $id,
+                'operation'   => 'find',
+                'id'          => $id,
             ]);
+
             return null;
         }
     }
@@ -282,35 +220,37 @@ abstract class BaseModel extends VersaModel
         } catch (VersaORMException $e) {
             ErrorHandler::handleException($e, [
                 'model_class' => static::class,
-                'operation' => 'findAll',
-                'conditions' => $conditions,
+                'operation'   => 'findAll',
+                'conditions'  => $conditions,
             ]);
+
             return [];
         }
     }
 
     /**
-     * Obtiene estadísticas de rendimiento del modelo
+     * Obtiene estadísticas de rendimiento del modelo.
      */
     public static function getPerformanceStats(): array
     {
         $errorStats = static::getErrorStats();
 
         return [
-            'model_class' => static::class,
-            'error_stats' => $errorStats,
+            'model_class'  => static::class,
+            'error_stats'  => $errorStats,
             'memory_usage' => memory_get_usage(true),
-            'peak_memory' => memory_get_peak_usage(true),
+            'peak_memory'  => memory_get_peak_usage(true),
         ];
     }
 
     /**
-     * Método para debugging - muestra información detallada del último error
+     * Método para debugging - muestra información detallada del último error.
      */
     public function debugLastError(): void
     {
         if (!$this->hasError()) {
             echo "No errors found.\n";
+
             return;
         }
 
@@ -319,7 +259,78 @@ abstract class BaseModel extends VersaModel
     }
 
     /**
-     * Valida el modelo antes de operaciones críticas
+     * Determina si estamos en modo debug.
+     */
+    protected function isDebugMode(): bool
+    {
+        // Puedes personalizar esto según tu framework
+        return defined('APP_DEBUG') && APP_DEBUG === true;
+    }
+
+    /**
+     * Método para operaciones de base de datos con logging automático.
+     */
+    protected function executeWithLogging(string $operation, callable $callback, array $context = [])
+    {
+        $startTime = microtime(true);
+
+        try {
+            $result = $this->withErrorHandling($callback, array_merge($context, [
+                'operation'  => $operation,
+                'start_time' => $startTime,
+            ]));
+
+            // Log operación exitosa
+            $this->logOperation($operation, true, microtime(true) - $startTime, $context);
+
+            return $result;
+        } catch (VersaORMException $e) {
+            // Log operación fallida
+            $this->logOperation($operation, false, microtime(true) - $startTime, $context, $e);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Log de operaciones.
+     */
+    protected function logOperation(string $operation, bool $success, float $duration, array $context = [], ?VersaORMException $exception = null): void
+    {
+        $logData = [
+            'model'       => static::class,
+            'table'       => $this->getTable(),
+            'operation'   => $operation,
+            'success'     => $success,
+            'duration_ms' => round($duration * 1000, 2),
+            'timestamp'   => date('Y-m-d H:i:s'),
+            'context'     => $context,
+        ];
+
+        if ($exception) {
+            $logData['error'] = [
+                'message'  => $exception->getMessage(),
+                'code'     => $exception->getErrorCode(),
+                'query'    => $exception->getQuery(),
+                'bindings' => $exception->getBindings(),
+            ];
+        }
+
+        // Escribir al log configurado en VersaORM si está disponible
+        $logPath = ErrorHandler::getLogPath();
+
+        if ($logPath) {
+            $logFile = $logPath . DIRECTORY_SEPARATOR . 'versaorm_operations_' . date('Y-m-d') . '.log';
+            $logLine = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+            file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
+        } else {
+            // Fallback al error_log del sistema
+            error_log(json_encode($logData));
+        }
+    }
+
+    /**
+     * Valida el modelo antes de operaciones críticas.
      */
     protected function validateModel(): array
     {
@@ -332,13 +343,12 @@ abstract class BaseModel extends VersaModel
 
         // Validaciones personalizadas (override en modelos específicos)
         $customErrors = $this->customValidation();
-        $errors = array_merge($errors, $customErrors);
 
-        return $errors;
+        return array_merge($errors, $customErrors);
     }
 
     /**
-     * Validaciones personalizadas (override en modelos específicos)
+     * Validaciones personalizadas (override en modelos específicos).
      */
     protected function customValidation(): array
     {

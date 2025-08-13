@@ -12,26 +12,24 @@ use Exception;
 class VersaORMException extends Exception
 {
     private ?string $query;
+
     /**
      * @var array<int, mixed>
      */
     private array $bindings;
+
     private string $errorCode;
+
     /**
      * @var array<string, mixed>
      */
     private array $errorDetails;
+
     private ?string $sqlState;
 
     /**
-     * @param string $message
-     * @param string $errorCode
-     * @param string|null $query
      * @param array<int, mixed> $bindings
      * @param array<string, mixed> $errorDetails
-     * @param string|null $sqlState
-     * @param int $code
-     * @param Exception|null $previous
      */
     public function __construct(
         string $message,
@@ -41,7 +39,7 @@ class VersaORMException extends Exception
         array $errorDetails = [],
         ?string $sqlState = null,
         int $code = 0,
-        ?Exception $previous = null
+        ?Exception $previous = null,
     ) {
         parent::__construct($message, $code, $previous);
         $this->errorCode    = $errorCode;
@@ -53,8 +51,6 @@ class VersaORMException extends Exception
 
     /**
      * Obtiene la consulta SQL que causó el error.
-     *
-     * @return string|null
      */
     public function getQuery(): ?string
     {
@@ -73,8 +69,6 @@ class VersaORMException extends Exception
 
     /**
      * Obtiene el código de error específico de VersaORM.
-     *
-     * @return string
      */
     public function getErrorCode(): string
     {
@@ -93,8 +87,6 @@ class VersaORMException extends Exception
 
     /**
      * Obtiene el estado SQL si está disponible.
-     *
-     * @return string|null
      */
     public function getSqlState(): ?string
     {

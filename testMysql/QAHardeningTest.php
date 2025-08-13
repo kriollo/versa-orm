@@ -70,8 +70,8 @@ class QAHardeningTest extends TestCase
     {
         $qb   = new QueryBuilder($this->orm, 'order');
         $rows = $qb->select(['select'])->where('group', '=', 'g1')->get();
-        $this->assertNotEmpty($rows);
-        $this->assertSame('s1', $rows[0]['select'] ?? null);
+        self::assertNotEmpty($rows);
+        self::assertSame('s1', $rows[0]['select'] ?? null);
     }
 
     public function testWindowFunctionQualificationAndAlias(): void
@@ -80,8 +80,8 @@ class QAHardeningTest extends TestCase
         $this->orm->table('order')->insert(['select' => 's3', 'group' => 'g1', 'name' => 'n3']);
         $qb   = new QueryBuilder($this->orm, 'order');
         $rows = $qb->windowFunction('row_number', '*', [], ['group'], [['column' => 'name', 'direction' => 'ASC']], 'rn');
-        $this->assertNotEmpty($rows);
-        $this->assertArrayHasKey('rn', $rows[0]);
+        self::assertNotEmpty($rows);
+        self::assertArrayHasKey('rn', $rows[0]);
     }
 
     public function testFullTextSearchBooleanModeWithScore(): void
@@ -89,9 +89,9 @@ class QAHardeningTest extends TestCase
         $qb = new QueryBuilder($this->orm, 'qa_docs');
         // Usar una consulta que garantice coincidencias (exigir "foo" y excluir "baz")
         $rows = $qb->fullTextSearch(['title', 'body'], '"foo" -baz', ['mode' => 'BOOLEAN', 'with_score' => true]);
-        $this->assertIsArray($rows);
+        self::assertIsArray($rows);
         // score debe existir cuando with_score es true
-        $this->assertArrayHasKey('score', $rows[0] ?? []);
+        self::assertArrayHasKey('score', $rows[0] ?? []);
     }
 
     public function testCteWithBindings(): void
@@ -100,17 +100,17 @@ class QAHardeningTest extends TestCase
         $rows = $qb->withCte([
             'docs' => [
                 'query'    => 'SELECT id, title FROM qa_docs WHERE id > ?',
-                'bindings' => [0]
-            ]
+                'bindings' => [0],
+            ],
         ], 'SELECT * FROM docs WHERE title LIKE ?', ['%o%']);
-        $this->assertNotEmpty($rows);
+        self::assertNotEmpty($rows);
     }
 
     public function testGroupConcatWithSpecialSeparator(): void
     {
         $qb   = new QueryBuilder($this->orm, 'qa_docs');
         $rows = $qb->advancedAggregation('group_concat', 'title', ['separator' => "'|,|'", 'order_by' => 'id ASC']);
-        $this->assertIsArray($rows);
-        $this->assertArrayHasKey('agg', $rows[0] ?? []);
+        self::assertIsArray($rows);
+        self::assertArrayHasKey('agg', $rows[0] ?? []);
     }
 }

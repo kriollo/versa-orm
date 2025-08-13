@@ -6,6 +6,8 @@ namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaModel;
 
+use function get_class;
+
 require_once __DIR__ . '/TestCase.php';
 /**
  * @group mysql
@@ -30,27 +32,27 @@ class JsonCastingConsistencyTest extends TestCase
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id' => ['type' => 'int'],
-                    'name' => ['type' => 'string'],
+                    'id'       => ['type' => 'int'],
+                    'name'     => ['type' => 'string'],
                     'settings' => ['type' => 'json'],
                 ];
             }
         };
 
         $rows = self::$orm->table('configs_json_cast', get_class($model))->get();
-        $this->assertCount(1, $rows);
-        $this->assertIsArray($rows[0]['settings']);
-        $this->assertSame('dark', $rows[0]['settings']['theme']);
+        self::assertCount(1, $rows);
+        self::assertIsArray($rows[0]['settings']);
+        self::assertSame('dark', $rows[0]['settings']['theme']);
 
         $first = self::$orm->table('configs_json_cast', get_class($model))->firstArray();
-        $this->assertNotNull($first);
-        $this->assertIsArray($first['settings']);
+        self::assertNotNull($first);
+        self::assertIsArray($first['settings']);
 
         $objects = self::$orm->table('configs_json_cast', get_class($model))->findAll();
-        $this->assertIsArray($objects[0]->export()['settings']);
+        self::assertIsArray($objects[0]->export()['settings']);
 
         $one = self::$orm->table('configs_json_cast', get_class($model))->where('name', '=', 'conf_a')->findOne();
-        $this->assertNotNull($one);
-        $this->assertIsArray($one->export()['settings']);
+        self::assertNotNull($one);
+        self::assertIsArray($one->export()['settings']);
     }
 }
