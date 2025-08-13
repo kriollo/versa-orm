@@ -423,7 +423,7 @@ class VersaModel implements TypedModelInterface
             $propertyTypes = static::getPropertyTypes();
             $phpType = $propertyTypes[$columnName]['type'] ?? null;
 
-            if ($dataType === 'tinyint' && $phpType === 'boolean') {
+            if ($dataType === 'tinyint' && ($phpType === 'boolean' || $phpType === 'bool')) {
                 // No agregar regla 'numeric' para campos boolean
             } elseif (strpos($dataType, 'int') !== false) {
                 $validationRules[] = 'numeric';

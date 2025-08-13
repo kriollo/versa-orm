@@ -39,7 +39,7 @@ class LoadCastingTest extends TestCase
                 return [
                     'id' => ['type' => 'integer'],
                     'name' => ['type' => 'string'],
-                    'active' => ['type' => 'boolean'],
+                    'active' => ['type' => 'bool'],
                     'created_at' => ['type' => 'datetime'],
                 ];
             }
@@ -75,7 +75,7 @@ class LoadCastingTest extends TestCase
                 return [
                     'id' => ['type' => 'integer'],
                     'name' => ['type' => 'string'],
-                    'active' => ['type' => 'boolean'],
+                    'active' => ['type' => 'bool'],
                     'created_at' => ['type' => 'datetime'],
                 ];
             }
