@@ -131,6 +131,10 @@ class VersaORM
             $normalized   = $config;
             $this->config = $normalized;
         }
+
+        // Configurar ErrorHandler con la configuración de VersaORM
+        ErrorHandler::configureFromVersaORM($this->config);
+
         // Forzar engine por defecto a 'pdo' si no se indica explícitamente 'rust'
         $engine = strtolower((string)($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
         if ($engine === '' || $engine === 'default') {
@@ -1219,6 +1223,20 @@ class VersaORM
     }
 
     /**
+     * Obtiene el directorio de logs configurado
+     */
+    private function getLogDirectory(): string
+    {
+        // Usar log_path de la configuración si está disponible
+        if (isset($this->config['log_path']) && !empty($this->config['log_path'])) {
+            return rtrim($this->config['log_path'], '/\\');
+        }
+
+        // Fallback al directorio por defecto
+        return __DIR__ . '/logs';
+    }
+
+    /**
      * Registra eventos de seguridad relacionados con el modo freeze.
      *
      * @param string $event
@@ -1228,7 +1246,7 @@ class VersaORM
     private function logSecurityEvent(string $event, array $data): void
     {
         try {
-            $logDir = __DIR__ . '/logs';
+            $logDir = $this->getLogDirectory();
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));

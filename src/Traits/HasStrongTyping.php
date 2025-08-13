@@ -86,6 +86,7 @@ trait HasStrongTyping
             } catch (\Throwable) { /* ignorar */
             }
         }
+
         // 2. Método protegido/privado definePropertyTypes()
         if ($types === [] && method_exists($cls, 'definePropertyTypes')) {
             try {

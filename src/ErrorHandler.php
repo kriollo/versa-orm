@@ -18,7 +18,9 @@ class ErrorHandler
 {
     private static bool $debugMode = false;
     private static array $errorLog = [];
-    private static ?callable $customHandler = null;
+    private static $customHandler = null;
+    private static array $config = [];
+    private static ?string $logPath = null;
 
     /**
      * Configura el modo debug
@@ -31,9 +33,56 @@ class ErrorHandler
     /**
      * Establece un handler personalizado para errores
      */
-    public static function setCustomHandler(?callable $handler): void
+    public static function setCustomHandler($handler): void
     {
         self::$customHandler = $handler;
+    }
+
+    /**
+     * Configura el ErrorHandler desde la configuración de VersaORM
+     */
+    public static function configureFromVersaORM(array $config): void
+    {
+        self::$config = $config;
+
+        // Configurar log path
+        if (isset($config['log_path'])) {
+            self::$logPath = rtrim($config['log_path'], '/\\');
+        }
+
+        // Configurar debug mode desde la config
+        if (isset($config['debug'])) {
+            self::$debugMode = (bool) $config['debug'];
+        }
+
+        // Crear directorio de logs si no existe
+        if (self::$logPath && !is_dir(self::$logPath)) {
+            mkdir(self::$logPath, 0755, true);
+        }
+    }
+
+    /**
+     * Obtiene el path de logs configurado
+     */
+    public static function getLogPath(): ?string
+    {
+        return self::$logPath;
+    }
+
+    /**
+     * Verifica si el ErrorHandler está configurado
+     */
+    public static function isConfigured(): bool
+    {
+        return !empty(self::$config);
+    }
+
+    /**
+     * Verifica si está en modo debug
+     */
+    public static function isDebugMode(): bool
+    {
+        return self::$debugMode;
     }
 
     /**
@@ -275,7 +324,7 @@ class ErrorHandler
     }
 
     /**
-     * Registra el error en el log interno
+     * Registra el error en el log interno y archivo
      */
     private static function logError(array $errorData): void
     {
@@ -285,6 +334,37 @@ class ErrorHandler
         if (count(self::$errorLog) > 100) {
             array_shift(self::$errorLog);
         }
+
+        // Escribir a archivo si está configurado el log path
+        if (self::$logPath) {
+            self::writeErrorToFile($errorData);
+        }
+    }
+
+    /**
+     * Escribe el error a archivo
+     */
+    private static function writeErrorToFile(array $errorData): void
+    {
+        if (!self::$logPath) {
+            return;
+        }
+
+        $logFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_' . date('Y-m-d') . '.log';
+
+        $logEntry = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'error_code' => $errorData['error']['error_code'],
+            'message' => $errorData['error']['message'],
+            'origin' => $errorData['origin'],
+            'query' => $errorData['query']['sql'] ?? null,
+            'context' => $errorData['context'],
+        ];
+
+        $logLine = json_encode($logEntry, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+
+        // Escribir al archivo de log
+        file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
     }
 
     /**

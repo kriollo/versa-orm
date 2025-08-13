@@ -701,8 +701,18 @@ class VersaModel implements TypedModelInterface
                 }
             }
 
-            // Aplicar casting solo en puntos seguros, no durante la carga inicial
-            $this->attributes = $attributes;
+            // Aplicar casting de tipos a los atributos antes de asignarlos
+            $castedAttributes = [];
+            foreach ($attributes as $key => $value) {
+                try {
+                    // Usar castToPhpType directamente para asignar atributos internos
+                    $castedAttributes[$key] = $this->castToPhpType($key, $value);
+                } catch (\Throwable) {
+                    // Fallback al valor original si el casting falla
+                    $castedAttributes[$key] = $value;
+                }
+            }
+            $this->attributes = $castedAttributes;
 
             // Cargar las relaciones encontradas
             foreach ($relations as $relationName => $relationData) {
@@ -759,7 +769,8 @@ class VersaModel implements TypedModelInterface
 
         $result = $orm->exec("SELECT * FROM {$this->table} WHERE {$pk} = ?", [$data]);
         if (is_array($result) && !empty($result) && is_array($result[0])) {
-            $this->attributes = $result[0];
+            // Usar loadInstance para aplicar casting correctamente
+            $this->loadInstance($result[0]);
         } else {
             throw new \Exception('Record not found or invalid result format');
         }
@@ -873,7 +884,9 @@ class VersaModel implements TypedModelInterface
                 $fallbackResult = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
 
                 if (is_array($fallbackResult) && !empty($fallbackResult) && is_array($fallbackResult[0])) {
-                    $this->attributes = array_merge($this->attributes, $fallbackResult[0]);
+                    // Merge los datos y luego aplicar casting
+                    $mergedData = array_merge($this->attributes, $fallbackResult[0]);
+                    $this->loadInstance($mergedData);
                 }
             }
         }
@@ -1515,9 +1528,54 @@ class VersaModel implements TypedModelInterface
     public function getDataCasted(): array
     {
         $data = [];
+        $types = static::getPropertyTypes();
+
         foreach ($this->attributes as $key => $value) {
             try {
-                $data[$key] = $this->applyAccessor($key, $value);
+                // Aplicar casting manual más directo para casos problemáticos
+                if (isset($types[$key]) && isset($types[$key]['type'])) {
+                    $type = $types[$key]['type'];
+
+                    // Casting directo para tipos comunes
+                    switch ($type) {
+                        case 'boolean':
+                        case 'bool':
+                            $data[$key] = $value === null ? null : (bool)$value;
+                            break;
+                        case 'integer':
+                        case 'int':
+                            $data[$key] = $value === null ? null : (int)$value;
+                            break;
+                        case 'float':
+                        case 'double':
+                        case 'real':
+                            $data[$key] = $value === null ? null : (float)$value;
+                            break;
+                        case 'string':
+                            $data[$key] = $value === null ? null : (string)$value;
+                            break;
+                        case 'datetime':
+                        case 'date':
+                            if ($value === null) {
+                                $data[$key] = null;
+                            } elseif ($value instanceof \DateTime) {
+                                $data[$key] = $value; // Ya es DateTime
+                            } else {
+                                try {
+                                    $data[$key] = new \DateTime((string)$value);
+                                } catch (\Throwable) {
+                                    $data[$key] = $value; // Fallback
+                                }
+                            }
+                            break;
+                        default:
+                            // Para otros tipos, usar el casting del trait
+                            $data[$key] = $this->applyAccessor($key, $value);
+                    }
+                } else {
+                    // Si no hay tipo definido, usar applyAccessor
+                    $data[$key] = $this->applyAccessor($key, $value);
+                }
             } catch (\Throwable) {
                 // Fallback al valor original si el casting falla
                 $data[$key] = $value;
@@ -1560,8 +1618,9 @@ class VersaModel implements TypedModelInterface
                 return null;
             }
 
-            $model             = new self($table, self::$ormInstance);
-            $model->attributes = $data[0];
+            $model = new static($table, self::$ormInstance);
+            // Usar loadInstance para aplicar casting correctamente
+            $model->loadInstance($data[0]);
             return $model;
         } catch (\Exception $e) {
             return null;
