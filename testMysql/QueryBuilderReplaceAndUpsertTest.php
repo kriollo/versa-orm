@@ -14,6 +14,10 @@ use VersaORM\VersaORMException;
  * - replaceIntoMany: Sustitución masiva optimizada (MySQL específico)
  * - upsert: Inserción/actualización condicional para un registro
  */
+
+/**
+ * @group mysql
+ */
 class QueryBuilderReplaceAndUpsertTest extends TestCase
 {
     /** @var array<string, mixed> */

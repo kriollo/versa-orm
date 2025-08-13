@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+/**
+ * @group mysql
+ */
 final class BatchOperationsTypedBindTest extends TestCase
 {
     public function testInsertManyAndUpdateManyDeleteMany(): void

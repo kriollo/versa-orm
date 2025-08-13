@@ -7,7 +7,9 @@ namespace VersaORM\Tests\Mysql;
 use VersaORM\VersaModel;
 
 require_once __DIR__ . '/TestCase.php';
-
+/**
+ * @group mysql
+ */
 class JsonCastingConsistencyTest extends TestCase
 {
     protected function setUp(): void

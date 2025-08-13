@@ -9,6 +9,9 @@ use VersaORM\VersaModel;
 
 // --- Test Models Definition ---
 
+/**
+ * @group mysql
+ */
 class UserTestModel extends VersaModel
 {
     use HasRelationships;

@@ -9,6 +9,9 @@ use VersaORM\QueryBuilder;
 /**
  * Tests para modo lazy y planificador de consultas
  */
+/**
+ * @group mysql
+ */
 class LazyQueryPlannerTest extends TestCase
 {
     public function testLazyModeActivation(): void

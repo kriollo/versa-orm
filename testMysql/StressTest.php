@@ -12,6 +12,9 @@ namespace VersaORM\Tests\Mysql;
  * These tests are designed to verify the ORM behavior under
  * high load conditions and stress scenarios.
  */
+/**
+ * @group mysql
+ */
 class StressTest extends TestCase
 {
     public function testPlaceholder(): void

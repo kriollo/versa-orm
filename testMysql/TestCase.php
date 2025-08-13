@@ -9,7 +9,9 @@ use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
 require_once __DIR__ . '/bootstrap.php';
-
+/**
+ * @group mysql
+ */
 class TestCase extends BaseTestCase
 {
     public static ?VersaORM $orm       = null;

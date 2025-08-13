@@ -8,6 +8,9 @@ namespace VersaORM\Tests\Mysql;
 
 use VersaORM\VersaORMException;
 
+/**
+ * @group mysql
+ */
 class AliasValidationTest extends TestCase
 {
     /**

@@ -19,6 +19,9 @@ use VersaORM\VersaORMException;
  * - Full-text search
  * - Database-specific features
  */
+/**
+ * @group mysql
+ */
 class AdvancedSQLTest extends TestCase
 {
     private VersaORM $orm;

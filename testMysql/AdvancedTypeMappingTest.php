@@ -8,7 +8,9 @@ use VersaORM\VersaModel;
 use VersaORM\VersaORMException;
 
 require_once __DIR__ . '/TestCase.php';
-
+/**
+ * @group mysql
+ */
 class AdvancedTypeMappingTest extends TestCase
 {
     public function testJsonTypeConversion(): void

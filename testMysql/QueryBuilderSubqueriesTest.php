@@ -12,6 +12,9 @@ use VersaORM\VersaORMException;
 /**
  * Tests para subconsultas y expresiones raw en QueryBuilder - Tarea 2.3.
  */
+/**
+ * @group mysql
+ */
 class QueryBuilderSubqueriesTest extends TestCase
 {
     private QueryBuilder $queryBuilder;

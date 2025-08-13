@@ -8,6 +8,10 @@ use VersaORM\VersaModel;
 /**
  * Test para validación de consistencia de esquemas en VersaORM.
  */
+
+/**
+ * @group mysql
+ */
 class SchemaConsistencyTest extends TestCase
 {
     private TestSchemaModel $model;

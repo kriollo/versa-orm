@@ -8,6 +8,9 @@ use VersaORM\VersaORM;
 /**
  * Pruebas de transacciones: commit y rollback usando las APIs del ORM/QueryBuilder.
  */
+/**
+ * @group mysql
+ */
 class TransactionsRollbackTest extends TestCase
 {
     private VersaORM $orm;

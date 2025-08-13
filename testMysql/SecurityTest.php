@@ -14,6 +14,9 @@ namespace VersaORM\Tests\Mysql;
  * - Prevención de XSS
  * - Casos extremos de seguridad
  */
+/**
+ * @group mysql
+ */
 class SecurityTest extends TestCase
 {
     //======================================================================

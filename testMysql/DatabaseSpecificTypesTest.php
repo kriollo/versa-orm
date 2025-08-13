@@ -10,6 +10,9 @@ use VersaORM\VersaORM;
  * Tests de tipos específicos por base de datos
  * Prueba el manejo de tipos avanzados en MySQL, PostgreSQL y SQLite
  */
+/**
+ * @group mysql
+ */
 class DatabaseSpecificTypesTest extends TestCase
 {
     private VersaORM $orm;

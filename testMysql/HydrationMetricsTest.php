@@ -8,6 +8,9 @@ namespace VersaORM\Tests\Mysql;
 
 require_once __DIR__ . '/bootstrap.php';
 
+/**
+ * @group mysql
+ */
 class HydrationMetricsTest extends TestCase
 {
     public function testHydrationFastPathAndMetrics(): void

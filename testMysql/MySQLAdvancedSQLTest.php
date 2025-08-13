@@ -15,6 +15,9 @@ use VersaORM\VersaORM;
  * - Full-text search con FULLTEXT indexes
  * - Query hints específicos de MySQL
  */
+/**
+ * @group mysql
+ */
 class MySQLAdvancedSQLTest extends TestCase
 {
     private VersaORM $orm;

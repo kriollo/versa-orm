@@ -12,6 +12,9 @@ use VersaORM\VersaORMException;
  * Cubre los métodos: upsert(), insertOrUpdate(), save(), createOrUpdate()
  * implementados en la Tarea 2.2 - Operaciones CRUD completas.
  */
+/**
+ * @group mysql
+ */
 class UpsertOperationsTest extends TestCase
 {
     //======================================================================

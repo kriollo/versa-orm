@@ -12,6 +12,10 @@ use VersaORM\VersaORMException;
  * Cubre el método replaceInto() implementado en la Tarea 2.2.
  * Nota: REPLACE INTO es específico de MySQL - otros drivers usan fallback.
  */
+
+/**
+ * @group mysql
+ */
 class ReplaceIntoTest extends TestCase
 {
     //======================================================================

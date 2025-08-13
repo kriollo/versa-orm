@@ -10,6 +10,9 @@ use VersaORM\VersaModel;
 
 require_once __DIR__ . '/TestCase.php';
 
+/**
+ * @group mysql
+ */
 class VersaModelTest extends TestCase
 {
     public function testDispenseAndCreate(): void

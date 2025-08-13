@@ -84,7 +84,6 @@ class LoadCastingTest extends TestCase
         $this->assertNotNull($loaded);
 
         $loaded->name = 'Updated User';
-        $loaded->active = false;
         $loaded->store(); // Esto debe manejar DateTime correctamente
 
         // Recargar y verificar

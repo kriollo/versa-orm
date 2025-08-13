@@ -9,6 +9,10 @@ namespace VersaORM\Tests\Mysql;
 use VersaORM\VersaORMException;
 
 require_once __DIR__ . '/TestCase.php';
+
+/**
+ * @group mysql
+ */
 class VersaORMTest extends TestCase
 {
     public function testConnection(): void

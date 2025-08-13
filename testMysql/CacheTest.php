@@ -7,6 +7,9 @@ namespace VersaORM\Tests\Mysql;
 use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
+/**
+ * @group mysql
+ */
 class CacheTest extends TestCase
 {
     public static ?VersaORM $orm = null;

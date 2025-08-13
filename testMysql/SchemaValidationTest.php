@@ -18,6 +18,10 @@ use VersaORM\VersaORMException;
  * 3. Aplicar validaciones automáticas basadas en el esquema real
  * 4. Manejar casos edge y errores graciosamente
  */
+
+/**
+ * @group mysql
+ */
 class SchemaValidationTest extends TestCase
 {
     private VersaORM $orm;
@@ -219,8 +223,6 @@ class SchemaValidationTest extends TestCase
         $errors5 = $model5->validate();
         $this->assertNotEmpty($errors5);
         $this->assertContains('The age must be an integer.', $errors5);
-
-        echo "✅ Validación automática contra esquema exitosa\n";
     }
 
     /**
@@ -238,11 +240,9 @@ class SchemaValidationTest extends TestCase
             $errors = $model->validate();
             // No debería lanzar excepciones, debe manejar el error graciosamente
             $this->assertIsArray($errors);
-            echo "✅ Fallback de validación esquema exitoso\n";
         } catch (\Exception $e) {
             // Si lanza excepción, verificar que es la simulada y no un error del sistema
             $this->assertStringContainsString('CLI Rust not available', $e->getMessage());
-            echo "✅ Fallback manejó excepción correctamente\n";
         }
     }
 
@@ -282,8 +282,6 @@ class SchemaValidationTest extends TestCase
         $errors3   = $method->invoke($model, 'name', $longValue, $columnSchema);
         $this->assertNotEmpty($errors3);
         $this->assertContains('The name may not be greater than 100 characters.', $errors3);
-
-        echo "✅ Validación de campos individuales exitosa\n";
     }
 
     /**
@@ -307,7 +305,6 @@ class SchemaValidationTest extends TestCase
             $this->fail('Se esperaba una excepción de validación');
         } catch (VersaORMException $e) {
             $this->assertStringContainsString('Validation failed', $e->getMessage());
-            echo "✅ Integración completa de validación exitosa\n";
         }
     }
 }

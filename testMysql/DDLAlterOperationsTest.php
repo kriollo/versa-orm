@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+/**
+ * @group mysql
+ */
 final class DDLAlterOperationsTest extends TestCase
 {
     public function testAddAndDropIndexAndForeign(): void

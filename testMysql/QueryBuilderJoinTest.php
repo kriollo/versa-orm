@@ -6,6 +6,9 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Mysql;
 
+/**
+ * @group mysql
+ */
 class QueryBuilderJoinTest extends TestCase
 {
     //======================================================================

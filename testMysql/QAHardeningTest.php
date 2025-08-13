@@ -9,6 +9,9 @@ use VersaORM\VersaORM;
 /**
  * Pruebas duras estilo QA para romper el SqlGenerator y PdoEngine.
  */
+/**
+ * @group mysql
+ */
 class QAHardeningTest extends TestCase
 {
     private VersaORM $orm;

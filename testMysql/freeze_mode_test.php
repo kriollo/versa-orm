@@ -12,7 +12,9 @@ use VersaORM\VersaORM;
  * Tarea 7.2 - Task: Implementar freeze/frozen mode completamente.
  */
 
-// Mock model para testing
+/**
+ * @group mysql
+ */
 class TestModel extends VersaModel
 {
     public function __construct($orm = null)
@@ -32,7 +34,6 @@ $config = [
     'debug'    => true,
 ];
 
-echo "=== VersaORM Freeze Mode Tests ===\n";
 
 try {
     $orm = new VersaORM($config);
@@ -41,43 +42,31 @@ try {
     TestModel::setORM($orm);
 
     // Test 1: Verificar estado inicial (no frozen)
-    echo "\n1. Test: Estado inicial - no frozen\n";
     assert($orm->isFrozen() === false, 'El ORM no debe estar frozen inicialmente');
     assert($orm->isModelFrozen(TestModel::class) === false, 'El modelo no debe estar frozen inicialmente');
-    echo "   ✓ Estado inicial correcto\n";
 
     // Test 2: Activar freeze global
-    echo "\n2. Test: Activar freeze global\n";
     $orm->freeze(true);
     assert($orm->isFrozen() === true, 'El ORM debe estar frozen después de activar freeze global');
-    echo "   ✓ Freeze global activado correctamente\n";
 
     // Test 3: Verificar que modelo también está frozen globalmente
-    echo "\n3. Test: Modelo affected por freeze global\n";
     assert(TestModel::isFrozen() === true, 'El modelo debe detectar freeze global');
-    echo "   ✓ Modelo detecta freeze global correctamente\n";
 
     // Test 4: Desactivar freeze global
-    echo "\n4. Test: Desactivar freeze global\n";
     $orm->freeze(false);
     assert($orm->isFrozen() === false, 'El ORM no debe estar frozen después de desactivar');
     assert(TestModel::isFrozen() === false, 'El modelo no debe detectar freeze después de desactivar global');
-    echo "   ✓ Freeze global desactivado correctamente\n";
 
     // Test 5: Freeze por modelo específico
-    echo "\n5. Test: Freeze por modelo específico\n";
     $orm->freezeModel(TestModel::class, true);
     assert($orm->isModelFrozen(TestModel::class) === true, 'El modelo específico debe estar frozen');
     assert(TestModel::isFrozen() === true, 'El modelo debe detectar su propio freeze state');
     assert($orm->isFrozen() === false, 'El freeze global debe seguir desactivado');
-    echo "   ✓ Freeze por modelo funciona correctamente\n";
 
     // Test 6: Desactivar freeze por modelo
-    echo "\n6. Test: Desactivar freeze por modelo\n";
     $orm->freezeModel(TestModel::class, false);
     assert($orm->isModelFrozen(TestModel::class) === false, 'El modelo no debe estar frozen después de desactivar');
     assert(TestModel::isFrozen() === false, 'El modelo no debe detectar freeze después de desactivar');
-    echo "   ✓ Desactivación de freeze por modelo funciona correctamente\n";
 
     // Test 7: Múltiples modelos con freeze individual
     echo "\n7. Test: Múltiples modelos con freeze individual\n";
@@ -158,7 +147,6 @@ try {
     echo "✓ Múltiples modelos con configuraciones independientes\n";
     echo "✓ Logging de eventos de freeze\n";
     echo "✓ Validación de parámetros\n";
-
 } catch (Exception $e) {
     echo 'ERROR en test: ' . $e->getMessage() . "\n";
     echo 'Stack trace: ' . $e->getTraceAsString() . "\n";

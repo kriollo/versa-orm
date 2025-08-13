@@ -9,6 +9,9 @@ use VersaORM\VersaORMException;
 /**
  * Test para funcionalidad de tipado fuerte en VersaORM.
  */
+/**
+ * @group mysql
+ */
 class StrongTypingTest extends TestCase
 {
     private TestTypedModel $model;
