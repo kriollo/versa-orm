@@ -827,7 +827,7 @@ class VersaModel implements TypedModelInterface
             foreach ($this->attributes as $key => $value) {
                 if ($key !== 'id') {
                     $fields[] = "{$key} = ?";
-                    $params[] = $value;
+                    $params[] = $this->prepareValueForDatabase($value);
                 }
             }
             $params[] = $this->attributes['id'];
@@ -840,7 +840,13 @@ class VersaModel implements TypedModelInterface
             unset($filteredAttributes['id']); // No insertar ID manualmente
             // Nota: permitimos created_at/updated_at si vienen provistos; si la columna no existe, ensureColumnsExist la creará
 
-            if (empty($filteredAttributes)) {
+            // Preparar valores para la base de datos (convertir DateTime a string, etc.)
+            $preparedAttributes = [];
+            foreach ($filteredAttributes as $key => $value) {
+                $preparedAttributes[$key] = $this->prepareValueForDatabase($value);
+            }
+
+            if (empty($preparedAttributes)) {
                 throw new VersaORMException(
                     'No data to insert',
                     'NO_DATA_TO_INSERT'
@@ -850,7 +856,7 @@ class VersaModel implements TypedModelInterface
             // Intentar obtener el ID en forma nativa usando el QueryBuilder
             try {
                 /** @var int|string|null $newId */
-                $newId = $orm->table($this->table)->insertGetId($filteredAttributes);
+                $newId = $orm->table($this->table)->insertGetId($preparedAttributes);
                 if ($newId !== null && $newId !== '') {
                     // Normalizar a int si es numérico
                     $this->attributes['id'] = is_numeric($newId) ? (int)$newId : $newId;
@@ -865,12 +871,12 @@ class VersaModel implements TypedModelInterface
             $whereParams     = [];
 
             // Usar campos únicos comunes para encontrar el registro
-            if (isset($filteredAttributes['email'])) {
+            if (isset($preparedAttributes['email'])) {
                 $whereConditions[] = 'email = ?';
-                $whereParams[]     = $filteredAttributes['email'];
+                $whereParams[]     = $preparedAttributes['email'];
             } else {
                 // Si no hay un campo único obvio, usar el primer campo escalar
-                foreach ($filteredAttributes as $key => $value) {
+                foreach ($preparedAttributes as $key => $value) {
                     if (is_string($value) || is_numeric($value)) {
                         $whereConditions[] = "{$key} = ?";
                         $whereParams[]     = $value;
@@ -901,6 +907,26 @@ class VersaModel implements TypedModelInterface
     {
         $this->store();
         return $this->attributes['id'] ?? null;
+    }
+
+    /**
+     * Prepara un valor para ser enviado a la base de datos.
+     * Convierte objetos DateTime a string y maneja otros tipos especiales.
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    private function prepareValueForDatabase($value)
+    {
+        if ($value instanceof \DateTime) {
+            return $value->format('Y-m-d H:i:s');
+        }
+        
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+        
+        return $value;
     }
 
     /**
