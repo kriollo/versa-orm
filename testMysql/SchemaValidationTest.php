@@ -73,13 +73,9 @@ class SchemaValidationTest extends TestCase
                 $this->assertArrayHasKey('is_auto_increment', $idColumn);
                 $this->assertArrayHasKey('data_type', $idColumn);
                 $this->assertArrayHasKey('validation_rules', $idColumn);
-
-                echo "✅ Schema validation básica exitosa - CLI Rust disponible\n";
             } else {
-                echo "ℹ️  Schema vacío - CLI Rust no disponible o sin permisos\n";
             }
         } catch (\Exception $e) {
-            echo 'ℹ️  Schema validation falló graciosamente: ' . get_class($e) . "\n";
             $this->assertTrue(true); // Test pasa porque el error es manejado graciosamente
         }
     }
@@ -176,8 +172,6 @@ class SchemaValidationTest extends TestCase
         $scoreRules = $validationSchema['score'];
         $this->assertFalse($scoreRules['is_required']); // Tiene default
         $this->assertContains('numeric', $scoreRules['validation_rules']);
-
-        echo "✅ Procesamiento de esquema a reglas de validación exitoso\n";
     }
 
     /**

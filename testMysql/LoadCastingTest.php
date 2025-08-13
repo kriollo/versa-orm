@@ -7,7 +7,9 @@ namespace VersaORM\Tests\Mysql;
 use VersaORM\VersaModel;
 
 require_once __DIR__ . '/TestCase.php';
-
+/**
+ * @group mysql
+ */
 class LoadCastingTest extends TestCase
 {
     protected function setUp(): void
@@ -83,16 +85,20 @@ class LoadCastingTest extends TestCase
         $loaded = $model::load('load_cast_test', 1);
         $this->assertNotNull($loaded);
 
-        $loaded->name = 'Updated User';
-        $loaded->store(); // Esto debe manejar DateTime correctamente
+        // Verificar que active se carga correctamente como boolean true
+        $loadedData = $loaded->export();
+        $this->assertTrue($loadedData['active']);
 
-        // Recargar y verificar
+        $loaded->name = 'Updated User';
+        $loaded->store(); // Esto debe manejar DateTime correctamente y preservar otros campos
+
+        // Recargar y verificar que el valor active se preservó
         $reloaded = $model::load('load_cast_test', 1);
         $this->assertNotNull($reloaded);
 
         $data = $reloaded->export();
         $this->assertEquals('Updated User', $data['name']);
         $this->assertIsBool($data['active']);
-        $this->assertFalse($data['active']);
+        $this->assertTrue($data['active'], 'El campo active debe preservarse cuando solo se modifica otro campo');
     }
 }

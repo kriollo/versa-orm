@@ -419,7 +419,13 @@ class VersaModel implements TypedModelInterface
                 }
             }
 
-            if (strpos($dataType, 'int') !== false) {
+            // Para TINYINT, verificar si hay un tipo PHP definido como boolean
+            $propertyTypes = static::getPropertyTypes();
+            $phpType = $propertyTypes[$columnName]['type'] ?? null;
+
+            if ($dataType === 'tinyint' && $phpType === 'boolean') {
+                // No agregar regla 'numeric' para campos boolean
+            } elseif (strpos($dataType, 'int') !== false) {
                 $validationRules[] = 'numeric';
             }
 
@@ -481,14 +487,69 @@ class VersaModel implements TypedModelInterface
         }
 
         // Validar tipo de datos
-        $dataType = strtolower($columnSchema['data_type'] ?? '');
-        if (strpos($dataType, 'int') !== false) {
-            if (!is_numeric($value) || (string) (int) $value !== (string) $value) {
-                $errors[] = "The {$field} must be an integer.";
+        // Primero verificar si hay un tipo PHP definido específicamente
+        $propertyTypes = static::getPropertyTypes();
+        $phpType = $propertyTypes[$field]['type'] ?? null;
+
+        if ($phpType) {
+            // Usar el tipo PHP definido para validación
+            switch ($phpType) {
+                case 'boolean':
+                case 'bool':
+                    // Para boolean, aceptar bool, 0, 1, "0", "1", "true", "false"
+                    if (!is_bool($value) && !in_array($value, [0, 1, '0', '1', 'true', 'false', true, false], true)) {
+                        $errors[] = "The {$field} must be a boolean value.";
+                    }
+                    break;
+
+                case 'integer':
+                case 'int':
+                    if (!is_numeric($value) || (string) (int) $value !== (string) $value) {
+                        $errors[] = "The {$field} must be an integer.";
+                    }
+                    break;
+
+                case 'float':
+                case 'double':
+                case 'decimal':
+                    if (!is_numeric($value)) {
+                        $errors[] = "The {$field} must be a number.";
+                    }
+                    break;
+
+                case 'string':
+                    // Los strings son generalmente válidos, solo verificar si hay longitud máxima
+                    break;
+
+                case 'datetime':
+                case 'date':
+                case 'timestamp':
+                    if (!($value instanceof \DateTime || $value instanceof \DateTimeInterface || is_string($value))) {
+                        $errors[] = "The {$field} must be a valid date.";
+                    }
+                    break;
+
+                // Para otros tipos PHP definidos, ser permisivo
+                default:
+                    break;
             }
-        } elseif (strpos($dataType, 'decimal') !== false || strpos($dataType, 'float') !== false) {
-            if (!is_numeric($value)) {
-                $errors[] = "The {$field} must be a number.";
+        } else {
+            // Fallback: usar tipo de base de datos solo si no hay tipo PHP definido
+            $dataType = strtolower($columnSchema['data_type'] ?? '');
+
+            // Caso especial: TINYINT debería tratarse como boolean por defecto
+            if ($dataType === 'tinyint') {
+                if (!is_bool($value) && !in_array($value, [0, 1, '0', '1', 'true', 'false', true, false], true)) {
+                    $errors[] = "The {$field} must be a boolean value.";
+                }
+            } elseif (strpos($dataType, 'int') !== false) {
+                if (!is_numeric($value) || (string) (int) $value !== (string) $value) {
+                    $errors[] = "The {$field} must be an integer.";
+                }
+            } elseif (strpos($dataType, 'decimal') !== false || strpos($dataType, 'float') !== false) {
+                if (!is_numeric($value)) {
+                    $errors[] = "The {$field} must be a number.";
+                }
             }
         }
 
@@ -827,7 +888,7 @@ class VersaModel implements TypedModelInterface
             foreach ($this->attributes as $key => $value) {
                 if ($key !== 'id') {
                     $fields[] = "{$key} = ?";
-                    $params[] = $this->prepareValueForDatabase($value);
+                    $params[] = $this->prepareValueForDatabase($key, $value);
                 }
             }
             $params[] = $this->attributes['id'];
@@ -843,7 +904,7 @@ class VersaModel implements TypedModelInterface
             // Preparar valores para la base de datos (convertir DateTime a string, etc.)
             $preparedAttributes = [];
             foreach ($filteredAttributes as $key => $value) {
-                $preparedAttributes[$key] = $this->prepareValueForDatabase($value);
+                $preparedAttributes[$key] = $this->prepareValueForDatabase($key, $value);
             }
 
             if (empty($preparedAttributes)) {
@@ -912,12 +973,79 @@ class VersaModel implements TypedModelInterface
     /**
      * Prepara un valor para ser enviado a la base de datos.
      * Convierte objetos DateTime a string y maneja otros tipos especiales.
+     * Esta función es lo opuesto a castToPhpType - convierte de PHP a formato DB.
      *
-     * @param mixed $value
+     * @param string $field Nombre del campo para aplicar casting específico
+     * @param mixed $value Valor a preparar
      * @return mixed
      */
-    private function prepareValueForDatabase($value)
+    private function prepareValueForDatabase(string $field, $value)
     {
+        // Si el valor es null, mantenerlo como null
+        if ($value === null) {
+            return null;
+        }
+
+        // Obtener el tipo PHP definido para este campo
+        $propertyTypes = static::getPropertyTypes();
+        $fieldType = $propertyTypes[$field]['type'] ?? null;
+
+        // Convertir según el tipo PHP definido
+        if ($fieldType) {
+            switch ($fieldType) {
+                case 'boolean':
+                case 'bool':
+                    // Convertir boolean a int para la base de datos (TINYINT)
+                    if (is_bool($value)) {
+                        return $value ? 1 : 0;
+                    }
+                    // Si no es boolean, convertir string/numeric a int
+                    if (is_numeric($value)) {
+                        return (float)$value != 0 ? 1 : 0;
+                    }
+                    return in_array(strtolower((string)$value), ['1', 'true', 'yes', 'on'], true) ? 1 : 0;
+
+                case 'integer':
+                case 'int':
+                    return is_numeric($value) ? (int)$value : 0;
+
+                case 'float':
+                case 'double':
+                case 'decimal':
+                    return is_numeric($value) ? (float)$value : 0.0;
+
+                case 'string':
+                    return (string)$value;
+
+                case 'datetime':
+                case 'date':
+                case 'timestamp':
+                    if ($value instanceof \DateTime) {
+                        return $value->format('Y-m-d H:i:s');
+                    }
+                    if ($value instanceof \DateTimeInterface) {
+                        return $value->format('Y-m-d H:i:s');
+                    }
+                    // Si es string, asumir que ya está en formato correcto
+                    return $value;
+
+                case 'json':
+                case 'array':
+                    if (is_array($value) || is_object($value)) {
+                        return json_encode($value);
+                    }
+                    return $value;
+
+                case 'uuid':
+                    return (string)$value;
+
+                default:
+                    // Para tipos no reconocidos, aplicar conversiones básicas
+                    break;
+            }
+        }
+
+        // Fallback: conversiones automáticas sin tipo específico
         if ($value instanceof \DateTime) {
             return $value->format('Y-m-d H:i:s');
         }
@@ -926,7 +1054,25 @@ class VersaModel implements TypedModelInterface
             return $value->format('Y-m-d H:i:s');
         }
 
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return json_encode($value);
+        }
+
         return $value;
+    }
+
+    /**
+     * Versión simplificada para compatibilidad hacia atrás
+     * @param mixed $value
+     * @return mixed
+     */
+    private function prepareValueForDatabaseSimple($value)
+    {
+        return $this->prepareValueForDatabase('unknown', $value);
     }
 
     /**
