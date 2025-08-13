@@ -1584,7 +1584,7 @@ class VersaORM
         }
 
         try {
-            $logDir = __DIR__ . '/logs';
+            $logDir = $this->getLogDirectory();
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
@@ -1631,7 +1631,7 @@ class VersaORM
         }
 
         try {
-            $logDir = __DIR__ . '/logs';
+            $logDir = $this->getLogDirectory();
             if (!is_dir($logDir)) {
                 if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));

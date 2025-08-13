@@ -13,6 +13,8 @@ composer.lock
 /.phpunit.cache/
 /tests/results.xml
 /tests/reports/*
+/example/logs
+/example/complete_logs
 
 # IDEs
 .vscode/
@@ -20,12 +22,14 @@ composer.lock
 *.swp
 *.swo
 *~
+.kiro
 
 # Archivos temporales del sistema
 .DS_Store
 Thumbs.db
 *.tmp
 *.bak
+.php-cs-fixer.cache
 
 # Archivos de compilación Rust
 /versaorm_cli/target/
