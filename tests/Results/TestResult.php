@@ -57,6 +57,34 @@ class TestResult
     }
 
     /**
+     * Obtiene un resumen legible del resultado
+     */
+    public function getSummary(): string
+    {
+        $status = $this->isSuccessful() ? '✅ EXITOSO' : '❌ FALLIDO';
+        $successRate = number_format($this->getSuccessRate(), 2);
+
+        $summary = "=== Resumen de Tests ({$this->engine}) ===\n";
+        $summary .= "Estado: {$status}\n";
+        $summary .= "Total: {$this->total_tests} | Exitosos: {$this->passed_tests} | Fallidos: {$this->failed_tests} | Omitidos: {$this->skipped_tests}\n";
+        $summary .= "Tasa de éxito: {$successRate}%\n";
+        $summary .= "Tiempo de ejecución: " . number_format($this->execution_time, 2) . "s\n";
+
+        if (!empty($this->failures)) {
+            $summary .= "\n⚠️  Fallas:\n";
+            foreach ($this->failures as $failure) {
+                if (is_string($failure)) {
+                    $summary .= "- {$failure}\n";
+                } elseif (is_array($failure) && isset($failure['message'])) {
+                    $summary .= "- {$failure['message']}\n";
+                }
+            }
+        }
+
+        return $summary;
+    }
+
+    /**
      * Convierte a array
      */
     public function toArray(): array

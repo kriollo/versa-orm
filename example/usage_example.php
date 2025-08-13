@@ -8,25 +8,27 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use VersaORM\VersaORM;
-use VersaORM\ErrorHandler;
-use App\Models\UserModel;
 use App\Controllers\UserController;
+use App\Models\UserModel;
+use VersaORM\ErrorHandler;
+use VersaORM\VersaORM;
 
 // Configuración inicial
 define('APP_DEBUG', true);
 
-// Configurar VersaORM
+// Configurar VersaORM con log_path
 $config = [
     'driver' => 'sqlite',
     'database' => ':memory:', // Base de datos en memoria para el ejemplo
+    'debug' => true,
+    'log_path' => __DIR__ . '/logs', // Directorio para logs de errores
 ];
 
 $orm = new VersaORM($config);
 UserModel::setORM($orm);
 
-// Configurar ErrorHandler
-ErrorHandler::setDebugMode(true);
+// Configurar handler personalizado (opcional)
+// El ErrorHandler ya está configurado automáticamente por VersaORM
 ErrorHandler::setCustomHandler(function ($errorData) {
     // Handler personalizado - puedes enviar a tu sistema de logging
     echo "🚨 Custom Error Handler: " . $errorData['error']['message'] . "\n";
@@ -164,6 +166,35 @@ if (!empty($errorLog)) {
 
 echo "\n=== Demo completed ===\n";
 
-// Ejemplo 10: Limpiar log de errores
+// Ejemplo 10: Mostrar archivos de log generados
+echo "10. Generated log files:\n";
+$logPath = ErrorHandler::getLogPath();
+if ($logPath && is_dir($logPath)) {
+    $logFiles = glob($logPath . DIRECTORY_SEPARATOR . '*.log');
+    if (!empty($logFiles)) {
+        foreach ($logFiles as $logFile) {
+            $filename = basename($logFile);
+            $size = filesize($logFile);
+            echo "  - {$filename} ({$size} bytes)\n";
+
+            // Mostrar las últimas 3 líneas del archivo
+            $lines = file($logFile, FILE_IGNORE_NEW_LINES);
+            $lastLines = array_slice($lines, -3);
+            foreach ($lastLines as $line) {
+                $data = json_decode($line, true);
+                if ($data) {
+                    $displayValue = $data['error_code'] ?? $data['operation'] ?? 'operation';
+                    echo "    └─ [{$data['timestamp']}] {$displayValue}\n";
+                }
+            }
+        }
+    } else {
+        echo "  No log files found in: {$logPath}\n";
+    }
+} else {
+    echo "  Log path not configured or directory doesn't exist\n";
+}
+
+// Ejemplo 11: Limpiar log de errores
 ErrorHandler::clearErrorLog();
-echo "Error log cleared. Current count: " . count(ErrorHandler::getErrorLog()) . "\n";
+echo "\nError log cleared. Current count: " . count(ErrorHandler::getErrorLog()) . "\n";

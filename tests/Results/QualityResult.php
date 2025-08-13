@@ -14,15 +14,31 @@ use DateTime;
  */
 class QualityResult
 {
+    public string $tool;
+    public int $score;
+    public array $issues;
+    public array $metrics;
+    public bool $passed;
+    public string $output;
+    public DateTime $timestamp;
+
     public function __construct(
-        public readonly string $tool,
-        public readonly int $score,
-        public readonly array $issues,
-        public readonly array $metrics,
-        public readonly bool $passed,
-        public readonly string $output,
-        public readonly DateTime $timestamp
-    ) {}
+        string $tool,
+        int $score,
+        array $issues,
+        array $metrics,
+        bool $passed,
+        string $output,
+        DateTime $timestamp
+    ) {
+        $this->tool = $tool;
+        $this->score = $score;
+        $this->issues = $issues;
+        $this->metrics = $metrics;
+        $this->passed = $passed;
+        $this->output = $output;
+        $this->timestamp = $timestamp;
+    }
 
     /**
      * Obtiene el nivel de calidad basado en la puntuación

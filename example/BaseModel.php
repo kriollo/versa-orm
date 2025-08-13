@@ -18,24 +18,30 @@ abstract class BaseModel extends VersaModel
 {
     use HandlesErrors;
 
-    /**
-     * Configuración de errores por defecto para todos los modelos
-     */
-    protected static array $errorConfig = [
-        'log_errors' => true,
-        'throw_on_error' => false, // No lanzar excepciones por defecto
-        'format_for_api' => true,  // Formatear para respuestas de API
-        'include_suggestions' => true,
-    ];
+    // La configuración de errores se hereda del trait HandlesErrors
 
     /**
      * Inicialización del modelo
      */
     public function __construct(array $attributes = [])
     {
-        parent::__construct($attributes);
+        parent::__construct($this->table ?? 'default_table', static::getORM());
 
-        // Configurar ErrorHandler si no está configurado
+        // Llenar atributos si se proporcionaron
+        if (!empty($attributes)) {
+            $this->fill($attributes);
+        }
+
+        // Configurar el manejo de errores para este modelo
+        static::configureErrorHandling([
+            'log_errors' => true,
+            'throw_on_error' => false, // No lanzar excepciones por defecto
+            'format_for_api' => true,  // Formatear para respuestas de API
+            'include_suggestions' => true,
+        ]);
+
+        // El ErrorHandler ya está configurado automáticamente por VersaORM
+        // Solo configurar debug mode si no está configurado
         if (!ErrorHandler::isConfigured()) {
             ErrorHandler::setDebugMode($this->isDebugMode());
         }
@@ -98,52 +104,59 @@ abstract class BaseModel extends VersaModel
             ];
         }
 
-        // Aquí puedes integrar con tu sistema de logging
-        // Por ejemplo: Log::info('database_operation', $logData);
-        error_log(json_encode($logData));
+        // Escribir al log configurado en VersaORM si está disponible
+        $logPath = ErrorHandler::getLogPath();
+        if ($logPath) {
+            $logFile = $logPath . DIRECTORY_SEPARATOR . 'versaorm_operations_' . date('Y-m-d') . '.log';
+            $logLine = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+            file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
+        } else {
+            // Fallback al error_log del sistema
+            error_log(json_encode($logData));
+        }
     }
 
     /**
      * Override de métodos principales con manejo de errores mejorado
      */
 
-    public function save(): mixed
+    public function save(string $primaryKey = 'id'): array
     {
-        return $this->executeWithLogging('save', function () {
+        return $this->executeWithLogging('save', function () use ($primaryKey) {
             if (!$this->validateBeforeOperation('save')) {
-                return false;
+                return [];
             }
-            return parent::save();
+            return parent::save($primaryKey);
         });
     }
 
-    public function store(): mixed
+    public function store(): void
     {
-        return $this->executeWithLogging('store', function () {
+        $this->executeWithLogging('store', function () {
             if (!$this->validateBeforeOperation('store')) {
-                return false;
+                return;
             }
-            return parent::store();
+            parent::store();
         });
     }
 
-    public function update(array $data): mixed
+    public function update(array $data): self
     {
         return $this->executeWithLogging('update', function () use ($data) {
             if (!$this->validateBeforeOperation('update')) {
-                return false;
+                return $this;
             }
             return parent::update($data);
         }, ['update_data' => $data]);
     }
 
-    public function delete(): mixed
+    public function delete(): void
     {
-        return $this->executeWithLogging('delete', function () {
+        $this->executeWithLogging('delete', function () {
             if (!$this->validateBeforeOperation('delete')) {
-                return false;
+                return;
             }
-            return parent::delete();
+            parent::delete();
         });
     }
 

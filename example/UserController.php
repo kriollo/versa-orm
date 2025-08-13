@@ -308,8 +308,16 @@ class UserController
             'context' => $context,
         ];
 
-        // Integrar con tu sistema de logging
-        error_log(json_encode($logData));
+        // Escribir al log configurado en VersaORM si está disponible
+        $logPath = ErrorHandler::getLogPath();
+        if ($logPath) {
+            $logFile = $logPath . DIRECTORY_SEPARATOR . 'versaorm_controllers_' . date('Y-m-d') . '.log';
+            $logLine = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+            file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
+        } else {
+            // Fallback al error_log del sistema
+            error_log(json_encode($logData));
+        }
     }
 
     /**

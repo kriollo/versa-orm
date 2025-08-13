@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests;
 
+use DateTime;
 use VersaORM\Tests\Interfaces\TestManagerInterface;
-use VersaORM\Tests\Results\TestResult;
+use VersaORM\Tests\Logging\TestLogger;
+use VersaORM\Tests\Metrics\MetricsCollector;
 use VersaORM\Tests\Results\BenchmarkResult;
 use VersaORM\Tests\Results\QualityResult;
 use VersaORM\Tests\Results\Report;
-use VersaORM\Tests\Logging\TestLogger;
-use VersaORM\Tests\Metrics\MetricsCollector;
-use DateTime;
+use VersaORM\Tests\Results\TestResult;
 
 /**
  * TestManager - Coordina la ejecución de todos los tipos de tests y genera reportes consolidados
@@ -87,7 +87,6 @@ class TestManager implements TestManagerInterface
             ]);
 
             return $report;
-
         } catch (\Exception $e) {
             $this->logger->error('Full test suite execution failed', [
                 'error' => $e->getMessage(),
@@ -403,7 +402,7 @@ class TestManager implements TestManagerInterface
             'failed_tests' => $failedTests,
             'skipped_tests' => $skippedTests,
             'execution_time' => $executionTime,
-            'failures' => array_merge(...array_map(fn($r) => $r->failures, $results)),
+            'failures' => call_user_func_array('array_merge', array_values(array_map(fn($r) => $r->failures, $results))),
             'metrics' => ['merged_results' => $results],
             'timestamp' => new DateTime()
         ]);

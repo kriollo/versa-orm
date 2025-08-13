@@ -41,6 +41,7 @@
             <file>./testMysql/DateTimeCastingConsistencyTest.php</file>
             <file>./testMysql/EnumSetCastingConsistencyTest.php</file>
             <file>./testMysql/InetCastingConsistencyTest.php</file>
+            <file>./testMysql/LoadCastingTest.php</file>
         </testsuite>
 
         <!-- Relationship and join tests -->
