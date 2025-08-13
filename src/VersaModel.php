@@ -921,11 +921,11 @@ class VersaModel implements TypedModelInterface
         if ($value instanceof \DateTime) {
             return $value->format('Y-m-d H:i:s');
         }
-        
+
         if ($value instanceof \DateTimeInterface) {
             return $value->format('Y-m-d H:i:s');
         }
-        
+
         return $value;
     }
 
