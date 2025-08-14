@@ -469,6 +469,12 @@ $rows = $qbA->except($qbB);               // EXCEPT
 $rows = $qbA->except($qbB, true);         // EXCEPT ALL
 ```
 
+---
+
+### 📘 Más Recursos
+
+Para comprender cómo VersaORM maneja y registra errores con metadatos enriquecidos revisa: [14-error-handling-logging.md](14-error-handling-logging.md).
+
 ### 💡 Ejemplos Comparativos
 
 #### UNION Simple - Combinar tablas similares

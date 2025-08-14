@@ -416,6 +416,7 @@ Ignóralo en modo PHP. Cuando el núcleo nativo se reactive se documentará aqu�
 - [⚙️ Configuración](docs/getting-started/configuration.md)
 - [📝 Guía Completa](docs/user-guide/README.md)
 - [Modo PHP / PDO](docs/pdo-mode/README.md)
+ - [🛡️ Manejo de Errores y Logging](docs/user-guide/14-error-handling-logging.md)
 
 ### 🔧 Documentación para Desarrolladores
 - [🏗️ Guía del Desarrollador](docs/contributor-guide/README.md) - Contribuir al proyecto
