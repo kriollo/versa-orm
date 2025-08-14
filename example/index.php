@@ -100,8 +100,7 @@ try {
                     ->select(['task_id', 'COUNT(*) as count'])
                     ->whereIn('task_id', $taskIds)
                     ->groupBy('task_id')
-                    ->getAll()
-                ;
+                    ->getAll();
 
                 foreach ($noteCountsData as $row) {
                     $noteCounts[$row['task_id']] = $row['count'];
@@ -194,8 +193,7 @@ try {
                     $exists = app()->orm()->table('project_users')
                         ->where('project_id', '=', (int) $_POST['project_id'])
                         ->where('user_id', '=', (int) $_POST['user_id'])
-                        ->exists()
-                    ;
+                        ->exists();
 
                     if ($exists) {
                         flash('warning', 'El usuario ya es miembro del proyecto');
@@ -235,8 +233,7 @@ try {
                         ->select(['id'])
                         ->where('project_id', '=', (int) $_POST['project_id'])
                         ->where('user_id', '=', (int) $_POST['user_id'])
-                        ->get()
-                    ;
+                        ->get();
 
                     foreach ($rows as $row) {
                         if (!isset($row['id'])) {
@@ -366,8 +363,7 @@ try {
                     ->select(['task_id', 'COUNT(*) as count'])
                     ->whereIn('task_id', $taskIds)
                     ->groupBy('task_id')
-                    ->getAll()
-                ;
+                    ->getAll();
 
                 foreach ($noteCountsData as $row) {
                     $noteCounts[$row['task_id']] = $row['count'];
@@ -621,8 +617,7 @@ try {
                     ->select(['label_id', 'COUNT(*) as c'])
                     ->whereIn('label_id', $labelIds)
                     ->groupBy('label_id')
-                    ->getAll()
-                ;
+                    ->getAll();
                 $map = [];
 
                 foreach ($countsRows as $r) {
@@ -704,8 +699,7 @@ try {
             $countRow = app()->orm()->table('task_labels')
                 ->select(['COUNT(*) as c'])
                 ->where('label_id', '=', $label->id)
-                ->firstArray()
-            ;
+                ->firstArray();
             $label->tasks_count = (int) ($countRow['c'] ?? 0);
 
             if ($_POST !== []) {

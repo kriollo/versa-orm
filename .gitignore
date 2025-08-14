@@ -13,6 +13,7 @@ composer.lock
 /.phpunit.cache/
 /tests/results.xml
 /tests/reports/*
+/testSQlite/_logs_runtime/*
 /example/logs
 /example/complete_logs
 /var/*

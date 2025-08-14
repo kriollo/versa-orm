@@ -87,6 +87,22 @@ class QueryBuilder
     private ?int $offset = null;
 
     /**
+     * Subconsulta derivada establecida vía fromUnion (estructura: {sql, bindings, alias}).
+     *
+     * @var array{sql:string,bindings:array<int,mixed>,alias:string}|null
+     */
+    private ?array $fromSub = null;
+
+    /** @var list<array{sql:string,bindings:array<int,mixed>}> */
+    private array $unionParts = [];
+
+    /**
+     * Flag interno para controlar si el UNION diferido será ALL.
+     * Se mantiene por compatibilidad; es leído en fromUnion.
+     */
+    private bool $unionAll = false; // (lectura en fromUnion)
+
+    /**
      * @var array<int, string>|array<string, mixed>
      */
     private array $groupBy = [];
@@ -793,22 +809,37 @@ class QueryBuilder
             switch ($relationType) {
                 case 'HasOne':
                 case 'HasMany':
-                    // @var \VersaORM\Relations\HasOne|\VersaORM\Relations\HasMany $relationInstance
-                    $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['local_key'] = $relationInstance->localKey;
+                    if (property_exists($relationInstance, 'foreignKey')) {
+                        $relationData['foreign_key'] = $relationInstance->foreignKey;
+                    }
+                    if (property_exists($relationInstance, 'localKey')) {
+                        $relationData['local_key'] = $relationInstance->localKey;
+                    }
                     break;
                 case 'BelongsTo':
-                    // @var \VersaORM\Relations\BelongsTo $relationInstance
-                    $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
+                    if (property_exists($relationInstance, 'foreignKey')) {
+                        $relationData['foreign_key'] = $relationInstance->foreignKey;
+                    }
+                    if (property_exists($relationInstance, 'ownerKey')) {
+                        $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
+                    }
                     break;
                 case 'BelongsToMany':
-                    // @var \VersaORM\Relations\BelongsToMany $relationInstance
-                    $relationData['pivot_table'] = $relationInstance->pivotTable;
-                    $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
-                    $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
-                    $relationData['parent_key'] = $relationInstance->parentKey;
-                    $relationData['related_key'] = $relationInstance->relatedKey;
+                    if (property_exists($relationInstance, 'pivotTable')) {
+                        $relationData['pivot_table'] = $relationInstance->pivotTable;
+                    }
+                    if (property_exists($relationInstance, 'foreignPivotKey')) {
+                        $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
+                    }
+                    if (property_exists($relationInstance, 'relatedPivotKey')) {
+                        $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
+                    }
+                    if (property_exists($relationInstance, 'parentKey')) {
+                        $relationData['parent_key'] = $relationInstance->parentKey;
+                    }
+                    if (property_exists($relationInstance, 'relatedKey')) {
+                        $relationData['related_key'] = $relationInstance->relatedKey;
+                    }
                     break;
             }
             $resolvedRelations[] = $relationData;
@@ -2100,12 +2131,78 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type' => 'union',
+            'operation_type' => 'set_operation',
+            'set_type' => $all ? 'UNION ALL' : 'UNION',
             'queries' => $queryDefinitions,
-            'all' => $all,
         ];
 
         return $this->executeAdvancedSQL($params);
+    }
+
+    /**
+     * Añade una parte de UNION diferido para construir una tabla derivada posteriormente.
+     *
+     * @param callable|self $query
+     */
+    public function addUnionPart($query): self
+    {
+        if ($query instanceof self) {
+            $part = $query->buildSelectSQL();
+            $this->unionParts[] = ['sql' => $part['sql'], 'bindings' => $part['bindings']];
+
+            return $this;
+        }
+        if (is_callable($query)) {
+            $tmp = new self($this->orm, $this->table);
+            $query($tmp);
+            $part = $tmp->buildSelectSQL();
+            $this->unionParts[] = ['sql' => $part['sql'], 'bindings' => $part['bindings']];
+
+            return $this;
+        }
+
+        throw new VersaORMException('addUnionPart expects QueryBuilder or callable');
+    }
+
+    /**
+     * Construye un UNION diferido y lo fija como FROM (derived table) con alias.
+     *
+     * @param array<int,callable|self> $queries
+     */
+    public function fromUnion(array $queries, string $alias, bool $all = false): self
+    {
+        if (!$this->isSafeIdentifier($alias)) {
+            throw new VersaORMException(sprintf('Invalid alias name for union derived table: %s', $alias));
+        }
+        if ($queries === []) {
+            throw new VersaORMException('fromUnion requires at least one query');
+        }
+        $this->unionParts = [];
+        $this->unionAll = $all;
+        foreach ($queries as $q) {
+            $this->addUnionPart($q);
+        }
+        if (count($this->unionParts) === 0) { // evita empty() y comparación redundante array{}
+            throw new VersaORMException('fromUnion could not build any union part');
+        }
+        $glue = $this->unionAll ? ' UNION ALL ' : ' UNION ';
+        $sqlParts = [];
+        $bindings = [];
+        foreach ($this->unionParts as $p) {
+            // Evitar paréntesis alrededor de cada SELECT individual para mejor compatibilidad (SQLite 'near UNION').
+            // Sólo se envolverá el conjunto completo cuando se inserte como tabla derivada.
+            $sqlParts[] = $p['sql'];
+            /** @var list<mixed> $b */
+            $b = $p['bindings'];
+            $bindings = array_merge($bindings, $b);
+        }
+        $this->fromSub = [
+            'sql' => implode($glue, $sqlParts),
+            'bindings' => $bindings,
+            'alias' => $alias,
+        ];
+
+        return $this;
     }
 
     /**
@@ -2137,12 +2234,12 @@ class QueryBuilder
         $secondQuerySQL = $query->buildSelectSQL();
 
         $params = [
-            'operation_type' => 'intersect',
+            'operation_type' => 'set_operation',
+            'set_type' => $all ? 'INTERSECT ALL' : 'INTERSECT',
             'queries' => [
                 ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
                 ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
             ],
-            'all' => $all,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2177,12 +2274,12 @@ class QueryBuilder
         $secondQuerySQL = $query->buildSelectSQL();
 
         $params = [
-            'operation_type' => 'except',
+            'operation_type' => 'set_operation',
+            'set_type' => $all ? 'EXCEPT ALL' : 'EXCEPT',
             'queries' => [
                 ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
                 ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
             ],
-            'all' => $all,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2594,8 +2691,8 @@ class QueryBuilder
             // Permitir argumentos simples como column names, números, strings
             // Verificar que no contenga patrones maliciosos
             if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) === 1 && (!str_contains($functionArgs, '--')
-            && !str_contains($functionArgs, '/*')
-            && !str_contains($functionArgs, ';'))) {
+                && !str_contains($functionArgs, '/*')
+                && !str_contains($functionArgs, ';'))) {
                 return true;
             }
         }
@@ -2908,6 +3005,15 @@ class QueryBuilder
             'with' => $this->with,
             'method' => $method,
         ];
+
+        // Si existe una tabla derivada (fromUnion) incluir su metadata para que el engine PDO la compile.
+        if ($this->fromSub !== null && isset($this->fromSub['sql'], $this->fromSub['alias'])) {
+            $params['from_sub'] = [
+                'sql' => $this->fromSub['sql'],
+                'alias' => $this->fromSub['alias'],
+                'bindings' => $this->fromSub['bindings'] ?? [],
+            ];
+        }
 
         if ($data !== null) {
             // For batch operations, params go directly at the root
@@ -3418,9 +3524,13 @@ class QueryBuilder
     {
         $sql = 'SELECT ';
 
-        // SELECT
+        // SELECT: si hay fromSub y no se definió select explícito, seleccionar alias.*
         if ($this->selects === []) {
-            $sql .= '*';
+            if ($this->fromSub !== null && isset($this->fromSub['alias'])) {
+                $sql .= $this->fromSub['alias'] . '.*';
+            } else {
+                $sql .= '*';
+            }
         } else {
             /** @var list<string> $selectParts */
             $selectParts = [];
@@ -3451,16 +3561,25 @@ class QueryBuilder
             }
 
             if ($selectParts === []) {
-                $selectParts[] = '*';
+                $selectParts[] = $this->fromSub !== null && isset($this->fromSub['alias']) ? $this->fromSub['alias'] . '.*' : '*';
             }
             $sql .= implode(', ', $selectParts);
         }
 
-        // FROM
-        $sql .= ' FROM ' . $this->table;
+        // FROM (soporta tabla derivada de UNION)
+        if ($this->fromSub !== null) {
+            $sql .= ' FROM (' . $this->fromSub['sql'] . ') ' . $this->fromSub['alias'];
+        } else {
+            $sql .= ' FROM ' . $this->table;
+        }
 
         // WHERE
         $bindings = [];
+        if ($this->fromSub !== null) {
+            /** @var list<mixed> $fb */
+            $fb = $this->fromSub['bindings'];
+            $bindings = array_merge($bindings, $fb);
+        }
 
         if ($this->wheres !== []) {
             $sql .= ' WHERE ';

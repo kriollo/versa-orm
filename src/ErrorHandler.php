@@ -98,7 +98,8 @@ class ErrorHandler
      */
     public static function handleException(VersaORMException $exception, array $context = []): array
     {
-        $errorData = self::extractErrorData($exception, $context);
+        $base = $exception->toLogArray();
+        $errorData = self::extractErrorData($exception, $context) + ['exception_log' => $base];
 
         // Log del error
         self::logError($errorData);
@@ -465,6 +466,7 @@ class ErrorHandler
         }
 
         $logFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_' . date('Y-m-d') . '.log';
+        $detailFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_detail_' . date('Y-m-d') . '.log';
 
         $logEntry = [
             'timestamp' => date('Y-m-d H:i:s'),
@@ -479,5 +481,12 @@ class ErrorHandler
 
         // Escribir al archivo de log
         file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
+        // Archivo detallado: incluye traza completa y objeto exception_log si existe
+        $detailPayload = $errorData;
+        if (isset($errorData['exception_log'])) {
+            $detailPayload['exception_log'] = $errorData['exception_log'];
+        }
+        $detailPayload['full_trace'] = $errorData['trace'] ?? [];
+        file_put_contents($detailFile, json_encode($detailPayload, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND | LOCK_EX);
     }
 }

@@ -76,15 +76,15 @@ abstract class BaseModel extends VersaModel
         });
     }
 
-    public function update(array $data): self
+    public function update(array $attributes): self
     {
-        return $this->executeWithLogging('update', function () use ($data): self|VersaModel {
+        return $this->executeWithLogging('update', function () use ($attributes): self|VersaModel {
             if (!$this->validateBeforeOperation('update')) {
                 return $this;
             }
 
-            return parent::update($data);
-        }, ['update_data' => $data]);
+            return parent::update($attributes);
+        }, ['update_data' => $attributes]);
     }
 
     public function delete(): void

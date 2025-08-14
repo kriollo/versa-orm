@@ -82,8 +82,22 @@ class SqlGenerator
     private static function compileSelect(string $method, array $params, SqlDialectInterface $dialect): array
     {
         $table = (string) ($params['table'] ?? '');
+        /**
+         * from_sub soporte: ['sql'=>string,'alias'=>string,'bindings'=>list<mixed>]
+         * Si se provee, sustituye la referencia de FROM por (sql) alias y antepone sus bindings.
+         * 'table' sigue siendo requerido internamente (para compatibilidad) pero puede ser placeholder.
+         */
+        $fromSub = null;
 
-        if ($table === '') {
+        if (isset($params['from_sub']) && is_array($params['from_sub']) && isset($params['from_sub']['sql'], $params['from_sub']['alias'])) {
+            $fromSub = [
+                'sql' => (string) $params['from_sub']['sql'],
+                'alias' => (string) $params['from_sub']['alias'],
+                'bindings' => is_array($params['from_sub']['bindings'] ?? null) ? array_values($params['from_sub']['bindings']) : [],
+            ];
+        }
+
+        if ($table === '' && $fromSub === null) {
             throw new VersaORMException('Missing table for SELECT');
         }
         /**
@@ -138,9 +152,35 @@ class SqlGenerator
             $selectSqlParts[] = '*';
         }
 
-        $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
+        // FROM base o derivado
+        if ($fromSub !== null) {
+            // Envolver todo el UNION en un único paréntesis
+            $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM (' . $fromSub['sql'] . ') AS ' . $dialect->quoteIdentifier($fromSub['alias']);
+        } else {
+            $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
+        }
         /** @var array<int,mixed> $bindings */
         $bindings = [];
+
+        if ($fromSub !== null) {
+            $bindings = array_merge($bindings, $fromSub['bindings']);
+        }
+
+        // Debug logging para diagnosticar errores de sintaxis en subconsultas UNION derivadas.
+        // Controlado por variable de entorno VERSA_DEBUG_SQL=1 para evitar ruido en entornos productivos.
+        if ($fromSub !== null && \function_exists('error_log') && getenv('VERSA_DEBUG_SQL') === '1') {
+            error_log('[DEBUG][SqlGenerator] from_sub SQL: ' . $sql . ' | bindings=' . json_encode($bindings));
+
+            try {
+                $logDir = __DIR__ . '/../../logs';
+                if (!is_dir($logDir)) {
+                    @mkdir($logDir, 0777, true);
+                }
+                @file_put_contents($logDir . '/sql_debug.log', '[' . date('H:i:s') . '] ' . $sql . ' | bindings=' . json_encode($bindings) . "\n", FILE_APPEND);
+            } catch (\Throwable $e) {
+                // Ignorar errores de logging
+            }
+        }
 
         // JOINS (inner, left, right, cross, joinSub); FULL OUTER (limitado)
         /** @var list<array{type?:string,table?:string,first_col?:string,second_col?:string,operator?:string,subquery?:string,alias?:string,subquery_bindings?:array<int,mixed>}> $joins */

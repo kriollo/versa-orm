@@ -987,8 +987,28 @@ class VersaORM
 
                 return $this->pdoEngine->execute($action, $params);
             } catch (Throwable $e) {
-                // Incluir la palabra 'error' para tests que lo validan
-                throw new VersaORMException('PDO engine execution error: ' . $e->getMessage(), 'PDO_ENGINE_FAILED');
+                $ex = new VersaORMException(
+                    'PDO engine execution error: ' . $e->getMessage(),
+                    'PDO_ENGINE_FAILED',
+                    $params['query'] ?? null,
+                    is_array($params['bindings'] ?? null) ? $params['bindings'] : [],
+                    ['action' => $action, 'params' => $this->safeParamsForLog($params)],
+                    $this->extractSqlState($e),
+                    (int) $e->getCode(),
+                    $e instanceof Exception ? $e : null,
+                );
+                $ex->withDriver($this->config['driver'] ?? null)->withOrigin(__METHOD__);
+                // Log inmediato usando ErrorHandler si configurado
+                if (class_exists(ErrorHandler::class) && ErrorHandler::isConfigured()) {
+                    ErrorHandler::handleException($ex, ['phase' => 'pdo_engine']);
+                } else {
+                    // fallback mínimo
+                    if (function_exists('error_log')) {
+                        @error_log('[VersaORM][ERROR] ' . json_encode($ex->toLogArray()));
+                    }
+                }
+
+                throw $ex;
             }
         }
 
@@ -1129,6 +1149,39 @@ class VersaORM
         }
 
         return is_array($response) ? ($response['data'] ?? null) : null;
+    }
+
+    /**
+     * Sanitiza parámetros para logging (evita exponer credenciales o blobs grandes).
+     *
+     * @param array<string,mixed> $params
+     *
+     * @return array<string,mixed>
+     */
+    private function safeParamsForLog(array $params): array
+    {
+        $sanitized = [];
+        foreach ($params as $k => $v) {
+            if (is_string($v)) {
+                $sanitized[$k] = (strlen($v) > 500) ? substr($v, 0, 500) . '…' : $v;
+            } elseif (is_array($v)) {
+                $sanitized[$k] = count($v) > 50 ? array_slice($v, 0, 50) + ['_truncated' => true, '_count' => count($v)] : $v;
+            } else {
+                $sanitized[$k] = $v;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /** Extrae SQLSTATE si se puede (PDOException) */
+    private function extractSqlState(Throwable $t): ?string
+    {
+        if ($t instanceof \PDOException && isset($t->errorInfo[0]) && is_string($t->errorInfo[0])) {
+            return $t->errorInfo[0];
+        }
+
+        return null;
     }
 
     /**
