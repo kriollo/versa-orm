@@ -1698,12 +1698,12 @@ class VersaModel implements TypedModelInterface
                 $validationRules[] = "max:{$maxLength}";
             }
 
-            // Para TINYINT, verificar si hay un tipo PHP definido como boolean
+            // Para campos INTEGER que representan boolean, verificar si hay un tipo PHP definido como boolean
             $propertyTypes = static::getPropertyTypes();
             $phpType = $propertyTypes[$columnName]['type'] ?? null;
 
-            if ($dataType === 'tinyint' && ($phpType === 'boolean' || $phpType === 'bool')) {
-                // No agregar regla 'numeric' para campos boolean
+            if (str_contains($dataType, 'int') && ($phpType === 'boolean' || $phpType === 'bool')) {
+                // No agregar regla 'numeric' para campos boolean (aplica a TINYINT, INTEGER, etc.)
             } elseif (str_contains($dataType, 'int')) {
                 $validationRules[] = 'numeric';
             }
