@@ -13,15 +13,15 @@ use VersaORM\VersaORM;
  */
 class TransactionsRollbackTest extends TestCase
 {
-    private VersaORM $orm;
+    private ?VersaORM $orm = null;
 
     protected function setUp(): void
     {
         $config = [
-            'engine'   => 'pdo',
-            'driver'   => 'mysql',
-            'host'     => 'localhost',
-            'port'     => 3306,
+            'engine' => 'pdo',
+            'driver' => 'mysql',
+            'host' => 'localhost',
+            'port' => 3306,
             'database' => 'versaorm_test',
             'username' => 'local',
             'password' => 'local',

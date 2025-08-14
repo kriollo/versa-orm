@@ -77,7 +77,7 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertContains('tag1', $model->tags);
 
         // Test JSON (MySQL 5.7+)
-        $jsonData        = ['key' => 'value', 'number' => 42];
+        $jsonData = ['key' => 'value', 'number' => 42];
         $model->metadata = $jsonData;
         $model->store();
         self::assertSame($jsonData, $model->metadata);
@@ -88,7 +88,7 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertIsFloat($model->price);
 
         // Test TIMESTAMP vs DATETIME
-        $now               = new DateTime();
+        $now = new DateTime();
         $model->created_at = $now;
         $model->store();
         self::assertInstanceOf(DateTime::class, $model->created_at);
@@ -117,19 +117,19 @@ class DatabaseSpecificTypesTest extends TestCase
         $model = new VersaModel('test_postgresql_types', self::$orm);
 
         // Test UUID
-        $uuid        = '550e8400-e29b-41d4-a716-446655440000';
+        $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $model->uuid = $uuid;
         $model->store();
         self::assertSame($uuid, $model->uuid);
 
         // Test JSONB
-        $jsonData    = ['key' => 'value', 'nested' => ['array' => [1, 2, 3]]];
+        $jsonData = ['key' => 'value', 'nested' => ['array' => [1, 2, 3]]];
         $model->data = $jsonData;
         $model->store();
         self::assertSame($jsonData, $model->data);
 
         // Test INET
-        $ip                = '192.168.1.1';
+        $ip = '192.168.1.1';
         $model->ip_address = $ip;
         $model->store();
         self::assertSame($ip, $model->ip_address);
@@ -142,13 +142,13 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertIsString($model->text_array);
 
         // Test CIDR
-        $cidr           = '192.168.1.0/24';
+        $cidr = '192.168.1.0/24';
         $model->network = $cidr;
         $model->store();
         self::assertSame($cidr, $model->network);
 
         // Test MACADDR
-        $mac                = '08:00:2b:01:02:03';
+        $mac = '08:00:2b:01:02:03';
         $model->mac_address = $mac;
         $model->store();
         self::assertSame($mac, $model->mac_address);
@@ -168,19 +168,19 @@ class DatabaseSpecificTypesTest extends TestCase
         $model = new VersaModel('test_sqlite_types', self::$orm);
 
         // SQLite maneja JSON como TEXT
-        $jsonData         = ['key' => 'value', 'number' => 42];
+        $jsonData = ['key' => 'value', 'number' => 42];
         $model->json_data = $jsonData;
         $model->store();
         self::assertSame($jsonData, $model->json_data);
 
         // SQLite BLOB
-        $binaryData       = base64_encode('binary data test');
+        $binaryData = base64_encode('binary data test');
         $model->blob_data = $binaryData;
         $model->store();
         self::assertSame($binaryData, $model->blob_data);
 
         // SQLite maneja fechas como strings
-        $dateString            = '2024-01-15 12:30:45';
+        $dateString = '2024-01-15 12:30:45';
         $model->datetime_field = $dateString;
         $model->store();
         self::assertIsString($model->datetime_field);
@@ -192,12 +192,12 @@ class DatabaseSpecificTypesTest extends TestCase
 
         // Test casting de string a JSON
         $model->metadata = '{"key": "value"}';
-        $casted          = $model->castToPhpType('metadata', $model->metadata);
+        $casted = $model->castToPhpType('metadata', $model->metadata);
         self::assertIsArray($casted);
         self::assertSame(['key' => 'value'], $casted);
 
         // Test casting de array a JSON string para DB
-        $array  = ['key' => 'value', 'number' => 42];
+        $array = ['key' => 'value', 'number' => 42];
         $casted = $model->castToDatabaseType('metadata', $array);
         self::assertIsString($casted);
         self::assertSame('{"key":"value","number":42}', $casted);
@@ -221,7 +221,7 @@ class DatabaseSpecificTypesTest extends TestCase
 
         // Test Base64 encoding/decoding
         $originalData = 'This is binary data with special chars: áéíóú ñ ¿¡';
-        $base64Data   = base64_encode($originalData);
+        $base64Data = base64_encode($originalData);
 
         $model->binary_field = $base64Data;
         $model->store();
@@ -242,14 +242,14 @@ class DatabaseSpecificTypesTest extends TestCase
         // Test mapeo de tipo complejo con configuración personalizada
         $complexData = [
             'user_preferences' => [
-                'theme'         => 'dark',
-                'language'      => 'es',
+                'theme' => 'dark',
+                'language' => 'es',
                 'notifications' => true,
             ],
             'permissions' => ['read', 'write', 'admin'],
-            'metadata'    => [
+            'metadata' => [
                 'created_by' => 'system',
-                'version'    => '1.0.0',
+                'version' => '1.0.0',
             ],
         ];
 
@@ -264,11 +264,11 @@ class DatabaseSpecificTypesTest extends TestCase
     public function testTypeValidationErrors(): void
     {
         // Crear un modelo de prueba con tipos definidos
-        $testModel = new class('test_validation', self::$orm) extends VersaModel {
+        $testModel = new class ('test_validation', self::$orm) extends VersaModel {
             public static function getPropertyTypes(): array
             {
                 return [
-                    'uuid_field'  => ['type' => 'uuid'],
+                    'uuid_field' => ['type' => 'uuid'],
                     'email_field' => ['type' => 'email'],
                 ];
             }
@@ -287,19 +287,19 @@ class DatabaseSpecificTypesTest extends TestCase
 
         // Test con dataset grande
         $largeArray = array_fill(0, 1000, [
-            'id'   => rand(1, 1000000),
+            'id' => rand(1, 1000000),
             'name' => 'Test Item ' . rand(1, 1000),
             'data' => ['nested' => array_fill(0, 100, 'value')],
         ]);
 
-        $model                = new VersaModel('test_performance', self::$orm);
+        $model = new VersaModel('test_performance', self::$orm);
         $model->large_dataset = $largeArray;
 
         // El casting debe ser rápido incluso con datos grandes
-        $jsonString  = $model->castToDatabaseType('large_dataset', $largeArray);
+        $jsonString = $model->castToDatabaseType('large_dataset', $largeArray);
         $backToArray = $model->castToPhpType('large_dataset', $jsonString);
 
-        $endTime       = microtime(true);
+        $endTime = microtime(true);
         $executionTime = $endTime - $startTime;
 
         self::assertLessThan(1.0, $executionTime, 'El casting debe ser rápido (<1s)');
@@ -310,28 +310,28 @@ class DatabaseSpecificTypesTest extends TestCase
     {
         $configs = [
             'mysql' => [
-                'engine'        => 'pdo',
+                'engine' => 'pdo',
                 'database_type' => 'mysql',
-                'host'          => $_ENV['MYSQL_HOST'] ?? 'localhost',
-                'port'          => $_ENV['MYSQL_PORT'] ?? 3306,
-                'database'      => $_ENV['MYSQL_DATABASE'] ?? 'versaorm_test',
-                'username'      => $_ENV['MYSQL_USERNAME'] ?? 'local',
-                'password'      => $_ENV['MYSQL_PASSWORD'] ?? 'local',
-                'charset'       => 'utf8mb4',
-                'collation'     => 'utf8mb4_unicode_ci',
+                'host' => $_ENV['MYSQL_HOST'] ?? 'localhost',
+                'port' => $_ENV['MYSQL_PORT'] ?? 3306,
+                'database' => $_ENV['MYSQL_DATABASE'] ?? 'versaorm_test',
+                'username' => $_ENV['MYSQL_USERNAME'] ?? 'local',
+                'password' => $_ENV['MYSQL_PASSWORD'] ?? 'local',
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
             ],
             'postgresql' => [
                 'database_type' => 'postgresql',
-                'host'          => $_ENV['POSTGRES_HOST'] ?? 'localhost',
-                'port'          => $_ENV['POSTGRES_PORT'] ?? 5432,
-                'database'      => $_ENV['POSTGRES_DATABASE'] ?? 'test_versaorm',
-                'username'      => $_ENV['POSTGRES_USERNAME'] ?? 'postgres',
-                'password'      => $_ENV['POSTGRES_PASSWORD'] ?? '',
-                'charset'       => 'utf8',
+                'host' => $_ENV['POSTGRES_HOST'] ?? 'localhost',
+                'port' => $_ENV['POSTGRES_PORT'] ?? 5432,
+                'database' => $_ENV['POSTGRES_DATABASE'] ?? 'test_versaorm',
+                'username' => $_ENV['POSTGRES_USERNAME'] ?? 'postgres',
+                'password' => $_ENV['POSTGRES_PASSWORD'] ?? '',
+                'charset' => 'utf8',
             ],
             'sqlite' => [
                 'database_type' => 'sqlite',
-                'database'      => ':memory:',
+                'database' => ':memory:',
             ],
         ];
 

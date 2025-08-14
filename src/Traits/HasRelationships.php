@@ -40,11 +40,11 @@ trait HasRelationships
      */
     public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
     {
-        $foreignKey = $foreignKey !== null ? $foreignKey : $this->getForeignKey();
-        $localKey   = $localKey !== null ? $localKey : $this->getKeyName();
+        $foreignKey ??= $this->getForeignKey();
+        $localKey ??= $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection        = new ReflectionClass($related);
+        $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
         /** @var string $table */
         $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
@@ -59,11 +59,11 @@ trait HasRelationships
      */
     public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): HasMany
     {
-        $foreignKey = $foreignKey !== null ? $foreignKey : $this->getForeignKey();
-        $localKey   = $localKey !== null ? $localKey : $this->getKeyName();
+        $foreignKey ??= $this->getForeignKey();
+        $localKey ??= $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection        = new ReflectionClass($related);
+        $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
         /** @var string $table */
         $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
@@ -78,17 +78,17 @@ trait HasRelationships
      */
     public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null, ?string $relation = null): BelongsTo
     {
-        $relation   = $relation !== null ? $relation : $this->getRelationName();
-        $foreignKey = $foreignKey !== null ? $foreignKey : $relation . '_id';
+        $relation ??= $this->getRelationName();
+        $foreignKey ??= $relation . '_id';
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection        = new ReflectionClass($related);
+        $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
         /** @var string $table */
         $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
 
         $instance = new $related($table, $this->getOrm());
-        $ownerKey = $ownerKey !== null ? $ownerKey : $instance->getKeyName();
+        $ownerKey ??= $instance->getKeyName();
 
         return new BelongsTo($instance->newQuery(), $this, $foreignKey, $ownerKey, $relation);
     }
@@ -98,18 +98,18 @@ trait HasRelationships
      */
     public function belongsToMany(string $related, string $pivotTable, ?string $foreignPivotKey = null, ?string $relatedPivotKey = null, ?string $parentKey = null, ?string $relatedKey = null): BelongsToMany
     {
-        $foreignPivotKey = $foreignPivotKey !== null ? $foreignPivotKey : $this->getForeignKey();
-        $relatedPivotKey = $relatedPivotKey !== null ? $relatedPivotKey : (new $related('dummy', $this->getOrm()))->getForeignKey();
-        $parentKey       = $parentKey !== null ? $parentKey : $this->getKeyName();
+        $foreignPivotKey ??= $this->getForeignKey();
+        $relatedPivotKey ??= (new $related('dummy', $this->getOrm()))->getForeignKey();
+        $parentKey ??= $this->getKeyName();
 
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection        = new ReflectionClass($related);
+        $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
         /** @var string $table */
         $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
 
-        $instance   = new $related($table, $this->getOrm());
-        $relatedKey = $relatedKey !== null ? $relatedKey : $instance->getKeyName();
+        $instance = new $related($table, $this->getOrm());
+        $relatedKey ??= $instance->getKeyName();
 
         return new BelongsToMany($instance->newQuery(), $this, $pivotTable, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey);
     }
@@ -153,7 +153,7 @@ trait HasRelationships
             throw new Exception('Relationship method must return an object of type Relation.');
         }
 
-        $result                   = $relation->getResults();
+        $result = $relation->getResults();
         $this->relations[$method] = $result;
 
         return $result;

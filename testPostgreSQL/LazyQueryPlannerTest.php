@@ -25,7 +25,7 @@ class LazyQueryPlannerTest extends TestCase
     {
         $query = self::$orm->table('users')->lazy();
 
-        $reflection     = new ReflectionClass($query);
+        $reflection = new ReflectionClass($query);
         $isLazyProperty = $reflection->getProperty('isLazy');
         $isLazyProperty->setAccessible(true);
 
@@ -167,7 +167,7 @@ class LazyQueryPlannerTest extends TestCase
         }
 
         // Consulta normal
-        $start         = microtime(true);
+        $start = microtime(true);
         $normalResults = self::$orm->table('users')
             ->select(['id', 'name'])
             ->where('status', '=', 'active')
@@ -176,7 +176,7 @@ class LazyQueryPlannerTest extends TestCase
         $normalTime = microtime(true) - $start;
 
         // Consulta lazy
-        $start       = microtime(true);
+        $start = microtime(true);
         $lazyResults = self::$orm->table('users')
             ->lazy()
             ->select(['id', 'name'])

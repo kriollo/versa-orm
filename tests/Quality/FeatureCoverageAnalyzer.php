@@ -34,9 +34,9 @@ class FeatureCoverageAnalyzer
 
     public function __construct(array $config = [])
     {
-        $this->logger             = new TestLogger();
-        $this->projectRoot        = dirname(__DIR__, 2);
-        $this->config             = $this->loadConfiguration($config);
+        $this->logger = new TestLogger();
+        $this->projectRoot = dirname(__DIR__, 2);
+        $this->config = $this->loadConfiguration($config);
         $this->featureDefinitions = $this->config['feature_coverage'] ?? [];
     }
 
@@ -47,27 +47,27 @@ class FeatureCoverageAnalyzer
     {
         $this->logger->info('Starting feature coverage analysis');
 
-        $engines        = ['mysql', 'postgresql', 'sqlite'];
+        $engines = ['mysql', 'postgresql', 'sqlite'];
         $featureResults = [];
         $overallResults = [];
-        $alerts         = [];
+        $alerts = [];
 
         foreach ($this->featureDefinitions as $featureName => $featureConfig) {
             $this->logger->info("Analyzing coverage for feature: {$featureName}");
 
-            $featureResult                = $this->analyzeFeatureAcrossEngines($featureName, $featureConfig, $engines);
+            $featureResult = $this->analyzeFeatureAcrossEngines($featureName, $featureConfig, $engines);
             $featureResults[$featureName] = $featureResult;
 
             // Check if feature meets minimum coverage
             if ($featureResult['average_coverage'] < $featureConfig['minimum_coverage']) {
                 $alerts[] = [
-                    'type'              => 'feature_coverage_gap',
-                    'severity'          => 'medium',
-                    'feature'           => $featureName,
-                    'current_coverage'  => $featureResult['average_coverage'],
+                    'type' => 'feature_coverage_gap',
+                    'severity' => 'medium',
+                    'feature' => $featureName,
+                    'current_coverage' => $featureResult['average_coverage'],
                     'required_coverage' => $featureConfig['minimum_coverage'],
-                    'gap'               => $featureConfig['minimum_coverage'] - $featureResult['average_coverage'],
-                    'message'           => "Feature {$featureName} has coverage gap: {$featureResult['average_coverage']}% (required: {$featureConfig['minimum_coverage']}%)",
+                    'gap' => $featureConfig['minimum_coverage'] - $featureResult['average_coverage'],
+                    'message' => "Feature {$featureName} has coverage gap: {$featureResult['average_coverage']}% (required: {$featureConfig['minimum_coverage']}%)",
                 ];
             }
         }
@@ -76,21 +76,21 @@ class FeatureCoverageAnalyzer
         $overallResults = $this->calculateOverallFeatureMetrics($featureResults);
 
         // Generate feature coverage gaps report
-        $gapsReport = $this->generateFeatureCoverageGapsReport($featureResults);
+        $gapsReport = $this->generateFeatureCoverageGapsReport();
 
         // Determine if analysis passed
-        $passed = empty($alerts) && $overallResults['features_meeting_threshold'] >= count($this->featureDefinitions) * 0.8;
+        $passed = $alerts === [] && $overallResults['features_meeting_threshold'] >= count($this->featureDefinitions) * 0.8;
 
         $result = new QualityResult(
             tool: 'feature-coverage',
             score: (int) $overallResults['average_coverage'],
             issues: array_column($alerts, 'message'),
             metrics: [
-                'feature_results'            => $featureResults,
-                'overall_results'            => $overallResults,
-                'gaps_report'                => $gapsReport,
-                'alerts'                     => $alerts,
-                'features_analyzed'          => count($this->featureDefinitions),
+                'feature_results' => $featureResults,
+                'overall_results' => $overallResults,
+                'gaps_report' => $gapsReport,
+                'alerts' => $alerts,
+                'features_analyzed' => count($this->featureDefinitions),
                 'features_meeting_threshold' => $overallResults['features_meeting_threshold'],
             ],
             passed: $passed,
@@ -113,7 +113,7 @@ class FeatureCoverageAnalyzer
         }
 
         $featureConfig = $this->featureDefinitions[$featureName];
-        $engines       = ['mysql', 'postgresql', 'sqlite'];
+        $engines = ['mysql', 'postgresql', 'sqlite'];
 
         return $this->analyzeFeatureAcrossEngines($featureName, $featureConfig, $engines);
     }
@@ -125,7 +125,7 @@ class FeatureCoverageAnalyzer
     {
         $this->logger->info('Generating feature coverage gaps report');
 
-        $gaps            = [];
+        $gaps = [];
         $recommendations = [];
 
         foreach ($this->featureDefinitions as $featureName => $featureConfig) {
@@ -133,22 +133,22 @@ class FeatureCoverageAnalyzer
 
             if ($featureResult['average_coverage'] < $featureConfig['minimum_coverage']) {
                 $gap = [
-                    'feature'           => $featureName,
-                    'description'       => $featureConfig['description'],
-                    'current_coverage'  => $featureResult['average_coverage'],
+                    'feature' => $featureName,
+                    'description' => $featureConfig['description'],
+                    'current_coverage' => $featureResult['average_coverage'],
                     'required_coverage' => $featureConfig['minimum_coverage'],
-                    'gap_percentage'    => $featureConfig['minimum_coverage'] - $featureResult['average_coverage'],
+                    'gap_percentage' => $featureConfig['minimum_coverage'] - $featureResult['average_coverage'],
                     'engines_with_gaps' => [],
-                    'test_files'        => $featureConfig['test_files'] ?? [],
+                    'test_files' => $featureConfig['test_files'] ?? [],
                 ];
 
                 // Identify engines with gaps
                 foreach ($featureResult['engine_results'] as $engine => $engineResult) {
                     if ($engineResult['coverage'] < $featureConfig['minimum_coverage']) {
                         $gap['engines_with_gaps'][] = [
-                            'engine'   => $engine,
+                            'engine' => $engine,
                             'coverage' => $engineResult['coverage'],
-                            'gap'      => $featureConfig['minimum_coverage'] - $engineResult['coverage'],
+                            'gap' => $featureConfig['minimum_coverage'] - $engineResult['coverage'],
                         ];
                     }
                 }
@@ -161,19 +161,17 @@ class FeatureCoverageAnalyzer
         }
 
         // Sort gaps by severity (largest gap first)
-        usort($gaps, static function ($a, $b) {
-            return $b['gap_percentage'] <=> $a['gap_percentage'];
-        });
+        usort($gaps, static fn ($a, $b): int => $b['gap_percentage'] <=> $a['gap_percentage']);
 
         $report = [
-            'timestamp'          => date('Y-m-d H:i:s'),
-            'total_features'     => count($this->featureDefinitions),
+            'timestamp' => date('Y-m-d H:i:s'),
+            'total_features' => count($this->featureDefinitions),
             'features_with_gaps' => count($gaps),
-            'gaps'               => $gaps,
-            'recommendations'    => $recommendations,
-            'summary'            => [
-                'worst_gap'                  => !empty($gaps) ? max(array_column($gaps, 'gap_percentage')) : 0,
-                'average_gap'                => !empty($gaps) ? array_sum(array_column($gaps, 'gap_percentage')) / count($gaps) : 0,
+            'gaps' => $gaps,
+            'recommendations' => $recommendations,
+            'summary' => [
+                'worst_gap' => $gaps === [] ? 0 : max(array_column($gaps, 'gap_percentage')),
+                'average_gap' => $gaps === [] ? 0 : array_sum(array_column($gaps, 'gap_percentage')) / count($gaps),
                 'features_needing_attention' => count($gaps),
             ],
         ];
@@ -201,14 +199,14 @@ class FeatureCoverageAnalyzer
                     $severity = $this->determineSeverity($featureResult['average_coverage'], $featureConfig['minimum_coverage']);
 
                     $alerts[] = [
-                        'type'              => 'feature_coverage_below_threshold',
-                        'severity'          => $severity,
-                        'feature'           => $featureName,
-                        'current_coverage'  => $featureResult['average_coverage'],
+                        'type' => 'feature_coverage_below_threshold',
+                        'severity' => $severity,
+                        'feature' => $featureName,
+                        'current_coverage' => $featureResult['average_coverage'],
                         'required_coverage' => $featureConfig['minimum_coverage'],
-                        'gap'               => $featureConfig['minimum_coverage'] - $featureResult['average_coverage'],
-                        'engines_affected'  => array_keys($featureResult['engine_results']),
-                        'message'           => "Feature '{$featureName}' coverage ({$featureResult['average_coverage']}%) is below threshold ({$featureConfig['minimum_coverage']}%)",
+                        'gap' => $featureConfig['minimum_coverage'] - $featureResult['average_coverage'],
+                        'engines_affected' => array_keys($featureResult['engine_results']),
+                        'message' => "Feature '{$featureName}' coverage ({$featureResult['average_coverage']}%) is below threshold ({$featureConfig['minimum_coverage']}%)",
                     ];
                 }
 
@@ -216,13 +214,13 @@ class FeatureCoverageAnalyzer
                 foreach ($featureResult['engine_results'] as $engine => $engineResult) {
                     if ($engineResult['coverage'] < $featureConfig['minimum_coverage'] * 0.8) { // 80% of minimum
                         $alerts[] = [
-                            'type'              => 'engine_feature_coverage_critical',
-                            'severity'          => 'high',
-                            'feature'           => $featureName,
-                            'engine'            => $engine,
-                            'current_coverage'  => $engineResult['coverage'],
+                            'type' => 'engine_feature_coverage_critical',
+                            'severity' => 'high',
+                            'feature' => $featureName,
+                            'engine' => $engine,
+                            'current_coverage' => $engineResult['coverage'],
                             'required_coverage' => $featureConfig['minimum_coverage'],
-                            'message'           => "Feature '{$featureName}' has critically low coverage in {$engine}: {$engineResult['coverage']}%",
+                            'message' => "Feature '{$featureName}' has critically low coverage in {$engine}: {$engineResult['coverage']}%",
                         ];
                     }
                 }
@@ -230,23 +228,22 @@ class FeatureCoverageAnalyzer
                 // Check for missing test files
                 $missingTestFiles = $this->findMissingTestFiles($featureConfig['test_files'] ?? []);
 
-                if (!empty($missingTestFiles)) {
+                if ($missingTestFiles !== []) {
                     $alerts[] = [
-                        'type'          => 'missing_test_files',
-                        'severity'      => 'medium',
-                        'feature'       => $featureName,
+                        'type' => 'missing_test_files',
+                        'severity' => 'medium',
+                        'feature' => $featureName,
                         'missing_files' => $missingTestFiles,
-                        'message'       => "Feature '{$featureName}' has missing test files: " . implode(', ', $missingTestFiles),
+                        'message' => "Feature '{$featureName}' has missing test files: " . implode(', ', $missingTestFiles),
                     ];
                 }
-
             } catch (Exception $e) {
                 $alerts[] = [
-                    'type'     => 'feature_analysis_error',
+                    'type' => 'feature_analysis_error',
                     'severity' => 'high',
-                    'feature'  => $featureName,
-                    'error'    => $e->getMessage(),
-                    'message'  => "Failed to analyze coverage for feature '{$featureName}': " . $e->getMessage(),
+                    'feature' => $featureName,
+                    'error' => $e->getMessage(),
+                    'message' => "Failed to analyze coverage for feature '{$featureName}': " . $e->getMessage(),
                 ];
             }
         }
@@ -261,26 +258,25 @@ class FeatureCoverageAnalyzer
     {
         $engineResults = [];
         $totalCoverage = 0;
-        $validEngines  = 0;
+        $validEngines = 0;
 
         foreach ($engines as $engine) {
             try {
-                $engineCoverage         = $this->analyzeFeatureForEngine($featureName, $featureConfig, $engine);
+                $engineCoverage = $this->analyzeFeatureForEngine($featureName, $featureConfig, $engine);
                 $engineResults[$engine] = $engineCoverage;
 
                 if ($engineCoverage['coverage'] > 0) {
                     $totalCoverage += $engineCoverage['coverage'];
                     ++$validEngines;
                 }
-
             } catch (Exception $e) {
                 $this->logger->warning("Failed to analyze feature '{$featureName}' for engine '{$engine}': " . $e->getMessage());
                 $engineResults[$engine] = [
-                    'coverage'         => 0,
-                    'error'            => $e->getMessage(),
+                    'coverage' => 0,
+                    'error' => $e->getMessage(),
                     'test_files_found' => 0,
-                    'lines_covered'    => 0,
-                    'total_lines'      => 0,
+                    'lines_covered' => 0,
+                    'total_lines' => 0,
                 ];
             }
         }
@@ -288,16 +284,14 @@ class FeatureCoverageAnalyzer
         $averageCoverage = $validEngines > 0 ? $totalCoverage / $validEngines : 0;
 
         return [
-            'feature'          => $featureName,
-            'description'      => $featureConfig['description'],
+            'feature' => $featureName,
+            'description' => $featureConfig['description'],
             'minimum_required' => $featureConfig['minimum_coverage'],
             'average_coverage' => round($averageCoverage, 2),
-            'engine_results'   => $engineResults,
-            'status'           => $averageCoverage >= $featureConfig['minimum_coverage'] ? 'PASS' : 'FAIL',
+            'engine_results' => $engineResults,
+            'status' => $averageCoverage >= $featureConfig['minimum_coverage'] ? 'PASS' : 'FAIL',
             'engines_analyzed' => count($engines),
-            'engines_passed'   => count(array_filter($engineResults, static function ($result) use ($featureConfig) {
-                return $result['coverage'] >= $featureConfig['minimum_coverage'];
-            })),
+            'engines_passed' => count(array_filter($engineResults, static fn ($result): bool => $result['coverage'] >= $featureConfig['minimum_coverage'])),
         ];
     }
 
@@ -306,16 +300,16 @@ class FeatureCoverageAnalyzer
      */
     private function analyzeFeatureForEngine(string $featureName, array $featureConfig, string $engine): array
     {
-        $testFiles       = $featureConfig['test_files'] ?? [];
+        $testFiles = $featureConfig['test_files'] ?? [];
         $engineTestFiles = $this->filterTestFilesForEngine($testFiles, $engine);
 
-        if (empty($engineTestFiles)) {
+        if ($engineTestFiles === []) {
             return [
-                'coverage'         => 0,
+                'coverage' => 0,
                 'test_files_found' => 0,
-                'lines_covered'    => 0,
-                'total_lines'      => 0,
-                'note'             => "No test files found for {$engine}",
+                'lines_covered' => 0,
+                'total_lines' => 0,
+                'note' => "No test files found for {$engine}",
             ];
         }
 
@@ -323,14 +317,14 @@ class FeatureCoverageAnalyzer
         $coverageData = $this->getCoverageDataForEngine($engine);
 
         // Calculate feature-specific coverage
-        $featureCoverage = $this->calculateFeatureCoverageFromData($coverageData, $engineTestFiles, $featureName);
+        $featureCoverage = $this->calculateFeatureCoverageFromData($coverageData, $featureName);
 
         return [
-            'coverage'         => $featureCoverage['coverage_percentage'],
+            'coverage' => $featureCoverage['coverage_percentage'],
             'test_files_found' => count($engineTestFiles),
-            'lines_covered'    => $featureCoverage['lines_covered'],
-            'total_lines'      => $featureCoverage['total_lines'],
-            'test_files'       => $engineTestFiles,
+            'lines_covered' => $featureCoverage['lines_covered'],
+            'total_lines' => $featureCoverage['total_lines'],
+            'test_files' => $engineTestFiles,
         ];
     }
 
@@ -393,16 +387,16 @@ class FeatureCoverageAnalyzer
         $this->logger->info("Generating coverage data for {$engine}");
 
         $configFiles = [
-            'mysql'      => 'phpunit-mysql.xml',
+            'mysql' => 'phpunit-mysql.xml',
             'postgresql' => 'phpunit-postgresql.xml',
-            'sqlite'     => 'phpunit-sqlite.xml',
+            'sqlite' => 'phpunit-sqlite.xml',
         ];
 
         if (!isset($configFiles[$engine])) {
             throw new Exception("Unknown engine: {$engine}");
         }
 
-        $configFile    = "{$this->projectRoot}/{$configFiles[$engine]}";
+        $configFile = "{$this->projectRoot}/{$configFiles[$engine]}";
         $phpunitBinary = $this->findPhpUnitBinary();
 
         $command = sprintf(
@@ -429,7 +423,7 @@ class FeatureCoverageAnalyzer
         // Handle different XML structures - some have package, some don't
         $fileElements = null;
 
-        if (isset($xml->project->package->file)) {
+        if (property_exists($xml->project->package, 'file') && $xml->project->package->file !== null) {
             $fileElements = $xml->project->package->file;
         } elseif (isset($xml->project->file)) {
             $fileElements = $xml->project->file;
@@ -445,7 +439,7 @@ class FeatureCoverageAnalyzer
             // Get metrics from class or file level
             $metrics = null;
 
-            if (isset($file->metrics)) {
+            if (property_exists($file, 'metrics') && $file->metrics !== null) {
                 $metrics = $file->metrics;
             } elseif (isset($file->class->metrics)) {
                 $metrics = $file->class->metrics;
@@ -456,18 +450,18 @@ class FeatureCoverageAnalyzer
             }
 
             $files[$fileName] = [
-                'statements'        => (int) $metrics['statements'],
+                'statements' => (int) $metrics['statements'],
                 'coveredstatements' => (int) $metrics['coveredstatements'],
-                'methods'           => (int) $metrics['methods'],
-                'coveredmethods'    => (int) $metrics['coveredmethods'],
-                'lines'             => [],
+                'methods' => (int) $metrics['methods'],
+                'coveredmethods' => (int) $metrics['coveredmethods'],
+                'lines' => [],
             ];
 
             // Parse line coverage
-            if (isset($file->line)) {
+            if (property_exists($file, 'line') && $file->line !== null) {
                 foreach ($file->line as $line) {
-                    $lineNum                             = (int) $line['num'];
-                    $count                               = (int) $line['count'];
+                    $lineNum = (int) $line['num'];
+                    $count = (int) $line['count'];
                     $files[$fileName]['lines'][$lineNum] = $count;
                 }
             }
@@ -479,12 +473,12 @@ class FeatureCoverageAnalyzer
     /**
      * Calculate feature coverage from coverage data.
      */
-    private function calculateFeatureCoverageFromData(array $coverageData, array $testFiles, string $featureName): array
+    private function calculateFeatureCoverageFromData(array $coverageData, string $featureName): array
     {
         // This is a simplified approach - in a real implementation, you would
         // need to map test files to source code coverage more precisely
 
-        $totalLines   = 0;
+        $totalLines = 0;
         $coveredLines = 0;
 
         // Get all source files that might be related to this feature
@@ -506,9 +500,9 @@ class FeatureCoverageAnalyzer
 
         return [
             'coverage_percentage' => round($coveragePercentage, 2),
-            'total_lines'         => $totalLines,
-            'lines_covered'       => $coveredLines,
-            'relevant_files'      => $relevantSourceFiles,
+            'total_lines' => $totalLines,
+            'lines_covered' => $coveredLines,
+            'relevant_files' => $relevantSourceFiles,
         ];
     }
 
@@ -520,12 +514,12 @@ class FeatureCoverageAnalyzer
         // Map features to source files
         $featureToSourceMap = [
             'crud_operations' => ['src/VersaORM.php', 'src/VersaModel.php'],
-            'relationships'   => ['src/VersaModel.php', 'src/Relations/'],
-            'query_builder'   => ['src/QueryBuilder.php'],
-            'transactions'    => ['src/VersaORM.php'],
-            'security'        => ['src/VersaORM.php', 'src/QueryBuilder.php', 'src/ErrorHandler.php'],
-            'validation'      => ['src/VersaModel.php', 'src/Traits/'],
-            'type_mapping'    => ['src/VersaORM.php', 'src/VersaModel.php'],
+            'relationships' => ['src/VersaModel.php', 'src/Relations/'],
+            'query_builder' => ['src/QueryBuilder.php'],
+            'transactions' => ['src/VersaORM.php'],
+            'security' => ['src/VersaORM.php', 'src/QueryBuilder.php', 'src/ErrorHandler.php'],
+            'validation' => ['src/VersaModel.php', 'src/Traits/'],
+            'type_mapping' => ['src/VersaORM.php', 'src/VersaModel.php'],
         ];
 
         return $featureToSourceMap[$featureName] ?? ['src/VersaORM.php'];
@@ -536,9 +530,9 @@ class FeatureCoverageAnalyzer
      */
     private function calculateOverallFeatureMetrics(array $featureResults): array
     {
-        $totalFeatures            = count($featureResults);
+        $totalFeatures = count($featureResults);
         $featuresMeetingThreshold = 0;
-        $totalCoverage            = 0;
+        $totalCoverage = 0;
 
         foreach ($featureResults as $result) {
             $totalCoverage += $result['average_coverage'];
@@ -549,11 +543,11 @@ class FeatureCoverageAnalyzer
         }
 
         return [
-            'total_features'             => $totalFeatures,
+            'total_features' => $totalFeatures,
             'features_meeting_threshold' => $featuresMeetingThreshold,
-            'features_below_threshold'   => $totalFeatures - $featuresMeetingThreshold,
-            'average_coverage'           => $totalFeatures > 0 ? round($totalCoverage / $totalFeatures, 2) : 0,
-            'pass_rate'                  => $totalFeatures > 0 ? round(($featuresMeetingThreshold / $totalFeatures) * 100, 2) : 0,
+            'features_below_threshold' => $totalFeatures - $featuresMeetingThreshold,
+            'average_coverage' => $totalFeatures > 0 ? round($totalCoverage / $totalFeatures, 2) : 0,
+            'pass_rate' => $totalFeatures > 0 ? round(($featuresMeetingThreshold / $totalFeatures) * 100, 2) : 0,
         ];
     }
 
@@ -563,27 +557,27 @@ class FeatureCoverageAnalyzer
     private function generateFeatureRecommendation(string $featureName, array $gap): array
     {
         $priority = 'medium';
-        $action   = 'Add more test cases';
+        $action = 'Add more test cases';
 
         if ($gap['gap_percentage'] > 20) {
             $priority = 'high';
-            $action   = 'Create comprehensive test suite';
+            $action = 'Create comprehensive test suite';
         } elseif ($gap['gap_percentage'] > 10) {
             $priority = 'medium';
-            $action   = 'Add edge case tests';
+            $action = 'Add edge case tests';
         } else {
             $priority = 'low';
-            $action   = 'Add minor test cases';
+            $action = 'Add minor test cases';
         }
 
         return [
-            'feature'              => $featureName,
-            'priority'             => $priority,
-            'action'               => $action,
-            'gap_percentage'       => $gap['gap_percentage'],
-            'engines_affected'     => count($gap['engines_with_gaps']),
+            'feature' => $featureName,
+            'priority' => $priority,
+            'action' => $action,
+            'gap_percentage' => $gap['gap_percentage'],
+            'engines_affected' => count($gap['engines_with_gaps']),
             'suggested_test_files' => $gap['test_files'],
-            'reason'               => "Feature coverage is {$gap['gap_percentage']}% below target",
+            'reason' => "Feature coverage is {$gap['gap_percentage']}% below target",
         ];
     }
 
@@ -607,7 +601,6 @@ class FeatureCoverageAnalyzer
         }
 
         return 'low';
-
     }
 
     /**
@@ -655,11 +648,7 @@ class FeatureCoverageAnalyzer
     {
         $configFile = "{$this->projectRoot}/tests/config/coverage-config.php";
 
-        if (file_exists($configFile)) {
-            $config = require $configFile;
-        } else {
-            $config = $this->getDefaultConfiguration();
-        }
+        $config = file_exists($configFile) ? require $configFile : $this->getDefaultConfiguration();
 
         return array_merge($config, $overrides);
     }
@@ -672,9 +661,9 @@ class FeatureCoverageAnalyzer
         return [
             'feature_coverage' => [
                 'crud_operations' => [
-                    'description'      => 'Create, Read, Update, Delete operations',
+                    'description' => 'Create, Read, Update, Delete operations',
                     'minimum_coverage' => 98.0,
-                    'test_files'       => [
+                    'test_files' => [
                         'testMysql/VersaORMTest.php',
                         'testPostgreSQL/VersaORMTest.php',
                         'testSQLite/QueryBuilderTest.php',

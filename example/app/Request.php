@@ -11,26 +11,8 @@ use function function_exists;
  */
 class Request
 {
-    public array $get;
-
-    public array $post;
-
-    public array $server;
-
-    public array $cookies;
-
-    public array $files;
-
-    public array $headers;
-
-    private function __construct(array $get, array $post, array $server, array $cookies, array $files, array $headers)
+    private function __construct(public array $get, public array $post, public array $server, public array $cookies, public array $files, public array $headers)
     {
-        $this->get     = $get;
-        $this->post    = $post;
-        $this->server  = $server;
-        $this->cookies = $cookies;
-        $this->files   = $files;
-        $this->headers = $headers;
     }
 
     public static function fromGlobals(): self
@@ -41,7 +23,7 @@ class Request
             $_SERVER,
             $_COOKIE,
             $_FILES,
-            function_exists('getallheaders') ? (getallheaders() ?: []) : [],
+            function_exists('getallheaders') ? (getallheaders()) : [],
         );
     }
 
@@ -53,7 +35,7 @@ class Request
     public function path(): string
     {
         $uri = $this->server['REQUEST_URI'] ?? '/';
-        $q   = strpos($uri, '?');
+        $q = strpos($uri, '?');
 
         return $q === false ? $uri : substr($uri, 0, $q);
     }

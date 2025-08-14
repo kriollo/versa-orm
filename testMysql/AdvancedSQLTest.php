@@ -24,24 +24,24 @@ use VersaORM\VersaORMException;
  */
 class AdvancedSQLTest extends TestCase
 {
-    private VersaORM $orm;
+    private ?VersaORM $orm = null;
 
-    private QueryBuilder $queryBuilder;
+    private ?QueryBuilder $queryBuilder = null;
 
     protected function setUp(): void
     {
         // Configuración directa (sin bootstrap global que interfiere)
         $config = [
-            'driver'   => 'mysql',
+            'driver' => 'mysql',
             'database' => 'versaorm_test',
-            'debug'    => true,
-            'host'     => 'localhost',
-            'port'     => 3306,
+            'debug' => true,
+            'host' => 'localhost',
+            'port' => 3306,
             'username' => 'local',
             'password' => 'local',
         ];
 
-        $this->orm          = new VersaORM($config);
+        $this->orm = new VersaORM($config);
         $this->queryBuilder = new QueryBuilder($this->orm, 'test_table');
 
         // Crear tabla de prueba
@@ -51,7 +51,7 @@ class AdvancedSQLTest extends TestCase
     protected function tearDown(): void
     {
         // Limpiar después de cada prueba
-        $this->orm          = null;
+        $this->orm = null;
         $this->queryBuilder = null;
     }
 
@@ -123,7 +123,7 @@ class AdvancedSQLTest extends TestCase
 
         $ctes = [
             'high_earners' => [
-                'query'    => 'SELECT * FROM test_table WHERE salary > 80000',
+                'query' => 'SELECT * FROM test_table WHERE salary > 80000',
                 'bindings' => [],
             ],
         ];
@@ -159,7 +159,7 @@ class AdvancedSQLTest extends TestCase
 
         $ctes = [
             'employee_hierarchy' => [
-                'query'    => 'SELECT id, name, manager_id, 0 as level FROM employees WHERE manager_id IS NULL',
+                'query' => 'SELECT id, name, manager_id, 0 as level FROM employees WHERE manager_id IS NULL',
                 'bindings' => [],
             ],
         ];
@@ -188,11 +188,11 @@ class AdvancedSQLTest extends TestCase
 
         $queries = [
             [
-                'sql'      => 'SELECT name FROM test_table WHERE department = ?',
+                'sql' => 'SELECT name FROM test_table WHERE department = ?',
                 'bindings' => ['Engineering'],
             ],
             [
-                'sql'      => 'SELECT name FROM test_table WHERE salary > ?',
+                'sql' => 'SELECT name FROM test_table WHERE salary > ?',
                 'bindings' => [80000],
             ],
         ];
@@ -208,11 +208,11 @@ class AdvancedSQLTest extends TestCase
 
         $queries = [
             [
-                'sql'      => 'SELECT department FROM test_table WHERE salary > 70000',
+                'sql' => 'SELECT department FROM test_table WHERE salary > 70000',
                 'bindings' => [],
             ],
             [
-                'sql'      => 'SELECT department FROM test_table WHERE department = ?',
+                'sql' => 'SELECT department FROM test_table WHERE department = ?',
                 'bindings' => ['Marketing'],
             ],
         ];
@@ -480,10 +480,10 @@ class AdvancedSQLTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe');
 
-        $qb   = new QueryBuilder($this->orm, 'test_table');
+        $qb = new QueryBuilder($this->orm, 'test_table');
         $ctes = [
             'unsafe' => [
-                'query'    => 'SELECT * FROM test_table; DROP TABLE users; --',
+                'query' => 'SELECT * FROM test_table; DROP TABLE users; --',
                 'bindings' => [],
             ],
         ];
@@ -556,14 +556,14 @@ class AdvancedSQLTest extends TestCase
         // Datos JSON
         $jsonData = [
             [
-                'id'       => 1,
-                'profile'  => '{"name": "John Doe", "age": 30, "skills": ["PHP", "JavaScript"]}',
+                'id' => 1,
+                'profile' => '{"name": "John Doe", "age": 30, "skills": ["PHP", "JavaScript"]}',
                 'settings' => '{"theme": "dark", "notifications": true}',
                 'metadata' => '{"created": "2023-01-01", "tags": ["developer", "senior"]}',
             ],
             [
-                'id'       => 2,
-                'profile'  => '{"name": "Jane Smith", "age": 28, "skills": ["Python", "React"]}',
+                'id' => 2,
+                'profile' => '{"name": "Jane Smith", "age": 28, "skills": ["Python", "React"]}',
                 'settings' => '{"theme": "light", "notifications": false}',
                 'metadata' => '{"created": "2023-02-15", "tags": ["designer", "junior"]}',
             ],

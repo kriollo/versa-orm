@@ -40,8 +40,8 @@ class TestManager implements TestManagerInterface
 
     public function __construct(array $config = [])
     {
-        $this->config  = array_merge($this->getDefaultConfig(), $config);
-        $this->logger  = new TestLogger($this->config['logging']);
+        $this->config = array_merge($this->getDefaultConfig(), $config);
+        $this->logger = new TestLogger($this->config['logging']);
         $this->metrics = new MetricsCollector($this->config['metrics']);
 
         $this->logger->info('TestManager initialized', ['config' => $this->config]);
@@ -56,10 +56,10 @@ class TestManager implements TestManagerInterface
         $this->logger->info('Starting full test suite execution', $options);
 
         $results = [
-            'unit_tests'        => [],
+            'unit_tests' => [],
             'integration_tests' => [],
-            'benchmarks'        => [],
-            'quality_analysis'  => [],
+            'benchmarks' => [],
+            'quality_analysis' => [],
         ];
 
         try {
@@ -93,7 +93,7 @@ class TestManager implements TestManagerInterface
             $report = $this->generateReport($results);
             $this->logger->info('Full test suite completed successfully', [
                 'execution_time' => $executionTime,
-                'total_tests'    => $this->countTotalTests($results),
+                'total_tests' => $this->countTotalTests($results),
             ]);
 
             return $report;
@@ -130,11 +130,11 @@ class TestManager implements TestManagerInterface
         }
 
         // Ejecutar PHPUnit para el motor específico
-        $testDir     = 'test' . ucfirst($engine === 'mysql' ? 'Mysql' : ($engine === 'postgresql' ? 'PostgreSQL' : 'SQLite'));
+        $testDir = 'test' . ucfirst($engine === 'mysql' ? 'Mysql' : ($engine === 'postgresql' ? 'PostgreSQL' : 'SQLite'));
         $phpunitPath = PHP_OS_FAMILY === 'Windows' ? 'vendor\bin\phpunit.bat' : 'vendor/bin/phpunit';
-        $command     = "{$phpunitPath} {$testDir} --testdox --no-coverage";
+        $command = "{$phpunitPath} {$testDir} --testdox --no-coverage";
 
-        $output     = [];
+        $output = [];
         $returnCode = 0;
         exec($command, $output, $returnCode);
 
@@ -147,22 +147,22 @@ class TestManager implements TestManagerInterface
         $this->metrics->recordExecutionTime("unit_tests_{$engine}", $executionTime);
 
         $result = new TestResult([
-            'test_type'      => 'unit',
-            'engine'         => $engine,
-            'total_tests'    => $this->parseTestCount($output),
-            'passed_tests'   => $this->parsePassedTests($output),
-            'failed_tests'   => $this->parseFailedTests($output),
-            'skipped_tests'  => $this->parseSkippedTests($output),
+            'test_type' => 'unit',
+            'engine' => $engine,
+            'total_tests' => $this->parseTestCount($output),
+            'passed_tests' => $this->parsePassedTests($output),
+            'failed_tests' => $this->parseFailedTests($output),
+            'skipped_tests' => $this->parseSkippedTests($output),
             'execution_time' => $executionTime,
-            'failures'       => $this->parseFailures($output),
-            'metrics'        => $this->extractMetrics($output),
-            'timestamp'      => new DateTime(),
+            'failures' => $this->parseFailures(),
+            'metrics' => $this->extractMetrics(),
+            'timestamp' => new DateTime(),
         ]);
 
         $this->logger->info("Unit tests completed for {$engine}", [
-            'total'          => $result->total_tests,
-            'passed'         => $result->passed_tests,
-            'failed'         => $result->failed_tests,
+            'total' => $result->total_tests,
+            'passed' => $result->passed_tests,
+            'failed' => $result->failed_tests,
             'execution_time' => $executionTime,
         ]);
 
@@ -179,7 +179,7 @@ class TestManager implements TestManagerInterface
 
         // Por ahora, los tests de integración son los mismos que los unitarios
         // pero con configuración específica para validar integración entre componentes
-        $result            = $this->runUnitTests($engine);
+        $result = $this->runUnitTests($engine);
         $result->test_type = 'integration';
 
         $executionTime = microtime(true) - $startTime;
@@ -201,8 +201,8 @@ class TestManager implements TestManagerInterface
             benchmarkName: 'comprehensive_suite',
             engine: 'all',
             metrics: [
-                'throughput'   => 1000,
-                'latency'      => 0.05,
+                'throughput' => 1000,
+                'latency' => 0.05,
                 'memory_usage' => 64 * 1024 * 1024,
             ],
             comparisons: $comparisons,
@@ -224,7 +224,7 @@ class TestManager implements TestManagerInterface
         $startTime = microtime(true);
         $this->logger->info('Starting quality analysis');
 
-        $tools   = ['phpstan', 'psalm', 'php-cs-fixer'];
+        $tools = ['phpstan', 'psalm', 'php-cs-fixer'];
         $results = [];
 
         foreach ($tools as $tool) {
@@ -234,7 +234,7 @@ class TestManager implements TestManagerInterface
                 $this->logger->warning("Quality tool {$tool} failed", ['error' => $e->getMessage()]);
                 $results[$tool] = [
                     'passed' => false,
-                    'score'  => 0,
+                    'score' => 0,
                     'issues' => [$e->getMessage()],
                 ];
             }
@@ -256,8 +256,8 @@ class TestManager implements TestManagerInterface
         $this->metrics->recordExecutionTime('quality_analysis', $executionTime);
 
         $this->logger->info('Quality analysis completed', [
-            'score'          => $overallScore,
-            'passed'         => $result->passed,
+            'score' => $overallScore,
+            'passed' => $result->passed,
             'execution_time' => $executionTime,
         ]);
 
@@ -272,21 +272,21 @@ class TestManager implements TestManagerInterface
         $this->logger->info('Generating consolidated report');
 
         $summary = $this->generateSummary($results);
-        $alerts  = $this->generateAlerts($results);
+        $alerts = $this->generateAlerts($results);
 
         $report = new Report([
-            'report_id'   => uniqid('report_', true),
-            'test_type'   => 'full_suite',
+            'report_id' => uniqid('report_', true),
+            'test_type' => 'full_suite',
             'php_version' => PHP_VERSION,
-            'results'     => [
-                'unit_tests'        => $results['unit_tests'] ?? [],
+            'results' => [
+                'unit_tests' => $results['unit_tests'] ?? [],
                 'integration_tests' => $results['integration_tests'] ?? [],
-                'benchmarks'        => $results['benchmarks'] ?? [],
-                'quality_analysis'  => $results['quality_analysis'] ?? [],
+                'benchmarks' => $results['benchmarks'] ?? [],
+                'quality_analysis' => $results['quality_analysis'] ?? [],
             ],
-            'summary'         => $summary,
-            'execution_time'  => $this->calculateTotalExecutionTime($results),
-            'timestamp'       => new DateTime(),
+            'summary' => $summary,
+            'execution_time' => $this->calculateTotalExecutionTime($results),
+            'timestamp' => new DateTime(),
             'recommendations' => $alerts,
         ]);
 
@@ -306,23 +306,23 @@ class TestManager implements TestManagerInterface
     {
         return [
             'logging' => [
-                'level'      => 'info',
+                'level' => 'info',
                 'output_dir' => 'tests/logs',
-                'max_files'  => 10,
+                'max_files' => 10,
             ],
             'metrics' => [
-                'enabled'        => true,
-                'output_dir'     => 'tests/metrics',
+                'enabled' => true,
+                'output_dir' => 'tests/metrics',
                 'retention_days' => 30,
             ],
             'reports' => [
-                'output_dir'     => 'tests/reports',
-                'format'         => ['json', 'html'],
+                'output_dir' => 'tests/reports',
+                'format' => ['json', 'html'],
                 'include_trends' => true,
             ],
             'quality_gates' => [
-                'min_coverage'      => 95,
-                'max_complexity'    => 10,
+                'min_coverage' => 95,
+                'max_complexity' => 10,
                 'min_quality_score' => 80,
             ],
         ];
@@ -356,7 +356,7 @@ class TestManager implements TestManagerInterface
 
             // Buscar patrones de fallos para calcular los que pasaron
             if (preg_match('/FAILURES!.*Tests: (\d+), Assertions: \d+, Failures: (\d+)/', $line, $matches)) {
-                $total    = (int) $matches[1];
+                $total = (int) $matches[1];
                 $failures = (int) $matches[2];
 
                 return $total - $failures;
@@ -393,39 +393,39 @@ class TestManager implements TestManagerInterface
         return 0;
     }
 
-    private function parseFailures(array $output): array
+    private function parseFailures(): array
     {
         // Implementar parsing de fallos específicos
         return [];
     }
 
-    private function extractMetrics(array $output): array
+    private function extractMetrics(): array
     {
         return [
             'memory_usage' => memory_get_peak_usage(true),
-            'time'         => microtime(true),
+            'time' => microtime(true),
         ];
     }
 
     private function mergeTestResults(array $results, string $type): TestResult
     {
-        $totalTests    = array_sum(array_map(static fn ($r) => $r->total_tests, $results));
-        $passedTests   = array_sum(array_map(static fn ($r) => $r->passed_tests, $results));
-        $failedTests   = array_sum(array_map(static fn ($r) => $r->failed_tests, $results));
-        $skippedTests  = array_sum(array_map(static fn ($r) => $r->skipped_tests, $results));
+        $totalTests = array_sum(array_map(static fn ($r) => $r->total_tests, $results));
+        $passedTests = array_sum(array_map(static fn ($r) => $r->passed_tests, $results));
+        $failedTests = array_sum(array_map(static fn ($r) => $r->failed_tests, $results));
+        $skippedTests = array_sum(array_map(static fn ($r) => $r->skipped_tests, $results));
         $executionTime = array_sum(array_map(static fn ($r) => $r->execution_time, $results));
 
         return new TestResult([
-            'test_type'      => $type,
-            'engine'         => 'all',
-            'total_tests'    => $totalTests,
-            'passed_tests'   => $passedTests,
-            'failed_tests'   => $failedTests,
-            'skipped_tests'  => $skippedTests,
+            'test_type' => $type,
+            'engine' => 'all',
+            'total_tests' => $totalTests,
+            'passed_tests' => $passedTests,
+            'failed_tests' => $failedTests,
+            'skipped_tests' => $skippedTests,
             'execution_time' => $executionTime,
-            'failures'       => call_user_func_array('array_merge', array_values(array_map(static fn ($r) => $r->failures, $results))),
-            'metrics'        => ['merged_results' => $results],
-            'timestamp'      => new DateTime(),
+            'failures' => call_user_func_array('array_merge', array_values(array_map(static fn ($r) => $r->failures, $results))),
+            'metrics' => ['merged_results' => $results],
+            'timestamp' => new DateTime(),
         ]);
     }
 
@@ -436,34 +436,34 @@ class TestManager implements TestManagerInterface
         switch ($tool) {
             case 'phpstan':
                 $phpstanPath = $isWindows ? 'vendor\bin\phpstan.bat' : 'vendor/bin/phpstan';
-                $command     = "{$phpstanPath} analyse src --level=8 --no-progress --error-format=json";
+                $command = "{$phpstanPath} analyse src --level=8 --no-progress --error-format=json";
                 exec($command, $output, $code);
 
                 return [
                     'passed' => $code === 0,
-                    'score'  => $code === 0 ? 100 : 50,
+                    'score' => $code === 0 ? 100 : 50,
                     'issues' => $code === 0 ? [] : ['PHPStan found issues'],
                 ];
 
             case 'psalm':
                 $psalmPath = $isWindows ? 'vendor\bin\psalm.bat' : 'vendor/bin/psalm';
-                $command   = "{$psalmPath} --no-cache --output-format=json";
+                $command = "{$psalmPath} --no-cache --output-format=json";
                 exec($command, $output, $code);
 
                 return [
                     'passed' => $code === 0,
-                    'score'  => $code === 0 ? 100 : 50,
+                    'score' => $code === 0 ? 100 : 50,
                     'issues' => $code === 0 ? [] : ['Psalm found issues'],
                 ];
 
             case 'php-cs-fixer':
                 $csFixerPath = $isWindows ? 'vendor\bin\php-cs-fixer.bat' : 'vendor/bin/php-cs-fixer';
-                $command     = "{$csFixerPath} fix --dry-run --diff";
+                $command = "{$csFixerPath} fix --dry-run --diff";
                 exec($command, $output, $code);
 
                 return [
                     'passed' => $code === 0,
-                    'score'  => $code === 0 ? 100 : 80,
+                    'score' => $code === 0 ? 100 : 80,
                     'issues' => $code === 0 ? [] : ['Code style issues found'],
                 ];
 
@@ -474,7 +474,7 @@ class TestManager implements TestManagerInterface
 
     private function calculateOverallQualityScore(array $results): int
     {
-        if (empty($results)) {
+        if ($results === []) {
             return 0;
         }
 
@@ -498,9 +498,9 @@ class TestManager implements TestManagerInterface
 
     private function generateSummary(array $results): array
     {
-        $totalTests   = 0;
-        $passedTests  = 0;
-        $failedTests  = 0;
+        $totalTests = 0;
+        $passedTests = 0;
+        $failedTests = 0;
         $skippedTests = 0;
 
         // Contar tests unitarios
@@ -523,14 +523,14 @@ class TestManager implements TestManagerInterface
 
         return [
             'total_test_suites' => count($results['unit_tests'] ?? []),
-            'total_tests'       => $totalTests,
-            'passed_tests'      => $passedTests,
-            'failed_tests'      => $failedTests,
-            'skipped_tests'     => $skippedTests,
-            'success_rate'      => $successRate,
-            'overall_status'    => $this->calculateOverallStatus($results),
-            'execution_time'    => $this->calculateTotalExecutionTime($results),
-            'quality_score'     => $this->extractQualityScore($results),
+            'total_tests' => $totalTests,
+            'passed_tests' => $passedTests,
+            'failed_tests' => $failedTests,
+            'skipped_tests' => $skippedTests,
+            'success_rate' => $successRate,
+            'overall_status' => $this->calculateOverallStatus(),
+            'execution_time' => $this->calculateTotalExecutionTime($results),
+            'quality_score' => $this->extractQualityScore($results),
         ];
     }
 
@@ -542,9 +542,9 @@ class TestManager implements TestManagerInterface
         foreach ($results['unit_tests'] ?? [] as $engine => $result) {
             if ($result->failed_tests > 0) {
                 $alerts[] = [
-                    'level'   => 'error',
+                    'level' => 'error',
                     'message' => "Unit tests failed for {$engine}: {$result->failed_tests} failures",
-                    'engine'  => $engine,
+                    'engine' => $engine,
                 ];
             }
         }
@@ -552,17 +552,18 @@ class TestManager implements TestManagerInterface
         return $alerts;
     }
 
-    private function calculateOverallStatus(array $results): string
+    private function calculateOverallStatus(): string
     {
         // Lógica para determinar estado general
-        return 'success'; // Placeholder
+        return 'success';
+        // Placeholder
     }
 
     private function calculateTotalExecutionTime(array $results): float
     {
         $total = 0;
 
-        foreach ($results as $category => $categoryResults) {
+        foreach ($results as $categoryResults) {
             if (is_array($categoryResults)) {
                 foreach ($categoryResults as $result) {
                     if (isset($result->executionTime)) {
@@ -589,12 +590,5 @@ class TestManager implements TestManagerInterface
         }
 
         return $total;
-    }
-
-    private function getProjectVersion(): string
-    {
-        $composer = json_decode(file_get_contents('composer.json'), true);
-
-        return $composer['version'] ?? '1.0.0';
     }
 }

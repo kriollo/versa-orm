@@ -9,20 +9,16 @@ use VersaORM\VersaModel;
 
 abstract class Relation
 {
-    /**
-     * The query builder instance for the related model.
-     */
-    public QueryBuilder $query;
-
-    /**
-     * The parent model instance.
-     */
-    protected VersaModel $parent;
-
-    public function __construct(QueryBuilder $query, VersaModel $parent)
-    {
-        $this->query  = $query;
-        $this->parent = $parent;
+    public function __construct(
+        /**
+         * The query builder instance for the related model.
+         */
+        public QueryBuilder $query,
+        /**
+         * The parent model instance.
+         */
+        protected VersaModel $parent,
+    ) {
     }
 
     /**
@@ -30,7 +26,7 @@ abstract class Relation
      *
      * @return mixed
      */
-    abstract public function getResults();
+    abstract public function getResults(): mixed;
 
     /**
      * Set the base constraints on the relation query.

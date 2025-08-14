@@ -27,7 +27,7 @@ class User extends BaseModel
     protected array $guarded = [];
 
     protected array $rules = [
-        'name'  => ['required', 'min:2', 'max:100'],
+        'name' => ['required', 'min:2', 'max:100'],
         'email' => ['required', 'email', 'max:150'],
     ];
 
@@ -35,7 +35,7 @@ class User extends BaseModel
     public function createOne(array $attributes): self
     {
         if (!isset($attributes['avatar_color'])) {
-            $attributes['avatar_color'] = static::generateRandomColor();
+            $attributes['avatar_color'] = $this->generateRandomColor();
         }
         $this->fill($attributes);
         $this->store();
@@ -75,19 +75,19 @@ class User extends BaseModel
 
             // Eliminar duplicados basado en ID
             $uniqueProjects = [];
-            $seenIds        = [];
+            $seenIds = [];
 
             foreach ($allProjects as $project) {
                 $projectId = $project['id'] ?? null;
 
                 if ($projectId && !in_array($projectId, $seenIds, true)) {
                     $uniqueProjects[] = $project;
-                    $seenIds[]        = $projectId;
+                    $seenIds[] = $projectId;
                 }
             }
 
             return $uniqueProjects;
-        } catch (Exception $e) {
+        } catch (Exception) {
             // Si falla el join, intentar solo los proyectos propios
             try {
                 $projects = $this->getOrm()->table('projects', Project::class)
@@ -96,7 +96,7 @@ class User extends BaseModel
                 ;
 
                 return $projects ?: [];
-            } catch (Exception $e2) {
+            } catch (Exception) {
                 return [];
             }
         }
@@ -115,7 +115,7 @@ class User extends BaseModel
             ;
 
             return $tasks ?: [];
-        } catch (Exception $e) {
+        } catch (Exception) {
             return [];
         }
     }
@@ -126,30 +126,28 @@ class User extends BaseModel
     public function getStats(): array
     {
         try {
-            $projects       = $this->projects();
-            $tasks          = $this->tasks();
-            $completedTasks = array_filter($tasks, static function ($task) {
-                return isset($task['status']) && $task['status'] === 'done';
-            });
+            $projects = $this->projects();
+            $tasks = $this->tasks();
+            $completedTasks = array_filter($tasks, static fn ($task): bool => isset($task['status']) && $task['status'] === 'done');
 
             return [
-                'projects_count'        => count($projects),
-                'tasks_count'           => count($tasks),
+                'projects_count' => count($projects),
+                'tasks_count' => count($tasks),
                 'completed_tasks_count' => count($completedTasks),
-                'completion_rate'       => count($tasks) > 0 ? (count($completedTasks) / count($tasks)) * 100 : 0,
-                'projects'              => $projects,
-                'tasks'                 => $tasks,
-                'completed_tasks'       => $completedTasks,
+                'completion_rate' => $tasks !== [] ? (count($completedTasks) / count($tasks)) * 100 : 0,
+                'projects' => $projects,
+                'tasks' => $tasks,
+                'completed_tasks' => $completedTasks,
             ];
-        } catch (Exception $e) {
+        } catch (Exception) {
             return [
-                'projects_count'        => 0,
-                'tasks_count'           => 0,
+                'projects_count' => 0,
+                'tasks_count' => 0,
                 'completed_tasks_count' => 0,
-                'completion_rate'       => 0,
-                'projects'              => [],
-                'tasks'                 => [],
-                'completed_tasks'       => [],
+                'completion_rate' => 0,
+                'projects' => [],
+                'tasks' => [],
+                'completed_tasks' => [],
             ];
         }
     }
@@ -160,20 +158,20 @@ class User extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id'           => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'         => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
-            'email'        => ['type' => 'string', 'max_length' => 150, 'nullable' => false, 'unique' => true],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'email' => ['type' => 'string', 'max_length' => 150, 'nullable' => false, 'unique' => true],
             'avatar_color' => ['type' => 'string', 'max_length' => 7, 'nullable' => true, 'default' => '#3498db'],
-            'active'       => ['type' => 'bool', 'nullable' => false, 'default' => true],
-            'created_at'   => ['type' => 'datetime', 'nullable' => false],
-            'updated_at'   => ['type' => 'datetime', 'nullable' => false],
+            'active' => ['type' => 'bool', 'nullable' => false, 'default' => true],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
         ];
     }
 
     /**
      * Generar color aleatorio para avatar.
      */
-    private static function generateRandomColor(): string
+    private function generateRandomColor(): string
     {
         $colors = [
             '#ff6b6b',

@@ -34,7 +34,7 @@ class PHPStanCLI
                 return $this->runFullAnalysis($argv);
 
             case 'metrics':
-                return $this->showMetrics($argv);
+                return $this->showMetrics();
 
             case 'help':
             default:
@@ -49,7 +49,7 @@ class PHPStanCLI
         echo "Running PHPStan analysis...\n";
 
         $options = $this->parseOptions($argv);
-        $result  = $this->analyzer->analyze($options);
+        $result = $this->analyzer->analyze($options);
 
         echo 'Analysis completed in ' . number_format($result['execution_time'], 2) . "s\n";
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
@@ -75,7 +75,7 @@ class PHPStanCLI
         // Generate HTML report if requested
         if (in_array('--html', $argv, true)) {
             $htmlReport = $this->analyzer->generateHTMLReport($result);
-            $htmlFile   = str_replace('.json', '.html', $result['report_file']);
+            $htmlFile = str_replace('.json', '.html', $result['report_file']);
             file_put_contents($htmlFile, $htmlReport);
             echo "HTML report saved to: {$htmlFile}\n";
         }
@@ -88,7 +88,7 @@ class PHPStanCLI
         echo "Generating PHPStan baseline...\n";
 
         $memoryLimit = $this->getOption($argv, '--memory-limit', '512M');
-        $result      = $this->analyzer->generateBaseline($memoryLimit);
+        $result = $this->analyzer->generateBaseline($memoryLimit);
 
         if ($result['success']) {
             echo 'Baseline generated successfully: ' . $result['baseline_file'] . "\n";
@@ -99,7 +99,6 @@ class PHPStanCLI
         echo $result['output'] . "\n";
 
         return 1;
-
     }
 
     private function runFullAnalysis(array $argv): int
@@ -127,12 +126,10 @@ class PHPStanCLI
         return $result['return_code'];
     }
 
-    private function showMetrics(array $argv): int
+    private function showMetrics(): int
     {
         echo "Calculating PHPStan quality metrics...\n";
-
         $metrics = $this->analyzer->getQualityMetrics();
-
         echo "\nQuality Metrics:\n";
         echo '  PHPStan Level: ' . $metrics['phpstan_level'] . "\n";
         echo '  Execution Time: ' . number_format($metrics['execution_time'], 2) . "s\n";
@@ -147,16 +144,17 @@ class PHPStanCLI
     private function parseOptions(array $argv): array
     {
         $options = [];
+        $counter = count($argv);
 
-        for ($i = 2; $i < count($argv); ++$i) {
+        for ($i = 2; $i < $counter; ++$i) {
             $arg = $argv[$i];
 
-            if (strpos($arg, '--') === 0) {
-                if (strpos($arg, '=') !== false) {
+            if (str_starts_with($arg, '--')) {
+                if (str_contains($arg, '=')) {
                     [$key, $value] = explode('=', substr($arg, 2), 2);
                     $options[$key] = $value;
                 } else {
-                    $key           = substr($arg, 2);
+                    $key = substr($arg, 2);
                     $options[$key] = true;
                 }
             }
@@ -168,7 +166,7 @@ class PHPStanCLI
     private function getOption(array $argv, string $option, string $default = ''): string
     {
         foreach ($argv as $arg) {
-            if (strpos($arg, $option . '=') === 0) {
+            if (str_starts_with($arg, $option . '=')) {
                 return substr($arg, strlen($option) + 1);
             }
         }

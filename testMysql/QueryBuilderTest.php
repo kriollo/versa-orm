@@ -114,13 +114,13 @@ class QueryBuilderTest extends TestCase
         // Create a separate ORM instance to avoid setup data being inserted
         global $config;
         $orm = new VersaORM([
-            'driver'   => $config['DB']['DB_DRIVER'],
-            'host'     => $config['DB']['DB_HOST'],
-            'port'     => $config['DB']['DB_PORT'],
+            'driver' => $config['DB']['DB_DRIVER'],
+            'host' => $config['DB']['DB_HOST'],
+            'port' => $config['DB']['DB_PORT'],
             'database' => $config['DB']['DB_NAME'],
             'username' => $config['DB']['DB_USER'],
             'password' => $config['DB']['DB_PASS'],
-            'debug'    => true,
+            'debug' => true,
         ]);
 
         $query = $orm->table('users')->whereIn('id', [1, 3]);
@@ -301,8 +301,8 @@ class QueryBuilderTest extends TestCase
     public function testInsert(): void
     {
         self::$orm->table('users')->insert([
-            'name'   => 'Frank',
-            'email'  => 'frank@example.com',
+            'name' => 'Frank',
+            'email' => 'frank@example.com',
             'status' => 'active',
         ]);
 
@@ -314,8 +314,8 @@ class QueryBuilderTest extends TestCase
     public function testInsertGetId(): void
     {
         $id = self::$orm->table('users')->insertGetId([
-            'name'   => 'Grace',
-            'email'  => 'grace@example.com',
+            'name' => 'Grace',
+            'email' => 'grace@example.com',
             'status' => 'active',
         ]);
 
@@ -361,8 +361,8 @@ class QueryBuilderTest extends TestCase
     {
         // Test 1: Verificar que devuelve int, no string
         $id1 = self::$orm->table('users')->insertGetId([
-            'name'   => 'TypeTest1',
-            'email'  => 'type1@example.com',
+            'name' => 'TypeTest1',
+            'email' => 'type1@example.com',
             'status' => 'active',
         ]);
 
@@ -371,8 +371,8 @@ class QueryBuilderTest extends TestCase
 
         // Test 2: Múltiples inserciones deben devolver IDs incrementales
         $id2 = self::$orm->table('users')->insertGetId([
-            'name'   => 'TypeTest2',
-            'email'  => 'type2@example.com',
+            'name' => 'TypeTest2',
+            'email' => 'type2@example.com',
             'status' => 'active',
         ]);
 

@@ -34,6 +34,7 @@
     "phpstan/phpstan-strict-rules": "^1.6",
     "phpunit/phpunit": "^10.0",
     "psalm/plugin-phpunit": "^0.19.0",
+    "rector/rector": "^1.2",
     "squizlabs/php_codesniffer": "^3.7",
     "vimeo/psalm": "^5.26"
   },
@@ -53,12 +54,42 @@
     }
   },
   "scripts": {
-    "test-mysql": "phpunit --configuration phpunit-mysql.xml --testdox",
-    "test-postgresql": "phpunit --configuration phpunit-postgresql.xml --testdox",
-    "test-sqlite": "phpunit --configuration phpunit-sqlite.xml --testdox",
+    "test-mysql": [
+      "@putenv XDEBUG_MODE=off",
+      "@putenv DB_DRIVER=mysql",
+      "@putenv DB_HOST=localhost",
+      "@putenv DB_PORT=3306",
+      "@putenv DB_NAME=versaorm_test",
+      "@putenv DB_USER=local",
+      "@putenv DB_PASS=local",
+      "phpunit --configuration phpunit-mysql.xml --testdox"
+    ],
+    "test-postgresql": [
+      "@putenv XDEBUG_MODE=off",
+      "@putenv DB_DRIVER=postgresql",
+      "@putenv DB_HOST=localhost",
+      "@putenv DB_PORT=5432",
+      "@putenv DB_NAME=versaorm_test",
+      "@putenv DB_USER=local",
+      "@putenv DB_PASS=local",
+      "phpunit --configuration phpunit-postgresql.xml --testdox"
+    ],
+    "test-sqlite": [
+      "@putenv XDEBUG_MODE=off",
+      "@putenv DB_DRIVER=sqlite",
+      "@putenv DB_NAME=:memory:",
+      "phpunit --configuration phpunit-sqlite.xml --testdox"
+    ],
+    "test-all": [
+      "@test-sqlite",
+      "@test-mysql",
+      "@test-postgresql"
+    ],
     "psalm-check": "psalm --no-cache --show-info=true",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "php-cs-fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
+    "qa": "php qa-integration.php",
+    "qa-fix": "php qa-integration.php --fix",
     "qa-full": "php tests/bin/qa-runner.php full",
     "qa-unit": "php tests/bin/qa-runner.php unit",
     "qa-quality": "php tests/bin/qa-runner.php quality",

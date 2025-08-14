@@ -6,7 +6,7 @@ namespace VersaORM\Relations;
 
 class HasMany extends HasOne // Extends HasOne because the constraint logic is identical
 {
-    public function getResults()
+    public function getResults(): mixed
     {
         $this->addConstraints();
 

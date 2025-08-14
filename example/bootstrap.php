@@ -11,19 +11,19 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // Autoload temprano para App\ (Request, OrmFactory, App, ModelManager) y App\Models\
 spl_autoload_register(function ($class): void {
-    if (strpos($class, 'App\Models\\') === 0) {
+    if (str_starts_with($class, 'App\Models\\')) {
         $className = str_replace('App\Models\\', '', $class);
-        $file      = __DIR__ . '/models/' . $className . '.php';
+        $file = __DIR__ . '/models/' . $className . '.php';
 
         if (file_exists($file)) {
             require_once $file;
         }
     }
 
-    if (strpos($class, 'App\\') === 0) {
+    if (str_starts_with($class, 'App\\')) {
         $relative = str_replace('App\\', '', $class);
         $relative = str_replace('\\', '/', $relative);
-        $file     = __DIR__ . '/app/' . $relative . '.php';
+        $file = __DIR__ . '/app/' . $relative . '.php';
 
         if (file_exists($file)) {
             require_once $file;
@@ -50,7 +50,7 @@ $app = new App($request, $config);
 // Autoloader ya registrado arriba
 
 // Función helper para renderizar vistas
-function render($view, $data = []): void
+function render(string $view, $data = []): void
 {
     global $config;
     extract($data);
@@ -123,10 +123,8 @@ session_start();
 /**
  * Helper para convertir fechas a timestamp de manera segura.
  * Maneja tanto strings como objetos DateTime.
- *
- * @param mixed $date
  */
-function safe_strtotime($date)
+function safe_strtotime(mixed $date): false|int
 {
     if ($date instanceof DateTime) {
         return $date->getTimestamp();
@@ -138,11 +136,8 @@ function safe_strtotime($date)
 /**
  * Helper para formatear fechas de manera segura.
  * Maneja tanto strings como objetos DateTime.
- *
- * @param mixed $format
- * @param mixed $date
  */
-function safe_date($format, $date)
+function safe_date(mixed $format, mixed $date): string
 {
     if ($date instanceof DateTime) {
         return $date->format($format);
@@ -154,11 +149,8 @@ function safe_date($format, $date)
 /**
  * Helper para formatear fechas de manera segura con manejo de errores.
  * Maneja tanto strings como objetos DateTime.
- *
- * @param mixed $date
- * @param mixed $format
  */
-function safe_date_format($date, $format = 'Y-m-d H:i:s')
+function safe_date_format(mixed $date, mixed $format = 'Y-m-d H:i:s'): string
 {
     if (empty($date)) {
         return '-';

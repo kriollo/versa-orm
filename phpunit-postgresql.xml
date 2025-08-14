@@ -97,7 +97,8 @@
         </testsuite>
     </testsuites>
 
-    <!-- Test groups configuration -->
+    <!-- Test groups configuration - DISABLED to run all tests -->
+    <!--
     <groups>
         <include>
             <group>postgresql</group>
@@ -119,6 +120,7 @@
             <group>slow</group>
         </exclude>
     </groups>
+    -->
 
     <!-- Code coverage configuration -->
     <coverage includeUncoveredFiles="true"

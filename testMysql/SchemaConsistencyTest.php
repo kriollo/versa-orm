@@ -29,7 +29,7 @@ class SchemaConsistencyTest extends TestCase
 
     public function testValidateSchemaConsistencyWithEmptyPropertyTypes(): void
     {
-        $model  = new EmptySchemaModel('empty_table', null);
+        $model = new EmptySchemaModel('empty_table', null);
         $errors = $model->validateSchemaConsistency();
 
         self::assertCount(1, $errors);
@@ -54,19 +54,19 @@ class SchemaConsistencyTest extends TestCase
 
         // Use reflection to test private methods
         $reflection = new ReflectionClass($model);
-        $method     = $reflection->getMethod('validatePropertyConsistency');
+        $method = $reflection->getMethod('validatePropertyConsistency');
         $method->setAccessible(true);
 
         // Test type compatibility
         $propertyDef = ['type' => 'int', 'nullable' => false];
-        $dbColumn    = ['data_type' => 'int', 'is_nullable' => 'NO'];
+        $dbColumn = ['data_type' => 'int', 'is_nullable' => 'NO'];
 
         $errors = $method->invokeArgs($model, ['id', $propertyDef, $dbColumn]);
         self::assertEmpty($errors);
 
         // Test type mismatch
         $propertyDef = ['type' => 'string', 'nullable' => false];
-        $dbColumn    = ['data_type' => 'int', 'is_nullable' => 'NO'];
+        $dbColumn = ['data_type' => 'int', 'is_nullable' => 'NO'];
 
         $errors = $method->invokeArgs($model, ['id', $propertyDef, $dbColumn]);
         self::assertNotEmpty($errors);
@@ -78,12 +78,12 @@ class SchemaConsistencyTest extends TestCase
         $model = new TestSchemaModel('test_table', null);
 
         $reflection = new ReflectionClass($model);
-        $method     = $reflection->getMethod('validatePropertyConsistency');
+        $method = $reflection->getMethod('validatePropertyConsistency');
         $method->setAccessible(true);
 
         // Test nullability mismatch - model expects non-nullable but database allows null
         $propertyDef = ['type' => 'string', 'nullable' => false];
-        $dbColumn    = ['data_type' => 'varchar', 'is_nullable' => 'YES'];
+        $dbColumn = ['data_type' => 'varchar', 'is_nullable' => 'YES'];
 
         $errors = $method->invokeArgs($model, ['name', $propertyDef, $dbColumn]);
         self::assertNotEmpty($errors);
@@ -95,12 +95,12 @@ class SchemaConsistencyTest extends TestCase
         $model = new TestSchemaModel('test_table', null);
 
         $reflection = new ReflectionClass($model);
-        $method     = $reflection->getMethod('validatePropertyConsistency');
+        $method = $reflection->getMethod('validatePropertyConsistency');
         $method->setAccessible(true);
 
         // Test length mismatch - model max_length exceeds database max_length
         $propertyDef = ['type' => 'string', 'max_length' => 500];
-        $dbColumn    = ['data_type' => 'varchar', 'character_maximum_length' => 255];
+        $dbColumn = ['data_type' => 'varchar', 'character_maximum_length' => 255];
 
         $errors = $method->invokeArgs($model, ['name', $propertyDef, $dbColumn]);
         self::assertNotEmpty($errors);
@@ -112,7 +112,7 @@ class SchemaConsistencyTest extends TestCase
         $model = new TestSchemaModel('test_table', null);
 
         $reflection = new ReflectionClass($model);
-        $method     = $reflection->getMethod('validatePropertyConsistency');
+        $method = $reflection->getMethod('validatePropertyConsistency');
         $method->setAccessible(true);
 
         // Test compatible types
@@ -140,7 +140,7 @@ class SchemaConsistencyTest extends TestCase
 
         foreach ($compatiblePairs as [$modelType, $dbType]) {
             $propertyDef = ['type' => $modelType, 'nullable' => true];
-            $dbColumn    = ['data_type' => $dbType, 'is_nullable' => 'YES'];
+            $dbColumn = ['data_type' => $dbType, 'is_nullable' => 'YES'];
 
             $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
 
@@ -161,14 +161,14 @@ class SchemaConsistencyTest extends TestCase
         $model = new TestSchemaModel('test_table', null);
 
         $reflection = new ReflectionClass($model);
-        $method     = $reflection->getMethod('validatePropertyConsistency');
+        $method = $reflection->getMethod('validatePropertyConsistency');
         $method->setAccessible(true);
 
         // Test incompatible types
         $propertyDef = ['type' => 'int', 'nullable' => true];
-        $dbColumn    = ['data_type' => 'text', 'is_nullable' => 'YES'];
+        $dbColumn = ['data_type' => 'text', 'is_nullable' => 'YES'];
 
-        $errors             = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
+        $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
         $typeMismatchErrors = array_filter($errors, static function ($error) {
             return strpos($error, 'Type mismatch') !== false;
         });
@@ -210,19 +210,19 @@ class TestSchemaModel extends VersaModel
     protected static function definePropertyTypes(): array
     {
         return [
-            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'        => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
-            'email'       => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
-            'age'         => ['type' => 'int', 'nullable' => true],
-            'salary'      => ['type' => 'float', 'nullable' => true],
-            'is_active'   => ['type' => 'bool', 'nullable' => false],
-            'settings'    => ['type' => 'json', 'nullable' => true],
-            'uuid'        => ['type' => 'uuid', 'nullable' => false],
-            'status'      => ['type' => 'enum', 'values' => ['active', 'inactive']],
-            'tags'        => ['type' => 'set', 'values' => ['work', 'personal']],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
+            'email' => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
+            'age' => ['type' => 'int', 'nullable' => true],
+            'salary' => ['type' => 'float', 'nullable' => true],
+            'is_active' => ['type' => 'bool', 'nullable' => false],
+            'settings' => ['type' => 'json', 'nullable' => true],
+            'uuid' => ['type' => 'uuid', 'nullable' => false],
+            'status' => ['type' => 'enum', 'values' => ['active', 'inactive']],
+            'tags' => ['type' => 'set', 'values' => ['work', 'personal']],
             'profile_pic' => ['type' => 'blob', 'nullable' => true],
-            'ip_address'  => ['type' => 'inet', 'nullable' => true],
-            'created_at'  => ['type' => 'datetime', 'nullable' => false],
+            'ip_address' => ['type' => 'inet', 'nullable' => true],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
         ];
     }
 }
@@ -246,8 +246,8 @@ class ConsistentSchemaModel extends VersaModel
     protected static function definePropertyTypes(): array
     {
         return [
-            'id'     => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'   => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
             'active' => ['type' => 'bool', 'nullable' => false],
         ];
     }

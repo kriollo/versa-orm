@@ -18,22 +18,16 @@ class PHPStanAnalyzer
 {
     private string $phpstanPath;
 
-    private string $configPath;
-
-    private string $reportsDir;
-
     public function __construct(
         ?string $phpstanPath = null,
-        string $configPath = 'phpstan.neon',
-        string $reportsDir = 'tests/reports/phpstan',
+        private string $configPath = 'phpstan.neon',
+        private string $reportsDir = 'tests/reports/phpstan',
     ) {
         // Auto-detect PHPStan path based on OS
         if ($phpstanPath === null) {
             $phpstanPath = $this->detectPHPStanPath();
         }
         $this->phpstanPath = $phpstanPath;
-        $this->configPath  = $configPath;
-        $this->reportsDir  = $reportsDir;
 
         if (!is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
@@ -45,13 +39,13 @@ class PHPStanAnalyzer
      */
     public function analyze(array $options = []): array
     {
-        $timestamp  = new DateTime();
+        $timestamp = new DateTime();
         $reportFile = $this->reportsDir . '/phpstan-' . $timestamp->format('Y-m-d-H-i-s') . '.json';
 
-        $command = $this->buildCommand($options, $reportFile);
+        $command = $this->buildCommand($options);
 
-        $startTime  = microtime(true);
-        $output     = [];
+        $startTime = microtime(true);
+        $output = [];
         $returnCode = 0;
 
         exec($command, $output, $returnCode);
@@ -59,16 +53,16 @@ class PHPStanAnalyzer
         $executionTime = microtime(true) - $startTime;
 
         $result = [
-            'timestamp'      => $timestamp->format('c'),
+            'timestamp' => $timestamp->format('c'),
             'execution_time' => $executionTime,
-            'return_code'    => $returnCode,
-            'command'        => $command,
-            'output'         => implode("\n", $output),
-            'report_file'    => $reportFile,
-            'passed'         => $returnCode === 0,
-            'errors'         => [],
-            'warnings'       => [],
-            'summary'        => [],
+            'return_code' => $returnCode,
+            'command' => $command,
+            'output' => implode("\n", $output),
+            'report_file' => $reportFile,
+            'passed' => $returnCode === 0,
+            'errors' => [],
+            'warnings' => [],
+            'summary' => [],
         ];
 
         // Parse output for errors and warnings
@@ -91,14 +85,14 @@ class PHPStanAnalyzer
             $memoryLimit,
         );
 
-        $output     = [];
+        $output = [];
         $returnCode = 0;
 
         exec($command, $output, $returnCode);
 
         return [
-            'success'       => $returnCode === 0,
-            'output'        => implode("\n", $output),
+            'success' => $returnCode === 0,
+            'output' => implode("\n", $output),
             'baseline_file' => 'phpstan-baseline.neon',
         ];
     }
@@ -109,7 +103,7 @@ class PHPStanAnalyzer
     public function analyzeWithoutBaseline(): array
     {
         // Temporarily disable baseline
-        $configContent  = file_get_contents($this->configPath);
+        $configContent = file_get_contents($this->configPath);
         $modifiedConfig = str_replace(
             'baseline: phpstan-baseline.neon',
             '# baseline: phpstan-baseline.neon',
@@ -126,29 +120,28 @@ class PHPStanAnalyzer
                 $tempConfigFile,
             );
 
-            $output     = [];
+            $output = [];
             $returnCode = 0;
 
             exec($command, $output, $returnCode);
 
             $result = [
                 'without_baseline' => true,
-                'return_code'      => $returnCode,
-                'raw_output'       => implode("\n", $output),
+                'return_code' => $returnCode,
+                'raw_output' => implode("\n", $output),
             ];
 
             // Try to parse JSON output
             $jsonOutput = implode("\n", $output);
-            $decoded    = json_decode($jsonOutput, true);
+            $decoded = json_decode($jsonOutput, true);
 
             if ($decoded !== null) {
-                $result['parsed_output']     = $decoded;
-                $result['total_errors']      = $decoded['totals']['errors'] ?? 0;
+                $result['parsed_output'] = $decoded;
+                $result['total_errors'] = $decoded['totals']['errors'] ?? 0;
                 $result['total_file_errors'] = $decoded['totals']['file_errors'] ?? 0;
             }
 
             return $result;
-
         } finally {
             // Clean up temp config file
             if (file_exists($tempConfigFile)) {
@@ -165,27 +158,27 @@ class PHPStanAnalyzer
         $result = $this->analyze(['--error-format' => 'json']);
 
         $metrics = [
-            'phpstan_level'    => 8,
-            'execution_time'   => $result['execution_time'],
-            'passed'           => $result['passed'],
-            'total_errors'     => 0,
+            'phpstan_level' => 8,
+            'execution_time' => $result['execution_time'],
+            'passed' => $result['passed'],
+            'total_errors' => 0,
             'error_categories' => [],
-            'files_analyzed'   => 0,
-            'quality_score'    => 0,
+            'files_analyzed' => 0,
+            'quality_score' => 0,
         ];
 
         // Parse JSON output if available
         if (isset($result['parsed_output'])) {
-            $parsed                       = $result['parsed_output'];
-            $metrics['total_errors']      = $parsed['totals']['errors'] ?? 0;
+            $parsed = $result['parsed_output'];
+            $metrics['total_errors'] = $parsed['totals']['errors'] ?? 0;
             $metrics['total_file_errors'] = $parsed['totals']['file_errors'] ?? 0;
 
             // Calculate quality score (100 - error_density)
-            $filesAnalyzed             = count($parsed['files'] ?? []);
+            $filesAnalyzed = count($parsed['files'] ?? []);
             $metrics['files_analyzed'] = $filesAnalyzed;
 
             if ($filesAnalyzed > 0) {
-                $errorDensity             = ($metrics['total_errors'] / $filesAnalyzed) * 10;
+                $errorDensity = ($metrics['total_errors'] / $filesAnalyzed) * 10;
                 $metrics['quality_score'] = max(0, 100 - $errorDensity);
             }
         }
@@ -242,7 +235,7 @@ class PHPStanAnalyzer
             $html .= '</div>';
         }
 
-        $html .= '<div class="section">
+        return $html . ('<div class="section">
             <h2>Full Output</h2>
             <pre>' . htmlspecialchars($analysisResult['output']) . '</pre>
         </div>
@@ -252,9 +245,7 @@ class PHPStanAnalyzer
             <pre>' . htmlspecialchars($analysisResult['command']) . '</pre>
         </div>
     </body>
-</html>';
-
-        return $html;
+</html>');
     }
 
     /**
@@ -294,18 +285,18 @@ class PHPStanAnalyzer
      */
     private function commandExists(string $command): bool
     {
-        $isWindows   = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
         $testCommand = $isWindows ? "where {$command}" : "which {$command}";
 
         $output = shell_exec($testCommand);
 
-        return !empty($output);
+        return !($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
      * Build PHPStan command with options.
      */
-    private function buildCommand(array $options, string $reportFile): string
+    private function buildCommand(array $options): string
     {
         $command = $this->phpstanPath . ' analyse';
 
@@ -336,20 +327,20 @@ class PHPStanAnalyzer
      */
     private function parseOutput(array $output, array &$result): void
     {
-        $errors   = [];
+        $errors = [];
         $warnings = [];
 
         foreach ($output as $line) {
-            if (strpos($line, '[ERROR]') !== false) {
+            if (str_contains($line, '[ERROR]')) {
                 $errors[] = trim(str_replace('[ERROR]', '', $line));
-            } elseif (strpos($line, '[WARNING]') !== false) {
+            } elseif (str_contains($line, '[WARNING]')) {
                 $warnings[] = trim(str_replace('[WARNING]', '', $line));
             } elseif (preg_match('/(\d+)\/(\d+)/', $line, $matches)) {
                 $result['summary']['files_processed'] = $matches[2];
             }
         }
 
-        $result['errors']   = $errors;
+        $result['errors'] = $errors;
         $result['warnings'] = $warnings;
     }
 }

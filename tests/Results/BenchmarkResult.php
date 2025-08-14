@@ -25,7 +25,8 @@ class BenchmarkResult
         public readonly array $dataPoints,
         public readonly float $executionTime,
         public readonly DateTime $timestamp,
-    ) {}
+    ) {
+    }
 
     /**
      * Obtiene el throughput en operaciones por segundo.
@@ -81,11 +82,11 @@ class BenchmarkResult
     {
         $comparison = $this->getComparisonWith($orm);
 
-        if (!$comparison || !isset($comparison['throughput'])) {
+        if ($comparison === null || $comparison === [] || !isset($comparison['throughput'])) {
             return null;
         }
 
-        $ourThroughput   = $this->getThroughput();
+        $ourThroughput = $this->getThroughput();
         $theirThroughput = $comparison['throughput'];
 
         if ($theirThroughput === 0) {
@@ -117,17 +118,17 @@ class BenchmarkResult
     public function toArray(): array
     {
         return [
-            'benchmark_name'   => $this->benchmarkName,
-            'engine'           => $this->engine,
-            'metrics'          => $this->metrics,
-            'comparisons'      => $this->comparisons,
-            'data_points'      => $this->dataPoints,
-            'execution_time'   => $this->executionTime,
-            'throughput'       => $this->getThroughput(),
-            'latency'          => $this->getLatency(),
-            'memory_usage'     => $this->getMemoryUsage(),
+            'benchmark_name' => $this->benchmarkName,
+            'engine' => $this->engine,
+            'metrics' => $this->metrics,
+            'comparisons' => $this->comparisons,
+            'data_points' => $this->dataPoints,
+            'execution_time' => $this->executionTime,
+            'throughput' => $this->getThroughput(),
+            'latency' => $this->getLatency(),
+            'memory_usage' => $this->getMemoryUsage(),
             'formatted_memory' => $this->getFormattedMemoryUsage(),
-            'timestamp'        => $this->timestamp->format('Y-m-d H:i:s'),
+            'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
         ];
     }
 }

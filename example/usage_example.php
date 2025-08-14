@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use VersaORM\VersaORM\VersaORMException;
+
 /**
  * Ejemplo completo de uso del sistema de manejo de errores de VersaORM.
  */
@@ -18,9 +20,9 @@ define('APP_DEBUG', true);
 
 // Configurar VersaORM con log_path
 $config = [
-    'driver'   => 'sqlite',
+    'driver' => 'sqlite',
     'database' => ':memory:', // Base de datos en memoria para el ejemplo
-    'debug'    => true,
+    'debug' => true,
     'log_path' => __DIR__ . '/logs', // Directorio para logs de errores
 ];
 
@@ -29,7 +31,7 @@ UserModel::setORM($orm);
 
 // Configurar handler personalizado (opcional)
 // El ErrorHandler ya está configurado automáticamente por VersaORM
-ErrorHandler::setCustomHandler(static function ($errorData) {
+ErrorHandler::setCustomHandler(static function (array $errorData): void {
     // Handler personalizado - puedes enviar a tu sistema de logging
     echo '🚨 Custom Error Handler: ' . $errorData['error']['message'] . "\n";
 });
@@ -53,9 +55,9 @@ echo "=== VersaORM Error Handling System Demo ===\n\n";
 // Ejemplo 1: Crear usuario exitosamente
 echo "1. Creating user successfully:\n";
 $controller = new UserController();
-$result     = $controller->create([
-    'name'     => 'John Doe',
-    'email'    => 'john@example.com',
+$result = $controller->create([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
     'password' => 'securepassword123',
 ]);
 echo json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
@@ -63,8 +65,8 @@ echo json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
 // Ejemplo 2: Intentar crear usuario con email duplicado
 echo "2. Attempting to create user with duplicate email:\n";
 $result = $controller->create([
-    'name'     => 'Jane Doe',
-    'email'    => 'john@example.com', // Email duplicado
+    'name' => 'Jane Doe',
+    'email' => 'john@example.com', // Email duplicado
     'password' => 'anotherpassword123',
 ]);
 echo json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
@@ -72,8 +74,8 @@ echo json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
 // Ejemplo 3: Crear usuario con datos inválidos
 echo "3. Creating user with invalid data:\n";
 $result = $controller->create([
-    'name'     => 'A', // Nombre muy corto
-    'email'    => 'invalid-email', // Email inválido
+    'name' => 'A', // Nombre muy corto
+    'email' => 'invalid-email', // Email inválido
     'password' => '123', // Password muy corto
 ]);
 echo json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
@@ -81,8 +83,8 @@ echo json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
 // Ejemplo 4: Usar métodos seguros del modelo directamente
 echo "4. Using safe model methods directly:\n";
 $user = new UserModel([
-    'name'     => 'Safe User',
-    'email'    => 'safe@example.com',
+    'name' => 'Safe User',
+    'email' => 'safe@example.com',
     'password' => 'safepassword123',
 ]);
 
@@ -115,10 +117,10 @@ echo "5. Traditional try-catch error handling:\n";
 try {
     $user = UserModel::find(999); // ID que no existe
     echo 'User found: ' . json_encode($user->toArray()) . "\n";
-} catch (VersaORM\VersaORMException $e) {
+} catch (VersaORMException $e) {
     $errorData = ErrorHandler::handleException($e, [
         'operation' => 'find_user',
-        'user_id'   => 999,
+        'user_id' => 999,
     ]);
 
     echo "Caught VersaORMException:\n";
@@ -161,7 +163,7 @@ echo "9. Complete error log:\n";
 $errorLog = ErrorHandler::getErrorLog();
 echo 'Total errors logged: ' . count($errorLog) . "\n";
 
-if (!empty($errorLog)) {
+if ($errorLog !== []) {
     $lastError = end($errorLog);
     echo 'Last error: ' . $lastError['error']['message'] . "\n";
     echo 'Error code: ' . $lastError['error']['error_code'] . "\n";
@@ -177,14 +179,14 @@ $logPath = ErrorHandler::getLogPath();
 if ($logPath && is_dir($logPath)) {
     $logFiles = glob($logPath . DIRECTORY_SEPARATOR . '*.log');
 
-    if (!empty($logFiles)) {
+    if ($logFiles !== [] && $logFiles !== false) {
         foreach ($logFiles as $logFile) {
             $filename = basename($logFile);
-            $size     = filesize($logFile);
+            $size = filesize($logFile);
             echo "  - {$filename} ({$size} bytes)\n";
 
             // Mostrar las últimas 3 líneas del archivo
-            $lines     = file($logFile, FILE_IGNORE_NEW_LINES);
+            $lines = file($logFile, FILE_IGNORE_NEW_LINES);
             $lastLines = array_slice($lines, -3);
 
             foreach ($lastLines as $line) {

@@ -40,10 +40,8 @@ class ErrorHandler
 
     /**
      * Establece un handler personalizado para errores.
-     *
-     * @param mixed $handler
      */
-    public static function setCustomHandler($handler): void
+    public static function setCustomHandler(mixed $handler): void
     {
         self::$customHandler = $handler;
     }
@@ -84,7 +82,7 @@ class ErrorHandler
      */
     public static function isConfigured(): bool
     {
-        return !empty(self::$config);
+        return self::$config !== [];
     }
 
     /**
@@ -182,9 +180,7 @@ class ErrorHandler
             }
         }
 
-        $output .= str_repeat('=', 80) . "\n";
-
-        return $output;
+        return $output . (str_repeat('=', 80) . "\n");
     }
 
     /**
@@ -193,9 +189,9 @@ class ErrorHandler
     public static function formatForProduction(array $errorData): array
     {
         return [
-            'error'     => true,
-            'message'   => 'A database error occurred',
-            'code'      => $errorData['error']['error_code'],
+            'error' => true,
+            'message' => 'A database error occurred',
+            'code' => $errorData['error']['error_code'],
             'timestamp' => $errorData['context']['timestamp'],
             'reference' => substr(md5(json_encode($errorData)), 0, 8),
         ];
@@ -224,32 +220,32 @@ class ErrorHandler
      */
     private static function extractErrorData(VersaORMException $exception, array $context = []): array
     {
-        $trace      = $exception->getTrace();
+        $trace = $exception->getTrace();
         $originInfo = self::findOriginLocation($trace);
 
         return [
             'error' => [
-                'type'       => 'VersaORMException',
-                'message'    => $exception->getMessage(),
-                'code'       => $exception->getCode(),
+                'type' => 'VersaORMException',
+                'message' => $exception->getMessage(),
+                'code' => $exception->getCode(),
                 'error_code' => $exception->getErrorCode(),
-                'sql_state'  => $exception->getSqlState(),
-                'file'       => $exception->getFile(),
-                'line'       => $exception->getLine(),
+                'sql_state' => $exception->getSqlState(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
             ],
             'query' => [
-                'sql'           => $exception->getQuery(),
-                'bindings'      => $exception->getBindings(),
+                'sql' => $exception->getQuery(),
+                'bindings' => $exception->getBindings(),
                 'formatted_sql' => self::formatQuery($exception->getQuery(), $exception->getBindings()),
             ],
             'context' => array_merge($context, [
-                'timestamp'    => date('Y-m-d H:i:s'),
-                'php_version'  => PHP_VERSION,
+                'timestamp' => date('Y-m-d H:i:s'),
+                'php_version' => PHP_VERSION,
                 'memory_usage' => memory_get_usage(true),
-                'peak_memory'  => memory_get_peak_usage(true),
+                'peak_memory' => memory_get_peak_usage(true),
             ]),
-            'origin'      => $originInfo,
-            'details'     => $exception->getErrorDetails(),
+            'origin' => $originInfo,
+            'details' => $exception->getErrorDetails(),
             'stack_trace' => self::$debugMode ? $trace : self::getSimplifiedTrace($trace),
             'suggestions' => self::generateSuggestions($exception),
         ];
@@ -262,25 +258,25 @@ class ErrorHandler
     {
         $origin = [
             'location' => 'unknown',
-            'type'     => 'unknown',
-            'file'     => null,
-            'line'     => null,
+            'type' => 'unknown',
+            'file' => null,
+            'line' => null,
             'function' => null,
-            'class'    => null,
+            'class' => null,
         ];
 
         foreach ($trace as $frame) {
-            $file     = $frame['file'] ?? '';
-            $class    = $frame['class'] ?? '';
+            $file = $frame['file'] ?? '';
+            $class = $frame['class'] ?? '';
             $function = $frame['function'] ?? '';
 
             // Buscar el primer frame que no sea de VersaORM interno
             if (!str_contains($file, 'VersaORM') && !str_contains($file, 'vendor')) {
                 $origin['location'] = 'application';
-                $origin['file']     = $file;
-                $origin['line']     = $frame['line'] ?? null;
+                $origin['file'] = $file;
+                $origin['line'] = $frame['line'] ?? null;
                 $origin['function'] = $function;
-                $origin['class']    = $class;
+                $origin['class'] = $class;
 
                 // Determinar el tipo de origen
                 if (str_contains($class, 'Model') || str_contains($file, 'Model')) {
@@ -298,18 +294,18 @@ class ErrorHandler
             // Si es de VersaORM, determinar el componente
             if (str_contains($class, 'VersaModel')) {
                 $origin['location'] = 'versaorm_model';
-                $origin['type']     = 'orm_model';
-                $origin['class']    = $class;
+                $origin['type'] = 'orm_model';
+                $origin['class'] = $class;
                 $origin['function'] = $function;
             } elseif (str_contains($class, 'QueryBuilder')) {
                 $origin['location'] = 'versaorm_querybuilder';
-                $origin['type']     = 'query_builder';
-                $origin['class']    = $class;
+                $origin['type'] = 'query_builder';
+                $origin['class'] = $class;
                 $origin['function'] = $function;
             } elseif (str_contains($class, 'VersaORM')) {
                 $origin['location'] = 'versaorm_core';
-                $origin['type']     = 'orm_core';
-                $origin['class']    = $class;
+                $origin['type'] = 'orm_core';
+                $origin['class'] = $class;
                 $origin['function'] = $function;
             }
         }
@@ -322,18 +318,18 @@ class ErrorHandler
      */
     private static function formatQuery(?string $sql, array $bindings = []): ?string
     {
-        if (!$sql) {
+        if ($sql === null || $sql === '' || $sql === '0') {
             return null;
         }
 
-        if (empty($bindings)) {
+        if ($bindings === []) {
             return $sql;
         }
 
         $formatted = $sql;
 
         foreach ($bindings as $binding) {
-            $value     = is_string($binding) ? "'{$binding}'" : (string) $binding;
+            $value = is_string($binding) ? "'{$binding}'" : (string) $binding;
             $formatted = preg_replace('/\?/', $value, $formatted, 1);
         }
 
@@ -346,22 +342,22 @@ class ErrorHandler
     private static function getSimplifiedTrace(array $trace): array
     {
         $simplified = [];
-        $maxFrames  = 10;
-        $count      = 0;
+        $maxFrames = 10;
+        $count = 0;
 
         foreach ($trace as $frame) {
             if ($count >= $maxFrames) {
                 break;
             }
 
-            $file     = $frame['file'] ?? 'unknown';
-            $line     = $frame['line'] ?? 0;
+            $file = $frame['file'] ?? 'unknown';
+            $line = $frame['line'] ?? 0;
             $function = $frame['function'] ?? 'unknown';
-            $class    = $frame['class'] ?? '';
+            $class = $frame['class'] ?? '';
 
             $simplified[] = [
                 'location' => basename($file) . ':' . $line,
-                'call'     => $class ? "{$class}::{$function}" : $function,
+                'call' => $class ? "{$class}::{$function}" : $function,
             ];
 
             ++$count;
@@ -376,8 +372,8 @@ class ErrorHandler
     private static function generateSuggestions(VersaORMException $exception): array
     {
         $suggestions = [];
-        $errorCode   = $exception->getErrorCode();
-        $message     = $exception->getMessage();
+        $errorCode = $exception->getErrorCode();
+        $message = $exception->getMessage();
 
         switch ($errorCode) {
             case 'INVALID_IDENTIFIER':
@@ -433,7 +429,7 @@ class ErrorHandler
                 break;
         }
 
-        if (empty($suggestions)) {
+        if ($suggestions === []) {
             $suggestions[] = 'Check the VersaORM documentation for more information';
             $suggestions[] = 'Enable debug mode for more detailed error information';
         }
@@ -454,7 +450,7 @@ class ErrorHandler
         }
 
         // Escribir a archivo si está configurado el log path
-        if (self::$logPath) {
+        if (self::$logPath !== null && self::$logPath !== '' && self::$logPath !== '0') {
             self::writeErrorToFile($errorData);
         }
     }
@@ -464,19 +460,19 @@ class ErrorHandler
      */
     private static function writeErrorToFile(array $errorData): void
     {
-        if (!self::$logPath) {
+        if (self::$logPath === null || self::$logPath === '' || self::$logPath === '0') {
             return;
         }
 
         $logFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_' . date('Y-m-d') . '.log';
 
         $logEntry = [
-            'timestamp'  => date('Y-m-d H:i:s'),
+            'timestamp' => date('Y-m-d H:i:s'),
             'error_code' => $errorData['error']['error_code'],
-            'message'    => $errorData['error']['message'],
-            'origin'     => $errorData['origin'],
-            'query'      => $errorData['query']['sql'] ?? null,
-            'context'    => $errorData['context'],
+            'message' => $errorData['error']['message'],
+            'origin' => $errorData['origin'],
+            'query' => $errorData['query']['sql'] ?? null,
+            'context' => $errorData['context'],
         ];
 
         $logLine = json_encode($logEntry, JSON_UNESCAPED_UNICODE) . PHP_EOL;

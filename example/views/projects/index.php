@@ -45,9 +45,9 @@
                     <!-- Estadísticas del proyecto -->
                     <?php
                     // Usar directamente el modelo de proyecto ya provisto (instancia), evitando llamadas estáticas
-                    $tasks  = $project->tasks();
-            $members        = $project->members();
-            $completedTasks = array_filter($tasks, static fn ($t) => $t['status'] === 'done');
+                    $tasks = $project->tasks();
+            $members = $project->members();
+            $completedTasks = array_filter($tasks, static fn ($t): bool => $t['status'] === 'done');
             ?>
 
                     <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">

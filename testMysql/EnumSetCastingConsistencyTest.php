@@ -31,13 +31,13 @@ class EnumSetCastingConsistencyTest extends TestCase
 
     public function testEnumSetCastingConsistency(): void
     {
-        $model = new class('labels_enum_cast', self::$orm) extends VersaModel {
+        $model = new class ('labels_enum_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id'     => ['type' => 'int'],
+                    'id' => ['type' => 'int'],
                     'status' => ['type' => 'enum', 'values' => ['active', 'inactive']],
-                    'tags'   => ['type' => 'set', 'values' => ['work', 'urgent', 'personal']],
+                    'tags' => ['type' => 'set', 'values' => ['work', 'urgent', 'personal']],
                 ];
             }
         };

@@ -16,7 +16,7 @@ class SecurityTest extends TestCase
     public function testSqlInjectionInWhereClause(): void
     {
         $malicious = "' OR 1=1 --";
-        $users     = self::$orm->table('users')->where('email', '=', $malicious)->getAll();
+        $users = self::$orm->table('users')->where('email', '=', $malicious)->getAll();
         self::assertCount(0, $users);
     }
 
@@ -80,7 +80,7 @@ class SecurityTest extends TestCase
     public function testNullByteInjection(): void
     {
         $attack = "admin\x00'; DROP TABLE users; --";
-        $users  = self::$orm->table('users')->where('name', '=', $attack)->getAll();
+        $users = self::$orm->table('users')->where('name', '=', $attack)->getAll();
         self::assertCount(0, $users);
     }
 }

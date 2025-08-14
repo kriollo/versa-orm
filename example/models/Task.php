@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Exception;
+use VersaORM\VersaModel;
 
 use function in_array;
 
@@ -17,16 +18,16 @@ class Task extends BaseModel
     /**
      * Estados disponibles para las tareas.
      */
-    public const STATUS_TODO        = 'todo';
+    public const STATUS_TODO = 'todo';
     public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_DONE        = 'done';
+    public const STATUS_DONE = 'done';
 
     /**
      * Prioridades disponibles.
      */
-    public const PRIORITY_LOW    = 'low';
+    public const PRIORITY_LOW = 'low';
     public const PRIORITY_MEDIUM = 'medium';
-    public const PRIORITY_HIGH   = 'high';
+    public const PRIORITY_HIGH = 'high';
     public const PRIORITY_URGENT = 'urgent';
 
     protected string $table = 'tasks';
@@ -44,7 +45,7 @@ class Task extends BaseModel
     protected array $guarded = [];
 
     protected array $rules = [
-        'title'      => ['required', 'min:3', 'max:200'],
+        'title' => ['required', 'min:3', 'max:200'],
         'project_id' => ['required'],
     ];
 
@@ -128,7 +129,7 @@ class Task extends BaseModel
             if (isset($existing['id'])) {
                 $taskLabel = $this->load('task_labels', (int) $existing['id']);
 
-                if ($taskLabel) {
+                if ($taskLabel instanceof VersaModel) {
                     $taskLabel->trash();
                 }
             }
@@ -137,8 +138,8 @@ class Task extends BaseModel
         // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
             if (!empty($labelId)) {
-                $taskLabel           = $this->dispenseInstance('task_labels');
-                $taskLabel->task_id  = $this->id;
+                $taskLabel = $this->dispenseInstance('task_labels');
+                $taskLabel->task_id = $this->id;
                 $taskLabel->label_id = $labelId;
                 $taskLabel->store();
             }
@@ -202,18 +203,13 @@ class Task extends BaseModel
      */
     public function getPriorityClass(): string
     {
-        switch ($this->priority) {
-            case self::PRIORITY_URGENT:
-                return 'bg-red-100 text-red-800 border-red-200';
-            case self::PRIORITY_HIGH:
-                return 'bg-orange-100 text-orange-800 border-orange-200';
-            case self::PRIORITY_MEDIUM:
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case self::PRIORITY_LOW:
-                return 'bg-green-100 text-green-800 border-green-200';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
+        return match ($this->priority) {
+            self::PRIORITY_URGENT => 'bg-red-100 text-red-800 border-red-200',
+            self::PRIORITY_HIGH => 'bg-orange-100 text-orange-800 border-orange-200',
+            self::PRIORITY_MEDIUM => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+            self::PRIORITY_LOW => 'bg-green-100 text-green-800 border-green-200',
+            default => 'bg-gray-100 text-gray-800 border-gray-200',
+        };
     }
 
     /**
@@ -221,16 +217,12 @@ class Task extends BaseModel
      */
     public function getStatusClass(): string
     {
-        switch ($this->status) {
-            case self::STATUS_TODO:
-                return 'bg-gray-100 text-gray-800';
-            case self::STATUS_IN_PROGRESS:
-                return 'bg-blue-100 text-blue-800';
-            case self::STATUS_DONE:
-                return 'bg-green-100 text-green-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
+        return match ($this->status) {
+            self::STATUS_TODO => 'bg-gray-100 text-gray-800',
+            self::STATUS_IN_PROGRESS => 'bg-blue-100 text-blue-800',
+            self::STATUS_DONE => 'bg-green-100 text-green-800',
+            default => 'bg-gray-100 text-gray-800',
+        };
     }
 
     /**
@@ -259,24 +251,24 @@ class Task extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'title'       => ['type' => 'string', 'max_length' => 200, 'nullable' => false],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'title' => ['type' => 'string', 'max_length' => 200, 'nullable' => false],
             'description' => ['type' => 'text', 'nullable' => true],
-            'status'      => [
-                'type'     => 'enum',
-                'values'   => ['todo', 'in_progress', 'done'],
+            'status' => [
+                'type' => 'enum',
+                'values' => ['todo', 'in_progress', 'done'],
                 'nullable' => false,
-                'default'  => 'todo',
+                'default' => 'todo',
             ],
             'priority' => [
-                'type'     => 'enum',
-                'values'   => ['low', 'medium', 'high', 'urgent'],
+                'type' => 'enum',
+                'values' => ['low', 'medium', 'high', 'urgent'],
                 'nullable' => false,
-                'default'  => 'medium',
+                'default' => 'medium',
             ],
-            'due_date'   => ['type' => 'date', 'nullable' => true],
+            'due_date' => ['type' => 'date', 'nullable' => true],
             'project_id' => ['type' => 'int', 'nullable' => false],
-            'user_id'    => ['type' => 'int', 'nullable' => true],
+            'user_id' => ['type' => 'int', 'nullable' => true],
             'created_at' => ['type' => 'datetime', 'nullable' => false],
             'updated_at' => ['type' => 'datetime', 'nullable' => false],
         ];

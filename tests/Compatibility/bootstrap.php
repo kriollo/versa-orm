@@ -65,13 +65,13 @@ if (!is_dir($reportsDir)) {
 }
 
 // Configurar variables de entorno para tests
-$_ENV['TESTING']             = true;
+$_ENV['TESTING'] = true;
 $_ENV['PHP_VERSION_TESTING'] = true;
 
 // Función helper para logging de tests
 function logCompatibilityTest(string $message, string $level = 'INFO'): void
 {
-    $timestamp  = date('Y-m-d H:i:s');
+    $timestamp = date('Y-m-d H:i:s');
     $phpVersion = PHP_VERSION;
     $logMessage = "[{$timestamp}] [{$level}] [PHP {$phpVersion}] {$message}" . PHP_EOL;
 
@@ -90,7 +90,7 @@ logCompatibilityTest('Max Execution Time: ' . ini_get('max_execution_time'));
 
 // Verificar extensiones requeridas
 $requiredExtensions = ['pdo', 'json', 'mbstring'];
-$missingExtensions  = [];
+$missingExtensions = [];
 
 foreach ($requiredExtensions as $extension) {
     if (!extension_loaded($extension)) {
@@ -98,13 +98,13 @@ foreach ($requiredExtensions as $extension) {
     }
 }
 
-if (!empty($missingExtensions)) {
+if ($missingExtensions !== []) {
     logCompatibilityTest('Missing required extensions: ' . implode(', ', $missingExtensions), 'WARNING');
 }
 
 // Verificar extensiones recomendadas
 $recommendedExtensions = ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite', 'openssl', 'curl'];
-$missingRecommended    = [];
+$missingRecommended = [];
 
 foreach ($recommendedExtensions as $extension) {
     if (!extension_loaded($extension)) {
@@ -112,14 +112,14 @@ foreach ($recommendedExtensions as $extension) {
     }
 }
 
-if (!empty($missingRecommended)) {
+if ($missingRecommended !== []) {
     logCompatibilityTest('Missing recommended extensions: ' . implode(', ', $missingRecommended), 'INFO');
 }
 
 // Configurar handler de errores para tests
-set_error_handler(static function ($severity, $message, $file, $line) {
+set_error_handler(static function ($severity, $message, $file, $line): bool {
     // Solo log errores críticos durante tests
-    if ($severity & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR)) {
+    if (($severity & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR)) !== 0) {
         logCompatibilityTest("PHP Error: {$message} in {$file}:{$line}", 'ERROR');
     }
 
@@ -127,14 +127,14 @@ set_error_handler(static function ($severity, $message, $file, $line) {
 });
 
 // Configurar handler de excepciones no capturadas
-set_exception_handler(static function ($exception) {
+set_exception_handler(static function ($exception): void {
     logCompatibilityTest('Uncaught Exception: ' . $exception->getMessage() . ' in ' .
                         $exception->getFile() . ':' . $exception->getLine(), 'ERROR');
     logCompatibilityTest('Stack trace: ' . $exception->getTraceAsString(), 'ERROR');
 });
 
 // Configurar shutdown handler para cleanup
-register_shutdown_function(static function () {
+register_shutdown_function(static function (): void {
     $error = error_get_last();
 
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
@@ -149,11 +149,8 @@ register_shutdown_function(static function () {
     }
 });
 
-// Configuraciones específicas por versión PHP
-if (PHP_VERSION_ID >= 80000) {
-    // PHP 8.0+ configuraciones
-    logCompatibilityTest('PHP 8.0+ features available');
-}
+// PHP 8.0+ configuraciones
+logCompatibilityTest('PHP 8.0+ features available');
 
 if (PHP_VERSION_ID >= 80100) {
     // PHP 8.1+ configuraciones

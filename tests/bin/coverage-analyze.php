@@ -59,7 +59,6 @@ try {
     }
 
     $logger->info('Coverage analysis completed successfully');
-
 } catch (Exception $e) {
     $logger->error('Coverage analysis failed: ' . $e->getMessage());
     echo 'ERROR: ' . $e->getMessage() . "\n";
@@ -89,7 +88,7 @@ function runFullAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogger 
         $logger->info('Generating coverage alerts');
         $alerts = $analyzer->generateCoverageAlerts();
 
-        if (!empty($alerts)) {
+        if ($alerts !== []) {
             echo "\nCoverage Alerts:\n";
 
             foreach ($alerts as $alert) {
@@ -135,7 +134,6 @@ function runEngineAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogge
         }
 
         exit($threshold['passed'] ? 0 : 1);
-
     } catch (Exception $e) {
         echo "ERROR: Failed to analyze coverage for {$engine}: " . $e->getMessage() . "\n";
         exit(1);
@@ -179,7 +177,7 @@ function runAlertsAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogge
 
     $alerts = $analyzer->generateCoverageAlerts();
 
-    if (empty($alerts)) {
+    if ($alerts === []) {
         echo "No coverage alerts found!\n";
         exit(0);
     }
@@ -216,33 +214,23 @@ function runAlertsAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogge
 
 /**
  * Output results based on format.
- *
- * @param mixed $result
  */
-function outputResults($result, array $options): void
+function outputResults(mixed $result, array $options): void
 {
     $format = $options['format'] ?? 'text';
 
-    switch ($format) {
-        case 'json':
-            $output = json_encode([
-                'tool'      => $result->tool,
-                'score'     => $result->score,
-                'passed'    => $result->passed,
-                'issues'    => $result->issues,
-                'metrics'   => $result->metrics,
-                'timestamp' => $result->timestamp->format('Y-m-d H:i:s'),
-            ], JSON_PRETTY_PRINT);
-            break;
-
-        case 'html':
-            $output = generateHtmlOutput($result);
-            break;
-
-        default: // text
-            $output = generateTextOutput($result);
-            break;
-    }
+    $output = match ($format) {
+        'json' => json_encode([
+            'tool' => $result->tool,
+            'score' => $result->score,
+            'passed' => $result->passed,
+            'issues' => $result->issues,
+            'metrics' => $result->metrics,
+            'timestamp' => $result->timestamp->format('Y-m-d H:i:s'),
+        ], JSON_PRETTY_PRINT),
+        'html' => generateHtmlOutput($result),
+        default => generateTextOutput($result),
+    };
 
     if (isset($options['output'])) {
         file_put_contents($options['output'], $output);
@@ -254,10 +242,8 @@ function outputResults($result, array $options): void
 
 /**
  * Generate text output.
- *
- * @param mixed $result
  */
-function generateTextOutput($result): string
+function generateTextOutput(mixed $result): string
 {
     $output = "Coverage Analysis Results\n";
     $output .= "========================\n\n";
@@ -291,12 +277,10 @@ function generateTextOutput($result): string
 
 /**
  * Generate HTML output.
- *
- * @param mixed $result
  */
-function generateHtmlOutput($result): string
+function generateHtmlOutput(mixed $result): string
 {
-    $status      = $result->passed ? 'PASS' : 'FAIL';
+    $status = $result->passed ? 'PASS' : 'FAIL';
     $statusClass = $result->passed ? 'success' : 'error';
 
     $html = "<!DOCTYPE html>\n<html>\n<head>\n";
@@ -323,7 +307,7 @@ function generateHtmlOutput($result): string
     foreach ($result->metrics['engine_results'] as $engine => $engineResult) {
         if ($engineResult['success']) {
             $engineStatus = $engineResult['coverage_percentage'] >= $result->metrics['minimum_required'] ? 'PASS' : 'FAIL';
-            $engineClass  = $engineStatus === 'PASS' ? 'success' : 'error';
+            $engineClass = $engineStatus === 'PASS' ? 'success' : 'error';
             $html .= "<tr><td>{$engine}</td><td>{$engineResult['coverage_percentage']}%</td><td class=\"{$engineClass}\">{$engineStatus}</td></tr>\n";
         } else {
             $html .= "<tr><td>{$engine}</td><td>-</td><td class=\"error\">ERROR</td></tr>\n";
@@ -331,9 +315,8 @@ function generateHtmlOutput($result): string
     }
 
     $html .= "</table>\n";
-    $html .= "</body>\n</html>";
 
-    return $html;
+    return $html . "</body>\n</html>";
 }
 
 /**
@@ -342,12 +325,13 @@ function generateHtmlOutput($result): string
 function parseArguments(array $argv): array
 {
     $options = [];
+    $counter = count($argv);
 
-    for ($i = 1; $i < count($argv); ++$i) {
+    for ($i = 1; $i < $counter; ++$i) {
         $arg = $argv[$i];
 
-        if (strpos($arg, '--') === 0) {
-            if (strpos($arg, '=') !== false) {
+        if (str_starts_with($arg, '--')) {
+            if (str_contains($arg, '=')) {
                 [$key, $value] = explode('=', substr($arg, 2), 2);
                 $options[$key] = $value;
             } else {

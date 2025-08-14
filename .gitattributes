@@ -36,6 +36,8 @@ task_ok.md export-ignore
 /logs export-ignore
 /tests.sqlite export-ignore
 /cache_test.json export-ignore
+/var export-ignore
+/test export-ignore
 
 # Composer lock (opcional mantenerlo fuera del paquete para libs)
 composer.lock export-ignore

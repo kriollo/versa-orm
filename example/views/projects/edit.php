@@ -2,9 +2,7 @@
 
 use VersaORM\VersaORMException;
 
-/**
- * Vista para editar un proyecto existente.
- */
+// Vista para editar un proyecto existente.
 
 // Verifica que $project esté definido y es un objeto válido
 if (!isset($project) || !is_object($project)) {
@@ -124,8 +122,8 @@ foreach ($colors as $color) {
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
 
                                         <?php
-            $owner = array_filter($users, static fn ($u) => $u->id === $project->owner_id);
-echo $owner ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
+            $owner = array_filter($users, static fn ($u): bool => $u->id === $project->owner_id);
+echo $owner !== [] ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
 ?>
                                     </p>
                                     <p><i class="fas fa-calendar mr-2"></i>Creado: <?php echo isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''; ?></p>

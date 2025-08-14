@@ -19,36 +19,8 @@ use function sprintf;
  */
 class QualityResult
 {
-    public string $tool;
-
-    public int $score;
-
-    public array $issues;
-
-    public array $metrics;
-
-    public bool $passed;
-
-    public string $output;
-
-    public DateTime $timestamp;
-
-    public function __construct(
-        string $tool,
-        int $score,
-        array $issues,
-        array $metrics,
-        bool $passed,
-        string $output,
-        DateTime $timestamp,
-    ) {
-        $this->tool      = $tool;
-        $this->score     = $score;
-        $this->issues    = $issues;
-        $this->metrics   = $metrics;
-        $this->passed    = $passed;
-        $this->output    = $output;
-        $this->timestamp = $timestamp;
+    public function __construct(public string $tool, public int $score, public array $issues, public array $metrics, public bool $passed, public string $output, public DateTime $timestamp)
+    {
     }
 
     /**
@@ -73,7 +45,6 @@ class QualityResult
         }
 
         return 'critical';
-
     }
 
     /**
@@ -107,7 +78,7 @@ class QualityResult
      */
     public function getIssuesBySeverity(string $severity): array
     {
-        return array_filter($this->issues, static function ($issue) use ($severity) {
+        return array_filter($this->issues, static function ($issue) use ($severity): bool {
             if (is_array($issue) && isset($issue['severity'])) {
                 return $issue['severity'] === $severity;
             }
@@ -129,9 +100,9 @@ class QualityResult
      */
     public function getSummary(): string
     {
-        $level      = $this->getQualityLevel();
+        $level = $this->getQualityLevel();
         $issueCount = $this->getIssueCount();
-        $status     = $this->passed ? 'PASSED' : 'FAILED';
+        $status = $this->passed ? 'PASSED' : 'FAILED';
 
         return sprintf(
             '%s analysis: %s (score: %d/100, level: %s, issues: %d)',
@@ -177,17 +148,17 @@ class QualityResult
     public function toArray(): array
     {
         return [
-            'tool'                => $this->tool,
-            'score'               => $this->score,
-            'quality_level'       => $this->getQualityLevel(),
-            'passed'              => $this->passed,
-            'issue_count'         => $this->getIssueCount(),
+            'tool' => $this->tool,
+            'score' => $this->score,
+            'quality_level' => $this->getQualityLevel(),
+            'passed' => $this->passed,
+            'issue_count' => $this->getIssueCount(),
             'has_critical_issues' => $this->hasCriticalIssues(),
-            'issues'              => $this->issues,
-            'metrics'             => $this->metrics,
-            'recommendations'     => $this->getRecommendations(),
-            'output'              => $this->output,
-            'timestamp'           => $this->timestamp->format('Y-m-d H:i:s'),
+            'issues' => $this->issues,
+            'metrics' => $this->metrics,
+            'recommendations' => $this->getRecommendations(),
+            'output' => $this->output,
+            'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
         ];
     }
 }

@@ -37,13 +37,13 @@ class PsalmCLI
                 return $this->runSecurityChecks($argv);
 
             case 'metrics':
-                return $this->showMetrics($argv);
+                return $this->showMetrics();
 
             case 'baseline':
-                return $this->generateBaseline($argv);
+                return $this->generateBaseline();
 
             case 'validate-config':
-                return $this->validateConfig($argv);
+                return $this->validateConfig();
 
             case 'help':
             default:
@@ -58,7 +58,7 @@ class PsalmCLI
         echo "Running Psalm analysis...\n";
 
         $options = $this->parseOptions($argv);
-        $result  = $this->analyzer->analyze($options);
+        $result = $this->analyzer->analyze($options);
 
         echo 'Analysis completed in ' . number_format($result['execution_time'], 2) . "s\n";
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
@@ -76,7 +76,7 @@ class PsalmCLI
         // Generate HTML report if requested
         if (in_array('--html', $argv, true)) {
             $htmlReport = $this->analyzer->generateHTMLReport($result);
-            $htmlFile   = str_replace('.json', '.html', $result['report_file']);
+            $htmlFile = str_replace('.json', '.html', $result['report_file']);
             file_put_contents($htmlFile, $htmlReport);
             echo "HTML report saved to: {$htmlFile}\n";
         }
@@ -89,7 +89,7 @@ class PsalmCLI
         echo "Running Psalm security analysis...\n";
 
         $options = $this->parseOptions($argv);
-        $result  = $this->analyzer->analyzeSecurity($options);
+        $result = $this->analyzer->analyzeSecurity($options);
 
         echo 'Security analysis completed in ' . number_format($result['execution_time'], 2) . "s\n";
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
@@ -111,7 +111,7 @@ class PsalmCLI
         // Generate HTML report if requested
         if (in_array('--html', $argv, true)) {
             $htmlReport = $this->analyzer->generateHTMLReport($result);
-            $htmlFile   = str_replace('.json', '.html', $result['report_file']);
+            $htmlFile = str_replace('.json', '.html', $result['report_file']);
             file_put_contents($htmlFile, $htmlReport);
             echo "HTML report saved to: {$htmlFile}\n";
         }
@@ -124,7 +124,7 @@ class PsalmCLI
         echo "Running Psalm type analysis...\n";
 
         $options = $this->parseOptions($argv);
-        $result  = $this->analyzer->analyzeTypes($options);
+        $result = $this->analyzer->analyzeTypes($options);
 
         echo 'Type analysis completed in ' . number_format($result['execution_time'], 2) . "s\n";
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
@@ -167,12 +167,10 @@ class PsalmCLI
         return $checks['total_security_issues'] === 0 ? 0 : 1;
     }
 
-    private function showMetrics(array $argv): int
+    private function showMetrics(): int
     {
         echo "Calculating Psalm security and quality metrics...\n";
-
         $metrics = $this->analyzer->getSecurityMetrics();
-
         echo "\nSecurity & Quality Metrics:\n";
         echo '  Execution Time: ' . number_format($metrics['execution_time'], 2) . "s\n";
         echo '  Status: ' . ($metrics['passed'] ? 'PASSED' : 'FAILED') . "\n";
@@ -194,10 +192,9 @@ class PsalmCLI
         return $metrics['passed'] ? 0 : 1;
     }
 
-    private function generateBaseline(array $argv): int
+    private function generateBaseline(): int
     {
         echo "Generating Psalm baseline...\n";
-
         $result = $this->analyzer->generateBaseline();
 
         if ($result['success']) {
@@ -209,13 +206,11 @@ class PsalmCLI
         echo $result['output'] . "\n";
 
         return 1;
-
     }
 
-    private function validateConfig(array $argv): int
+    private function validateConfig(): int
     {
         echo "Validating Psalm configuration...\n";
-
         $validation = $this->analyzer->validateConfig();
 
         if ($validation['valid']) {
@@ -231,12 +226,11 @@ class PsalmCLI
         echo 'Error: ' . $validation['error'] . "\n";
 
         return 1;
-
     }
 
     private function displayIssues(array $issues, array $argv): void
     {
-        $verbose   = in_array('--verbose', $argv, true) || in_array('-v', $argv, true);
+        $verbose = in_array('--verbose', $argv, true) || in_array('-v', $argv, true);
         $maxIssues = $verbose ? count($issues) : min(10, count($issues));
 
         for ($i = 0; $i < $maxIssues; ++$i) {
@@ -253,16 +247,17 @@ class PsalmCLI
     private function parseOptions(array $argv): array
     {
         $options = [];
+        $counter = count($argv);
 
-        for ($i = 2; $i < count($argv); ++$i) {
+        for ($i = 2; $i < $counter; ++$i) {
             $arg = $argv[$i];
 
-            if (strpos($arg, '--') === 0) {
-                if (strpos($arg, '=') !== false) {
+            if (str_starts_with($arg, '--')) {
+                if (str_contains($arg, '=')) {
                     [$key, $value] = explode('=', substr($arg, 2), 2);
                     $options[$key] = $value;
                 } else {
-                    $key           = substr($arg, 2);
+                    $key = substr($arg, 2);
                     $options[$key] = true;
                 }
             }

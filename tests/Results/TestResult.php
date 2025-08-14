@@ -36,16 +36,16 @@ class TestResult
 
     public function __construct(array $data)
     {
-        $this->test_type      = $data['test_type'] ?? 'unknown';
-        $this->engine         = $data['engine'] ?? 'unknown';
-        $this->total_tests    = $data['total_tests'] ?? 0;
-        $this->passed_tests   = $data['passed_tests'] ?? 0;
-        $this->failed_tests   = $data['failed_tests'] ?? 0;
-        $this->skipped_tests  = $data['skipped_tests'] ?? 0;
+        $this->test_type = $data['test_type'] ?? 'unknown';
+        $this->engine = $data['engine'] ?? 'unknown';
+        $this->total_tests = $data['total_tests'] ?? 0;
+        $this->passed_tests = $data['passed_tests'] ?? 0;
+        $this->failed_tests = $data['failed_tests'] ?? 0;
+        $this->skipped_tests = $data['skipped_tests'] ?? 0;
         $this->execution_time = $data['execution_time'] ?? 0.0;
-        $this->failures       = $data['failures'] ?? [];
-        $this->metrics        = $data['metrics'] ?? [];
-        $this->timestamp      = $data['timestamp'] ?? new DateTime();
+        $this->failures = $data['failures'] ?? [];
+        $this->metrics = $data['metrics'] ?? [];
+        $this->timestamp = $data['timestamp'] ?? new DateTime();
     }
 
     /**
@@ -73,7 +73,7 @@ class TestResult
      */
     public function getSummary(): string
     {
-        $status      = $this->isSuccessful() ? '✅ EXITOSO' : '❌ FALLIDO';
+        $status = $this->isSuccessful() ? '✅ EXITOSO' : '❌ FALLIDO';
         $successRate = number_format($this->getSuccessRate(), 2);
 
         $summary = "=== Resumen de Tests ({$this->engine}) ===\n";
@@ -82,7 +82,7 @@ class TestResult
         $summary .= "Tasa de éxito: {$successRate}%\n";
         $summary .= 'Tiempo de ejecución: ' . number_format($this->execution_time, 2) . "s\n";
 
-        if (!empty($this->failures)) {
+        if ($this->failures !== []) {
             $summary .= "\n⚠️  Fallas:\n";
 
             foreach ($this->failures as $failure) {
@@ -103,18 +103,18 @@ class TestResult
     public function toArray(): array
     {
         return [
-            'test_type'      => $this->test_type,
-            'engine'         => $this->engine,
-            'total_tests'    => $this->total_tests,
-            'passed_tests'   => $this->passed_tests,
-            'failed_tests'   => $this->failed_tests,
-            'skipped_tests'  => $this->skipped_tests,
+            'test_type' => $this->test_type,
+            'engine' => $this->engine,
+            'total_tests' => $this->total_tests,
+            'passed_tests' => $this->passed_tests,
+            'failed_tests' => $this->failed_tests,
+            'skipped_tests' => $this->skipped_tests,
             'execution_time' => $this->execution_time,
-            'success_rate'   => $this->getSuccessRate(),
-            'is_successful'  => $this->isSuccessful(),
-            'failures'       => $this->failures,
-            'metrics'        => $this->metrics,
-            'timestamp'      => $this->timestamp->format('Y-m-d H:i:s'),
+            'success_rate' => $this->getSuccessRate(),
+            'is_successful' => $this->isSuccessful(),
+            'failures' => $this->failures,
+            'metrics' => $this->metrics,
+            'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
         ];
     }
 }

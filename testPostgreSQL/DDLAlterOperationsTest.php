@@ -31,11 +31,11 @@ final class DDLAlterOperationsTest extends TestCase
         // add foreign key
         $orm->schemaAlter('emp', [
             'addForeign' => [[
-                'name'       => 'fk_emp_dept',
-                'columns'    => ['dept_id'],
-                'refTable'   => 'dept',
+                'name' => 'fk_emp_dept',
+                'columns' => ['dept_id'],
+                'refTable' => 'dept',
                 'refColumns' => ['id'],
-                'onDelete'   => 'cascade',
+                'onDelete' => 'cascade',
             ]],
         ]);
         // Inserciones válidas
@@ -56,6 +56,14 @@ final class DDLAlterOperationsTest extends TestCase
     public function testRenameModifyDropColumns(): void
     {
         $orm = self::$orm;
+
+        // Ensure table doesn't exist before creating
+        try {
+            $orm->schemaDrop('tddl');
+        } catch (Exception) {
+            // Table doesn't exist, which is fine
+        }
+
         $orm->schemaCreate('tddl', [
             ['name' => 'a', 'type' => 'INT'],
             ['name' => 'b', 'type' => 'VARCHAR(50)'],
@@ -68,7 +76,7 @@ final class DDLAlterOperationsTest extends TestCase
         // drop column b
         $orm->schemaAlter('tddl', ['drop' => ['b']]);
 
-        $cols  = $orm->schema('columns', 'tddl');
+        $cols = $orm->schema('columns', 'tddl');
         $names = array_map(static fn ($c) => (string) ($c['name'] ?? $c['column_name'] ?? ''), $cols);
         self::assertContains('a_id', $names);
         self::assertNotContains('a', $names);

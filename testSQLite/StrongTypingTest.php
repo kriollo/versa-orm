@@ -81,12 +81,12 @@ class TestTypedModel extends VersaModel
     protected static function definePropertyTypes(): array
     {
         return [
-            'id'         => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'       => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
-            'settings'   => ['type' => 'json', 'nullable' => true],
-            'uuid'       => ['type' => 'uuid', 'nullable' => false],
-            'status'     => ['type' => 'enum', 'values' => ['active', 'inactive'], 'default' => 'active'],
-            'tags'       => ['type' => 'set', 'values' => ['work', 'personal', 'urgent']],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
+            'settings' => ['type' => 'json', 'nullable' => true],
+            'uuid' => ['type' => 'uuid', 'nullable' => false],
+            'status' => ['type' => 'enum', 'values' => ['active', 'inactive'], 'default' => 'active'],
+            'tags' => ['type' => 'set', 'values' => ['work', 'personal', 'urgent']],
             'created_at' => ['type' => 'datetime', 'nullable' => true],
         ];
     }

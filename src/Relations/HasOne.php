@@ -9,18 +9,12 @@ use VersaORM\VersaModel;
 
 class HasOne extends Relation
 {
-    public string $foreignKey;
-
-    public string $localKey;
-
-    public function __construct(QueryBuilder $query, VersaModel $parent, string $foreignKey, string $localKey)
+    public function __construct(QueryBuilder $query, VersaModel $parent, public string $foreignKey, public string $localKey)
     {
-        $this->foreignKey = $foreignKey;
-        $this->localKey   = $localKey;
         parent::__construct($query, $parent);
     }
 
-    public function getResults()
+    public function getResults(): mixed
     {
         $this->addConstraints();
 

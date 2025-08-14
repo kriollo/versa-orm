@@ -15,13 +15,13 @@ use VersaORM\VersaORMException;
  */
 class QueryBuilderSubqueriesTest extends TestCase
 {
-    private QueryBuilder $queryBuilder;
+    private ?QueryBuilder $queryBuilder = null;
 
-    private VersaORM $orm;
+    private ?VersaORM $orm = null;
 
     protected function setUp(): void
     {
-        $this->orm          = $this->createMock(VersaORM::class);
+        $this->orm = $this->createMock(VersaORM::class);
         $this->queryBuilder = new QueryBuilder($this->orm, 'users');
     }
 
@@ -139,7 +139,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     {
         $this->expectException(VersaORMException::class);
         $ref = new ReflectionClass($this->queryBuilder);
-        $m   = $ref->getMethod('buildSubQuery');
+        $m = $ref->getMethod('buildSubQuery');
         $m->setAccessible(true);
         $m->invoke($this->queryBuilder, 'invalid_type');
     }

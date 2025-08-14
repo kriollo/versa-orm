@@ -108,7 +108,6 @@ class PHPCompatibilityCLI
             $this->showRecommendations($report);
 
             return $report->isSuccessful() ? 0 : 1;
-
         } catch (Exception $e) {
             $this->error('Error: ' . $e->getMessage());
 
@@ -169,13 +168,13 @@ class PHPCompatibilityCLI
     private function generateReports(Report $report): void
     {
         $outputDir = $this->options['output'] ?? 'tests/reports/php-compatibility';
-        $format    = $this->options['format'] ?? 'both';
+        $format = $this->options['format'] ?? 'both';
 
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0755, true);
         }
 
-        $timestamp  = date('Y-m-d_H-i-s');
+        $timestamp = date('Y-m-d_H-i-s');
         $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 
         if ($format === 'json' || $format === 'both') {
@@ -186,7 +185,7 @@ class PHPCompatibilityCLI
 
         if ($format === 'html' || $format === 'both') {
             $htmlFile = "{$outputDir}/php-{$phpVersion}-compatibility-{$timestamp}.html";
-            $html     = $this->runner->exportMatrixToHtml();
+            $html = $this->runner->exportMatrixToHtml();
             file_put_contents($htmlFile, $html);
             $this->output("HTML report saved to: {$htmlFile}");
         }
@@ -199,14 +198,14 @@ class PHPCompatibilityCLI
      */
     private function showRecommendations(Report $report): void
     {
-        if (empty($report->recommendations)) {
+        if ($report->recommendations === []) {
             return;
         }
 
         $this->output('=== Recommendations ===');
 
         foreach ($report->recommendations as $recommendation) {
-            $type    = strtoupper($recommendation['type'] ?? 'INFO');
+            $type = strtoupper($recommendation['type'] ?? 'INFO');
             $message = $recommendation['message'] ?? '';
             $this->output("[{$type}] {$message}");
         }
@@ -218,18 +217,20 @@ class PHPCompatibilityCLI
      */
     private function parseArguments(array $argv): void
     {
-        for ($i = 1; $i < count($argv); ++$i) {
+        $counter = count($argv);
+
+        for ($i = 1; $i < $counter; ++$i) {
             $arg = $argv[$i];
 
             if ($arg === '--help' || $arg === '-h') {
                 $this->options['help'] = true;
             } elseif ($arg === '--verbose' || $arg === '-v') {
                 $this->options['verbose'] = true;
-            } elseif (strpos($arg, '--version=') === 0) {
+            } elseif (str_starts_with($arg, '--version=')) {
                 $this->options['version'] = substr($arg, 10);
-            } elseif (strpos($arg, '--output=') === 0) {
+            } elseif (str_starts_with($arg, '--output=')) {
                 $this->options['output'] = substr($arg, 9);
-            } elseif (strpos($arg, '--format=') === 0) {
+            } elseif (str_starts_with($arg, '--format=')) {
                 $format = substr($arg, 9);
 
                 if (!in_array($format, ['json', 'html', 'both'], true)) {

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use VersaORM\VersaORM;
+
 /**
  * Script para crear la base de datos y tablas usando VersaORM
  * Ejecutar desde línea de comandos: php setup_database.php.
@@ -21,7 +23,7 @@ try {
     // Obtener instancia de VersaORM
     $orm = VersaModel::getGlobalORM();
 
-    if (!$orm) {
+    if (!$orm instanceof VersaORM) {
         throw new Exception('No se pudo obtener la instancia de VersaORM');
     }
 
@@ -135,9 +137,9 @@ try {
 
     // Verificar si ya hay datos
     $existingUsers = $orm->exec('SELECT COUNT(*) as count FROM users', []);
-    $userCount     = 0;
+    $userCount = 0;
 
-    if ($existingUsers && is_array($existingUsers) && count($existingUsers) > 0 && isset($existingUsers[0]['count'])) {
+    if ($existingUsers && is_array($existingUsers) && $existingUsers !== [] && isset($existingUsers[0]['count'])) {
         $userCount = (int) $existingUsers[0]['count'];
     }
 
@@ -154,9 +156,9 @@ try {
 
         foreach ($users as $userData) {
             try {
-                $user               = VersaModel::dispense('users');
-                $user->name         = $userData['name'];
-                $user->email        = $userData['email'];
+                $user = VersaModel::dispense('users');
+                $user->name = $userData['name'];
+                $user->email = $userData['email'];
                 $user->avatar_color = $userData['avatar_color'];
                 $user->store();
                 echo "✓ Usuario '{$userData['name']}' creado\n";
@@ -176,9 +178,9 @@ try {
 
         foreach ($labels as $labelData) {
             try {
-                $label              = VersaModel::dispense('labels');
-                $label->name        = $labelData['name'];
-                $label->color       = $labelData['color'];
+                $label = VersaModel::dispense('labels');
+                $label->name = $labelData['name'];
+                $label->color = $labelData['color'];
                 $label->description = $labelData['description'];
                 $label->store();
                 echo "✓ Etiqueta '{$labelData['name']}' creada\n";
@@ -196,11 +198,11 @@ try {
 
         foreach ($projects as $projectData) {
             try {
-                $project              = VersaModel::dispense('projects');
-                $project->name        = $projectData['name'];
+                $project = VersaModel::dispense('projects');
+                $project->name = $projectData['name'];
                 $project->description = $projectData['description'];
-                $project->color       = $projectData['color'];
-                $project->owner_id    = $projectData['owner_id'];
+                $project->color = $projectData['color'];
+                $project->owner_id = $projectData['owner_id'];
                 $project->store();
                 echo "✓ Proyecto '{$projectData['name']}' creado\n";
             } catch (Exception $e) {
@@ -219,14 +221,14 @@ try {
 
         foreach ($tasks as $taskData) {
             try {
-                $task              = VersaModel::dispense('tasks');
-                $task->title       = $taskData['title'];
+                $task = VersaModel::dispense('tasks');
+                $task->title = $taskData['title'];
                 $task->description = $taskData['description'];
-                $task->status      = $taskData['status'];
-                $task->priority    = $taskData['priority'];
-                $task->project_id  = $taskData['project_id'];
-                $task->user_id     = $taskData['user_id'];
-                $task->due_date    = $taskData['due_date'];
+                $task->status = $taskData['status'];
+                $task->priority = $taskData['priority'];
+                $task->project_id = $taskData['project_id'];
+                $task->user_id = $taskData['user_id'];
+                $task->due_date = $taskData['due_date'];
                 $task->store();
                 echo "✓ Tarea '{$taskData['title']}' creada\n";
             } catch (Exception $e) {
@@ -289,7 +291,7 @@ try {
 
         foreach ($notes as $noteData) {
             try {
-                $note          = VersaModel::dispense('task_notes');
+                $note = VersaModel::dispense('task_notes');
                 $note->content = $noteData['content'];
                 $note->task_id = $noteData['task_id'];
                 $note->user_id = $noteData['user_id'];

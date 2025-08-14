@@ -22,9 +22,9 @@ trait HandlesErrors
      * Configuración de manejo de errores para este modelo.
      */
     protected static array $errorConfig = [
-        'log_errors'          => true,
-        'throw_on_error'      => true,
-        'format_for_api'      => false,
+        'log_errors' => true,
+        'throw_on_error' => true,
+        'format_for_api' => false,
         'include_suggestions' => true,
     ];
 
@@ -90,9 +90,7 @@ trait HandlesErrors
      */
     public function safeSave(): mixed
     {
-        return $this->withErrorHandling(function () {
-            return $this->save();
-        }, ['operation' => 'save']);
+        return $this->withErrorHandling(fn () => $this->save(), ['operation' => 'save']);
     }
 
     /**
@@ -100,9 +98,7 @@ trait HandlesErrors
      */
     public function safeStore(): mixed
     {
-        return $this->withErrorHandling(function () {
-            return $this->store();
-        }, ['operation' => 'store']);
+        return $this->withErrorHandling(fn () => $this->store(), ['operation' => 'store']);
     }
 
     /**
@@ -110,9 +106,7 @@ trait HandlesErrors
      */
     public function safeUpdate(array $data): mixed
     {
-        return $this->withErrorHandling(function () use ($data) {
-            return $this->update($data);
-        }, ['operation' => 'update', 'data' => $data]);
+        return $this->withErrorHandling(fn () => $this->update($data), ['operation' => 'update', 'data' => $data]);
     }
 
     /**
@@ -120,9 +114,7 @@ trait HandlesErrors
      */
     public function safeDelete(): mixed
     {
-        return $this->withErrorHandling(function () {
-            return $this->delete();
-        }, ['operation' => 'delete']);
+        return $this->withErrorHandling(fn () => $this->delete(), ['operation' => 'delete']);
     }
 
     /**
@@ -130,21 +122,15 @@ trait HandlesErrors
      */
     public function safeUpsert(array $uniqueKeys, array $updateColumns = []): mixed
     {
-        return $this->withErrorHandling(function () use ($uniqueKeys, $updateColumns) {
-            return $this->upsert($uniqueKeys, $updateColumns);
-        }, ['operation' => 'upsert', 'unique_keys' => $uniqueKeys]);
+        return $this->withErrorHandling(fn () => $this->upsert($uniqueKeys, $updateColumns), ['operation' => 'upsert', 'unique_keys' => $uniqueKeys]);
     }
 
     /**
      * Find seguro con manejo de errores.
-     *
-     * @param mixed $id
      */
-    public static function safeFind($id): mixed
+    public static function safeFind(mixed $id): mixed
     {
-        return static::withStaticErrorHandling(static function () use ($id) {
-            return static::find($id);
-        }, ['operation' => 'find', 'id' => $id]);
+        return static::withStaticErrorHandling(static fn () => static::find($id), ['operation' => 'find', 'id' => $id]);
     }
 
     /**
@@ -152,9 +138,7 @@ trait HandlesErrors
      */
     public static function safeFindAll(array $conditions = []): mixed
     {
-        return static::withStaticErrorHandling(static function () use ($conditions) {
-            return static::findAll($conditions);
-        }, ['operation' => 'findAll', 'conditions' => $conditions]);
+        return static::withStaticErrorHandling(static fn () => static::findAll($conditions), ['operation' => 'findAll', 'conditions' => $conditions]);
     }
 
     /**
@@ -162,21 +146,19 @@ trait HandlesErrors
      */
     public static function getErrorStats(): array
     {
-        $allErrors   = ErrorHandler::getErrorLog();
-        $modelErrors = array_filter($allErrors, static function ($error) {
-            return ($error['context']['model_class'] ?? '') === static::class;
-        });
+        $allErrors = ErrorHandler::getErrorLog();
+        $modelErrors = array_filter($allErrors, static fn ($error): bool => ($error['context']['model_class'] ?? '') === static::class);
 
         $stats = [
-            'total_errors'       => count($modelErrors),
-            'error_types'        => [],
+            'total_errors' => count($modelErrors),
+            'error_types' => [],
             'most_common_errors' => [],
-            'recent_errors'      => array_slice($modelErrors, -5),
+            'recent_errors' => array_slice($modelErrors, -5),
         ];
 
         // Contar tipos de errores
         foreach ($modelErrors as $error) {
-            $errorCode                        = $error['error']['error_code'];
+            $errorCode = $error['error']['error_code'];
             $stats['error_types'][$errorCode] = ($stats['error_types'][$errorCode] ?? 0) + 1;
         }
 
@@ -208,14 +190,14 @@ trait HandlesErrors
     {
         // Agregar contexto del modelo
         $modelContext = array_merge($context, [
-            'model_class'       => static::class,
-            'model_table'       => $this->getTable() ?? 'unknown',
-            'model_attributes'  => $this->attributes ?? [],
+            'model_class' => static::class,
+            'model_table' => $this->getTable() ?? 'unknown',
+            'model_attributes' => $this->attributes ?? [],
             'operation_context' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3),
         ]);
 
         // Procesar el error
-        $errorData       = ErrorHandler::handleException($exception, $modelContext);
+        $errorData = ErrorHandler::handleException($exception, $modelContext);
         $this->lastError = $errorData;
 
         // Decidir qué hacer basado en la configuración
@@ -238,10 +220,10 @@ trait HandlesErrors
     {
         $response = [
             'success' => false,
-            'error'   => [
+            'error' => [
                 'message' => $errorData['error']['message'],
-                'code'    => $errorData['error']['error_code'],
-                'type'    => 'database_error',
+                'code' => $errorData['error']['error_code'],
+                'type' => 'database_error',
             ],
         ];
 
@@ -252,8 +234,8 @@ trait HandlesErrors
         // En modo debug, incluir más información
         if (ErrorHandler::isDebugMode()) {
             $response['debug'] = [
-                'query'   => $errorData['query'],
-                'origin'  => $errorData['origin'],
+                'query' => $errorData['query'],
+                'origin' => $errorData['origin'],
                 'context' => $errorData['context'],
             ];
         }
@@ -270,7 +252,7 @@ trait HandlesErrors
             return $operation();
         } catch (VersaORMException $e) {
             $modelContext = array_merge($context, [
-                'model_class'      => static::class,
+                'model_class' => static::class,
                 'static_operation' => true,
             ]);
 
@@ -341,7 +323,7 @@ trait HandlesErrors
             $result = static::find($this->attributes['id']);
 
             return $result !== null;
-        } catch (VersaORMException $e) {
+        } catch (VersaORMException) {
             return false;
         }
     }

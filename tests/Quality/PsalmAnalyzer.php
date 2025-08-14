@@ -19,23 +19,17 @@ class PsalmAnalyzer
 {
     private string $psalmPath;
 
-    private string $configPath;
-
-    private string $reportsDir;
-
     public function __construct(
         ?string $psalmPath = null,
-        string $configPath = 'psalm.xml',
-        string $reportsDir = 'tests/reports/psalm',
+        private string $configPath = 'psalm.xml',
+        private string $reportsDir = 'tests/reports/psalm',
     ) {
         // Auto-detect Psalm path based on OS
         if ($psalmPath === null) {
             $psalmPath = $this->detectPsalmPath();
         }
 
-        $this->psalmPath  = $psalmPath;
-        $this->configPath = $configPath;
-        $this->reportsDir = $reportsDir;
+        $this->psalmPath = $psalmPath;
 
         if (!is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
@@ -47,13 +41,13 @@ class PsalmAnalyzer
      */
     public function analyze(array $options = []): array
     {
-        $timestamp  = new DateTime();
+        $timestamp = new DateTime();
         $reportFile = $this->reportsDir . '/psalm-' . $timestamp->format('Y-m-d-H-i-s') . '.json';
 
         $command = $this->buildCommand($options);
 
-        $startTime  = microtime(true);
-        $output     = [];
+        $startTime = microtime(true);
+        $output = [];
         $returnCode = 0;
 
         exec($command, $output, $returnCode);
@@ -61,17 +55,17 @@ class PsalmAnalyzer
         $executionTime = microtime(true) - $startTime;
 
         $result = [
-            'timestamp'       => $timestamp->format('c'),
-            'execution_time'  => $executionTime,
-            'return_code'     => $returnCode,
-            'command'         => $command,
-            'output'          => implode("\n", $output),
-            'report_file'     => $reportFile,
-            'passed'          => $returnCode === 0,
-            'issues'          => [],
+            'timestamp' => $timestamp->format('c'),
+            'execution_time' => $executionTime,
+            'return_code' => $returnCode,
+            'command' => $command,
+            'output' => implode("\n", $output),
+            'report_file' => $reportFile,
+            'passed' => $returnCode === 0,
+            'issues' => [],
             'security_issues' => [],
-            'type_issues'     => [],
-            'summary'         => [],
+            'type_issues' => [],
+            'summary' => [],
         ];
 
         // Parse output for issues
@@ -90,7 +84,7 @@ class PsalmAnalyzer
     {
         $securityOptions = array_merge($options, [
             '--taint-analysis' => true,
-            '--report'         => $this->reportsDir . '/psalm-security-' . date('Y-m-d-H-i-s') . '.json',
+            '--report' => $this->reportsDir . '/psalm-security-' . date('Y-m-d-H-i-s') . '.json',
         ]);
 
         return $this->analyze($securityOptions);
@@ -116,13 +110,13 @@ class PsalmAnalyzer
         $result = $this->analyzeSecurity(['--output-format' => 'json']);
 
         $metrics = [
-            'execution_time'    => $result['execution_time'],
-            'passed'            => $result['passed'],
-            'total_issues'      => count($result['issues']),
-            'security_issues'   => count($result['security_issues']),
-            'type_issues'       => count($result['type_issues']),
-            'issue_categories'  => [],
-            'security_score'    => 0,
+            'execution_time' => $result['execution_time'],
+            'passed' => $result['passed'],
+            'total_issues' => count($result['issues']),
+            'security_issues' => count($result['security_issues']),
+            'type_issues' => count($result['type_issues']),
+            'issue_categories' => [],
+            'security_score' => 0,
             'type_safety_score' => 0,
         ];
 
@@ -140,10 +134,10 @@ class PsalmAnalyzer
         $totalLines = $this->countLinesOfCode();
 
         if ($totalLines > 0) {
-            $securityIssueDensity      = ($metrics['security_issues'] / $totalLines) * 1000;
+            $securityIssueDensity = ($metrics['security_issues'] / $totalLines) * 1000;
             $metrics['security_score'] = max(0, 100 - $securityIssueDensity);
 
-            $typeIssueDensity             = ($metrics['type_issues'] / $totalLines) * 1000;
+            $typeIssueDensity = ($metrics['type_issues'] / $totalLines) * 1000;
             $metrics['type_safety_score'] = max(0, 100 - $typeIssueDensity);
         }
 
@@ -161,14 +155,14 @@ class PsalmAnalyzer
             'psalm-baseline.xml',
         );
 
-        $output     = [];
+        $output = [];
         $returnCode = 0;
 
         exec($command, $output, $returnCode);
 
         return [
-            'success'       => $returnCode === 0,
-            'output'        => implode("\n", $output),
+            'success' => $returnCode === 0,
+            'output' => implode("\n", $output),
             'baseline_file' => 'psalm-baseline.xml',
         ];
     }
@@ -187,10 +181,10 @@ class PsalmAnalyzer
 
         // Try to validate the XML configuration
         libxml_use_internal_errors(true);
-        $xml    = simplexml_load_file($this->configPath);
+        $xml = simplexml_load_file($this->configPath);
         $errors = libxml_get_errors();
 
-        if ($xml === false || !empty($errors)) {
+        if ($xml === false || $errors !== []) {
             $errorMessages = [];
 
             foreach ($errors as $error) {
@@ -204,11 +198,11 @@ class PsalmAnalyzer
         }
 
         return [
-            'valid'          => true,
-            'error_level'    => (string) $xml['errorLevel'] ?? 'unknown',
-            'php_version'    => (string) $xml['phpVersion'] ?? 'unknown',
+            'valid' => true,
+            'error_level' => (string) $xml['errorLevel'] ?? 'unknown',
+            'php_version' => (string) $xml['phpVersion'] ?? 'unknown',
             'taint_analysis' => isset($xml->issueHandlers->TaintedInput),
-            'strict_mode'    => isset($xml['strictBinaryOperands']) && (string) $xml['strictBinaryOperands'] === 'true',
+            'strict_mode' => isset($xml['strictBinaryOperands']) && (string) $xml['strictBinaryOperands'] === 'true',
         ];
     }
 
@@ -218,21 +212,21 @@ class PsalmAnalyzer
     public function runSecurityChecks(): array
     {
         $checks = [
-            'sql_injection'       => $this->checkSQLInjection(),
+            'sql_injection' => $this->checkSQLInjection(),
             'xss_vulnerabilities' => $this->checkXSSVulnerabilities(),
-            'file_inclusion'      => $this->checkFileInclusion(),
-            'command_injection'   => $this->checkCommandInjection(),
-            'tainted_data'        => $this->checkTaintedData(),
+            'file_inclusion' => $this->checkFileInclusion(),
+            'command_injection' => $this->checkCommandInjection(),
+            'tainted_data' => $this->checkTaintedData(),
         ];
 
-        $totalIssues  = array_sum(array_column($checks, 'issues_found'));
+        $totalIssues = array_sum(array_column($checks, 'issues_found'));
         $overallScore = $totalIssues === 0 ? 100 : max(0, 100 - ($totalIssues * 10));
 
         return [
-            'checks'                => $checks,
+            'checks' => $checks,
             'total_security_issues' => $totalIssues,
-            'security_score'        => $overallScore,
-            'timestamp'             => date('c'),
+            'security_score' => $overallScore,
+            'timestamp' => date('c'),
         ];
     }
 
@@ -315,7 +309,7 @@ class PsalmAnalyzer
             $html .= '</div>';
         }
 
-        $html .= '<div class="section">
+        return $html . ('<div class="section">
             <h2>Full Output</h2>
             <pre>' . htmlspecialchars($analysisResult['output']) . '</pre>
         </div>
@@ -325,9 +319,7 @@ class PsalmAnalyzer
             <pre>' . htmlspecialchars($analysisResult['command']) . '</pre>
         </div>
     </body>
-</html>';
-
-        return $html;
+</html>');
     }
 
     /**
@@ -367,12 +359,12 @@ class PsalmAnalyzer
      */
     private function commandExists(string $command): bool
     {
-        $isWindows   = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
         $testCommand = $isWindows ? "where {$command}" : "which {$command}";
 
         $output = shell_exec($testCommand);
 
-        return !empty($output);
+        return !($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -387,7 +379,7 @@ class PsalmAnalyzer
 
         // Add default options
         $defaultOptions = [
-            '--show-info'   => false,
+            '--show-info' => false,
             '--no-progress' => true,
         ];
 
@@ -410,28 +402,28 @@ class PsalmAnalyzer
      */
     private function parseOutput(array $output, array &$result): void
     {
-        $issues         = [];
+        $issues = [];
         $securityIssues = [];
-        $typeIssues     = [];
+        $typeIssues = [];
 
         foreach ($output as $line) {
             // Parse JSON output if available
-            if (strpos($line, '{') === 0) {
+            if (str_starts_with($line, '{')) {
                 $decoded = json_decode($line, true);
 
                 if ($decoded !== null && isset($decoded['type'])) {
                     $issue = [
-                        'type'     => $decoded['type'],
-                        'message'  => $decoded['message'] ?? '',
-                        'file'     => $decoded['file_name'] ?? '',
-                        'line'     => $decoded['line_from'] ?? 0,
+                        'type' => $decoded['type'],
+                        'message' => $decoded['message'] ?? '',
+                        'file' => $decoded['file_name'] ?? '',
+                        'line' => $decoded['line_from'] ?? 0,
                         'severity' => $decoded['severity'] ?? 'error',
                     ];
 
                     $issues[] = $issue;
 
                     // Categorize security issues
-                    if (strpos($issue['type'], 'Tainted') !== false) {
+                    if (str_contains($issue['type'], 'Tainted')) {
                         $securityIssues[] = $issue;
                     } else {
                         $typeIssues[] = $issue;
@@ -441,14 +433,14 @@ class PsalmAnalyzer
 
             // Parse text output for summary
             if (preg_match('/(\d+) errors?, (\d+) warnings?/', $line, $matches)) {
-                $result['summary']['errors']   = (int) $matches[1];
+                $result['summary']['errors'] = (int) $matches[1];
                 $result['summary']['warnings'] = (int) $matches[2];
             }
         }
 
-        $result['issues']          = $issues;
+        $result['issues'] = $issues;
         $result['security_issues'] = $securityIssues;
-        $result['type_issues']     = $typeIssues;
+        $result['type_issues'] = $typeIssues;
     }
 
     /**
@@ -457,7 +449,7 @@ class PsalmAnalyzer
     private function countLinesOfCode(): int
     {
         $totalLines = 0;
-        $iterator   = new RecursiveIteratorIterator(
+        $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator('src'),
         );
 
@@ -477,14 +469,12 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $sqlInjectionIssues = array_filter($result['issues'], static function ($issue) {
-            return strpos($issue['type'], 'TaintedSql') !== false;
-        });
+        $sqlInjectionIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedSql'));
 
         return [
             'issues_found' => count($sqlInjectionIssues),
-            'details'      => $sqlInjectionIssues,
-            'description'  => 'SQL injection vulnerability detection',
+            'details' => $sqlInjectionIssues,
+            'description' => 'SQL injection vulnerability detection',
         ];
     }
 
@@ -495,14 +485,12 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $xssIssues = array_filter($result['issues'], static function ($issue) {
-            return strpos($issue['type'], 'TaintedHtml') !== false;
-        });
+        $xssIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedHtml'));
 
         return [
             'issues_found' => count($xssIssues),
-            'details'      => $xssIssues,
-            'description'  => 'Cross-site scripting (XSS) vulnerability detection',
+            'details' => $xssIssues,
+            'description' => 'Cross-site scripting (XSS) vulnerability detection',
         ];
     }
 
@@ -513,14 +501,12 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $fileIssues = array_filter($result['issues'], static function ($issue) {
-            return strpos($issue['type'], 'TaintedFile') !== false;
-        });
+        $fileIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedFile'));
 
         return [
             'issues_found' => count($fileIssues),
-            'details'      => $fileIssues,
-            'description'  => 'File inclusion vulnerability detection',
+            'details' => $fileIssues,
+            'description' => 'File inclusion vulnerability detection',
         ];
     }
 
@@ -531,14 +517,12 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $commandIssues = array_filter($result['issues'], static function ($issue) {
-            return strpos($issue['type'], 'TaintedShell') !== false;
-        });
+        $commandIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedShell'));
 
         return [
             'issues_found' => count($commandIssues),
-            'details'      => $commandIssues,
-            'description'  => 'Command injection vulnerability detection',
+            'details' => $commandIssues,
+            'description' => 'Command injection vulnerability detection',
         ];
     }
 
@@ -549,14 +533,12 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $taintedIssues = array_filter($result['issues'], static function ($issue) {
-            return strpos($issue['type'], 'TaintedInput') !== false;
-        });
+        $taintedIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedInput'));
 
         return [
             'issues_found' => count($taintedIssues),
-            'details'      => $taintedIssues,
-            'description'  => 'General tainted data flow detection',
+            'details' => $taintedIssues,
+            'description' => 'General tainted data flow detection',
         ];
     }
 }

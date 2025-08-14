@@ -11,42 +11,21 @@ use Exception;
  */
 class VersaORMException extends Exception
 {
-    private ?string $query;
-
-    /**
-     * @var array<int, mixed>
-     */
-    private array $bindings;
-
-    private string $errorCode;
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $errorDetails;
-
-    private ?string $sqlState;
-
     /**
      * @param array<int, mixed> $bindings
      * @param array<string, mixed> $errorDetails
      */
     public function __construct(
         string $message,
-        string $errorCode = 'UNKNOWN_ERROR',
-        ?string $query = null,
-        array $bindings = [],
-        array $errorDetails = [],
-        ?string $sqlState = null,
+        private string $errorCode = 'UNKNOWN_ERROR',
+        private ?string $query = null,
+        private array $bindings = [],
+        private array $errorDetails = [],
+        private ?string $sqlState = null,
         int $code = 0,
         ?Exception $previous = null,
     ) {
         parent::__construct($message, $code, $previous);
-        $this->errorCode    = $errorCode;
-        $this->query        = $query;
-        $this->bindings     = $bindings;
-        $this->errorDetails = $errorDetails;
-        $this->sqlState     = $sqlState;
     }
 
     /**

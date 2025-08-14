@@ -12,7 +12,6 @@ use Throwable;
 use Traversable;
 use VersaORM\SQL\PdoEngine;
 
-use function array_key_exists;
 use function in_array;
 use function is_array;
 use function is_bool;
@@ -147,9 +146,9 @@ class VersaORM
     public function __construct(array $config = [])
     {
         // Establecer configuración primero para decidir motor. Por defecto: PDO.
-        if (!empty($config)) {
+        if ($config !== []) {
             /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $normalized */
-            $normalized   = $config;
+            $normalized = $config;
             $this->config = $normalized;
         }
 
@@ -160,7 +159,7 @@ class VersaORM
         $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
         if ($engine === '' || $engine === 'default') {
-            $engine                 = 'pdo';
+            $engine = 'pdo';
             $this->config['engine'] = 'pdo';
         }
 
@@ -180,7 +179,7 @@ class VersaORM
     public function setConfig(array $config): void
     {
         /** @var array{engine?:string,driver?:string,host?:string,port?:int|string,database?:string,database_type?:string,charset?:string,username?:string,password?:string,debug?:bool,options?:array<string,mixed>} $normalized */
-        $normalized   = $config;
+        $normalized = $config;
         $this->config = $normalized;
     }
 
@@ -344,12 +343,12 @@ class VersaORM
     public function schemaCreate(string $table, array $columns, array $options = []): void
     {
         $this->validateFreezeOperation('createTable');
-        $driver      = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q           = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
+        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
         $ifNotExists = !empty($options['if_not_exists']);
 
-        $colSql             = [];
-        $pkCols             = [];
+        $colSql = [];
+        $pkCols = [];
         $sqliteInlinePkUsed = false; // Para SQLite, usamos PK inline solo cuando es INTEGER PRIMARY KEY autoincremental
 
         /** @var list<ColumnDef> $columns */
@@ -360,12 +359,12 @@ class VersaORM
             if ($name === '') {
                 continue;
             }
-            $nullable      = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
+            $nullable = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
             $defaultExists = array_key_exists('default', $col);
             /** @var mixed $default */
             $default = $col['default'] ?? null;
             $primary = !empty($col['primary']);
-            $auto    = !empty($col['autoIncrement']);
+            $auto = !empty($col['autoIncrement']);
 
             // Ajustes por dialecto para autoincrement
             $colType = $type;
@@ -384,7 +383,7 @@ class VersaORM
 
             if ($primary && $driver === 'sqlite' && $auto) {
                 // En SQLite la PK autoincremental debe ser exactamente INTEGER PRIMARY KEY
-                $parts              = [$q($name) . ' INTEGER PRIMARY KEY'];
+                $parts = [$q($name) . ' INTEGER PRIMARY KEY'];
                 $sqliteInlinePkUsed = true;
             } else {
                 if (!$nullable) {
@@ -408,12 +407,12 @@ class VersaORM
         }
 
         if (!empty($options['primary_key'])) {
-            $pk     = (array) $options['primary_key'];
+            $pk = (array) $options['primary_key'];
             $pkCols = array_map($q, $pk);
         }
 
         // Para SQLite, permitimos PRIMARY KEY a nivel de tabla cuando no se usó inline (INTEGER PRIMARY KEY)
-        if (!empty($pkCols) && ($driver !== 'sqlite' || ($driver === 'sqlite' && !$sqliteInlinePkUsed))) {
+        if ($pkCols !== [] && ($driver !== 'sqlite' || ($driver === 'sqlite' && !$sqliteInlinePkUsed))) {
             $colSql[] = 'PRIMARY KEY (' . implode(', ', $pkCols) . ')';
         }
 
@@ -427,10 +426,10 @@ class VersaORM
             $cname = isset($uq['name']) ? $q((string) $uq['name']) : null;
             /** @var list<string> $uqCols */
             $uqCols = (array) ($uq['columns'] ?? []);
-            $cols   = array_map($q, $uqCols);
+            $cols = array_map($q, $uqCols);
 
-            if (!empty($cols)) {
-                $colSql[] = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'UNIQUE (' . implode(', ', $cols) . ')';
+            if ($cols !== []) {
+                $colSql[] = ($cname !== null && $cname !== '' && $cname !== '0' ? ('CONSTRAINT ' . $cname . ' ') : '') . 'UNIQUE (' . implode(', ', $cols) . ')';
             }
         }
         /** @var list<ForeignConstraintDef> $foreignList */
@@ -439,15 +438,15 @@ class VersaORM
         foreach ($foreignList as $fk) {
             $cname = isset($fk['name']) ? $q((string) $fk['name']) : null;
             /** @var list<string> $fkCols */
-            $fkCols   = (array) ($fk['columns'] ?? []);
-            $cols     = array_map($q, $fkCols);
+            $fkCols = (array) ($fk['columns'] ?? []);
+            $cols = array_map($q, $fkCols);
             $refTable = isset($fk['refTable']) ? $q((string) $fk['refTable']) : null;
             /** @var list<string> $fkRefCols */
             $fkRefCols = (array) ($fk['refColumns'] ?? []);
-            $refCols   = array_map($q, $fkRefCols);
+            $refCols = array_map($q, $fkRefCols);
 
-            if (!empty($cols) && $refTable && !empty($refCols)) {
-                $line = ($cname ? ('CONSTRAINT ' . $cname . ' ') : '') . 'FOREIGN KEY (' . implode(', ', $cols) . ') REFERENCES ' . $refTable . ' (' . implode(', ', $refCols) . ')';
+            if ($cols !== [] && $refTable && $refCols !== []) {
+                $line = ($cname !== null && $cname !== '' && $cname !== '0' ? ('CONSTRAINT ' . $cname . ' ') : '') . 'FOREIGN KEY (' . implode(', ', $cols) . ') REFERENCES ' . $refTable . ' (' . implode(', ', $refCols) . ')';
 
                 if (!empty($fk['onDelete'])) {
                     $line .= ' ON DELETE ' . strtoupper((string) $fk['onDelete']);
@@ -462,7 +461,7 @@ class VersaORM
 
         $tableIdent = $q($table);
         $createHead = 'CREATE TABLE ' . ($ifNotExists ? 'IF NOT EXISTS ' : '') . $tableIdent;
-        $sql        = $createHead . ' (' . implode(', ', $colSql) . ')';
+        $sql = $createHead . ' (' . implode(', ', $colSql) . ')';
 
         if ($driver === 'mysql' || $driver === 'mariadb') {
             if (!empty($options['engine'])) {
@@ -499,7 +498,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('alterTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
 
         $tableIdent = $q($table);
         /** @var AlterChanges $changes */
@@ -516,7 +515,7 @@ class VersaORM
                 if ($name === '') {
                     continue;
                 }
-                $nullable      = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
+                $nullable = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
                 $defaultExists = array_key_exists('default', $col);
                 /** @var mixed $default */
                 $default = $col['default'] ?? null;
@@ -533,7 +532,7 @@ class VersaORM
                 $clauses[] = implode(' ', $parts);
             }
 
-            if (!empty($clauses)) {
+            if ($clauses !== []) {
                 $sql = 'ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses);
                 $this->exec($sql);
             }
@@ -564,10 +563,10 @@ class VersaORM
             $addForeign = (array) $changes['addForeign'];
 
             foreach ($addForeign as $fk) {
-                $name     = (string) ($fk['name'] ?? '');
-                $cols     = (array) ($fk['columns'] ?? []);
+                $name = (string) ($fk['name'] ?? '');
+                $cols = (array) ($fk['columns'] ?? []);
                 $refTable = (string) ($fk['refTable'] ?? '');
-                $refCols  = (array) ($fk['refColumns'] ?? []);
+                $refCols = (array) ($fk['refColumns'] ?? []);
 
                 if ($name && $cols && $refTable && $refCols) {
                     $line = 'ALTER TABLE ' . $tableIdent . ' ADD CONSTRAINT ' . $q($name) . ' FOREIGN KEY (' . implode(', ', array_map($q, $cols)) . ') REFERENCES ' . $q($refTable) . ' (' . implode(', ', array_map($q, $refCols)) . ')';
@@ -609,7 +608,7 @@ class VersaORM
 
             foreach ($renameDefs as $rc) {
                 $from = (string) ($rc['from'] ?? '');
-                $to   = (string) ($rc['to'] ?? '');
+                $to = (string) ($rc['to'] ?? '');
 
                 if ($from !== '' && $to !== '') {
                     if ($driver === 'mysql' || $driver === 'mariadb' || $driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
@@ -621,7 +620,7 @@ class VersaORM
                 }
             }
 
-            if (!empty($clauses)) {
+            if ($clauses !== []) {
                 $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
             }
         }
@@ -629,7 +628,7 @@ class VersaORM
         // Drop columns
         if (!empty($changes['drop'])) {
             /** @var list<string> $cols */
-            $cols    = (array) $changes['drop'];
+            $cols = (array) $changes['drop'];
             $clauses = [];
 
             foreach ($cols as $c) {
@@ -640,7 +639,7 @@ class VersaORM
                 }
             }
 
-            if (!empty($clauses)) {
+            if ($clauses !== []) {
                 $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
             }
         }
@@ -648,7 +647,7 @@ class VersaORM
         // Modify columns (tipo/null/default)
         if (!empty($changes['modify'])) {
             /** @var list<AlterModifyDef> $mods */
-            $mods    = (array) $changes['modify'];
+            $mods = (array) $changes['modify'];
             $clauses = [];
 
             if ($driver === 'mysql' || $driver === 'mariadb') {
@@ -656,14 +655,18 @@ class VersaORM
                     $name = (string) ($m['name'] ?? '');
                     $type = (string) ($m['type'] ?? '');
 
-                    if ($name === '' || $type === '') {
+                    if ($name === '') {
                         continue;
                     }
-                    $nullable      = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
+
+                    if ($type === '') {
+                        continue;
+                    }
+                    $nullable = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
                     $defaultExists = array_key_exists('default', $m);
                     /** @var mixed $default */
                     $default = $m['default'] ?? null;
-                    $part    = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
+                    $part = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
 
                     if ($nullable !== null) {
                         $part .= $nullable ? '' : ' NOT NULL';
@@ -675,7 +678,7 @@ class VersaORM
                     $clauses[] = $part;
                 }
 
-                if (!empty($clauses)) {
+                if ($clauses !== []) {
                     $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
                 }
             } else {
@@ -684,13 +687,17 @@ class VersaORM
                     $name = (string) ($m['name'] ?? '');
                     $type = (string) ($m['type'] ?? '');
 
-                    if ($name === '' || $type === '') {
+                    if ($name === '') {
                         continue;
                     }
-                    $nullable      = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
+
+                    if ($type === '') {
+                        continue;
+                    }
+                    $nullable = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
                     $defaultExists = array_key_exists('default', $m);
                     /** @var mixed $default */
-                    $default   = $m['default'] ?? null;
+                    $default = $m['default'] ?? null;
                     $clauses[] = 'ALTER COLUMN ' . $q($name) . ' TYPE ' . $type;
 
                     if ($nullable !== null) {
@@ -706,7 +713,7 @@ class VersaORM
                     }
                 }
 
-                if (!empty($clauses)) {
+                if ($clauses !== []) {
                     $this->exec('ALTER TABLE ' . $tableIdent . ' ' . implode(', ', $clauses));
                 }
             }
@@ -721,8 +728,8 @@ class VersaORM
     {
         $this->validateFreezeOperation('dropTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn (string $id): string => $this->quoteIdent($id, $driver);
-        $sql    = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
+        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $sql = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
         $this->exec($sql);
     }
 
@@ -733,7 +740,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('alterTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q      = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
 
         if ($driver === 'mysql' || $driver === 'mariadb') {
             $sql = 'RENAME TABLE ' . $q($from) . ' TO ' . $q($to);
@@ -754,11 +761,11 @@ class VersaORM
     public function cache(string $action, array $params = []): array
     {
         $cacheParams = ['action' => $action] + $params;
-        $result      = $this->execute('cache', $cacheParams);
+        $result = $this->execute('cache', $cacheParams);
 
         return [
             'status' => 'success',
-            'data'   => $result,
+            'data' => $result,
         ];
     }
 
@@ -816,8 +823,8 @@ class VersaORM
             "FREEZE_MODE_{$status}",
             [
                 'global_freeze' => $frozen,
-                'timestamp'     => date('Y-m-d H:i:s'),
-                'trace'         => $this->getDebugStackTrace(),
+                'timestamp' => date('Y-m-d H:i:s'),
+                'trace' => $this->getDebugStackTrace(),
             ],
         );
 
@@ -842,7 +849,7 @@ class VersaORM
      */
     public function freezeModel(string $modelClass, bool $frozen = true): self
     {
-        if (empty($modelClass)) {
+        if ($modelClass === '' || $modelClass === '0') {
             throw new InvalidArgumentException('Model class cannot be empty');
         }
 
@@ -854,8 +861,8 @@ class VersaORM
             "MODEL_{$status}",
             [
                 'model_class' => $modelClass,
-                'frozen'      => $frozen,
-                'timestamp'   => date('Y-m-d H:i:s'),
+                'frozen' => $frozen,
+                'timestamp' => date('Y-m-d H:i:s'),
             ],
         );
 
@@ -869,7 +876,7 @@ class VersaORM
      */
     public function isModelFrozen(string $modelClass): bool
     {
-        if (empty($modelClass)) {
+        if ($modelClass === '' || $modelClass === '0') {
             throw new InvalidArgumentException('Model class cannot be empty');
         }
 
@@ -893,9 +900,9 @@ class VersaORM
      */
     public function validateFreezeOperation(string $operation, ?string $modelClass = null, array $context = []): void
     {
-        $isDdlOperation   = $this->isDdlOperation($operation);
+        $isDdlOperation = $this->isDdlOperation($operation);
         $isGloballyFrozen = $this->isFrozen();
-        $isModelFrozen    = $modelClass ? $this->isModelFrozen($modelClass) : false;
+        $isModelFrozen = $modelClass && $this->isModelFrozen($modelClass);
 
         // Si es una operación DDL y hay freeze activo, bloquear
         if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
@@ -903,17 +910,17 @@ class VersaORM
             $this->logSecurityEvent(
                 'FREEZE_VIOLATION_ATTEMPT',
                 [
-                    'operation'     => $operation,
-                    'model_class'   => $modelClass,
+                    'operation' => $operation,
+                    'model_class' => $modelClass,
                     'global_frozen' => $isGloballyFrozen,
-                    'model_frozen'  => $isModelFrozen,
-                    'context'       => $context,
-                    'timestamp'     => date('Y-m-d H:i:s'),
-                    'trace'         => $this->getDebugStackTrace(),
+                    'model_frozen' => $isModelFrozen,
+                    'context' => $context,
+                    'timestamp' => date('Y-m-d H:i:s'),
+                    'trace' => $this->getDebugStackTrace(),
                 ],
             );
 
-            $freezeType     = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
+            $freezeType = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
             $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
 
             // Mostrar advertencia en modo desarrollo
@@ -956,7 +963,7 @@ class VersaORM
      */
     private function execute(string $action, array $params)
     {
-        if (empty($this->config)) {
+        if ($this->config === []) {
             throw new VersaORMException('Database configuration is not set. Please call setConfig() first.');
         }
 
@@ -1017,7 +1024,7 @@ class VersaORM
                     // Acción solicitada
                     'action' => $action,
                     // Parámetros (shape depende de la acción; mantener mixed tipado)
-                    'params'       => $params,
+                    'params' => $params,
                     'freeze_state' => [
                         'global_frozen' => $this->isFrozen,
                         'frozen_models' => (object) $this->frozenModels, // Forzar como objeto
@@ -1142,10 +1149,10 @@ class VersaORM
         }
         // Validar identificador del índice para evitar inyección por nombre malicioso
         $this->assertSafeIdentifier($name, 'index');
-        $unique       = !empty($idx['unique']);
-        $using        = strtoupper((string) ($idx['using'] ?? ''));
-        $where        = (string) ($idx['where'] ?? '');
-        $ifNotExists  = !empty($idx['if_not_exists']);
+        $unique = !empty($idx['unique']);
+        $using = strtoupper((string) ($idx['using'] ?? ''));
+        $where = (string) ($idx['where'] ?? '');
+        $ifNotExists = !empty($idx['if_not_exists']);
         $concurrently = !empty($idx['concurrently']);
 
         $sql = 'CREATE ' . ($unique ? 'UNIQUE ' : '') . 'INDEX ';
@@ -1186,7 +1193,7 @@ class VersaORM
     /** Elimina índice portable según driver. */
     private function dropIndexPortable(string $table, string $indexName, string $driver): void
     {
-        $q     = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
         $iname = $q($indexName);
 
         if ($driver === 'mysql' || $driver === 'mariadb') {
@@ -1232,26 +1239,18 @@ class VersaORM
         $bad = ['`', '"', "'", '(', ')', ';', '.', ' ', "\t", "\n", "\r", '--', '/*', '*/'];
 
         foreach ($bad as $frag) {
-            if (strpos($ident, $frag) !== false) {
+            if (str_contains($ident, $frag)) {
                 throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
             }
         }
 
         // Solo permitir [A-Za-z_][A-Za-z0-9_]*
-        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $ident) !== 1) {
+        if (preg_match('/^[A-Za-z_]\w*$/', $ident) !== 1) {
             throw new VersaORMException("Invalid {$context} format: '{$ident}'", 'INVALID_IDENTIFIER');
         }
     }
 
-    /**
-     * Formatea valores DEFAULT según el driver/tipo.
-     *
-     * @param mixed $value
-     */
-    /**
-     * @param mixed $value
-     */
-    private function formatDefault($value, string $driver): string
+    private function formatDefault(mixed $value, string $driver): string
     {
         if ($value === null) {
             return 'NULL';
@@ -1299,6 +1298,7 @@ class VersaORM
             'createIndex',
             'renameTable',
             'truncateTable',
+            'rawDDL', // Consultas DDL raw
             // Operaciones de esquema que modifican estructura
             'create_table',
             'drop_table',
@@ -1318,6 +1318,37 @@ class VersaORM
         ];
 
         return in_array(strtolower($operation), array_map('strtolower', $ddlOperations), true);
+    }
+
+    /**
+     * Verifica si una consulta SQL raw es una operación DDL.
+     *
+     * @param string $query La consulta SQL a verificar
+     *
+     * @return bool True si es una operación DDL, false en caso contrario
+     */
+    private function isRawQueryDDL(string $query): bool
+    {
+        // Normalizar la consulta: eliminar espacios en blanco y convertir a minúsculas
+        $normalizedQuery = strtolower(trim($query));
+
+        // Patrones DDL comunes
+        $ddlPatterns = [
+            '/^create\s+(table|index|view|database|schema|trigger|procedure|function)/',
+            '/^drop\s+(table|index|view|database|schema|trigger|procedure|function)/',
+            '/^alter\s+(table|index|view|database|schema)/',
+            '/^truncate\s+table/',
+            '/^rename\s+table/',
+            '/^comment\s+on/',
+        ];
+
+        foreach ($ddlPatterns as $pattern) {
+            if (preg_match($pattern, $normalizedQuery)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1344,14 +1375,12 @@ class VersaORM
         try {
             $logDir = $this->getLogDirectory();
 
-            if (!is_dir($logDir)) {
-                if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
-                }
+            if (!is_dir($logDir) && (!mkdir($logDir, 0755, true) && !is_dir($logDir))) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
             }
 
             $securityLogFile = $logDir . '/php-security-' . date('Y-m-d') . '.log';
-            $timestamp       = date('Y-m-d H:i:s');
+            $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(
                 "[%s] [SECURITY] [%s] %s\n",
@@ -1366,7 +1395,7 @@ class VersaORM
             if ($this->isDebugMode()) {
                 $this->logDebug("Security Event: {$event}", $data);
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Silenciar errores de logging para no interferir con la operación principal
         }
     }
@@ -1381,7 +1410,7 @@ class VersaORM
     private function validateInput(string $action, array $params): void
     {
         // Validar que la acción no esté vacía
-        if (empty($action)) {
+        if ($action === '' || $action === '0') {
             throw new VersaORMException('Action parameter cannot be empty.');
         }
 
@@ -1427,6 +1456,11 @@ class VersaORM
                 if (strlen($params['query']) > 1000000) { // 1MB limit
                     throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
                 }
+
+                // Validar freeze para consultas DDL raw
+                if ($this->isRawQueryDDL($params['query'])) {
+                    $this->validateFreezeOperation('rawDDL', null, ['query' => $params['query']]);
+                }
                 break;
 
             case 'schema':
@@ -1460,66 +1494,66 @@ class VersaORM
      */
     private function handleBinaryError(array $response, string $action, array $params): void
     {
-        $error        = $response['error'] ?? [];
-        $errorCode    = is_array($error) && isset($error['code']) && is_string($error['code']) ? $error['code'] : 'UNKNOWN_ERROR';
+        $error = $response['error'] ?? [];
+        $errorCode = is_array($error) && isset($error['code']) && is_string($error['code']) ? $error['code'] : 'UNKNOWN_ERROR';
         $errorMessage = is_array($error) && isset($error['message']) && is_string($error['message']) ? $error['message'] : 'An unknown error occurred.';
         $errorDetails = is_array($error) && isset($error['details']) && is_array($error['details']) ? $error['details'] : [];
-        $sqlState     = is_array($error) && isset($error['sql_state']) && is_string($error['sql_state']) ? $error['sql_state'] : null;
+        $sqlState = is_array($error) && isset($error['sql_state']) && is_string($error['sql_state']) ? $error['sql_state'] : null;
 
         // Extraer información de la consulta desde el error de Rust (si está disponible)
-        $sqlQuery    = is_array($error) && isset($error['query']) && is_string($error['query']) ? $error['query'] : null;
+        $sqlQuery = is_array($error) && isset($error['query']) && is_string($error['query']) ? $error['query'] : null;
         $sqlBindings = is_array($error) && isset($error['bindings']) && is_array($error['bindings']) ? $error['bindings'] : [];
 
         // Crear información de consulta para el mensaje de error
-        $query    = null;
+        $query = null;
         $bindings = [];
 
-        if ($sqlQuery) {
+        if ($sqlQuery !== null && $sqlQuery !== '' && $sqlQuery !== '0') {
             // Si tenemos la query SQL real desde Rust, usarla
-            $query    = $sqlQuery;
+            $query = $sqlQuery;
             $bindings = $sqlBindings;
         } elseif ($action === 'raw') {
             // Para consultas raw, usar los parámetros originales
-            $query    = isset($params['query']) && is_string($params['query']) ? $params['query'] : null;
+            $query = isset($params['query']) && is_string($params['query']) ? $params['query'] : null;
             $bindings = isset($params['bindings']) && is_array($params['bindings']) ? $params['bindings'] : [];
         } elseif ($action === 'query') {
             // Para QueryBuilder, construir una representación de la consulta como fallback
-            $table   = isset($params['table']) && is_string($params['table']) ? $params['table'] : 'unknown';
-            $method  = isset($params['method']) && is_string($params['method']) ? $params['method'] : 'get';
-            $select  = isset($params['select']) && is_array($params['select']) ? $params['select'] : ['*'];
-            $where   = isset($params['where']) && is_array($params['where']) ? $params['where'] : [];
+            $table = isset($params['table']) && is_string($params['table']) ? $params['table'] : 'unknown';
+            $method = isset($params['method']) && is_string($params['method']) ? $params['method'] : 'get';
+            $select = isset($params['select']) && is_array($params['select']) ? $params['select'] : ['*'];
+            $where = isset($params['where']) && is_array($params['where']) ? $params['where'] : [];
             $orderBy = isset($params['orderBy']) && is_array($params['orderBy']) ? $params['orderBy'] : [];
-            $limit   = isset($params['limit']) && (is_int($params['limit']) || is_string($params['limit'])) ? $params['limit'] : null;
+            $limit = isset($params['limit']) && (is_int($params['limit']) || is_string($params['limit'])) ? $params['limit'] : null;
 
             $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $select);
 
-            if (!empty($where)) {
+            if ($where !== []) {
                 $whereDesc = [];
 
                 foreach ($where as $w) {
                     if (is_array($w) && (($w['operator'] ?? null) === 'RAW') && isset($w['value']) && is_array($w['value'])) {
                         // Manejo especial para whereRaw
-                        $rawSql      = isset($w['value']['sql']) && is_string($w['value']['sql']) ? $w['value']['sql'] : 'unknown';
+                        $rawSql = isset($w['value']['sql']) && is_string($w['value']['sql']) ? $w['value']['sql'] : 'unknown';
                         $rawBindings = isset($w['value']['bindings']) && is_array($w['value']['bindings']) ? $w['value']['bindings'] : [];
-                        $bindingsStr = !empty($rawBindings) ? ' [bindings: ' . json_encode($rawBindings) . ']' : '';
+                        $bindingsStr = $rawBindings === [] ? '' : ' [bindings: ' . json_encode($rawBindings) . ']';
                         $whereDesc[] = "RAW({$rawSql}){$bindingsStr}";
                     } elseif (is_array($w) && isset($w['value']) && is_array($w['value'])) {
-                        $value       = '[' . implode(',', $w['value']) . ']';
+                        $value = '[' . implode(',', $w['value']) . ']';
                         $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
                     } elseif (is_array($w)) {
-                        $value       = (string) ($w['value'] ?? '');
+                        $value = (string) ($w['value'] ?? '');
                         $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
                     }
                 }
                 $query .= ', where=[' . implode(' AND ', $whereDesc) . ']';
             }
 
-            if (!empty($orderBy) && isset($orderBy[0]) && is_array($orderBy[0])) {
+            if ($orderBy !== [] && isset($orderBy[0]) && is_array($orderBy[0])) {
                 $query .= ", orderBy={$orderBy[0]['column']} {$orderBy[0]['direction']}";
             }
 
-            if ($limit) {
-                $query .= ', limit=' . (string) $limit;
+            if ($limit !== 0 && ($limit !== '' && $limit !== '0')) {
+                $query .= ', limit=' . $limit;
             }
         }
 
@@ -1581,18 +1615,18 @@ class VersaORM
             $message .= sprintf('\n\nQuery: %s', $query);
         }
 
-        if (!empty($bindings)) {
+        if ($bindings !== []) {
             $message .= sprintf('\n\nBindings: %s', json_encode($bindings));
         }
 
-        if ($sqlState) {
+        if ($sqlState !== null && $sqlState !== '' && $sqlState !== '0') {
             $message .= sprintf('\nSQL State: %s', $sqlState);
         }
 
         // Agregar sugerencias basadas en el tipo de error
-        $suggestions = $this->getErrorSuggestions($errorCode, $errorMessage);
+        $suggestions = $this->getErrorSuggestions($errorMessage);
 
-        if (!empty($suggestions)) {
+        if ($suggestions !== []) {
             $message .= '\n\nSuggestions:';
 
             foreach ($suggestions as $suggestion) {
@@ -1601,7 +1635,7 @@ class VersaORM
         }
 
         // Agregar detalles adicionales si están disponibles
-        if (!empty($errorDetails)) {
+        if ($errorDetails !== []) {
             $message .= '\n\nDetails:';
 
             foreach ($errorDetails as $key => $value) {
@@ -1636,7 +1670,7 @@ class VersaORM
      */
     private function isDebugMode(): bool
     {
-        return isset($this->config['debug']) && $this->config['debug'] === true;
+        return isset($this->config['debug']) && $this->config['debug'];
     }
 
     /**
@@ -1644,15 +1678,15 @@ class VersaORM
      */
     private function getDebugStackTrace(): string
     {
-        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         $traceStr = '';
 
         foreach ($trace as $i => $frame) {
             if (isset($frame['file'], $frame['line'])) {
-                $file     = basename($frame['file']);
-                $line     = $frame['line'];
+                $file = basename($frame['file']);
+                $line = $frame['line'];
                 $function = $frame['function'];
-                $class    = isset($frame['class']) ? $frame['class'] . '::' : '';
+                $class = isset($frame['class']) ? $frame['class'] . '::' : '';
 
                 $traceStr .= sprintf("#%d %s%s() at %s:%d\n", $i, $class, $function, $file, $line);
             }
@@ -1675,13 +1709,11 @@ class VersaORM
         try {
             $logDir = $this->getLogDirectory();
 
-            if (!is_dir($logDir)) {
-                if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
-                }
+            if (!is_dir($logDir) && (!mkdir($logDir, 0755, true) && !is_dir($logDir))) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
             }
 
-            $logFile   = $logDir . '/php-' . date('Y-m-d') . '.log';
+            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(
@@ -1690,7 +1722,7 @@ class VersaORM
                 $message,
             );
 
-            if (!empty($context)) {
+            if ($context !== []) {
                 $logEntry .= sprintf(
                     "[%s] [PHP] [CONTEXT] %s\n",
                     $timestamp,
@@ -1699,7 +1731,7 @@ class VersaORM
             }
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Silenciar errores de logging para no interferir con la ejecución principal
         }
     }
@@ -1718,14 +1750,12 @@ class VersaORM
         try {
             $logDir = $this->getLogDirectory();
 
-            if (!is_dir($logDir)) {
-                if (!mkdir($logDir, 0755, true) && !is_dir($logDir)) {
-                    throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
-                }
+            if (!is_dir($logDir) && (!mkdir($logDir, 0755, true) && !is_dir($logDir))) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
             }
 
             // Usar archivo con fecha actual (YYYY-MM-DD.log)
-            $logFile   = $logDir . '/php-' . date('Y-m-d') . '.log';
+            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
             $logEntry = sprintf(
@@ -1748,7 +1778,7 @@ class VersaORM
 
             // Limpiar logs antiguos (mantener solo 7 días)
             $this->cleanOldLogs($logDir);
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Silenciar errores de logging para no interferir con el error principal
         }
     }
@@ -1778,7 +1808,7 @@ class VersaORM
                     }
                 }
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Silenciar errores de limpieza de logs
         }
     }
@@ -1788,9 +1818,9 @@ class VersaORM
      *
      * @return array<int, string>
      */
-    private function getErrorSuggestions(string $errorCode, string $errorMessage): array
+    private function getErrorSuggestions(string $errorMessage): array
     {
-        $suggestions  = [];
+        $suggestions = [];
         $lowerMessage = strtolower($errorMessage);
 
         // Errores de conexión
@@ -1850,12 +1880,11 @@ class VersaORM
     /**
      * Verifica referencias circulares en los parámetros.
      *
-     * @param mixed $data
      * @param array<int, string> $visited
      *
      * @throws VersaORMException
      */
-    private function checkCircularReferences($data, array &$visited = []): void
+    private function checkCircularReferences(mixed $data, array &$visited = []): void
     {
         // Solo verificar objetos reales, no arrays convertidos
         if (is_object($data)) {
@@ -1878,7 +1907,7 @@ class VersaORM
         } elseif (is_array($data)) {
             // Para arrays, solo verificar si tienen referencias reales de objetos
             foreach ($data as $value) {
-                if (is_object($value) || (is_array($value) && !empty($value))) {
+                if (is_object($value) || (is_array($value) && $value !== [])) {
                     $this->checkCircularReferences($value, $visited);
                 }
             }
@@ -1921,7 +1950,7 @@ class VersaORM
                 // Esperar a que termine el proceso
                 $returnCode = proc_close($process);
 
-                if ($returnCode !== 0 && !empty($errors)) {
+                if ($returnCode !== 0 && !($errors === '' || $errors === '0' || $errors === false)) {
                     throw new VersaORMException('PowerShell mock error: ' . $errors, 'MOCK_EXECUTION_ERROR');
                 }
 
@@ -1974,21 +2003,12 @@ class VersaORM
     {
         $binaryDir = __DIR__ . '/binary';
 
-        switch (PHP_OS_FAMILY) {
-            case 'Windows':
-                $this->binaryPath = $binaryDir . '/versaorm_cli.exe';
-                break;
-            case 'Linux':
-                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
-                break;
-            case 'Darwin': // macOS
-                $this->binaryPath = $binaryDir . '/versaorm_cli_darwin';
-                break;
-            default:
-                // Fallback para sistemas desconocidos
-                $this->binaryPath = $binaryDir . '/versaorm_cli_linux';
-                break;
-        }
+        $this->binaryPath = match (PHP_OS_FAMILY) {
+            'Windows' => $binaryDir . '/versaorm_cli.exe',
+            'Linux' => $binaryDir . '/versaorm_cli_linux',
+            'Darwin' => $binaryDir . '/versaorm_cli_darwin',
+            default => $binaryDir . '/versaorm_cli_linux',
+        };
     }
 
     /**
@@ -1999,7 +2019,7 @@ class VersaORM
     private function checkRustBinary(): void
     {
         if (!file_exists($this->binaryPath)) {
-            $osName       = strtolower(PHP_OS_FAMILY);
+            $osName = strtolower(PHP_OS_FAMILY);
             $expectedName = 'versaorm_cli_{$osName}' . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
 
             throw new RuntimeException(
@@ -2057,8 +2077,8 @@ class VersaORM
 
         // Buscar el final del JSON válido (última llave de cierre balanceada)
         $braceCount = 0;
-        $jsonEnd    = -1;
-        $length     = strlen($jsonCandidate);
+        $jsonEnd = -1;
+        $length = strlen($jsonCandidate);
 
         for ($i = 0; $i < $length; ++$i) {
             if ($jsonCandidate[$i] === '{') {

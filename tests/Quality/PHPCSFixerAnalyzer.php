@@ -19,14 +19,10 @@ class PHPCSFixerAnalyzer
 {
     private string $phpcsFixerPath;
 
-    private string $configPath;
-
-    private string $reportsDir;
-
     public function __construct(
         ?string $phpcsFixerPath = null,
-        string $configPath = '.php-cs-fixer.dist.php',
-        string $reportsDir = 'tests/reports/php-cs-fixer',
+        private string $configPath = '.php-cs-fixer.dist.php',
+        private string $reportsDir = 'tests/reports/php-cs-fixer',
     ) {
         // Auto-detect PHP-CS-Fixer path based on OS
         if ($phpcsFixerPath === null) {
@@ -34,8 +30,6 @@ class PHPCSFixerAnalyzer
         }
 
         $this->phpcsFixerPath = $phpcsFixerPath;
-        $this->configPath     = $configPath;
-        $this->reportsDir     = $reportsDir;
 
         if (!is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
@@ -47,13 +41,13 @@ class PHPCSFixerAnalyzer
      */
     public function analyze(bool $dryRun = true, array $options = []): array
     {
-        $timestamp  = new DateTime();
+        $timestamp = new DateTime();
         $reportFile = $this->reportsDir . '/php-cs-fixer-' . $timestamp->format('Y-m-d-H-i-s') . '.json';
 
         $command = $this->buildCommand($dryRun, $options);
 
-        $startTime  = microtime(true);
-        $output     = [];
+        $startTime = microtime(true);
+        $output = [];
         $returnCode = 0;
 
         exec($command, $output, $returnCode);
@@ -61,18 +55,18 @@ class PHPCSFixerAnalyzer
         $executionTime = microtime(true) - $startTime;
 
         $result = [
-            'timestamp'       => $timestamp->format('c'),
-            'execution_time'  => $executionTime,
-            'return_code'     => $returnCode,
-            'command'         => $command,
-            'dry_run'         => $dryRun,
-            'output'          => implode("\n", $output),
-            'report_file'     => $reportFile,
-            'passed'          => $dryRun ? ($returnCode === 0 || $returnCode === 8) : $returnCode === 0,
+            'timestamp' => $timestamp->format('c'),
+            'execution_time' => $executionTime,
+            'return_code' => $returnCode,
+            'command' => $command,
+            'dry_run' => $dryRun,
+            'output' => implode("\n", $output),
+            'report_file' => $reportFile,
+            'passed' => $dryRun ? ($returnCode === 0 || $returnCode === 8) : $returnCode === 0,
             'files_processed' => 0,
-            'files_fixed'     => 0,
-            'violations'      => [],
-            'summary'         => [],
+            'files_fixed' => 0,
+            'violations' => [],
+            'summary' => [],
         ];
 
         // Parse output for violations and statistics
@@ -108,17 +102,17 @@ class PHPCSFixerAnalyzer
         $result = $this->check(['--format' => 'json']);
 
         $metrics = [
-            'execution_time'        => $result['execution_time'],
-            'passed'                => $result['passed'],
-            'files_processed'       => $result['files_processed'],
+            'execution_time' => $result['execution_time'],
+            'passed' => $result['passed'],
+            'files_processed' => $result['files_processed'],
             'files_with_violations' => 0,
-            'total_violations'      => 0,
-            'violation_types'       => [],
-            'quality_score'         => 0,
+            'total_violations' => 0,
+            'violation_types' => [],
+            'quality_score' => 0,
         ];
 
         // Count violations
-        $violationCount              = count($result['violations']);
+        $violationCount = count($result['violations']);
         $metrics['total_violations'] = $violationCount;
 
         if ($result['files_processed'] > 0) {
@@ -127,7 +121,7 @@ class PHPCSFixerAnalyzer
             ));
 
             // Calculate quality score (100 - violation_density)
-            $violationDensity         = ($violationCount / $result['files_processed']) * 10;
+            $violationDensity = ($violationCount / $result['files_processed']) * 10;
             $metrics['quality_score'] = max(0, 100 - $violationDensity);
         }
 
@@ -168,12 +162,11 @@ class PHPCSFixerAnalyzer
             }
 
             return [
-                'valid'         => true,
-                'rules_count'   => count($config->getRules()),
+                'valid' => true,
+                'rules_count' => count($config->getRules()),
                 'risky_allowed' => $config->getRiskyAllowed(),
-                'using_cache'   => $config->getUsingCache(),
+                'using_cache' => $config->getUsingCache(),
             ];
-
         } catch (Exception $e) {
             return [
                 'valid' => false,
@@ -187,7 +180,7 @@ class PHPCSFixerAnalyzer
      */
     public function createPreCommitHook(): array
     {
-        $hookPath    = '.git/hooks/pre-commit';
+        $hookPath = '.git/hooks/pre-commit';
         $hookContent = '#!/bin/sh
 # PHP-CS-Fixer pre-commit hook
 
@@ -227,15 +220,14 @@ exit 0
             chmod($hookPath, 0755);
 
             return [
-                'success'   => true,
+                'success' => true,
                 'hook_path' => $hookPath,
-                'message'   => 'Pre-commit hook created successfully',
+                'message' => 'Pre-commit hook created successfully',
             ];
-
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'error'   => 'Failed to create pre-commit hook: ' . $e->getMessage(),
+                'error' => 'Failed to create pre-commit hook: ' . $e->getMessage(),
             ];
         }
     }
@@ -304,7 +296,7 @@ exit 0
             $html .= '</div>';
         }
 
-        $html .= '<div class="section">
+        return $html . ('<div class="section">
             <h2>Full Output</h2>
             <pre>' . htmlspecialchars($analysisResult['output']) . '</pre>
         </div>
@@ -314,9 +306,7 @@ exit 0
             <pre>' . htmlspecialchars($analysisResult['command']) . '</pre>
         </div>
     </body>
-</html>';
-
-        return $html;
+</html>');
     }
 
     /**
@@ -356,12 +346,12 @@ exit 0
      */
     private function commandExists(string $command): bool
     {
-        $isWindows   = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
         $testCommand = $isWindows ? "where {$command}" : "which {$command}";
 
         $output = shell_exec($testCommand);
 
-        return !empty($output);
+        return !($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -382,7 +372,7 @@ exit 0
         // Add default options
         $defaultOptions = [
             '--verbose' => true,
-            '--diff'    => true,
+            '--diff' => true,
         ];
 
         $allOptions = array_merge($defaultOptions, $options);
@@ -404,9 +394,9 @@ exit 0
      */
     private function parseOutput(array $output, array &$result): void
     {
-        $violations     = [];
+        $violations = [];
         $filesProcessed = 0;
-        $filesFixed     = 0;
+        $filesFixed = 0;
 
         foreach ($output as $line) {
             // Count processed files
@@ -417,34 +407,34 @@ exit 0
                 $filePath = $matches[2];
 
                 // Check if file was fixed (contains diff markers)
-                if (strpos($line, '--- Original') !== false || strpos($line, '+++ New') !== false) {
+                if (str_contains($line, '--- Original') || str_contains($line, '+++ New')) {
                     ++$filesFixed;
                 }
 
                 // Parse violations from diff output
                 if (preg_match('/\s+(\w+)\s+(.+)/', $line, $ruleMatches)) {
                     $violations[] = [
-                        'file'    => $filePath,
-                        'rule'    => $ruleMatches[1] ?? 'unknown',
+                        'file' => $filePath,
+                        'rule' => $ruleMatches[1] ?? 'unknown',
                         'message' => $ruleMatches[2] ?? 'Style violation',
-                        'line'    => $line,
+                        'line' => $line,
                     ];
                 }
             }
 
             // Parse summary information
             if (preg_match('/Fixed (\d+) of (\d+) files/', $line, $matches)) {
-                $filesFixed     = (int) $matches[1];
+                $filesFixed = (int) $matches[1];
                 $filesProcessed = (int) $matches[2];
             }
         }
 
         $result['files_processed'] = $filesProcessed;
-        $result['files_fixed']     = $filesFixed;
-        $result['violations']      = $violations;
-        $result['summary']         = [
-            'files_processed'  => $filesProcessed,
-            'files_fixed'      => $filesFixed,
+        $result['files_fixed'] = $filesFixed;
+        $result['violations'] = $violations;
+        $result['summary'] = [
+            'files_processed' => $filesProcessed,
+            'files_fixed' => $filesFixed,
             'violations_found' => count($violations),
         ];
     }

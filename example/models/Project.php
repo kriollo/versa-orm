@@ -21,7 +21,7 @@ class Project extends BaseModel
     protected array $guarded = [];
 
     protected array $rules = [
-        'name'     => ['required', 'min:2', 'max:100'],
+        'name' => ['required', 'min:2', 'max:100'],
         'owner_id' => ['required'],
     ];
 
@@ -29,11 +29,11 @@ class Project extends BaseModel
     /** Crear nuevo proyecto (usa reglas y strong typing internos). */
     public function createOne(array $attributes): self
     {
-        self::ensureColor($attributes);
+        $this->ensureColor($attributes);
         $this->fill($attributes);
         $this->store();
 
-        if (isset($this->owner_id)) {
+        if (property_exists($this, 'owner_id') && $this->owner_id !== null) {
             $this->addMember((int) $this->owner_id);
         }
 
@@ -45,7 +45,7 @@ class Project extends BaseModel
     /** Propietario del proyecto como array exportado. */
     public function owner(): ?array
     {
-        if (!isset($this->owner_id)) {
+        if (!property_exists($this, 'owner_id') || $this->owner_id === null) {
             return null;
         }
         // Obtener usuario vía QueryBuilder usando el ORM inyectado en la instancia
@@ -88,9 +88,9 @@ class Project extends BaseModel
         if ($exists) {
             return;
         }
-        $pivot             = $this->dispenseInstance('project_users');
+        $pivot = $this->dispenseInstance('project_users');
         $pivot->project_id = $this->id;
-        $pivot->user_id    = $userId;
+        $pivot->user_id = $userId;
         $pivot->store();
     }
 
@@ -117,13 +117,13 @@ class Project extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'        => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 100, 'nullable' => false],
             'description' => ['type' => 'text', 'nullable' => true],
-            'color'       => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
-            'owner_id'    => ['type' => 'int', 'nullable' => false],
-            'created_at'  => ['type' => 'datetime', 'nullable' => false],
-            'updated_at'  => ['type' => 'datetime', 'nullable' => false],
+            'color' => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
+            'owner_id' => ['type' => 'int', 'nullable' => false],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
         ];
     }
 
@@ -131,27 +131,15 @@ class Project extends BaseModel
     // Helpers orm()/qb() heredados de BaseModel
 
     /** Genera color aleatorio si no viene definido. */
-    private static function ensureColor(array &$attributes): void
+    private function ensureColor(array &$attributes): void
     {
         if (!isset($attributes['color'])) {
-            $attributes['color'] = static::generateRandomColor();
-        }
-    }
-
-    // ===================== Helpers pivot =====================
-    private static function addMemberToProject(int $projectId, int $userId): void
-    {
-        /** @var static $tmp */
-        $tmp     = new static(self::tableName(), self::orm());
-        $tmp->id = $projectId; // establecer contexto
-
-        if (method_exists($tmp, 'addMember')) {
-            $tmp->addMember($userId);
+            $attributes['color'] = $this->generateRandomColor();
         }
     }
 
     // ===================== Utilidades internas =====================
-    private static function generateRandomColor(): string
+    private function generateRandomColor(): string
     {
         $colors = [
             '#e74c3c',

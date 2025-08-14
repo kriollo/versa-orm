@@ -22,13 +22,10 @@ class CoverageDashboard
 
     private string $projectRoot;
 
-    private array $config;
-
-    public function __construct(array $config = [])
+    public function __construct()
     {
-        $this->logger      = new TestLogger();
+        $this->logger = new TestLogger();
         $this->projectRoot = dirname(__DIR__, 2);
-        $this->config      = $config;
     }
 
     /**
@@ -40,12 +37,12 @@ class CoverageDashboard
 
         // Collect all coverage data
         $coverageData = $this->collectCoverageData();
-        $featureData  = $this->collectFeatureData();
-        $trendsData   = $this->collectTrendsData();
-        $alertsData   = $this->collectAlertsData();
+        $featureData = $this->collectFeatureData();
+        $this->collectTrendsData();
+        $alertsData = $this->collectAlertsData();
 
         // Generate HTML dashboard
-        $html = $this->generateHtmlDashboard($coverageData, $featureData, $trendsData, $alertsData);
+        $html = $this->generateHtmlDashboard($coverageData, $featureData, $alertsData);
 
         // Save dashboard
         $dashboardPath = "{$this->projectRoot}/tests/reports/coverage/dashboard.html";
@@ -62,22 +59,22 @@ class CoverageDashboard
     private function collectCoverageData(): array
     {
         $engines = ['mysql', 'postgresql', 'sqlite'];
-        $data    = [
+        $data = [
             'engines' => [],
             'overall' => [
-                'coverage'       => 0,
-                'total_lines'    => 0,
-                'covered_lines'  => 0,
+                'coverage' => 0,
+                'total_lines' => 0,
+                'covered_lines' => 0,
                 'files_analyzed' => 0,
             ],
         ];
 
         $totalCoverage = 0;
-        $validEngines  = 0;
+        $validEngines = 0;
 
         foreach ($engines as $engine) {
             try {
-                $engineData               = $this->getCoverageDataForEngine($engine);
+                $engineData = $this->getCoverageDataForEngine($engine);
                 $data['engines'][$engine] = $engineData;
 
                 if ($engineData['coverage'] > 0) {
@@ -87,13 +84,12 @@ class CoverageDashboard
                     $data['overall']['covered_lines'] += $engineData['covered_lines'];
                     $data['overall']['files_analyzed'] += $engineData['files_analyzed'];
                 }
-
             } catch (Exception $e) {
                 $this->logger->warning("Failed to collect coverage data for {$engine}: " . $e->getMessage());
                 $data['engines'][$engine] = [
                     'coverage' => 0,
-                    'error'    => $e->getMessage(),
-                    'status'   => 'ERROR',
+                    'error' => $e->getMessage(),
+                    'status' => 'ERROR',
                 ];
             }
         }
@@ -110,22 +106,21 @@ class CoverageDashboard
     {
         try {
             $analyzer = new FeatureCoverageAnalyzer();
-            $result   = $analyzer->analyzeFeatureCoverage();
+            $result = $analyzer->analyzeFeatureCoverage();
 
             return [
                 'features' => $result->metrics['feature_results'] ?? [],
-                'overall'  => $result->metrics['overall_results'] ?? [],
-                'gaps'     => $result->metrics['gaps_report'] ?? [],
+                'overall' => $result->metrics['overall_results'] ?? [],
+                'gaps' => $result->metrics['gaps_report'] ?? [],
             ];
-
         } catch (Exception $e) {
             $this->logger->warning('Failed to collect feature data: ' . $e->getMessage());
 
             return [
                 'features' => [],
-                'overall'  => [],
-                'gaps'     => [],
-                'error'    => $e->getMessage(),
+                'overall' => [],
+                'gaps' => [],
+                'error' => $e->getMessage(),
             ];
         }
     }
@@ -145,8 +140,8 @@ class CoverageDashboard
 
         return [
             'coverage_history' => [],
-            'feature_history'  => [],
-            'alerts_history'   => [],
+            'feature_history' => [],
+            'alerts_history' => [],
         ];
     }
 
@@ -157,27 +152,26 @@ class CoverageDashboard
     {
         try {
             $coverageAnalyzer = new CoverageAnalyzer();
-            $featureAnalyzer  = new FeatureCoverageAnalyzer();
+            $featureAnalyzer = new FeatureCoverageAnalyzer();
 
             $coverageAlerts = $coverageAnalyzer->generateCoverageAlerts();
-            $featureAlerts  = $featureAnalyzer->generateFeatureCoverageAlerts();
+            $featureAlerts = $featureAnalyzer->generateFeatureCoverageAlerts();
 
             return [
                 'coverage_alerts' => $coverageAlerts,
-                'feature_alerts'  => $featureAlerts,
-                'total_alerts'    => count($coverageAlerts) + count($featureAlerts),
+                'feature_alerts' => $featureAlerts,
+                'total_alerts' => count($coverageAlerts) + count($featureAlerts),
                 'critical_alerts' => $this->countAlertsBySeverity(array_merge($coverageAlerts, $featureAlerts), 'critical'),
-                'high_alerts'     => $this->countAlertsBySeverity(array_merge($coverageAlerts, $featureAlerts), 'high'),
+                'high_alerts' => $this->countAlertsBySeverity(array_merge($coverageAlerts, $featureAlerts), 'high'),
             ];
-
         } catch (Exception $e) {
             $this->logger->warning('Failed to collect alerts data: ' . $e->getMessage());
 
             return [
                 'coverage_alerts' => [],
-                'feature_alerts'  => [],
-                'total_alerts'    => 0,
-                'error'           => $e->getMessage(),
+                'feature_alerts' => [],
+                'total_alerts' => 0,
+                'error' => $e->getMessage(),
             ];
         }
     }
@@ -199,19 +193,19 @@ class CoverageDashboard
             throw new Exception("Failed to parse coverage data for {$engine}");
         }
 
-        $metrics      = $xml->project->metrics;
-        $totalLines   = (int) $metrics['statements'];
+        $metrics = $xml->project->metrics;
+        $totalLines = (int) $metrics['statements'];
         $coveredLines = (int) $metrics['coveredstatements'];
-        $coverage     = $totalLines > 0 ? ($coveredLines / $totalLines) * 100 : 0;
+        $coverage = $totalLines > 0 ? ($coveredLines / $totalLines) * 100 : 0;
 
         return [
-            'coverage'         => round($coverage, 2),
-            'total_lines'      => $totalLines,
-            'covered_lines'    => $coveredLines,
-            'files_analyzed'   => (int) $metrics['files'],
+            'coverage' => round($coverage, 2),
+            'total_lines' => $totalLines,
+            'covered_lines' => $coveredLines,
+            'files_analyzed' => (int) $metrics['files'],
             'classes_analyzed' => (int) $metrics['classes'],
             'methods_analyzed' => (int) $metrics['methods'],
-            'status'           => $coverage >= 95 ? 'PASS' : 'FAIL',
+            'status' => $coverage >= 95 ? 'PASS' : 'FAIL',
         ];
     }
 
@@ -220,15 +214,13 @@ class CoverageDashboard
      */
     private function countAlertsBySeverity(array $alerts, string $severity): int
     {
-        return count(array_filter($alerts, static function ($alert) use ($severity) {
-            return $alert['severity'] === $severity;
-        }));
+        return count(array_filter($alerts, static fn ($alert): bool => $alert['severity'] === $severity));
     }
 
     /**
      * Generate HTML dashboard.
      */
-    private function generateHtmlDashboard(array $coverageData, array $featureData, array $trendsData, array $alertsData): string
+    private function generateHtmlDashboard(array $coverageData, array $featureData, array $alertsData): string
     {
         $html = $this->getHtmlTemplate();
 
@@ -271,7 +263,7 @@ class CoverageDashboard
 
         foreach ($engines as $engine => $data) {
             $statusClass = isset($data['error']) ? 'error' : ($data['status'] === 'PASS' ? 'success' : 'error');
-            $coverage    = isset($data['error']) ? 'ERROR' : $data['coverage'] . '%';
+            $coverage = isset($data['error']) ? 'ERROR' : $data['coverage'] . '%';
 
             $html .= '<tr>';
             $html .= '<td>' . ucfirst($engine) . '</td>';
@@ -312,11 +304,11 @@ class CoverageDashboard
      */
     private function generateAlertsHtml(array $alertsData): string
     {
-        $html      = '';
+        $html = '';
         $allAlerts = array_merge($alertsData['coverage_alerts'] ?? [], $alertsData['feature_alerts'] ?? []);
 
         // Sort by severity
-        usort($allAlerts, static function ($a, $b) {
+        usort($allAlerts, static function (array $a, array $b): int {
             $severityOrder = ['critical' => 0, 'high' => 1, 'medium' => 2, 'low' => 3];
 
             return ($severityOrder[$a['severity']] ?? 4) <=> ($severityOrder[$b['severity']] ?? 4);
@@ -332,7 +324,7 @@ class CoverageDashboard
             $html .= '</tr>';
         }
 
-        return $html ?: '<tr><td colspan="3">No alerts found</td></tr>';
+        return $html !== '' && $html !== '0' ? $html : '<tr><td colspan="3">No alerts found</td></tr>';
     }
 
     /**
@@ -340,19 +332,19 @@ class CoverageDashboard
      */
     private function generateCoverageChartData(array $coverageData): string
     {
-        $engines   = [];
+        $engines = [];
         $coverages = [];
 
         foreach ($coverageData['engines'] as $engine => $data) {
             if (!isset($data['error'])) {
-                $engines[]   = "'" . ucfirst($engine) . "'";
+                $engines[] = "'" . ucfirst($engine) . "'";
                 $coverages[] = $data['coverage'];
             }
         }
 
         return json_encode([
             'labels' => $engines,
-            'data'   => $coverages,
+            'data' => $coverages,
         ]);
     }
 
@@ -361,17 +353,17 @@ class CoverageDashboard
      */
     private function generateFeatureChartData(array $featureData): string
     {
-        $features  = [];
+        $features = [];
         $coverages = [];
 
         foreach ($featureData['features'] as $featureName => $data) {
-            $features[]  = "'" . ucwords(str_replace('_', ' ', $featureName)) . "'";
+            $features[] = "'" . ucwords(str_replace('_', ' ', $featureName)) . "'";
             $coverages[] = $data['average_coverage'];
         }
 
         return json_encode([
             'labels' => $features,
-            'data'   => $coverages,
+            'data' => $coverages,
         ]);
     }
 

@@ -15,7 +15,8 @@ composer.lock
 /tests/reports/*
 /example/logs
 /example/complete_logs
-
+/var/*
+/test/*
 # IDEs
 .vscode/
 .idea/

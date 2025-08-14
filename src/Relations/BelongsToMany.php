@@ -9,35 +9,19 @@ use VersaORM\VersaModel;
 
 class BelongsToMany extends Relation
 {
-    public string $pivotTable;
-
-    public string $foreignPivotKey;
-
-    public string $relatedPivotKey;
-
-    public string $parentKey;
-
-    public string $relatedKey;
-
     public function __construct(
         QueryBuilder $query,
         VersaModel $parent,
-        string $pivotTable,
-        string $foreignPivotKey,
-        string $relatedPivotKey,
-        string $parentKey,
-        string $relatedKey,
+        public string $pivotTable,
+        public string $foreignPivotKey,
+        public string $relatedPivotKey,
+        public string $parentKey,
+        public string $relatedKey,
     ) {
-        $this->pivotTable      = $pivotTable;
-        $this->foreignPivotKey = $foreignPivotKey;
-        $this->relatedPivotKey = $relatedPivotKey;
-        $this->parentKey       = $parentKey;
-        $this->relatedKey      = $relatedKey;
-
         parent::__construct($query, $parent);
     }
 
-    public function getResults()
+    public function getResults(): array
     {
         $this->addConstraints();
 

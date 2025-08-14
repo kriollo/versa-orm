@@ -225,7 +225,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
         // Usar reflexión para acceder al método privado
         $reflection = new ReflectionClass(self::$orm->table('users'));
-        $method     = $reflection->getMethod('buildSubQuery');
+        $method = $reflection->getMethod('buildSubQuery');
         $method->setAccessible(true);
 
         $method->invoke(self::$orm->table('users'), 'invalid_type');

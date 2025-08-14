@@ -64,7 +64,7 @@
         </testsuite>
     </testsuites>
 
-    <!-- Test groups configuration -->
+    <!-- Test groups configuration - DISABLED to run all tests
     <groups>
         <include>
             <group>sqlite</group>
@@ -81,7 +81,7 @@
             <group>postgresql</group>
             <group>postgres</group>
             <group>slow</group>
-            <!-- Exclude features not supported by SQLite -->
+            Exclude features not supported by SQLite
             <group>fulltext</group>
             <group>arrays</group>
             <group>jsonb</group>
@@ -91,6 +91,7 @@
             <group>storage-engines</group>
         </exclude>
     </groups>
+    -->
 
     <!-- Code coverage configuration -->
     <coverage includeUncoveredFiles="true"

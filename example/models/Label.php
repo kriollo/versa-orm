@@ -21,7 +21,7 @@ class Label extends BaseModel
     protected array $guarded = [];
 
     protected array $rules = [
-        'name'  => ['required', 'min:1', 'max:50'],
+        'name' => ['required', 'min:1', 'max:50'],
         'color' => ['required'],
     ];
 
@@ -29,7 +29,7 @@ class Label extends BaseModel
     public function createOne(array $attributes): self
     {
         if (!isset($attributes['color'])) {
-            $attributes['color'] = static::generateRandomColor();
+            $attributes['color'] = $this->generateRandomColor();
         }
         $this->fill($attributes);
         $this->store();
@@ -74,19 +74,19 @@ class Label extends BaseModel
     public static function definePropertyTypes(): array
     {
         return [
-            'id'          => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'        => ['type' => 'string', 'max_length' => 50, 'nullable' => false],
-            'color'       => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 50, 'nullable' => false],
+            'color' => ['type' => 'string', 'max_length' => 7, 'nullable' => false, 'default' => '#3498db'],
             'description' => ['type' => 'text', 'nullable' => true],
-            'created_at'  => ['type' => 'datetime', 'nullable' => false],
-            'updated_at'  => ['type' => 'datetime', 'nullable' => false],
+            'created_at' => ['type' => 'datetime', 'nullable' => false],
+            'updated_at' => ['type' => 'datetime', 'nullable' => false],
         ];
     }
 
     /**
      * Generar color aleatorio para etiqueta.
      */
-    private static function generateRandomColor(): string
+    private function generateRandomColor(): string
     {
         $colors = [
             '#e74c3c',

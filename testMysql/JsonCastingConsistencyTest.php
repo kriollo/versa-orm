@@ -28,12 +28,12 @@ class JsonCastingConsistencyTest extends TestCase
 
     public function testJsonCastingConsistency(): void
     {
-        $model = new class('configs_json_cast', self::$orm) extends VersaModel {
+        $model = new class ('configs_json_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id'       => ['type' => 'int'],
-                    'name'     => ['type' => 'string'],
+                    'id' => ['type' => 'int'],
+                    'name' => ['type' => 'string'],
                     'settings' => ['type' => 'json'],
                 ];
             }

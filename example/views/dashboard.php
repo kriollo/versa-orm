@@ -158,9 +158,9 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
                             <div class="flex-shrink-0">
                                 <?php
                                 $statusColors = [
-                                    'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+                                    'todo' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
                                     'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                    'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                    'done' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                                 ];
                 $statusColor = $statusColors[$task['status']] ?? 'bg-gray-100 text-gray-800';
                 ?>
@@ -178,9 +178,9 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
                         <div class="flex items-center space-x-2">
                             <?php
                             $priorityColors = [
-                                'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                'low' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                                 'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                                'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
                                 'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
                             ];
                 $priorityColor = $priorityColors[$task['priority']] ?? 'bg-gray-100 text-gray-800';
@@ -210,10 +210,10 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
                     VersaORM está validando automáticamente los tipos de datos en todos los modelos.
                     <?php
                     $typedModels = [
-                        'User'    => User::definePropertyTypes(),
+                        'User' => User::definePropertyTypes(),
                         'Project' => Project::definePropertyTypes(),
-                        'Task'    => Task::definePropertyTypes(),
-                        'Label'   => Label::definePropertyTypes(),
+                        'Task' => Task::definePropertyTypes(),
+                        'Label' => Label::definePropertyTypes(),
                     ];
 $totalProperties = array_sum(array_map('count', $typedModels));
 ?>

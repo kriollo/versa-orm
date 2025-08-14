@@ -30,12 +30,12 @@ class DateTimeCastingConsistencyTest extends TestCase
 
     public function testDateTimeCastingConsistent(): void
     {
-        $model = new class('posts_dt_cast', self::$orm) extends VersaModel {
+        $model = new class ('posts_dt_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id'           => ['type' => 'int'],
-                    'title'        => ['type' => 'string'],
+                    'id' => ['type' => 'int'],
+                    'title' => ['type' => 'string'],
                     'published_at' => ['type' => 'datetime', 'nullable' => true],
                 ];
             }

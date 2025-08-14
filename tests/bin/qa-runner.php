@@ -63,7 +63,7 @@ try {
         case 'benchmarks':
             echo "⚡ Ejecutando benchmarks...\n";
             $comparisons = isset($options['compare']) ? explode(',', $options['compare']) : [];
-            $result      = $testManager->runBenchmarks($comparisons);
+            $result = $testManager->runBenchmarks($comparisons);
             echo $result->getSummary() . "\n";
             exit(0);
 
@@ -78,55 +78,38 @@ try {
             showHelp();
             exit(1);
     }
-
     // Mostrar resumen del reporte si se ejecutó la suite completa
-    if (isset($report)) {
-        $summary = $report->getExecutiveSummary();
+    $summary = $report->getExecutiveSummary();
+    echo "\n📊 Resumen Ejecutivo:\n";
+    echo "==================\n";
+    echo 'Estado General: ' . getStatusEmoji($summary['overall_status']) . " {$summary['overall_status']}\n";
+    echo "Tests Totales: {$summary['total_tests']}\n";
+    echo "Tasa de Éxito: {$summary['success_rate']}%\n";
+    echo "Puntuación de Calidad: {$summary['quality_score']}/100\n";
+    echo "Tiempo de Ejecución: {$summary['execution_time']}s\n";
 
-        echo "\n📊 Resumen Ejecutivo:\n";
-        echo "==================\n";
-        echo 'Estado General: ' . getStatusEmoji($summary['overall_status']) . " {$summary['overall_status']}\n";
-        echo "Tests Totales: {$summary['total_tests']}\n";
-        echo "Tasa de Éxito: {$summary['success_rate']}%\n";
-        echo "Puntuación de Calidad: {$summary['quality_score']}/100\n";
-        echo "Tiempo de Ejecución: {$summary['execution_time']}s\n";
-
-        if ($summary['critical_alerts'] > 0) {
-            echo "🚨 Alertas Críticas: {$summary['critical_alerts']}\n";
-        }
-
-        // Mostrar recomendaciones si las hay
-        $recommendations = $report->getRecommendations();
-
-        if (!empty($recommendations)) {
-            echo "\n💡 Recomendaciones:\n";
-
-            foreach ($recommendations as $recommendation) {
-                echo "  • {$recommendation}\n";
-            }
-        }
-
-        echo "\n📄 Reporte guardado en: tests/reports/\n";
-
-        // Código de salida basado en el estado
-        switch ($summary['overall_status']) {
-            case 'success':
-            case 'warning':
-                $exitCode = 0;
-                break;
-            case 'failed':
-                $exitCode = 1;
-                break;
-            case 'critical':
-                $exitCode = 2;
-                break;
-            default:
-                $exitCode = 1;
-        }
-
-        exit($exitCode);
+    if ($summary['critical_alerts'] > 0) {
+        echo "🚨 Alertas Críticas: {$summary['critical_alerts']}\n";
     }
+    // Mostrar recomendaciones si las hay
+    $recommendations = $report->getRecommendations();
 
+    if (!empty($recommendations)) {
+        echo "\n💡 Recomendaciones:\n";
+
+        foreach ($recommendations as $recommendation) {
+            echo "  • {$recommendation}\n";
+        }
+    }
+    echo "\n📄 Reporte guardado en: tests/reports/\n";
+    // Código de salida basado en el estado
+    $exitCode = match ($summary['overall_status']) {
+        'success', 'warning' => 0,
+        'failed' => 1,
+        'critical' => 2,
+        default => 1,
+    };
+    exit($exitCode);
 } catch (Exception $e) {
     echo "❌ Error durante la ejecución: {$e->getMessage()}\n";
 
@@ -145,32 +128,31 @@ function parseArguments(array $argv): array
 {
     $options = [];
     $command = null;
+    $counter = count($argv);
 
-    for ($i = 1; $i < count($argv); ++$i) {
+    for ($i = 1; $i < $counter; ++$i) {
         $arg = $argv[$i];
 
-        if (substr($arg, 0, 2) === '--') {
+        if (str_starts_with($arg, '--')) {
             // Argumento largo
-            $parts         = explode('=', substr($arg, 2), 2);
-            $key           = $parts[0];
-            $value         = $parts[1] ?? true;
+            $parts = explode('=', substr($arg, 2), 2);
+            $key = $parts[0];
+            $value = $parts[1] ?? true;
             $options[$key] = $value;
-        } elseif (substr($arg, 0, 1) === '-') {
+        } elseif (str_starts_with($arg, '-')) {
             // Argumento corto
-            $key   = substr($arg, 1);
+            $key = substr($arg, 1);
             $value = true;
 
             // Verificar si el siguiente argumento es un valor
-            if ($i + 1 < count($argv) && substr($argv[$i + 1], 0, 1) !== '-') {
+            if ($i + 1 < count($argv) && !str_starts_with($argv[$i + 1], '-')) {
                 $value = $argv[++$i];
             }
 
             $options[$key] = $value;
-        } else {
+        } elseif (!$command) {
             // Comando principal
-            if (!$command) {
-                $command = $arg;
-            }
+            $command = $arg;
         }
     }
 
@@ -225,16 +207,11 @@ function showHelp(): void
  */
 function getStatusEmoji(string $status): string
 {
-    switch ($status) {
-        case 'success':
-            return '✅';
-        case 'warning':
-            return '⚠️';
-        case 'failed':
-            return '❌';
-        case 'critical':
-            return '🚨';
-        default:
-            return '❓';
-    }
+    return match ($status) {
+        'success' => '✅',
+        'warning' => '⚠️',
+        'failed' => '❌',
+        'critical' => '🚨',
+        default => '❓',
+    };
 }

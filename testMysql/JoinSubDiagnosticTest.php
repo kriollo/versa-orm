@@ -168,7 +168,6 @@ class JoinSubDiagnosticTest extends TestCase
                 self::assertGreaterThan(1, $result['post_count']);
             }
         } catch (Exception $e) {
-
             throw $e;
         }
     }
@@ -182,13 +181,13 @@ class JoinSubDiagnosticTest extends TestCase
         // Crear ORM con debug para ver el SQL
         global $config;
         $debugOrm = new VersaORM([
-            'driver'   => $config['DB']['DB_DRIVER'],
-            'host'     => $config['DB']['DB_HOST'],
-            'port'     => $config['DB']['DB_PORT'],
+            'driver' => $config['DB']['DB_DRIVER'],
+            'host' => $config['DB']['DB_HOST'],
+            'port' => $config['DB']['DB_PORT'],
             'database' => $config['DB']['DB_NAME'],
             'username' => $config['DB']['DB_USER'],
             'password' => $config['DB']['DB_PASS'],
-            'debug'    => true,
+            'debug' => true,
         ]);
 
         $subquery = $debugOrm->table('posts')
@@ -271,7 +270,7 @@ class JoinSubDiagnosticTest extends TestCase
         // Test simple para verificar que la comunicación con Rust funciona
         try {
             $simpleQuery = self::$orm->table('users')->limit(1);
-            $result      = $simpleQuery->getAll();
+            $result = $simpleQuery->getAll();
 
             self::assertIsArray($result);
         } catch (Exception $e) {

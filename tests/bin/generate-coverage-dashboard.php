@@ -84,7 +84,6 @@ try {
     echo "\nOpen the dashboard in your browser to view detailed coverage analysis.\n";
 
     $logger->info('Coverage dashboard generation completed successfully');
-
 } catch (Exception $e) {
     $logger->error('Coverage dashboard generation failed: ' . $e->getMessage());
     echo 'ERROR: ' . $e->getMessage() . "\n";
@@ -97,12 +96,13 @@ try {
 function parseArguments(array $argv): array
 {
     $options = [];
+    $counter = count($argv);
 
-    for ($i = 1; $i < count($argv); ++$i) {
+    for ($i = 1; $i < $counter; ++$i) {
         $arg = $argv[$i];
 
-        if (strpos($arg, '--') === 0) {
-            if (strpos($arg, '=') !== false) {
+        if (str_starts_with($arg, '--')) {
+            if (str_contains($arg, '=')) {
                 [$key, $value] = explode('=', substr($arg, 2), 2);
                 $options[$key] = $value;
             } else {

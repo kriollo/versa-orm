@@ -19,7 +19,7 @@ class ValidationUnitTest extends TestCase
 {
     public function testFillableAttributesAllowMassAssignment(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -31,7 +31,7 @@ class ValidationUnitTest extends TestCase
 
     public function testFillableAttributesBlockUnallowedFields(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
         };
 
@@ -43,7 +43,7 @@ class ValidationUnitTest extends TestCase
 
     public function testGuardedAttributesBlockMassAssignment(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['id', 'created_at'];
@@ -57,7 +57,7 @@ class ValidationUnitTest extends TestCase
 
     public function testWildcardGuardBlocksAllFields(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['*'];
@@ -71,11 +71,11 @@ class ValidationUnitTest extends TestCase
 
     public function testCustomValidationRules(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
-                'name'  => ['required', 'min:3'],
+                'name' => ['required', 'min:3'],
                 'email' => ['required', 'email'],
             ];
         };
@@ -91,11 +91,11 @@ class ValidationUnitTest extends TestCase
 
     public function testValidModelPassesValidation(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
-                'name'  => ['required'],
+                'name' => ['required'],
                 'email' => ['required', 'email'],
             ];
         };
@@ -109,7 +109,7 @@ class ValidationUnitTest extends TestCase
 
     public function testIsFillableMethod(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -120,7 +120,7 @@ class ValidationUnitTest extends TestCase
 
     public function testIsGuardedMethod(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -131,7 +131,7 @@ class ValidationUnitTest extends TestCase
 
     public function testMaxLengthValidationRule(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
 
             protected array $rules = [
@@ -149,7 +149,7 @@ class ValidationUnitTest extends TestCase
 
     public function testNumericValidationRule(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['age'];
 
             protected array $rules = [
@@ -167,7 +167,7 @@ class ValidationUnitTest extends TestCase
 
     public function testRequiredValidationRule(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
 
             protected array $rules = [
@@ -185,7 +185,7 @@ class ValidationUnitTest extends TestCase
 
     public function testMinLengthValidationRule(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name'];
 
             protected array $rules = [
@@ -203,7 +203,7 @@ class ValidationUnitTest extends TestCase
 
     public function testGetFillableMethod(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -212,7 +212,7 @@ class ValidationUnitTest extends TestCase
 
     public function testGetGuardedMethod(): void
     {
-        $model = new class('test_users', null) extends VersaModel {
+        $model = new class ('test_users', null) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['id', 'created_at'];

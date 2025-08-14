@@ -21,9 +21,9 @@ echo "=== VersaORM Log Configuration Example ===\n\n";
 // 1. Configurar VersaORM con log_path
 echo "1. Configuring VersaORM with log_path...\n";
 $config = [
-    'driver'   => 'sqlite',
+    'driver' => 'sqlite',
     'database' => ':memory:',
-    'debug'    => true,
+    'debug' => true,
     'log_path' => __DIR__ . '/logs', // Los logs se guardarán aquí
 ];
 
@@ -51,7 +51,7 @@ echo "2. Generating log entries...\n";
 // Operación exitosa
 try {
     $user = new UserModel([
-        'name'  => 'John Doe',
+        'name' => 'John Doe',
         'email' => 'john@example.com',
     ]);
     $user->store();
@@ -63,7 +63,7 @@ try {
 // Operación con error (email duplicado)
 try {
     $user2 = new UserModel([
-        'name'  => 'Jane Doe',
+        'name' => 'Jane Doe',
         'email' => 'john@example.com', // Email duplicado
     ]);
     $user2->store();
@@ -75,7 +75,7 @@ try {
 // Operación con datos inválidos
 try {
     $user3 = new UserModel([
-        'name'  => '', // Nombre vacío
+        'name' => '', // Nombre vacío
         'email' => 'invalid-email', // Email inválido
     ]);
     $user3->store();
@@ -93,8 +93,8 @@ if ($logPath && is_dir($logPath)) {
     $logFiles = glob($logPath . DIRECTORY_SEPARATOR . '*.log');
 
     foreach ($logFiles as $logFile) {
-        $filename  = basename($logFile);
-        $size      = filesize($logFile);
+        $filename = basename($logFile);
+        $size = filesize($logFile);
         $lineCount = count(file($logFile));
 
         echo "📄 {$filename}\n";
@@ -110,8 +110,8 @@ if ($logPath && is_dir($logPath)) {
 
             if ($data) {
                 $timestamp = $data['timestamp'] ?? 'unknown';
-                $type      = $data['error_code'] ?? $data['operation'] ?? 'operation';
-                $message   = $data['message'] ?? $data['success'] ?? 'N/A';
+                $type = $data['error_code'] ?? $data['operation'] ?? 'operation';
+                $message = $data['message'] ?? $data['success'] ?? 'N/A';
                 echo "   └─ [{$timestamp}] {$type}: {$message}\n";
             }
         }
@@ -124,14 +124,14 @@ if ($logPath && is_dir($logPath)) {
 // 5. Mostrar configuración actual
 echo "4. Current ErrorHandler configuration:\n";
 echo '   Debug mode: ' . (ErrorHandler::isConfigured() ? 'Yes' : 'No') . "\n";
-echo '   Log path: ' . (ErrorHandler::getLogPath() ?: 'Not configured') . "\n";
+echo '   Log path: ' . (ErrorHandler::getLogPath() !== null && ErrorHandler::getLogPath() !== '' && ErrorHandler::getLogPath() !== '0' ? ErrorHandler::getLogPath() : 'Not configured') . "\n";
 echo '   Error count in memory: ' . count(ErrorHandler::getErrorLog()) . "\n\n";
 
 // 6. Ejemplo de acceso a logs programáticamente
 echo "5. Accessing logs programmatically:\n";
 $errorLog = ErrorHandler::getErrorLog();
 
-if (!empty($errorLog)) {
+if ($errorLog !== []) {
     $lastError = end($errorLog);
     echo "   Last error:\n";
     echo '   - Code: ' . $lastError['error']['error_code'] . "\n";

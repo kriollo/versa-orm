@@ -88,6 +88,13 @@
             <file>./testMysql/AliasValidationTest.php</file>
         </testsuite>
 
+        <!-- Freeze mode tests -->
+        <testsuite name="Freeze-Mode">
+            <!-- <file>./testMysql/freeze_mode_test.php</file> -->
+            <!-- Note: freeze_mode_test.php doesn't follow PHPUnit naming convention -->
+            <!-- It should be renamed to FreezeModeTest.php to be auto-discovered -->
+        </testsuite>
+
         <!-- Batch operations -->
         <testsuite name="Batch-Operations">
             <file>./testMysql/BatchOperationsTypedBindTest.php</file>
@@ -100,7 +107,8 @@
         </testsuite>
     </testsuites>
 
-    <!-- Test groups configuration -->
+    <!-- Test groups configuration - DISABLED to run all tests -->
+    <!--
     <groups>
         <include>
             <group>mysql</group>
@@ -118,6 +126,7 @@
             <group>slow</group>
         </exclude>
     </groups>
+    -->
 
     <!-- Code coverage configuration -->
     <coverage includeUncoveredFiles="true"

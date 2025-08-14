@@ -54,7 +54,6 @@ try {
     }
 
     $logger->info('Feature coverage analysis completed successfully');
-
 } catch (Exception $e) {
     $logger->error('Feature coverage analysis failed: ' . $e->getMessage());
     echo 'ERROR: ' . $e->getMessage() . "\n";
@@ -84,7 +83,7 @@ function runFullAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Test
         $logger->info('Generating feature coverage alerts');
         $alerts = $analyzer->generateFeatureCoverageAlerts();
 
-        if (!empty($alerts)) {
+        if ($alerts !== []) {
             echo "\nFeature Coverage Alerts:\n";
 
             foreach ($alerts as $alert) {
@@ -132,7 +131,6 @@ function runFeatureAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, T
         }
 
         exit($result['status'] === 'PASS' ? 0 : 1);
-
     } catch (Exception $e) {
         echo "ERROR: Failed to analyze feature '{$feature}': " . $e->getMessage() . "\n";
         exit(1);
@@ -190,7 +188,7 @@ function runAlertsAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Te
 
     $alerts = $analyzer->generateFeatureCoverageAlerts();
 
-    if (empty($alerts)) {
+    if ($alerts === []) {
         echo "No feature coverage alerts found!\n";
         exit(0);
     }
@@ -242,33 +240,23 @@ function runAlertsAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Te
 
 /**
  * Output results based on format.
- *
- * @param mixed $result
  */
-function outputResults($result, array $options): void
+function outputResults(mixed $result, array $options): void
 {
     $format = $options['format'] ?? 'text';
 
-    switch ($format) {
-        case 'json':
-            $output = json_encode([
-                'tool'      => $result->tool,
-                'score'     => $result->score,
-                'passed'    => $result->passed,
-                'issues'    => $result->issues,
-                'metrics'   => $result->metrics,
-                'timestamp' => $result->timestamp->format('Y-m-d H:i:s'),
-            ], JSON_PRETTY_PRINT);
-            break;
-
-        case 'html':
-            $output = generateHtmlOutput($result);
-            break;
-
-        default: // text
-            $output = generateTextOutput($result);
-            break;
-    }
+    $output = match ($format) {
+        'json' => json_encode([
+            'tool' => $result->tool,
+            'score' => $result->score,
+            'passed' => $result->passed,
+            'issues' => $result->issues,
+            'metrics' => $result->metrics,
+            'timestamp' => $result->timestamp->format('Y-m-d H:i:s'),
+        ], JSON_PRETTY_PRINT),
+        'html' => generateHtmlOutput($result),
+        default => generateTextOutput($result),
+    };
 
     if (isset($options['output'])) {
         file_put_contents($options['output'], $output);
@@ -280,10 +268,8 @@ function outputResults($result, array $options): void
 
 /**
  * Generate text output.
- *
- * @param mixed $result
  */
-function generateTextOutput($result): string
+function generateTextOutput(mixed $result): string
 {
     $output = "Feature Coverage Analysis Results\n";
     $output .= "=================================\n\n";
@@ -314,12 +300,10 @@ function generateTextOutput($result): string
 
 /**
  * Generate HTML output.
- *
- * @param mixed $result
  */
-function generateHtmlOutput($result): string
+function generateHtmlOutput(mixed $result): string
 {
-    $status      = $result->passed ? 'PASS' : 'FAIL';
+    $status = $result->passed ? 'PASS' : 'FAIL';
     $statusClass = $result->passed ? 'success' : 'error';
 
     $html = "<!DOCTYPE html>\n<html>\n<head>\n";
@@ -345,7 +329,7 @@ function generateHtmlOutput($result): string
 
     foreach ($result->metrics['feature_results'] as $featureName => $featureResult) {
         $featureStatus = $featureResult['status'];
-        $featureClass  = $featureStatus === 'PASS' ? 'success' : 'error';
+        $featureClass = $featureStatus === 'PASS' ? 'success' : 'error';
         $html .= '<tr>';
         $html .= "<td>{$featureName}</td>";
         $html .= "<td>{$featureResult['average_coverage']}%</td>";
@@ -356,9 +340,8 @@ function generateHtmlOutput($result): string
     }
 
     $html .= "</table>\n";
-    $html .= "</body>\n</html>";
 
-    return $html;
+    return $html . "</body>\n</html>";
 }
 
 /**
@@ -367,12 +350,13 @@ function generateHtmlOutput($result): string
 function parseArguments(array $argv): array
 {
     $options = [];
+    $counter = count($argv);
 
-    for ($i = 1; $i < count($argv); ++$i) {
+    for ($i = 1; $i < $counter; ++$i) {
         $arg = $argv[$i];
 
-        if (strpos($arg, '--') === 0) {
-            if (strpos($arg, '=') !== false) {
+        if (str_starts_with($arg, '--')) {
+            if (str_contains($arg, '=')) {
                 [$key, $value] = explode('=', substr($arg, 2), 2);
                 $options[$key] = $value;
             } else {

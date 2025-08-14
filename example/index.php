@@ -16,11 +16,10 @@ use App\Models\User;
 
 // Obtener la acción y parámetros de la URL
 $action = $_GET['action'] ?? 'dashboard';
-$id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
+$id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
 try {
     switch ($action) {
-
         // ======================
         // DASHBOARD
         // ======================
@@ -36,9 +35,9 @@ try {
 
             // Conteos eficientes usando el ORM
             $totalProjects = $orm->table('projects')->count();
-            $totalTasks    = $orm->table('tasks')->count();
-            $totalUsers    = $orm->table('users')->count();
-            $totalLabels   = $orm->table('labels')->count();
+            $totalTasks = $orm->table('tasks')->count();
+            $totalUsers = $orm->table('users')->count();
+            $totalLabels = $orm->table('labels')->count();
 
             // 🚀 Tareas recientes con información relacionada usando Modo Lazy
             $recentTasks = $orm->table('tasks as t')
@@ -51,7 +50,7 @@ try {
                 ->collect()                                               // ✅ UNA consulta optimizada
             ;
 
-            render('dashboard', compact('totalProjects', 'totalTasks', 'totalUsers', 'totalLabels', 'recentTasks'));
+            render('dashboard', ['totalProjects' => $totalProjects, 'totalTasks' => $totalTasks, 'totalUsers' => $totalUsers, 'totalLabels' => $totalLabels, 'recentTasks' => $recentTasks]);
             break;
 
             // ======================
@@ -60,19 +59,19 @@ try {
         case 'projects':
             // Usar modelos para que las vistas sigan accediendo con ->propiedad
             $projects = models()->project()->all();
-            $users    = models()->user()->all();
-            render('projects/index', compact('projects', 'users'));
+            $users = models()->user()->all();
+            render('projects/index', ['projects' => $projects, 'users' => $users]);
             break;
 
         case 'project_show':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de proyecto requerido');
                 redirect('?action=projects');
             }
 
             $project = models()->project()->find($id);
 
-            if (!$project) {
+            if (!$project instanceof Project) {
                 flash('error', 'Proyecto no encontrado');
                 redirect('?action=projects');
             }
@@ -81,7 +80,7 @@ try {
             // $tasks = Task::getAll('SELECT * FROM tasks WHERE project_id = ? ORDER BY status, created_at DESC', [$id]);
 
             // ✅ DESPUÉS (Modo Lazy con información relacionada):
-            $orm   = app()->orm();
+            $orm = app()->orm();
             $tasks = $orm->table('tasks as t')
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'u.email as user_email'])
@@ -93,10 +92,10 @@ try {
             ;
 
             // Obtener el recuento de notas para las tareas obtenidas
-            $taskIds    = array_column($tasks, 'id');
+            $taskIds = array_column($tasks, 'id');
             $noteCounts = [];
 
-            if (!empty($taskIds)) {
+            if ($taskIds !== []) {
                 $noteCountsData = $orm->table('task_notes')
                     ->select(['task_id', 'COUNT(*) as count'])
                     ->whereIn('task_id', $taskIds)
@@ -116,23 +115,21 @@ try {
             unset($task); // Romper la referencia
 
             $members = $project->members();
-            $owner   = models()->user()->findArray($project->owner_id);
+            $owner = models()->user()->findArray($project->owner_id);
 
             // Obtener usuarios disponibles de forma eficiente
-            $allUsers    = models()->user()->all();
-            $allUsers    = models()->user()->all();
-            $memberIds   = array_column($members, 'id');
+            $allUsers = models()->user()->all();
+            $allUsers = models()->user()->all();
+            $memberIds = array_column($members, 'id');
             $memberIds[] = $project->owner_id;
 
-            $availableUsers = array_filter($allUsers, static function ($user) use ($memberIds) {
-                return !in_array($user->id, $memberIds, true);
-            });
+            $availableUsers = array_filter($allUsers, static fn ($user): bool => !in_array($user->id, $memberIds, true));
 
-            render('projects/show', compact('project', 'tasks', 'members', 'owner', 'availableUsers'));
+            render('projects/show', ['project' => $project, 'tasks' => $tasks, 'members' => $members, 'owner' => $owner, 'availableUsers' => $availableUsers]);
             break;
 
         case 'project_create':
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     $project = models()->project()->createOne($_POST);
                     flash('success', 'Proyecto creado exitosamente');
@@ -143,23 +140,23 @@ try {
             }
             // Mantener usuarios como objetos de modelo para consistencia en las vistas
             $users = models()->user()->all();
-            render('projects/create', compact('users'));
+            render('projects/create', ['users' => $users]);
             break;
 
         case 'project_edit':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de proyecto requerido');
                 redirect('?action=projects');
             }
 
             $project = models()->project()->find($id);
 
-            if (!$project) {
+            if (!$project instanceof Project) {
                 flash('error', 'Proyecto no encontrado');
                 redirect('?action=projects');
             }
 
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     $project->fill($_POST);
                     $project->store();
@@ -171,7 +168,7 @@ try {
             }
             // Mantener usuarios como objetos (no arrays exportados) para evitar warnings en la vista edit
             $users = models()->user()->all();
-            render('projects/edit', compact('project', 'users'));
+            render('projects/edit', ['project' => $project, 'users' => $users]);
             break;
 
         case 'project_add_member':
@@ -179,7 +176,7 @@ try {
                 try {
                     $project = models()->project()->find((int) $_POST['project_id']);
 
-                    if (!$project) {
+                    if (!$project instanceof Project) {
                         flash('error', 'Proyecto no encontrado');
                         redirect('?action=projects');
                         break;
@@ -187,7 +184,7 @@ try {
 
                     $user = models()->user()->find((int) $_POST['user_id']);
 
-                    if (!$user) {
+                    if (!$user instanceof User) {
                         flash('error', 'Usuario no encontrado');
                         redirect('?action=project_show&id=' . $_POST['project_id']);
                         break;
@@ -203,9 +200,9 @@ try {
                     if ($exists) {
                         flash('warning', 'El usuario ya es miembro del proyecto');
                     } else {
-                        $pivot             = $project->dispenseInstance('project_users');
+                        $pivot = $project->dispenseInstance('project_users');
                         $pivot->project_id = (int) $_POST['project_id'];
-                        $pivot->user_id    = (int) $_POST['user_id'];
+                        $pivot->user_id = (int) $_POST['user_id'];
                         $pivot->store();
                         flash('success', 'Miembro agregado exitosamente');
                     }
@@ -226,14 +223,14 @@ try {
                 try {
                     $project = models()->project()->find((int) $_POST['project_id']);
 
-                    if (!$project) {
+                    if (!$project instanceof Project) {
                         flash('error', 'Proyecto no encontrado');
                         redirect('?action=projects');
                         break;
                     }
 
                     // Remover el miembro usando el ORM global
-                    $orm  = app()->orm();
+                    $orm = app()->orm();
                     $rows = app()->orm()->table('project_users')
                         ->select(['id'])
                         ->where('project_id', '=', (int) $_POST['project_id'])
@@ -262,14 +259,14 @@ try {
             break;
 
         case 'project_delete':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de proyecto requerido');
                 redirect('?action=projects');
             }
 
             $project = models()->project()->find($id);
 
-            if ($project) {
+            if ($project instanceof Project) {
                 $project->trash();
                 flash('success', 'Proyecto eliminado exitosamente');
             } else {
@@ -283,16 +280,16 @@ try {
             // ======================
         case 'tasks':
             // Parámetros de paginación y filtros
-            $page         = max(1, (int) ($_GET['page'] ?? 1));
+            $page = max(1, (int) ($_GET['page'] ?? 1));
             $perPageParam = $_GET['per_page'] ?? 10;
-            $perPage      = in_array((int) $perPageParam, [1, 5, 10, 20, 50, 100], true) ? (int) $perPageParam : 10;
-            $offset       = ($page - 1) * $perPage;
+            $perPage = in_array((int) $perPageParam, [1, 5, 10, 20, 50, 100], true) ? (int) $perPageParam : 10;
+            $offset = ($page - 1) * $perPage;
 
             // Filtros
-            $statusFilter   = $_GET['status'] ?? '';
+            $statusFilter = $_GET['status'] ?? '';
             $priorityFilter = $_GET['priority'] ?? '';
-            $projectFilter  = $_GET['project_id'] ?? '';
-            $userFilter     = $_GET['user_id'] ?? '';
+            $projectFilter = $_GET['project_id'] ?? '';
+            $userFilter = $_GET['user_id'] ?? '';
 
             // 🚀 ANTES (Muy ineficiente):
             // - Obtener TODAS las tareas en memoria
@@ -361,10 +358,10 @@ try {
             ;
 
             // Obtener el recuento de notas para las tareas obtenidas
-            $taskIds    = array_column($tasks, 'id');
+            $taskIds = array_column($tasks, 'id');
             $noteCounts = [];
 
-            if (!empty($taskIds)) {
+            if ($taskIds !== []) {
                 $noteCountsData = $orm->table('task_notes')
                     ->select(['task_id', 'COUNT(*) as count'])
                     ->whereIn('task_id', $taskIds)
@@ -385,30 +382,30 @@ try {
 
             // Obtener datos para filtros (solo los necesarios)
             $projects = $orm->table('projects')->select(['id', 'name'])->getAll();
-            $users    = $orm->table('users')->select(['id', 'name'])->getAll();
+            $users = $orm->table('users')->select(['id', 'name'])->getAll();
 
             // Datos de paginación
             $pagination = [
                 'current_page' => $page,
-                'per_page'     => $perPage,
-                'total'        => $totalTasks,
-                'total_pages'  => $totalPages,
-                'has_prev'     => $page > 1,
-                'has_next'     => $page < $totalPages,
-                'prev_page'    => max(1, $page - 1),
-                'next_page'    => min($totalPages, $page + 1),
-                'start'        => $totalTasks > 0 ? $offset + 1 : 0,
-                'end'          => min($offset + $perPage, $totalTasks),
+                'per_page' => $perPage,
+                'total' => $totalTasks,
+                'total_pages' => $totalPages,
+                'has_prev' => $page > 1,
+                'has_next' => $page < $totalPages,
+                'prev_page' => max(1, $page - 1),
+                'next_page' => min($totalPages, $page + 1),
+                'start' => $totalTasks > 0 ? $offset + 1 : 0,
+                'end' => min($offset + $perPage, $totalTasks),
                 'showing_from' => $totalTasks > 0 ? $offset + 1 : 0,
-                'showing_to'   => min($offset + $perPage, $totalTasks),
+                'showing_to' => min($offset + $perPage, $totalTasks),
             ];
 
             // Datos de filtros actuales
             $filters = [
-                'status'     => $statusFilter,
-                'priority'   => $priorityFilter,
+                'status' => $statusFilter,
+                'priority' => $priorityFilter,
                 'project_id' => $projectFilter,
-                'user_id'    => $userFilter,
+                'user_id' => $userFilter,
             ];
 
             // Construir query string para filtros
@@ -429,16 +426,16 @@ try {
             if ($userFilter) {
                 $filterParams['user_id'] = $userFilter;
             }
-            $filterQueryString = $filterParams ? '&' . http_build_query($filterParams) : '';
+            $filterQueryString = $filterParams !== [] ? '&' . http_build_query($filterParams) : '';
 
-            render('tasks/index', compact('tasks', 'projects', 'users', 'pagination', 'filters', 'filterQueryString'));
+            render('tasks/index', ['tasks' => $tasks, 'projects' => $projects, 'users' => $users, 'pagination' => $pagination, 'filters' => $filters, 'filterQueryString' => $filterQueryString]);
             break;
 
         case 'task_create':
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     // Extraer las etiquetas del POST antes de crear la tarea
-                    $labels   = $_POST['labels'] ?? [];
+                    $labels = $_POST['labels'] ?? [];
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
@@ -457,28 +454,28 @@ try {
             }
 
             $projects = array_map(static fn ($p) => $p->export(), models()->project()->all());
-            $users    = array_map(static fn ($u) => $u->export(), models()->user()->all());
-            $labels   = array_map(static fn ($l) => $l->export(), app()->orm()->table('labels')->findAll());
-            render('tasks/create', compact('projects', 'users', 'labels'));
+            $users = array_map(static fn ($u) => $u->export(), models()->user()->all());
+            $labels = array_map(static fn ($l): array => $l->export(), app()->orm()->table('labels')->findAll());
+            render('tasks/create', ['projects' => $projects, 'users' => $users, 'labels' => $labels]);
             break;
 
         case 'task_edit':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de tarea requerido');
                 redirect('?action=tasks');
             }
 
             $task = models()->task()->find($id);
 
-            if (!$task) {
+            if (!$task instanceof Task) {
                 flash('error', 'Tarea no encontrada');
                 redirect('?action=tasks');
             }
 
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     // Extraer las etiquetas del POST antes de actualizar la tarea
-                    $labels   = $_POST['labels'] ?? [];
+                    $labels = $_POST['labels'] ?? [];
                     $taskData = $_POST;
                     unset($taskData['labels']); // Remover labels del array de datos
 
@@ -499,22 +496,22 @@ try {
                 }
             }
 
-            $projects   = array_map(static fn ($p) => $p->export(), models()->project()->all());
-            $users      = array_map(static fn ($u) => $u->export(), models()->user()->all());
-            $labels     = array_map(static fn ($l) => $l->export(), app()->orm()->table('labels')->findAll());
+            $projects = array_map(static fn ($p) => $p->export(), models()->project()->all());
+            $users = array_map(static fn ($u) => $u->export(), models()->user()->all());
+            $labels = array_map(static fn ($l): array => $l->export(), app()->orm()->table('labels')->findAll());
             $taskLabels = $task->getLabelIds();
-            render('tasks/edit', compact('task', 'projects', 'users', 'labels', 'taskLabels'));
+            render('tasks/edit', ['task' => $task, 'projects' => $projects, 'users' => $users, 'labels' => $labels, 'taskLabels' => $taskLabels]);
             break;
 
         case 'task_delete':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de tarea requerido');
                 redirect('?action=tasks');
             }
 
             $task = models()->task()->find($id);
 
-            if ($task) {
+            if ($task instanceof Task) {
                 $projectId = $task->project_id;
                 $task->trash();
                 flash('success', 'Tarea eliminada exitosamente');
@@ -526,14 +523,14 @@ try {
             break;
 
         case 'task_change_status':
-            if (!$id || empty($_POST['status'])) {
+            if ($id === null || $id === 0 || empty($_POST['status'])) {
                 flash('error', 'Datos incompletos');
                 redirect($_SERVER['HTTP_REFERER'] ?? '?action=tasks');
             }
 
             $task = models()->task()->find($id);
 
-            if ($task) {
+            if ($task instanceof Task) {
                 try {
                     $task->changeStatus($_POST['status']);
                     flash('success', 'Estado de tarea actualizado');
@@ -551,11 +548,11 @@ try {
             // ======================
         case 'users':
             $users = models()->user()->all();
-            render('users/index', compact('users'));
+            render('users/index', ['users' => $users]);
             break;
 
         case 'user_create':
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     $user = models()->user()->createOne($_POST);
                     flash('success', 'Usuario creado exitosamente');
@@ -569,19 +566,19 @@ try {
             break;
 
         case 'user_edit':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de usuario requerido');
                 redirect('?action=users');
             }
 
             $user = models()->user()->find($id);
 
-            if (!$user) {
+            if (!$user instanceof User) {
                 flash('error', 'Usuario no encontrado');
                 redirect('?action=users');
             }
 
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     $user->fill($_POST);
                     $user->store();
@@ -592,18 +589,18 @@ try {
                 }
             }
             // Render único (se había duplicado por error)
-            render('users/edit', compact('user'));
+            render('users/edit', ['user' => $user]);
             break;
 
         case 'user_delete':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de usuario requerido');
                 redirect('?action=users');
             }
 
             $user = models()->user()->find($id);
 
-            if ($user) {
+            if ($user instanceof User) {
                 $user->trash();
                 flash('success', 'Usuario eliminado exitosamente');
             } else {
@@ -618,8 +615,8 @@ try {
         case 'labels':
             $labels = app()->orm()->table('labels')->findAll();
 
-            if ($labels) {
-                $labelIds   = array_map(static fn ($l) => $l->id, $labels);
+            if ($labels !== []) {
+                $labelIds = array_map(static fn ($l) => $l->id, $labels);
                 $countsRows = app()->orm()->table('task_labels')
                     ->select(['label_id', 'COUNT(*) as c'])
                     ->whereIn('label_id', $labelIds)
@@ -636,7 +633,7 @@ try {
                     $l->tasks_count = $map[$l->id] ?? 0;
                 }
             }
-            render('labels/index', compact('labels'));
+            render('labels/index', ['labels' => $labels]);
             break;
 
         case 'label_tasks':
@@ -659,7 +656,7 @@ try {
             // ', [$labelId]);
 
             // ✅ DESPUÉS (Modo Lazy optimizado automáticamente):
-            $orm   = app()->orm();
+            $orm = app()->orm();
             $tasks = $orm->table('tasks as t')
                 ->lazy()                                                    // 🚀 Activa optimización automática
                 ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
@@ -676,7 +673,7 @@ try {
             exit;
 
         case 'label_create':
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     $label = new Label(Label::tableName(), app()->orm());
                     $label->createOne($_POST);
@@ -691,14 +688,14 @@ try {
             break;
 
         case 'label_edit':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de etiqueta requerido');
                 redirect('?action=labels');
             }
 
             $label = (new Label(Label::tableName(), app()->orm()))->find($id);
 
-            if (!$label) {
+            if (!$label instanceof Label) {
                 flash('error', 'Etiqueta no encontrada');
                 redirect('?action=labels');
             }
@@ -711,7 +708,7 @@ try {
             ;
             $label->tasks_count = (int) ($countRow['c'] ?? 0);
 
-            if ($_POST) {
+            if ($_POST !== []) {
                 try {
                     $label->fill($_POST);
                     $label->store();
@@ -722,18 +719,18 @@ try {
                 }
             }
 
-            render('labels/edit', compact('label'));
+            render('labels/edit', ['label' => $label]);
             break;
 
         case 'label_delete':
-            if (!$id) {
+            if ($id === null || $id === 0) {
                 flash('error', 'ID de etiqueta requerido');
                 redirect('?action=labels');
             }
 
             $label = (new Label(Label::tableName(), app()->orm()))->find($id);
 
-            if ($label) {
+            if ($label instanceof Label) {
                 $label->trash();
                 flash('success', 'Etiqueta eliminada exitosamente');
             } else {

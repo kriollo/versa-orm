@@ -29,8 +29,8 @@ class MetricsCollector
 
     public function __construct(array $config = [])
     {
-        $this->enabled       = $config['enabled'] ?? true;
-        $this->outputDir     = $config['output_dir'] ?? 'tests/metrics';
+        $this->enabled = $config['enabled'] ?? true;
+        $this->outputDir = $config['output_dir'] ?? 'tests/metrics';
         $this->retentionDays = $config['retention_days'] ?? 30;
 
         if ($this->enabled) {
@@ -50,9 +50,9 @@ class MetricsCollector
         }
 
         $this->recordMetric('execution_time', [
-            'operation'    => $operation,
+            'operation' => $operation,
             'time_seconds' => $time,
-            'timestamp'    => (new DateTime())->format('Y-m-d H:i:s.u'),
+            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
@@ -66,12 +66,12 @@ class MetricsCollector
         }
 
         $this->recordMetric('memory_usage', [
-            'operation'                => $operation,
-            'peak_memory_bytes'        => $peakMemory,
-            'current_memory_bytes'     => $currentMemory,
-            'peak_memory_formatted'    => $this->formatBytes($peakMemory),
+            'operation' => $operation,
+            'peak_memory_bytes' => $peakMemory,
+            'current_memory_bytes' => $currentMemory,
+            'peak_memory_formatted' => $this->formatBytes($peakMemory),
             'current_memory_formatted' => $this->formatBytes($currentMemory),
-            'timestamp'                => (new DateTime())->format('Y-m-d H:i:s.u'),
+            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
@@ -86,8 +86,8 @@ class MetricsCollector
 
         $this->recordMetric('test_execution', [
             'test_type' => $testType,
-            'engine'    => $engine,
-            'metrics'   => $metrics,
+            'engine' => $engine,
+            'metrics' => $metrics,
             'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
@@ -102,11 +102,11 @@ class MetricsCollector
         }
 
         $this->recordMetric('quality_analysis', [
-            'tool'        => $tool,
-            'score'       => $score,
+            'tool' => $tool,
+            'score' => $score,
             'issue_count' => $issueCount,
-            'details'     => $details,
-            'timestamp'   => (new DateTime())->format('Y-m-d H:i:s.u'),
+            'details' => $details,
+            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
@@ -121,9 +121,9 @@ class MetricsCollector
 
         $this->recordMetric('benchmark', [
             'benchmark_name' => $benchmark,
-            'engine'         => $engine,
-            'metrics'        => $metrics,
-            'timestamp'      => (new DateTime())->format('Y-m-d H:i:s.u'),
+            'engine' => $engine,
+            'metrics' => $metrics,
+            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
@@ -138,8 +138,8 @@ class MetricsCollector
 
         $this->recordMetric('custom', [
             'metric_name' => $name,
-            'data'        => $data,
-            'timestamp'   => (new DateTime())->format('Y-m-d H:i:s.u'),
+            'data' => $data,
+            'timestamp' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ]);
     }
 
@@ -154,7 +154,7 @@ class MetricsCollector
 
         $allMetrics = $this->loadAllMetrics();
 
-        return array_filter($allMetrics, static function ($metric) use ($type, $from, $to) {
+        return array_filter($allMetrics, static function (array $metric) use ($type, $from, $to): bool {
             // Filtrar por tipo
             if ($type && $metric['type'] !== $type) {
                 return false;
@@ -182,26 +182,26 @@ class MetricsCollector
      */
     public function getPerformanceStats(int $days = 7): array
     {
-        $from             = new DateTime("-{$days} days");
+        $from = new DateTime("-{$days} days");
         $executionMetrics = $this->getMetrics('execution_time', $from);
-        $memoryMetrics    = $this->getMetrics('memory_usage', $from);
+        $memoryMetrics = $this->getMetrics('memory_usage', $from);
 
         $stats = [
-            'period_days'      => $days,
+            'period_days' => $days,
             'total_executions' => count($executionMetrics),
-            'execution_times'  => [],
-            'memory_usage'     => [],
-            'operations'       => [],
+            'execution_times' => [],
+            'memory_usage' => [],
+            'operations' => [],
         ];
 
         // Analizar tiempos de ejecución
         $executionTimes = array_map(static fn ($m) => $m['data']['time_seconds'], $executionMetrics);
 
-        if (!empty($executionTimes)) {
+        if ($executionTimes !== []) {
             $stats['execution_times'] = [
-                'min'    => min($executionTimes),
-                'max'    => max($executionTimes),
-                'avg'    => array_sum($executionTimes) / count($executionTimes),
+                'min' => min($executionTimes),
+                'max' => max($executionTimes),
+                'avg' => array_sum($executionTimes) / count($executionTimes),
                 'median' => $this->calculateMedian($executionTimes),
             ];
         }
@@ -209,11 +209,11 @@ class MetricsCollector
         // Analizar uso de memoria
         $memoryUsages = array_map(static fn ($m) => $m['data']['peak_memory_bytes'], $memoryMetrics);
 
-        if (!empty($memoryUsages)) {
+        if ($memoryUsages !== []) {
             $stats['memory_usage'] = [
-                'min_bytes'     => min($memoryUsages),
-                'max_bytes'     => max($memoryUsages),
-                'avg_bytes'     => (int) (array_sum($memoryUsages) / count($memoryUsages)),
+                'min_bytes' => min($memoryUsages),
+                'max_bytes' => max($memoryUsages),
+                'avg_bytes' => (int) (array_sum($memoryUsages) / count($memoryUsages)),
                 'min_formatted' => $this->formatBytes(min($memoryUsages)),
                 'max_formatted' => $this->formatBytes(max($memoryUsages)),
                 'avg_formatted' => $this->formatBytes((int) (array_sum($memoryUsages) / count($memoryUsages))),
@@ -233,15 +233,15 @@ class MetricsCollector
      */
     public function getQualityTrends(int $days = 30): array
     {
-        $from           = new DateTime("-{$days} days");
+        $from = new DateTime("-{$days} days");
         $qualityMetrics = $this->getMetrics('quality_analysis', $from);
 
         $trends = [
-            'period_days'    => $days,
+            'period_days' => $days,
             'total_analyses' => count($qualityMetrics),
-            'tools'          => [],
-            'score_trend'    => [],
-            'issue_trend'    => [],
+            'tools' => [],
+            'score_trend' => [],
+            'issue_trend' => [],
         ];
 
         // Agrupar por herramienta
@@ -263,9 +263,9 @@ class MetricsCollector
 
             $trends['tools'][$tool] = [
                 'total_runs' => count($metrics),
-                'avg_score'  => array_sum($scores) / count($scores),
-                'min_score'  => min($scores),
-                'max_score'  => max($scores),
+                'avg_score' => array_sum($scores) / count($scores),
+                'min_score' => min($scores),
+                'max_score' => max($scores),
                 'avg_issues' => array_sum($issues) / count($issues),
                 'min_issues' => min($issues),
                 'max_issues' => max($issues),
@@ -284,7 +284,7 @@ class MetricsCollector
             return ['enabled' => false];
         }
 
-        $allMetrics    = $this->loadAllMetrics();
+        $allMetrics = $this->loadAllMetrics();
         $metricsByType = [];
 
         foreach ($allMetrics as $metric) {
@@ -297,13 +297,13 @@ class MetricsCollector
         }
 
         return [
-            'enabled'          => true,
-            'total_metrics'    => count($allMetrics),
-            'metrics_by_type'  => $metricsByType,
-            'current_file'     => $this->currentMetricsFile,
+            'enabled' => true,
+            'total_metrics' => count($allMetrics),
+            'metrics_by_type' => $metricsByType,
+            'current_file' => $this->currentMetricsFile,
             'output_directory' => $this->outputDir,
-            'retention_days'   => $this->retentionDays,
-            'file_count'       => count(glob($this->outputDir . '/metrics-*.jsonl')),
+            'retention_days' => $this->retentionDays,
+            'file_count' => count(glob($this->outputDir . '/metrics-*.jsonl')),
         ];
     }
 
@@ -314,7 +314,7 @@ class MetricsCollector
     {
         $metrics = $this->getMetrics($type, $from, $to);
 
-        if (empty($metrics)) {
+        if ($metrics === []) {
             return '';
         }
 
@@ -334,8 +334,8 @@ class MetricsCollector
     private function recordMetric(string $type, array $data): void
     {
         $metric = [
-            'type'        => $type,
-            'data'        => $data,
+            'type' => $type,
+            'data' => $data,
             'recorded_at' => (new DateTime())->format('Y-m-d H:i:s.u'),
         ];
 
@@ -357,7 +357,7 @@ class MetricsCollector
      */
     private function loadAllMetrics(): array
     {
-        $allMetrics  = [];
+        $allMetrics = [];
         $metricFiles = glob($this->outputDir . '/metrics-*.jsonl');
 
         foreach ($metricFiles as $file) {
@@ -400,7 +400,7 @@ class MetricsCollector
      */
     private function cleanupOldMetrics(): void
     {
-        $cutoffDate  = new DateTime("-{$this->retentionDays} days");
+        $cutoffDate = new DateTime("-{$this->retentionDays} days");
         $metricFiles = glob($this->outputDir . '/metrics-*.jsonl');
 
         foreach ($metricFiles as $file) {
@@ -429,7 +429,6 @@ class MetricsCollector
         }
 
         return $numbers[(int) ($count / 2)];
-
     }
 
     /**

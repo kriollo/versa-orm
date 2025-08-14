@@ -27,11 +27,11 @@ class InetCastingConsistencyTest extends TestCase
 
     public function testInetCastingConsistency(): void
     {
-        $model = new class('access_logs_inet_cast', self::$orm) extends VersaModel {
+        $model = new class ('access_logs_inet_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id'         => ['type' => 'int'],
+                    'id' => ['type' => 'int'],
                     'ip_address' => ['type' => 'inet'],
                 ];
             }

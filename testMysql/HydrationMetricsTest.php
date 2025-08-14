@@ -30,7 +30,7 @@ class HydrationMetricsTest extends TestCase
 
         // Uso de first (fast-path single row) y ver incremento de objetos
         $beforeObjs = $after['objects_hydrated'];
-        $one        = self::$orm->table('users')->first();
+        $one = self::$orm->table('users')->first();
         self::assertNotNull($one);
         $after2 = self::$orm->metrics();
         self::assertGreaterThan($beforeObjs, $after2['objects_hydrated']);

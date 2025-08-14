@@ -14,7 +14,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 global $config;
 $config = [
     'DB' => [
-        'engine'    => 'pdo',
+        'engine' => 'pdo',
         'DB_DRIVER' => getenv('DB_DRIVER') ?: 'sqlite',
         // Para archivo local persistente usa ruta absoluta; por defecto en la raíz del repo
         'DB_NAME' => getenv('DB_NAME') ?: (getenv('SQLITE_PATH') ?: (__DIR__ . '/../tests.sqlite')),
@@ -22,7 +22,7 @@ $config = [
         'DB_PORT' => 0,
         'DB_USER' => '',
         'DB_PASS' => '',
-        'debug'   => true,
+        'debug' => true,
     ],
 ];
 

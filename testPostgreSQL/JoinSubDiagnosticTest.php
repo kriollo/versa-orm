@@ -242,7 +242,7 @@ class JoinSubDiagnosticTest extends TestCase
         // Test simple para verificar que la comunicación con Rust funciona
         try {
             $simpleQuery = self::$orm->table('users')->limit(1);
-            $result      = $simpleQuery->getAll();
+            $result = $simpleQuery->getAll();
 
             echo "\n[TEST 10] Comunicación básica PHP-Rust funciona";
             self::assertIsArray($result);

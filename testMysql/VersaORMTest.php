@@ -37,7 +37,7 @@ class VersaORMTest extends TestCase
 
     public function testExecInsert()
     {
-        $query  = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
+        $query = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
         $result = self::$orm->exec($query);
 
         self::assertTrue(
@@ -68,7 +68,7 @@ class VersaORMTest extends TestCase
         self::$orm->exec('COMMIT');
 
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-        $bob   = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
+        $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
 
         self::assertSame('pending', $alice->status);
         self::assertSame('pending', $bob->status);
@@ -77,7 +77,7 @@ class VersaORMTest extends TestCase
     public function testTransactionRollback(): void
     {
         // Primero obtener el estado actual de Alice
-        $alice          = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
+        $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
         $originalStatus = $alice->status;
 
         // Simular rollback verificando que el cambio no se persiste si hay error
@@ -116,8 +116,8 @@ class VersaORMTest extends TestCase
         self::assertNotEmpty($columns, 'Schema should not be empty');
 
         // The schema can return different structures - check for column names as values or keys
-        $hasIdColumn    = false;
-        $hasNameColumn  = false;
+        $hasIdColumn = false;
+        $hasNameColumn = false;
         $hasEmailColumn = false;
 
         // Try to find columns either as keys or values

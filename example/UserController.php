@@ -32,11 +32,10 @@ class UserController
             // Log de la operación
             $this->logControllerAction('create_user', $response['success'], [
                 'request_data' => $this->sanitizeLogData($requestData),
-                'response'     => $response,
+                'response' => $response,
             ]);
 
             return $response;
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'create_user', $requestData);
         }
@@ -54,8 +53,8 @@ class UserController
                 return [
                     'success' => false,
                     'message' => 'User not found',
-                    'error'   => [
-                        'code'        => 'USER_NOT_FOUND',
+                    'error' => [
+                        'code' => 'USER_NOT_FOUND',
                         'suggestions' => ['Verify the user ID is correct', 'Check if the user was deleted'],
                     ],
                 ];
@@ -63,9 +62,8 @@ class UserController
 
             return [
                 'success' => true,
-                'data'    => $user->toArray(),
+                'data' => $user->toArray(),
             ];
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'show_user', ['user_id' => $userId]);
         }
@@ -83,22 +81,21 @@ class UserController
                 return [
                     'success' => false,
                     'message' => 'User not found',
-                    'error'   => ['code' => 'USER_NOT_FOUND'],
+                    'error' => ['code' => 'USER_NOT_FOUND'],
                 ];
             }
 
             $response = $user->updateUser($requestData);
 
             $this->logControllerAction('update_user', $response['success'], [
-                'user_id'      => $userId,
+                'user_id' => $userId,
                 'request_data' => $this->sanitizeLogData($requestData),
             ]);
 
             return $response;
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'update_user', [
-                'user_id'      => $userId,
+                'user_id' => $userId,
                 'request_data' => $this->sanitizeLogData($requestData),
             ]);
         }
@@ -116,11 +113,11 @@ class UserController
                 return [
                     'success' => false,
                     'message' => 'User not found',
-                    'error'   => ['code' => 'USER_NOT_FOUND'],
+                    'error' => ['code' => 'USER_NOT_FOUND'],
                 ];
             }
 
-            $result   = $user->safeDelete();
+            $result = $user->safeDelete();
             $response = $user->deleteApiResponse();
 
             $this->logControllerAction('delete_user', $response['success'], [
@@ -128,7 +125,6 @@ class UserController
             ]);
 
             return $response;
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'delete_user', ['user_id' => $userId]);
         }
@@ -154,25 +150,24 @@ class UserController
             $users = UserModel::findAllWithErrorHandling($conditions);
 
             // Aplicar paginación simple
-            $total          = count($users);
-            $offset         = ($page - 1) * $perPage;
+            $total = count($users);
+            $offset = ($page - 1) * $perPage;
             $paginatedUsers = array_slice($users, $offset, $perPage);
 
             return [
-                'success'    => true,
-                'data'       => array_map(static fn ($user) => $user->toArray(), $paginatedUsers),
+                'success' => true,
+                'data' => array_map(static fn ($user) => $user->toArray(), $paginatedUsers),
                 'pagination' => [
                     'current_page' => $page,
-                    'per_page'     => $perPage,
-                    'total'        => $total,
-                    'total_pages'  => ceil($total / $perPage),
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'total_pages' => ceil($total / $perPage),
                 ],
             ];
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'index_users', [
-                'filters'  => $filters,
-                'page'     => $page,
+                'filters' => $filters,
+                'page' => $page,
                 'per_page' => $perPage,
             ]);
         }
@@ -190,7 +185,7 @@ class UserController
                 return [
                     'success' => false,
                     'message' => 'User not found',
-                    'error'   => ['code' => 'USER_NOT_FOUND'],
+                    'error' => ['code' => 'USER_NOT_FOUND'],
                 ];
             }
 
@@ -199,13 +194,12 @@ class UserController
             return [
                 'success' => !$user->hasError(),
                 'message' => $user->hasError() ? 'Failed to activate user' : 'User activated successfully',
-                'data'    => $user->hasError() ? null : $user->toArray(),
-                'error'   => $user->hasError() ? [
+                'data' => $user->hasError() ? null : $user->toArray(),
+                'error' => $user->hasError() ? [
                     'message' => $user->getLastErrorMessage(),
-                    'code'    => $user->getLastErrorCode(),
+                    'code' => $user->getLastErrorCode(),
                 ] : null,
             ];
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'activate_user', ['user_id' => $userId]);
         }
@@ -221,9 +215,8 @@ class UserController
 
             return [
                 'success' => true,
-                'data'    => $stats,
+                'data' => $stats,
             ];
-
         } catch (VersaORMException $e) {
             return $this->handleControllerError($e, 'user_stats', []);
         }
@@ -241,15 +234,13 @@ class UserController
             ];
         }
 
-        $errors     = ErrorHandler::getErrorLog();
-        $userErrors = array_filter($errors, static function ($error) {
-            return str_contains($error['context']['model_class'] ?? '', 'UserModel');
-        });
+        $errors = ErrorHandler::getErrorLog();
+        $userErrors = array_filter($errors, static fn ($error): bool => str_contains($error['context']['model_class'] ?? '', 'UserModel'));
 
         return [
             'success' => true,
-            'data'    => [
-                'total_errors'  => count($userErrors),
+            'data' => [
+                'total_errors' => count($userErrors),
                 'recent_errors' => array_slice($userErrors, -10),
                 'error_summary' => $this->summarizeErrors($userErrors),
             ],
@@ -263,12 +254,12 @@ class UserController
     {
         $errorData = ErrorHandler::handleException($e, array_merge($context, [
             'controller' => static::class,
-            'action'     => $action,
-            'timestamp'  => date('Y-m-d H:i:s'),
+            'action' => $action,
+            'timestamp' => date('Y-m-d H:i:s'),
         ]));
 
         $this->logControllerAction($action, false, [
-            'error'   => $errorData,
+            'error' => $errorData,
             'context' => $context,
         ]);
 
@@ -277,15 +268,15 @@ class UserController
             return [
                 'success' => false,
                 'message' => 'Database operation failed',
-                'error'   => [
-                    'message'     => $e->getMessage(),
-                    'code'        => $e->getErrorCode(),
-                    'query'       => $e->getQuery(),
-                    'bindings'    => $e->getBindings(),
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'code' => $e->getErrorCode(),
+                    'query' => $e->getQuery(),
+                    'bindings' => $e->getBindings(),
                     'suggestions' => $errorData['suggestions'],
                 ],
                 'debug' => [
-                    'origin'      => $errorData['origin'],
+                    'origin' => $errorData['origin'],
                     'stack_trace' => $errorData['stack_trace'],
                 ],
             ];
@@ -295,8 +286,8 @@ class UserController
         return [
             'success' => false,
             'message' => 'An error occurred while processing your request',
-            'error'   => [
-                'code'      => $e->getErrorCode(),
+            'error' => [
+                'code' => $e->getErrorCode(),
                 'reference' => substr(md5(json_encode($errorData)), 0, 8),
             ],
         ];
@@ -309,10 +300,10 @@ class UserController
     {
         $logData = [
             'controller' => static::class,
-            'action'     => $action,
-            'success'    => $success,
-            'timestamp'  => date('Y-m-d H:i:s'),
-            'context'    => $context,
+            'action' => $action,
+            'success' => $success,
+            'timestamp' => date('Y-m-d H:i:s'),
+            'context' => $context,
         ];
 
         // Escribir al log configurado en VersaORM si está disponible
@@ -352,7 +343,7 @@ class UserController
      */
     private function isDebugMode(): bool
     {
-        return defined('APP_DEBUG') && APP_DEBUG === true;
+        return defined('APP_DEBUG') && APP_DEBUG;
     }
 
     /**
@@ -362,8 +353,8 @@ class UserController
     {
         $summary = [
             'by_error_code' => [],
-            'by_operation'  => [],
-            'most_recent'   => null,
+            'by_operation' => [],
+            'most_recent' => null,
         ];
 
         foreach ($errors as $error) {
@@ -371,10 +362,10 @@ class UserController
             $operation = $error['context']['operation'] ?? 'unknown';
 
             $summary['by_error_code'][$errorCode] = ($summary['by_error_code'][$errorCode] ?? 0) + 1;
-            $summary['by_operation'][$operation]  = ($summary['by_operation'][$operation] ?? 0) + 1;
+            $summary['by_operation'][$operation] = ($summary['by_operation'][$operation] ?? 0) + 1;
         }
 
-        if (!empty($errors)) {
+        if ($errors !== []) {
             $summary['most_recent'] = end($errors);
         }
 

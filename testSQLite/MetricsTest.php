@@ -9,7 +9,7 @@ class MetricsTest extends TestCase
     public function testMetricsIncrementQueries(): void
     {
         $orm = self::$orm; // instancia compartida
-        $m0  = $orm->metrics();
+        $m0 = $orm->metrics();
         self::assertIsArray($m0);
         $initial = (int) ($m0['queries'] ?? 0);
 

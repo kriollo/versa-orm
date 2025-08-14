@@ -30,35 +30,35 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationWithRequiredFields(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance', 'bio', 'is_active'];
 
             protected function getTableValidationSchema(): array
             {
                 return [
                     'name' => [
-                        'is_required'      => true,
-                        'is_nullable'      => false,
-                        'max_length'       => 255,
-                        'data_type'        => 'varchar',
+                        'is_required' => true,
+                        'is_nullable' => false,
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                         'validation_rules' => ['required'],
                     ],
                     'email' => [
-                        'is_required'      => true,
-                        'is_nullable'      => false,
-                        'max_length'       => 255,
-                        'data_type'        => 'varchar',
+                        'is_required' => true,
+                        'is_nullable' => false,
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                         'validation_rules' => ['required', 'email'],
                     ],
                     'age' => [
                         'is_required' => false,
                         'is_nullable' => true,
-                        'data_type'   => 'int',
+                        'data_type' => 'int',
                     ],
                     'balance' => [
-                        'is_required'      => false,
-                        'is_nullable'      => true,
-                        'data_type'        => 'decimal',
+                        'is_required' => false,
+                        'is_nullable' => true,
+                        'data_type' => 'decimal',
                         'validation_rules' => ['numeric'],
                     ],
                 ];
@@ -73,7 +73,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationFailsOnRequiredFields(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance'];
 
             protected function getTableValidationSchema(): array
@@ -82,14 +82,14 @@ class ValidationSchemaTest extends TestCase
                     'name' => [
                         'is_required' => true,
                         'is_nullable' => false,
-                        'max_length'  => 255,
-                        'data_type'   => 'varchar',
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                     ],
                     'email' => [
                         'is_required' => true,
                         'is_nullable' => false,
-                        'max_length'  => 255,
-                        'data_type'   => 'varchar',
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                     ],
                 ];
             }
@@ -104,7 +104,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationMaxLength(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -113,8 +113,8 @@ class ValidationSchemaTest extends TestCase
                     'name' => [
                         'is_required' => true,
                         'is_nullable' => false,
-                        'max_length'  => 10,
-                        'data_type'   => 'varchar',
+                        'max_length' => 10,
+                        'data_type' => 'varchar',
                     ],
                 ];
             }
@@ -129,7 +129,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationDataTypes(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['age', 'balance'];
 
             protected function getTableValidationSchema(): array
@@ -138,12 +138,12 @@ class ValidationSchemaTest extends TestCase
                     'age' => [
                         'is_required' => false,
                         'is_nullable' => true,
-                        'data_type'   => 'int',
+                        'data_type' => 'int',
                     ],
                     'balance' => [
                         'is_required' => false,
                         'is_nullable' => true,
-                        'data_type'   => 'decimal',
+                        'data_type' => 'decimal',
                     ],
                 ];
             }
@@ -164,7 +164,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationWithNullableFields(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'age', 'bio'];
 
             protected function getTableValidationSchema(): array
@@ -173,18 +173,18 @@ class ValidationSchemaTest extends TestCase
                     'name' => [
                         'is_required' => true,
                         'is_nullable' => false,
-                        'max_length'  => 255,
-                        'data_type'   => 'varchar',
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                     ],
                     'age' => [
                         'is_required' => false,
                         'is_nullable' => true,
-                        'data_type'   => 'int',
+                        'data_type' => 'int',
                     ],
                     'bio' => [
                         'is_required' => false,
                         'is_nullable' => true,
-                        'data_type'   => 'text',
+                        'data_type' => 'text',
                     ],
                 ];
             }
@@ -198,7 +198,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationFallbackToBasic(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -217,7 +217,7 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationWithCustomRules(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
@@ -230,14 +230,14 @@ class ValidationSchemaTest extends TestCase
                     'name' => [
                         'is_required' => true,
                         'is_nullable' => false,
-                        'max_length'  => 255,
-                        'data_type'   => 'varchar',
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                     ],
                     'email' => [
-                        'is_required'      => true,
-                        'is_nullable'      => false,
-                        'max_length'       => 255,
-                        'data_type'        => 'varchar',
+                        'is_required' => true,
+                        'is_nullable' => false,
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                         'validation_rules' => ['email'],
                     ],
                 ];
@@ -254,25 +254,25 @@ class ValidationSchemaTest extends TestCase
 
     public function testSchemaValidationMissingRequiredFields(): void
     {
-        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
             {
                 return [
                     'name' => [
-                        'is_required'       => true,
-                        'is_nullable'       => false,
+                        'is_required' => true,
+                        'is_nullable' => false,
                         'is_auto_increment' => false,
-                        'max_length'        => 255,
-                        'data_type'         => 'varchar',
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                     ],
                     'email' => [
-                        'is_required'       => true,
-                        'is_nullable'       => false,
+                        'is_required' => true,
+                        'is_nullable' => false,
                         'is_auto_increment' => false,
-                        'max_length'        => 255,
-                        'data_type'         => 'varchar',
+                        'max_length' => 255,
+                        'data_type' => 'varchar',
                     ],
                 ];
             }

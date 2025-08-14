@@ -80,7 +80,7 @@ abstract class BaseModel extends VersaModel
      */
     public function find(int $id, string $pk = 'id'): ?static
     {
-        /** @var static|null $m */
+        // @var static|null $m
         return $this->querySelf()->where($pk, '=', $id)->findOne();
     }
 
@@ -95,23 +95,23 @@ abstract class BaseModel extends VersaModel
     {
         $row = $this->querySelf()->where($pk, '=', $id)->firstArray();
 
-        return $row ?: null;
+        return $row !== null && $row !== [] ? $row : null;
     }
 
     /** Paginación simple (instancia). */
     public function paginate(int $page = 1, int $perPage = 10): array
     {
-        $page    = max(1, $page);
+        $page = max(1, $page);
         $perPage = max(1, $perPage);
-        $offset  = ($page - 1) * $perPage;
-        $items   = $this->querySelf()->limit($perPage)->offset($offset)->getAll();
-        $total   = $this->querySelf()->count();
+        $offset = ($page - 1) * $perPage;
+        $items = $this->querySelf()->limit($perPage)->offset($offset)->getAll();
+        $total = $this->querySelf()->count();
 
         return [
-            'items'      => $items,
-            'total'      => $total,
-            'page'       => $page,
-            'perPage'    => $perPage,
+            'items' => $items,
+            'total' => $total,
+            'page' => $page,
+            'perPage' => $perPage,
             'totalPages' => (int) ceil($total / $perPage),
         ];
     }

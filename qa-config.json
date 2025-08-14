@@ -1,0 +1,185 @@
+{
+    "version": "1.0.0",
+    "description": "Centralized QA tools configuration for VersaORM",
+    "php_version": "8.0",
+    "tools": {
+        "rector": {
+            "enabled": true,
+            "config_file": "rector.php",
+            "cache_dir": "var/cache/rector",
+            "memory_limit": "512M",
+            "parallel": true,
+            "paths": [
+                "src",
+                "tests",
+                "example"
+            ],
+            "skip_paths": [
+                "vendor",
+                "tests/reports",
+                "tests/cache",
+                "tests/logs",
+                "src/binary"
+            ],
+            "target_php_version": "8.0",
+            "focus": "code_modernization"
+        },
+        "php_cs_fixer": {
+            "enabled": true,
+            "config_file": ".php-cs-fixer.dist.php",
+            "cache_file": ".php-cs-fixer.cache",
+            "paths": [
+                "src",
+                "testPostgreSQL",
+                "testMysql",
+                "testSQLite",
+                "tests",
+                "example"
+            ],
+            "skip_paths": [
+                "vendor",
+                "cache",
+                "logs",
+                "reports",
+                "binary"
+            ],
+            "risky_allowed": true,
+            "focus": "code_style_formatting"
+        },
+        "phpstan": {
+            "enabled": true,
+            "config_file": "phpstan.neon",
+            "baseline_file": "phpstan-baseline.neon",
+            "level": 8,
+            "memory_limit": "512M",
+            "paths": [
+                "src",
+                "example"
+            ],
+            "skip_paths": [
+                "src/binary",
+                "vendor"
+            ],
+            "focus": "static_analysis_type_checking"
+        },
+        "psalm": {
+            "enabled": true,
+            "config_file": "psalm.xml",
+            "cache_dir": "var/cache/psalm",
+            "error_level": 5,
+            "paths": [
+                "src",
+                "example"
+            ],
+            "skip_paths": [
+                "vendor",
+                "src/binary",
+                "tests",
+                "test*"
+            ],
+            "focus": "security_analysis_complementary_checks"
+        },
+        "phpunit": {
+            "enabled": true,
+            "config_files": {
+                "sqlite": "phpunit-sqlite.xml",
+                "mysql": "phpunit-mysql.xml",
+                "postgresql": "phpunit-postgresql.xml",
+                "default": "phpunit.xml"
+            },
+            "coverage_enabled": true,
+            "memory_limit": "512M",
+            "focus": "unit_integration_testing"
+        }
+    },
+    "execution_order": [
+        "rector",
+        "php_cs_fixer",
+        "phpstan",
+        "psalm",
+        "phpunit"
+    ],
+    "integration_rules": {
+        "rector_before_php_cs_fixer": {
+            "reason": "Rector makes structural changes, PHP-CS-Fixer handles formatting",
+            "conflicts_avoided": [
+                "declare_strict_types",
+                "constructor_promotion",
+                "void_return"
+            ]
+        },
+        "php_cs_fixer_before_static_analysis": {
+            "reason": "Code style should be consistent before analysis",
+            "conflicts_avoided": [
+                "import_formatting",
+                "whitespace_issues"
+            ]
+        },
+        "phpstan_before_psalm": {
+            "reason": "PHPStan handles type checking, Psalm focuses on security",
+            "conflicts_avoided": [
+                "mixed_type_issues",
+                "undefined_method_overlap"
+            ]
+        },
+        "static_analysis_before_tests": {
+            "reason": "Fix static issues before running tests",
+            "conflicts_avoided": [
+                "type_errors_in_tests"
+            ]
+        }
+    },
+    "shared_settings": {
+        "cache_base_dir": "var/cache",
+        "reports_base_dir": "tests/reports",
+        "memory_limit_default": "512M",
+        "parallel_processing": true,
+        "strict_types": true,
+        "error_reporting": "E_ALL"
+    },
+    "orm_specific_rules": {
+        "allow_magic_methods": true,
+        "allow_dynamic_properties": true,
+        "allow_mixed_types_in_models": true,
+        "skip_final_classes": true,
+        "allow_property_exists_with_arrays": true,
+        "flexible_return_types_in_relations": true
+    },
+    "compatibility_matrix": {
+        "rector_vs_php_cs_fixer": {
+            "rector_handles": [
+                "code_structure",
+                "type_declarations",
+                "php_version_upgrades"
+            ],
+            "php_cs_fixer_handles": [
+                "formatting",
+                "style",
+                "imports_organization"
+            ],
+            "shared_disabled_in_php_cs_fixer": [
+                "declare_strict_types",
+                "constructor_promotion",
+                "void_return",
+                "nullable_type_declaration_for_default_null_value"
+            ]
+        },
+        "phpstan_vs_psalm": {
+            "phpstan_handles": [
+                "type_checking",
+                "method_calls",
+                "property_access"
+            ],
+            "psalm_handles": [
+                "security_analysis",
+                "taint_analysis",
+                "immutability"
+            ],
+            "psalm_suppresses_overlapping": [
+                "mixed_types",
+                "undefined_methods",
+                "type_checking_redundancy"
+            ]
+        }
+    }
+}

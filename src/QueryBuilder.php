@@ -48,18 +48,7 @@ use function strlen;
  */
 class QueryBuilder
 {
-    /**
-     * Psalm type aliases.
-     *
-     * @psalm-type WhereEntry = array{column:string,operator:string,value:mixed,type:'and'|'or',sql?:string,bindings?:list<mixed>,subquery?:true}
-     * @psalm-type HavingEntry = array{column:string,operator:string,value:mixed,connector:string}
-     * @psalm-type SelectRaw = array{type:'raw',expression:string,bindings?:list<mixed>}
-     * @psalm-type SelectSub = array{type:'subquery'|'sub',query:string,alias:string}
-     * @psalm-type OperationResult = array<string,mixed>
-     */
-
-    /** @var array<string,mixed>|VersaORM|null */
-    private $orm; // Puede ser array (config) o instancia de VersaORM
+    // Puede ser array (config) o instancia de VersaORM
 
     private string $table;
 
@@ -145,10 +134,8 @@ class QueryBuilder
     /**
      * @param array<string,mixed>|VersaORM|null $orm
      */
-    public function __construct($orm, string $table, ?string $modelClass = null)
+    public function __construct(private $orm, string $table, ?string $modelClass = null)
     {
-        $this->orm = $orm;
-
         // Validar identificador/alias de tabla inmediatamente para prevenir casos maliciosos
         if (!$this->isSafeIdentifier($table)) {
             throw new VersaORMException(sprintf('Invalid or malicious table name detected (error): %s', $table));
@@ -183,7 +170,7 @@ class QueryBuilder
      */
     public function select(array $columns = ['*']): self
     {
-        if (empty($columns)) {
+        if ($columns === []) {
             $columns = ['*'];
         }
 
@@ -205,7 +192,7 @@ class QueryBuilder
      */
     public function selectRaw(string $expression, array $bindings = []): self
     {
-        if (empty(trim($expression))) {
+        if (in_array(trim($expression), ['', '0'], true)) {
             throw new VersaORMException('selectRaw expression cannot be empty');
         }
 
@@ -215,9 +202,9 @@ class QueryBuilder
         }
 
         $this->selects[] = [
-            'type'       => 'raw',
+            'type' => 'raw',
             'expression' => $expression,
-            'bindings'   => $bindings,
+            'bindings' => $bindings,
         ];
 
         return $this;
@@ -237,9 +224,9 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->selects[] = [
-            'type'     => 'subquery',
+            'type' => 'subquery',
             'subquery' => $subQuery,
-            'alias'    => $alias,
+            'alias' => $alias,
         ];
 
         return $this;
@@ -354,10 +341,10 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->wheres[] = [
-            'column'   => $column,
+            'column' => $column,
             'operator' => strtoupper($operator),
-            'value'    => $subQuery,
-            'type'     => 'and',
+            'value' => $subQuery,
+            'type' => 'and',
             'subquery' => true,
         ];
 
@@ -374,10 +361,10 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->wheres[] = [
-            'column'   => '',
+            'column' => '',
             'operator' => 'EXISTS',
-            'value'    => $subQuery,
-            'type'     => 'and',
+            'value' => $subQuery,
+            'type' => 'and',
             'subquery' => true,
         ];
 
@@ -394,10 +381,10 @@ class QueryBuilder
         $subQuery = $this->buildSubQuery($callback);
 
         $this->wheres[] = [
-            'column'   => '',
+            'column' => '',
             'operator' => 'NOT EXISTS',
-            'value'    => $subQuery,
-            'type'     => 'and',
+            'value' => $subQuery,
+            'type' => 'and',
             'subquery' => true,
         ];
 
@@ -410,9 +397,9 @@ class QueryBuilder
     public function having(string $column, string $operator, mixed $value): self
     {
         $this->having[] = [
-            'column'    => $column,
-            'operator'  => $operator,
-            'value'     => $value,
+            'column' => $column,
+            'operator' => $operator,
+            'value' => $value,
             'connector' => 'AND',
         ];
 
@@ -425,23 +412,23 @@ class QueryBuilder
     public function join(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
         $entry = [
-            'type'       => 'inner',
-            'table'      => $table,
-            'first_col'  => '',
-            'operator'   => '=',
+            'type' => 'inner',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '=',
             'second_col' => '',
             'conditions' => [],
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
-            $entry['first_col']    = $firstCol;
-            $entry['operator']     = $operator;
-            $entry['second_col']   = $secondCol;
+            $entry['first_col'] = $firstCol;
+            $entry['operator'] = $operator;
+            $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
-                'local'    => $firstCol,
+                'local' => $firstCol,
                 'operator' => $operator,
-                'foreign'  => $secondCol,
-                'boolean'  => 'AND',
+                'foreign' => $secondCol,
+                'boolean' => 'AND',
             ];
         }
         $this->joins[] = $entry;
@@ -455,23 +442,23 @@ class QueryBuilder
     public function leftJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
         $entry = [
-            'type'       => 'left',
-            'table'      => $table,
-            'first_col'  => '',
-            'operator'   => '=',
+            'type' => 'left',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '=',
             'second_col' => '',
             'conditions' => [],
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
-            $entry['first_col']    = $firstCol;
-            $entry['operator']     = $operator;
-            $entry['second_col']   = $secondCol;
+            $entry['first_col'] = $firstCol;
+            $entry['operator'] = $operator;
+            $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
-                'local'    => $firstCol,
+                'local' => $firstCol,
                 'operator' => $operator,
-                'foreign'  => $secondCol,
-                'boolean'  => 'AND',
+                'foreign' => $secondCol,
+                'boolean' => 'AND',
             ];
         }
         $this->joins[] = $entry;
@@ -485,23 +472,23 @@ class QueryBuilder
     public function rightJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
         $entry = [
-            'type'       => 'right',
-            'table'      => $table,
-            'first_col'  => '',
-            'operator'   => '=',
+            'type' => 'right',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '=',
             'second_col' => '',
             'conditions' => [],
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
-            $entry['first_col']    = $firstCol;
-            $entry['operator']     = $operator;
-            $entry['second_col']   = $secondCol;
+            $entry['first_col'] = $firstCol;
+            $entry['operator'] = $operator;
+            $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
-                'local'    => $firstCol,
+                'local' => $firstCol,
                 'operator' => $operator,
-                'foreign'  => $secondCol,
-                'boolean'  => 'AND',
+                'foreign' => $secondCol,
+                'boolean' => 'AND',
             ];
         }
         $this->joins[] = $entry;
@@ -515,23 +502,23 @@ class QueryBuilder
     public function fullOuterJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
         $entry = [
-            'type'       => 'full_outer',
-            'table'      => $table,
-            'first_col'  => '',
-            'operator'   => '=',
+            'type' => 'full_outer',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '=',
             'second_col' => '',
             'conditions' => [],
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
-            $entry['first_col']    = $firstCol;
-            $entry['operator']     = $operator;
-            $entry['second_col']   = $secondCol;
+            $entry['first_col'] = $firstCol;
+            $entry['operator'] = $operator;
+            $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
-                'local'    => $firstCol,
+                'local' => $firstCol,
                 'operator' => $operator,
-                'foreign'  => $secondCol,
-                'boolean'  => 'AND',
+                'foreign' => $secondCol,
+                'boolean' => 'AND',
             ];
         }
         $this->joins[] = $entry;
@@ -545,10 +532,10 @@ class QueryBuilder
     public function crossJoin(string $table): self
     {
         $this->joins[] = [
-            'type'       => 'cross',
-            'table'      => $table,
-            'first_col'  => '',
-            'operator'   => '',
+            'type' => 'cross',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '',
             'second_col' => '',
             'conditions' => [],
         ];
@@ -563,10 +550,10 @@ class QueryBuilder
     public function naturalJoin(string $table): self
     {
         $this->joins[] = [
-            'type'       => 'natural',
-            'table'      => $table,
-            'first_col'  => '',
-            'operator'   => '',
+            'type' => 'natural',
+            'table' => $table,
+            'first_col' => '',
+            'operator' => '',
             'second_col' => '',
             'conditions' => [],
         ];
@@ -593,20 +580,20 @@ class QueryBuilder
         $subqueryData = $this->convertSubqueryToSql($subquery);
 
         $this->joins[] = [
-            'type'              => 'inner',
-            'table'             => $alias,
-            'first_col'         => $firstCol,
-            'operator'          => $operator,
-            'second_col'        => $secondCol,
-            'subquery'          => $subqueryData['sql'],
+            'type' => 'inner',
+            'table' => $alias,
+            'first_col' => $firstCol,
+            'operator' => $operator,
+            'second_col' => $secondCol,
+            'subquery' => $subqueryData['sql'],
             'subquery_bindings' => $subqueryData['bindings'],
-            'alias'             => $alias,
-            'conditions'        => [
+            'alias' => $alias,
+            'conditions' => [
                 [
-                    'local'    => $firstCol,
+                    'local' => $firstCol,
                     'operator' => $operator,
-                    'foreign'  => $secondCol,
-                    'boolean'  => 'AND',
+                    'foreign' => $secondCol,
+                    'boolean' => 'AND',
                 ],
             ],
         ];
@@ -630,15 +617,15 @@ class QueryBuilder
             $this->joins[$idx]['conditions'] = [];
         }
         $this->joins[$idx]['conditions'][] = [
-            'local'    => $local,
+            'local' => $local,
             'operator' => $operator,
-            'foreign'  => $foreign,
-            'boolean'  => strtoupper($boolean) === 'OR' ? 'OR' : 'AND',
+            'foreign' => $foreign,
+            'boolean' => strtoupper($boolean) === 'OR' ? 'OR' : 'AND',
         ];
 
         if (empty($this->joins[$idx]['first_col'])) {
-            $this->joins[$idx]['first_col']  = $local;
-            $this->joins[$idx]['operator']   = $operator;
+            $this->joins[$idx]['first_col'] = $local;
+            $this->joins[$idx]['operator'] = $operator;
             $this->joins[$idx]['second_col'] = $foreign;
         }
 
@@ -675,7 +662,7 @@ class QueryBuilder
      */
     public function groupByRaw(string $expression, array $bindings = []): self
     {
-        if (empty(trim($expression))) {
+        if (in_array(trim($expression), ['', '0'], true)) {
             throw new VersaORMException('groupByRaw expression cannot be empty');
         }
 
@@ -685,9 +672,9 @@ class QueryBuilder
         }
 
         $this->groupBy = [
-            'type'       => 'raw',
+            'type' => 'raw',
             'expression' => $expression,
-            'bindings'   => $bindings,
+            'bindings' => $bindings,
         ];
 
         return $this;
@@ -723,7 +710,7 @@ class QueryBuilder
      */
     public function orderByRaw(string $expression, array $bindings = []): self
     {
-        if (empty(trim($expression))) {
+        if (in_array(trim($expression), ['', '0'], true)) {
             throw new VersaORMException('orderByRaw expression cannot be empty');
         }
 
@@ -733,9 +720,9 @@ class QueryBuilder
         }
 
         $this->orderBy = [
-            'type'       => 'raw',
+            'type' => 'raw',
             'expression' => $expression,
-            'bindings'   => $bindings,
+            'bindings' => $bindings,
         ];
 
         return $this;
@@ -774,7 +761,7 @@ class QueryBuilder
             $relations = [$relations];
         }
 
-        if (!$this->modelClass || !class_exists($this->modelClass)) {
+        if ($this->modelClass === null || $this->modelClass === '' || $this->modelClass === '0' || !class_exists($this->modelClass)) {
             throw new Exception('Cannot eager load relations without a valid model class.');
         }
 
@@ -797,8 +784,8 @@ class QueryBuilder
 
             $relationType = (new ReflectionClass($relationInstance))->getShortName();
             $relationData = [
-                'name'          => $relationName,
-                'type'          => $relationType,
+                'name' => $relationName,
+                'type' => $relationType,
                 'related_table' => $relationInstance->query->getTable(),
             ];
 
@@ -808,20 +795,20 @@ class QueryBuilder
                 case 'HasMany':
                     // @var \VersaORM\Relations\HasOne|\VersaORM\Relations\HasMany $relationInstance
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['local_key']   = $relationInstance->localKey;
+                    $relationData['local_key'] = $relationInstance->localKey;
                     break;
                 case 'BelongsTo':
                     // @var \VersaORM\Relations\BelongsTo $relationInstance
                     $relationData['foreign_key'] = $relationInstance->foreignKey;
-                    $relationData['owner_key']   = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
+                    $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
                     break;
                 case 'BelongsToMany':
                     // @var \VersaORM\Relations\BelongsToMany $relationInstance
-                    $relationData['pivot_table']       = $relationInstance->pivotTable;
+                    $relationData['pivot_table'] = $relationInstance->pivotTable;
                     $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
                     $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
-                    $relationData['parent_key']        = $relationInstance->parentKey;
-                    $relationData['related_key']       = $relationInstance->relatedKey;
+                    $relationData['parent_key'] = $relationInstance->parentKey;
+                    $relationData['related_key'] = $relationInstance->relatedKey;
                     break;
             }
             $resolvedRelations[] = $relationData;
@@ -841,8 +828,8 @@ class QueryBuilder
      */
     public function findAll(): array
     {
-        $raw            = $this->execute('get');
-        $models         = [];
+        $raw = $this->execute('get');
+        $models = [];
         $hydrationStart = microtime(true);
 
         if (!is_array($raw)) {
@@ -856,7 +843,7 @@ class QueryBuilder
         // FAST-PATH: sin relaciones, modelo base (VersaModel exactamente), sin select personalizado (usa '*'), sin having ni window ni unions.
         $canFastPath = $this->with === []
             && $modelClass === VersaModel::class
-            && (count($this->selects) === 0 || (count($this->selects) === 1 && $this->selects[0] === '*'))
+            && ($this->selects === [] || (count($this->selects) === 1 && $this->selects[0] === '*'))
             && $this->groupBy === []
             && $this->having === [];
 
@@ -881,14 +868,14 @@ class QueryBuilder
                 if ($this->orm instanceof VersaORM) {
                     $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
-                    if ($cfgEngine === 'pdo' && class_exists('\VersaORM\SQL\PdoEngine')) {
+                    if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                         $elapsedFp = (microtime(true) - $fpStart) * 1000;
                         PdoEngine::recordHydrationFast(count($models), $elapsedFp);
                     }
                 }
 
                 return $models; // Terminar aquí (fast-path completado)
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // fallback silencioso al camino normal
             }
         }
@@ -900,13 +887,11 @@ class QueryBuilder
             $model = new $modelClass($this->table, $this->orm);
             $model->loadInstance($row);
 
-            if ($this->with !== []) {
-                foreach ($this->with as $relation) {
-                    $name = $relation['name'] ?? null;
+            foreach ($this->with as $relation) {
+                $name = $relation['name'] ?? null;
 
-                    if (is_string($name) && $name !== '') {
-                        $model->getRelationValue($name);
-                    }
+                if (is_string($name) && $name !== '') {
+                    $model->getRelationValue($name);
                 }
             }
             $models[] = $model;
@@ -917,12 +902,12 @@ class QueryBuilder
             if ($this->orm instanceof VersaORM) {
                 $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
-                if ($cfgEngine === 'pdo' && class_exists('\VersaORM\SQL\PdoEngine')) {
+                if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                     $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
                     PdoEngine::recordHydration(count($models), $elapsed);
                 }
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // silencioso: no romper flujo si métricas fallan
         }
 
@@ -957,7 +942,7 @@ class QueryBuilder
                 $m->loadInstance($row);
                 // Export aplica casting; garantizar consistencia
                 $exported[] = $m->export();
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // Fallback al row original si algo falla
                 $exported[] = $row;
             }
@@ -997,7 +982,7 @@ class QueryBuilder
             $m->loadInstance($row);
 
             return $m->export(); // export con casting
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return $row; // fallback sin casting
         }
     }
@@ -1008,7 +993,7 @@ class QueryBuilder
     public function findOne(): ?VersaModel
     {
         $hydrationStart = microtime(true);
-        $row            = $this->execute('first');
+        $row = $this->execute('first');
 
         if (!is_array($row) || $row === []) {
             return null;
@@ -1022,33 +1007,31 @@ class QueryBuilder
         if ($this->with === [] && $modelClass === VersaModel::class) {
             try {
                 $fpStart = microtime(true);
-                $m       = new VersaModel($this->table, $this->orm);
+                $m = new VersaModel($this->table, $this->orm);
                 $m->loadInstance($row); // simple; mapping directo interno
 
                 if ($this->orm instanceof VersaORM) {
                     $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
-                    if ($cfgEngine === 'pdo' && class_exists('\VersaORM\SQL\PdoEngine')) {
+                    if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                         $elapsedFp = (microtime(true) - $fpStart) * 1000;
                         PdoEngine::recordHydrationFast(1, $elapsedFp);
                     }
                 }
 
                 return $m;
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // fallback normal
             }
         }
         $model = new $modelClass($this->table, $this->orm);
         $model->loadInstance($row);
 
-        if ($this->with !== []) {
-            foreach ($this->with as $relation) {
-                $name = $relation['name'] ?? null;
+        foreach ($this->with as $relation) {
+            $name = $relation['name'] ?? null;
 
-                if (is_string($name) && $name !== '') {
-                    $model->getRelationValue($name);
-                }
+            if (is_string($name) && $name !== '') {
+                $model->getRelationValue($name);
             }
         }
 
@@ -1056,12 +1039,12 @@ class QueryBuilder
             if ($this->orm instanceof VersaORM) {
                 $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
-                if ($cfgEngine === 'pdo' && class_exists('\VersaORM\SQL\PdoEngine')) {
+                if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                     $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
                     PdoEngine::recordHydration(1, $elapsed);
                 }
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
         }
 
         return $model;
@@ -1069,12 +1052,8 @@ class QueryBuilder
 
     /**
      * Busca un registro por su clave primaria.
-     *
-     * @param mixed $id
-     *
-     * @return mixed
      */
-    public function find($id, string $pk = 'id')
+    public function find(mixed $id, string $pk = 'id'): ?VersaModel
     {
         return $this->where($pk, '=', $id)->first();
     }
@@ -1091,7 +1070,7 @@ class QueryBuilder
     public function first(): ?VersaModel
     {
         $hydrationStart = microtime(true);
-        $row            = $this->execute('first');
+        $row = $this->execute('first');
 
         if (!is_array($row) || $row === []) {
             return null;
@@ -1104,20 +1083,20 @@ class QueryBuilder
         if ($this->with === [] && $modelClass === VersaModel::class) {
             try {
                 $fpStart = microtime(true);
-                $m       = new VersaModel($this->table, $this->orm);
+                $m = new VersaModel($this->table, $this->orm);
                 $m->loadInstance($row);
 
                 if ($this->orm instanceof VersaORM) {
                     $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
-                    if ($cfgEngine === 'pdo' && class_exists('\VersaORM\SQL\PdoEngine')) {
+                    if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                         $elapsedFp = (microtime(true) - $fpStart) * 1000;
                         PdoEngine::recordHydrationFast(1, $elapsedFp);
                     }
                 }
 
                 return $m;
-            } catch (Throwable $e) {
+            } catch (Throwable) {
             }
         }
         $model = new $modelClass($this->table, $this->orm);
@@ -1127,12 +1106,12 @@ class QueryBuilder
             if ($this->orm instanceof VersaORM) {
                 $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
-                if ($cfgEngine === 'pdo' && class_exists('\VersaORM\SQL\PdoEngine')) {
+                if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                     $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
                     PdoEngine::recordHydration(1, $elapsed);
                 }
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
         }
 
         return $model;
@@ -1179,7 +1158,7 @@ class QueryBuilder
      *
      * @return int|null El ID del registro insertado (como entero), o null si no se pudo obtener el ID
      */
-    public function insertGetId(array $data)
+    public function insertGetId(array $data): ?int
     {
         $result = $this->execute('insertGetId', $data);
 
@@ -1239,7 +1218,7 @@ class QueryBuilder
      */
     public function getModelInstance(): VersaModel
     {
-        $modelClass = $this->modelClass ?: VersaModel::class;
+        $modelClass = $this->modelClass !== null && $this->modelClass !== '' && $this->modelClass !== '0' ? $this->modelClass : VersaModel::class;
         /**
          * @var VersaModel $model
          */
@@ -1267,7 +1246,7 @@ class QueryBuilder
      */
     public function insertMany(array $records, int $batchSize = 1000): array
     {
-        if (empty($records)) {
+        if ($records === []) {
             throw new VersaORMException('insertMany requires at least one record to insert');
         }
 
@@ -1275,7 +1254,7 @@ class QueryBuilder
         $firstKeys = array_keys($records[0]);
 
         foreach ($records as $index => $record) {
-            if (!is_array($record) || empty($record)) {
+            if (!is_array($record) || $record === []) {
                 throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
             }
 
@@ -1306,7 +1285,7 @@ class QueryBuilder
         }
 
         $params = [
-            'records'    => $records,
+            'records' => $records,
             'batch_size' => $batchSize,
         ];
 
@@ -1334,11 +1313,11 @@ class QueryBuilder
      */
     public function updateMany(array $data, int $maxRecords = 10000): array
     {
-        if (empty($data)) {
+        if ($data === []) {
             throw new VersaORMException('updateMany requires data to update');
         }
 
-        if (empty($this->wheres)) {
+        if ($this->wheres === []) {
             throw new VersaORMException('updateMany requires WHERE conditions to prevent accidental mass updates');
         }
 
@@ -1355,7 +1334,7 @@ class QueryBuilder
         }
 
         $params = [
-            'data'        => $data,
+            'data' => $data,
             'max_records' => $maxRecords,
         ];
 
@@ -1377,7 +1356,7 @@ class QueryBuilder
      */
     public function deleteMany(int $maxRecords = 10000): array
     {
-        if (empty($this->wheres)) {
+        if ($this->wheres === []) {
             throw new VersaORMException('deleteMany requires WHERE conditions to prevent accidental mass deletions');
         }
 
@@ -1413,11 +1392,11 @@ class QueryBuilder
         array $uniqueKeys,
         array $updateColumns = [],
     ): array {
-        if (empty($data)) {
+        if ($data === []) {
             throw new VersaORMException('upsert requires data to insert/update');
         }
 
-        if (empty($uniqueKeys)) {
+        if ($uniqueKeys === []) {
             throw new VersaORMException('upsert requires unique keys to detect duplicates');
         }
 
@@ -1470,11 +1449,11 @@ class QueryBuilder
         array $uniqueKeys,
         array $updateColumns = [],
     ): array {
-        if (empty($data)) {
+        if ($data === []) {
             throw new VersaORMException('insertOrUpdate requires data');
         }
 
-        if (empty($uniqueKeys)) {
+        if ($uniqueKeys === []) {
             throw new VersaORMException('insertOrUpdate requires unique keys to check existence');
         }
 
@@ -1512,15 +1491,15 @@ class QueryBuilder
 
         if ($exists) {
             // Actualizar registro existente
-            $updateData = empty($updateColumns)
+            $updateData = $updateColumns === []
                 ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
                 : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
 
-            if (empty($updateData)) {
+            if ($updateData === []) {
                 return [
-                    'status'      => 'success',
-                    'operation'   => 'no_update_needed',
-                    'message'     => 'Record exists but no columns to update',
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
+                    'message' => 'Record exists but no columns to update',
                     'unique_keys' => $uniqueKeys,
                 ];
             }
@@ -1535,10 +1514,10 @@ class QueryBuilder
             $updateQuery->update($updateData);
 
             return [
-                'status'          => 'success',
-                'operation'       => 'updated',
-                'rows_affected'   => 1,
-                'unique_keys'     => $uniqueKeys,
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'unique_keys' => $uniqueKeys,
                 'updated_columns' => array_keys($updateData),
             ];
         }
@@ -1546,12 +1525,11 @@ class QueryBuilder
         $this->insert($data);
 
         return [
-            'status'        => 'success',
-            'operation'     => 'inserted',
+            'status' => 'success',
+            'operation' => 'inserted',
             'rows_affected' => 1,
-            'unique_keys'   => $uniqueKeys,
+            'unique_keys' => $uniqueKeys,
         ];
-
     }
 
     /**
@@ -1566,7 +1544,7 @@ class QueryBuilder
      */
     public function save(array $data, string $primaryKey = 'id'): array
     {
-        if (empty($data)) {
+        if ($data === []) {
             throw new VersaORMException('save requires data');
         }
 
@@ -1577,16 +1555,16 @@ class QueryBuilder
         // Si tiene ID, es actualización; si no, es inserción
         if (isset($data[$primaryKey]) && !empty($data[$primaryKey])) {
             // Actualización - separar ID de los datos
-            $id         = $data[$primaryKey];
+            $id = $data[$primaryKey];
             $updateData = $data;
             unset($updateData[$primaryKey]); // Remover ID de los datos a actualizar
 
-            if (empty($updateData)) {
+            if ($updateData === []) {
                 return [
-                    'status'    => 'success',
+                    'status' => 'success',
                     'operation' => 'no_update_needed',
-                    'message'   => 'No data to update',
-                    'id'        => $id,
+                    'message' => 'No data to update',
+                    'id' => $id,
                 ];
             }
 
@@ -1595,10 +1573,10 @@ class QueryBuilder
             $updateQuery->where($primaryKey, '=', $id)->update($updateData);
 
             return [
-                'status'          => 'success',
-                'operation'       => 'updated',
-                'rows_affected'   => 1,
-                'id'              => $id,
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'id' => $id,
                 'updated_columns' => array_keys($updateData),
             ];
         }
@@ -1606,12 +1584,11 @@ class QueryBuilder
         $insertedId = $this->insertGetId($data);
 
         return [
-            'status'        => 'success',
-            'operation'     => 'inserted',
+            'status' => 'success',
+            'operation' => 'inserted',
             'rows_affected' => 1,
-            'id'            => $insertedId,
+            'id' => $insertedId,
         ];
-
     }
 
     /**
@@ -1630,11 +1607,11 @@ class QueryBuilder
         array $conditions,
         array $updateColumns = [],
     ): array {
-        if (empty($data)) {
+        if ($data === []) {
             throw new VersaORMException('createOrUpdate requires data');
         }
 
-        if (empty($conditions)) {
+        if ($conditions === []) {
             throw new VersaORMException('createOrUpdate requires conditions to check existence');
         }
 
@@ -1663,15 +1640,15 @@ class QueryBuilder
 
         if ($exists) {
             // Actualizar registro existente
-            $updateData = empty($updateColumns)
+            $updateData = $updateColumns === []
                 ? $data // Actualizar todas las columnas
                 : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
 
-            if (empty($updateData)) {
+            if ($updateData === []) {
                 return [
-                    'status'     => 'success',
-                    'operation'  => 'no_update_needed',
-                    'message'    => 'Record exists but no columns to update',
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
+                    'message' => 'Record exists but no columns to update',
                     'conditions' => $conditions,
                 ];
             }
@@ -1686,10 +1663,10 @@ class QueryBuilder
             $updateQuery->update($updateData);
 
             return [
-                'status'          => 'success',
-                'operation'       => 'updated',
-                'rows_affected'   => 1,
-                'conditions'      => $conditions,
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'conditions' => $conditions,
                 'updated_columns' => array_keys($updateData),
             ];
         }
@@ -1698,13 +1675,12 @@ class QueryBuilder
         $insertedId = $this->insertGetId($insertData);
 
         return [
-            'status'        => 'success',
-            'operation'     => 'created',
+            'status' => 'success',
+            'operation' => 'created',
             'rows_affected' => 1,
-            'id'            => $insertedId,
-            'conditions'    => $conditions,
+            'id' => $insertedId,
+            'conditions' => $conditions,
         ];
-
     }
 
     /**
@@ -1727,11 +1703,11 @@ class QueryBuilder
         array $updateColumns = [],
         int $batchSize = 1000,
     ): array {
-        if (empty($records)) {
+        if ($records === []) {
             throw new VersaORMException('upsertMany requires at least one record');
         }
 
-        if (empty($uniqueKeys)) {
+        if ($uniqueKeys === []) {
             throw new VersaORMException('upsertMany requires unique keys to detect duplicates');
         }
 
@@ -1760,13 +1736,13 @@ class QueryBuilder
         }
 
         $params = [
-            'records'        => $records,
-            'unique_keys'    => $uniqueKeys,
+            'records' => $records,
+            'unique_keys' => $uniqueKeys,
             'update_columns' => $updateColumns,
-            'batch_size'     => $batchSize,
+            'batch_size' => $batchSize,
         ];
 
-        $result = $this->execute('upsertMany', $params);
+        $this->execute('upsertMany', $params);
         /** @var mixed $rawResult */
         $rawResult = $this->execute('upsertMany', $params);
 
@@ -1786,7 +1762,7 @@ class QueryBuilder
      */
     public function replaceInto(array $data): array
     {
-        if (empty($data)) {
+        if ($data === []) {
             throw new VersaORMException('replaceInto requires data to replace/insert');
         }
 
@@ -1815,7 +1791,7 @@ class QueryBuilder
      */
     public function replaceIntoMany(array $records, int $batchSize = 1000): array
     {
-        if (empty($records)) {
+        if ($records === []) {
             throw new VersaORMException('replaceIntoMany requires at least one record');
         }
 
@@ -1828,7 +1804,7 @@ class QueryBuilder
         $firstKeys = array_keys($records[0]);
 
         foreach ($records as $index => $record) {
-            if (!is_array($record) || empty($record)) {
+            if (!is_array($record) || $record === []) {
                 throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
             }
 
@@ -1916,18 +1892,18 @@ class QueryBuilder
      */
     public function explain(): array
     {
-        if (!$this->isLazy || empty($this->lazyOperations)) {
+        if (!$this->isLazy || $this->lazyOperations === []) {
             $this->addCurrentOperationToLazy();
         }
 
         // Preparar parámetros para el planificador
         $params = [
             'operations' => $this->lazyOperations,
-            'optimize'   => [
-                'enable_join_optimization'    => true,
-                'enable_where_combination'    => true,
+            'optimize' => [
+                'enable_join_optimization' => true,
+                'enable_where_combination' => true,
                 'enable_subquery_elimination' => true,
-                'max_operations_to_combine'   => 5,
+                'max_operations_to_combine' => 5,
             ],
         ];
 
@@ -1937,7 +1913,7 @@ class QueryBuilder
         }
 
         // Usar el método execute estándar para que incluya la configuración
-        $reflection    = new ReflectionClass($this->orm);
+        $reflection = new ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
@@ -1987,16 +1963,16 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'window_function',
-            'function'       => strtolower($function),
-            'column'         => $column,
-            'args'           => $args,
-            'partition_by'   => $partitionBy,
-            'order_by'       => $orderBy,
-            'alias'          => $alias,
-            'table'          => $this->table,
-            'wheres'         => $this->wheres,
-            'joins'          => $this->joins,
-            'selects'        => $this->selects,
+            'function' => strtolower($function),
+            'column' => $column,
+            'args' => $args,
+            'partition_by' => $partitionBy,
+            'order_by' => $orderBy,
+            'alias' => $alias,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'selects' => $this->selects,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2015,11 +1991,11 @@ class QueryBuilder
      */
     public function withCte(array $ctes, string $mainQuery, array $mainQueryBindings = []): array
     {
-        if (empty($ctes)) {
+        if ($ctes === []) {
             throw new VersaORMException('At least one CTE must be provided');
         }
 
-        if (empty(trim($mainQuery))) {
+        if (in_array(trim($mainQuery), ['', '0'], true)) {
             throw new VersaORMException('Main query cannot be empty');
         }
 
@@ -2041,8 +2017,8 @@ class QueryBuilder
                 throw new VersaORMException(sprintf('Potentially unsafe query in CTE %s', $name));
             }
             $cteDefinitions[] = [
-                'name'     => $name,
-                'query'    => $queryStr,
+                'name' => $name,
+                'query' => $queryStr,
                 'bindings' => isset($definition['bindings']) && is_array($definition['bindings']) ? array_values($definition['bindings']) : [],
             ];
         }
@@ -2052,9 +2028,9 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type'      => 'cte',
-            'ctes'                => $cteDefinitions,
-            'main_query'          => $mainQuery,
+            'operation_type' => 'cte',
+            'ctes' => $cteDefinitions,
+            'main_query' => $mainQuery,
             'main_query_bindings' => $mainQueryBindings,
         ];
 
@@ -2099,7 +2075,7 @@ class QueryBuilder
                     throw new VersaORMException('Potentially unsafe SQL in UNION query');
                 }
                 $queryDefinitions[] = [
-                    'sql'      => $query['sql'],
+                    'sql' => $query['sql'],
                     'bindings' => array_values($query['bindings']),
                 ];
             }
@@ -2113,7 +2089,7 @@ class QueryBuilder
             }
 
             $currentSQL = $this->buildSelectSQL();
-            $secondSQL  = $queries->buildSelectSQL();
+            $secondSQL = $queries->buildSelectSQL();
 
             $queryDefinitions = [
                 ['sql' => $currentSQL['sql'], 'bindings' => $currentSQL['bindings']],
@@ -2125,8 +2101,8 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'union',
-            'queries'        => $queryDefinitions,
-            'all'            => $all,
+            'queries' => $queryDefinitions,
+            'all' => $all,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2157,12 +2133,12 @@ class QueryBuilder
         }
 
         // Preparar queries para INTERSECT
-        $firstQuerySQL  = $this->buildSelectSQL();
+        $firstQuerySQL = $this->buildSelectSQL();
         $secondQuerySQL = $query->buildSelectSQL();
 
         $params = [
             'operation_type' => 'intersect',
-            'queries'        => [
+            'queries' => [
                 ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
                 ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
             ],
@@ -2197,12 +2173,12 @@ class QueryBuilder
         }
 
         // Preparar queries para EXCEPT
-        $firstQuerySQL  = $this->buildSelectSQL();
+        $firstQuerySQL = $this->buildSelectSQL();
         $secondQuerySQL = $query->buildSelectSQL();
 
         $params = [
             'operation_type' => 'except',
-            'queries'        => [
+            'queries' => [
                 ['sql' => $firstQuerySQL['sql'], 'bindings' => $firstQuerySQL['bindings']],
                 ['sql' => $secondQuerySQL['sql'], 'bindings' => $secondQuerySQL['bindings']],
             ],
@@ -2225,7 +2201,7 @@ class QueryBuilder
      *
      * @return array<string, mixed> Resultados de la operación JSON
      */
-    public function jsonOperation(string $operation, string $column, string $path = '', $value = null): array
+    public function jsonOperation(string $operation, string $column, string $path = '', mixed $value = null): array
     {
         if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
@@ -2242,20 +2218,20 @@ class QueryBuilder
         }
 
         // Para ciertas operaciones, path es requerido
-        if (in_array($operation, ['extract', 'contains', 'search'], true) && empty($path)) {
+        if (in_array($operation, ['extract', 'contains', 'search'], true) && ($path === '' || $path === '0')) {
             throw new VersaORMException(sprintf('JSON operation %s requires a path', $operation));
         }
 
         $params = [
             'operation_type' => 'json_operation',
             'json_operation' => $operation,
-            'column'         => $column,
-            'path'           => $path,
-            'value'          => $value,
-            'table'          => $this->table,
-            'wheres'         => $this->wheres,
-            'joins'          => $this->joins,
-            'selects'        => $this->selects,
+            'column' => $column,
+            'path' => $path,
+            'value' => $value,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'selects' => $this->selects,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2273,7 +2249,7 @@ class QueryBuilder
      *
      * @return array<string, mixed> Resultados de la operación array
      */
-    public function arrayOperations(string $operation, string $column, $value = null): array
+    public function arrayOperations(string $operation, string $column, mixed $value = null): array
     {
         if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
@@ -2295,14 +2271,14 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type'  => 'array_operations',
+            'operation_type' => 'array_operations',
             'array_operation' => $operation,
-            'column'          => $column,
-            'value'           => $value,
-            'table'           => $this->table,
-            'wheres'          => $this->wheres,
-            'joins'           => $this->joins,
-            'bindings'        => [],
+            'column' => $column,
+            'value' => $value,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'bindings' => [],
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2317,11 +2293,11 @@ class QueryBuilder
      */
     public function queryHints(array $hints): self
     {
-        if (empty($hints)) {
+        if ($hints === []) {
             throw new VersaORMException('Query hints cannot be empty');
         }
 
-        foreach ($hints as $hint => $value) {
+        foreach (array_keys($hints) as $hint) {
             // Validar que el hint no contenga SQL malicioso
             if (!$this->isSafeIdentifier($hint) && !$this->isSafeRawExpression($hint)) {
                 throw new VersaORMException(sprintf('Potentially unsafe query hint: %s', $hint));
@@ -2334,7 +2310,7 @@ class QueryBuilder
         }
 
         $this->lazyOperations[] = [
-            'type'  => 'query_hints',
+            'type' => 'query_hints',
             'hints' => $hints,
         ];
 
@@ -2354,11 +2330,11 @@ class QueryBuilder
      */
     public function fullTextSearch(array $columns, string $searchTerm, array $options = []): array
     {
-        if (empty($columns)) {
+        if ($columns === []) {
             throw new VersaORMException('At least one column must be specified for full-text search');
         }
 
-        if (empty(trim($searchTerm))) {
+        if (in_array(trim($searchTerm), ['', '0'], true)) {
             throw new VersaORMException('Search term cannot be empty');
         }
 
@@ -2371,13 +2347,13 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'full_text_search',
-            'columns'        => $columns,
-            'search_term'    => $searchTerm,
-            'options'        => $options,
-            'table'          => $this->table,
-            'wheres'         => $this->wheres,
-            'joins'          => $this->joins,
-            'selects'        => $this->selects,
+            'columns' => $columns,
+            'search_term' => $searchTerm,
+            'options' => $options,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'selects' => $this->selects,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2417,16 +2393,16 @@ class QueryBuilder
         }
 
         $params = [
-            'operation_type'   => 'advanced_aggregation',
+            'operation_type' => 'advanced_aggregation',
             'aggregation_type' => $type,
-            'column'           => $column,
-            'options'          => $options,
-            'table'            => $this->table,
-            'wheres'           => $this->wheres,
-            'joins'            => $this->joins,
-            'groupBy'          => !empty($groupBy) ? $groupBy : $this->groupBy,
-            'having'           => $this->having,
-            'alias'            => $alias,
+            'column' => $column,
+            'options' => $options,
+            'table' => $this->table,
+            'wheres' => $this->wheres,
+            'joins' => $this->joins,
+            'groupBy' => $groupBy === [] ? $this->groupBy : $groupBy,
+            'having' => $this->having,
+            'alias' => $alias,
         ];
 
         // Debug temporal
@@ -2468,7 +2444,7 @@ class QueryBuilder
      */
     public function optimizeQuery(array $options = []): array
     {
-        if (empty($options)) {
+        if ($options === []) {
             throw new VersaORMException('Query cannot be empty');
         }
 
@@ -2476,9 +2452,9 @@ class QueryBuilder
 
         $params = [
             'operation_type' => 'optimize_query',
-            'query'          => $querySQL['sql'],
-            'bindings'       => $querySQL['bindings'],
-            'options'        => $options,
+            'query' => $querySQL['sql'],
+            'bindings' => $querySQL['bindings'],
+            'options' => $options,
         ];
 
         return $this->executeAdvancedSQL($params);
@@ -2517,7 +2493,7 @@ class QueryBuilder
             return false;
         }
         $mainIdentifier = $parts[0];
-        $alias          = $parts[1] ?? null;
+        $alias = $parts[1] ?? null;
 
         if ($alias !== null && !$this->isValidDatabaseIdentifier($alias)) {
             return false; // Alias inválido
@@ -2551,16 +2527,12 @@ class QueryBuilder
         // Expresión regular para validar identificadores:
         // - Debe empezar con una letra o guion bajo.
         // - Seguido de letras, números o guiones bajos.
-        if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $identifier)) {
+        if (in_array(preg_match('/^[a-zA-Z_]\w*$/', $identifier), [0, false], true)) {
             return false;
         }
 
         // Comprobar la existencia de patrones maliciosos
-        if (str_contains($identifier, '--') || str_contains($identifier, '/*') || str_contains($identifier, ';')) {
-            return false;
-        }
-
-        return true;
+        return !(str_contains($identifier, '--') || str_contains($identifier, '/*') || str_contains($identifier, ';'));
     }
 
     /**
@@ -2620,15 +2592,11 @@ class QueryBuilder
             }
 
             // Permitir argumentos simples como column names, números, strings
-            if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs)) {
-                // Verificar que no contenga patrones maliciosos
-                if (
-                    !str_contains($functionArgs, '--')
-                    && !str_contains($functionArgs, '/*')
-                    && !str_contains($functionArgs, ';')
-                ) {
-                    return true;
-                }
+            // Verificar que no contenga patrones maliciosos
+            if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) && (!str_contains($functionArgs, '--')
+            && !str_contains($functionArgs, '/*')
+            && !str_contains($functionArgs, ';'))) {
+                return true;
             }
         }
 
@@ -2670,14 +2638,10 @@ class QueryBuilder
         }
 
         // Contar paréntesis balanceados
-        $openParens  = substr_count($expression, '(');
+        $openParens = substr_count($expression, '(');
         $closeParens = substr_count($expression, ')');
 
-        if ($openParens !== $closeParens) {
-            return false;
-        }
-
-        return true;
+        return $openParens === $closeParens;
     }
 
     /**
@@ -2688,10 +2652,10 @@ class QueryBuilder
     private function addWhereEntry(string $column, string $operator, mixed $value, string $type): void
     {
         $this->wheres[] = [
-            'column'   => $column,
+            'column' => $column,
             'operator' => $operator,
-            'value'    => $value,
-            'type'     => $type === 'or' ? 'or' : 'and',
+            'value' => $value,
+            'type' => $type === 'or' ? 'or' : 'and',
         ];
     }
 
@@ -2711,32 +2675,32 @@ class QueryBuilder
 
             // Construir el payload de la subconsulta
             return [
-                'type'    => 'subquery',
-                'table'   => $subQueryBuilder->getTable(),
-                'select'  => $subQueryBuilder->selects ?: ['*'],
-                'where'   => $subQueryBuilder->processWheres(),
-                'joins'   => $subQueryBuilder->joins,
-                'orderBy' => $subQueryBuilder->orderBy ? [$subQueryBuilder->orderBy] : [],
+                'type' => 'subquery',
+                'table' => $subQueryBuilder->getTable(),
+                'select' => $subQueryBuilder->selects !== [] ? $subQueryBuilder->selects : ['*'],
+                'where' => $subQueryBuilder->processWheres(),
+                'joins' => $subQueryBuilder->joins,
+                'orderBy' => $subQueryBuilder->orderBy !== null && $subQueryBuilder->orderBy !== [] ? [$subQueryBuilder->orderBy] : [],
                 'groupBy' => $subQueryBuilder->groupBy,
-                'having'  => $subQueryBuilder->having,
-                'limit'   => $subQueryBuilder->limit,
-                'offset'  => $subQueryBuilder->offset,
+                'having' => $subQueryBuilder->having,
+                'limit' => $subQueryBuilder->limit,
+                'offset' => $subQueryBuilder->offset,
             ];
         }
 
         if ($callback instanceof self) {
             // Si ya es un QueryBuilder, usar directamente
             return [
-                'type'    => 'subquery',
-                'table'   => $callback->getTable(),
-                'select'  => $callback->selects ?: ['*'],
-                'where'   => $callback->processWheres(),
-                'joins'   => $callback->joins,
-                'orderBy' => $callback->orderBy ? [$callback->orderBy] : [],
+                'type' => 'subquery',
+                'table' => $callback->getTable(),
+                'select' => $callback->selects !== [] ? $callback->selects : ['*'],
+                'where' => $callback->processWheres(),
+                'joins' => $callback->joins,
+                'orderBy' => $callback->orderBy !== null && $callback->orderBy !== [] ? [$callback->orderBy] : [],
                 'groupBy' => $callback->groupBy,
-                'having'  => $callback->having,
-                'limit'   => $callback->limit,
-                'offset'  => $callback->offset,
+                'having' => $callback->having,
+                'limit' => $callback->limit,
+                'offset' => $callback->offset,
             ];
         }
 
@@ -2776,11 +2740,11 @@ class QueryBuilder
      */
     private function buildSubquerySqlAndBindings(self $builder): array
     {
-        $sql      = 'SELECT ';
+        $sql = 'SELECT ';
         $bindings = [];
 
         // Handle SELECT columns
-        if (!empty($builder->selects)) {
+        if ($builder->selects !== []) {
             $selectColumns = [];
 
             foreach ($builder->selects as $select) {
@@ -2799,38 +2763,38 @@ class QueryBuilder
         $sql .= ' FROM ' . $builder->table;
 
         // WHERE clauses - Extract bindings properly
-        if (!empty($builder->wheres)) {
+        if ($builder->wheres !== []) {
             $wheresParts = [];
 
             foreach ($builder->wheres as $where) {
                 if (is_array($where) && isset($where['column'], $where['operator'], $where['value'])) {
                     $wheresParts[] = $where['column'] . ' ' . $where['operator'] . ' ?';
-                    $bindings[]    = $where['value'];
+                    $bindings[] = $where['value'];
                 }
             }
 
-            if (!empty($wheresParts)) {
+            if ($wheresParts !== []) {
                 $sql .= ' WHERE ' . implode(' AND ', $wheresParts);
             }
         }
 
         // GROUP BY
-        if (!empty($builder->groupBy) && is_array($builder->groupBy)) {
+        if ($builder->groupBy !== [] && is_array($builder->groupBy)) {
             $sql .= ' GROUP BY ' . implode(', ', $builder->groupBy);
         }
 
         // HAVING
-        if (!empty($builder->having) && is_array($builder->having)) {
+        if ($builder->having !== [] && is_array($builder->having)) {
             $havingParts = [];
 
             foreach ($builder->having as $having) {
                 if (is_array($having) && isset($having['column'], $having['operator'], $having['value'])) {
                     $havingParts[] = $having['column'] . ' ' . $having['operator'] . ' ?';
-                    $bindings[]    = $having['value'];
+                    $bindings[] = $having['value'];
                 }
             }
 
-            if (!empty($havingParts)) {
+            if ($havingParts !== []) {
                 $sql .= ' HAVING ' . implode(' AND ', $havingParts);
             }
         }
@@ -2845,12 +2809,12 @@ class QueryBuilder
         }
 
         // LIMIT
-        if ($builder->limit) {
+        if ($builder->limit !== null && $builder->limit !== 0) {
             $sql .= ' LIMIT ' . $builder->limit;
         }
 
         return [
-            'sql'      => $sql,
+            'sql' => $sql,
             'bindings' => $bindings,
         ];
     }
@@ -2900,13 +2864,13 @@ class QueryBuilder
         if (in_array($method, $batchMethods, true)) {
             // Ahora enviamos operaciones batch como acciones dedicadas (insertMany, updateMany, etc.)
             $action = $method;
-        // El motor PDO ignora 'method' para acciones directas; mantenerlo no afecta.
+            // El motor PDO ignora 'method' para acciones directas; mantenerlo no afecta.
         } elseif (in_array($method, $writeMethods, true)) {
             // Las operaciones de escritura normales van como su propio método
             $action = $method;
         } else {
             // Las operaciones de lectura van como 'query'
-            $action           = 'query';
+            $action = 'query';
             $params['method'] = $method;
         }
 
@@ -2922,7 +2886,7 @@ class QueryBuilder
     private function buildPayload(string $method, ?array $data = null): array
     {
         // Asegurar que selects nunca esté vacío - usar ['*'] por defecto
-        $selects = empty($this->selects) ? ['*'] : $this->selects;
+        $selects = $this->selects === [] ? ['*'] : $this->selects;
 
         // Preparar orderBy como array de objetos para Rust
         $orderBy = [];
@@ -2932,17 +2896,17 @@ class QueryBuilder
         }
 
         $params = [
-            'table'   => $this->table,
-            'select'  => $selects,
-            'joins'   => $this->joins,
-            'where'   => $this->processWheres(),
+            'table' => $this->table,
+            'select' => $selects,
+            'joins' => $this->joins,
+            'where' => $this->processWheres(),
             'orderBy' => $orderBy,
             'groupBy' => $this->groupBy,
-            'having'  => $this->having,
-            'limit'   => $this->limit,
-            'offset'  => $this->offset,
-            'with'    => $this->with,
-            'method'  => $method,
+            'having' => $this->having,
+            'limit' => $this->limit,
+            'offset' => $this->offset,
+            'with' => $this->with,
+            'method' => $method,
         ];
 
         if ($data !== null) {
@@ -2989,17 +2953,17 @@ class QueryBuilder
 
         if ($exists) {
             // Actualizar registro existente
-            $updateData = empty($updateColumns)
+            $updateData = $updateColumns === []
                 ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
                 : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
 
-            if (empty($updateData)) {
+            if ($updateData === []) {
                 return [
-                    'status'        => 'success',
-                    'operation'     => 'no_update_needed',
+                    'status' => 'success',
+                    'operation' => 'no_update_needed',
                     'rows_affected' => 0,
-                    'unique_keys'   => $uniqueKeys,
-                    'table'         => $this->table,
+                    'unique_keys' => $uniqueKeys,
+                    'table' => $this->table,
                 ];
             }
 
@@ -3013,11 +2977,11 @@ class QueryBuilder
             $updateQuery->update($updateData);
 
             return [
-                'status'         => 'success',
-                'operation'      => 'updated',
-                'rows_affected'  => 1,
-                'unique_keys'    => $uniqueKeys,
-                'table'          => $this->table,
+                'status' => 'success',
+                'operation' => 'updated',
+                'rows_affected' => 1,
+                'unique_keys' => $uniqueKeys,
+                'table' => $this->table,
                 'update_columns' => $updateColumns, // Siempre incluir, será vacío si no se especificaron
             ];
         }
@@ -3025,13 +2989,12 @@ class QueryBuilder
         $this->insert($data);
 
         return [
-            'status'        => 'success',
-            'operation'     => 'inserted',
+            'status' => 'success',
+            'operation' => 'inserted',
             'rows_affected' => 1,
-            'unique_keys'   => $uniqueKeys,
-            'table'         => $this->table,
+            'unique_keys' => $uniqueKeys,
+            'table' => $this->table,
         ];
-
     }
 
     /**
@@ -3054,7 +3017,7 @@ class QueryBuilder
         // MySQL/MariaDB: usar REPLACE INTO nativo
         if ($driver === 'mysql' || $driver === 'mariadb') {
             // Construir la consulta REPLACE INTO manualmente
-            $columns      = array_keys($data);
+            $columns = array_keys($data);
             $placeholders = array_fill(0, count($data), '?');
 
             $sql = sprintf(
@@ -3067,10 +3030,10 @@ class QueryBuilder
             $this->orm->exec($sql, array_values($data));
 
             return [
-                'status'        => 'success',
-                'operation'     => 'replaced',
+                'status' => 'success',
+                'operation' => 'replaced',
                 'rows_affected' => 1,
-                'table'         => $this->table,
+                'table' => $this->table,
             ];
         }
 
@@ -3083,8 +3046,8 @@ class QueryBuilder
             // Reutilizar ruta de inserción
             $insertParams = [
                 'method' => 'insert',
-                'table'  => $this->table,
-                'data'   => $data,
+                'table' => $this->table,
+                'data' => $data,
             ];
             // Ejecutar a través del mismo mecanismo que insert() usa internamente
             $result = $this->execute('insert', $data);
@@ -3126,21 +3089,21 @@ class QueryBuilder
 
         // MySQL/MariaDB: usar REPLACE INTO en lotes
         if ($driver === 'mysql' || $driver === 'mariadb') {
-            $totalReplaced      = 0;
-            $batchesProcessed   = 0;
+            $totalReplaced = 0;
+            $batchesProcessed = 0;
             $effectiveBatchSize = max(1, $batchSize); // Asegurar que sea al menos 1
-            $recordBatches      = array_chunk($records, $effectiveBatchSize);
+            $recordBatches = array_chunk($records, $effectiveBatchSize);
 
             foreach ($recordBatches as $batch) {
                 // Construir SQL para este lote
-                $columns     = array_keys($batch[0]);
+                $columns = array_keys($batch[0]);
                 $valueGroups = [];
-                $allValues   = [];
+                $allValues = [];
 
                 foreach ($batch as $record) {
-                    $placeholders  = array_fill(0, count($record), '?');
+                    $placeholders = array_fill(0, count($record), '?');
                     $valueGroups[] = '(' . implode(', ', $placeholders) . ')';
-                    $allValues     = array_merge($allValues, array_values($record));
+                    $allValues = array_merge($allValues, array_values($record));
                 }
 
                 $sql = sprintf(
@@ -3157,12 +3120,12 @@ class QueryBuilder
             }
 
             return [
-                'status'            => 'success',
-                'total_replaced'    => $totalReplaced,
+                'status' => 'success',
+                'total_replaced' => $totalReplaced,
                 'batches_processed' => $batchesProcessed,
-                'batch_size'        => $batchSize,
-                'total_records'     => count($records),
-                'table'             => $this->table,
+                'batch_size' => $batchSize,
+                'total_records' => count($records),
+                'table' => $this->table,
             ];
         }
 
@@ -3180,27 +3143,27 @@ class QueryBuilder
             }
 
             return [
-                'status'            => 'success',
-                'total_replaced'    => $inserted,
+                'status' => 'success',
+                'total_replaced' => $inserted,
                 'batches_processed' => 1,
-                'batch_size'        => $batchSize,
-                'total_records'     => count($records),
-                'table'             => $this->table,
+                'batch_size' => $batchSize,
+                'total_records' => count($records),
+                'table' => $this->table,
             ];
         }
 
         // Ejecutar la operación con upsertMany pero devolver métrica tipo REPLACE
         $this->upsertMany($records, $uniqueKeys, $updateColumns);
-        $total            = count($records);
+        $total = count($records);
         $batchesProcessed = (int) ceil($total / max(1, $batchSize));
 
         return [
-            'status'            => 'success',
-            'total_replaced'    => $total,
+            'status' => 'success',
+            'total_replaced' => $total,
             'batches_processed' => $batchesProcessed,
-            'batch_size'        => $batchSize,
-            'total_records'     => $total,
-            'table'             => $this->table,
+            'batch_size' => $batchSize,
+            'total_records' => $total,
+            'table' => $this->table,
         ];
     }
 
@@ -3215,7 +3178,7 @@ class QueryBuilder
     private function detectUpsertKeysForReplace(array $data): array
     {
         $keysInData = array_keys($data);
-        $keysInData = array_values(array_filter($keysInData, fn ($k) => $this->isSafeIdentifier($k)));
+        $keysInData = array_values(array_filter($keysInData, fn ($k): bool => $this->isSafeIdentifier($k)));
 
         $pk = [];
 
@@ -3238,36 +3201,36 @@ class QueryBuilder
                     $pk[] = $name;
                 }
             }
-        } catch (Throwable $t) {
+        } catch (Throwable) {
             // Silencioso: usar heurísticas si falla
         }
 
         // Si no detectamos PK presentes en los datos, intentar con índices únicos
-        if (empty($pk)) {
+        if ($pk === []) {
             try {
                 $idx = $this->orm instanceof VersaORM ? (array) $this->orm->schema('indexes', $this->table) : [];
 
                 foreach ($idx as $ix) {
                     $unique = (bool) ($ix['unique'] ?? false);
-                    $cols   = (array) ($ix['columns'] ?? ($ix['column'] ?? []));
+                    $cols = (array) ($ix['columns'] ?? ($ix['column'] ?? []));
 
                     if (!is_array($cols)) {
                         $cols = [$cols];
                     }
                     $cols = array_values(array_filter(array_map('strval', $cols)));
 
-                    if ($unique && !empty($cols) && empty(array_diff($cols, $keysInData))) {
+                    if ($unique && $cols !== [] && array_diff($cols, $keysInData) === []) {
                         $pk = $cols;
                         break;
                     }
                 }
-            } catch (Throwable $t) {
+            } catch (Throwable) {
                 // Ignorar
             }
         }
 
         // Heurística final: si hay 'id' en los datos, úsalo como clave
-        if (empty($pk) && in_array('id', $keysInData, true)) {
+        if ($pk === [] && in_array('id', $keysInData, true)) {
             $pk = ['id'];
         }
 
@@ -3282,17 +3245,17 @@ class QueryBuilder
     private function addCurrentOperationToLazy(): void
     {
         $operation = [
-            'operation_type'  => 'SELECT',
-            'table'           => $this->table,
-            'columns'         => empty($this->selects) ? ['*'] : $this->selects,
-            'conditions'      => $this->convertWheresToConditions(),
+            'operation_type' => 'SELECT',
+            'table' => $this->table,
+            'columns' => $this->selects === [] ? ['*'] : $this->selects,
+            'conditions' => $this->convertWheresToConditions(),
             'join_conditions' => $this->convertJoinsToConditions(),
-            'ordering'        => $this->convertOrderByToArray(),
-            'grouping'        => $this->groupBy,
-            'having'          => $this->convertHavingToConditions(),
-            'limit'           => $this->limit,
-            'offset'          => $this->offset,
-            'relations'       => $this->with,
+            'ordering' => $this->convertOrderByToArray(),
+            'grouping' => $this->groupBy,
+            'having' => $this->convertHavingToConditions(),
+            'limit' => $this->limit,
+            'offset' => $this->offset,
+            'relations' => $this->with,
         ];
 
         $this->lazyOperations[] = $operation;
@@ -3309,9 +3272,9 @@ class QueryBuilder
 
         foreach ($this->wheres as $where) {
             $conditions[] = [
-                'column'   => $where['column'] ?? '',
+                'column' => $where['column'] ?? '',
                 'operator' => $where['operator'] ?? '=',
-                'value'    => $where['value'] ?? null,
+                'value' => $where['value'] ?? null,
                 // Los WHERE almacenan 'type' ('and'|'or'); mapearlo a 'AND'/'OR'
                 'connector' => isset($where['type']) && $where['type'] === 'or' ? 'OR' : 'AND',
             ];
@@ -3330,22 +3293,22 @@ class QueryBuilder
         $joinConditions = [];
 
         foreach ($this->joins as $join) {
-            $local   = $join['first_col'] ?? '';
+            $local = $join['first_col'] ?? '';
             $foreign = $join['second_col'] ?? '';
-            $op      = $join['operator'] ?? '=';
+            $op = $join['operator'] ?? '=';
 
             if (isset($join['conditions'][0]) && is_array($join['conditions'][0])) {
-                $c       = $join['conditions'][0];
-                $local   = isset($c['local']) ? (string) $c['local'] : $local;
+                $c = $join['conditions'][0];
+                $local = isset($c['local']) ? (string) $c['local'] : $local;
                 $foreign = isset($c['foreign']) ? (string) $c['foreign'] : $foreign;
-                $op      = isset($c['operator']) ? (string) $c['operator'] : $op;
+                $op = isset($c['operator']) ? (string) $c['operator'] : $op;
             }
             $joinConditions[] = [
-                'table'          => $join['table'] ?? '',
-                'join_type'      => strtoupper($join['type'] ?? 'INNER'),
-                'local_column'   => $local,
+                'table' => $join['table'] ?? '',
+                'join_type' => strtoupper($join['type'] ?? 'INNER'),
+                'local_column' => $local,
                 'foreign_column' => $foreign,
-                'operator'       => $op,
+                'operator' => $op,
             ];
         }
 
@@ -3367,7 +3330,7 @@ class QueryBuilder
         if (isset($this->orderBy['type']) && $this->orderBy['type'] === 'raw') {
             return [
                 [
-                    'column'    => $this->orderBy['expression'] ?? '',
+                    'column' => $this->orderBy['expression'] ?? '',
                     'direction' => 'ASC', // Raw expressions no tienen dirección específica
                 ],
             ];
@@ -3382,7 +3345,7 @@ class QueryBuilder
 
         return [
             [
-                'column'    => $this->orderBy['column'] ?? '',
+                'column' => $this->orderBy['column'] ?? '',
                 'direction' => strtoupper((string) $direction),
             ],
         ];
@@ -3399,9 +3362,9 @@ class QueryBuilder
 
         foreach ($this->having as $having) {
             $conditions[] = [
-                'column'    => $having['column'] ?? '',
-                'operator'  => $having['operator'] ?? '=',
-                'value'     => $having['value'] ?? null,
+                'column' => $having['column'] ?? '',
+                'operator' => $having['operator'] ?? '=',
+                'value' => $having['value'] ?? null,
                 'connector' => $having['connector'] ?? 'AND',
             ];
         }
@@ -3422,18 +3385,18 @@ class QueryBuilder
 
         // Preparar payload para el planificador de consultas
         $params = [
-            'action'     => 'query_plan',
+            'action' => 'query_plan',
             'operations' => $this->lazyOperations,
-            'optimize'   => [
-                'enable_join_optimization'    => true,
-                'enable_where_combination'    => true,
+            'optimize' => [
+                'enable_join_optimization' => true,
+                'enable_where_combination' => true,
                 'enable_subquery_elimination' => true,
-                'max_operations_to_combine'   => 5,
+                'max_operations_to_combine' => 5,
             ],
         ];
 
         // Ejecutar usando reflexión para acceder al método execute privado
-        $reflection    = new ReflectionClass($this->orm);
+        $reflection = new ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 
@@ -3441,7 +3404,7 @@ class QueryBuilder
 
         // Limpiar operaciones lazy después de la ejecución
         $this->lazyOperations = [];
-        $this->isLazy         = false;
+        $this->isLazy = false;
 
         return $result;
     }
@@ -3456,7 +3419,7 @@ class QueryBuilder
         $sql = 'SELECT ';
 
         // SELECT
-        if (empty($this->selects)) {
+        if ($this->selects === []) {
             $sql .= '*';
         } else {
             /** @var list<string> $selectParts */
@@ -3499,7 +3462,7 @@ class QueryBuilder
         // WHERE
         $bindings = [];
 
-        if (!empty($this->wheres)) {
+        if ($this->wheres !== []) {
             $sql .= ' WHERE ';
             $whereParts = [];
 
@@ -3507,14 +3470,14 @@ class QueryBuilder
                 if (isset($where['sql'], $where['bindings']) && is_string($where['sql']) && is_array($where['bindings'])) {
                     $whereParts[] = $where['sql'];
                     /** @var list<mixed> $wb */
-                    $wb       = array_values($where['bindings']);
+                    $wb = array_values($where['bindings']);
                     $bindings = array_merge($bindings, $wb);
                     continue;
                 }
-                $operator     = isset($where['operator']) && is_string($where['operator']) ? $where['operator'] : '=';
-                $col          = isset($where['column']) && is_string($where['column']) ? $where['column'] : '';
+                $operator = isset($where['operator']) && is_string($where['operator']) ? $where['operator'] : '=';
+                $col = isset($where['column']) && is_string($where['column']) ? $where['column'] : '';
                 $whereParts[] = sprintf('%s %s ?', $col, $operator);
-                $bindings[]   = $where['value'] ?? null;
+                $bindings[] = $where['value'] ?? null;
             }
             $sql .= implode(' AND ', $whereParts);
         }
@@ -3543,7 +3506,7 @@ class QueryBuilder
         }
 
         // Usar reflexión para acceder al método execute de VersaORM
-        $reflection    = new ReflectionClass($this->orm);
+        $reflection = new ReflectionClass($this->orm);
         $executeMethod = $reflection->getMethod('execute');
         $executeMethod->setAccessible(true);
 

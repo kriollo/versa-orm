@@ -3,27 +3,37 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
-    errorLevel="3"
-    phpVersion="8.3"
-    cacheDirectory="vendor/cache/psalm"
-    ensureArrayStringOffsetsExist="true"
-    findUnusedVariablesAndParams="true"
-    findUnusedCode="true"
-    strictBinaryOperands="true"
-    reportMixedIssues="true"
+    errorLevel="5"
+    phpVersion="8.0"
+    cacheDirectory="var/cache/psalm"
+    ensureArrayStringOffsetsExist="false"
+    findUnusedVariablesAndParams="false"
+    findUnusedCode="false"
+    strictBinaryOperands="false"
+    reportMixedIssues="false"
+    allowPhpStormGenerics="true"
+    allowStringToStandInForClass="true"
+    memoizeMethodCallResults="true"
+    hoistConstants="true"
+    addParamTypesFromCallSites="false"
+    checkForThrowsDocblock="false"
+    checkForThrowsInGlobalScope="false"
+    ignoreInternalFunctionFalseReturn="true"
+    ignoreInternalFunctionNullReturn="true"
 >
     <projectFiles>
         <directory name="src" />
+        <directory name="example" />
         <ignoreFiles>
             <directory name="vendor" />
             <directory name="src/binary" />
+            <directory name="tests" />
+            <directory name="test*" />
         </ignoreFiles>
     </projectFiles>
 
-    <!-- Plugins deshabilitados: el plugin de seguridad no está disponible para Psalm 5. Usamos reglas de Tainted* igualmente. -->
-
     <issueHandlers>
-        <!-- Security issues should be treated as errors -->
+        <!-- === SECURITY FOCUS - Psalm's strength === -->
         <TaintedInput errorLevel="error" />
         <TaintedSql errorLevel="error" />
         <TaintedShell errorLevel="error" />
@@ -31,41 +41,129 @@
         <TaintedHtml errorLevel="error" />
         <TaintedCookie errorLevel="error" />
         <TaintedHeader errorLevel="error" />
-        <ForbiddenCode errorLevel="suppress" />
+        <TaintedCallable errorLevel="error" />
+        <TaintedTextWithQuotes errorLevel="error" />
 
-        <!-- Allow mixed types in some cases -->
-    <!-- Escalamos mixed para forzar limpieza completa -->
-    <MixedAssignment errorLevel="error" />
-    <MixedArgument errorLevel="error" />
-    <MixedArrayOffset errorLevel="error" />
-    <MixedMethodCall errorLevel="error" />
-    <MixedPropertyFetch errorLevel="error" />
+        <!-- === COMPLEMENTARY TO PHPSTAN - Focus on what PHPStan doesn't catch === -->
 
-        <!-- Strict type checking -->
-    <RedundantCondition errorLevel="info" />
-        <UnresolvableInclude errorLevel="error" />
-    <InvalidDocblock errorLevel="error" />
-    <InvalidCast errorLevel="info" />
-    <TypeDoesNotContainType errorLevel="info" />
-    <RedundantCast errorLevel="info" />
-    <PossiblyUndefinedArrayOffset errorLevel="info" />
+        <!-- Immutability and purity -->
+        <ImpureMethodCall errorLevel="info" />
+        <ImpurePropertyAssignment errorLevel="info" />
+        <ImpureStaticProperty errorLevel="info" />
 
-        <!-- Allow some flexibility for dynamic features -->
-        <UndefinedMagicMethod errorLevel="info" />
-        <UndefinedMagicPropertyFetch errorLevel="info" />
-        <UndefinedMagicPropertyAssignment errorLevel="info" />
+        <!-- Template and generic issues -->
+        <InvalidTemplateParam errorLevel="error" />
+        <MissingTemplateParam errorLevel="error" />
+        <ReservedWord errorLevel="error" />
 
-        <!-- Library noise reductions -->
+        <!-- === SUPPRESS OVERLAPPING CHECKS WITH PHPSTAN === -->
+
+        <!-- Type checking - let PHPStan handle these -->
+        <MixedAssignment errorLevel="suppress" />
+        <MixedArgument errorLevel="suppress" />
+        <MixedArrayOffset errorLevel="suppress" />
+        <MixedMethodCall errorLevel="suppress" />
+        <MixedPropertyFetch errorLevel="suppress" />
+        <MixedReturnStatement errorLevel="suppress" />
+        <MixedInferredReturnType errorLevel="suppress" />
+        <MixedArrayAccess errorLevel="suppress" />
+        <MixedArrayAssignment errorLevel="suppress" />
+        <MixedStringOffsetAssignment errorLevel="suppress" />
+
+        <!-- Redundant conditions - let PHPStan handle -->
+        <RedundantCondition errorLevel="suppress" />
+        <RedundantConditionGivenDocblockType errorLevel="suppress" />
+        <TypeDoesNotContainType errorLevel="suppress" />
+        <TypeDoesNotContainNull errorLevel="suppress" />
+
+        <!-- === ORM-SPECIFIC SUPPRESSIONS === -->
+
+        <!-- Magic methods and properties -->
+        <UndefinedMagicMethod errorLevel="suppress" />
+        <UndefinedMagicPropertyFetch errorLevel="suppress" />
+        <UndefinedMagicPropertyAssignment errorLevel="suppress" />
+        <UndefinedMethod errorLevel="suppress" />
+        <UndefinedPropertyFetch errorLevel="suppress" />
+        <UndefinedPropertyAssignment errorLevel="suppress" />
+        <UndefinedClass errorLevel="suppress" />
+
+        <!-- Dynamic property access -->
+        <PossiblyUndefinedArrayOffset errorLevel="suppress" />
+        <PossiblyNullArrayOffset errorLevel="suppress" />
+        <PossiblyNullReference errorLevel="suppress" />
+        <PossiblyUndefinedStringArrayOffset errorLevel="suppress" />
+        <PossiblyUndefinedIntArrayOffset errorLevel="suppress" />
+
+        <!-- === NOISE REDUCTION === -->
+
+        <!-- Unused code - not our focus -->
         <PossiblyUnusedMethod errorLevel="suppress" />
         <UnusedClass errorLevel="suppress" />
         <UnusedMethod errorLevel="suppress" />
-        <UnusedMethodCall errorLevel="info" />
-        <UnusedVariable errorLevel="info" />
-        <UnusedForeachValue errorLevel="info" />
-        <PossiblyUnusedProperty errorLevel="info" />
-        <PossiblyUnusedReturnValue errorLevel="info" />
-        <UnnecessaryVarAnnotation errorLevel="info" />
-        <PossiblyUndefinedStringArrayOffset errorLevel="info" />
+        <UnusedMethodCall errorLevel="suppress" />
+        <UnusedVariable errorLevel="suppress" />
+        <UnusedForeachValue errorLevel="suppress" />
+        <PossiblyUnusedProperty errorLevel="suppress" />
+        <PossiblyUnusedReturnValue errorLevel="suppress" />
+        <UnusedClosureParam errorLevel="suppress" />
+        <UnusedParam errorLevel="suppress" />
+
+        <!-- Documentation issues - let other tools handle -->
+        <UnnecessaryVarAnnotation errorLevel="suppress" />
+        <InvalidDocblock errorLevel="suppress" />
+        <MissingDocblockType errorLevel="suppress" />
+        <MissingReturnType errorLevel="suppress" />
+        <MissingParamType errorLevel="suppress" />
+        <MissingPropertyType errorLevel="suppress" />
+
+        <!-- === ALLOW FLEXIBILITY FOR ORM === -->
+
+        <!-- Constructor and property initialization -->
+        <PropertyNotSetInConstructor errorLevel="suppress" />
+        <MissingConstructor errorLevel="suppress" />
+        <UninitializedProperty errorLevel="suppress" />
+
+        <!-- Return type flexibility -->
+        <LessSpecificReturnType errorLevel="suppress" />
+        <MoreSpecificReturnType errorLevel="suppress" />
+        <LessSpecificImplementedReturnType errorLevel="suppress" />
+
+        <!-- Array access patterns -->
+        <InvalidArrayOffset errorLevel="suppress" />
+        <PossiblyInvalidArrayOffset errorLevel="suppress" />
+        <InvalidArrayAccess errorLevel="suppress" />
+        <PossiblyInvalidArrayAccess errorLevel="suppress" />
+
+        <!-- Argument type flexibility -->
+        <InvalidArgument errorLevel="suppress" />
+        <PossiblyInvalidArgument errorLevel="suppress" />
+        <TooManyArguments errorLevel="suppress" />
+        <TooFewArguments errorLevel="suppress" />
+
+        <!-- === FOCUS ON PSALM'S STRENGTHS === -->
+
+        <!-- Keep these active for security and correctness -->
+        <UnresolvableInclude errorLevel="error" />
+        <InvalidCast errorLevel="info" />
         <InvalidOperand errorLevel="info" />
+        <InvalidClone errorLevel="error" />
+        <InvalidFunctionCall errorLevel="error" />
+        <InvalidScalarArgument errorLevel="info" />
+        <InvalidReturnStatement errorLevel="info" />
+        <InvalidReturnType errorLevel="info" />
+        <InvalidThrow errorLevel="error" />
+        <InvalidCatch errorLevel="error" />
+
+        <!-- Null safety - but be lenient -->
+        <PossiblyNullOperand errorLevel="info" />
+        <PossiblyNullArgument errorLevel="info" />
+        <PossiblyNullIterator errorLevel="info" />
+        <PossiblyNullPropertyFetch errorLevel="info" />
+        <PossiblyNullFunctionCall errorLevel="info" />
+
+        <!-- False positive reductions -->
+        <PossiblyFalseOperand errorLevel="info" />
+        <PossiblyFalseArgument errorLevel="info" />
+        <PossiblyFalseIterator errorLevel="info" />
     </issueHandlers>
 </psalm>

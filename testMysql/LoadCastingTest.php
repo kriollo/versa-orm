@@ -36,13 +36,13 @@ class LoadCastingTest extends TestCase
     public function testLoadMethodAppliesCasting(): void
     {
         // Modelo con tipado fuerte
-        $model = new class('load_cast_test', self::$orm) extends VersaModel {
+        $model = new class ('load_cast_test', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id'         => ['type' => 'integer'],
-                    'name'       => ['type' => 'string'],
-                    'active'     => ['type' => 'bool'],
+                    'id' => ['type' => 'integer'],
+                    'name' => ['type' => 'string'],
+                    'active' => ['type' => 'bool'],
                     'created_at' => ['type' => 'datetime'],
                 ];
             }
@@ -72,13 +72,13 @@ class LoadCastingTest extends TestCase
     public function testLoadMethodWithUpdate(): void
     {
         // Modelo con tipado fuerte
-        $model = new class('load_cast_test', self::$orm) extends VersaModel {
+        $model = new class ('load_cast_test', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
-                    'id'         => ['type' => 'integer'],
-                    'name'       => ['type' => 'string'],
-                    'active'     => ['type' => 'bool'],
+                    'id' => ['type' => 'integer'],
+                    'name' => ['type' => 'string'],
+                    'active' => ['type' => 'bool'],
                     'created_at' => ['type' => 'datetime'],
                 ];
             }

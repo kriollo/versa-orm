@@ -21,12 +21,12 @@ class TestCase extends BaseTestCase
         if (self::$orm === null) {
             global $config;
             $dbConfig = [
-                'engine'   => $config['DB']['engine'],
-                'driver'   => $config['DB']['DB_DRIVER'],
+                'engine' => $config['DB']['engine'],
+                'driver' => $config['DB']['DB_DRIVER'],
                 'database' => $config['DB']['DB_NAME'],
-                'debug'    => $config['DB']['debug'],
-                'host'     => $config['DB']['DB_HOST'] ?? '',
-                'port'     => (int) ($config['DB']['DB_PORT'] ?? 0),
+                'debug' => $config['DB']['debug'],
+                'host' => $config['DB']['DB_HOST'] ?? '',
+                'port' => (int) ($config['DB']['DB_PORT'] ?? 0),
                 'username' => $config['DB']['DB_USER'] ?? '',
                 'password' => $config['DB']['DB_PASS'] ?? '',
             ];
@@ -89,11 +89,11 @@ class TestCase extends BaseTestCase
         ], [
             'constraints' => [
                 'foreign' => [[
-                    'name'       => 'fk_profiles_users',
-                    'columns'    => ['user_id'],
-                    'refTable'   => 'users',
+                    'name' => 'fk_profiles_users',
+                    'columns' => ['user_id'],
+                    'refTable' => 'users',
                     'refColumns' => ['id'],
-                    'onDelete'   => 'cascade',
+                    'onDelete' => 'cascade',
                 ]],
             ],
         ]);
@@ -107,11 +107,11 @@ class TestCase extends BaseTestCase
         ], [
             'constraints' => [
                 'foreign' => [[
-                    'name'       => 'fk_posts_users',
-                    'columns'    => ['user_id'],
-                    'refTable'   => 'users',
+                    'name' => 'fk_posts_users',
+                    'columns' => ['user_id'],
+                    'refTable' => 'users',
                     'refColumns' => ['id'],
-                    'onDelete'   => 'cascade',
+                    'onDelete' => 'cascade',
                 ]],
             ],
         ]);
@@ -129,18 +129,18 @@ class TestCase extends BaseTestCase
             'constraints' => [
                 'foreign' => [
                     [
-                        'name'       => 'fk_role_user_user',
-                        'columns'    => ['user_id'],
-                        'refTable'   => 'users',
+                        'name' => 'fk_role_user_user',
+                        'columns' => ['user_id'],
+                        'refTable' => 'users',
                         'refColumns' => ['id'],
-                        'onDelete'   => 'cascade',
+                        'onDelete' => 'cascade',
                     ],
                     [
-                        'name'       => 'fk_role_user_role',
-                        'columns'    => ['role_id'],
-                        'refTable'   => 'roles',
+                        'name' => 'fk_role_user_role',
+                        'columns' => ['role_id'],
+                        'refTable' => 'roles',
                         'refColumns' => ['id'],
-                        'onDelete'   => 'cascade',
+                        'onDelete' => 'cascade',
                     ],
                 ],
             ],

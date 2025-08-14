@@ -25,8 +25,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: Insertar un nuevo producto usando upsert
         $productData = [
-            'sku'   => 'UPSERT-NEW-001',
-            'name'  => 'Nuevo Producto Upsert',
+            'sku' => 'UPSERT-NEW-001',
+            'name' => 'Nuevo Producto Upsert',
             'price' => 299.99,
             'stock' => 15,
         ];
@@ -46,15 +46,15 @@ class UpsertOperationsTest extends TestCase
         $inserted = self::$orm->table('products')->where('sku', '=', 'UPSERT-NEW-001')->firstArray();
         self::assertNotNull($inserted);
         self::assertSame('Nuevo Producto Upsert', $inserted['name']);
-        self::assertSame(299.99, $inserted['price']);
+        self::assertEquals(299.99, (float) $inserted['price']);
     }
 
     public function testUpsertExistingRecord(): void
     {
         // Test: Actualizar un producto existente usando upsert
         $existingProduct = [
-            'sku'   => 'P001', // Ya existe en los datos de prueba
-            'name'  => 'Laptop Actualizada',
+            'sku' => 'P001', // Ya existe en los datos de prueba
+            'name' => 'Laptop Actualizada',
             'price' => 1299.99,
             'stock' => 25,
         ];
@@ -74,7 +74,7 @@ class UpsertOperationsTest extends TestCase
         $updated = self::$orm->table('products')->where('sku', '=', 'P001')->firstArray();
         self::assertNotNull($updated);
         self::assertSame('Laptop Actualizada', $updated['name']);
-        self::assertSame(1299.99, $updated['price']);
+        self::assertEquals(1299.99, (float) $updated['price']);
         self::assertSame(25, $updated['stock']);
     }
 
@@ -82,8 +82,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: Upsert con múltiples claves únicas
         $userData = [
-            'name'   => 'Test Usuario',
-            'email'  => 'alice@example.com', // Ya existe
+            'name' => 'Test Usuario',
+            'email' => 'alice@example.com', // Ya existe
             'status' => 'super_active',
         ];
 
@@ -135,8 +135,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: insertOrUpdate debe insertar un nuevo registro
         $userData = [
-            'name'   => 'New InsertOrUpdate User',
-            'email'  => 'insertupdate@example.com',
+            'name' => 'New InsertOrUpdate User',
+            'email' => 'insertupdate@example.com',
             'status' => 'active',
         ];
 
@@ -158,8 +158,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: insertOrUpdate debe actualizar registro existente
         $updatedData = [
-            'name'   => 'Alice Updated',
-            'email'  => 'alice@example.com', // Ya existe
+            'name' => 'Alice Updated',
+            'email' => 'alice@example.com', // Ya existe
             'status' => 'updated',
         ];
 
@@ -185,8 +185,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: save() debe detectar registro nuevo e insertar
         $newUser = [
-            'name'   => 'Usuario Save',
-            'email'  => 'save@example.com',
+            'name' => 'Usuario Save',
+            'email' => 'save@example.com',
             'status' => 'active',
         ];
 
@@ -209,9 +209,9 @@ class UpsertOperationsTest extends TestCase
         $existingUser = self::$orm->table('users')->where('email', '=', 'alice@example.com')->firstArray();
 
         $existingUserUpdate = [
-            'id'     => $existingUser['id'], // Con ID = actualización
-            'name'   => 'Alice Actualizada',
-            'email'  => 'alice@example.com',
+            'id' => $existingUser['id'], // Con ID = actualización
+            'name' => 'Alice Actualizada',
+            'email' => 'alice@example.com',
             'status' => 'super_active',
         ];
 
@@ -243,8 +243,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: createOrUpdate debe crear un nuevo registro (usar tabla users que tiene ID)
         $userData = [
-            'name'   => 'Usuario CreateOrUpdate',
-            'email'  => 'createorupdate@example.com',
+            'name' => 'Usuario CreateOrUpdate',
+            'email' => 'createorupdate@example.com',
             'status' => 'active',
         ];
 
@@ -267,8 +267,8 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: createOrUpdate debe actualizar registro existente
         $updateData = [
-            'sku'   => 'P002', // Ya existe en datos de prueba
-            'name'  => 'Smartphone Actualizado',
+            'sku' => 'P002', // Ya existe en datos de prueba
+            'name' => 'Smartphone Actualizado',
             'price' => 899.99,
             'stock' => 30,
         ];
@@ -285,7 +285,7 @@ class UpsertOperationsTest extends TestCase
         // Verificar actualización
         $updated = self::$orm->table('products')->where('sku', '=', 'P002')->firstArray();
         self::assertSame('Smartphone Actualizado', $updated['name']);
-        self::assertSame(899.99, $updated['price']);
+        self::assertEquals(899.99, (float) $updated['price']);
     }
 
     // ======================================================================
@@ -296,11 +296,11 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: Manejo de valores NULL en upsert
         $dataWithNulls = [
-            'sku'         => 'NULL-TEST-001',
-            'name'        => 'Producto con Nulls',
-            'price'       => 100.00,
+            'sku' => 'NULL-TEST-001',
+            'name' => 'Producto con Nulls',
+            'price' => 100.00,
             'description' => null, // Valor NULL
-            'stock'       => 5,
+            'stock' => 5,
         ];
 
         $result = self::$orm->table('products')->upsert(
@@ -321,11 +321,11 @@ class UpsertOperationsTest extends TestCase
     {
         // Test: Manejo de caracteres especiales en upsert
         $dataWithSpecialChars = [
-            'sku'         => 'SPECIAL-001',
-            'name'        => "Producto con 'comillas' y \"dobles\"",
-            'price'       => 150.00,
+            'sku' => 'SPECIAL-001',
+            'name' => "Producto con 'comillas' y \"dobles\"",
+            'price' => 150.00,
             'description' => 'Descripción con acentos: ñáéíóú',
-            'stock'       => 8,
+            'stock' => 8,
         ];
 
         $result = self::$orm->table('products')->upsert(
@@ -348,8 +348,8 @@ class UpsertOperationsTest extends TestCase
 
         // Primero, insertar con save() (sin ID) - usar tabla users que tiene ID autoincremental
         $newRecord = [
-            'name'   => 'Auto Detection Test',
-            'email'  => 'autodetect@example.com',
+            'name' => 'Auto Detection Test',
+            'email' => 'autodetect@example.com',
             'status' => 'active',
         ];
 
@@ -359,9 +359,9 @@ class UpsertOperationsTest extends TestCase
 
         // Luego, actualizar el mismo registro con save() (con ID)
         $updateRecord = [
-            'id'     => $insertedId, // Con ID para actualización
-            'name'   => 'Auto Detection Updated',
-            'email'  => 'autodetect@example.com',
+            'id' => $insertedId, // Con ID para actualización
+            'name' => 'Auto Detection Updated',
+            'email' => 'autodetect@example.com',
             'status' => 'updated',
         ];
 
@@ -381,8 +381,8 @@ class UpsertOperationsTest extends TestCase
 
         for ($i = 1; $i <= 10; ++$i) {
             $data = [
-                'sku'   => 'PERF-TEST-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
-                'name'  => "Producto Performance {$i}",
+                'sku' => 'PERF-TEST-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+                'name' => "Producto Performance {$i}",
                 'price' => 100.00 + $i,
                 'stock' => $i * 5,
             ];
@@ -396,7 +396,7 @@ class UpsertOperationsTest extends TestCase
             self::assertSame('success', $result['status']);
         }
 
-        $endTime       = microtime(true);
+        $endTime = microtime(true);
         $executionTime = $endTime - $startTime;
 
         // Verificar que todas las operaciones fueron exitosas

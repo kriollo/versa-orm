@@ -39,7 +39,7 @@ class DDLApiTest extends TestCase
                 ['name' => 'email', 'type' => 'VARCHAR(150)', 'nullable' => true],
             ],
         ]);
-        $cols2     = $orm->schema('columns', 'ddl_mvp_users');
+        $cols2 = $orm->schema('columns', 'ddl_mvp_users');
         $colNames2 = array_map(static fn ($c) => strtolower($c['name'] ?? ($c['column_name'] ?? ($c['Field'] ?? ''))), $cols2);
         self::assertContains('email', $colNames2);
 

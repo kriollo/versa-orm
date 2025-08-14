@@ -45,7 +45,7 @@ class UserModel extends BaseModel
             return [
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors'  => $validationErrors,
+                'errors' => $validationErrors,
             ];
         }
 
@@ -55,7 +55,7 @@ class UserModel extends BaseModel
         }
 
         // Intentar guardar
-        $result = $user->safeSave();
+        $user->safeSave();
 
         return $user->createApiResponse();
     }
@@ -70,7 +70,7 @@ class UserModel extends BaseModel
             $userData['password'] = password_hash($userData['password'], PASSWORD_DEFAULT);
         }
 
-        $result = $this->safeUpdate($userData);
+        $this->safeUpdate($userData);
 
         return $this->updateApiResponse();
     }
@@ -83,12 +83,12 @@ class UserModel extends BaseModel
         try {
             $users = static::findAllWithErrorHandling(['email' => $email]);
 
-            return !empty($users) ? $users[0] : null;
+            return empty($users) ? null : $users[0];
         } catch (VersaORMException $e) {
             ErrorHandler::handleException($e, [
                 'model_class' => static::class,
-                'operation'   => 'findByEmail',
-                'email'       => $email,
+                'operation' => 'findByEmail',
+                'email' => $email,
             ]);
 
             return null;
@@ -110,7 +110,7 @@ class UserModel extends BaseModel
      */
     public function activate(): array
     {
-        return $this->executeWithLogging('activate', function () {
+        return $this->executeWithLogging('activate', function (): array {
             $this->setAttribute('status', 'active');
             $this->setAttribute('email_verified_at', date('Y-m-d H:i:s'));
 
@@ -123,7 +123,7 @@ class UserModel extends BaseModel
      */
     public function deactivate(): array
     {
-        return $this->executeWithLogging('deactivate', function () {
+        return $this->executeWithLogging('deactivate', function (): array {
             $this->setAttribute('status', 'inactive');
 
             return $this->save();
@@ -139,17 +139,17 @@ class UserModel extends BaseModel
 
         try {
             // Contar usuarios activos
-            $activeUsers   = static::findAllWithErrorHandling(['status' => 'active']);
+            $activeUsers = static::findAllWithErrorHandling(['status' => 'active']);
             $inactiveUsers = static::findAllWithErrorHandling(['status' => 'inactive']);
 
             $baseStats['user_stats'] = [
-                'active_users'   => count($activeUsers),
+                'active_users' => count($activeUsers),
                 'inactive_users' => count($inactiveUsers),
-                'total_users'    => count($activeUsers) + count($inactiveUsers),
+                'total_users' => count($activeUsers) + count($inactiveUsers),
             ];
         } catch (VersaORMException $e) {
             $baseStats['user_stats'] = [
-                'error'      => 'Could not retrieve user statistics',
+                'error' => 'Could not retrieve user statistics',
                 'error_code' => $e->getErrorCode(),
             ];
         }
@@ -165,24 +165,18 @@ class UserModel extends BaseModel
         $errors = [];
 
         // Validar email
-        if (isset($this->attributes['email'])) {
-            if (!filter_var($this->attributes['email'], FILTER_VALIDATE_EMAIL)) {
-                $errors[] = 'Invalid email format';
-            }
+        if (isset($this->attributes['email']) && !filter_var($this->attributes['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Invalid email format';
         }
 
         // Validar nombre
-        if (isset($this->attributes['name'])) {
-            if (strlen($this->attributes['name']) < 2) {
-                $errors[] = 'Name must be at least 2 characters long';
-            }
+        if (isset($this->attributes['name']) && strlen($this->attributes['name']) < 2) {
+            $errors[] = 'Name must be at least 2 characters long';
         }
 
         // Validar password (si está presente)
-        if (isset($this->attributes['password'])) {
-            if (strlen($this->attributes['password']) < 8) {
-                $errors[] = 'Password must be at least 8 characters long';
-            }
+        if (isset($this->attributes['password']) && strlen($this->attributes['password']) < 8) {
+            $errors[] = 'Password must be at least 8 characters long';
         }
 
         return $errors;

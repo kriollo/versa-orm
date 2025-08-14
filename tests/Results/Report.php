@@ -35,13 +35,13 @@ class Report
 
     public function __construct(array $data)
     {
-        $this->report_id       = $data['report_id'] ?? uniqid('report_', true);
-        $this->test_type       = $data['test_type'] ?? 'unknown';
-        $this->php_version     = $data['php_version'] ?? PHP_VERSION;
-        $this->results         = $data['results'] ?? [];
-        $this->summary         = $data['summary'] ?? [];
-        $this->execution_time  = $data['execution_time'] ?? 0.0;
-        $this->timestamp       = $data['timestamp'] ?? new DateTime();
+        $this->report_id = $data['report_id'] ?? uniqid('report_', true);
+        $this->test_type = $data['test_type'] ?? 'unknown';
+        $this->php_version = $data['php_version'] ?? PHP_VERSION;
+        $this->results = $data['results'] ?? [];
+        $this->summary = $data['summary'] ?? [];
+        $this->execution_time = $data['execution_time'] ?? 0.0;
+        $this->timestamp = $data['timestamp'] ?? new DateTime();
         $this->recommendations = $data['recommendations'] ?? [];
     }
 
@@ -99,18 +99,16 @@ class Report
     public function toArray(): array
     {
         return [
-            'report_id'   => $this->report_id,
-            'test_type'   => $this->test_type,
+            'report_id' => $this->report_id,
+            'test_type' => $this->test_type,
             'php_version' => $this->php_version,
-            'results'     => array_map(static function ($result) {
-                return $result instanceof TestResult ? $result->toArray() : $result;
-            }, $this->results),
-            'summary'         => $this->summary,
-            'execution_time'  => $this->execution_time,
-            'timestamp'       => $this->timestamp->format('Y-m-d H:i:s'),
+            'results' => array_map(static fn ($result) => $result instanceof TestResult ? $result->toArray() : $result, $this->results),
+            'summary' => $this->summary,
+            'execution_time' => $this->execution_time,
+            'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
             'recommendations' => $this->recommendations,
-            'overall_status'  => $this->getOverallStatus(),
-            'is_successful'   => $this->isSuccessful(),
+            'overall_status' => $this->getOverallStatus(),
+            'is_successful' => $this->isSuccessful(),
         ];
     }
 
@@ -119,7 +117,7 @@ class Report
      */
     public function getExecutiveSummary(): array
     {
-        $totalTests  = $this->getTotalTests();
+        $totalTests = $this->getTotalTests();
         $passedTests = $this->getPassedTests();
         $failedTests = $this->getFailedTests();
         $successRate = $this->getSuccessRate();
@@ -134,19 +132,19 @@ class Report
         }
 
         return [
-            'overall_status'        => $this->getOverallStatus(),
-            'total_tests'           => $totalTests,
-            'passed_tests'          => $passedTests,
-            'failed_tests'          => $failedTests,
-            'success_rate'          => $successRate,
-            'execution_time'        => $this->execution_time,
-            'php_version'           => $this->php_version,
-            'test_type'             => $this->test_type,
-            'timestamp'             => $this->timestamp->format('Y-m-d H:i:s'),
-            'has_failures'          => $failedTests > 0,
-            'quality_score'         => $this->getQualityScore(),
+            'overall_status' => $this->getOverallStatus(),
+            'total_tests' => $totalTests,
+            'passed_tests' => $passedTests,
+            'failed_tests' => $failedTests,
+            'success_rate' => $successRate,
+            'execution_time' => $this->execution_time,
+            'php_version' => $this->php_version,
+            'test_type' => $this->test_type,
+            'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
+            'has_failures' => $failedTests > 0,
+            'quality_score' => $this->getQualityScore(),
             'recommendations_count' => count($this->recommendations),
-            'critical_alerts'       => $criticalAlerts,
+            'critical_alerts' => $criticalAlerts,
         ];
     }
 
@@ -185,7 +183,7 @@ class Report
             && is_object($this->results['quality_analysis'])
             && method_exists($this->results['quality_analysis'], 'getRecommendations')) {
             $qualityRecommendations = $this->results['quality_analysis']->getRecommendations();
-            $recommendations        = array_merge($recommendations, $qualityRecommendations);
+            $recommendations = array_merge($recommendations, $qualityRecommendations);
         }
 
         return array_unique($recommendations);
@@ -263,7 +261,7 @@ class Report
                 $html .= "Passed: <span class='pass'>{$result->passed_tests}</span>, ";
                 $html .= "Failed: <span class='fail'>{$result->failed_tests}</span></p>\n";
 
-                if (!empty($result->failures)) {
+                if ($result->failures !== []) {
                     $html .= "<h4>Failures:</h4>\n<ul>\n";
 
                     foreach ($result->failures as $failure) {
@@ -275,19 +273,17 @@ class Report
         }
 
         // Recommendations
-        if (!empty($this->recommendations)) {
+        if ($this->recommendations !== []) {
             $html .= "<h2>Recommendations</h2>\n<ul>\n";
 
             foreach ($this->recommendations as $recommendation) {
-                $type    = $recommendation['type'] ?? 'info';
+                $type = $recommendation['type'] ?? 'info';
                 $message = htmlspecialchars($recommendation['message'] ?? '');
                 $html .= "<li class='{$type}'>{$message}</li>\n";
             }
             $html .= "</ul>\n";
         }
 
-        $html .= "</body>\n</html>";
-
-        return $html;
+        return $html . "</body>\n</html>";
     }
 }

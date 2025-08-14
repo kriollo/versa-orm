@@ -15,7 +15,9 @@ use VersaORM\VersaORM;
  */
 class ModelManager
 {
-    public function __construct(private VersaORM $orm) {}
+    public function __construct(private VersaORM $orm)
+    {
+    }
 
     public function project(): Project
     {

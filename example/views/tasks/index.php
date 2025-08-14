@@ -114,7 +114,7 @@
             <?php if (($pagination['total_pages'] ?? 1) > 1) { ?>
                 <div class="flex items-center space-x-2">
                     <?php if ($pagination['has_prev'] ?? false) { ?>
-                        <a href="?action=tasks&page=<?php echo $pagination['prev_page']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo !empty($filters['status']) ? '&status=' . urlencode($filters['status']) : ''; ?><?php echo !empty($filters['priority']) ? '&priority=' . urlencode($filters['priority']) : ''; ?><?php echo !empty($filters['project_id']) ? '&project_id=' . urlencode($filters['project_id']) : ''; ?><?php echo !empty($filters['user_id']) ? '&user_id=' . urlencode($filters['user_id']) : ''; ?>"
+                        <a href="?action=tasks&page=<?php echo $pagination['prev_page']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo empty($filters['status']) ? '' : '&status=' . urlencode($filters['status']); ?><?php echo empty($filters['priority']) ? '' : '&priority=' . urlencode($filters['priority']); ?><?php echo empty($filters['project_id']) ? '' : '&project_id=' . urlencode($filters['project_id']); ?><?php echo empty($filters['user_id']) ? '' : '&user_id=' . urlencode($filters['user_id']); ?>"
                             class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </a>
@@ -125,7 +125,7 @@
                     </span>
 
                     <?php if ($pagination['has_next'] ?? false) { ?>
-                        <a href="?action=tasks&page=<?php echo $pagination['next_page']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo !empty($filters['status']) ? '&status=' . urlencode($filters['status']) : ''; ?><?php echo !empty($filters['priority']) ? '&priority=' . urlencode($filters['priority']) : ''; ?><?php echo !empty($filters['project_id']) ? '&project_id=' . urlencode($filters['project_id']) : ''; ?><?php echo !empty($filters['user_id']) ? '&user_id=' . urlencode($filters['user_id']) : ''; ?>"
+                        <a href="?action=tasks&page=<?php echo $pagination['next_page']; ?>&per_page=<?php echo $pagination['per_page']; ?><?php echo empty($filters['status']) ? '' : '&status=' . urlencode($filters['status']); ?><?php echo empty($filters['priority']) ? '' : '&priority=' . urlencode($filters['priority']); ?><?php echo empty($filters['project_id']) ? '' : '&project_id=' . urlencode($filters['project_id']); ?><?php echo empty($filters['user_id']) ? '' : '&user_id=' . urlencode($filters['user_id']); ?>"
                             class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </a>
@@ -140,9 +140,9 @@
         <?php
         // Calcular estadísticas basadas en el total filtrado (antes de paginación)
         $totalFiltered = $pagination['total'] ?? 0;
-$todoTasks             = count(array_filter($tasks, static fn ($t) => $t['status'] === 'todo'));
-$inProgressTasks       = count(array_filter($tasks, static fn ($t) => $t['status'] === 'in_progress'));
-$doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status'] === 'done'));
+$todoTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] === 'todo'));
+$inProgressTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] === 'in_progress'));
+$doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] === 'done'));
 ?>
 
         <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition-colors">
@@ -152,7 +152,7 @@ $doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status
                 </div>
                 <div>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo $totalFiltered; ?></p>
-                    <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">Total<?php echo !empty(array_filter($filters)) ? ' (Filtrado)' : ''; ?></p>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors">Total<?php echo array_filter($filters) === [] ? '' : ' (Filtrado)'; ?></p>
                 </div>
             </div>
         </div>
@@ -249,14 +249,14 @@ $doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
                         $statusClasses = [
-                            'todo'        => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+                            'todo' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
                             'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                            'done'        => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                            'done' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                         ];
                         $statusNames = [
-                            'todo'        => 'Por Hacer',
+                            'todo' => 'Por Hacer',
                             'in_progress' => 'En Progreso',
-                            'done'        => 'Completada',
+                            'done' => 'Completada',
                         ];
                         ?>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?php echo $statusClasses[$task['status']]; ?>">
@@ -267,15 +267,15 @@ $doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status
                                 <?php
                         $priorityClasses = [
                             'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                            'high'   => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                            'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
                             'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                            'low'    => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                            'low' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                         ];
                         $priorityNames = [
                             'urgent' => 'Urgente',
-                            'high'   => 'Alta',
+                            'high' => 'Alta',
                             'medium' => 'Media',
-                            'low'    => 'Baja',
+                            'low' => 'Baja',
                         ];
                         ?>
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?php echo $priorityClasses[$task['priority']]; ?>">
@@ -296,10 +296,10 @@ $doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status
                                             $dueDate = null; // fallback silencioso
                                         }
                                     }
-                                    $today     = new DateTime();
-                                    $isOverdue = $dueDate ? ($today > $dueDate) : false;
+                                    $today = new DateTime();
+                                    $isOverdue = $dueDate instanceof DateTimeInterface && $today > $dueDate;
                                     ?>
-                                    <?php if ($dueDate) { ?>
+                                    <?php if ($dueDate instanceof DateTimeInterface) { ?>
                                         <span class="<?php echo $isOverdue ? 'text-red-600' : ''; ?>">
                                             <?php echo htmlspecialchars($dueDate->format('d/m/Y')); ?>
                                             <?php if ($isOverdue) { ?>
@@ -411,7 +411,7 @@ $doneTasks             = count(array_filter($tasks, static fn ($t) => $t['status
                     <!-- Números de página -->
                     <?php
                     $start_page = max(1, $pagination['current_page'] - 2);
-    $end_page                   = min($pagination['total_pages'], $pagination['current_page'] + 2);
+    $end_page = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
     // Mostrar primera página si no está en el rango
     if ($start_page > 1) { ?>

@@ -58,7 +58,7 @@ class StrongTypingTest extends TestCase
 
     public function testCastToPhpTypeWithFloat(): void
     {
-        $model  = new TestTypedModelWithFloat('test_table', null);
+        $model = new TestTypedModelWithFloat('test_table', null);
         $result = $model->castToPhpType('price', '19.99');
         self::assertSame(19.99, $result);
         self::assertIsFloat($result);
@@ -87,7 +87,7 @@ class StrongTypingTest extends TestCase
     public function testCastToPhpTypeWithJson(): void
     {
         $jsonString = '{"key": "value", "number": 42}';
-        $result     = $this->model->castToPhpType('settings', $jsonString);
+        $result = $this->model->castToPhpType('settings', $jsonString);
 
         self::assertIsArray($result);
         self::assertSame(['key' => 'value', 'number' => 42], $result);
@@ -103,7 +103,7 @@ class StrongTypingTest extends TestCase
 
     public function testCastToPhpTypeWithUuid(): void
     {
-        $uuid   = '550e8400-e29b-41d4-a716-446655440000';
+        $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $result = $this->model->castToPhpType('uuid', $uuid);
 
         self::assertSame($uuid, $result);
@@ -155,9 +155,9 @@ class StrongTypingTest extends TestCase
 
     public function testCastToPhpTypeWithArray(): void
     {
-        $model     = new TestTypedModelWithArray('test_table', null);
+        $model = new TestTypedModelWithArray('test_table', null);
         $jsonArray = '["item1", "item2", "item3"]';
-        $result    = $model->castToPhpType('items', $jsonArray);
+        $result = $model->castToPhpType('items', $jsonArray);
 
         self::assertIsArray($result);
         self::assertSame(['item1', 'item2', 'item3'], $result);
@@ -194,7 +194,7 @@ class StrongTypingTest extends TestCase
 
     public function testCastToDatabaseTypeWithJson(): void
     {
-        $data   = ['key' => 'value', 'number' => 42];
+        $data = ['key' => 'value', 'number' => 42];
         $result = $this->model->castToDatabaseType('settings', $data);
 
         self::assertIsString($result);
@@ -204,7 +204,7 @@ class StrongTypingTest extends TestCase
     public function testCastToDatabaseTypeWithDateTime(): void
     {
         $dateTime = new DateTime('2023-01-01 12:00:00');
-        $result   = $this->model->castToDatabaseType('created_at', $dateTime);
+        $result = $this->model->castToDatabaseType('created_at', $dateTime);
 
         self::assertSame('2023-01-01 12:00:00', $result);
     }
@@ -223,7 +223,7 @@ class StrongTypingTest extends TestCase
 
     public function testCastToDatabaseTypeWithUuid(): void
     {
-        $uuid   = '550e8400-e29b-41d4-a716-446655440000';
+        $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $result = $this->model->castToDatabaseType('uuid', $uuid);
         self::assertSame($uuid, $result);
     }
@@ -272,7 +272,7 @@ class StrongTypingTest extends TestCase
     {
         $model = new TestTypedModelWithMutators('test_table', null);
 
-        $mutators  = $model->getMutators();
+        $mutators = $model->getMutators();
         $accessors = $model->getAccessors();
 
         self::assertIsArray($mutators);
@@ -311,13 +311,13 @@ class TestTypedModel extends VersaModel
     protected static function definePropertyTypes(): array
     {
         return [
-            'id'         => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
-            'name'       => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
-            'email'      => ['type' => 'string', 'max_length' => 255, 'nullable' => false, 'unique' => true],
-            'settings'   => ['type' => 'json', 'nullable' => true],
-            'uuid'       => ['type' => 'uuid', 'nullable' => false],
-            'status'     => ['type' => 'enum', 'values' => ['active', 'inactive'], 'default' => 'active'],
-            'tags'       => ['type' => 'set', 'values' => ['work', 'personal', 'urgent']],
+            'id' => ['type' => 'int', 'nullable' => false, 'auto_increment' => true],
+            'name' => ['type' => 'string', 'max_length' => 255, 'nullable' => false],
+            'email' => ['type' => 'string', 'max_length' => 255, 'nullable' => false, 'unique' => true],
+            'settings' => ['type' => 'json', 'nullable' => true],
+            'uuid' => ['type' => 'uuid', 'nullable' => false],
+            'status' => ['type' => 'enum', 'values' => ['active', 'inactive'], 'default' => 'active'],
+            'tags' => ['type' => 'set', 'values' => ['work', 'personal', 'urgent']],
             'created_at' => ['type' => 'datetime', 'nullable' => false],
             'updated_at' => ['type' => 'datetime', 'nullable' => true],
         ];

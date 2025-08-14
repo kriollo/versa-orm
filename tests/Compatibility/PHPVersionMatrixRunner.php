@@ -28,15 +28,12 @@ class PHPVersionMatrixRunner
 
     private PHPVersionDetector $detector;
 
-    private array $config;
-
     private array $supportedVersions = ['7.4', '8.0', '8.1', '8.2', '8.3'];
 
     public function __construct(array $config = [])
     {
         $this->executor = new PHPVersionTestExecutor($config);
         $this->detector = new PHPVersionDetector();
-        $this->config   = array_merge($this->getDefaultConfig(), $config);
     }
 
     /**
@@ -44,7 +41,7 @@ class PHPVersionMatrixRunner
      */
     public function runCompatibilityMatrix(): Report
     {
-        $startTime      = microtime(true);
+        $startTime = microtime(true);
         $currentVersion = $this->detector->getCurrentVersion()['short_version'];
 
         // Solo podemos ejecutar tests para la versión actual
@@ -53,21 +50,21 @@ class PHPVersionMatrixRunner
         }
 
         $results = [
-            'current_version_tests'   => $this->executor->runAllCompatibilityTests(),
+            'current_version_tests' => $this->executor->runAllCompatibilityTests(),
             'version_matrix_analysis' => $this->analyzeVersionMatrix(),
-            'compatibility_report'    => $this->generateCompatibilityMatrix(),
+            'compatibility_report' => $this->generateCompatibilityMatrix(),
         ];
 
         $executionTime = microtime(true) - $startTime;
 
         return new Report([
-            'report_id'       => 'php_matrix_' . date('Y-m-d_H-i-s'),
-            'test_type'       => 'php_compatibility_matrix',
-            'php_version'     => PHP_VERSION,
-            'results'         => $results,
-            'summary'         => $this->generateMatrixSummary($results),
-            'execution_time'  => $executionTime,
-            'timestamp'       => new DateTime(),
+            'report_id' => 'php_matrix_' . date('Y-m-d_H-i-s'),
+            'test_type' => 'php_compatibility_matrix',
+            'php_version' => PHP_VERSION,
+            'results' => $results,
+            'summary' => $this->generateMatrixSummary($results),
+            'execution_time' => $executionTime,
+            'timestamp' => new DateTime(),
             'recommendations' => $this->generateMatrixRecommendations($results),
         ]);
     }
@@ -94,9 +91,9 @@ class PHPVersionMatrixRunner
     public function exportMatrixToJson(?string $filepath = null): string
     {
         $report = $this->runCompatibilityMatrix();
-        $json   = $report->toJson();
+        $json = $report->toJson();
 
-        if ($filepath) {
+        if ($filepath !== null && $filepath !== '' && $filepath !== '0') {
             $directory = dirname($filepath);
 
             if (!is_dir($directory)) {
@@ -114,9 +111,9 @@ class PHPVersionMatrixRunner
     public function exportMatrixToHtml(?string $filepath = null): string
     {
         $report = $this->runCompatibilityMatrix();
-        $html   = $this->generateMatrixHtml($report);
+        $html = $this->generateMatrixHtml($report);
 
-        if ($filepath) {
+        if ($filepath !== null && $filepath !== '' && $filepath !== '0') {
             $directory = dirname($filepath);
 
             if (!is_dir($directory)) {
@@ -133,41 +130,41 @@ class PHPVersionMatrixRunner
      */
     private function analyzeVersionMatrix(): TestResult
     {
-        $startTime      = microtime(true);
-        $tests          = [];
+        $startTime = microtime(true);
+        $tests = [];
         $currentVersion = $this->detector->getCurrentVersion();
 
         try {
             // Análisis de la versión actual
             $tests['current_version_analysis'] = [
-                'status'  => 'pass',
+                'status' => 'pass',
                 'message' => "Running on PHP {$currentVersion['full_version']}",
                 'details' => $currentVersion,
             ];
 
             // Análisis de soporte
-            $supportInfo                       = $this->detector->getCurrentVersionSupport();
+            $supportInfo = $this->detector->getCurrentVersionSupport();
             $tests['version_support_analysis'] = [
-                'status'  => $supportInfo ? 'pass' : 'fail',
-                'message' => $supportInfo ? 'Version is supported' : 'Version is not supported',
+                'status' => $supportInfo !== null && $supportInfo !== [] ? 'pass' : 'fail',
+                'message' => $supportInfo !== null && $supportInfo !== [] ? 'Version is supported' : 'Version is not supported',
                 'details' => $supportInfo,
             ];
 
             // Análisis de características por versión
             foreach ($this->supportedVersions as $version) {
-                $versionId        = (int) str_replace('.', '', $version . '00');
+                $versionId = (int) str_replace('.', '', $version . '00');
                 $isCurrentOrLower = $versionId <= PHP_VERSION_ID;
 
                 $tests["version_{$version}_compatibility"] = [
-                    'status'  => $isCurrentOrLower ? 'pass' : 'skip',
+                    'status' => $isCurrentOrLower ? 'pass' : 'skip',
                     'message' => $isCurrentOrLower
                         ? "PHP {$version} features are available"
                         : "PHP {$version} features are not available (current version is lower)",
                     'details' => [
-                        'version'            => $version,
-                        'version_id'         => $versionId,
+                        'version' => $version,
+                        'version_id' => $versionId,
                         'current_version_id' => PHP_VERSION_ID,
-                        'available'          => $isCurrentOrLower,
+                        'available' => $isCurrentOrLower,
                     ],
                 ];
             }
@@ -178,43 +175,42 @@ class PHPVersionMatrixRunner
 
                 if ($versionInfo && isset($versionInfo['eol_date'])) {
                     $eolDate = new DateTime($versionInfo['eol_date']);
-                    $now     = new DateTime();
-                    $isEol   = $eolDate < $now;
+                    $now = new DateTime();
+                    $isEol = $eolDate < $now;
 
                     $tests["version_{$version}_eol_status"] = [
-                        'status'  => $isEol ? 'warning' : 'pass',
+                        'status' => $isEol ? 'warning' : 'pass',
                         'message' => $isEol
                             ? "PHP {$version} reached EOL on {$versionInfo['eol_date']}"
                             : "PHP {$version} is supported until {$versionInfo['eol_date']}",
                         'details' => [
-                            'version'        => $version,
-                            'eol_date'       => $versionInfo['eol_date'],
-                            'is_eol'         => $isEol,
+                            'version' => $version,
+                            'eol_date' => $versionInfo['eol_date'],
+                            'is_eol' => $isEol,
                             'days_until_eol' => $isEol ? 0 : $now->diff($eolDate)->days,
                         ],
                     ];
                 }
             }
-
         } catch (Exception $e) {
             $tests['matrix_analysis_error'] = [
-                'status'  => 'fail',
+                'status' => 'fail',
                 'message' => 'Matrix analysis failed: ' . $e->getMessage(),
                 'details' => ['exception' => $e->getMessage()],
             ];
         }
 
         return new TestResult([
-            'test_type'      => 'version_matrix_analysis',
-            'engine'         => 'php',
-            'total_tests'    => count($tests),
-            'passed_tests'   => count(array_filter($tests, static fn ($t) => $t['status'] === 'pass')),
-            'failed_tests'   => count(array_filter($tests, static fn ($t) => $t['status'] === 'fail')),
-            'skipped_tests'  => count(array_filter($tests, static fn ($t) => $t['status'] === 'skip')),
+            'test_type' => 'version_matrix_analysis',
+            'engine' => 'php',
+            'total_tests' => count($tests),
+            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'skipped_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'skip')),
             'execution_time' => microtime(true) - $startTime,
-            'failures'       => array_filter($tests, static fn ($t) => $t['status'] === 'fail'),
-            'metrics'        => ['tests' => $tests],
-            'timestamp'      => new DateTime(),
+            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'metrics' => ['tests' => $tests],
+            'timestamp' => new DateTime(),
         ]);
     }
 
@@ -223,34 +219,34 @@ class PHPVersionMatrixRunner
      */
     private function generateCompatibilityMatrix(): array
     {
-        $matrix           = [];
+        $matrix = [];
         $currentVersionId = PHP_VERSION_ID;
-        $currentVersion   = $this->detector->getCurrentVersion()['short_version'];
+        $currentVersion = $this->detector->getCurrentVersion()['short_version'];
 
         foreach ($this->supportedVersions as $version) {
-            $versionId   = (int) str_replace('.', '', $version . '00');
+            $versionId = (int) str_replace('.', '', $version . '00');
             $versionInfo = PHPVersionDetector::$supportedVersions[$version] ?? null;
 
             $matrix[$version] = [
-                'version'      => $version,
-                'version_id'   => $versionId,
-                'is_current'   => $version === $currentVersion,
+                'version' => $version,
+                'version_id' => $versionId,
+                'is_current' => $version === $currentVersion,
                 'is_available' => $currentVersionId >= $versionId,
                 'support_info' => $versionInfo,
-                'features'     => $versionInfo['features'] ?? [],
-                'status'       => $versionInfo['status'] ?? 'unknown',
-                'eol_date'     => $versionInfo['eol_date'] ?? null,
-                'test_status'  => $this->getVersionTestStatus($version, $currentVersionId, $versionId),
+                'features' => $versionInfo['features'] ?? [],
+                'status' => $versionInfo['status'] ?? 'unknown',
+                'eol_date' => $versionInfo['eol_date'] ?? null,
+                'test_status' => $this->getVersionTestStatus($version, $currentVersionId, $versionId),
             ];
         }
 
         return [
-            'current_php_version'   => PHP_VERSION,
+            'current_php_version' => PHP_VERSION,
             'current_version_short' => $currentVersion,
-            'current_version_id'    => $currentVersionId,
-            'supported_versions'    => $this->supportedVersions,
-            'matrix'                => $matrix,
-            'summary'               => $this->generateMatrixCompatibilitySummary($matrix),
+            'current_version_id' => $currentVersionId,
+            'supported_versions' => $this->supportedVersions,
+            'matrix' => $matrix,
+            'summary' => $this->generateMatrixCompatibilitySummary($matrix),
         ];
     }
 
@@ -262,17 +258,16 @@ class PHPVersionMatrixRunner
         if ($currentVersionId >= $versionId) {
             return [
                 'can_test' => true,
-                'status'   => 'testable',
-                'message'  => "Can test PHP {$version} features on current version",
+                'status' => 'testable',
+                'message' => "Can test PHP {$version} features on current version",
             ];
         }
 
         return [
             'can_test' => false,
-            'status'   => 'not_testable',
-            'message'  => "Cannot test PHP {$version} features (requires newer PHP version)",
+            'status' => 'not_testable',
+            'message' => "Cannot test PHP {$version} features (requires newer PHP version)",
         ];
-
     }
 
     /**
@@ -280,12 +275,12 @@ class PHPVersionMatrixRunner
      */
     private function generateMatrixCompatibilitySummary(array $matrix): array
     {
-        $testableVersions  = 0;
+        $testableVersions = 0;
         $supportedVersions = 0;
-        $eolVersions       = 0;
+        $eolVersions = 0;
         $availableFeatures = [];
 
-        foreach ($matrix as $version => $info) {
+        foreach ($matrix as $info) {
             if ($info['test_status']['can_test']) {
                 ++$testableVersions;
             }
@@ -296,7 +291,7 @@ class PHPVersionMatrixRunner
 
             if ($info['eol_date']) {
                 $eolDate = new DateTime($info['eol_date']);
-                $now     = new DateTime();
+                $now = new DateTime();
 
                 if ($eolDate < $now) {
                     ++$eolVersions;
@@ -309,13 +304,13 @@ class PHPVersionMatrixRunner
         }
 
         return [
-            'total_versions'           => count($matrix),
-            'testable_versions'        => $testableVersions,
-            'supported_versions'       => $supportedVersions,
-            'eol_versions'             => $eolVersions,
+            'total_versions' => count($matrix),
+            'testable_versions' => $testableVersions,
+            'supported_versions' => $supportedVersions,
+            'eol_versions' => $eolVersions,
             'available_features_count' => count(array_unique($availableFeatures)),
-            'available_features'       => array_unique($availableFeatures),
-            'compatibility_score'      => ($testableVersions / count($matrix)) * 100,
+            'available_features' => array_unique($availableFeatures),
+            'compatibility_score' => ($testableVersions / count($matrix)) * 100,
         ];
     }
 
@@ -324,11 +319,11 @@ class PHPVersionMatrixRunner
      */
     private function generateMatrixSummary(array $results): array
     {
-        $totalTests   = 0;
-        $totalPassed  = 0;
-        $totalFailed  = 0;
+        $totalTests = 0;
+        $totalPassed = 0;
+        $totalFailed = 0;
         $totalSkipped = 0;
-        $totalTime    = 0;
+        $totalTime = 0;
 
         foreach ($results as $result) {
             if ($result instanceof TestResult || $result instanceof Report) {
@@ -350,15 +345,15 @@ class PHPVersionMatrixRunner
         }
 
         return [
-            'total_tests'          => $totalTests,
-            'passed_tests'         => $totalPassed,
-            'failed_tests'         => $totalFailed,
-            'skipped_tests'        => $totalSkipped,
-            'success_rate'         => $totalTests > 0 ? ($totalPassed / $totalTests) * 100 : 0,
+            'total_tests' => $totalTests,
+            'passed_tests' => $totalPassed,
+            'failed_tests' => $totalFailed,
+            'skipped_tests' => $totalSkipped,
+            'success_rate' => $totalTests > 0 ? ($totalPassed / $totalTests) * 100 : 0,
             'total_execution_time' => $totalTime,
-            'php_version'          => PHP_VERSION,
-            'overall_status'       => $totalFailed === 0 ? 'pass' : 'fail',
-            'matrix_type'          => 'php_compatibility',
+            'php_version' => PHP_VERSION,
+            'overall_status' => $totalFailed === 0 ? 'pass' : 'fail',
+            'matrix_type' => 'php_compatibility',
         ];
     }
 
@@ -368,7 +363,7 @@ class PHPVersionMatrixRunner
     private function generateMatrixRecommendations(array $results): array
     {
         $recommendations = [];
-        $currentVersion  = $this->detector->getCurrentVersion()['short_version'];
+        $currentVersion = $this->detector->getCurrentVersion()['short_version'];
 
         // Recomendaciones basadas en la versión actual
         if (isset($results['compatibility_report']['matrix'][$currentVersion])) {
@@ -376,17 +371,17 @@ class PHPVersionMatrixRunner
 
             if (isset($versionInfo['eol_date'])) {
                 $eolDate = new DateTime($versionInfo['eol_date']);
-                $now     = new DateTime();
-                $diff    = $now->diff($eolDate);
+                $now = new DateTime();
+                $diff = $now->diff($eolDate);
 
                 if ($eolDate < $now) {
                     $recommendations[] = [
-                        'type'    => 'error',
+                        'type' => 'error',
                         'message' => "PHP {$currentVersion} has reached end-of-life. Upgrade immediately for security updates.",
                     ];
                 } elseif ($diff->days < 365) {
                     $recommendations[] = [
-                        'type'    => 'warning',
+                        'type' => 'warning',
                         'message' => "PHP {$currentVersion} will reach end-of-life in {$diff->days} days. Plan for upgrade.",
                     ];
                 }
@@ -394,14 +389,12 @@ class PHPVersionMatrixRunner
         }
 
         // Recomendaciones sobre versiones más nuevas
-        $newerVersions = array_filter($this->supportedVersions, static function ($version) use ($currentVersion) {
-            return version_compare($version, $currentVersion, '>');
-        });
+        $newerVersions = array_filter($this->supportedVersions, static fn ($version): bool|int => version_compare($version, $currentVersion, '>'));
 
-        if (!empty($newerVersions)) {
-            $latestVersion     = max($newerVersions);
+        if ($newerVersions !== []) {
+            $latestVersion = max($newerVersions);
             $recommendations[] = [
-                'type'    => 'info',
+                'type' => 'info',
                 'message' => "Consider upgrading to PHP {$latestVersion} for latest features and performance improvements.",
             ];
         }
@@ -412,7 +405,7 @@ class PHPVersionMatrixRunner
 
             if ($failedTests > 0) {
                 $recommendations[] = [
-                    'type'    => 'error',
+                    'type' => 'error',
                     'message' => "There are {$failedTests} failing tests on PHP {$currentVersion}. Review and fix before deployment.",
                 ];
             }
@@ -497,7 +490,7 @@ class PHPVersionMatrixRunner
                 // Check if EOL
                 if ($info['eol_date']) {
                     $eolDate = new DateTime($info['eol_date']);
-                    $now     = new DateTime();
+                    $now = new DateTime();
 
                     if ($eolDate < $now) {
                         $rowClass .= ' eol';
@@ -523,36 +516,17 @@ class PHPVersionMatrixRunner
         }
 
         // Recommendations
-        if (!empty($report->recommendations)) {
+        if ($report->recommendations !== []) {
             $html .= "<h2>Recommendations</h2>\n<ul>\n";
 
             foreach ($report->recommendations as $recommendation) {
-                $type    = $recommendation['type'] ?? 'info';
+                $type = $recommendation['type'] ?? 'info';
                 $message = htmlspecialchars($recommendation['message'] ?? '');
                 $html .= "<li class='{$type}'><strong>" . strtoupper($type) . ":</strong> {$message}</li>\n";
             }
             $html .= "</ul>\n";
         }
 
-        $html .= "</body>\n</html>";
-
-        return $html;
-    }
-
-    /**
-     * Obtiene configuración por defecto.
-     */
-    private function getDefaultConfig(): array
-    {
-        return [
-            'timeout'                   => 600,
-            'memory_limit'              => '512M',
-            'include_performance_tests' => true,
-            'include_memory_tests'      => true,
-            'include_extension_tests'   => true,
-            'generate_html_report'      => true,
-            'generate_json_report'      => true,
-            'verbose'                   => false,
-        ];
+        return $html . "</body>\n</html>";
     }
 }

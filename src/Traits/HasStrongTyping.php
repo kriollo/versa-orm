@@ -50,27 +50,27 @@ trait HasStrongTyping
 
     /** @var array<string,string> */
     private static array $supportedCasts = [
-        'int'        => 'integer',
-        'integer'    => 'integer',
-        'real'       => 'float',
-        'float'      => 'float',
-        'double'     => 'float',
-        'decimal'    => 'float',
-        'string'     => 'string',
-        'bool'       => 'boolean',
-        'boolean'    => 'boolean',
-        'object'     => 'object',
-        'array'      => 'array',
+        'int' => 'integer',
+        'integer' => 'integer',
+        'real' => 'float',
+        'float' => 'float',
+        'double' => 'float',
+        'decimal' => 'float',
+        'string' => 'string',
+        'bool' => 'boolean',
+        'boolean' => 'boolean',
+        'object' => 'object',
+        'array' => 'array',
         'collection' => 'array',
-        'date'       => 'datetime',
-        'datetime'   => 'datetime',
-        'timestamp'  => 'datetime',
-        'json'       => 'json',
-        'uuid'       => 'uuid',
-        'enum'       => 'enum',
-        'set'        => 'set',
-        'blob'       => 'blob',
-        'inet'       => 'inet',
+        'date' => 'datetime',
+        'datetime' => 'datetime',
+        'timestamp' => 'datetime',
+        'json' => 'json',
+        'uuid' => 'uuid',
+        'enum' => 'enum',
+        'set' => 'set',
+        'blob' => 'blob',
+        'inet' => 'inet',
     ];
 
     /** @var array<string,callable> */
@@ -84,7 +84,7 @@ trait HasStrongTyping
      */
     public static function getPropertyTypes(): array
     {
-        $cls      = static::class;
+        $cls = static::class;
         $registry = &self::propertyTypeRegistry();
 
         if (isset($registry[$cls])) {
@@ -132,13 +132,11 @@ trait HasStrongTyping
     }
 
     /**
-     * @param mixed $value
-     *
      * @throws VersaORMException
      *
      * @return mixed
      */
-    public function castToPhpType(string $property, $value)
+    public function castToPhpType(string $property, mixed $value)
     {
         if ($value === null) {
             return null;
@@ -169,8 +167,8 @@ trait HasStrongTyping
             return $value;
         }
         /** @var PropertyTypeDef $def */
-        $def     = $types[$property];
-        $type    = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
+        $def = $types[$property];
+        $type = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
         $handler = self::getPhpCastHandlers()[$type] ?? static fn ($s, $p, $v, $t = []): mixed => $v;
 
         try {
@@ -185,13 +183,11 @@ trait HasStrongTyping
     }
 
     /**
-     * @param mixed $value
-     *
      * @throws VersaORMException
      *
      * @return mixed
      */
-    public function castToDatabaseType(string $property, $value)
+    public function castToDatabaseType(string $property, mixed $value)
     {
         if ($value === null) {
             return null;
@@ -215,8 +211,8 @@ trait HasStrongTyping
             return $value;
         }
         /** @var PropertyTypeDef $def */
-        $def     = $types[$property];
-        $type    = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
+        $def = $types[$property];
+        $type = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
         $handler = self::getDbCastHandlers()[$type] ?? static fn ($s, $p, $v, $t = []): mixed => $v;
 
         try {
@@ -233,7 +229,7 @@ trait HasStrongTyping
     /** @return array<string> */
     public function validateSchemaConsistency(): array
     {
-        $errs  = [];
+        $errs = [];
         $types = static::getPropertyTypes();
 
         if ($types === []) {
@@ -265,15 +261,15 @@ trait HasStrongTyping
                     $errs[] = "⚠️  ADVERTENCIA: La propiedad '{$prop}' no existe en la base de datos";
                     continue;
                 }
-                $dbCol     = $db[$c];
-                $dbType    = strtolower($dbCol['data_type']);
+                $dbCol = $db[$c];
+                $dbType = strtolower($dbCol['data_type']);
                 $modelType = strtolower((string) ($def['type'] ?? ''));
-                $expected  = $map[$dbType] ?? $dbType;
+                $expected = $map[$dbType] ?? $dbType;
 
                 if ($expected !== $modelType && !$this->isCompatibleType($expected, $modelType)) {
                     $errs[] = "⚠️  INCONSISTENCIA: '{$prop}' - DB: {$dbType} ({$expected}) vs Modelo: {$modelType}";
                 }
-                $nullable  = strtolower($dbCol['is_nullable'] ?? 'no') === 'yes';
+                $nullable = strtolower($dbCol['is_nullable'] ?? 'no') === 'yes';
                 $modelNull = (bool) ($def['nullable'] ?? false);
 
                 if ($nullable !== $modelNull) {
@@ -345,11 +341,11 @@ trait HasStrongTyping
      */
     private static function getPhpCastHandlers(): array
     {
-        if (self::$phpCastHandlers) {
+        if (self::$phpCastHandlers !== []) {
             return self::$phpCastHandlers;
         }
-        $int    = static fn ($s, $p, $v, $_ = []): int => (int) (is_numeric($v) ? $v : 0);
-        $float  = static fn ($s, $p, $v, $_ = []): float => (float) (is_numeric($v) ? $v : 0.0);
+        $int = static fn ($s, $p, $v, $_ = []): int => (int) (is_numeric($v) ? $v : 0);
+        $float = static fn ($s, $p, $v, $_ = []): float => (float) (is_numeric($v) ? $v : 0.0);
         $string = static fn ($s, $p, $v, $_ = []): string => is_scalar($v)
             ? (string) $v
             : (json_encode($v, JSON_UNESCAPED_UNICODE) ?: '');
@@ -441,9 +437,9 @@ trait HasStrongTyping
             throw new VersaORMException("Invalid datetime value for property {$p}");
         };
         $enum = static function ($s, $p, $v, $t = []): string {
-            $val       = (string) $v;
+            $val = (string) $v;
             $rawValues = $t['values'] ?? [];
-            $allowed   = [];
+            $allowed = [];
 
             if (is_array($rawValues)) {
                 foreach ($rawValues as $rv) {
@@ -470,12 +466,7 @@ trait HasStrongTyping
                 } else {
                     $decoded = json_decode($v, true);
 
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        /** @var array $decoded */
-                        $vals = $decoded;
-                    } else {
-                        $vals = explode(',', $v);
-                    }
+                    $vals = json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : explode(',', $v);
                 }
             } elseif ($v !== null) {
                 $vals = [$v];
@@ -538,13 +529,13 @@ trait HasStrongTyping
      */
     private static function getDbCastHandlers(): array
     {
-        if (self::$dbCastHandlers) {
+        if (self::$dbCastHandlers !== []) {
             return self::$dbCastHandlers;
         }
-        $int    = static fn ($s, $p, $v, $_ = []): int => (int) $v;
-        $float  = static fn ($s, $p, $v, $_ = []): float => (float) $v;
+        $int = static fn ($s, $p, $v, $_ = []): int => (int) $v;
+        $float = static fn ($s, $p, $v, $_ = []): float => (float) $v;
         $string = static function ($s, $p, $v, $t = []): string {
-            $sv  = (string) $v;
+            $sv = (string) $v;
             $max = $t['max_length'] ?? null;
 
             if ($max && strlen($sv) > $max) {
@@ -553,7 +544,7 @@ trait HasStrongTyping
 
             return $sv;
         };
-        $bool     = static fn ($s, $p, $v, $_ = []): int => (is_bool($v) ? $v : (is_numeric($v) ? (float) $v !== 0 : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0;
+        $bool = static fn ($s, $p, $v, $_ = []): int => (is_bool($v) ? $v : (is_numeric($v) ? (float) $v !== 0 : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0;
         $jsonLike = static function ($s, $p, $v, $_ = []): string {
             if (is_string($v)) {
                 $trim = ltrim($v);
@@ -594,9 +585,9 @@ trait HasStrongTyping
             throw new VersaORMException("Invalid datetime value for property {$p}");
         };
         $enum = static function ($s, $p, $v, $t = []): string {
-            $val       = (string) $v;
+            $val = (string) $v;
             $rawValues = $t['values'] ?? [];
-            $allowed   = [];
+            $allowed = [];
 
             if (is_array($rawValues)) {
                 foreach ($rawValues as $rv) {
@@ -623,12 +614,7 @@ trait HasStrongTyping
                 } else {
                     $decoded = json_decode($v, true);
 
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        /** @var array $decoded */
-                        $vals = $decoded;
-                    } else {
-                        $vals = explode(',', $v);
-                    }
+                    $vals = json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : explode(',', $v);
                 }
             } elseif ($v !== null) {
                 $vals = [$v];
@@ -716,11 +702,11 @@ trait HasStrongTyping
     /** @return array<int,string> */
     private function validatePropertyConsistency(string $p, array $def, array $col): array
     {
-        $errs      = [];
+        $errs = [];
         $modelType = strtolower((string) ($def['type'] ?? ''));
-        $dbType    = strtolower((string) ($col['data_type'] ?? ''));
-        $compat    = ['int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'], 'float' => ['float', 'double', 'real', 'decimal', 'numeric'], 'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'], 'bool' => ['tinyint', 'boolean', 'bit'], 'boolean' => ['tinyint', 'boolean', 'bit'], 'datetime' => ['datetime', 'timestamp', 'date'], 'date' => ['date', 'datetime', 'timestamp'], 'json' => ['json', 'jsonb', 'text'], 'uuid' => ['uuid', 'char', 'varchar'], 'enum' => ['enum'], 'set' => ['set'], 'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'], 'inet' => ['inet', 'varchar', 'char']];
-        $ok        = in_array($dbType, $compat[$modelType] ?? [], true) || $dbType === $modelType;
+        $dbType = strtolower((string) ($col['data_type'] ?? ''));
+        $compat = ['int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'], 'float' => ['float', 'double', 'real', 'decimal', 'numeric'], 'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'], 'bool' => ['tinyint', 'boolean', 'bit'], 'boolean' => ['tinyint', 'boolean', 'bit'], 'datetime' => ['datetime', 'timestamp', 'date'], 'date' => ['date', 'datetime', 'timestamp'], 'json' => ['json', 'jsonb', 'text'], 'uuid' => ['uuid', 'char', 'varchar'], 'enum' => ['enum'], 'set' => ['set'], 'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'], 'inet' => ['inet', 'varchar', 'char']];
+        $ok = in_array($dbType, $compat[$modelType] ?? [], true) || $dbType === $modelType;
 
         if (!$ok) {
             $errs[] = "Type mismatch for property '{$p}': model={$modelType} db={$dbType}";
@@ -736,7 +722,7 @@ trait HasStrongTyping
         }
 
         if (isset($def['max_length']) && ($def['max_length'] ?? null) !== null) {
-            $ml  = (int) $def['max_length'];
+            $ml = (int) $def['max_length'];
             $dbl = (int) ($col['character_maximum_length'] ?? 0);
 
             if ($dbl > 0 && $ml > $dbl) {

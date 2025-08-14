@@ -19,10 +19,10 @@ use function in_array;
 class TestLogger
 {
     private const LEVELS = [
-        'debug'    => 0,
-        'info'     => 1,
-        'warning'  => 2,
-        'error'    => 3,
+        'debug' => 0,
+        'info' => 1,
+        'warning' => 2,
+        'error' => 3,
         'critical' => 4,
     ];
 
@@ -36,9 +36,9 @@ class TestLogger
 
     public function __construct(array $config = [])
     {
-        $this->logLevel  = $config['level'] ?? 'info';
+        $this->logLevel = $config['level'] ?? 'info';
         $this->outputDir = $config['output_dir'] ?? 'tests/logs';
-        $this->maxFiles  = $config['max_files'] ?? 10;
+        $this->maxFiles = $config['max_files'] ?? 10;
 
         $this->ensureLogDirectory();
         $this->currentLogFile = $this->getCurrentLogFile();
@@ -90,8 +90,8 @@ class TestLogger
      */
     public function getStats(): array
     {
-        $logFiles   = glob($this->outputDir . '/test-qa-*.log');
-        $totalSize  = 0;
+        $logFiles = glob($this->outputDir . '/test-qa-*.log');
+        $totalSize = 0;
         $totalLines = 0;
 
         foreach ($logFiles as $file) {
@@ -100,12 +100,12 @@ class TestLogger
         }
 
         return [
-            'total_files'          => count($logFiles),
-            'total_size_bytes'     => $totalSize,
+            'total_files' => count($logFiles),
+            'total_size_bytes' => $totalSize,
             'total_size_formatted' => $this->formatBytes($totalSize),
-            'total_lines'          => $totalLines,
-            'current_log_file'     => $this->currentLogFile,
-            'log_level'            => $this->logLevel,
+            'total_lines' => $totalLines,
+            'current_log_file' => $this->currentLogFile,
+            'log_level' => $this->logLevel,
         ];
     }
 
@@ -142,7 +142,7 @@ class TestLogger
      */
     public function searchLogs(string $pattern, int $maxResults = 100): array
     {
-        $results  = [];
+        $results = [];
         $logFiles = glob($this->outputDir . '/test-qa-*.log');
 
         foreach ($logFiles as $file) {
@@ -151,9 +151,9 @@ class TestLogger
             foreach ($lines as $lineNumber => $line) {
                 if (stripos($line, $pattern) !== false) {
                     $results[] = [
-                        'file'        => basename($file),
+                        'file' => basename($file),
                         'line_number' => $lineNumber + 1,
-                        'content'     => $line,
+                        'content' => $line,
                     ];
 
                     if (count($results) >= $maxResults) {
@@ -200,13 +200,13 @@ class TestLogger
      */
     private function formatLogEntry(string $level, string $message, array $context): string
     {
-        $timestamp  = (new DateTime())->format('Y-m-d H:i:s.u');
+        $timestamp = (new DateTime())->format('Y-m-d H:i:s.u');
         $levelUpper = strtoupper($level);
-        $pid        = getmypid();
+        $pid = getmypid();
 
         $logEntry = "[{$timestamp}] [{$levelUpper}] [PID:{$pid}] {$message}";
 
-        if (!empty($context)) {
+        if ($context !== []) {
             $contextJson = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             $logEntry .= " Context: {$contextJson}";
         }
@@ -254,9 +254,7 @@ class TestLogger
         }
 
         // Ordenar por fecha de modificación (más antiguos primero)
-        usort($logFiles, static function ($a, $b) {
-            return filemtime($a) - filemtime($b);
-        });
+        usort($logFiles, static fn ($a, $b): int => filemtime($a) - filemtime($b));
 
         // Eliminar archivos más antiguos
         $filesToDelete = array_slice($logFiles, 0, count($logFiles) - $this->maxFiles);

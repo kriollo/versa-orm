@@ -257,8 +257,8 @@ class QueryBuilderTest extends TestCase
     public function testInsert(): void
     {
         self::$orm->table('users')->insert([
-            'name'   => 'Frank',
-            'email'  => 'frank@example.com',
+            'name' => 'Frank',
+            'email' => 'frank@example.com',
             'status' => 'active',
         ]);
 
@@ -270,8 +270,8 @@ class QueryBuilderTest extends TestCase
     public function testInsertGetId(): void
     {
         $id = self::$orm->table('users')->insertGetId([
-            'name'   => 'Grace',
-            'email'  => 'grace@example.com',
+            'name' => 'Grace',
+            'email' => 'grace@example.com',
             'status' => 'active',
         ]);
 

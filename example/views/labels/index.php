@@ -38,7 +38,7 @@
                     <i class="fas fa-check-circle text-green-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(array_filter($labels, static fn ($l) => !empty($l->tasks_count) && $l->tasks_count > 0)); ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(array_filter($labels, static fn ($l): bool => !empty($l->tasks_count) && $l->tasks_count > 0)); ?></p>
                     <p class="text-gray-600 dark:text-gray-400 text-sm transition-colors">En Uso</p>
                 </div>
             </div>
@@ -146,7 +146,7 @@
                         <div class="w-4 h-4 rounded-full" style="background-color: <?php echo htmlspecialchars($color); ?>"></div>
                         <span class="text-sm font-mono text-gray-600 dark:text-gray-300 transition-colors"><?php echo htmlspecialchars($color); ?></span>
                         <span class="text-xs text-gray-500 dark:text-gray-400 transition-colors">
-                            (<?php echo count(array_filter($labels, static fn ($l) => $l->color === $color)); ?> etiquetas)
+                            (<?php echo count(array_filter($labels, static fn ($l): bool => $l->color === $color)); ?> etiquetas)
                         </span>
                     </div>
                 <?php } ?>
