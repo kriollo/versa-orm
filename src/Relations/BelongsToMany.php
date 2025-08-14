@@ -21,6 +21,9 @@ class BelongsToMany extends Relation
         parent::__construct($query, $parent);
     }
 
+    /**
+     * @return array<int, VersaModel>
+     */
     public function getResults(): array
     {
         $this->addConstraints();

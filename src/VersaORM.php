@@ -359,8 +359,8 @@ class VersaORM
             if ($name === '') {
                 continue;
             }
-            $nullable = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
-            $defaultExists = array_key_exists('default', $col);
+            $nullable = isset($col['nullable']) ? (bool) $col['nullable'] : true;
+            $defaultExists = isset($col['default']);
             /** @var mixed $default */
             $default = $col['default'] ?? null;
             $primary = !empty($col['primary']);
@@ -515,8 +515,8 @@ class VersaORM
                 if ($name === '') {
                     continue;
                 }
-                $nullable = array_key_exists('nullable', $col) ? (bool) $col['nullable'] : true;
-                $defaultExists = array_key_exists('default', $col);
+                $nullable = isset($col['nullable']) ? (bool) $col['nullable'] : true;
+                $defaultExists = isset($col['default']);
                 /** @var mixed $default */
                 $default = $col['default'] ?? null;
 
@@ -662,8 +662,8 @@ class VersaORM
                     if ($type === '') {
                         continue;
                     }
-                    $nullable = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
-                    $defaultExists = array_key_exists('default', $m);
+                    $nullable = isset($m['nullable']) ? (bool) $m['nullable'] : null;
+                    $defaultExists = isset($m['default']);
                     /** @var mixed $default */
                     $default = $m['default'] ?? null;
                     $part = 'MODIFY COLUMN ' . $q($name) . ' ' . $type;
@@ -694,8 +694,8 @@ class VersaORM
                     if ($type === '') {
                         continue;
                     }
-                    $nullable = array_key_exists('nullable', $m) ? (bool) $m['nullable'] : null;
-                    $defaultExists = array_key_exists('default', $m);
+                    $nullable = isset($m['nullable']) ? (bool) $m['nullable'] : null;
+                    $defaultExists = isset($m['default']);
                     /** @var mixed $default */
                     $default = $m['default'] ?? null;
                     $clauses[] = 'ALTER COLUMN ' . $q($name) . ' TYPE ' . $type;
@@ -902,7 +902,7 @@ class VersaORM
     {
         $isDdlOperation = $this->isDdlOperation($operation);
         $isGloballyFrozen = $this->isFrozen();
-        $isModelFrozen = $modelClass && $this->isModelFrozen($modelClass);
+        $isModelFrozen = $modelClass !== null && $this->isModelFrozen($modelClass);
 
         // Si es una operación DDL y hay freeze activo, bloquear
         if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
@@ -1800,7 +1800,7 @@ class VersaORM
                 $filename = basename($file, '.log');
 
                 // Si es un archivo con formato de fecha YYYY-MM-DD
-                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename)) {
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename) === 1) {
                     $fileDate = strtotime($filename);
 
                     if ($fileDate !== false && $sevenDaysAgo !== false && $fileDate < $sevenDaysAgo) {

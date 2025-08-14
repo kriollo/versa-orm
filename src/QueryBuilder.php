@@ -105,16 +105,16 @@ class QueryBuilder
      *
      * @var list<array{
      *   name:string,
-     *   type?:non-empty-string,
+     *   type?:string,
      *   related_table?:string,
-     *   foreign_key?:string,
-     *   local_key?:string,
-     *   owner_key?:string,
-     *   pivot_table?:string,
-     *   foreign_pivot_key?:string,
-     *   related_pivot_key?:string,
-     *   parent_key?:string,
-     *   related_key?:string
+     *   foreign_key?:mixed,
+     *   local_key?:mixed,
+     *   owner_key?:mixed,
+     *   pivot_table?:mixed,
+     *   foreign_pivot_key?:mixed,
+     *   related_pivot_key?:mixed,
+     *   parent_key?:mixed,
+     *   related_key?:mixed
      * }>
      */
     private array $with = [];
@@ -2593,7 +2593,7 @@ class QueryBuilder
 
             // Permitir argumentos simples como column names, números, strings
             // Verificar que no contenga patrones maliciosos
-            if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) && (!str_contains($functionArgs, '--')
+            if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) === 1 && (!str_contains($functionArgs, '--')
             && !str_contains($functionArgs, '/*')
             && !str_contains($functionArgs, ';'))) {
                 return true;

@@ -1754,7 +1754,7 @@ class VersaModel implements TypedModelInterface
         }
 
         // Si el valor es null y la columna lo permite, no validar más
-        if ($value === null && ($columnSchema['is_nullable'] ?? false)) {
+        if ($value === null && (bool) ($columnSchema['is_nullable'] ?? false)) {
             return $errors;
         }
 
@@ -1979,7 +1979,7 @@ class VersaModel implements TypedModelInterface
 
                     // Si no es boolean, convertir string/numeric a int
                     if (is_numeric($value)) {
-                        return (float) $value !== 0 ? 1 : 0;
+                        return (float) $value != 0 ? 1 : 0;
                     }
 
                     return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true) ? 1 : 0;

@@ -80,8 +80,10 @@ abstract class BaseModel extends VersaModel
      */
     public function find(int $id, string $pk = 'id'): ?static
     {
-        // @var static|null $m
-        return $this->querySelf()->where($pk, '=', $id)->findOne();
+        /** @var static|null $result */
+        $result = $this->querySelf()->where($pk, '=', $id)->findOne();
+
+        return $result;
     }
 
     /** Obtener todos como arrays (instancia). */

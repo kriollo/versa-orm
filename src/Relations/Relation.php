@@ -23,8 +23,6 @@ abstract class Relation
 
     /**
      * Execute the query and get the results.
-     *
-     * @return mixed
      */
     abstract public function getResults(): mixed;
 

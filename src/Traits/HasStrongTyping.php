@@ -544,7 +544,7 @@ trait HasStrongTyping
 
             return $sv;
         };
-        $bool = static fn ($s, $p, $v, $_ = []): int => (is_bool($v) ? $v : (is_numeric($v) ? (float) $v !== 0 : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0;
+        $bool = static fn ($s, $p, $v, $_ = []): int => (is_bool($v) ? $v : (is_numeric($v) ? (float) $v != 0 : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0;
         $jsonLike = static function ($s, $p, $v, $_ = []): string {
             if (is_string($v)) {
                 $trim = ltrim($v);

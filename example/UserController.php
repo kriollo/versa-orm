@@ -343,7 +343,7 @@ class UserController
      */
     private function isDebugMode(): bool
     {
-        return defined('APP_DEBUG') && APP_DEBUG;
+        return defined('APP_DEBUG') && APP_DEBUG === true;
     }
 
     /**

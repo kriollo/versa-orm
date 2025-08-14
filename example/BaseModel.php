@@ -196,8 +196,6 @@ abstract class BaseModel extends VersaModel
 
     /**
      * Métodos estáticos con manejo de errores.
-     *
-     * @param mixed $id
      */
     public static function findWithErrorHandling(int $id): ?static
     {
@@ -265,7 +263,7 @@ abstract class BaseModel extends VersaModel
     protected function isDebugMode(): bool
     {
         // Puedes personalizar esto según tu framework
-        return defined('APP_DEBUG') && APP_DEBUG;
+        return defined('APP_DEBUG') && APP_DEBUG === true;
     }
 
     /**

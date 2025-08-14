@@ -66,7 +66,15 @@ class PdoEngine
      *  cache_hits:int,
      *  cache_misses:int,
      *  last_query_ms:float,
-     *  total_query_ms:float
+     *  total_query_ms:float,
+     *  stmt_cache_hits:int,
+     *  stmt_cache_misses:int,
+     *  total_prepare_ms:float,
+     *  hydration_ms:float,
+     *  objects_hydrated:int,
+     *  hydration_fastpath_uses:int,
+     *  hydration_fastpath_rows:int,
+     *  hydration_fastpath_ms:float
      * }
      */
     private static array $metrics = [

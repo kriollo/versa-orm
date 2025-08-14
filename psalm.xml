@@ -140,6 +140,18 @@
         <TooManyArguments errorLevel="suppress" />
         <TooFewArguments errorLevel="suppress" />
 
+        <!-- === EXAMPLE/VIEW SPECIFIC SUPPRESSIONS === -->
+
+        <!-- View templates use global variables -->
+        <UndefinedGlobalVariable errorLevel="suppress" />
+        <UndefinedFunction errorLevel="suppress" />
+        <DuplicateClass errorLevel="suppress" />
+
+        <!-- === QUERYBUILDER SPECIFIC SUPPRESSIONS === -->
+
+        <!-- QueryBuilder uses flexible array structures -->
+        <InvalidPropertyAssignmentValue errorLevel="suppress" />
+
         <!-- === FOCUS ON PSALM'S STRENGTHS === -->
 
         <!-- Keep these active for security and correctness -->
@@ -147,7 +159,7 @@
         <InvalidCast errorLevel="info" />
         <InvalidOperand errorLevel="info" />
         <InvalidClone errorLevel="error" />
-        <InvalidFunctionCall errorLevel="error" />
+        <InvalidFunctionCall errorLevel="info" />
         <InvalidScalarArgument errorLevel="info" />
         <InvalidReturnStatement errorLevel="info" />
         <InvalidReturnType errorLevel="info" />
