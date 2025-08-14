@@ -11,7 +11,6 @@ use PDO;
 use VersaORM\QueryBuilder;
 
 use function count;
-use function get_class;
 use function in_array;
 use function sprintf;
 
@@ -33,9 +32,6 @@ class JoinSubDiagnosticTest extends TestCase
 
         self::assertGreaterThan(0, count($users));
         self::assertGreaterThan(0, count($posts));
-
-        echo "\n[TEST 1] Usuarios encontrados: " . count($users);
-        echo "\n[TEST 1] Posts encontrados: " . count($posts);
     }
 
     // ======================================================================
@@ -47,11 +43,9 @@ class JoinSubDiagnosticTest extends TestCase
         $results = self::$orm->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertGreaterThan(0, count($results));
-        echo "\n[TEST 2] Join básico funcionó. Resultados: " . count($results);
     }
 
     // ======================================================================
@@ -74,18 +68,11 @@ class JoinSubDiagnosticTest extends TestCase
             $results = self::$orm->table('users')
                 ->select(['users.name'])
                 ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id')
-                ->getAll()
-            ;
+                ->getAll();
 
-            echo "\n[TEST 6] joinSub mínimo ejecutado. SQL y parámetros:";
             // Agregar debug para ver el SQL generado
             self::assertIsArray($results);
-            echo "\n[TEST 6] Resultados: " . count($results);
         } catch (Exception $e) {
-            echo "\n[TEST 6] ERROR ejecutando joinSub mínimo: " . $e->getMessage();
-            echo "\n[TEST 6] Tipo de error: " . get_class($e);
-            echo "\n[TEST 6] Código: " . $e->getCode();
-
             throw $e;
         }
     }
@@ -100,17 +87,14 @@ class JoinSubDiagnosticTest extends TestCase
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
-            ->having('COUNT(*)', '>', 1)
-        ;
+            ->having('COUNT(*)', '>', 1);
 
         try {
             $results = self::$orm->table('users')
                 ->select(['users.name', 'active_users.post_count'])
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
-                ->getAll()
-            ;
+                ->getAll();
 
-            echo "\n[TEST 7] joinSub con COUNT ejecutado correctamente";
             self::assertIsArray($results);
 
             foreach ($results as $result) {
@@ -118,13 +102,7 @@ class JoinSubDiagnosticTest extends TestCase
                 self::assertArrayHasKey('post_count', $result);
                 self::assertGreaterThan(1, $result['post_count']);
             }
-
-            echo "\n[TEST 7] Resultados validados: " . count($results);
         } catch (Exception $e) {
-            echo "\n[TEST 7] ERROR ejecutando joinSub con COUNT: " . $e->getMessage();
-            echo "\n[TEST 7] Tipo de error: " . get_class($e);
-            echo "\n[TEST 7] Código: " . $e->getCode();
-
             // Agregar información adicional del error MySQL
             if ($e->getCode() === 1835) {
                 echo "\n[TEST 7] Error MySQL 1835: Malformed communication packet";
@@ -143,16 +121,13 @@ class JoinSubDiagnosticTest extends TestCase
     {
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id')
-        ;
+            ->groupBy('user_id');
 
         $query = self::$orm->table('users')
             ->select(['users.name', 'active_users.post_count'])
-            ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
-        ;
+            ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
 
         self::assertInstanceOf(QueryBuilder::class, $query);
-        echo "\n[TEST 8] Query construido para debug";
     }
 
     // ======================================================================
@@ -209,9 +184,6 @@ class JoinSubDiagnosticTest extends TestCase
             $stmt->execute([1]);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            echo "\n[TEST 9] SQL directo PostgreSQL ejecutado correctamente";
-            echo "\n[TEST 9] Resultados: " . count($results);
-
             self::assertIsArray($results);
 
             // Verificar estructura de datos
@@ -223,13 +195,12 @@ class JoinSubDiagnosticTest extends TestCase
                 }
             }
         } catch (Exception $e) {
-            echo "\n[TEST 9] ERROR ejecutando SQL directo PostgreSQL: " . $e->getMessage();
-            echo "\n[TEST 9] Código de error: " . $e->getCode();
-
             // Si es un error de conexión, marcar como skipped en lugar de fallar
-            if (strpos($e->getMessage(), 'could not find driver') !== false
+            if (
+                strpos($e->getMessage(), 'could not find driver') !== false
                 || strpos($e->getMessage(), 'Connection refused') !== false
-                || strpos($e->getMessage(), 'could not connect') !== false) {
+                || strpos($e->getMessage(), 'could not connect') !== false
+            ) {
                 self::markTestSkipped('PostgreSQL connection not available: ' . $e->getMessage());
             }
 
@@ -244,11 +215,8 @@ class JoinSubDiagnosticTest extends TestCase
             $simpleQuery = self::$orm->table('users')->limit(1);
             $result = $simpleQuery->getAll();
 
-            echo "\n[TEST 10] Comunicación básica PHP-Rust funciona";
             self::assertIsArray($result);
         } catch (Exception $e) {
-            echo "\n[TEST 10] ERROR en comunicación PHP-Rust: " . $e->getMessage();
-
             throw $e;
         }
     }

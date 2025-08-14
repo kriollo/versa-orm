@@ -9,7 +9,6 @@ use ReflectionClass;
 use VersaORM\VersaModel;
 use VersaORM\VersaORMException;
 
-use function get_class;
 use function in_array;
 
 /**
@@ -50,25 +49,18 @@ class SchemaValidationTest extends TestCase
             self::assertIsArray($schema);
 
             // Si el CLI Rust está disponible y funciona, debería tener datos
-            if (!empty($schema)) {
-                self::assertArrayHasKey('id', $schema);
-                self::assertArrayHasKey('name', $schema);
-                self::assertArrayHasKey('email', $schema);
+            self::assertArrayHasKey('id', $schema);
+            self::assertArrayHasKey('name', $schema);
+            self::assertArrayHasKey('email', $schema);
 
-                // Verificar estructura de columna
-                $idColumn = $schema['id'];
-                self::assertArrayHasKey('is_required', $idColumn);
-                self::assertArrayHasKey('is_nullable', $idColumn);
-                self::assertArrayHasKey('is_auto_increment', $idColumn);
-                self::assertArrayHasKey('data_type', $idColumn);
-                self::assertArrayHasKey('validation_rules', $idColumn);
-
-                echo "✅ Schema validation básica exitosa - CLI Rust disponible\n";
-            } else {
-                echo "ℹ️  Schema vacío - CLI Rust no disponible o sin permisos\n";
-            }
+            // Verificar estructura de columna
+            $idColumn = $schema['id'];
+            self::assertArrayHasKey('is_required', $idColumn);
+            self::assertArrayHasKey('is_nullable', $idColumn);
+            self::assertArrayHasKey('is_auto_increment', $idColumn);
+            self::assertArrayHasKey('data_type', $idColumn);
+            self::assertArrayHasKey('validation_rules', $idColumn);
         } catch (Exception $e) {
-            echo 'ℹ️  Schema validation falló graciosamente: ' . get_class($e) . "\n";
             self::assertTrue(true); // Test pasa porque el error es manejado graciosamente
         }
     }
@@ -165,8 +157,6 @@ class SchemaValidationTest extends TestCase
         $scoreRules = $validationSchema['score'];
         self::assertFalse($scoreRules['is_required']); // Tiene default
         self::assertContains('numeric', $scoreRules['validation_rules']);
-
-        echo "✅ Procesamiento de esquema a reglas de validación exitoso\n";
     }
 
     /**
@@ -212,8 +202,6 @@ class SchemaValidationTest extends TestCase
         $errors5 = $model5->validate();
         self::assertNotEmpty($errors5);
         self::assertContains('The age must be an integer.', $errors5);
-
-        echo "✅ Validación automática contra esquema exitosa\n";
     }
 
     /**
@@ -231,11 +219,9 @@ class SchemaValidationTest extends TestCase
             $errors = $model->validate();
             // No debería lanzar excepciones, debe manejar el error graciosamente
             self::assertIsArray($errors);
-            echo "✅ Fallback de validación esquema exitoso\n";
         } catch (Exception $e) {
             // Si lanza excepción, verificar que es la simulada y no un error del sistema
             self::assertStringContainsString('CLI Rust not available', $e->getMessage());
-            echo "✅ Fallback manejó excepción correctamente\n";
         }
     }
 
@@ -275,8 +261,6 @@ class SchemaValidationTest extends TestCase
         $errors3 = $method->invoke($model, 'name', $longValue, $columnSchema);
         self::assertNotEmpty($errors3);
         self::assertContains('The name may not be greater than 100 characters.', $errors3);
-
-        echo "✅ Validación de campos individuales exitosa\n";
     }
 
     /**
@@ -300,7 +284,6 @@ class SchemaValidationTest extends TestCase
             self::fail('Se esperaba una excepción de validación');
         } catch (VersaORMException $e) {
             self::assertStringContainsString('Validation failed', $e->getMessage());
-            echo "✅ Integración completa de validación exitosa\n";
         }
     }
 }

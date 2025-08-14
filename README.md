@@ -76,6 +76,7 @@ $users = $orm->table('users')
 - � Relaciones básicas implementables con métodos de conveniencia
 - 💾 Conversión de tipos común (fechas, booleanos) y helpers
 - 🚫 Cero necesidad de compilar binarios
+ - 🔀 Operaciones de conjuntos: `UNION`, `UNION ALL` (todos los drivers) + `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` (solo PostgreSQL en modo PDO)
 
 > Cuando el núcleo nativo vuelva a estar disponible podrás activar rendimiento adicional sin cambiar tu código de aplicación.
 

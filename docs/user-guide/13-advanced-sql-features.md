@@ -431,20 +431,42 @@ Las operaciones UNION combinan resultados de múltiples consultas en un solo con
 - Crear reportes consolidados
 - Migración de datos entre tablas
 
-### 🔧 Tipos de UNION
+### 🔧 Operaciones de Conjuntos Disponibles
 
-- **UNION**: Elimina duplicados automáticamente
-- **UNION ALL**: Mantiene todos los registros (más rápido)
-- **INTERSECT**: Solo registros que aparecen en ambas consultas
-- **EXCEPT**: Registros de la primera consulta que NO están en la segunda
+VersaORM en modo PDO soporta varias operaciones de conjuntos. El soporte depende del driver:
+
+| Operación        | Descripción                                                     | MySQL | PostgreSQL | SQLite |
+|------------------|-----------------------------------------------------------------|:-----:|:----------:|:------:|
+| UNION            | Combina conjuntos eliminando duplicados                         |  ✔    |     ✔      |   ✔    |
+| UNION ALL        | Combina conjuntos manteniendo duplicados                        |  ✔    |     ✔      |   ✔    |
+| INTERSECT        | Intersección (elimina duplicados)                               |  ✖    |     ✔      |   ✖*   |
+| INTERSECT ALL    | Intersección preservando multiplicidades mínimas                |  ✖    |     ✔      |   ✖*   |
+| EXCEPT           | Diferencia (A \ B) eliminando duplicados                        |  ✖    |     ✔      |   ✖*   |
+| EXCEPT ALL       | Diferencia preservando multiplicidades residuales               |  ✖    |     ✔      |   ✖*   |
+
+(*SQLite puede soportar INTERSECT/EXCEPT en determinadas versiones, pero se deshabilitan aquí para maximizar compatibilidad; se lanza VersaORMException.)
+
+Notas:
+- Usa `$qb->union($queries, true)` para UNION ALL.
+- Usa `$qb->intersect($otherQb, bool $all = false)` y `$qb->except($otherQb, bool $all = false)` solo en PostgreSQL.
+- Intentar INTERSECT/EXCEPT en drivers no soportados lanza `VersaORMException`.
 
 ### 📝 Sintaxis VersaORM
 
 ```php
-$result = $queryBuilder->union(
-    array|QueryBuilder|callable $queries, // Consultas a unir
-    bool $all = false                      // true = UNION ALL, false = UNION
-);
+// UNION / UNION ALL
+$rows = $qb->union([
+    ['sql' => 'SELECT id FROM table_a', 'bindings' => []],
+    ['sql' => 'SELECT id FROM table_b', 'bindings' => []],
+], false); // false => UNION (sin duplicados)
+
+// INTERSECT (PostgreSQL)
+$rows = $qbA->intersect($qbB);            // INTERSECT
+$rows = $qbA->intersect($qbB, true);      // INTERSECT ALL
+
+// EXCEPT (PostgreSQL)
+$rows = $qbA->except($qbB);               // EXCEPT
+$rows = $qbA->except($qbB, true);         // EXCEPT ALL
 ```
 
 ### 💡 Ejemplos Comparativos

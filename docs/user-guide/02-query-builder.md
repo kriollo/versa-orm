@@ -370,275 +370,82 @@ Para aprender más sobre esta funcionalidad avanzada, consulta la [Guía del Mod
 
 ---
 
-## 🏆 Casos de Uso Comunes y Mejores Prácticas
+## 🔗 Tablas Derivadas con UNION (fromUnion)
 
-### 🔍 Búsquedas y Filtrado Avanzado
+Cuando necesitas usar la combinación de múltiples consultas como si fuera una tabla (por ejemplo, para poder hacer JOINs posteriores o aplicar filtros/orden sobre el resultado combinado) ahora puedes construir un `UNION` (o `UNION ALL`) y montarlo como tabla derivada con `fromUnion()`.
 
-#### Búsqueda de Texto
+### ✅ Cuándo usarlo
+- Combinar filas de varias tablas homogéneas y luego seguir filtrando / ordenando.
+- Unificar resultados de diferentes condiciones y tratarlos como una sola fuente.
+- Reemplazar consultas manuales con subconsultas complejas incrustadas en `FROM`.
+
+### 🚫 Cuándo NO usarlo
+- Cuando solo necesitas un UNION simple final (usa el modo `advanced_sql` existente).
+- Cuando los SELECT difieren en número o alias de columnas (no permitido por la semántica de UNION).
+
+### 🧩 Reglas
+- Todos los SELECT deben proyectar el mismo número de columnas y en orden compatible.
+- Se valida que el alias sea seguro (`[A-Za-z0-9_]+`).
+- Usa `UNION ALL` pasando `true` como tercer argumento para permitir duplicados.
+- Si no defines columnas explícitas luego de `fromUnion()`, puedes seleccionar usando el alias: `select(['u.*'])` donde `u` es el alias proporcionado.
+
+### 🧪 Ejemplo Básico
 ```php
-// Búsqueda de texto simple
-$users = $orm->table('users')
-    ->where('name', 'LIKE', '%' . $searchTerm . '%')
-    ->orWhere('email', 'LIKE', '%' . $searchTerm . '%')
-    ->getAll();
-
-// Búsqueda más específica con múltiples criterios
-$products = $orm->table('products')
-    ->where('name', 'LIKE', '%' . $query . '%')
-    ->where('status', '=', 'published')
-    ->where('price', '<=', $maxPrice)
-    ->whereIn('category_id', $allowedCategories)
-    ->orderBy('popularity_score', 'desc')
+// Queremos combinar usuarios activos y recién creados en una misma fuente
+$query = $orm->table('users')
+    ->fromUnion([
+        function($q) { $q->where('status', '=', 'active'); },
+        function($q) { $q->where('created_at', '>=', date('Y-m-d', strtotime('-7 days'))); }
+    ], 'u') // alias de la tabla derivada
+    ->select(['u.id', 'u.name', 'u.status'])
+    ->orderBy('u.id', 'desc')
     ->limit(20)
     ->getAll();
 ```
 
-#### Filtros con Rangos de Fechas
+### 🧪 UNION ALL (permitiendo duplicados)
 ```php
-// Reportes por rango de fechas
-$orders = $orm->table('orders')
-    ->whereBetween('created_at', $startDate, $endDate)
-    ->where('status', '!=', 'cancelled')
-    ->orderBy('created_at', 'desc')
-    ->getAll();
-
-// Análisis de tendencias por mes
-$monthlyStats = $orm->table('orders')
-    ->select(['DATE_FORMAT(created_at, "%Y-%m") as month', 'COUNT(*) as orders', 'SUM(total) as revenue'])
-    ->where('created_at', '>=', date('Y-01-01'))
-    ->groupBy('month')
-    ->orderBy('month', 'desc')
+$query = $orm->table('users')
+    ->fromUnion([
+        fn($q) => $q->where('role', '=', 'editor'),
+        fn($q) => $q->where('role', '=', 'moderator')
+    ], 'u_roles', true) // true => UNION ALL
+    ->select(['u_roles.id', 'u_roles.role'])
     ->getAll();
 ```
 
-### 📊 Consultas de Análisis y Reportes
+### 🔒 Seguridad
+Cada subconsulta se construye mediante QueryBuilder, garantizando:
+- Parametrización de valores.
+- Validación de identificadores.
+- Prevención de inyección en columnas/alias.
 
-#### Dashboard de Estadísticas
-```php
-// Estadísticas del usuario actual
-$userStats = $orm->table('users')
-    ->select([
-        'COUNT(posts.id) as total_posts',
-        'COUNT(CASE WHEN posts.status = "published" THEN 1 END) as published_posts',
-        'AVG(posts.views) as avg_views',
-        'MAX(posts.created_at) as last_post_date'
-    ])
-    ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
-    ->where('users.id', '=', $currentUserId)
-    ->groupBy('users.id')
-    ->firstArray();
+### 🐞 Debug
+Para inspeccionar el SQL generado del `fromUnion` establece la variable de entorno:
 ```
+VERSA_DEBUG_SQL=1
+```
+Esto activará logs en `src/logs/sql_debug.log` (solo para escenarios de desarrollo / pruebas).
 
-#### Top N Consultas
+### ⚙️ Interacción con otros métodos
+Después de `fromUnion()` puedes encadenar normalmente:
+- `where()`, `orderBy()`, `limit()`, `groupBy()`, etc.
+- `join()` sobre la tabla derivada usando su alias.
+
+Ejemplo avanzando con JOIN:
 ```php
-// Los 10 productos más vendidos del mes
-$topProducts = $orm->table('products')
-    ->select([
-        'products.id',
-        'products.name',
-        'SUM(order_items.quantity) as total_sold',
-        'SUM(order_items.price * order_items.quantity) as revenue'
-    ])
-    ->join('order_items', 'products.id', '=', 'order_items.product_id')
-    ->join('orders', 'order_items.order_id', '=', 'orders.id')
-    ->where('orders.created_at', '>=', date('Y-m-01'))
-    ->where('orders.status', '=', 'completed')
-    ->groupBy(['products.id', 'products.name'])
-    ->orderBy('total_sold', 'desc')
-    ->limit(10)
+$results = $orm->table('users')
+    ->fromUnion([
+        fn($q) => $q->where('status', '=', 'active'),
+        fn($q) => $q->where('status', '=', 'pending')
+    ], 'u')
+    ->join('profiles as p', 'u.id', '=', 'p.user_id')
+    ->select(['u.id', 'u.name', 'p.bio'])
     ->getAll();
 ```
 
-### 🔄 Operaciones Complejas con Subqueries
-
-#### Usando whereRaw para Lógica Avanzada
-```php
-// Usuarios con posts publicados recientemente
-$activeAuthors = $orm->table('users')
-    ->whereRaw('EXISTS (SELECT 1 FROM posts WHERE posts.user_id = users.id AND posts.created_at >= ? AND posts.status = "published")', [date('Y-m-d', strtotime('-30 days'))])
-    ->orderBy('name')
-    ->getAll();
-
-// Productos sin stock pero con pedidos pendientes
-$outOfStockProducts = $orm->table('products')
-    ->where('stock', '<=', 0)
-    ->whereRaw('EXISTS (SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = products.id AND o.status = "pending")')
-    ->select(['id', 'name', 'stock', 'price'])
-    ->getAll();
-```
-
-### 🛡️ Patrones Seguros y Eficientes
-
-#### Paginación Robusta
-```php
-class UserRepository {
-    private $orm;
-    
-    public function getPaginatedUsers($page = 1, $perPage = 15, $filters = []) {
-        $query = $this->orm->table('users')
-            ->select(['id', 'name', 'email', 'status', 'created_at']);
-        
-        // Aplicar filtros opcionales
-        if (!empty($filters['status'])) {
-            $query->where('status', '=', $filters['status']);
-        }
-        
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%");
-            });
-        }
-        
-        // Contar total para paginación
-        $total = clone $query;
-        $totalCount = $total->count();
-        
-        // Aplicar paginación
-        $results = $query
-            ->orderBy('created_at', 'desc')
-            ->limit($perPage)
-            ->offset(($page - 1) * $perPage)
-            ->getAll();
-        
-        return [
-            'data' => $results,
-            'current_page' => $page,
-            'per_page' => $perPage,
-            'total' => $totalCount,
-            'last_page' => ceil($totalCount / $perPage)
-        ];
-    }
-}
-```
-
-#### Construcción Dinámica de Consultas
-```php
-class OrderQueryBuilder {
-    private $query;
-    
-    public function __construct($orm) {
-        $this->query = $orm->table('orders')
-            ->select([
-                'orders.*',
-                'users.name as customer_name',
-                'users.email as customer_email'
-            ])
-            ->join('users', 'orders.user_id', '=', 'users.id');
-    }
-    
-    public function filterByStatus($status) {
-        if ($status !== 'all') {
-            $this->query->where('orders.status', '=', $status);
-        }
-        return $this;
-    }
-    
-    public function filterByDateRange($startDate, $endDate) {
-        if ($startDate && $endDate) {
-            $this->query->whereBetween('orders.created_at', $startDate, $endDate);
-        }
-        return $this;
-    }
-    
-    public function filterByMinAmount($minAmount) {
-        if ($minAmount > 0) {
-            $this->query->where('orders.total', '>=', $minAmount);
-        }
-        return $this;
-    }
-    
-    public function withOrderItems() {
-        $this->query->with('orderItems');
-        return $this;
-    }
-    
-    public function getResults($page = 1, $perPage = 20) {
-        return $this->query
-            ->orderBy('orders.created_at', 'desc')
-            ->limit($perPage)
-            ->offset(($page - 1) * $perPage)
-            ->findAll();
-    }
-}
-
-// Uso:
-$orderBuilder = new OrderQueryBuilder($orm);
-$orders = $orderBuilder
-    ->filterByStatus('completed')
-    ->filterByDateRange('2024-01-01', '2024-01-31')
-    ->filterByMinAmount(100)
-    ->withOrderItems()
-    ->getResults(1, 25);
-```
-
-### ⚠️ Precauciones y Mejores Prácticas
-
-#### ❌ Errores Comunes a Evitar
-```php
-// ❌ MAL: SQL injection vulnerable
-$badQuery = $orm->table('users')
-    ->whereRaw("name = '{$userInput}'"); // ¡PELIGROSO!
-
-// ✅ BIEN: Siempre usar parámetros
-$goodQuery = $orm->table('users')
-    ->whereRaw('name = ?', [$userInput]);
-
-// ❌ MAL: N+1 queries
-$users = $orm->table('users')->findAll();
-foreach ($users as $user) {
-    echo $user->posts->count(); // Consulta por cada usuario
-}
-
-// ✅ BIEN: Eager loading
-$users = $orm->table('users')
-    ->with('posts')
-    ->findAll();
-foreach ($users as $user) {
-    echo $user->posts->count(); // Sin consultas adicionales
-}
-```
-
-#### ✅ Optimizaciones Recomendadas
-```php
-// ✅ Seleccionar solo las columnas necesarias
-$lightUsers = $orm->table('users')
-    ->select(['id', 'name', 'email']) // No traer datos innecesarios
-    ->where('status', '=', 'active')
-    ->getAll();
-
-// ✅ Usar índices adecuadamente
-$indexedQuery = $orm->table('orders')
-    ->where('user_id', '=', $userId)     // Asume índice en user_id
-    ->where('status', '=', 'pending')    // Asume índice en status
-    ->orderBy('created_at', 'desc')      // Asume índice en created_at
-    ->limit(10)
-    ->getAll();
-
-// ✅ Para consultas complejas, usar modo lazy
-$complexQuery = $orm->table('orders')
-    ->lazy() // Optimización automática
-    ->select(['orders.*', 'users.name', 'products.title'])
-    ->join('users', 'orders.user_id', '=', 'users.id')
-    ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-    ->join('products', 'order_items.product_id', '=', 'products.id')
-    ->where('orders.created_at', '>=', date('Y-m-d', strtotime('-30 days')))
-    ->groupBy(['orders.id'])
-    ->orderBy('orders.created_at', 'desc')
-    ->collect(); // Ejecuta con optimizaciones
-```
+### 🧵 Diferencia con advanced_sql union()
+`advanced_sql` (p.ej. `$query->union($other)`) devuelve directamente el resultado del UNION.
+`fromUnion()` en cambio prepara el UNION como una fuente para seguir construyendo la consulta principal.
 
 ---
-
-## Siguientes Pasos
-
-Ahora que dominas el Query Builder desde lo básico hasta casos avanzados, puedes profundizar en:
-
-- **[Modelos y Objetos](03-models-and-objects.md)** - Trabaja con los resultados como objetos con lógica de negocio
-- **[⚡ Modo Lazy y Planificador de Consultas](10-lazy-mode-query-planner.md)** - Optimiza automáticamente tus consultas para máximo rendimiento
-- **[Operaciones Batch](03-batch-operations.md)** - Operaciones masivas eficientes con insertMany, updateMany, etc.
-- **[Validación y Mass Assignment](05-validation-mass-assignment.md)** - Protege tus datos al usar `update()` con el Query Builder
-- **[Herramienta CLI](04-cli-tool.md)** - Aprovecha el poder del núcleo Rust para operaciones avanzadas
-
-> **💡 Tip:** Para aplicaciones en producción, siempre combina el Query Builder con validación de entrada, manejo de errores robusto y consideraciones de rendimiento. El **Modo Lazy** es especialmente útil para consultas complejas con múltiples JOIN y agregaciones.

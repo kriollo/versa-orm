@@ -8,6 +8,7 @@ namespace VersaORM\Tests\SQLite;
 
 use VersaORM\QueryBuilder;
 use VersaORM\VersaModel;
+use VersaORM\VersaORMException;
 
 class QueryBuilderTest extends TestCase
 {
@@ -148,8 +149,7 @@ class QueryBuilderTest extends TestCase
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('users.status', '=', 'active')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertCount(2, $posts);
         self::assertSame('Alice', $posts[0]['author']);
@@ -162,8 +162,7 @@ class QueryBuilderTest extends TestCase
             ->select(['users.name', 'posts.id as post_id'])
             ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
             ->whereNull('posts.id')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertCount(2, $users);
     }
@@ -197,8 +196,7 @@ class QueryBuilderTest extends TestCase
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
             ->orderBy('status', 'asc')
-            ->get()
-        ;
+            ->get();
 
         self::assertCount(2, $results);
         self::assertSame('active', $results[0]['status']);
@@ -213,8 +211,7 @@ class QueryBuilderTest extends TestCase
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy(['user_id'])
             ->orderBy('user_id', 'asc')
-            ->get()
-        ;
+            ->get();
 
         self::assertCount(2, $results);
         self::assertSame(1, $results[0]['user_id']);
@@ -229,8 +226,7 @@ class QueryBuilderTest extends TestCase
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
             ->having('COUNT(*)', '>', 1)
-            ->get()
-        ;
+            ->get();
 
         self::assertCount(1, $results);
         self::assertSame('active', $results[0]['status']);
@@ -245,8 +241,7 @@ class QueryBuilderTest extends TestCase
             ->having('COUNT(*)', '>=', 1)
             ->having('COUNT(*)', '<=', 2)
             ->orderBy('status', 'asc')
-            ->get()
-        ;
+            ->get();
 
         self::assertCount(2, $results);
         self::assertSame('active', $results[0]['status']);
@@ -289,8 +284,7 @@ class QueryBuilderTest extends TestCase
     {
         $updated = self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
-            ->update(['status' => 'on_vacation'])
-        ;
+            ->update(['status' => 'on_vacation']);
 
         self::assertInstanceOf(QueryBuilder::class, $updated);
 
@@ -302,11 +296,61 @@ class QueryBuilderTest extends TestCase
     {
         $deleted = self::$orm->table('users')
             ->where('email', '=', 'bob@example.com')
-            ->delete()
-        ;
+            ->delete();
 
         self::assertNull($deleted);
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
         self::assertNull($bob);
+    }
+
+    // ================================================================
+    // Derived UNION (fromUnion)
+    // ================================================================
+
+    public function testFromUnionDerivedTable(): void
+    {
+        $rows = self::$orm->table('posts')
+            ->fromUnion([
+                function (QueryBuilder $q): void {
+                    $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
+                },
+                function (QueryBuilder $q): void {
+                    $q->select(['id', 'user_id', 'title'])->where('id', '=', 2);
+                },
+            ], 'pu')
+            ->select(['pu.id', 'pu.user_id', 'pu.title', 'users.name as author'])
+            ->join('users', 'pu.user_id', '=', 'users.id')
+            ->orderBy('pu.id', 'asc')
+            ->getAll();
+
+        self::assertCount(2, $rows);
+        self::assertSame(1, (int) $rows[0]['id']);
+        self::assertSame(2, (int) $rows[1]['id']);
+        self::assertSame('Alice', $rows[0]['author']);
+    }
+
+    public function testFromUnionAllDuplicates(): void
+    {
+        $rows = self::$orm->table('posts')
+            ->fromUnion([
+                function (QueryBuilder $q): void {
+                    $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
+                },
+                function (QueryBuilder $q): void {
+                    $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
+                },
+            ], 'pu', true)
+            ->select(['pu.id', 'pu.user_id', 'pu.title'])
+            ->orderBy('pu.id', 'asc')
+            ->getAll();
+
+        self::assertCount(2, $rows);
+        self::assertSame((int) $rows[0]['id'], (int) $rows[1]['id']);
+    }
+
+    public function testFromUnionInvalidEmpty(): void
+    {
+        $this->expectException(VersaORMException::class);
+        self::$orm->table('posts')->fromUnion([], 'x');
     }
 }
