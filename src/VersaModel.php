@@ -1897,7 +1897,7 @@ class VersaModel implements TypedModelInterface
     {
         switch ($rule) {
             case 'required':
-                if (empty($value)) {
+                if ($value === null || $value === '') {
                     return "The {$field} field is required.";
                 }
                 break;
