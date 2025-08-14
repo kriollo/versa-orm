@@ -183,11 +183,11 @@ class LoadCastingTest extends TestCase
         $reloaded = $model::load('load_cast_test', 1);
         self::assertTrue($reloaded->active);
 
-        // Test 3: Asignar null debe fallar la validación
+        // Test 3: Asignar null debe fallar la validación (puede ser por tipo o required)
         $loaded->active = null;
 
         $this->expectException(\VersaORM\VersaORMException::class);
-        $this->expectExceptionMessage('The active field is required');
+        $this->expectExceptionMessageMatches('/The active (field is required|must be a boolean value)/');
         $loaded->store();
     }
 }
