@@ -32,7 +32,7 @@ $user->email = 'juan@test.com'; // ✅ String válido
 
 try {
     $user->age = 'veinticinco';  // ❌ String en campo integer
-    $$user->store();
+    $user->store();
 } catch (VersaORMException $e) {
     echo "Error: " . $e->getMessage();
     // Error: El campo 'age' debe ser un número entero

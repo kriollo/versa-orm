@@ -56,17 +56,17 @@ $orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
 $phpTag = VersaModel::dispense('tag');
 $phpTag->name = 'PHP';
 $phpTag->description = 'Lenguaje de programación PHP';
-$phpTagId = $$phpTag->store();
+$phpTagId = $phpTag->store();
 
 $mysqlTag = VersaModel::dispense('tag');
 $mysqlTag->name = 'MySQL';
 $mysqlTag->description = 'Sistema de gestión de bases de datos';
-$mysqlTagId = $$mysqlTag->store();
+$mysqlTagId = $mysqlTag->store();
 
 $webTag = VersaModel::dispense('tag');
 $webTag->name = 'Desarrollo Web';
 $webTag->description = 'Desarrollo de aplicaciones web';
-$webTagId = $$webTag->store();
+$webTagId = $webTag->store();
 
 // Crear posts
 $post1 = VersaModel::dispense('post');
@@ -74,14 +74,14 @@ $post1->title = 'Introducción a PHP y MySQL';
 $post1->content = 'En este tutorial aprenderemos...';
 $post1->user_id = 1;
 $post1->published = true;
-$post1Id = $$post1->store();
+$post1Id = $post1->store();
 
 $post2 = VersaModel::dispense('post');
 $post2->title = 'Desarrollo Web Moderno';
 $post2->content = 'Las mejores prácticas para...';
 $post2->user_id = 1;
 $post2->published = true;
-$post2Id = $$post2->store();
+$post2Id = $post2->store();
 
 echo "Posts y tags creados correctamente\n";
 ```
@@ -95,23 +95,23 @@ echo "Posts y tags creados correctamente\n";
 $postTag1 = VersaModel::dispense('post_tags');
 $postTag1->post_id = $post1Id;
 $postTag1->tag_id = $phpTagId;
-$$postTag1->store();
+$postTag1->store();
 
 $postTag2 = VersaModel::dispense('post_tags');
 $postTag2->post_id = $post1Id;
 $postTag2->tag_id = $mysqlTagId;
-$$postTag2->store();
+$postTag2->store();
 
 // Asociar post 2 con tags PHP y Desarrollo Web
 $postTag3 = VersaModel::dispense('post_tags');
 $postTag3->post_id = $post2Id;
 $postTag3->tag_id = $phpTagId;
-$$postTag3->store();
+$postTag3->store();
 
 $postTag4 = VersaModel::dispense('post_tags');
 $postTag4->post_id = $post2Id;
 $postTag4->tag_id = $webTagId;
-$$postTag4->store();
+$postTag4->store();
 
 echo "Relaciones creadas correctamente\n";
 ```
@@ -129,7 +129,7 @@ function associatePostWithTags($orm, $postId, $tagIds) {
     // Limpiar asociaciones existentes
     $existingAssociations = VersaModel::findAll('post_tags', 'post_id = ?', [$postId]);
     foreach ($existingAssociations as $association) {
-        $$association->trash();
+        $association->trash();
     }
 
     // Crear nuevas asociaciones
@@ -137,7 +137,7 @@ function associatePostWithTags($orm, $postId, $tagIds) {
         $postTag = VersaModel::dispense('post_tags');
         $postTag->post_id = $postId;
         $postTag->tag_id = $tagId;
-        $$postTag->store();
+        $postTag->store();
     }
 
     echo "Post {$postId} asociado con " . count($tagIds) . " tags\n";
@@ -344,7 +344,7 @@ $postTag->post_id = $post1Id;
 $postTag->tag_id = $phpTagId;
 $postTag->relevance_score = 5;  // Muy relevante
 $postTag->added_by = 1;         // Usuario que agregó el tag
-$$postTag->store();
+$postTag->store();
 
 // Consultar con datos pivot
 $postTagsWithRelevance = $orm->table('tag')
@@ -370,7 +370,7 @@ foreach ($postTagsWithRelevance as $tagInfo) {
 function removeTagFromPost($orm, $postId, $tagId) {
     $association = VersaModel::findOne('post_tags', 'post_id = ? AND tag_id = ?', [$postId, $tagId]);
     if ($association) {
-        $$association->trash();
+        $association->trash();
         echo "Tag eliminado del post\n";
         return true;
     }
@@ -413,7 +413,7 @@ function syncPostTags($orm, $postId, $newTagIds) {
             $postTag = VersaModel::dispense('post_tags');
             $postTag->post_id = $postId;
             $postTag->tag_id = $tagId;
-            $$postTag->store();
+            $postTag->store();
         }
 
         $orm->commit();
@@ -485,7 +485,7 @@ function safeAssociate($orm, $postId, $tagId) {
     $postTag = VersaModel::dispense('post_tags');
     $postTag->post_id = $postId;
     $postTag->tag_id = $tagId;
-    return $$postTag->store();
+    return $postTag->store();
 }
 ```
 

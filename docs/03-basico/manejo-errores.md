@@ -25,7 +25,7 @@ try {
     // Operaciones con VersaORM
     $usuario = VersaModel::dispense('users');
     $usuario->email = 'test@ejemplo.com';
-    $$usuario->store();
+    $usuario->store();
 
 } catch (VersaORMException $e) {
     echo "Error de VersaORM: " . $e->getMessage();
@@ -70,7 +70,7 @@ try {
 try {
     $usuario = VersaModel::dispense('tabla_inexistente');
     $usuario->name = 'Test';
-    $$usuario->store();
+    $usuario->store();
 
 } catch (VersaORMException $e) {
     echo "Error de tabla: " . $e->getMessage();
@@ -91,11 +91,11 @@ try {
     // Intentar insertar email duplicado
     $usuario1 = VersaModel::dispense('users');
     $usuario1->email = 'duplicado@ejemplo.com';
-    $$usuario1->store();
+    $usuario1->store();
 
     $usuario2 = VersaModel::dispense('users');
     $usuario2->email = 'duplicado@ejemplo.com'; // Email duplicado
-    $$usuario2->store();
+    $usuario2->store();
 
 } catch (VersaORMException $e) {
     if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
@@ -125,7 +125,7 @@ try {
         throw new VersaORMException('La edad no puede ser negativa');
     }
 
-    $$usuario->store();
+    $usuario->store();
 
 } catch (VersaORMException $e) {
     echo "Error de validación: " . $e->getMessage();
@@ -160,7 +160,7 @@ function crearUsuario($orm, $datos) {
         $usuario->email = $datos['email'];
         $usuario->active = $datos['active'] ?? true;
 
-        $id = $$usuario->store();
+        $id = $usuario->store();
         return ['success' => true, 'id' => $id];
 
     } catch (VersaORMException $e) {
@@ -241,7 +241,7 @@ function actualizarUsuario($orm, $id, $datos) {
             }
         }
 
-        $$usuario->store();
+        $usuario->store();
         return ['success' => true, 'message' => 'Usuario actualizado'];
 
     } catch (VersaORMException $e) {
@@ -281,7 +281,7 @@ function eliminarUsuario($orm, $id) {
             );
         }
 
-        $$usuario->trash();
+        $usuario->trash();
         return ['success' => true, 'message' => 'Usuario eliminado'];
 
     } catch (VersaORMException $e) {
@@ -315,7 +315,7 @@ function logError($message, $context = []) {
 try {
     $usuario = VersaModel::dispense('users');
     $usuario->email = 'test@ejemplo.com';
-    $$usuario->store();
+    $usuario->store();
 
 } catch (VersaORMException $e) {
     logError($e->getMessage(), [
@@ -377,7 +377,7 @@ $logger = new VersaORMLogger();
 try {
     $usuario = VersaModel::dispense('users');
     $usuario->name = 'Test User';
-    $id = $$usuario->store();
+    $id = $usuario->store();
 
     $logger->logInfo('Usuario creado exitosamente', ['id' => $id]);
 
@@ -414,8 +414,8 @@ function transferirDatos($orm, $fromId, $toId, $amount) {
         $fromAccount->balance -= $amount;
         $toAccount->balance += $amount;
 
-        $$fromAccount->store();
-        $$toAccount->store();
+        $fromAccount->store();
+        $toAccount->store();
 
         // Registrar transacción
         $transaction = VersaModel::dispense('transactions');
@@ -423,7 +423,7 @@ function transferirDatos($orm, $fromId, $toId, $amount) {
         $transaction->to_account_id = $toId;
         $transaction->amount = $amount;
         $transaction->created_at = date('Y-m-d H:i:s');
-        $$transaction->store();
+        $transaction->store();
 
         $orm->commit();
         return ['success' => true, 'message' => 'Transferencia completada'];
@@ -589,13 +589,13 @@ try {
 ```php
 // ✅ Correcto
 try {
-    $$usuario->store();
+    $usuario->store();
 } catch (VersaORMException $e) {
     // Manejar error específico
 }
 
 // ❌ Incorrecto
-$$usuario->store(); // Puede fallar sin aviso
+$usuario->store(); // Puede fallar sin aviso
 ```
 
 ### 2. Validar datos antes de operaciones
@@ -636,3 +636,5 @@ Ahora que sabes manejar errores en VersaORM, puedes continuar con:
 - [Query Builder](../04-query-builder/README.md) - Para consultas más complejas
 - [Relaciones](../05-relaciones/README.md) - Trabajar con múltiples tablas
 - [Funcionalidades Avanzadas](../06-avanzado/README.md) - Transacciones y operaciones batch
+
+```

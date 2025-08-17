@@ -32,7 +32,7 @@ $user->active = true;                 // BOOLEAN
 $user->created_at = new DateTime();   // DATETIME
 $user->metadata = ['role' => 'admin']; // JSON (si está soportado)
 
-$id = $$user->store();
+$id = $user->store();
 ```
 
 **SQL Equivalente:**
@@ -112,7 +112,7 @@ echo gettype($user->metadata); // array
 try {
     $user = VersaModel::dispense('users');
     $user->age = 'no es un número';  // Esto causará un error
-    $$user->store();
+    $user->store();
 } catch (VersaORMException $e) {
     echo "Error de tipo: " . $e->getMessage();
     // Error de tipo: El campo 'age' debe ser un número entero
@@ -200,7 +200,7 @@ $event->start_time = '14:30:00';             // String a Time
 $event->created_at = new DateTime();         // DateTime object
 $event->updated_at = time();                 // Timestamp a DateTime
 
-$$event->store();
+$event->store();
 
 // Al recuperar, todo se convierte a DateTime objects
 $retrieved = VersaModel::load('events', $event->id);
@@ -217,7 +217,7 @@ $orm->setTimezone('America/Mexico_City');
 $event = VersaModel::dispense('events');
 $event->event_date = new DateTime('2024-12-25 15:00:00', new DateTimeZone('UTC'));
 
-$$event->store();
+$event->store();
 
 // Al recuperar, se respeta la zona horaria configurada
 $retrieved = VersaModel::load('events', $event->id);
@@ -236,7 +236,7 @@ $user->preferences = [
     'notifications' => true
 ];
 
-$$user->store();
+$user->store();
 
 // En la base de datos se almacena como JSON
 // {"theme":"dark","language":"es","notifications":true}
@@ -310,7 +310,7 @@ public function beforeStore() {
 // ✅ Buena práctica: Capturar errores de tipo específicos
 try {
     $user->age = $input['age'];
-    $$user->store();
+    $user->store();
 } catch (VersaORMException $e) {
     if (strpos($e->getMessage(), 'tipo') !== false) {
         // Manejar error de tipo específicamente

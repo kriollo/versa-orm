@@ -304,7 +304,7 @@ if (!$usuario->phone) {
 }
 
 // Guardar cambios
-$$usuario->store();
+$usuario->store();
 ```
 
 ## Ejemplo completo: Ciclo de vida de un modelo
@@ -338,7 +338,7 @@ try {
     echo "Propiedades asignadas\n\n";
 
     echo "=== STORE: Guardar modelo (INSERT) ===\n";
-    $id = $$producto->store();
+    $id = $producto->store();
     echo "Producto guardado con ID: $id\n";
     echo "ID del modelo: " . $producto->id . "\n\n";
 
@@ -350,7 +350,7 @@ try {
     echo "=== Modificar y STORE: Actualizar (UPDATE) ===\n";
     $productoLeido->price = 799.99;
     $productoLeido->on_sale = true;
-    $idActualizado = $$productoLeido->store();
+    $idActualizado = $productoLeido->store();
     echo "Producto actualizado. ID: $idActualizado\n\n";
 
     echo "=== Verificar actualización ===\n";
@@ -359,7 +359,7 @@ try {
     echo "En oferta: " . ($productoActualizado->on_sale ? 'Sí' : 'No') . "\n\n";
 
     echo "=== TRASH: Eliminar modelo ===\n";
-    $$productoActualizado->trash();
+    $productoActualizado->trash();
     echo "Producto eliminado\n";
     echo "ID después de eliminar: " . ($productoActualizado->id ?? 'null') . "\n\n";
 
@@ -383,13 +383,13 @@ try {
 $usuario = VersaModel::load('users', $id);
 if ($model !== null) {
     $usuario->name = 'Nuevo nombre';
-    $$usuario->store();
+    $usuario->store();
 }
 
 // ❌ Incorrecto
 $usuario = VersaModel::load('users', $id);
 $usuario->name = 'Nuevo nombre'; // Error si no existe
-$$usuario->store();
+$usuario->store();
 ```
 
 ### 2. Usar nombres de tabla consistentes
@@ -417,7 +417,7 @@ if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
     throw new InvalidArgumentException('Email inválido');
 }
 
-$$usuario->store();
+$usuario->store();
 ```
 
 ### 4. Manejar modelos vacíos apropiadamente
@@ -431,18 +431,18 @@ if ($usuario->isEmpty()) {
     $usuario->name = 'Usuario por defecto';
 }
 
-$$usuario->store();
+$usuario->store();
 ```
 
 ## Comparación con SQL tradicional
 
 | Operación VersaORM | SQL Equivalente | Devuelve |
-|-------------------|-----------------|----------|
+|-------------------|-----------------|
 | `VersaModel::dispense('users')` | N/A (solo en memoria) | VersaModel vacío |
 | `VersaModel::load('users', 1)` | `SELECT * FROM users WHERE id = 1` | VersaModel |
-| `$$user->store()` (nuevo) | `INSERT INTO users (...)` | ID (integer) |
-| `$$user->store()` (existente) | `UPDATE users SET ... WHERE id = ?` | ID (integer) |
-| `$$user->trash()` | `DELETE FROM users WHERE id = ?` | void |
+| `$user->store()` (nuevo) | `INSERT INTO users (...)` | ID (integer) |
+| `$user->store()` (existente) | `UPDATE users SET ... WHERE id = ?` | ID (integer) |
+| `$user->trash()` | `DELETE FROM users WHERE id = ?` | void |
 
 ## Próximos pasos
 

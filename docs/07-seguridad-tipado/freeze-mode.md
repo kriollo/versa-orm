@@ -76,7 +76,7 @@ $user = VersaModel::dispense('users');  // ✅ Crea tabla automáticamente si no
 $user->name = 'Juan Pérez';
 $user->email = 'juan@example.com';
 $user->new_field = 'valor';       // ✅ Agrega columna automáticamente
-$$user->store();
+$user->store();
 
 // Con Freeze Mode ACTIVADO (producción)
 $orm->freeze(true);
@@ -87,7 +87,7 @@ $user->email = 'ana@example.com';
 
 try {
     $user->new_field = 'valor';   // ❌ Error: columna no existe
-    $$user->store();
+    $user->store();
 } catch (VersaORMException $e) {
     echo "Error: " . $e->getMessage();
     // Error: Columna 'new_field' no existe en tabla 'users' (Freeze Mode activo)
@@ -104,7 +104,7 @@ $orm->freeze(true);
 // 1. CRUD en tablas existentes con columnas existentes
 $user = VersaModel::load('users', 1);
 $user->name = 'Nombre actualizado';  // ✅ Columna existe
-$$user->store();
+$user->store();
 
 // 2. Consultas normales
 $users = VersaModel::findAll('users', 'active = ?', [true]); // ✅ OK
@@ -117,7 +117,7 @@ $posts = $user->ownPostsList;  // ✅ OK si las tablas existen
 try {
     // 1. Crear nuevas tablas
     $newModel = VersaModel::dispense('nueva_tabla');
-    $$newModel->store();  // ❌ Error
+    $newModel->store();  // ❌ Error
 } catch (VersaORMException $e) {
     echo "Bloqueado: " . $e->getMessage();
 }
@@ -126,7 +126,7 @@ try {
     // 2. Agregar nuevas columnas
     $user = VersaModel::load('users', 1);
     $user->nueva_columna = 'valor';
-    $$user->store();  // ❌ Error
+    $user->store();  // ❌ Error
 } catch (VersaORMException $e) {
     echo "Bloqueado: " . $e->getMessage();
 }
@@ -221,7 +221,7 @@ $result = $orm->withUnfreeze(function($orm) {
     // Dentro de este bloque, se pueden hacer cambios de esquema
     $newModel = VersaModel::dispense('nueva_tabla_temporal');
     $newModel->data = 'información temporal';
-    return $$newModel->store();
+    return $newModel->store();
 });
 ```
 
@@ -540,12 +540,12 @@ class AddNewFieldToUsers {
 ```php
 // ❌ Error común: No capturar errores de Freeze Mode
 $model->new_property = 'value';
-$$model->store(); // Puede fallar sin manejo
+$model->store(); // Puede fallar sin manejo
 
 // ✅ Solución: Manejar excepciones apropiadamente
 try {
     $model->new_property = 'value';
-    $$model->store();
+    $model->store();
 } catch (VersaORMException $e) {
     if (strpos($e->getMessage(), 'Freeze Mode') !== false) {
         // Manejar error de esquema protegido

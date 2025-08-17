@@ -13,33 +13,33 @@ Existen muchos ORMs para PHP (Eloquent, Doctrine, Propel), entonces ¿por qué e
 <?php
 // Configuración de conexión
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=mi_app', $usuario, $password);
+    $pdo = new PDO('mysql:host=localhost;dbname=mi_app', $user, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die('Error de conexión: ' . $e->getMessage());
 }
 
 // Crear usuario
-$sql = "INSERT INTO usuarios (nombre, email, activo, fecha_registro) VALUES (?, ?, ?, NOW())";
+$sql = "INSERT INTO users (name, email, active, created_at) VALUES (?, ?, ?, NOW())";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['Ana García', 'ana@ejemplo.com', 1]);
-$usuario_id = $pdo->lastInsertId();
+$stmt->execute(['Ana García', 'ana@example.com', 1]);
+$user_id = $pdo->lastInsertId();
 
 // Leer usuario
-$sql = "SELECT * FROM usuarios WHERE id = ?";
+$sql = "SELECT * FROM users WHERE id = ?";
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$usuario_id]);
-$usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->execute([$user_id]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Actualizar usuario
-$sql = "UPDATE usuarios SET nombre = ?, email = ? WHERE id = ?";
+$sql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['Ana García López', 'ana.garcia@ejemplo.com', $usuario_id]);
+$stmt->execute(['Ana García López', 'ana.garcia@example.com', $user_id]);
 
 // Eliminar usuario
-$sql = "DELETE FROM usuarios WHERE id = ?";
+$sql = "DELETE FROM users WHERE id = ?";
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$usuario_id]);
+$stmt->execute([$user_id]);
 
 echo "Operaciones completadas con " . count(explode("\n", $sql)) . " líneas de código SQL";
 ?>
@@ -56,27 +56,27 @@ $orm = new VersaORM([
     'driver' => 'mysql',
     'host' => 'localhost',
     'database' => 'mi_app',
-    'username' => 'usuario',
+    'username' => 'user',
     'password' => 'password'
 ]);
 
 // Crear usuario
-$usuario = VersaModel::dispense('usuario');
-$usuario->nombre = 'Ana García';
-$usuario->email = 'ana@ejemplo.com';
-$usuario->activo = true;
-$usuario_id = $$usuario->store();
+$user = VersaModel::dispense('users');
+$user->name = 'Ana García';
+$user->email = 'ana@example.com';
+$user->active = true;
+$user_id = $user->store();
 
 // Leer usuario
-$usuario = VersaModel::load('usuario', $usuario_id);
+$user = VersaModel::load('users', $user_id);
 
 // Actualizar usuario
-$usuario->nombre = 'Ana García López';
-$usuario->email = 'ana.garcia@ejemplo.com';
-$$usuario->store();
+$user->name = 'Ana García López';
+$user->email = 'ana.garcia@example.com';
+$user->store();
 
 // Eliminar usuario
-$$usuario->trash();
+$user->trash();
 
 echo "Operaciones completadas con código más limpio y legible";
 ?>
@@ -93,40 +93,40 @@ echo "Operaciones completadas con código más limpio y legible";
 // Eloquent (Laravel)
 use Illuminate\Database\Eloquent\Model;
 
-class Usuario extends Model {
-    protected $table = 'usuarios';
-    protected $fillable = ['nombre', 'email'];
+class User extends Model {
+    protected $table = 'users';
+    protected $fillable = ['name', 'email'];
 }
 
-$usuario = new Usuario();
-$usuario->nombre = 'Juan';
-$usuario->save();
+$user = new User();
+$user->name = 'Juan';
+$user->save();
 ```
 
 #### VersaORM
 ```php
 // Sin necesidad de clases o configuración
-$usuario = VersaModel::dispense('usuario');
-$usuario->nombre = 'Juan';
-$$usuario->store();
+$user = VersaModel::dispense('users');
+$user->name = 'Juan';
+$user->store();
 ```
 
 ### 2. Tipado Estricto Automático
 
 ```php
 // VersaORM detecta y convierte tipos automáticamente
-$producto = VersaModel::dispense('producto');
-$producto->precio = '19.99';        // String
-$producto->stock = '50';            // String
-$producto->activo = 'true';         // String
+$product = VersaModel::dispense('products');
+$product->price = '19.99';        // String
+$product->stock = '50';            // String
+$product->active = 'true';         // String
 
-$$producto->store();
+$product->store();
 
 // Al recuperar, VersaORM devuelve tipos correctos
-$producto = VersaModel::load('producto', 1);
-var_dump($producto->precio);        // float(19.99)
-var_dump($producto->stock);         // int(50)
-var_dump($producto->activo);        // bool(true)
+$product = VersaModel::load('products', 1);
+var_dump($product->price);        // float(19.99)
+var_dump($product->stock);         // int(50)
+var_dump($product->active);        // bool(true)
 ```
 
 ### 3. Seguridad por Defecto
@@ -134,17 +134,17 @@ var_dump($producto->activo);        // bool(true)
 #### SQL Vulnerable
 ```php
 // ¡NUNCA hagas esto!
-$nombre = $_POST['nombre'];
-$sql = "SELECT * FROM usuarios WHERE nombre = '$nombre'";
+$name = $_POST['name'];
+$sql = "SELECT * FROM users WHERE name = '$name'";
 // Vulnerable a SQL injection
 ```
 
 #### VersaORM Seguro
 ```php
 // Automáticamente seguro
-$nombre = $_POST['nombre'];
-$usuarios = $orm->table('usuarios')
-    ->where('nombre', '=', $nombre)  // Automáticamente escapado
+$name = $_POST['name'];
+$users = $orm->table('users')
+    ->where('name', '=', $name)  // Automáticamente escapado
     ->getAll();
 ```
 
@@ -157,9 +157,9 @@ $orm_postgres = new VersaORM('pgsql:host=localhost;dbname=app', $user, $pass);
 $orm_sqlite = new VersaORM('sqlite:database.db');
 
 // Código idéntico para todas
-$usuario = VersaModel::dispense('usuario');
-$usuario->nombre = 'Test';
-$$usuario->store();
+$user = VersaModel::dispense('users');
+$user->name = 'Test';
+$user->store();
 ```
 
 ## Comparación con Otros ORMs Populares
@@ -177,7 +177,7 @@ $$usuario->store();
 ```php
 // VersaORM - Inmediato
 $orm = new VersaORM($dsn, $user, $pass);
-$post = VersaModel::dispense('post');
+$post = VersaModel::dispense('posts');
 
 // Eloquent - Requiere configuración
 // Necesita configurar Laravel, modelos, migraciones...
@@ -194,8 +194,8 @@ $post = VersaModel::dispense('post');
 
 ```php
 // VersaORM - Sin configuración
-$usuario = VersaModel::dispense('usuario');
-$usuario->nombre = 'Juan';
+$user = VersaModel::dispense('users');
+$user->name = 'Juan';
 
 // Doctrine - Requiere entidades, anotaciones, configuración...
 ```
@@ -207,21 +207,21 @@ $usuario->nombre = 'Juan';
 #### 1. Aplicaciones Web Rápidas
 ```php
 // API REST en minutos
-$app->post('/usuarios', function() use ($orm) {
-    $usuario = VersaModel::dispense('usuario');
-    $usuario->nombre = $_POST['nombre'];
-    $usuario->email = $_POST['email'];
-    return json_encode(['id' => $$usuario->store()]);
+$app->post('/users', function() use ($orm) {
+    $user = VersaModel::dispense('users');
+    $user->name = $_POST['name'];
+    $user->email = $_POST['email'];
+    return json_encode(['id' => $user->store()]);
 });
 ```
 
 #### 2. Prototipos y MVPs
 ```php
 // Cambios de esquema sin migraciones
-$producto = VersaModel::dispense('producto');
-$producto->nombre = 'iPhone';
-$producto->nueva_columna = 'valor';  // Se crea automáticamente
-$$producto->store();
+$product = VersaModel::dispense('products');
+$product->name = 'iPhone';
+$product->new_column = 'valor';  // Se crea automáticamente
+$product->store();
 ```
 
 #### 3. Aplicaciones Multi-Tenant
@@ -234,12 +234,12 @@ $orm_cliente2 = new VersaORM('mysql:host=db2;dbname=cliente2', $u, $p);
 #### 4. Migración desde SQL Legacy
 ```php
 // Migración gradual
-$usuarios_sql = $pdo->query("SELECT * FROM usuarios_legacy")->fetchAll();
+$users_sql = $pdo->query("SELECT * FROM users_legacy")->fetchAll();
 
-foreach ($usuarios_sql as $usuario_data) {
-    $usuario = VersaModel::dispense('usuario');
-    $usuario->import($usuario_data);
-    $$usuario->store();
+foreach ($users_sql as $user_data) {
+    $user = VersaModel::dispense('users');
+    $user->import($user_data);
+    $user->store();
 }
 ```
 
@@ -248,21 +248,21 @@ foreach ($usuarios_sql as $usuario_data) {
 ### Query Builder Inteligente
 ```php
 // VersaORM optimiza automáticamente
-$usuarios = $orm->table('usuarios')
-    ->where('activo', '=', true)
+$users = $orm->table('users')
+    ->where('active', '=', true)
     ->limit(10)
     ->getAll();
 
 // Genera SQL optimizado:
-// SELECT * FROM usuarios WHERE activo = 1 LIMIT 10
+// SELECT * FROM users WHERE active = 1 LIMIT 10
 ```
 
 ### Lazy Loading Automático
 ```php
 // Solo carga datos cuando los necesitas
-$usuario = VersaModel::load('usuario', 1);        // SELECT básico
-echo $usuario->nombre;                      // Sin consultas adicionales
-$posts = $usuario->ownPostList;             // SELECT solo cuando se accede
+$user = VersaModel::load('users', 1);        // SELECT básico
+echo $user->name;                      // Sin consultas adicionales
+$posts = $user->ownPostList;             // SELECT solo cuando se accede
 ```
 
 ## Ejemplo Completo: Blog en 5 Minutos
@@ -275,32 +275,32 @@ require_once 'vendor/autoload.php';
 $orm = new VersaORM('sqlite:blog.db');
 
 // 2. Crear autor
-$autor = VersaModel::dispense('autor');
-$autor->nombre = 'María González';
-$autor->email = 'maria@blog.com';
-$autor_id = $$autor->store();
+$author = VersaModel::dispense('authors');
+$author->name = 'María González';
+$author->email = 'maria@blog.com';
+$author_id = $author->store();
 
 // 3. Crear posts
 for ($i = 1; $i <= 3; $i++) {
-    $post = VersaModel::dispense('post');
-    $post->titulo = "Post número $i";
-    $post->contenido = "Contenido del post $i...";
-    $post->autor_id = $autor_id;
-    $post->publicado = true;
-    $$post->store();
+    $post = VersaModel::dispense('posts');
+    $post->title = "Post número $i";
+    $post->content = "Contenido del post $i...";
+    $post->author_id = $author_id;
+    $post->published = true;
+    $post->store();
 }
 
 // 4. Mostrar blog
 $posts = $orm->table('posts')
-    ->where('publicado', '=', true)
+    ->where('published', '=', true)
     ->orderBy('id', 'DESC')
     ->getAll();
 
 foreach ($posts as $post) {
-    $autor = VersaModel::load('autor', $post['autor_id']);
-    echo "<h2>{$post['titulo']}</h2>";
-    echo "<p>Por: {$autor->nombre}</p>";
-    echo "<p>{$post['contenido']}</p><hr>";
+    $author = VersaModel::load('authors', $post['author_id']);
+    echo "<h2>{$post['title']}</h2>";
+    echo "<p>Por: {$author->name}</p>";
+    echo "<p>{$post['content']}</p><hr>";
 }
 ?>
 ```
@@ -310,13 +310,13 @@ foreach ($posts as $post) {
 ### Desde SQL Puro
 ```php
 // Antes
-$stmt = $pdo->prepare("SELECT * FROM productos WHERE precio > ? AND stock > 0");
+$stmt = $pdo->prepare("SELECT * FROM products WHERE price > ? AND stock > 0");
 $stmt->execute([100]);
-$productos = $stmt->fetchAll();
+$products = $stmt->fetchAll();
 
 // Después
-$productos = $orm->table('productos')
-    ->where('precio', '>', 100)
+$products = $orm->table('products')
+    ->where('price', '>', 100)
     ->where('stock', '>', 0)
     ->getAll();
 ```
@@ -327,7 +327,7 @@ $productos = $orm->table('productos')
 Product::where('price', '>', 100)->where('stock', '>', 0)->get();
 
 // A VersaORM
-$orm->table('productos')->where('precio', '>', 100)->where('stock', '>', 0)->getAll();
+$orm->table('products')->where('price', '>', 100)->where('stock', '>', 0)->getAll();
 ```
 
 ## Siguiente Paso

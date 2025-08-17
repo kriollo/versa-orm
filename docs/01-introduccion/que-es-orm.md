@@ -32,26 +32,26 @@ Un ORM actúa como un **traductor inteligente** entre tu código PHP y la base d
 ### Antes (SQL Tradicional)
 ```php
 // Código PHP tradicional con SQL
-$sql = "SELECT * FROM usuarios WHERE edad > 18 AND activo = 1";
+$sql = "SELECT * FROM users WHERE age > 18 AND active = 1";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
-$usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-foreach ($usuarios as $usuario) {
-    echo $usuario['nombre'];
+foreach ($users as $user) {
+    echo $user['name'];
 }
 ```
 
 ### Después (Con ORM)
 ```php
 // Código PHP con ORM
-$usuarios = $orm->table('usuarios')
-    ->where('edad', '>', 18)
-    ->where('activo', '=', true)
+$users = $orm->table('users')
+    ->where('age', '>', 18)
+    ->where('active', '=', true)
     ->getAll();
 
-foreach ($usuarios as $usuario) {
-    echo $usuario->nombre;
+foreach ($users as $user) {
+    echo $user->name;
 }
 ```
 
@@ -67,10 +67,10 @@ El ORM convierte automáticamente:
 ### 2. Abstracción de Base de Datos
 ```php
 // El mismo código funciona para MySQL, PostgreSQL, SQLite
-$usuario = VersaModel::dispense('usuario');
-$usuario->nombre = 'Juan Pérez';
-$usuario->email = 'juan@ejemplo.com';
-$$usuario->store();
+$user = VersaModel::dispense('users');
+$user->name = 'Juan Pérez';
+$user->email = 'juan@ejemplo.com';
+$user->store();
 ```
 
 ### 3. Seguridad Automática
@@ -119,22 +119,22 @@ El ORM previene automáticamente:
 ```
 Tabla: posts
 - id (entero)
-- titulo (texto)
-- contenido (texto)
-- autor_id (entero)
-- fecha_creacion (fecha)
+- title (texto)
+- content (texto)
+- author_id (entero)
+- created_at (fecha)
 ```
 
 ### Con SQL Tradicional
 ```php
 // Crear un post
-$sql = "INSERT INTO posts (titulo, contenido, autor_id, fecha_creacion)
+$sql = "INSERT INTO posts (title, content, author_id, created_at)
         VALUES (?, ?, ?, NOW())";
 $stmt = $pdo->prepare($sql);
 $stmt->execute(['Mi Primer Post', 'Contenido del post...', 1]);
 
 // Leer posts
-$sql = "SELECT * FROM posts WHERE autor_id = ? ORDER BY fecha_creacion DESC";
+$sql = "SELECT * FROM posts WHERE author_id = ? ORDER BY created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([1]);
 $posts = $stmt->fetchAll();
@@ -143,16 +143,16 @@ $posts = $stmt->fetchAll();
 ### Con ORM
 ```php
 // Crear un post
-$post = VersaModel::dispense('post');
-$post->titulo = 'Mi Primer Post';
-$post->contenido = 'Contenido del post...';
-$post->autor_id = 1;
-$$post->store();
+$post = VersaModel::dispense('posts');
+$post->title = 'Mi Primer Post';
+$post->content = 'Contenido del post...';
+$post->author_id = 1;
+$post->store();
 
 // Leer posts
 $posts = $orm->table('posts')
-    ->where('autor_id', '=', 1)
-    ->orderBy('fecha_creacion', 'DESC')
+    ->where('author_id', '=', 1)
+    ->orderBy('created_at', 'DESC')
     ->getAll();
 ```
 

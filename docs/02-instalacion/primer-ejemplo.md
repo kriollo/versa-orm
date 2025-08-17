@@ -111,7 +111,7 @@ echo "<h2>1. Creando la tabla de tareas</h2>\n";
 
 // Crear tabla de tareas
 try {
-    $orm->exec("
+    $orm->exec(" 
         CREATE TABLE IF NOT EXISTS tareas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             titulo TEXT NOT NULL,
@@ -143,7 +143,7 @@ foreach ($tareas_ejemplo as $tarea_data) {
         $tarea->completada = false;
 
         // Guardar en la base de datos
-        $id = $$tarea->store();
+        $id = $tarea->store();
         echo "✅ Tarea creada con ID: $id - '{$tarea->titulo}'<br>\n";
 
     } catch (Exception $e) {
@@ -178,7 +178,7 @@ try {
 
     if ($primera_tarea) {
         $primera_tarea->completada = true;
-        $$primera_tarea->store();
+        $primera_tarea->store();
 
         echo "✅ Tarea '{$primera_tarea->titulo}' marcada como completada<br>\n";
     } else {
@@ -246,24 +246,24 @@ try {
 }
 
 echo "<h2>¡Felicitaciones! 🎉</h2>\n";
-echo "<p>Has completado tu primer ejemplo con VersaORM. Has aprendido a:</p>\n";
-echo "<ul>\n";
-echo "<li>✅ Conectar a una base de datos</li>\n";
-echo "<li>✅ Crear tablas</li>\n";
-echo "<li>✅ Insertar datos con <code>dispense()</code> y <code>store()</code></li>\n";
-echo "<li>✅ Consultar datos con <code>findAll()</code> y <code>find()</code></li>\n";
-echo "<li>✅ Actualizar registros</li>\n";
-echo "<li>✅ Usar el Query Builder</li>\n";
-echo "<li>✅ Contar registros</li>\n";
-echo "</ul>\n";
+    echo "<p>Has completado tu primer ejemplo con VersaORM. Has aprendido a:</p>\n";
+    echo "<ul>\n";
+    echo "<li>✅ Conectar a una base de datos</li>\n";
+    echo "<li>✅ Crear tablas</li>\n";
+    echo "<li>✅ Insertar datos con <code>dispense()</code> y <code>store()</code></li>\n";
+    echo "<li>✅ Consultar datos con <code>findAll()</code> y <code>find()</code></li>\n";
+    echo "<li>✅ Actualizar registros</li>\n";
+    echo "<li>✅ Usar el Query Builder</li>\n";
+    echo "<li>✅ Contar registros</li>\n";
+    echo "</ul>\n";
 
-echo "<h3>Próximos Pasos</h3>\n";
-echo "<p>Ahora puedes:</p>\n";
-echo "<ul>\n";
-echo "<li>📖 Leer la <a href='../03-basico/'>documentación de CRUD básico</a></li>\n";
-echo "<li>🔧 Explorar el <a href='../04-query-builder/'>Query Builder avanzado</a></li>\n";
-echo "<li>🔗 Aprender sobre <a href='../05-relaciones/'>relaciones entre modelos</a></li>\n";
-echo "</ul>\n";
+    echo "<h3>Próximos Pasos</h3>\n";
+    echo "<p>Ahora puedes:</p>\n";
+    echo "<ul>\n";
+    echo "<li>📖 Leer la <a href='../03-basico/'>documentación de CRUD básico</a></li>\n";
+    echo "<li>🔧 Explorar el <a href='../04-query-builder/'>Query Builder avanzado</a></li>\n";
+    echo "<li>🔗 Aprender sobre <a href='../05-relaciones/'>relaciones entre modelos</a></li>\n";
+    echo "</ul>\n";
 ?>
 ```
 
@@ -310,7 +310,7 @@ $orm = new VersaORM('sqlite:database.db');
 ```php
 $tarea = VersaModel::dispense('tarea');  // Crea un objeto vacío
 $tarea->titulo = 'Mi tarea';       // Asigna propiedades
-$id = $$tarea->store();         // Guarda en BD
+$id = $tarea->store();         // Guarda en BD
 ```
 
 **¿Qué hace?**
@@ -351,10 +351,10 @@ $resultados = $orm->table('tareas')
 
 | Operación | VersaORM | SQL Equivalente |
 |-----------|----------|-----------------|
-| **Insertar** | `$tarea = VersaModel::dispense('tarea'); $tarea->titulo = 'Test'; $$tarea->store();` | `INSERT INTO tareas (titulo) VALUES ('Test')` |
+| **Insertar** | `$tarea = VersaModel::dispense('tarea'); $tarea->titulo = 'Test'; $tarea->store();` | `INSERT INTO tareas (titulo) VALUES ('Test')` |
 | **Consultar Todo** | `$orm->findAll('tarea')` | `SELECT * FROM tareas` |
 | **Consultar Con Condición** | `VersaModel::findAll('tarea', 'completada = ?', [true])` | `SELECT * FROM tareas WHERE completada = 1` |
-| **Actualizar** | `$tarea->completada = true; $$tarea->store();` | `UPDATE tareas SET completada = 1 WHERE id = ?` |
+| **Actualizar** | `$tarea->completada = true; $tarea->store();` | `UPDATE tareas SET completada = 1 WHERE id = ?` |
 | **Contar** | `$orm->count('tarea')` | `SELECT COUNT(*) FROM tareas` |
 
 ## Versión Interactiva (Opcional)
@@ -367,7 +367,7 @@ Si quieres hacer el ejemplo más interactivo, crea `public/interactive.php`:
 $orm = require_once __DIR__ . '/../config/database.php';
 
 // Crear tabla si no existe
-$orm->exec("
+$orm->exec(" 
     CREATE TABLE IF NOT EXISTS tareas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT NOT NULL,
@@ -384,21 +384,21 @@ if ($_POST['accion'] ?? false) {
             $tarea = VersaModel::dispense('tarea');
             $tarea->titulo = $_POST['titulo'] ?? '';
             $tarea->descripcion = $_POST['descripcion'] ?? '';
-            $$tarea->store();
+            $tarea->store();
             $mensaje = "✅ Tarea creada: {$tarea->titulo}";
             break;
 
         case 'completar':
             $tarea = VersaModel::load('tarea', $_POST['id']);
             $tarea->completada = true;
-            $$tarea->store();
+            $tarea->store();
             $mensaje = "✅ Tarea completada: {$tarea->titulo}";
             break;
 
         case 'eliminar':
             $tarea = VersaModel::load('tarea', $_POST['id']);
             $titulo = $tarea->titulo;
-            $$tarea->trash();
+            $tarea->trash();
             $mensaje = "🗑️ Tarea eliminada: $titulo";
             break;
     }
@@ -450,14 +450,14 @@ $tareas = $orm->findAll('tarea', 'ORDER BY fecha_creacion DESC');
         <?php foreach ($tareas as $tarea): ?>
             <div class="tarea <?= $tarea->completada ? 'completada' : '' ?>">
                 <h4><?= $tarea->completada ? '✅' : '⏳' ?> <?= htmlspecialchars($tarea->titulo) ?></h4>
-                <?php if ($tarea->descripcion): ?>
-                    <p><?= htmlspecialchars($tarea->descripcion) ?></p>
+                <?php if ($tarea->descripcion):
+                    ?><p><?= htmlspecialchars($tarea->descripcion) ?></p>
                 <?php endif; ?>
                 <small>Creada: <?= $tarea->fecha_creacion ?></small>
 
                 <div style="margin-top: 10px;">
-                    <?php if (!$tarea->completada): ?>
-                        <form method="POST" style="display: inline;">
+                    <?php if (!$tarea->completada):
+                        ?><form method="POST" style="display: inline;">
                             <input type="hidden" name="accion" value="completar">
                             <input type="hidden" name="id" value="<?= $tarea->id ?>">
                             <button type="submit" class="btn-success">Completar</button>

@@ -17,7 +17,7 @@ $user = VersaModel::dispense('users');
 $user->name = 'Juan Pérez';
 $user->email = 'juan@email.com';
 $user->active = 1;
-$id = $$user->store();
+$id = $user->store();
 
 // O usando Query Builder
 $id = $orm->table('users')->insert([
@@ -85,7 +85,7 @@ $user = VersaModel::load('users', 5);
 if ($user) {
     $user->name = 'Juan Carlos Pérez';
     $user->active = 1;
-    $$user->store();
+    $user->store();
 }
 
 // O usando Query Builder
@@ -162,7 +162,7 @@ DELETE FROM users WHERE id = 5;
 // VersaORM con VersaModel
 $user = VersaModel::load('users', 5);
 if ($user) {
-    $$user->trash();
+    $user->trash();
 }
 
 // O usando Query Builder
@@ -365,7 +365,7 @@ if (!$user) {
 }
 
 $user->name = 'Nuevo Nombre';
-$$user->store();
+$user->store();
 ```
 
 ### Manejar errores de duplicados

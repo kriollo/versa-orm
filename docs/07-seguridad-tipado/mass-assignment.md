@@ -22,7 +22,7 @@ $user = VersaModel::dispense('users');
 foreach ($userData as $key => $value) {
     $user->$key = $value;  // ¡Peligroso!
 }
-$$user->store();
+$user->store();
 ```
 
 ## Configuración de Protección

@@ -145,28 +145,27 @@ return $orm;
 require_once 'config/database.php';
 
 // Crear tabla de ejemplo
-$orm->exec("
-    CREATE TABLE IF NOT EXISTS usuarios (
+$orm->exec(" 
+    CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
+        name VARCHAR(100) NOT NULL,
         email VARCHAR(100) UNIQUE NOT NULL,
-        activo BOOLEAN DEFAULT TRUE,
-        fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-");
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
 // Insertar usuario de prueba
-$usuario = VersaModel::dispense('usuario');
-$usuario->nombre = 'Juan Pérez';
-$usuario->email = 'juan@ejemplo.com';
-$usuario->activo = true;
+$user = VersaModel::dispense('users');
+$user->name = 'Juan Pérez';
+$user->email = 'juan@ejemplo.com';
+$user->active = true;
 
-$id = $$usuario->store();
+$id = $user->store();
 echo "Usuario creado con ID: $id\n";
 
 // Consultar usuario
-$usuario = VersaModel::load('usuario', $id);
-echo "Usuario encontrado: {$usuario->nombre} ({$usuario->email})\n";
+$user = VersaModel::load('users', $id);
+echo "Usuario encontrado: {$user->name} ({$user->email})\n";
 ?>
 ```
 
@@ -215,26 +214,26 @@ return $orm;
 require_once 'config/postgresql.php';
 
 // Crear tabla con tipos específicos de PostgreSQL
-$orm->exec("
-    CREATE TABLE IF NOT EXISTS productos (
+$orm->exec(" 
+    CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
-        nombre VARCHAR(200) NOT NULL,
-        descripcion TEXT,
-        precio DECIMAL(10,2) NOT NULL,
+        name VARCHAR(200) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2) NOT NULL,
         stock INTEGER DEFAULT 0,
-        activo BOOLEAN DEFAULT TRUE,
-        metadatos JSONB,
-        fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        active BOOLEAN DEFAULT TRUE,
+        metadata JSONB,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
 ");
 
 // Insertar producto con datos JSON
-$producto = VersaModel::dispense('producto');
-$producto->nombre = 'Laptop Gaming';
-$producto->descripcion = 'Laptop para gaming de alta gama';
-$producto->precio = 1299.99;
-$producto->stock = 5;
-$producto->metadatos = json_encode([
+$product = VersaModel::dispense('products');
+$product->name = 'Laptop Gaming';
+$product->description = 'Laptop para gaming de alta gama';
+$product->price = 1299.99;
+$product->stock = 5;
+$product->metadata = json_encode([
     'marca' => 'TechBrand',
     'modelo' => 'GX-2024',
     'especificaciones' => [
@@ -244,16 +243,17 @@ $producto->metadatos = json_encode([
     ]
 ]);
 
-$id = $$producto->store();
+$id = $product->store();
 echo "Producto creado con ID: $id\n";
 
 // Consultar con filtro JSON
-$productos = $orm->table('productos')
-    ->whereRaw("metadatos->>'marca' = ?", ['TechBrand'])
+$products = $orm->table('products')
+    ->whereRaw("metadata->>'marca' = ?", ['TechBrand'])
     ->getAll();
 
-foreach ($productos as $prod) {
-    echo "Producto: {$prod['nombre']} - Precio: \${$prod['precio']}\n";
+foreach ($products as $prod) {
+    echo "Producto: {$prod['name']} - Precio: \"
+{$prod['price']}\"\n";
 }
 ?>
 ```
@@ -324,52 +324,52 @@ return $orm;
 require_once 'config/sqlite.php';
 
 // Crear tablas con relaciones
-$orm->exec("
-    CREATE TABLE IF NOT EXISTS categorias (
+$orm->exec(" 
+    CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL UNIQUE,
-        descripcion TEXT,
-        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 ");
 
-$orm->exec("
-    CREATE TABLE IF NOT EXISTS articulos (
+$orm->exec(" 
+    CREATE TABLE IF NOT EXISTS articles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        titulo TEXT NOT NULL,
-        contenido TEXT,
-        categoria_id INTEGER,
-        publicado BOOLEAN DEFAULT 0,
-        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+        title TEXT NOT NULL,
+        content TEXT,
+        category_id INTEGER,
+        published BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES categories(id)
     )
 ");
 
 // Insertar categoría
-$categoria = VersaModel::dispense('categoria');
-$categoria->nombre = 'Tecnología';
-$categoria->descripcion = 'Artículos sobre tecnología';
-$categoria_id = $$categoria->store();
+$category = VersaModel::dispense('categories');
+$category->name = 'Tecnología';
+$category->description = 'Artículos sobre tecnología';
+$category_id = $category->store();
 
 // Insertar artículo
-$articulo = VersaModel::dispense('articulo');
-$articulo->titulo = 'Introducción a VersaORM';
-$articulo->contenido = 'VersaORM es un ORM simple y potente...';
-$articulo->categoria_id = $categoria_id;
-$articulo->publicado = true;
+$article = VersaModel::dispense('articles');
+$article->title = 'Introducción a VersaORM';
+$article->content = 'VersaORM es un ORM simple y potente...';
+$article->category_id = $category_id;
+$article->published = true;
 
-$articulo_id = $$articulo->store();
-echo "Artículo creado con ID: $articulo_id\n";
+$article_id = $article->store();
+echo "Artículo creado con ID: $article_id\n";
 
 // Consultar con JOIN
-$articulos = $orm->table('articulos')
-    ->join('categorias', 'articulos.categoria_id', '=', 'categorias.id')
-    ->select('articulos.titulo', 'categorias.nombre as categoria')
-    ->where('articulos.publicado', '=', true)
+$articles = $orm->table('articles')
+    ->join('categories', 'articles.category_id', '=', 'categories.id')
+    ->select('articles.title', 'categories.name as category')
+    ->where('articles.published', '=', true)
     ->getAll();
 
-foreach ($articulos as $art) {
-    echo "Artículo: {$art['titulo']} - Categoría: {$art['categoria']}\n";
+foreach ($articles as $art) {
+    echo "Artículo: {$art['title']} - Categoría: {$art['category']}\n";
 }
 ?>
 ```

@@ -160,20 +160,20 @@ $orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
 $user = VersaModel::dispense('user');
 $user->name = 'María García';
 $user->email = 'maria@ejemplo.com';
-$userId = $$user->store();
+$userId = $user->store();
 
 // Crear posts para el usuario
 $post1 = VersaModel::dispense('post');
 $post1->title = 'Mi primer post';
 $post1->content = 'Contenido del primer post';
 $post1->user_id = $userId;
-$$post1->store();
+$post1->store();
 
 $post2 = VersaModel::dispense('post');
 $post2->title = 'Segundo post';
 $post2->content = 'Más contenido interesante';
 $post2->user_id = $userId;
-$$post2->store();
+$post2->store();
 
 // Obtener usuario con sus posts
 $userWithPosts = VersaModel::load('user', $userId);

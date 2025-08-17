@@ -49,7 +49,7 @@ $orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
 $user = VersaModel::dispense('user');
 $user->name = 'Ana Martínez';
 $user->email = 'ana@ejemplo.com';
-$userId = $$user->store();
+$userId = $user->store();
 
 // Crear posts para el usuario
 $post1 = VersaModel::dispense('post');
@@ -57,14 +57,14 @@ $post1->title = 'Introducción a PHP';
 $post1->content = 'PHP es un lenguaje de programación...';
 $post1->user_id = $userId;
 $post1->published = true;
-$$post1->store();
+$post1->store();
 
 $post2 = VersaModel::dispense('post');
 $post2->title = 'Bases de Datos con MySQL';
 $post2->content = 'MySQL es un sistema de gestión...';
 $post2->user_id = $userId;
 $post2->published = false;
-$$post2->store();
+$post2->store();
 
 echo "Usuario y posts creados correctamente\n";
 ```
@@ -242,7 +242,7 @@ function createPostForUser($orm, $userId, $title, $content) {
     $post->user_id = $userId;
     $post->published = false;
 
-    $postId = $$post->store();
+    $postId = $post->store();
 
     echo "Post '{$title}' creado para {$user->name}\n";
     return $postId;
@@ -264,7 +264,7 @@ $drafts = VersaModel::findAll('post', 'user_id = ? AND published = ?', [$userId,
 
 foreach ($drafts as $draft) {
     $draft->published = true;
-    $$draft->store();
+    $draft->store();
 }
 
 echo "Se publicaron " . count($drafts) . " borradores\n";
@@ -283,7 +283,7 @@ WHERE user_id = 1 AND published = 0;
 $unpublishedPosts = VersaModel::findAll('post', 'user_id = ? AND published = ?', [$userId, false]);
 
 foreach ($unpublishedPosts as $post) {
-    $$post->trash();
+    $post->trash();
 }
 
 echo "Se eliminaron " . count($unpublishedPosts) . " borradores\n";
@@ -303,7 +303,7 @@ try {
     $post = VersaModel::dispense('post');
     $post->title = 'Post huérfano';
     $post->user_id = 999; // Usuario que no existe
-    $$post->store();
+    $post->store();
 
 } catch (VersaORMException $e) {
     echo "Error de integridad referencial: " . $e->getMessage() . "\n";
@@ -313,7 +313,7 @@ try {
 try {
     // Intentar eliminar usuario con posts
     $userWithPosts = VersaModel::load('user', $userId);
-    $$userWithPosts->trash();
+    $userWithPosts->trash();
 
 } catch (VersaORMException $e) {
     echo "No se puede eliminar usuario con posts: " . $e->getMessage() . "\n";
@@ -338,7 +338,7 @@ function safeCreatePost($orm, $userId, $title, $content) {
     $post->content = $content;
     $post->user_id = $userId;
 
-    return $$post->store();
+    return $post->store();
 }
 ```
 
@@ -351,7 +351,7 @@ try {
     $user = VersaModel::dispense('user');
     $user->name = 'Nuevo Usuario';
     $user->email = 'nuevo@ejemplo.com';
-    $userId = $$user->store();
+    $userId = $user->store();
 
     // Crear post inicial
     $post = VersaModel::dispense('post');
@@ -359,7 +359,7 @@ try {
     $post->content = 'Contenido inicial...';
     $post->user_id = $userId;
     $post->published = true;
-    $$post->store();
+    $post->store();
 
     $orm->commit();
     echo "Usuario y post creados exitosamente\n";
