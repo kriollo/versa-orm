@@ -415,8 +415,10 @@ class VersaModel implements TypedModelInterface
                 if (method_exists($this, $relationName)) {
                     $relationInstance = $this->{$relationName}();
 
-                    if ($relationInstance instanceof HasMany
-                    || $relationInstance instanceof BelongsToMany) {
+                    if (
+                        $relationInstance instanceof HasMany
+                        || $relationInstance instanceof BelongsToMany
+                    ) {
                         // Para relaciones "many", convertir cada elemento del array en un modelo
                         $modelInstances = [];
 
@@ -668,8 +670,7 @@ class VersaModel implements TypedModelInterface
 
         // Usar el QueryBuilder para hacer upsert
         $result = $orm->table($this->table)
-            ->upsert($this->attributes, $uniqueKeys, $updateColumns)
-        ;
+            ->upsert($this->attributes, $uniqueKeys, $updateColumns);
 
         // Si fue exitoso y se insertó un nuevo registro, actualizar el ID si es posible
         if (isset($result['operation']) && $result['operation'] === 'inserted_or_updated') {
@@ -745,8 +746,7 @@ class VersaModel implements TypedModelInterface
 
         // Usar el QueryBuilder para hacer save inteligente
         $result = $orm->table($this->table)
-            ->save($this->attributes, $primaryKey)
-        ;
+            ->save($this->attributes, $primaryKey);
 
         // Actualizar el modelo con los datos devueltos
         if (isset($result['id'])) {
@@ -866,8 +866,7 @@ class VersaModel implements TypedModelInterface
 
         // Usar el QueryBuilder para hacer createOrUpdate
         $result = $orm->table($this->table)
-            ->createOrUpdate($this->attributes, $conditions, $updateColumns)
-        ;
+            ->createOrUpdate($this->attributes, $conditions, $updateColumns);
 
         // Actualizar el modelo con el ID si se creó un nuevo registro
         if (isset($result['id'])) {
