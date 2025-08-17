@@ -196,6 +196,52 @@ Nota: También están disponibles joins avanzados cuando tu motor de base de dat
 - `naturalJoin(string $table)`
 - `joinSub(Closure|QueryBuilder $subquery, string $alias, string $firstCol, string $operator, string $secondCol)`
 
+#### `on()` y `onRaw()` para condiciones avanzadas en JOIN
+
+Después de definir un `join()`, puedes añadir condiciones adicionales encadenadas con `on()`:
+
+```php
+$orm->table('orders')
+    ->join('users', 'orders.user_id', '=', 'users.id')
+    ->on('users.status', '=', 'active')
+    ->getAll();
+```
+
+Para expresiones complejas en la cláusula `ON` (agrupaciones, múltiples comparaciones, funciones), usa `onRaw()` de forma segura:
+
+```php
+$rows = $orm->table('orders as o')
+    ->join('users as u', 'o.user_id', '=', 'u.id')
+    ->onRaw('(u.status = ? OR u.role = ?) AND u.deleted_at IS NULL', ['active', 'manager'])
+    ->select(['o.id', 'u.name'])
+    ->getAll();
+```
+
+Puedes mezclar varias llamadas `onRaw()` y `on()`; se combinan con `AND` por defecto (usa el tercer parámetro `'OR'` si necesitas cambiar el boolean):
+
+```php
+$orm->table('posts as p')
+    ->join('users as u') // diferido: agregamos condiciones luego
+    ->onRaw('p.user_id = u.id')
+    ->onRaw('u.status = ?', ['active'])
+    ->on('u.country', '=', 'p.country')
+    ->getAll();
+```
+
+Bindings en `onRaw()` se pasan a la consulta preparada igual que en `where()`, evitando inyección SQL. Si la expresión contiene patrones peligrosos (comentarios, `;`, palabras DDL/DML como DROP, ALTER, INSERT, etc.) se lanzará una excepción.
+
+| Método | Uso | Seguridad |
+|--------|-----|-----------|
+| `on($local, $op, $foreign, $boolean = 'AND')` | Condición estructurada (columna-columna) | Validación de identificadores |
+| `onRaw($expression, array $bindings = [], $boolean = 'AND')` | Expresión arbitraria en `ON` con placeholders `?` | Filtrado de patrones peligrosos + parámetros |
+
+Casos de uso típicos de `onRaw()`:
+- Comparaciones con funciones (`DATE(u.created_at) = DATE(o.created_at)`)
+- Agrupación lógica compleja (`(A AND B) OR (C AND D)`)
+- Joins condicionales con reglas de negocio no triviales
+
+Evita usar `onRaw()` para casos simples ya cubiertos por `on()`, manteniendo el SQL legible y validado automáticamente.
+
 ### Orden, Agrupación y Paginación
 
 - `orderBy(string $column, string $direction = 'asc')`: Ordena los resultados.

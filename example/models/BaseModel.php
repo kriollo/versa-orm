@@ -67,6 +67,40 @@ abstract class BaseModel extends VersaModel
         return $this->query();
     }
 
+    // ===================== Factorías y proxies estáticos seguros =====================
+    /** Crear una nueva instancia tipada usando la tabla inferida y el ORM global. */
+    public static function make(): static
+    {
+        /** @var static $inst */
+        $inst = new static(static::tableName(), self::orm());
+
+        return $inst;
+    }
+
+    /** Proxy estático alternativo: obtener todos los registros como modelos. */
+    public static function allModels(): array
+    {
+        return static::make()->all();
+    }
+
+    /** Proxy estático alternativo: obtener todos los registros como arrays. */
+    public static function allRows(): array
+    {
+        return static::make()->allArray();
+    }
+
+    /** Proxy estático alternativo: buscar por ID como modelo tipado. */
+    public static function findModel(int $id, string $pk = 'id'): ?static
+    {
+        return static::make()->find($id, $pk);
+    }
+
+    /** Proxy estático alternativo: buscar por ID y devolver array. */
+    public static function findRow(int $id, string $pk = 'id'): ?array
+    {
+        return static::make()->findArray($id, $pk);
+    }
+
     // ===================== Métodos instancia (no estáticos) =====================
     /** Obtener todos los registros como modelos tipados (instancia). */
     public function all(): array

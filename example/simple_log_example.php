@@ -8,8 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Incluir las clases del ejemplo
-require_once __DIR__ . '/BaseModel.php';
+// Clases cargadas vía autoload PSR-4 (BaseModel eliminado duplicado)
 require_once __DIR__ . '/UserModel.php';
 
 use App\Models\UserModel;
@@ -50,10 +49,9 @@ echo "2. Generating log entries...\n";
 
 // Operación exitosa
 try {
-    $user = new UserModel([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-    ]);
+    $user = UserModel::make();
+    $user->name = 'John Doe';
+    $user->email = 'john@example.com';
     $user->store();
     echo "✓ Successful operation logged\n";
 } catch (Exception $e) {
@@ -62,10 +60,9 @@ try {
 
 // Operación con error (email duplicado)
 try {
-    $user2 = new UserModel([
-        'name' => 'Jane Doe',
-        'email' => 'john@example.com', // Email duplicado
-    ]);
+    $user2 = UserModel::make();
+    $user2->name = 'Jane Doe';
+    $user2->email = 'john@example.com'; // Email duplicado
     $user2->store();
     echo "✓ Duplicate email operation logged\n";
 } catch (Exception $e) {
@@ -74,10 +71,9 @@ try {
 
 // Operación con datos inválidos
 try {
-    $user3 = new UserModel([
-        'name' => '', // Nombre vacío
-        'email' => 'invalid-email', // Email inválido
-    ]);
+    $user3 = UserModel::make();
+    $user3->name = ''; // Nombre vacío
+    $user3->email = 'invalid-email'; // Email inválido
     $user3->store();
     echo "✓ Invalid data operation logged\n";
 } catch (Exception $e) {

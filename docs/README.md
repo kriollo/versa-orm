@@ -1,41 +1,123 @@
-# 📚 Documentación de VersaORM
+# VersaORM-PHP Documentation
 
-Bienvenido. Aquí tienes todo lo necesario para usar VersaORM desde cero hasta nivel avanzado, en orden lógico: primero lo básico, luego lo intermedio y finalmente lo avanzado.
+Documentación completa para VersaORM-PHP con enfoque en PDO. Esta guía está diseñada para programadores con cero conocimientos en ORM, proporcionando una progresión pedagógica desde conceptos básicos hasta funcionalidades avanzadas.
 
-## 1) Empieza aquí: Primeros pasos
-- [Instalación](getting-started/installation.md)
-- [Configuración](getting-started/configuration.md)
-- [Resumen de primeros pasos](getting-started/README.md)
+## 🚀 Inicio Rápido
 
-## 2) Uso diario (lo esencial)
-- [Uso Básico (CRUD)](user-guide/01-basic-usage.md)
-- [Query Builder (selección, filtros, joins, orden, paginación)](user-guide/02-query-builder.md)
-- [Modelos y Objetos (VersaModel, relaciones, scopes)](user-guide/03-models-and-objects.md)
-- [Query Builder - Ejemplos Rápidos](user-guide/12-query-builder-quick-examples.md)
+- **¿Nuevo en ORM?** → Comienza con [¿Qué es un ORM?](01-introduccion/que-es-orm.md)
+- **¿Ya conoces ORMs?** → Ve directo a [Instalación](02-instalacion/instalacion.md)
+- **¿Migras desde SQL?** → Consulta la [Referencia SQL](08-referencia-sql/)
+- **¿Necesitas ejemplos?** → Cada sección incluye código ejecutable
 
-## 3) Productividad y seguridad
-- [Validación y Mass Assignment](user-guide/05-validation-mass-assignment.md)
-- [🎯 Tipado Fuerte y Validación de Esquemas](user-guide/06-strong-typing-schema-validation.md)
-- [🔒 Modo Freeze - Protección de Esquema](user-guide/07-freeze-mode.md)
+## 📚 Estructura de la Documentación
 
-## 4) Operaciones avanzadas
-- [🚀 Operaciones de Lote (insertMany, updateMany, deleteMany)](user-guide/03-batch-operations.md)
-- [🔄 UPSERT y REPLACE INTO](user-guide/11-upsert-replace-operations.md)
-- [⚡ Modo Lazy y Planificador de Consultas](user-guide/10-lazy-mode-query-planner.md)
-- [🚀 Funcionalidades SQL Avanzadas](user-guide/13-advanced-sql-features.md)
-- [🗂️ Características Específicas del Motor](user-guide/11-database-specific-features.md)
-- [Subconsultas y Expresiones Raw](user-guide/04-subqueries-raw-expressions.md)
+### 📖 [01. Introducción](01-introduccion/)
+*Conceptos fundamentales y comparaciones*
+- [¿Qué es un ORM?](01-introduccion/que-es-orm.md) - Conceptos básicos con analogías
+- [¿Por qué VersaORM?](01-introduccion/por-que-versaorm.md) - Ventajas y comparaciones
 
-## 5) Herramientas y CLI
-- [Herramienta de Línea de Comandos (CLI)](user-guide/04-cli-tool.md)
+### ⚙️ [02. Instalación](02-instalacion/)
+*Configuración inicial paso a paso*
+- [Instalación](02-instalacion/instalacion.md) - Composer e instalación manual
+- [Configuración](02-instalacion/configuracion.md) - MySQL, PostgreSQL, SQLite
+- [Primer Ejemplo](02-instalacion/primer-ejemplo.md) - "Hello World" funcional
 
-## 6) Contribuir al proyecto
-- [Arquitectura del Proyecto](contributor-guide/01-architecture.md)
-- [Configuración del Entorno de Desarrollo](contributor-guide/02-development-setup.md)
-- [Estándares de Código](contributor-guide/03-coding-standards.md)
+### 🔧 [03. Básico](03-basico/)
+*Operaciones CRUD fundamentales*
+- [CRUD Básico](03-basico/crud-basico.md) - Create, Read, Update, Delete
+- [VersaModel](03-basico/versamodel.md) - dispense, load, store, trash
+- [Manejo de Errores](03-basico/manejo-errores.md) - VersaORMException
+
+### 🔍 [04. Query Builder](04-query-builder/)
+*Constructor de consultas fluido*
+- [Consultas Simples](04-query-builder/consultas-simples.md) - SELECT y WHERE básicos
+- [Filtros WHERE](04-query-builder/filtros-where.md) - Operadores y condiciones
+- [JOINs](04-query-builder/joins.md) - INNER, LEFT, RIGHT JOIN
+- [Ordenamiento y Paginación](04-query-builder/ordenamiento-paginacion.md) - ORDER BY, LIMIT
+- [Agregaciones](04-query-builder/agregaciones.md) - COUNT, SUM, GROUP BY
+
+### 🔗 [05. Relaciones](05-relaciones/)
+*Asociaciones entre modelos*
+- [Tipos de Relaciones](05-relaciones/tipos-relaciones.md) - Conceptos y diagramas
+- [hasMany y belongsTo](05-relaciones/hasMany-belongsTo.md) - Relaciones 1:N
+- [Many-to-Many](05-relaciones/many-to-many.md) - Relaciones N:M con pivot
+- [Eager Loading](05-relaciones/eager-loading.md) - Optimización de consultas
+
+### 🚀 [06. Avanzado](06-avanzado/)
+*Funcionalidades de productividad*
+- [Operaciones Batch](06-avanzado/operaciones-batch.md) - insertMany, updateMany
+- [UPSERT y REPLACE](06-avanzado/upsert-replace.md) - Operaciones especiales
+- [Transacciones](06-avanzado/transacciones.md) - Control de transacciones
+- [Consultas Raw](06-avanzado/consultas-raw.md) - SQL directo cuando sea necesario
+
+### 🔒 [07. Seguridad y Tipado](07-seguridad-tipado/)
+*Características de seguridad*
+- [Tipado Estricto](07-seguridad-tipado/tipado-estricto.md) - Sistema de tipos
+- [Validación](07-seguridad-tipado/validacion.md) - Reglas automáticas y personalizadas
+- [Mass Assignment](07-seguridad-tipado/mass-assignment.md) - Protección $fillable/$guarded
+- [Freeze Mode](07-seguridad-tipado/freeze-mode.md) - Protección de esquema
+
+### 📖 [08. Referencia SQL](08-referencia-sql/)
+*Equivalencias SQL ↔ VersaORM*
+- [SELECT](08-referencia-sql/select.md) - Consultas de selección
+- [INSERT, UPDATE, DELETE](08-referencia-sql/insert-update-delete.md) - Modificación de datos
+- [JOINs y Subconsultas](08-referencia-sql/joins-subqueries.md) - Consultas complejas
+- [Funciones de Agregación](08-referencia-sql/funciones-agregacion.md) - Funciones SQL
+
+## 🛠️ Configuración de Ejemplos
+
+Todos los ejemplos en esta documentación utilizan una base de datos de ejemplo consistente. Para configurar tu entorno de pruebas:
+
+```bash
+php docs/setup/setup_database.php
+```
+
+Ver [configuración detallada](setup/README.md) para más opciones.
+
+## 🗺️ Rutas de Aprendizaje
+
+### 👶 **Principiante Completo**
+1. [¿Qué es un ORM?](01-introduccion/que-es-orm.md)
+2. [Instalación](02-instalacion/instalacion.md)
+3. [CRUD Básico](03-basico/crud-basico.md)
+4. [Query Builder Simple](04-query-builder/consultas-simples.md)
+
+### 🏃 **Desarrollador con Experiencia**
+1. [¿Por qué VersaORM?](01-introduccion/por-que-versaorm.md)
+2. [Configuración](02-instalacion/configuracion.md)
+3. [VersaModel](03-basico/versamodel.md)
+4. [Relaciones](05-relaciones/)
+
+### 🚀 **Migración desde SQL**
+1. [Referencia SQL](08-referencia-sql/)
+2. [Query Builder](04-query-builder/)
+3. [Funcionalidades Avanzadas](06-avanzado/)
+4. [Seguridad y Tipado](07-seguridad-tipado/)
+
+## 🔍 Búsqueda Rápida
+
+| Necesito... | Ve a... |
+|-------------|---------|
+| Instalar VersaORM | [Instalación](02-instalacion/instalacion.md) |
+| Crear/leer/actualizar datos | [CRUD Básico](03-basico/crud-basico.md) |
+| Consultas complejas | [Query Builder](04-query-builder/) |
+| Relacionar tablas | [Relaciones](05-relaciones/) |
+| Equivalencia SQL | [Referencia SQL](08-referencia-sql/) |
+| Validar datos | [Validación](07-seguridad-tipado/validacion.md) |
+| Manejar errores | [Manejo de Errores](03-basico/manejo-errores.md) |
+| Transacciones | [Transacciones](06-avanzado/transacciones.md) |
+
+## 📝 Convenciones de la Documentación
+
+- **Código ejecutable**: Todos los ejemplos se pueden copiar y ejecutar
+- **SQL equivalente**: Cada ejemplo VersaORM muestra su equivalente SQL
+- **Tipos de retorno**: Se especifica qué devuelve cada método
+- **Progresión lógica**: Cada sección construye sobre la anterior
+
+## 🤝 Contribuir
+
+Esta documentación está en constante mejora. Si encuentras errores o tienes sugerencias, por favor contribuye al proyecto.
 
 ---
 
-VersaORM te permite trabajar con tu base de datos usando PHP claro y seguro. Actualmente esta documentación prioriza el **Modo PHP / PDO** (sin núcleo nativo) mientras el binario se estabiliza. Para un resumen práctico de este modo visita: [Modo PHP / PDO](../pdo-mode/README.md).
-
-Si es tu primera vez, sigue la ruta 1 → 2 → 3. Si ya lo usas a diario, guarda 2 y 4 como referencia.
+**¿Listo para empezar?** → [Comienza con la Introducción](01-introduccion/) 🚀

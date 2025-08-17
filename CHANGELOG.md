@@ -5,6 +5,33 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Añadido ⚡
+- `onRaw()` en QueryBuilder para añadir expresiones complejas y seguras en la cláusula `ON` de los `JOIN`.
+
+### Mejorado 🚀
+- Motor PDO (`SqlGenerator`) ahora soporta condiciones `JOIN` mixtas estructuradas y raw con bindings parametrizados.
+
+### Seguridad 🔒
+- Validación preventiva en `onRaw()` contra sentencias múltiples (`;`), comentarios (`--`, `#`, `/* */`) y palabras DDL/DML peligrosas (DROP, ALTER, INSERT, etc.).
+
+### Tests ✅
+- Nuevos archivos de pruebas multi‑motor: `testSQLite/QueryBuilderOnRawTest.php`, `testMysql/QueryBuilderOnRawTest.php`, `testPostgreSQL/QueryBuilderOnRawTest.php` cubriendo:
+  - Uso básico `onRaw`
+  - Combinación con `on()` tradicional
+  - Múltiples llamadas encadenadas `onRaw()`
+  - Bindings aplicados correctamente
+  - Rechazo de expresiones inseguras (semicolon, comentario línea, palabras peligrosas)
+
+### Documentación 📚
+- Sección añadida a `docs/user-guide/02-query-builder.md` describiendo `on()` vs `onRaw()`, casos de uso, tabla comparativa y ejemplos.
+
+### Interno 🔧
+- Ajuste en `SqlGenerator` para iterar condiciones de join y procesar entradas de tipo `raw` acumulando bindings.
+
+---
+
 ## [1.4.0] - 2025-08-05
 
 ### Añadido ⚡

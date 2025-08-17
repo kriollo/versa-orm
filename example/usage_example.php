@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use VersaORM\VersaORM\VersaORMException;
-
 /**
  * Ejemplo completo de uso del sistema de manejo de errores de VersaORM.
  */
@@ -114,30 +112,24 @@ echo "\n";
 // Ejemplo 5: Manejo de errores con try-catch tradicional
 echo "5. Traditional try-catch error handling:\n";
 
-try {
-    $user = UserModel::find(999); // ID que no existe
-    echo 'User found: ' . json_encode($user->toArray()) . "\n";
-} catch (VersaORMException $e) {
-    $errorData = ErrorHandler::handleException($e, [
-        'operation' => 'find_user',
-        'user_id' => 999,
-    ]);
-
-    echo "Caught VersaORMException:\n";
-    echo ErrorHandler::formatForDevelopment($errorData);
-}
+// try {
+//     $user = UserModel::findModel(999); // ID que no existe
+//     echo 'User found: ' . json_encode($user) . "\n";
+// } catch (Throwable $e) {
+//     echo "Caught exception in lookup: " . $e->getMessage() . "\n";
+// }
 
 // Ejemplo 6: Estadísticas de errores
 echo "6. Error statistics:\n";
-$stats = UserModel::getErrorStats();
-echo json_encode($stats, JSON_PRETTY_PRINT) . "\n\n";
+// $stats = UserModel::getErrorStats();
+// echo json_encode($stats, JSON_PRETTY_PRINT) . "\n\n";
 
 // Ejemplo 7: Debugging del último error
 echo "7. Debug last error:\n";
-$user = new UserModel();
-$user->setAttribute('name', ''); // Nombre vacío para causar error
-$user->safeSave();
-$user->debugLastError();
+// $user = UserModel::make();
+// $user->name = ''; // Nombre vacío para causar error
+// $user->store();
+// // debugLastError(); método no disponible en versión simplificada
 
 // Ejemplo 8: Operaciones en lote con manejo de errores
 echo "8. Batch operations with error handling:\n";

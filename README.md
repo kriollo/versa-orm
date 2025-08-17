@@ -1,4 +1,4 @@
-# 🚀 VersaORM-PHP (Modo PHP / PDO)
+# 🚀 VersaORM-PHP
 
 **ORM sencillo y seguro para PHP – minimiza SQL manual y acelera tu desarrollo.**
 
@@ -6,13 +6,17 @@
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
-> Esta documentación está enfocada al **modo PHP puro (PDO)**. El núcleo nativo (binario) se encuentra en revisión y se re‑integrará más adelante. Nada de lo aquí descrito requiere compilar nada: solo PHP + tu base de datos.
+> VersaORM-PHP está construido sobre **PDO** para máxima compatibilidad y simplicidad. No requiere compilar nada: solo PHP + tu base de datos.
 
-- 📚 Documentación: [docs/README.md](docs/README.md)
-- 🧭 Primeros pasos: [docs/getting-started/README.md](docs/getting-started/README.md)
-- 📘 Guía de uso (básico → avanzado): [docs/user-guide/README.md](docs/user-guide/README.md)
-- � Modo PHP / PDO: [docs/pdo-mode/README.md](docs/pdo-mode/README.md)
-- �🤝 Contribuir: [docs/contributor-guide/README.md](docs/contributor-guide/README.md)
+## 📚 Documentación Completa
+
+- 📖 **[Documentación Principal](docs/README.md)** - Guía completa desde básico hasta avanzado
+- 🚀 **[Inicio Rápido](#-inicio-rápido)** - Empieza en 5 minutos
+- ⚙️ **[Instalación](docs/02-instalacion/instalacion.md)** - Composer e instalación manual
+- 🔧 **[CRUD Básico](docs/03-basico/crud-basico.md)** - Create, Read, Update, Delete
+- 🔍 **[Query Builder](docs/04-query-builder/)** - Consultas fluidas y seguras
+- 🔗 **[Relaciones](docs/05-relaciones/)** - hasMany, belongsTo, many-to-many
+- 📖 **[Referencia SQL](docs/08-referencia-sql/)** - Equivalencias SQL ↔ VersaORM
 
 ## 📋 ¿Qué es VersaORM?
 
@@ -37,50 +41,41 @@ $users = $orm->table('users')
     ->where('status', '=', 'active')
     ->where('age', '>=', 18)
     ->orderBy('created_at', 'desc')
-    ->findAll();
+    ->getAll();
 
-$user = User::create([
-    'name' => 'Juan',
-    'email' => 'juan@email.com',
-    'password' => 'mi_password'
-]);
+$user = VersaModel::dispense('users');
+$user->name = 'Juan';
+$user->email = 'juan@email.com';
+$user->password = password_hash('mi_password', PASSWORD_DEFAULT);
+$user->store();
 
-$user->update(['status' => 'inactive']);
-
-// 🆕 Con Modo Lazy (optimización automática para consultas complejas)
-$users = $orm->table('users')
-    ->lazy()                           // 🚀 Activa optimización automática
-    ->where('status', '=', 'active')
-    ->where('age', '>=', 18)
-    ->join('profiles', 'users.id', '=', 'profiles.user_id')
-    ->orderBy('created_at', 'desc')
-    ->collect();                       // ✅ Ejecuta consulta optimizada
+$user->status = 'inactive';
+$user->store(); // Actualización automática
 ```
 
-### 🏆 ¿Por qué elegir VersaORM (Modo PDO)?
+### 🏆 ¿Por qué elegir VersaORM?
 
 | Necesidad | Sin ORM (solo PDO) | Con VersaORM |
 |-----------|--------------------|--------------|
-| Seguridad | Debes escribir y parametrizar cada sentencia | Parámetros preparados siempre |
+| Seguridad | Debes escribir y parametrizar cada sentencia | Parámetros preparados automáticamente |
 | Mantenimiento | SQL repetido en muchos archivos | Lógica centralizada y fluida |
 | Curva de aprendizaje | Conocer bien SQL + PDO | API consistente (where, join, order, etc.) |
 | Refactors | Buscar/editar cadenas SQL | Cambias métodos encadenados |
-| Errores típicos | Inyección, comas, orden de placeholders | Minimizado por API tipada básica |
+| Errores típicos | Inyección, comas, orden de placeholders | Minimizado por API tipada |
 
-### Características Clave (Modo PHP)
+### 🌟 Características Principales
 
-- ✅ Construido sobre PDO (sin dependencias complicadas)
-- 🛡️ Protección por defecto contra inyección SQL (prepared statements internos)
-- 🧩 Modelos Active Record sencillos (`dispense`, `load`, `store`, `trash`)
-- 🔍 Query Builder fluido (`where`, `join`, `groupBy`, `having`, `orderBy`, `limit`)
-- � Relaciones básicas implementables con métodos de conveniencia
-- 💾 Conversión de tipos común (fechas, booleanos) y helpers
-- 🚫 Cero necesidad de compilar binarios
- - 🔀 Operaciones de conjuntos: `UNION`, `UNION ALL` (todos los drivers) + `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` (solo PostgreSQL en modo PDO)
+- ✅ **Construido sobre PDO** - Sin dependencias complicadas
+- 🛡️ **Seguridad por defecto** - Prepared statements automáticos
+- 🧩 **Modelos Active Record** - `dispense`, `load`, `store`, `trash`
+- 🔍 **Query Builder fluido** - `where`, `join`, `groupBy`, `having`, `orderBy`, `limit`
+- 🧠 **JOINs avanzados** - Condiciones encadenadas con `on()` y `onRaw()`
+- 🔗 **Relaciones** - hasMany, belongsTo, many-to-many
+- 💾 **Conversión de tipos** - Fechas, booleanos, JSON automático
+- 🔀 **Operaciones de conjuntos** - UNION, INTERSECT, EXCEPT
+- 🚫 **Cero compilación** - Solo PHP puro
 
-> Cuando el núcleo nativo vuelva a estar disponible podrás activar rendimiento adicional sin cambiar tu código de aplicación.
-
-## ✨ Arquitectura (Modo PHP)
+## ✨ Arquitectura
 
 ```
 ┌──────────────────────────┐
@@ -89,7 +84,7 @@ $users = $orm->table('users')
 └────────────┬────────────┘
              │ API PHP
 ┌────────────▼────────────┐
-│       VersaORM PHP       │
+│       VersaORM-PHP       │
 │ - VersaORM.php           │
 │ - VersaModel.php         │
 │ - QueryBuilder.php       │
@@ -97,10 +92,11 @@ $users = $orm->table('users')
              │ PDO
 ┌────────────▼────────────┐
 │     Base de Datos        │
+│ MySQL | PostgreSQL | SQLite │
 └──────────────────────────┘
 ```
 
-Sin procesos externos; todo fluye a través de PDO.
+**Simple y directo**: Todo fluye a través de PDO sin procesos externos.
 
 ## 🛠️ Instalación
 
@@ -110,26 +106,36 @@ composer require versaorm/versaorm-php
 ```
 
 ### Instalación Manual
-1. Clona el repositorio:
+1. Descarga o clona el repositorio:
    ```bash
    git clone https://github.com/kriollo/versa-orm.git
    ```
-2. Incluye el autoloader:
+2. Incluye los archivos necesarios:
    ```php
    require_once 'src/VersaORM.php';
-   require_once 'src/Model.php';
+   require_once 'src/VersaModel.php';
    require_once 'src/QueryBuilder.php';
    ```
 
 ### Requisitos del Sistema
-- PHP 7.4 o superior
-- Extensiones PHP: `json`, `mbstring`
-- Base de datos: MySQL 5.7+, PostgreSQL 10+, o SQLite 3.6+
-- Sistema operativo: Windows, Linux, macOS
+- **PHP**: 7.4 o superior
+- **Extensiones**: PDO, json, mbstring
+- **Base de datos**: MySQL 5.7+, PostgreSQL 10+, o SQLite 3.6+
+- **Sistema operativo**: Windows, Linux, macOS
+
+**📖 Guía detallada**: [Instalación paso a paso](docs/02-instalacion/instalacion.md)
 
 ## ⚡ Inicio Rápido
 
-### 1. Configuración Básica
+### 1. Instalación
+```bash
+# Via Composer (recomendado)
+composer require versaorm/versaorm-php
+
+# O descarga manual desde GitHub
+```
+
+### 2. Configuración Básica
 ```php
 use VersaORM\VersaORM;
 use VersaORM\VersaModel;
@@ -148,35 +154,62 @@ $orm = new VersaORM([
 VersaModel::setORM($orm);
 ```
 
-### 2. Ejemplos de Uso (Side‑by‑Side SQL vs ORM)
-
-#### CRUD Básico con ORM vs SQL Manual
+### 3. Tu Primer Ejemplo
 ```php
-// SQL Manual (PDO)
+// Crear un usuario
+$user = VersaModel::dispense('users');
+$user->name = 'Juan Pérez';
+$user->email = 'juan@example.com';
+$user->store(); // Se guarda automáticamente
+
+// Buscar usuarios activos
+$activeUsers = $orm->table('users')
+    ->where('status', '=', 'active')
+    ->orderBy('created_at', 'desc')
+    ->limit(10)
+    ->getAll();
+
+echo "Usuario creado con ID: " . $user->id;
+echo "Usuarios activos encontrados: " . count($activeUsers);
+```
+
+**¿Quieres más ejemplos?** → [Ver documentación completa](docs/README.md)
+
+### 4. Ejemplos Comparativos (SQL vs VersaORM)
+
+#### CRUD Básico - SQL vs VersaORM
+```php
+// ❌ SQL Manual (PDO) - Más código, más errores
 $stmt = $pdo->prepare("INSERT INTO users (name,email) VALUES (?,?)");
 $stmt->execute(['Juan Pérez','juan@example.com']);
 $id = $pdo->lastInsertId();
 
-// VersaORM
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$id]);
+$userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// ✅ VersaORM - Simple y seguro
 $user = VersaModel::dispense('users');
 $user->name  = 'Juan Pérez';
 $user->email = 'juan@example.com';
-$user->store(); // id asignado
+$user->store(); // ID asignado automáticamente
 
-// Leer
+// Leer, actualizar y eliminar
 $user = VersaModel::load('users', $user->id);
-
-// Actualizar
 $user->email = 'nuevo@example.com';
-$user->store();
-
-// Eliminar
-$user->trash();
+$user->store(); // Actualización automática
+$user->trash(); // Eliminación segura
 ```
 
-#### 🛠️ Query Builder - Consultas Potentes y Seguras
+#### Query Builder - Consultas Fluidas y Seguras
 ```php
-// Búsqueda avanzada con filtros múltiples
+// ❌ SQL Manual - Propenso a errores de sintaxis
+$sql = "SELECT * FROM users WHERE status = ? AND age >= ? AND role IN (?,?) ORDER BY created_at DESC LIMIT 10";
+$stmt = $pdo->prepare($sql);
+$stmt->execute(['active', 18, 'admin', 'editor']);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ✅ VersaORM - Fluido y legible
 $activeUsers = $orm->table('users')
     ->where('status', '=', 'active')
     ->where('age', '>=', 18)
@@ -185,25 +218,16 @@ $activeUsers = $orm->table('users')
     ->limit(10)
     ->getAll();
 
-// Joins y agregaciones - Dashboard de estadísticas
+// Joins complejos simplificados
 $userStats = $orm->table('users')
-    ->select([
-        'users.name',
-        'COUNT(posts.id) as total_posts',
-        'AVG(posts.views) as avg_views'
-    ])
+    ->select(['users.name', 'COUNT(posts.id) as total_posts'])
     ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
     ->where('users.status', '=', 'active')
     ->groupBy(['users.id', 'users.name'])
     ->having('total_posts', '>', 5)
     ->getAll();
 
-// Operaciones de escritura masivas
-$orm->table('logs')
-    ->where('created_at', '<', date('Y-m-d', strtotime('-30 days')))
-    ->delete(); // Limpieza de logs antiguos
-
-// Actualización masiva con condiciones
+// Operaciones masivas seguras
 $orm->table('products')
     ->whereIn('category_id', [1, 2, 3])
     ->where('stock', '>', 0)
@@ -292,50 +316,84 @@ try {
 ```
 ```
 
-## 🔧 Desarrollador (Modo PHP)
+## 🔧 Configuración Rápida
 
-En este modo no necesitas compilar nada. Basta con instalar mediante Composer y comenzar.
+### Configuración Básica
+```php
+use VersaORM\VersaORM;
+use VersaORM\VersaModel;
 
-## 🛠️ Configuración
+$orm = new VersaORM([
+    'driver' => 'mysql',        // mysql, postgresql, sqlite
+    'host' => 'localhost',
+    'database' => 'mi_app',
+    'username' => 'usuario',
+    'password' => 'password',
+    'charset' => 'utf8mb4'
+]);
 
-### Requisitos
-- PHP 7.4+
-- MySQL/MariaDB
-- Binario VersaORM (incluido precompilado)
+VersaModel::setORM($orm);
+```
 
-### Configurar Base de Datos
-Edita la configuración en `example/todo.php`:
+### Configuraciones por Base de Datos
 
+**MySQL/MariaDB:**
 ```php
 $config = [
+    'driver' => 'mysql',
     'host' => 'localhost',
+    'port' => 3306,
+    'database' => 'mi_app',
     'username' => 'root',
     'password' => '',
-    'database' => 'todo_app'  // Se crea automáticamente
+    'charset' => 'utf8mb4'
 ];
 ```
 
-### Estructura de la Tabla (Automática)
-```sql
-CREATE TABLE tasks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    completed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+**PostgreSQL:**
+```php
+$config = [
+    'driver' => 'postgresql',
+    'host' => 'localhost',
+    'port' => 5432,
+    'database' => 'mi_app',
+    'username' => 'postgres',
+    'password' => 'password'
+];
 ```
+
+**SQLite:**
+```php
+$config = [
+    'driver' => 'sqlite',
+    'database' => 'database/app.sqlite'
+];
+```
+
+**📖 Configuración detallada**: [Ver guía completa](docs/02-instalacion/configuracion.md)
 
 ## 📁 Estructura del Proyecto
 
 ```
 versaORM-PHP/
 ├── src/                    # Código fuente VersaORM
-│   ├── VersaORM.php       # Clase principal
-│   ├── Model.php          # Modelos Active Record
+│   ├── VersaORM.php       # Clase principal ORM
+│   ├── VersaModel.php     # Modelos Active Record
 │   ├── QueryBuilder.php   # Constructor de consultas
-│   └── (binarios opcionales próximos)
+│   ├── Relations/         # Sistema de relaciones
+│   ├── SQL/              # Generadores SQL específicos
+│   └── Traits/           # Funcionalidades reutilizables
+├── docs/                  # Documentación completa
+│   ├── 01-introduccion/   # Conceptos básicos
+│   ├── 02-instalacion/    # Guías de instalación
+│   ├── 03-basico/         # CRUD y fundamentos
+│   ├── 04-query-builder/  # Constructor de consultas
+│   ├── 05-relaciones/     # Relaciones entre modelos
+│   ├── 06-avanzado/       # Funcionalidades avanzadas
+│   ├── 07-seguridad-tipado/ # Seguridad y validación
+│   └── 08-referencia-sql/ # Equivalencias SQL
+├── example/               # Aplicación de ejemplo
+├── tests/                 # Suite de pruebas
 ├── composer.json         # Configuración Composer
 └── README.md            # Esta documentación
 ```
@@ -401,51 +459,63 @@ try {
 ## 🚨 Troubleshooting
 
 ### Error de conexión a la base de datos
-- Verifica las credenciales en `$config`
-- Asegúrate de que MySQL esté ejecutándose
-- La base de datos `tu_base` se crea automáticamente
+- Verifica las credenciales en la configuración
+- Asegúrate de que el servidor de base de datos esté ejecutándose
+- Confirma que la base de datos existe o que el usuario tiene permisos para crearla
+- Revisa que las extensiones PDO necesarias estén instaladas
 
-### Binario VersaORM no encontrado
-Ignóralo en modo PHP. Cuando el núcleo nativo se reactive se documentará aquí.
+### Errores comunes
+- **Class not found**: Verifica que el autoloader esté incluido correctamente
+- **PDO extension not found**: Instala la extensión PDO para tu base de datos
+- **Permission denied**: Verifica permisos de escritura para SQLite
+- **Connection refused**: Confirma host y puerto de la base de datos
 
-## 📚 Documentación
+**📖 Guía completa de troubleshooting**: [Manejo de errores](docs/03-basico/manejo-errores.md)
 
-### 📚 Guías de Usuario
-- [🚀 Inicio Rápido](docs/getting-started/README.md)
-- [�️ Instalación](docs/getting-started/installation.md)
-- [⚙️ Configuración](docs/getting-started/configuration.md)
-- [📝 Guía Completa](docs/user-guide/README.md)
-- [Modo PHP / PDO](docs/pdo-mode/README.md)
- - [🛡️ Manejo de Errores y Logging](docs/user-guide/14-error-handling-logging.md)
+## 📚 Documentación Detallada
 
-### 🔧 Documentación para Desarrolladores
-- [🏗️ Guía del Desarrollador](docs/contributor-guide/README.md) - Contribuir al proyecto
-- [🧪 Aplicación de Ejemplo](example/README.md) - Demo completa To-Do App
+### 🎯 Por Nivel de Experiencia
+- **👶 Principiante**: [Introducción](docs/01-introduccion/) → [Instalación](docs/02-instalacion/) → [CRUD Básico](docs/03-basico/)
+- **🏃 Intermedio**: [Query Builder](docs/04-query-builder/) → [Relaciones](docs/05-relaciones/) → [Avanzado](docs/06-avanzado/)
+- **🚀 Experto**: [Seguridad](docs/07-seguridad-tipado/) → [Referencia SQL](docs/08-referencia-sql/)
+
+### 📖 Por Tema
+- **[🔧 CRUD y Modelos](docs/03-basico/)** - dispense, load, store, trash
+- **[🔍 Query Builder](docs/04-query-builder/)** - Consultas fluidas y seguras
+- **[🔗 Relaciones](docs/05-relaciones/)** - hasMany, belongsTo, many-to-many
+- **[🚀 Funciones Avanzadas](docs/06-avanzado/)** - Batch, UPSERT, transacciones
+- **[🔒 Seguridad](docs/07-seguridad-tipado/)** - Validación, freeze mode, tipado
+- **[📖 Referencia SQL](docs/08-referencia-sql/)** - Equivalencias SQL ↔ VersaORM
+
+### 🛠️ Para Desarrolladores
+- **[🧪 Aplicación de Ejemplo](example/README.md)** - Demo completa funcional
+- **[🏗️ Contribuir](CONTRIBUTING.md)** - Guía para contribuir al proyecto
 
 
-## 🌟 Características Principales
+## 🌟 Características Destacadas
 
-### ⚡ Alto Rendimiento (Enfoque Actual)
-- Construido sobre PDO con prepared statements reutilizables
-- API fluida que reduce código repetitivo y errores
-- (Opcional futuro) Núcleo nativo para acelerar aún más sin cambiar tu código
+### ⚡ Alto Rendimiento
+- **PDO optimizado** con prepared statements reutilizables
+- **API fluida** que reduce código repetitivo y errores
+- **Query Builder eficiente** con generación SQL optimizada
+- **Lazy loading** para relaciones bajo demanda
 
-### 🛡️ Seguridad
-- Prepared statements automáticos
-- Protección Mass Assignment (`$fillable` / `$guarded`)
-- Validación declarativa por modelo
-- Modo Freeze para bloquear cambios accidentales de esquema
+### 🛡️ Seguridad Robusta
+- **Prepared statements automáticos** - Protección contra SQL injection
+- **Mass Assignment protection** - Control con `$fillable` / `$guarded`
+- **Validación declarativa** - Reglas por modelo automáticas
+- **Freeze mode** - Bloquea cambios accidentales de esquema en producción
 
 ### 🚀 Desarrollo Ágil
-- **Creación automática de campos**: Cuando freeze está desactivado, crea columnas automáticamente
-- **Detección inteligente de tipos**: Mapeo automático PHP → SQL (string→VARCHAR, int→INT, etc.)
-- **Modo fluid**: Desarrollo rápido sin definir esquemas previamente
-- **Transición suave**: Del prototipado (freeze OFF) a producción (freeze ON)
+- **Creación automática de campos** - Desarrollo rápido sin DDL manual
+- **Detección inteligente de tipos** - Mapeo automático PHP ↔ SQL
+- **Modo development** - Prototipado rápido sin esquemas previos
+- **Transición suave** - De desarrollo (freeze OFF) a producción (freeze ON)
 
-### 🔄 Compatibilidad
-- **Múltiples bases de datos**: MySQL, PostgreSQL, SQLite
-- **Integración PHP**: Compatible con frameworks existentes
-- **Migraciones**: Sistema de migraciones automático
+### 🔄 Máxima Compatibilidad
+- **Múltiples bases de datos** - MySQL, PostgreSQL, SQLite
+- **Framework agnostic** - Integra con cualquier proyecto PHP
+- **Estándares PSR** - Sigue las mejores prácticas de PHP
 
 ## 🤝 Contribuir
 
@@ -488,14 +558,31 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles.
 | Update masivo | `UPDATE products SET active=0 WHERE stock=0` | `$orm->table('products')->where('stock','=',0)->update(['active'=>0]);` |
 | Upsert | `INSERT ... ON DUPLICATE KEY UPDATE` | `$orm->table('cfg')->upsert($data,['key'],['value']);` |
 
-## 🧭 Roadmap Breve
-- Reintegración opcional de núcleo nativo
-- Generador de migraciones y seeders
-- Caché configurable de resultados
-- Tipos enriquecidos (UUID, Money, JSON helpers)
-- Auditoría automática (created_by / updated_by)
+## 🧭 Roadmap
+
+### 🎯 Próximas Funcionalidades
+- **Generador de migraciones** - Sistema automático de migraciones
+- **Seeders inteligentes** - Población de datos de desarrollo
+- **Caché de consultas** - Sistema de caché configurable
+- **Tipos avanzados** - UUID, Money, JSON helpers
+- **Auditoría automática** - Campos created_by/updated_by automáticos
+- **Eventos de modelo** - Hooks before/after save/delete
+- **Validación avanzada** - Reglas personalizadas y condicionales
+
+### 🔮 Visión a Largo Plazo
+- **Performance optimizations** - Mejoras continuas de rendimiento
+- **IDE integration** - Mejor soporte para autocompletado
+- **Database-specific features** - Aprovechamiento de características únicas por BD
 
 ---
-🚀 **VersaORM (Modo PHP)** listo para producción ligera, prototipos y aprendizaje.
 
-*Claridad • Seguridad por defecto • Preparado para crecer*
+## 🎉 ¿Listo para empezar?
+
+1. **[📖 Lee la introducción](docs/01-introduccion/)** - Entiende los conceptos básicos
+2. **[⚙️ Instala VersaORM](docs/02-instalacion/)** - Configuración en 5 minutos
+3. **[🔧 Prueba los ejemplos](docs/03-basico/)** - CRUD básico funcional
+4. **[🚀 Explora funciones avanzadas](docs/)** - Documentación completa
+
+---
+
+🚀 **VersaORM-PHP** - *Simplicidad, Seguridad y Productividad para PHP*

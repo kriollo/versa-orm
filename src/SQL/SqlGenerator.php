@@ -252,20 +252,32 @@ class SqlGenerator
                     if (!is_array($c)) {
                         continue;
                     }
+                    // Condición RAW soporta 'type' => 'raw', 'sql' y 'bindings'
+                    $isRaw = isset($c['type']) && $c['type'] === 'raw' && isset($c['sql']);
+                    if ($isRaw) {
+                        $rawSql = (string) $c['sql'];
+                        if ($rawSql === '') {
+                            continue;
+                        }
+                        $fragment = $rawSql;
+                        if ($idx > 0) {
+                            $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
+                            $fragment = $bool . ' ' . $fragment;
+                        }
+                        // Acumular bindings de la condición raw
+                        if (isset($c['bindings']) && is_array($c['bindings'])) {
+                            $bindings = array_merge($bindings, array_values($c['bindings']));
+                        }
+                        $conditions[] = $fragment;
+                        continue;
+                    }
                     $loc = (string) ($c['local'] ?? '');
                     $opr = (string) ($c['operator'] ?? '=');
                     $for = (string) ($c['foreign'] ?? '');
-
-                    if ($loc === '') {
-                        continue;
-                    }
-
-                    if ($for === '') {
+                    if ($loc === '' || $for === '') {
                         continue;
                     }
                     $fragment = self::compileJoinColumn($loc, $dialect) . ' ' . $opr . ' ' . self::compileJoinColumn($for, $dialect);
-
-                    // Primer fragmento sin boolean inicial
                     if ($idx > 0) {
                         $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
                         $fragment = $bool . ' ' . $fragment;

@@ -649,6 +649,37 @@ class QueryBuilder
     }
 
     /**
+     * Añade una condición RAW al último JOIN.
+     * Permite expresiones complejas (AND/OR, CASE, funciones) controladas por el usuario.
+     * Seguridad básica: se rechazan patrones peligrosos (DDL/DML, comentarios de bloque, múltiples sentencias).
+     *
+     * @param array<int,mixed> $bindings
+     */
+    public function onRaw(string $expression, array $bindings = [], string $boolean = 'AND'): self
+    {
+        $count = count($this->joins);
+        if ($count === 0) {
+            throw new VersaORMException('Cannot add raw ON condition: no JOIN defined yet.');
+        }
+        $idx = $count - 1;
+        $expr = trim($expression);
+        if (!$this->isSafeJoinRaw($expr)) {
+            throw new VersaORMException('Potentially unsafe raw ON expression detected.');
+        }
+        if (!isset($this->joins[$idx]['conditions']) || !is_array($this->joins[$idx]['conditions'])) {
+            $this->joins[$idx]['conditions'] = [];
+        }
+        $this->joins[$idx]['conditions'][] = [
+            'type' => 'raw',
+            'sql' => $expr,
+            'bindings' => array_values($bindings),
+            'boolean' => strtoupper($boolean) === 'OR' ? 'OR' : 'AND',
+        ];
+
+        return $this;
+    }
+
+    /**
      * Agrupa los resultados.
      *
      * @param array<int, string>|string $columns
@@ -2573,6 +2604,33 @@ class QueryBuilder
         return $this->executeAdvancedSQL($params);
     }
 
+    /** Verificación mínima de seguridad para expresiones raw en ON. */
+    private function isSafeJoinRaw(string $expr): bool
+    {
+        if ($expr === '') {
+            return false;
+        }
+        // Bloquear múltiples sentencias y comentarios peligrosos
+        if (str_contains($expr, ';')) {
+            return false;
+        }
+        $hasBlockCommentPattern = preg_match('/\/\?\*/', $expr) === 1; // comentarios /* */
+        if ($hasBlockCommentPattern) {
+            return false;
+        }
+        $hasLineCommentPattern = preg_match('/--|#/', $expr) === 1; // comentarios línea
+        if ($hasLineCommentPattern) {
+            return false;
+        }
+        // Bloquear DDL/DML comunes (permitir SELECT implícito en subqueries simples si fuese necesario en futuro)
+        $hasDangerousKeyword = preg_match('/\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|EXEC|MERGE)\b/i', $expr) === 1;
+        if ($hasDangerousKeyword) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Valida si un nombre de tabla o columna es seguro.
      */
@@ -2624,7 +2682,8 @@ class QueryBuilder
         // Expresión regular para validar identificadores:
         // - Debe empezar con una letra o guion bajo.
         // - Seguido de letras, números o guiones bajos.
-        if (in_array(preg_match('/^[a-zA-Z_]\w*$/', $identifier), [0, false], true)) {
+        $identifierMatch = preg_match('/^[a-zA-Z_]\w*$/', $identifier);
+        if (in_array($identifierMatch, [0, false], true)) {
             return false;
         }
 
@@ -2674,7 +2733,8 @@ class QueryBuilder
         ];
 
         // Verificar si es una función SQL con paréntesis
-        if (preg_match('/^([A-Z_]+)\s*\((.*)\)$/i', $identifier, $matches)) {
+        $functionMatch = preg_match('/^([A-Z_]+)\s*\((.*)\)$/i', $identifier, $matches);
+        if ($functionMatch === 1) {
             $functionName = strtoupper($matches[1]);
             $functionArgs = $matches[2];
 
@@ -2690,7 +2750,8 @@ class QueryBuilder
 
             // Permitir argumentos simples como column names, números, strings
             // Verificar que no contenga patrones maliciosos
-            if (preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) === 1 && (!str_contains($functionArgs, '--')
+            $argsSimple = preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) === 1;
+            if ($argsSimple && (!str_contains($functionArgs, '--')
                 && !str_contains($functionArgs, '/*')
                 && !str_contains($functionArgs, ';'))) {
                 return true;
@@ -2723,7 +2784,8 @@ class QueryBuilder
         ];
 
         foreach ($dangerousPatterns as $pattern) {
-            if (preg_match($pattern, $expression)) {
+            $patternDetected = preg_match($pattern, $expression) === 1;
+            if ($patternDetected) {
                 return false;
             }
         }
@@ -3571,6 +3633,54 @@ class QueryBuilder
             $sql .= ' FROM (' . $this->fromSub['sql'] . ') ' . $this->fromSub['alias'];
         } else {
             $sql .= ' FROM ' . $this->table;
+        }
+
+        // JOINs (materialización directa para modo PDO). Cada JOIN puede tener condiciones normales o raw.
+        foreach ($this->joins as $join) {
+            if (!is_array($join) || !isset($join['type'], $join['table'])) {
+                continue;
+            }
+            $joinType = strtoupper((string) $join['type']);
+            $table = (string) $join['table'];
+            $sql .= ' ' . $joinType . ' JOIN ' . $table;
+
+            // Construir condiciones
+            $condParts = [];
+            if (isset($join['conditions']) && is_array($join['conditions'])) {
+                foreach ($join['conditions'] as $c) {
+                    if (!is_array($c)) {
+                        continue;
+                    }
+                    // Condición raw
+                    if (($c['type'] ?? '') === 'raw' && isset($c['sql']) && is_string($c['sql'])) {
+                        $boolean = strtoupper((string) ($c['boolean'] ?? 'AND'));
+                        $fragment = '(' . $c['sql'] . ')';
+                        $condParts[] = [$boolean, $fragment, $c['bindings'] ?? []];
+                        continue;
+                    }
+                    // Condición normal
+                    $local = $c['local'] ?? ($c['column'] ?? '');
+                    $op = $c['operator'] ?? '=';
+                    $foreign = $c['foreign'] ?? '';
+                    if ($local !== '' && $foreign !== '') {
+                        $boolean = strtoupper((string) ($c['boolean'] ?? 'AND'));
+                        $fragment = $local . ' ' . $op . ' ' . $foreign;
+                        $condParts[] = [$boolean, $fragment, []];
+                    }
+                }
+            }
+            if ($condParts !== []) {
+                // Primera condición sin boolean al frente
+                $onSql = '';
+                foreach ($condParts as $i => [$bool, $frag]) {
+                    if ($i === 0) {
+                        $onSql .= $frag;
+                    } else {
+                        $onSql .= ' ' . $bool . ' ' . $frag;
+                    }
+                }
+                $sql .= ' ON ' . $onSql;
+            }
         }
 
         // WHERE

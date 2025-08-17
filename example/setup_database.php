@@ -305,10 +305,10 @@ try {
 
     echo "\n🎉 ¡Base de datos configurada exitosamente con VersaORM!\n";
     echo "📊 Estadísticas:\n";
-    echo '   - Usuarios: ' . count(User::allArray()) . "\n";
-    echo '   - Proyectos: ' . count(Project::allArray()) . "\n";
-    echo '   - Tareas: ' . count(Task::allArray()) . "\n";
-    echo '   - Etiquetas: ' . count(Label::allArray()) . "\n";
+    echo '   - Usuarios: ' . count(User::allRows()) . "\n";
+    echo '   - Proyectos: ' . count(Project::allRows()) . "\n";
+    echo '   - Tareas: ' . count(Task::allRows()) . "\n";
+    echo '   - Etiquetas: ' . count(Label::allRows()) . "\n";
     echo "\n🌐 Puedes acceder a la aplicación en: http://localhost:8080\n";
 } catch (Exception $e) {
     echo '❌ Error: ' . $e->getMessage() . "\n";
