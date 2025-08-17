@@ -475,10 +475,13 @@ class VersaModel implements TypedModelInterface
      * Guardar el modelo en la base de datos.
      * Ejecuta validación antes de guardar.
      * Si el modo freeze está desactivado, creará automáticamente columnas faltantes.
+     * Devuelve el ID (existente o insertado) si puede determinarse.
      *
      * @throws VersaORMException
+     *
+     * @return int|string|null
      */
-    public function store(): void
+    public function store(): int|string|null
     {
         // Ejecutar validación antes de guardar
         $validationErrors = $this->validate();
@@ -526,73 +529,79 @@ class VersaModel implements TypedModelInterface
             }
             $params[] = $this->attributes['id'];
 
-            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . ' WHERE id = ?';
-            $orm->exec($sql, $params);
+            if ($fields !== []) { // Sólo ejecutar si hay algo que actualizar
+                $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . ' WHERE id = ?';
+                $orm->exec($sql, $params);
+            }
+
+            return $this->attributes['id'];
+        }
+
+        // INSERT nuevo - filtrar campos que no deben insertarse manualmente
+        $filteredAttributes = $this->attributes;
+        unset($filteredAttributes['id']); // No insertar ID manualmente
+
+        // Preparar valores para la base de datos (convertir DateTime a string, etc.)
+        $preparedAttributes = [];
+        foreach ($filteredAttributes as $key => $value) {
+            $preparedAttributes[$key] = $this->prepareValueForDatabase($key, $value);
+        }
+
+        if ($preparedAttributes === []) {
+            throw new VersaORMException(
+                'No data to insert',
+                'NO_DATA_TO_INSERT',
+            );
+        }
+
+        // Intentar obtener el ID en forma nativa usando el QueryBuilder
+        try {
+            /** @var int|string|null $newId */
+            $newId = $orm->table($this->table)->insertGetId($preparedAttributes);
+
+            if ($newId !== null && $newId !== '') {
+                // Normalizar a int si es numérico
+                $this->attributes['id'] = is_numeric($newId) ? (int) $newId : $newId;
+
+                return $this->attributes['id']; // Insert completado con ID asignado
+            }
+        } catch (Throwable) {
+            // Continuar con fallback silencioso
+        }
+
+        // Fallback: buscar el registro más reciente que coincida con los datos insertados
+        $whereConditions = [];
+        $whereParams = [];
+
+        // Usar campos únicos comunes para encontrar el registro
+        if (isset($preparedAttributes['email'])) {
+            $whereConditions[] = 'email = ?';
+            $whereParams[] = $preparedAttributes['email'];
         } else {
-            // INSERT nuevo - filtrar campos que no deben insertarse manualmente
-            $filteredAttributes = $this->attributes;
-            unset($filteredAttributes['id']); // No insertar ID manualmente
-            // Nota: permitimos created_at/updated_at si vienen provistos; si la columna no existe, ensureColumnsExist la creará
-
-            // Preparar valores para la base de datos (convertir DateTime a string, etc.)
-            $preparedAttributes = [];
-
-            foreach ($filteredAttributes as $key => $value) {
-                $preparedAttributes[$key] = $this->prepareValueForDatabase($key, $value);
-            }
-
-            if ($preparedAttributes === []) {
-                throw new VersaORMException(
-                    'No data to insert',
-                    'NO_DATA_TO_INSERT',
-                );
-            }
-
-            // Intentar obtener el ID en forma nativa usando el QueryBuilder
-            try {
-                /** @var int|string|null $newId */
-                $newId = $orm->table($this->table)->insertGetId($preparedAttributes);
-
-                if ($newId !== null && $newId !== '') {
-                    // Normalizar a int si es numérico
-                    $this->attributes['id'] = is_numeric($newId) ? (int) $newId : $newId;
-
-                    return; // Insert completado con ID asignado
-                }
-            } catch (Throwable) {
-                // Continuar con fallback silencioso
-            }
-
-            // Fallback: buscar el registro más reciente que coincida con los datos insertados
-            $whereConditions = [];
-            $whereParams = [];
-
-            // Usar campos únicos comunes para encontrar el registro
-            if (isset($preparedAttributes['email'])) {
-                $whereConditions[] = 'email = ?';
-                $whereParams[] = $preparedAttributes['email'];
-            } else {
-                // Si no hay un campo único obvio, usar el primer campo escalar
-                foreach ($preparedAttributes as $key => $value) {
-                    if (is_string($value) || is_numeric($value)) {
-                        $whereConditions[] = "{$key} = ?";
-                        $whereParams[] = $value;
-                        break; // Solo usar el primer campo válido
-                    }
-                }
-            }
-
-            if ($whereConditions !== []) {
-                $whereClause = implode(' AND ', $whereConditions);
-                $fallbackResult = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
-
-                if (is_array($fallbackResult) && $fallbackResult !== [] && is_array($fallbackResult[0])) {
-                    // Merge los datos y luego aplicar casting
-                    $mergedData = array_merge($this->attributes, $fallbackResult[0]);
-                    $this->loadInstance($mergedData);
+            // Si no hay un campo único obvio, usar el primer campo escalar
+            foreach ($preparedAttributes as $key => $value) {
+                if (is_string($value) || is_numeric($value)) {
+                    $whereConditions[] = "{$key} = ?";
+                    $whereParams[] = $value;
+                    break; // Solo usar el primer campo válido
                 }
             }
         }
+
+        if ($whereConditions !== []) {
+            $whereClause = implode(' AND ', $whereConditions);
+            $fallbackResult = $orm->exec("SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1", $whereParams);
+
+            if (is_array($fallbackResult) && $fallbackResult !== [] && is_array($fallbackResult[0])) {
+                // Merge los datos y luego aplicar casting
+                $mergedData = array_merge($this->attributes, $fallbackResult[0]);
+                $this->loadInstance($mergedData);
+
+                return $this->attributes['id'] ?? null;
+            }
+        }
+
+        return $this->attributes['id'] ?? null;
     }
 
     /**
@@ -601,11 +610,9 @@ class VersaModel implements TypedModelInterface
      *
      * @return int|string|null
      */
-    public function storeAndGetId()
+    public function storeAndGetId(): int|string|null
     {
-        $this->store();
-
-        return $this->attributes['id'] ?? null;
+        return $this->store();
     }
 
     /**
@@ -1479,9 +1486,9 @@ class VersaModel implements TypedModelInterface
     /**
      * Guarda un modelo (método estático de conveniencia).
      */
-    public static function storeModel(self $model): void
+    public static function storeModel(self $model): int|string|null
     {
-        $model->store();
+        return $model->store();
     }
 
     /**
