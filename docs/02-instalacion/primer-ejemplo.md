@@ -50,7 +50,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 try {
     // Usar SQLite para simplicidad
-    $orm = new VersaORM('sqlite:' . __DIR__ . '/../database.db');
+    $orm = new VersaORM(['driver' => 'sqlite', 'database' => __DIR__ . '/../database.db']);
 
     // Habilitar claves foráneas
     $orm->exec("PRAGMA foreign_keys = ON");
@@ -71,18 +71,20 @@ try {
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $config = [
+    'driver' => 'mysql',
     'host' => 'localhost',
-    'dbname' => 'mi_primer_proyecto',
+    'database' => 'mi_primer_proyecto',
     'username' => 'root',
-    'password' => ''
+    'password' => '',
+    'charset'  => 'utf8mb4',
+    'options'  => [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]
 ];
 
 try {
-    $dsn = "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4";
-    $orm = new VersaORM($dsn, $config['username'], $config['password'], [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
+    $orm = new VersaORM($config);
 
     echo "✅ Conexión MySQL establecida\n";
     return $orm;
@@ -112,15 +114,15 @@ echo "<h2>1. Creando la tabla de tareas</h2>\n";
 // Crear tabla de tareas
 try {
     $orm->exec(" 
-        CREATE TABLE IF NOT EXISTS tareas (
+        CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            titulo TEXT NOT NULL,
-            descripcion TEXT,
-            completada BOOLEAN DEFAULT 0,
-            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            title TEXT NOT NULL,
+            description TEXT,
+            completed BOOLEAN DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ");
-    echo "✅ Tabla 'tareas' creada exitosamente<br>\n";
+    echo "✅ Tabla 'tasks' creada exitosamente<br>\n";
 } catch (Exception $e) {
     echo "❌ Error creando tabla: " . $e->getMessage() . "<br>\n";
 }
@@ -128,23 +130,23 @@ try {
 echo "<h2>2. Insertando tareas de ejemplo</h2>\n";
 
 // Insertar algunas tareas de ejemplo
-$tareas_ejemplo = [
-    ['titulo' => 'Aprender VersaORM', 'descripcion' => 'Completar el tutorial básico'],
-    ['titulo' => 'Crear mi primera app', 'descripcion' => 'Desarrollar una aplicación simple'],
-    ['titulo' => 'Leer documentación', 'descripcion' => 'Revisar toda la documentación disponible']
+$tasks_example = [
+    ['title' => 'Aprender VersaORM', 'description' => 'Completar el tutorial básico'],
+    ['title' => 'Crear mi primera app', 'description' => 'Desarrollar una aplicación simple'],
+    ['title' => 'Leer documentación', 'description' => 'Revisar toda la documentación disponible']
 ];
 
-foreach ($tareas_ejemplo as $tarea_data) {
+foreach ($tasks_example as $task_data) {
     try {
         // Crear nueva tarea usando VersaORM
-        $tarea = VersaModel::dispense('tarea');
-        $tarea->titulo = $tarea_data['titulo'];
-        $tarea->descripcion = $tarea_data['descripcion'];
-        $tarea->completada = false;
+        $task = VersaModel::dispense('tasks');
+        $task->title = $task_data['title'];
+        $task->description = $task_data['description'];
+        $task->completed = false;
 
         // Guardar en la base de datos
-        $id = $tarea->store();
-        echo "✅ Tarea creada con ID: $id - '{$tarea->titulo}'<br>\n";
+        $id = $task->store();
+        echo "✅ Tarea creada con ID: $id - '{$task->title}'<br>\n";
 
     } catch (Exception $e) {
         echo "❌ Error insertando tarea: " . $e->getMessage() . "<br>\n";
@@ -155,16 +157,16 @@ echo "<h2>3. Consultando todas las tareas</h2>\n";
 
 try {
     // Obtener todas las tareas
-    $todas_las_tareas = $orm->findAll('tarea');
+    $all_tasks = $orm->findAll('tasks');
 
     echo "<ul>\n";
-    foreach ($todas_las_tareas as $tarea) {
-        $estado = $tarea->completada ? '✅' : '⏳';
-        echo "<li>$estado <strong>{$tarea->titulo}</strong> - {$tarea->descripcion}</li>\n";
+    foreach ($all_tasks as $task) {
+        $status = $task->completed ? '✅' : '⏳';
+        echo "<li>$status <strong>{$task->title}</strong> - {$task->description}</li>\n";
     }
     echo "</ul>\n";
 
-    echo "<p>Total de tareas: " . count($todas_las_tareas) . "</p>\n";
+    echo "<p>Total de tareas: " . count($all_tasks) . "</p>\n";
 
 } catch (Exception $e) {
     echo "❌ Error consultando tareas: " . $e->getMessage() . "<br>\n";
@@ -174,13 +176,13 @@ echo "<h2>4. Actualizando una tarea</h2>\n";
 
 try {
     // Buscar la primera tarea y marcarla como completada
-    $primera_tarea = VersaModel::findOne('tarea', 'ORDER BY id LIMIT 1');
+    $first_task = VersaModel::findOne('tasks', 'ORDER BY id LIMIT 1');
 
-    if ($primera_tarea) {
-        $primera_tarea->completada = true;
-        $primera_tarea->store();
+    if ($first_task) {
+        $first_task->completed = true;
+        $first_task->store();
 
-        echo "✅ Tarea '{$primera_tarea->titulo}' marcada como completada<br>\n";
+        echo "✅ Tarea '{$first_task->title}' marcada como completada<br>\n";
     } else {
         echo "⚠️ No se encontraron tareas para actualizar<br>\n";
     }
@@ -193,12 +195,12 @@ echo "<h2>5. Consultando tareas completadas</h2>\n";
 
 try {
     // Buscar solo tareas completadas
-    $tareas_completadas = VersaModel::findAll('tarea', 'completada = ?', [true]);
+    $completed_tasks = VersaModel::findAll('tasks', 'completed = ?', [true]);
 
     echo "<p>Tareas completadas:</p>\n";
     echo "<ul>\n";
-    foreach ($tareas_completadas as $tarea) {
-        echo "<li>✅ <strong>{$tarea->titulo}</strong></li>\n";
+    foreach ($completed_tasks as $task) {
+        echo "<li>✅ <strong>{$task->title}</strong></li>\n";
     }
     echo "</ul>\n";
 
@@ -210,15 +212,15 @@ echo "<h2>6. Usando Query Builder</h2>\n";
 
 try {
     // Ejemplo con Query Builder
-    $tareas_pendientes = $orm->table('tareas')
-        ->where('completada', '=', false)
-        ->orderBy('fecha_creacion', 'DESC')
+    $pending_tasks = $orm->table('tasks')
+        ->where('completed', '=', false)
+        ->orderBy('created_at', 'DESC')
         ->getAll();
 
     echo "<p>Tareas pendientes (más recientes primero):</p>\n";
     echo "<ul>\n";
-    foreach ($tareas_pendientes as $tarea) {
-        echo "<li>⏳ <strong>{$tarea['titulo']}</strong> - {$tarea['descripcion']}</li>\n";
+    foreach ($pending_tasks as $task) {
+        echo "<li>⏳ <strong>{$task['title']}</strong> - {$task['description']}</li>\n";
     }
     echo "</ul>\n";
 
@@ -230,15 +232,15 @@ echo "<h2>7. Estadísticas</h2>\n";
 
 try {
     // Contar tareas por estado
-    $total_tareas = $orm->count('tarea');
-    $tareas_completadas = $orm->count('tarea', 'completada = ?', [true]);
-    $tareas_pendientes = $total_tareas - $tareas_completadas;
+    $total_tasks = $orm->count('tasks');
+    $completed_tasks = $orm->count('tasks', 'completed = ?', [true]);
+    $pending_tasks = $total_tasks - $completed_tasks;
 
     echo "<div style='background: #f0f0f0; padding: 10px; border-radius: 5px;'>\n";
     echo "<h3>Resumen de Tareas</h3>\n";
-    echo "<p>📊 Total de tareas: <strong>$total_tareas</strong></p>\n";
-    echo "<p>✅ Completadas: <strong>$tareas_completadas</strong></p>\n";
-    echo "<p>⏳ Pendientes: <strong>$tareas_pendientes</strong></p>\n";
+    echo "<p>📊 Total de tareas: <strong>$total_tasks</strong></p>\n";
+    echo "<p>✅ Completadas: <strong>$completed_tasks</strong></p>\n";
+    echo "<p>⏳ Pendientes: <strong>$pending_tasks</strong></p>\n";
     echo "</div>\n";
 
 } catch (Exception $e) {
@@ -299,7 +301,7 @@ php public/index.php
 ### 1. Conexión a la Base de Datos
 
 ```php
-$orm = new VersaORM('sqlite:database.db');
+$orm = new VersaORM(['driver' => 'sqlite', 'database' => 'database.db']);
 ```
 
 **¿Qué hace?** Crea una conexión a SQLite
@@ -308,9 +310,9 @@ $orm = new VersaORM('sqlite:database.db');
 ### 2. Crear Registros
 
 ```php
-$tarea = VersaModel::dispense('tarea');  // Crea un objeto vacío
-$tarea->titulo = 'Mi tarea';       // Asigna propiedades
-$id = $tarea->store();         // Guarda en BD
+$task = VersaModel::dispense('tasks');  // Crea un objeto vacío
+$task->title = 'Mi tarea';       // Asigna propiedades
+$id = $task->store();         // Guarda en BD
 ```
 
 **¿Qué hace?**
@@ -323,9 +325,9 @@ $id = $tarea->store();         // Guarda en BD
 ### 3. Consultar Registros
 
 ```php
-$todas = $orm->findAll('tarea');           // Todas las tareas
-$una = VersaModel::findOne('tarea', 'id = ?', [1]); // Una tarea específica
-$algunas = VersaModel::findAll('tarea', 'completada = ?', [false]); // Con condición
+$all = $orm->findAll('tasks');           // Todas las tareas
+$one = VersaModel::findOne('tasks', 'id = ?', [1]); // Una tarea específica
+$some = VersaModel::findAll('tasks', 'completed = ?', [false]); // Con condición
 ```
 
 **¿Qué devuelve?**
@@ -336,9 +338,9 @@ $algunas = VersaModel::findAll('tarea', 'completada = ?', [false]); // Con condi
 ### 4. Query Builder
 
 ```php
-$resultados = $orm->table('tareas')
-    ->where('completada', '=', false)
-    ->orderBy('fecha_creacion', 'DESC')
+$results = $orm->table('tasks')
+    ->where('completed', '=', false)
+    ->orderBy('created_at', 'DESC')
     ->getAll();
 ```
 
@@ -351,11 +353,11 @@ $resultados = $orm->table('tareas')
 
 | Operación | VersaORM | SQL Equivalente |
 |-----------|----------|-----------------|
-| **Insertar** | `$tarea = VersaModel::dispense('tarea'); $tarea->titulo = 'Test'; $tarea->store();` | `INSERT INTO tareas (titulo) VALUES ('Test')` |
-| **Consultar Todo** | `$orm->findAll('tarea')` | `SELECT * FROM tareas` |
-| **Consultar Con Condición** | `VersaModel::findAll('tarea', 'completada = ?', [true])` | `SELECT * FROM tareas WHERE completada = 1` |
-| **Actualizar** | `$tarea->completada = true; $tarea->store();` | `UPDATE tareas SET completada = 1 WHERE id = ?` |
-| **Contar** | `$orm->count('tarea')` | `SELECT COUNT(*) FROM tareas` |
+| **Insertar** | `$task = VersaModel::dispense('tasks'); $task->title = 'Test'; $task->store();` | `INSERT INTO tasks (title) VALUES ('Test')` |
+| **Consultar Todo** | `$orm->findAll('tasks')` | `SELECT * FROM tasks` |
+| **Consultar Con Condición** | `VersaModel::findAll('tasks', 'completed = ?', [true])` | `SELECT * FROM tasks WHERE completed = 1` |
+| **Actualizar** | `$task->completed = true; $task->store();` | `UPDATE tasks SET completed = 1 WHERE id = ?` |
+| **Contar** | `$orm->count('tasks')` | `SELECT COUNT(*) FROM tasks` |
 
 ## Versión Interactiva (Opcional)
 
@@ -368,12 +370,12 @@ $orm = require_once __DIR__ . '/../config/database.php';
 
 // Crear tabla si no existe
 $orm->exec(" 
-    CREATE TABLE IF NOT EXISTS tareas (
+    CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        titulo TEXT NOT NULL,
-        descripcion TEXT,
-        completada BOOLEAN DEFAULT 0,
-        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        title TEXT NOT NULL,
+        description TEXT,
+        completed BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 ");
 
@@ -381,31 +383,31 @@ $orm->exec("
 if ($_POST['accion'] ?? false) {
     switch ($_POST['accion']) {
         case 'crear':
-            $tarea = VersaModel::dispense('tarea');
-            $tarea->titulo = $_POST['titulo'] ?? '';
-            $tarea->descripcion = $_POST['descripcion'] ?? '';
-            $tarea->store();
-            $mensaje = "✅ Tarea creada: {$tarea->titulo}";
+            $task = VersaModel::dispense('tasks');
+            $task->title = $_POST['title'] ?? '';
+            $task->description = $_POST['description'] ?? '';
+            $task->store();
+            $mensaje = "✅ Tarea creada: {$task->title}";
             break;
 
         case 'completar':
-            $tarea = VersaModel::load('tarea', $_POST['id']);
-            $tarea->completada = true;
-            $tarea->store();
-            $mensaje = "✅ Tarea completada: {$tarea->titulo}";
+            $task = VersaModel::load('tasks', $_POST['id']);
+            $task->completed = true;
+            $task->store();
+            $mensaje = "✅ Tarea completada: {$task->title}";
             break;
 
         case 'eliminar':
-            $tarea = VersaModel::load('tarea', $_POST['id']);
-            $titulo = $tarea->titulo;
-            $tarea->trash();
-            $mensaje = "🗑️ Tarea eliminada: $titulo";
+            $task = VersaModel::load('tasks', $_POST['id']);
+            $title = $task->title;
+            $task->trash();
+            $mensaje = "🗑️ Tarea eliminada: $title";
             break;
     }
 }
 
 // Obtener todas las tareas
-$tareas = $orm->findAll('tarea', 'ORDER BY fecha_creacion DESC');
+$tasks = $orm->findAll('tasks', 'ORDER BY created_at DESC');
 ?>
 
 <!DOCTYPE html>
@@ -435,38 +437,40 @@ $tareas = $orm->findAll('tarea', 'ORDER BY fecha_creacion DESC');
     <form method="POST">
         <h3>➕ Crear Nueva Tarea</h3>
         <input type="hidden" name="accion" value="crear">
-        <input type="text" name="titulo" placeholder="Título de la tarea" required style="width: 300px;">
+        <input type="text" name="title" placeholder="Título de la tarea" required style="width: 300px;">
         <br>
-        <textarea name="descripcion" placeholder="Descripción (opcional)" style="width: 300px; height: 60px;"></textarea>
+        <textarea name="description" placeholder="Descripción (opcional)" style="width: 300px; height: 60px;"></textarea>
         <br>
         <button type="submit">Crear Tarea</button>
     </form>
 
-    <h3>📋 Mis Tareas (<?= count($tareas) ?>)</h3>
+    <h3>📋 Mis Tareas (<?= count($tasks) ?>)</h3>
 
-    <?php if (empty($tareas)): ?>
+    <?php if (empty($tasks)): ?>
         <p>No hay tareas. ¡Crea tu primera tarea arriba!</p>
     <?php else: ?>
-        <?php foreach ($tareas as $tarea): ?>
-            <div class="tarea <?= $tarea->completada ? 'completada' : '' ?>">
-                <h4><?= $tarea->completada ? '✅' : '⏳' ?> <?= htmlspecialchars($tarea->titulo) ?></h4>
-                <?php if ($tarea->descripcion):
-                    ?><p><?= htmlspecialchars($tarea->descripcion) ?></p>
+        <?php foreach ($tasks as $task):
+            $task_class = $task->completed ? 'completada' : '';
+        ?>
+            <div class="tarea <?= $task_class ?>">
+                <h4><?= $task->completed ? '✅' : '⏳' ?> <?= htmlspecialchars($task->title) ?></h4>
+                <?php if ($task->description): ?>
+                    <p><?= htmlspecialchars($task->description) ?></p>
                 <?php endif; ?>
-                <small>Creada: <?= $tarea->fecha_creacion ?></small>
+                <small>Creada: <?= $task->created_at ?></small>
 
                 <div style="margin-top: 10px;">
-                    <?php if (!$tarea->completada):
+                    <?php if (!$task->completed):
                         ?><form method="POST" style="display: inline;">
                             <input type="hidden" name="accion" value="completar">
-                            <input type="hidden" name="id" value="<?= $tarea->id ?>">
+                            <input type="hidden" name="id" value="<?= $task->id ?>">
                             <button type="submit" class="btn-success">Completar</button>
                         </form>
                     <?php endif; ?>
 
                     <form method="POST" style="display: inline;">
                         <input type="hidden" name="accion" value="eliminar">
-                        <input type="hidden" name="id" value="<?= $tarea->id ?>">
+                        <input type="hidden" name="id" value="<?= $task->id ?>">
                         <button type="submit" class="btn-danger" onclick="return confirm('¿Eliminar esta tarea?')">Eliminar</button>
                     </form>
                 </div>
@@ -477,11 +481,11 @@ $tareas = $orm->findAll('tarea', 'ORDER BY fecha_creacion DESC');
     <hr>
     <h3>📊 Estadísticas</h3>
     <?php
-    $total = count($tareas);
-    $completadas = count(array_filter($tareas, fn($t) => $t->completada));
-    $pendientes = $total - $completadas;
+    $total = count($tasks);
+    $completed = count(array_filter($tasks, fn($t) => $t->completed));
+    $pending = $total - $completed;
     ?>
-    <p>Total: <strong><?= $total ?></strong> | Completadas: <strong><?= $completadas ?></strong> | Pendientes: <strong><?= $pendientes ?></strong></p>
+    <p>Total: <strong><?= $total ?></strong> | Completadas: <strong><?= $completed ?></strong> | Pendientes: <strong><?= $pending ?></strong></p>
 
     <hr>
     <p><em>Este ejemplo demuestra las operaciones básicas de VersaORM: crear, leer, actualizar y eliminar datos.</em></p>
@@ -515,7 +519,7 @@ chmod 664 database.db
 chmod 775 .
 
 # O usar ruta absoluta
-$orm = new VersaORM('sqlite:' . __DIR__ . '/database.db');
+$orm = new VersaORM(['driver' => 'sqlite', 'database' => __DIR__ . '/database.db']);
 ```
 
 ### Error: "Table doesn't exist"
@@ -525,7 +529,7 @@ $orm = new VersaORM('sqlite:' . __DIR__ . '/database.db');
 **Solución:**
 ```php
 // Siempre crear tablas antes de usarlas
-$orm->exec("CREATE TABLE IF NOT EXISTS tareas (...)");
+$orm->exec("CREATE TABLE IF NOT EXISTS tasks (...)");
 ```
 
 ### Datos No Se Muestran
@@ -535,12 +539,12 @@ $orm->exec("CREATE TABLE IF NOT EXISTS tareas (...)");
 **Solución:**
 ```php
 // Verificar si hay datos
-$tareas = $orm->findAll('tarea');
-echo "Encontradas: " . count($tareas) . " tareas\n";
+$tasks = $orm->findAll('tasks');
+echo "Encontradas: " . count($tasks) . " tareas\n";
 
 // Verificar errores
 try {
-    $tareas = $orm->findAll('tarea');
+    $tasks = $orm->findAll('tasks');
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }

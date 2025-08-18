@@ -151,15 +151,36 @@ $users = $orm->table('users')
 ### 4. Compatibilidad Multi-Base de Datos
 
 ```php
-// El mismo código funciona en todas las bases de datos
-$orm_mysql = new VersaORM('mysql:host=localhost;dbname=app', $user, $pass);
-$orm_postgres = new VersaORM('pgsql:host=localhost;dbname=app', $user, $pass);
-$orm_sqlite = new VersaORM('sqlite:database.db');
+// El mismo código funciona en todas las bases de datos (forma recomendada con arrays)
+$orm_mysql = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'database' => 'app',
+    'username' => $user,
+    'password' => $pass
+]);
 
-// Código idéntico para todas
-$user = VersaModel::dispense('users');
-$user->name = 'Test';
-$user->store();
+$orm_postgresql = new VersaORM([
+    'driver' => 'postgresql', // Acepta también 'pgsql'
+    'host' => 'localhost',
+    'database' => 'app',
+    'username' => $user,
+    'password' => $pass
+]);
+
+$orm_sqlite = new VersaORM([
+    'driver' => 'sqlite',
+    'database' => __DIR__ . '/database.db'
+]);
+
+// Establecer un ORM por defecto para los modelos ActiveRecord
+VersaModel::setORM($orm_mysql);
+
+// Código idéntico para todas las operaciones
+$userModel = VersaModel::dispense('users');
+$userModel->name = 'Test';
+$id = $userModel->store();
+echo "Usuario creado con ID: $id"; // store() devuelve el ID
 ```
 
 ## Comparación con Otros ORMs Populares
@@ -175,8 +196,12 @@ $user->store();
 | **Rendimiento** | Optimizado | Bueno pero más pesado |
 
 ```php
-// VersaORM - Inmediato
-$orm = new VersaORM($dsn, $user, $pass);
+// VersaORM - Instanciación mínima (array en lugar de DSN)
+$orm = new VersaORM([
+    'driver' => 'sqlite',
+    'database' => __DIR__ . '/blog.db'
+]);
+VersaModel::setORM($orm);
 $post = VersaModel::dispense('posts');
 
 // Eloquent - Requiere configuración
@@ -226,9 +251,21 @@ $product->store();
 
 #### 3. Aplicaciones Multi-Tenant
 ```php
-// Fácil cambio entre bases de datos
-$orm_cliente1 = new VersaORM('mysql:host=db1;dbname=cliente1', $u, $p);
-$orm_cliente2 = new VersaORM('mysql:host=db2;dbname=cliente2', $u, $p);
+// Fácil cambio entre bases de datos (arrays de configuración)
+$orm_cliente1 = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'db1',
+    'database' => 'cliente1',
+    'username' => $u,
+    'password' => $p
+]);
+$orm_cliente2 = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'db2',
+    'database' => 'cliente2',
+    'username' => $u,
+    'password' => $p
+]);
 ```
 
 #### 4. Migración desde SQL Legacy
@@ -271,14 +308,18 @@ $posts = $user->ownPostList;             // SELECT solo cuando se accede
 <?php
 require_once 'vendor/autoload.php';
 
-// 1. Configuración (1 línea)
-$orm = new VersaORM('sqlite:blog.db');
+// 1. Configuración (1 línea con array recomendado)
+$orm = new VersaORM([
+    'driver' => 'sqlite',
+    'database' => __DIR__ . '/blog.db'
+]);
+VersaModel::setORM($orm);
 
 // 2. Crear autor
 $author = VersaModel::dispense('authors');
 $author->name = 'María González';
 $author->email = 'maria@blog.com';
-$author_id = $author->store();
+$author_id = $author->store(); // store() devuelve el ID
 
 // 3. Crear posts
 for ($i = 1; $i <= 3; $i++) {
@@ -287,7 +328,7 @@ for ($i = 1; $i <= 3; $i++) {
     $post->content = "Contenido del post $i...";
     $post->author_id = $author_id;
     $post->published = true;
-    $post->store();
+    $post_id = $post->store(); // Puedes usar $post_id si lo necesitas
 }
 
 // 4. Mostrar blog

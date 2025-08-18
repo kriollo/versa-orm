@@ -17,8 +17,15 @@ La estrategia de carga de relaciones es crucial para el rendimiento de aplicacio
 <?php
 require_once 'vendor/autoload.php';
 
-$orm = new VersaORM();
-$orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
+$orm = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'database' => 'ejemplo',
+    'username' => 'usuario',
+    'password' => 'password',
+    'charset' => 'utf8mb4'
+]);
+VersaModel::setORM($orm);
 
 // ❌ PROBLEMA: Esto genera múltiples consultas
 $posts = VersaModel::findAll('post', 'published = ?', [true]);

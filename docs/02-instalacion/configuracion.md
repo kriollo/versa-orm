@@ -30,12 +30,12 @@ Crea un archivo `.env` en la raíz de tu proyecto:
 
 ```env
 # Configuración de Base de Datos
-DB_TYPE=mysql
+DB_DRIVER=mysql
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=mi_aplicacion
-DB_USER=mi_usuario
-DB_PASS=mi_password
+DB_DATABASE=mi_aplicacion
+DB_USERNAME=mi_usuario
+DB_PASSWORD=mi_password
 
 # Configuración de Desarrollo
 APP_ENV=development
@@ -65,13 +65,14 @@ if (file_exists(__DIR__ . '/../.env')) {
 
 // Configuración MySQL
 $config = [
-    'host' => $_ENV['DB_HOST'] ?? 'localhost',
-    'port' => $_ENV['DB_PORT'] ?? 3306,
-    'dbname' => $_ENV['DB_NAME'] ?? 'mi_bd',
-    'username' => $_ENV['DB_USER'] ?? 'root',
-    'password' => $_ENV['DB_PASS'] ?? '',
-    'charset' => 'utf8mb4',
-    'options' => [
+    'driver'   => $_ENV['DB_DRIVER'] ?? 'mysql',
+    'host'     => $_ENV['DB_HOST'] ?? 'localhost',
+    'port'     => $_ENV['DB_PORT'] ?? 3306,
+    'database' => $_ENV['DB_DATABASE'] ?? 'mi_bd',
+    'username' => $_ENV['DB_USERNAME'] ?? 'root',
+    'password' => $_ENV['DB_PASSWORD'] ?? '',
+    'charset'  => 'utf8mb4',
+    'options'  => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
@@ -79,12 +80,10 @@ $config = [
     ]
 ];
 
-// Crear DSN
-$dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['dbname']};charset={$config['charset']}";
-
 // Inicializar VersaORM
 try {
-    $orm = new VersaORM($dsn, $config['username'], $config['password'], $config['options']);
+    $orm = new VersaORM($config);
+    VersaModel::setORM($orm);
     echo "✅ Conexión MySQL exitosa\n";
 } catch (PDOException $e) {
     die("❌ Error de conexión MySQL: " . $e->getMessage());
@@ -100,13 +99,14 @@ return $orm;
 <?php
 // config/mysql-advanced.php
 $config = [
-    'host' => 'localhost',
-    'port' => 3306,
-    'dbname' => 'mi_aplicacion',
+    'driver'   => 'mysql',
+    'host'     => 'localhost',
+    'port'     => 3306,
+    'database' => 'mi_aplicacion',
     'username' => 'app_user',
     'password' => 'secure_password',
-    'charset' => 'utf8mb4',
-    'options' => [
+    'charset'  => 'utf8mb4',
+    'options'  => [
         // Configuración de errores
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 
@@ -122,14 +122,11 @@ $config = [
 
         // Timeout de conexión
         PDO::ATTR_TIMEOUT => 30,
-
-        // Reconexión automática
-        PDO::MYSQL_ATTR_RECONNECT => true
     ]
 ];
 
-$dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['dbname']};charset={$config['charset']}";
-$orm = new VersaORM($dsn, $config['username'], $config['password'], $config['options']);
+$orm = new VersaORM($config);
+VersaModel::setORM($orm);
 
 // Configurar zona horaria
 $orm->exec("SET time_zone = '+00:00'");
@@ -145,7 +142,7 @@ return $orm;
 require_once 'config/database.php';
 
 // Crear tabla de ejemplo
-$orm->exec(" 
+$orm->exec("
     CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -177,23 +174,23 @@ echo "Usuario encontrado: {$user->name} ({$user->email})\n";
 <?php
 // config/postgresql.php
 $config = [
-    'host' => $_ENV['DB_HOST'] ?? 'localhost',
-    'port' => $_ENV['DB_PORT'] ?? 5432,
-    'dbname' => $_ENV['DB_NAME'] ?? 'mi_bd',
-    'username' => $_ENV['DB_USER'] ?? 'postgres',
-    'password' => $_ENV['DB_PASS'] ?? '',
-    'options' => [
+    // Se recomienda usar 'postgresql' (alias: pgsql, postgres)
+    'driver'   => 'postgresql',
+    'host'     => $_ENV['DB_HOST'] ?? 'localhost',
+    'port'     => $_ENV['DB_PORT'] ?? 5432,
+    'database' => $_ENV['DB_DATABASE'] ?? 'mi_bd',
+    'username' => $_ENV['DB_USERNAME'] ?? 'postgres',
+    'password' => $_ENV['DB_PASSWORD'] ?? '',
+    'options'  => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false
     ]
 ];
 
-// DSN para PostgreSQL
-$dsn = "pgsql:host={$config['host']};port={$config['port']};dbname={$config['dbname']}";
-
 try {
-    $orm = new VersaORM($dsn, $config['username'], $config['password'], $config['options']);
+    $orm = new VersaORM($config);
+    VersaModel::setORM($orm);
 
     // Configurar esquema por defecto
     $orm->exec("SET search_path TO public");
@@ -214,7 +211,7 @@ return $orm;
 require_once 'config/postgresql.php';
 
 // Crear tabla con tipos específicos de PostgreSQL
-$orm->exec(" 
+$orm->exec("
     CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
         name VARCHAR(200) NOT NULL,
@@ -234,21 +231,21 @@ $product->description = 'Laptop para gaming de alta gama';
 $product->price = 1299.99;
 $product->stock = 5;
 $product->metadata = json_encode([
-    'marca' => 'TechBrand',
-    'modelo' => 'GX-2024',
-    'especificaciones' => [
+    'brand' => 'TechBrand',
+    'model' => 'GX-2024',
+    'specs' => [
         'ram' => '16GB',
         'storage' => '1TB SSD',
         'gpu' => 'RTX 4060'
     ]
 ]);
 
-$id = $product->store();
+$id = $product->store(); // store() devuelve ID
 echo "Producto creado con ID: $id\n";
 
 // Consultar con filtro JSON
 $products = $orm->table('products')
-    ->whereRaw("metadata->>'marca' = ?", ['TechBrand'])
+    ->whereRaw("metadata->>'brand' = ?", ['TechBrand'])
     ->getAll();
 
 foreach ($products as $prod) {
@@ -266,8 +263,9 @@ foreach ($products as $prod) {
 <?php
 // config/sqlite.php
 $config = [
-    'database_path' => __DIR__ . '/../database/app.db',
-    'options' => [
+    'driver'   => 'sqlite',
+    'database' => __DIR__ . '/../database/app.db',
+    'options'  => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false
@@ -275,16 +273,14 @@ $config = [
 ];
 
 // Crear directorio de base de datos si no existe
-$db_dir = dirname($config['database_path']);
+$db_dir = dirname($config['database']);
 if (!is_dir($db_dir)) {
     mkdir($db_dir, 0755, true);
 }
 
-// DSN para SQLite
-$dsn = "sqlite:{$config['database_path']}";
-
 try {
-    $orm = new VersaORM($dsn, null, null, $config['options']);
+    $orm = new VersaORM($config);
+    VersaModel::setORM($orm);
 
     // Habilitar claves foráneas en SQLite
     $orm->exec("PRAGMA foreign_keys = ON");
@@ -306,7 +302,8 @@ return $orm;
 ```php
 <?php
 // config/sqlite-memory.php
-$orm = new VersaORM('sqlite::memory:');
+$orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
+VersaModel::setORM($orm);
 
 // Configurar SQLite en memoria
 $orm->exec("PRAGMA foreign_keys = ON");
@@ -324,7 +321,7 @@ return $orm;
 require_once 'config/sqlite.php';
 
 // Crear tablas con relaciones
-$orm->exec(" 
+$orm->exec("
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
@@ -333,7 +330,7 @@ $orm->exec("
     )
 ");
 
-$orm->exec(" 
+$orm->exec("
     CREATE TABLE IF NOT EXISTS articles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -349,7 +346,7 @@ $orm->exec("
 $category = VersaModel::dispense('categories');
 $category->name = 'Tecnología';
 $category->description = 'Artículos sobre tecnología';
-$category_id = $category->store();
+$category_id = $category->store(); // ID devuelto
 
 // Insertar artículo
 $article = VersaModel::dispense('articles');
@@ -394,48 +391,31 @@ class DatabaseManager {
     private static function createConnection($name) {
         $config = self::getConfig($name);
 
-        switch ($config['type']) {
-            case 'mysql':
-                $dsn = "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4";
-                break;
-            case 'pgsql':
-                $dsn = "pgsql:host={$config['host']};dbname={$config['dbname']}";
-                break;
-            case 'sqlite':
-                $dsn = "sqlite:{$config['path']}";
-                break;
-            default:
-                throw new Exception("Tipo de base de datos no soportado: {$config['type']}");
-        }
-
-        return new VersaORM(
-            $dsn,
-            $config['username'] ?? null,
-            $config['password'] ?? null,
-            $config['options'] ?? []
-        );
+    $orm = new VersaORM($config);
+    VersaModel::setORM($orm);
+    return $orm;
     }
 
     private static function getConfig($name) {
         $configs = [
             'default' => [
-                'type' => 'mysql',
+                'driver' => 'mysql',
                 'host' => 'localhost',
-                'dbname' => 'app_principal',
+                'database' => 'app_principal',
                 'username' => 'root',
                 'password' => '',
                 'options' => [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             ],
             'analytics' => [
-                'type' => 'pgsql',
+                'driver' => 'pgsql',
                 'host' => 'analytics-server',
-                'dbname' => 'analytics_db',
+                'database' => 'analytics_db',
                 'username' => 'analytics_user',
                 'password' => 'analytics_pass'
             ],
             'cache' => [
-                'type' => 'sqlite',
-                'path' => __DIR__ . '/../database/cache.db'
+                'driver' => 'sqlite',
+                'database' => __DIR__ . '/../database/cache.db'
             ]
         ];
 
@@ -464,7 +444,7 @@ $orm_cache = DatabaseManager::getConnection('cache');
 class ProductionConfig {
     public static function getORM() {
         // Validar variables de entorno requeridas
-        $required_vars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'];
+        $required_vars = ['DB_HOST', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD'];
         foreach ($required_vars as $var) {
             if (empty($_ENV[$var])) {
                 throw new Exception("Variable de entorno requerida no encontrada: $var");
@@ -472,13 +452,14 @@ class ProductionConfig {
         }
 
         $config = [
-            'host' => $_ENV['DB_HOST'],
-            'port' => $_ENV['DB_PORT'] ?? 3306,
-            'dbname' => $_ENV['DB_NAME'],
-            'username' => $_ENV['DB_USER'],
-            'password' => $_ENV['DB_PASS'],
-            'charset' => 'utf8mb4',
-            'options' => [
+            'driver'   => 'mysql',
+            'host'     => $_ENV['DB_HOST'],
+            'port'     => $_ENV['DB_PORT'] ?? 3306,
+            'database' => $_ENV['DB_DATABASE'],
+            'username' => $_ENV['DB_USERNAME'],
+            'password' => $_ENV['DB_PASSWORD'],
+            'charset'  => 'utf8mb4',
+            'options'  => [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
@@ -489,10 +470,9 @@ class ProductionConfig {
             ]
         ];
 
-        $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['dbname']};charset={$config['charset']}";
-
         try {
-            $orm = new VersaORM($dsn, $config['username'], $config['password'], $config['options']);
+            $orm = new VersaORM($config);
+            VersaModel::setORM($orm);
 
             // Configuraciones adicionales para producción
             $orm->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
@@ -532,7 +512,8 @@ class ConfigurationTest {
     private function testMySQL() {
         echo "1. Probando MySQL...\n";
         try {
-            $orm = new VersaORM('mysql:host=localhost;dbname=test', 'root', '');
+            $orm = new VersaORM(['driver' => 'mysql', 'host' => 'localhost', 'database' => 'test', 'username' => 'root', 'password' => '']);
+            VersaModel::setORM($orm);
             $result = $orm->getCell("SELECT 'MySQL OK' as test");
             echo "   ✅ MySQL: $result\n";
         } catch (Exception $e) {
@@ -543,7 +524,8 @@ class ConfigurationTest {
     private function testPostgreSQL() {
         echo "2. Probando PostgreSQL...\n";
         try {
-            $orm = new VersaORM('pgsql:host=localhost;dbname=test', 'postgres', '');
+            $orm = new VersaORM(['driver' => 'postgresql', 'host' => 'localhost', 'database' => 'test', 'username' => 'postgres', 'password' => '']);
+            VersaModel::setORM($orm);
             $result = $orm->getCell("SELECT 'PostgreSQL OK' as test");
             echo "   ✅ PostgreSQL: $result\n";
         } catch (Exception $e) {
@@ -554,7 +536,8 @@ class ConfigurationTest {
     private function testSQLite() {
         echo "3. Probando SQLite...\n";
         try {
-            $orm = new VersaORM('sqlite::memory:');
+            $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
+            VersaModel::setORM($orm);
             $result = $orm->getCell("SELECT 'SQLite OK' as test");
             echo "   ✅ SQLite: $result\n";
         } catch (Exception $e) {
@@ -600,7 +583,6 @@ $dbname = 'mi_bd';
 $username = 'mi_usuario';
 $password = 'mi_password';
 
-// Probar conexión directa con PDO
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     echo "✅ Credenciales correctas";
@@ -635,7 +617,7 @@ $pdo->exec("CREATE DATABASE IF NOT EXISTS mi_aplicacion CHARACTER SET utf8mb4 CO
 <?php
 // Usar ruta absoluta
 $db_path = __DIR__ . '/database.db';
-$orm = new VersaORM("sqlite:$db_path");
+$orm = new VersaORM(['driver' => 'sqlite', 'database' => $db_path]);
 
 // Verificar permisos del directorio
 $db_dir = dirname($db_path);
@@ -675,7 +657,7 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES => false,    // Prepared statements nativos
 ];
 
-$orm = new VersaORM($dsn, $username, $password, $options);
+$orm = new VersaORM($config);
 ?>
 ```
 
@@ -689,7 +671,7 @@ $orm = new VersaORM($dsn, $username, $password, $options);
 $options = [
     PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
 ];
-$orm = new VersaORM($dsn, $username, $password, $options);
+$orm = new VersaORM($config);
 ?>
 ```
 

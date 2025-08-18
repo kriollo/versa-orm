@@ -49,34 +49,41 @@ CREATE TABLE post_tags (
 <?php
 require_once 'vendor/autoload.php';
 
-$orm = new VersaORM();
-$orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
+$orm = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'database' => 'ejemplo',
+    'username' => 'usuario',
+    'password' => 'password',
+    'charset' => 'utf8mb4'
+]);
+VersaModel::setORM($orm);
 
 // Crear tags
-$phpTag = VersaModel::dispense('tag');
+$phpTag = VersaModel::dispense('tags');
 $phpTag->name = 'PHP';
 $phpTag->description = 'Lenguaje de programación PHP';
 $phpTagId = $phpTag->store();
 
-$mysqlTag = VersaModel::dispense('tag');
+$mysqlTag = VersaModel::dispense('tags');
 $mysqlTag->name = 'MySQL';
 $mysqlTag->description = 'Sistema de gestión de bases de datos';
 $mysqlTagId = $mysqlTag->store();
 
-$webTag = VersaModel::dispense('tag');
+$webTag = VersaModel::dispense('tags');
 $webTag->name = 'Desarrollo Web';
 $webTag->description = 'Desarrollo de aplicaciones web';
 $webTagId = $webTag->store();
 
 // Crear posts
-$post1 = VersaModel::dispense('post');
+$post1 = VersaModel::dispense('posts');
 $post1->title = 'Introducción a PHP y MySQL';
 $post1->content = 'En este tutorial aprenderemos...';
 $post1->user_id = 1;
 $post1->published = true;
 $post1Id = $post1->store();
 
-$post2 = VersaModel::dispense('post');
+$post2 = VersaModel::dispense('posts');
 $post2->title = 'Desarrollo Web Moderno';
 $post2->content = 'Las mejores prácticas para...';
 $post2->user_id = 1;
@@ -153,10 +160,10 @@ associatePostWithTags($orm, $post1Id, [$phpTagId, $mysqlTagId, $webTagId]);
 
 ```php
 // Método 1: Con JOIN
-$postTags = $orm->table('tag')
-    ->join('post_tags', 'tag.id = post_tags.tag_id')
+$postTags = $orm->table('tags')
+    ->join('post_tags', 'tags.id = post_tags.tag_id')
     ->where('post_tags.post_id', '=', $post1Id)
-    ->select('tag.id, tag.name, tag.description')
+    ->select('tags.id, tags.name, tags.description')
     ->getAll();
 
 echo "Tags del post '{$post1->title}':\n";
@@ -167,9 +174,9 @@ foreach ($postTags as $tag) {
 
 **SQL Equivalente:**
 ```sql
-SELECT tag.id, tag.name, tag.description
-FROM tags tag
-JOIN post_tags ON tag.id = post_tags.tag_id
+SELECT tags.id, tags.name, tags.description
+FROM tags
+JOIN post_tags ON tags.id = post_tags.tag_id
 WHERE post_tags.post_id = 1;
 ```
 
@@ -179,11 +186,11 @@ WHERE post_tags.post_id = 1;
 
 ```php
 // Posts que tienen el tag "PHP"
-$phpPosts = $orm->table('post')
-    ->join('post_tags', 'post.id = post_tags.post_id')
-    ->join('tag', 'post_tags.tag_id = tag.id')
-    ->where('tag.name', '=', 'PHP')
-    ->select('post.id, post.title, post.content')
+$phpPosts = $orm->table('posts')
+    ->join('post_tags', 'posts.id = post_tags.post_id')
+    ->join('tags', 'post_tags.tag_id = tags.id')
+    ->where('tags.name', '=', 'PHP')
+    ->select('posts.id, posts.title, posts.content')
     ->getAll();
 
 echo "Posts con tag 'PHP':\n";
@@ -194,23 +201,23 @@ foreach ($phpPosts as $post) {
 
 **SQL Equivalente:**
 ```sql
-SELECT post.id, post.title, post.content
-FROM posts post
-JOIN post_tags ON post.id = post_tags.post_id
-JOIN tags tag ON post_tags.tag_id = tag.id
-WHERE tag.name = 'PHP';
+SELECT posts.id, posts.title, posts.content
+FROM posts
+JOIN post_tags ON posts.id = post_tags.post_id
+JOIN tags ON post_tags.tag_id = tags.id
+WHERE tags.name = 'PHP';
 ```
 
 ### Consulta Completa con Información del Autor
 
 ```php
 // Posts con sus tags y autores
-$postsWithTagsAndAuthors = $orm->table('post')
-    ->join('user', 'post.user_id = user.id')
-    ->leftJoin('post_tags', 'post.id = post_tags.post_id')
-    ->leftJoin('tag', 'post_tags.tag_id = tag.id')
-    ->select('post.id, post.title, user.name as author, tag.name as tag_name')
-    ->orderBy('post.id')
+$postsWithTagsAndAuthors = $orm->table('posts')
+    ->join('users', 'posts.user_id = users.id')
+    ->leftJoin('post_tags', 'posts.id = post_tags.post_id')
+    ->leftJoin('tags', 'post_tags.tag_id = tags.id')
+    ->select('posts.id, posts.title, users.name as author, tags.name as tag_name')
+    ->orderBy('posts.id')
     ->getAll();
 
 // Agrupar resultados por post
@@ -238,12 +245,12 @@ foreach ($groupedPosts as $postId => $post) {
 
 **SQL Equivalente:**
 ```sql
-SELECT post.id, post.title, user.name as author, tag.name as tag_name
-FROM posts post
-JOIN users user ON post.user_id = user.id
-LEFT JOIN post_tags ON post.id = post_tags.post_id
-LEFT JOIN tags tag ON post_tags.tag_id = tag.id
-ORDER BY post.id;
+SELECT posts.id, posts.title, users.name as author, tags.name as tag_name
+FROM posts
+JOIN users ON posts.user_id = users.id
+LEFT JOIN post_tags ON posts.id = post_tags.post_id
+LEFT JOIN tags ON post_tags.tag_id = tags.id
+ORDER BY posts.id;
 ```
 
 ## Operaciones Avanzadas
@@ -252,10 +259,10 @@ ORDER BY post.id;
 
 ```php
 // Contar posts por tag
-$tagStats = $orm->table('tag')
-    ->leftJoin('post_tags', 'tag.id = post_tags.tag_id')
-    ->groupBy('tag.id')
-    ->select('tag.name, COUNT(post_tags.post_id) as post_count')
+$tagStats = $orm->table('tags')
+    ->leftJoin('post_tags', 'tags.id = post_tags.tag_id')
+    ->groupBy('tags.id')
+    ->select('tags.name, COUNT(post_tags.post_id) as post_count')
     ->getAll();
 
 echo "Estadísticas de tags:\n";
@@ -266,22 +273,22 @@ foreach ($tagStats as $stat) {
 
 **SQL Equivalente:**
 ```sql
-SELECT tag.name, COUNT(post_tags.post_id) as post_count
-FROM tags tag
-LEFT JOIN post_tags ON tag.id = post_tags.tag_id
-GROUP BY tag.id;
+SELECT tags.name, COUNT(post_tags.post_id) as post_count
+FROM tags
+LEFT JOIN post_tags ON tags.id = post_tags.tag_id
+GROUP BY tags.id;
 ```
 
 ### Buscar Posts con Tags Específicos
 
 ```php
 // Posts que tienen TANTO el tag "PHP" COMO "MySQL"
-$postsWithBothTags = $orm->table('post')
-    ->join('post_tags pt1', 'post.id = pt1.post_id')
-    ->join('tag t1', 'pt1.tag_id = t1.id AND t1.name = "PHP"')
-    ->join('post_tags pt2', 'post.id = pt2.post_id')
-    ->join('tag t2', 'pt2.tag_id = t2.id AND t2.name = "MySQL"')
-    ->select('DISTINCT post.id, post.title')
+$postsWithBothTags = $orm->table('posts')
+    ->join('post_tags pt1', 'posts.id = pt1.post_id')
+    ->join('tags t1', 'pt1.tag_id = t1.id AND t1.name = "PHP"')
+    ->join('post_tags pt2', 'posts.id = pt2.post_id')
+    ->join('tags t2', 'pt2.tag_id = t2.id AND t2.name = "MySQL"')
+    ->select('DISTINCT posts.id, posts.title')
     ->getAll();
 
 echo "Posts con tags PHP Y MySQL:\n";
@@ -294,11 +301,11 @@ foreach ($postsWithBothTags as $post) {
 
 ```php
 // Posts que tienen PHP O MySQL
-$postsWithEitherTag = $orm->table('post')
-    ->join('post_tags', 'post.id = post_tags.post_id')
-    ->join('tag', 'post_tags.tag_id = tag.id')
-    ->where('tag.name', 'IN', ['PHP', 'MySQL'])
-    ->select('DISTINCT post.id, post.title')
+$postsWithEitherTag = $orm->table('posts')
+    ->join('post_tags', 'posts.id = post_tags.post_id')
+    ->join('tags', 'post_tags.tag_id = tags.id')
+    ->where('tags.name', 'IN', ['PHP', 'MySQL'])
+    ->select('DISTINCT posts.id, posts.title')
     ->getAll();
 
 echo "Posts con tags PHP O MySQL:\n";
@@ -309,11 +316,11 @@ foreach ($postsWithEitherTag as $post) {
 
 **SQL Equivalente:**
 ```sql
-SELECT DISTINCT post.id, post.title
-FROM posts post
-JOIN post_tags ON post.id = post_tags.post_id
-JOIN tags tag ON post_tags.tag_id = tag.id
-WHERE tag.name IN ('PHP', 'MySQL');
+SELECT DISTINCT posts.id, posts.title
+FROM posts
+JOIN post_tags ON posts.id = post_tags.post_id
+JOIN tags ON post_tags.tag_id = tags.id
+WHERE tags.name IN ('PHP', 'MySQL');
 ```
 
 ## Tabla Pivot con Datos Adicionales
@@ -347,11 +354,11 @@ $postTag->added_by = 1;         // Usuario que agregó el tag
 $postTag->store();
 
 // Consultar con datos pivot
-$postTagsWithRelevance = $orm->table('tag')
-    ->join('post_tags', 'tag.id = post_tags.tag_id')
-    ->join('user', 'post_tags.added_by = user.id')
+$postTagsWithRelevance = $orm->table('tags')
+    ->join('post_tags', 'tags.id = post_tags.tag_id')
+    ->join('users', 'post_tags.added_by = users.id')
     ->where('post_tags.post_id', '=', $post1Id)
-    ->select('tag.name, post_tags.relevance_score, user.name as added_by_user')
+    ->select('tags.name, post_tags.relevance_score, users.name as added_by_user')
     ->orderBy('post_tags.relevance_score', 'DESC')
     ->getAll();
 
@@ -386,10 +393,10 @@ removeTagFromPost($orm, $post1Id, $mysqlTagId);
 
 ```php
 // Encontrar tags que no están asociados a ningún post
-$orphanTags = $orm->table('tag')
-    ->leftJoin('post_tags', 'tag.id = post_tags.tag_id')
+$orphanTags = $orm->table('tags')
+    ->leftJoin('post_tags', 'tags.id = post_tags.tag_id')
     ->where('post_tags.tag_id', 'IS', null)
-    ->select('tag.id, tag.name')
+    ->select('tags.id, tags.name')
     ->getAll();
 
 echo "Tags sin posts asociados:\n";
@@ -469,8 +476,8 @@ try {
 
 ```php
 function safeAssociate($orm, $postId, $tagId) {
-    $post = VersaModel::load('post', $postId);
-    $tag = VersaModel::load('tag', $tagId);
+    $post = VersaModel::load('posts', $postId);
+    $tag = VersaModel::load('tags', $tagId);
 
     if (!$post->id || !$tag->id) {
         return false;
@@ -493,10 +500,10 @@ function safeAssociate($orm, $postId, $tagId) {
 
 ```php
 // Obtener posts populares (con más tags) con paginación
-$popularPosts = $orm->table('post')
-    ->leftJoin('post_tags', 'post.id = post_tags.post_id')
-    ->groupBy('post.id')
-    ->select('post.id, post.title, COUNT(post_tags.tag_id) as tag_count')
+$popularPosts = $orm->table('posts')
+    ->leftJoin('post_tags', 'posts.id = post_tags.post_id')
+    ->groupBy('posts.id')
+    ->select('posts.id, posts.title, COUNT(post_tags.tag_id) as tag_count')
     ->orderBy('tag_count', 'DESC')
     ->limit(10)
     ->offset(0)

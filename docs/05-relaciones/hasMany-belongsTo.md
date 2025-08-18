@@ -42,24 +42,31 @@ CREATE TABLE posts (
 <?php
 require_once 'vendor/autoload.php';
 
-$orm = new VersaORM();
-$orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
+$orm = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'database' => 'ejemplo',
+    'username' => 'usuario',
+    'password' => 'password',
+    'charset' => 'utf8mb4'
+]);
+VersaModel::setORM($orm);
 
 // Crear usuario
-$user = VersaModel::dispense('user');
+$user = VersaModel::dispense('users');
 $user->name = 'Ana Martínez';
 $user->email = 'ana@ejemplo.com';
 $userId = $user->store();
 
 // Crear posts para el usuario
-$post1 = VersaModel::dispense('post');
+$post1 = VersaModel::dispense('posts');
 $post1->title = 'Introducción a PHP';
 $post1->content = 'PHP es un lenguaje de programación...';
 $post1->user_id = $userId;
 $post1->published = true;
 $post1->store();
 
-$post2 = VersaModel::dispense('post');
+$post2 = VersaModel::dispense('posts');
 $post2->title = 'Bases de Datos con MySQL';
 $post2->content = 'MySQL es un sistema de gestión...';
 $post2->user_id = $userId;
@@ -77,7 +84,7 @@ echo "Usuario y posts creados correctamente\n";
 
 ```php
 // Obtener todos los posts de un usuario específico
-$userPosts = VersaModel::findAll('post', 'user_id = ?', [$userId]);
+$userPosts = VersaModel::findAll('posts', 'user_id = ?', [$userId]);
 
 echo "Posts del usuario:\n";
 foreach ($userPosts as $post) {
@@ -96,7 +103,7 @@ SELECT * FROM posts WHERE user_id = 1;
 
 ```php
 // Posts publicados de un usuario, ordenados por fecha
-$publishedPosts = $orm->table('post')
+$publishedPosts = $orm->table('posts')
     ->where('user_id', '=', $userId)
     ->where('published', '=', true)
     ->orderBy('created_at', 'DESC')
@@ -121,10 +128,10 @@ ORDER BY created_at DESC;
 
 ```php
 // Cargar un post específico
-$post = VersaModel::load('post', 1);
+$post = VersaModel::load('posts', 1);
 
 // Obtener el usuario que escribió el post
-$author = VersaModel::load('user', $post->user_id);
+$author = VersaModel::load('users', $post->user_id);
 
 echo "Post: {$post->title}\n";
 echo "Autor: {$author->name} ({$author->email})\n";
@@ -147,14 +154,14 @@ SELECT * FROM users WHERE id = [user_id del post];
 
 ```php
 // Contar posts por usuario
-$postCount = $orm->table('post')
+$postCount = $orm->table('posts')
     ->where('user_id', '=', $userId)
     ->count();
 
 echo "El usuario tiene {$postCount} posts\n";
 
 // Contar solo posts publicados
-$publishedCount = $orm->table('post')
+$publishedCount = $orm->table('posts')
     ->where('user_id', '=', $userId)
     ->where('published', '=', true)
     ->count();
@@ -174,10 +181,10 @@ SELECT COUNT(*) FROM posts WHERE user_id = 1 AND published = 1;
 
 ```php
 // Obtener posts con información del autor
-$postsWithAuthors = $orm->table('post')
-    ->join('user', 'post.user_id = user.id')
-    ->select('post.title, post.content, user.name as author_name, user.email')
-    ->where('post.published', '=', true)
+$postsWithAuthors = $orm->table('posts')
+    ->join('users', 'posts.user_id = users.id')
+    ->select('posts.title, posts.content, users.name as author_name, users.email')
+    ->where('posts.published', '=', true)
     ->getAll();
 
 foreach ($postsWithAuthors as $post) {
@@ -187,10 +194,10 @@ foreach ($postsWithAuthors as $post) {
 
 **SQL Equivalente:**
 ```sql
-SELECT post.title, post.content, user.name as author_name, user.email
-FROM posts post
-JOIN users user ON post.user_id = user.id
-WHERE post.published = 1;
+SELECT posts.title, posts.content, users.name as author_name, users.email
+FROM posts
+JOIN users ON posts.user_id = users.id
+WHERE posts.published = 1;
 ```
 
 **Devuelve:** Array de arrays asociativos con datos combinados
@@ -199,11 +206,11 @@ WHERE post.published = 1;
 
 ```php
 // Obtener usuarios que tienen posts publicados
-$activeAuthors = $orm->table('user')
-    ->join('post', 'user.id = post.user_id')
-    ->where('post.published', '=', true)
-    ->groupBy('user.id')
-    ->select('user.id, user.name, COUNT(post.id) as post_count')
+$activeAuthors = $orm->table('users')
+    ->join('posts', 'users.id = posts.user_id')
+    ->where('posts.published', '=', true)
+    ->groupBy('users.id')
+    ->select('users.id, users.name, COUNT(posts.id) as post_count')
     ->getAll();
 
 echo "Autores activos:\n";
@@ -214,11 +221,11 @@ foreach ($activeAuthors as $author) {
 
 **SQL Equivalente:**
 ```sql
-SELECT user.id, user.name, COUNT(post.id) as post_count
-FROM users user
-JOIN posts post ON user.id = post.user_id
-WHERE post.published = 1
-GROUP BY user.id;
+SELECT users.id, users.name, COUNT(posts.id) as post_count
+FROM users
+JOIN posts ON users.id = posts.user_id
+WHERE posts.published = 1
+GROUP BY users.id;
 ```
 
 **Devuelve:** Array de arrays asociativos con datos agregados
@@ -230,13 +237,13 @@ GROUP BY user.id;
 ```php
 function createPostForUser($orm, $userId, $title, $content) {
     // Verificar que el usuario existe
-    $user = VersaModel::load('user', $userId);
-    if ($model === null) {
+    $user = VersaModel::load('users', $userId);
+    if ($user === null) {
         throw new Exception("Usuario no encontrado");
     }
 
     // Crear el post
-    $post = VersaModel::dispense('post');
+    $post = VersaModel::dispense('posts');
     $post->title = $title;
     $post->content = $content;
     $post->user_id = $userId;
@@ -260,7 +267,7 @@ try {
 
 ```php
 // Publicar todos los borradores de un usuario
-$drafts = VersaModel::findAll('post', 'user_id = ? AND published = ?', [$userId, false]);
+$drafts = VersaModel::findAll('posts', 'user_id = ? AND published = ?', [$userId, false]);
 
 foreach ($drafts as $draft) {
     $draft->published = true;
@@ -280,7 +287,7 @@ WHERE user_id = 1 AND published = 0;
 
 ```php
 // Eliminar posts no publicados de un usuario
-$unpublishedPosts = VersaModel::findAll('post', 'user_id = ? AND published = ?', [$userId, false]);
+$unpublishedPosts = VersaModel::findAll('posts', 'user_id = ? AND published = ?', [$userId, false]);
 
 foreach ($unpublishedPosts as $post) {
     $post->trash();
@@ -300,7 +307,7 @@ WHERE user_id = 1 AND published = 0;
 ```php
 try {
     // Intentar crear post sin usuario válido
-    $post = VersaModel::dispense('post');
+    $post = VersaModel::dispense('posts');
     $post->title = 'Post huérfano';
     $post->user_id = 999; // Usuario que no existe
     $post->store();
@@ -312,7 +319,7 @@ try {
 
 try {
     // Intentar eliminar usuario con posts
-    $userWithPosts = VersaModel::load('user', $userId);
+    $userWithPosts = VersaModel::load('users', $userId);
     $userWithPosts->trash();
 
 } catch (VersaORMException $e) {
@@ -328,12 +335,12 @@ try {
 ```php
 function safeCreatePost($orm, $userId, $title, $content) {
     // Verificar que el usuario existe
-    $user = VersaModel::load('user', $userId);
-    if ($model === null) {
+    $user = VersaModel::load('users', $userId);
+    if ($user === null) {
         return false;
     }
 
-    $post = VersaModel::dispense('post');
+    $post = VersaModel::dispense('posts');
     $post->title = $title;
     $post->content = $content;
     $post->user_id = $userId;
@@ -348,13 +355,13 @@ function safeCreatePost($orm, $userId, $title, $content) {
 $orm->begin();
 try {
     // Crear usuario
-    $user = VersaModel::dispense('user');
+    $user = VersaModel::dispense('users');
     $user->name = 'Nuevo Usuario';
     $user->email = 'nuevo@ejemplo.com';
     $userId = $user->store();
 
     // Crear post inicial
-    $post = VersaModel::dispense('post');
+    $post = VersaModel::dispense('posts');
     $post->title = 'Post de bienvenida';
     $post->content = 'Contenido inicial...';
     $post->user_id = $userId;
@@ -374,7 +381,7 @@ try {
 
 ```php
 // Obtener los 5 posts más recientes de un usuario
-$recentPosts = $orm->table('post')
+$recentPosts = $orm->table('posts')
     ->where('user_id', '=', $userId)
     ->orderBy('created_at', 'DESC')
     ->limit(5)

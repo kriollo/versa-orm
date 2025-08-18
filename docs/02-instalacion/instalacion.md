@@ -90,8 +90,9 @@ Crea un archivo `test-instalacion.php`:
 require_once 'vendor/autoload.php';
 
 try {
-    // Probar con SQLite (no requiere servidor)
-    $orm = new VersaORM('sqlite::memory:');
+    // Probar con SQLite (no requiere servidor) - forma recomendada (array)
+    $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
+    VersaModel::setORM($orm);
     echo "✅ VersaORM instalado correctamente\n";
     echo "Versión: " . $orm->getVersion() . "\n";
 } catch (Exception $e) {
@@ -168,8 +169,12 @@ spl_autoload_register(function ($class) {
 // En tus archivos PHP
 require_once 'lib/versaorm/autoload.php';
 
-// Ahora puedes usar VersaORM
-$orm = new VersaORM('sqlite:database.db');
+// Ahora puedes usar VersaORM (array recomendado en lugar de DSN)
+$orm = new VersaORM([
+    'driver' => 'sqlite',
+    'database' => __DIR__ . '/database.db'
+]);
+VersaModel::setORM($orm);
 ?>
 ```
 
@@ -193,8 +198,15 @@ $orm = new VersaORM('sqlite:database.db');
 4. **Configurar base de datos**:
    ```php
    <?php
-   // Para MySQL en XAMPP
-   $orm = new VersaORM('mysql:host=localhost;dbname=mi_bd', 'root', '');
+   // Para MySQL en XAMPP (forma recomendada con array)
+   $orm = new VersaORM([
+       'driver' => 'mysql',
+       'host' => 'localhost',
+       'database' => 'mi_bd',
+       'username' => 'root',
+       'password' => ''
+   ]);
+   VersaModel::setORM($orm);
    ?>
    ```
 
@@ -381,7 +393,8 @@ try {
         require_once 'lib/versaorm/autoload.php';
     }
 
-    $orm = new VersaORM('sqlite::memory:');
+    $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
+    VersaModel::setORM($orm);
     echo "✅\n";
     echo "   Versión: " . $orm->getVersion() . "\n";
 } catch (Exception $e) {

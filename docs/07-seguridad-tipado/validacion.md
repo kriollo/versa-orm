@@ -391,7 +391,7 @@ class OrderModel extends VersaModel {
 
             // Verificar que el producto existe
             $product = $this->orm->load('products', $item['product_id']);
-            if ($model === null) {
+            if ($product === null) {
                 throw new VersaORMException("Producto no encontrado en item $index");
             }
         }
@@ -521,7 +521,7 @@ protected static $messages = [
 public function beforeStore() {
     if ($this->category_id) {
         $category = $this->orm->load('categories', $this->category_id);
-        if ($model === null) {
+        if ($category === null) {
             throw new VersaORMException('Categoría no encontrada');
         }
         if (!$category->active) {

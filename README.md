@@ -74,6 +74,7 @@ $user->store(); // Actualización automática
 - 💾 **Conversión de tipos** - Fechas, booleanos, JSON automático
 - 🔀 **Operaciones de conjuntos** - UNION, INTERSECT, EXCEPT
 - 🚫 **Cero compilación** - Solo PHP puro
+- 📦 **Batch simple de modelos** - `VersaModel::storeAll([$m1,$m2])` devuelve array de IDs
 
 ## ✨ Arquitectura
 
@@ -324,7 +325,7 @@ use VersaORM\VersaORM;
 use VersaORM\VersaModel;
 
 $orm = new VersaORM([
-    'driver' => 'mysql',        // mysql, postgresql, sqlite
+    'driver' => 'mysql',        // mysql, postgresql, sqlite (alias aceptados: mariadb, pgsql, postgres)
     'host' => 'localhost',
     'database' => 'mi_app',
     'username' => 'usuario',
@@ -336,6 +337,14 @@ VersaModel::setORM($orm);
 ```
 
 ### Configuraciones por Base de Datos
+
+#### Drivers soportados y alias
+VersaORM reconoce estos drivers principales:
+- `mysql` (alias: `mariadb`)
+- `postgresql` (alias: `pgsql`, `postgres`)
+- `sqlite`
+
+Se recomienda usar los nombres canónicos (`mysql`, `postgresql`, `sqlite`). Los alias se mantienen por compatibilidad.
 
 **MySQL/MariaDB:**
 ```php
@@ -353,7 +362,7 @@ $config = [
 **PostgreSQL:**
 ```php
 $config = [
-    'driver' => 'postgresql',
+    'driver' => 'postgresql', // alias aceptados: pgsql, postgres
     'host' => 'localhost',
     'port' => 5432,
     'database' => 'mi_app',
@@ -368,6 +377,13 @@ $config = [
     'driver' => 'sqlite',
     'database' => 'database/app.sqlite'
 ];
+```
+
+Nota sobre persistencia: `store()` siempre devuelve el ID (int|string) del registro insertado/actualizado. Puedes capturarlo:
+```php
+$id = $user->store(); // Inserta y devuelve ID
+$user->name = 'Nuevo';
+$sameId = $user->store(); // Devuelve el mismo ID tras update
 ```
 
 **📖 Configuración detallada**: [Ver guía completa](docs/02-instalacion/configuracion.md)

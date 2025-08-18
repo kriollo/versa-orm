@@ -23,9 +23,9 @@ try {
     ]);
 
     // Operaciones con VersaORM
-    $usuario = VersaModel::dispense('users');
-    $usuario->email = 'test@ejemplo.com';
-    $usuario->store();
+    $user = VersaModel::dispense('users');
+    $user->email = 'test@ejemplo.com';
+    $user->store();
 
 } catch (VersaORMException $e) {
     echo "Error de VersaORM: " . $e->getMessage();
@@ -68,13 +68,13 @@ try {
 
 ```php
 try {
-    $usuario = VersaModel::dispense('tabla_inexistente');
-    $usuario->name = 'Test';
-    $usuario->store();
+    $user = VersaModel::dispense('non_existent_table');
+    $user->name = 'Test';
+    $user->store();
 
 } catch (VersaORMException $e) {
     echo "Error de tabla: " . $e->getMessage();
-    // "Table 'mi_app.tabla_inexistente' doesn't exist"
+    // "Table 'mi_app.non_existent_table' doesn't exist"
 
     // Crear la tabla automáticamente si es necesario
     if (strpos($e->getMessage(), "doesn't exist") !== false) {
@@ -89,13 +89,13 @@ try {
 ```php
 try {
     // Intentar insertar email duplicado
-    $usuario1 = VersaModel::dispense('users');
-    $usuario1->email = 'duplicado@ejemplo.com';
-    $usuario1->store();
+    $user1 = VersaModel::dispense('users');
+    $user1->email = 'duplicado@ejemplo.com';
+    $user1->store();
 
-    $usuario2 = VersaModel::dispense('users');
-    $usuario2->email = 'duplicado@ejemplo.com'; // Email duplicado
-    $usuario2->store();
+    $user2 = VersaModel::dispense('users');
+    $user2->email = 'duplicado@ejemplo.com'; // Email duplicado
+    $user2->store();
 
 } catch (VersaORMException $e) {
     if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
@@ -112,20 +112,20 @@ try {
 
 ```php
 try {
-    $usuario = VersaModel::dispense('users');
-    $usuario->email = 'email_invalido'; // Email sin formato válido
-    $usuario->age = -5; // Edad negativa
+    $user = VersaModel::dispense('users');
+    $user->email = 'email_invalido'; // Email sin formato válido
+    $user->age = -5; // Edad negativa
 
     // Si tienes validaciones personalizadas
-    if (!filter_var($usuario->email, FILTER_VALIDATE_EMAIL)) {
-        throw new VersaORMException('Email inválido: ' . $usuario->email);
+    if (!filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+        throw new VersaORMException('Email inválido: ' . $user->email);
     }
 
-    if ($usuario->age < 0) {
+    if ($user->age < 0) {
         throw new VersaORMException('La edad no puede ser negativa');
     }
 
-    $usuario->store();
+    $user->store();
 
 } catch (VersaORMException $e) {
     echo "Error de validación: " . $e->getMessage();
@@ -137,30 +137,30 @@ try {
 ### Errores en CREATE (dispense/store)
 
 ```php
-function crearUsuario($orm, $datos) {
+function createUser($orm, $data) {
     try {
-        $usuario = VersaModel::dispense('users');
+        $user = VersaModel::dispense('users');
 
         // Validar datos requeridos
-        if (empty($datos['name'])) {
+        if (empty($data['name'])) {
             throw new VersaORMException('El nombre es requerido');
         }
 
-        if (empty($datos['email'])) {
+        if (empty($data['email'])) {
             throw new VersaORMException('El email es requerido');
         }
 
         // Verificar email único
-        $existeEmail = VersaModel::findOne('users', 'email = ?', [$datos['email']]);
-        if ($model !== null) {
+        $emailExists = VersaModel::findOne('users', 'email = ?', [$data['email']]);
+        if ($emailExists !== null) {
             throw new VersaORMException('El email ya está registrado');
         }
 
-        $usuario->name = $datos['name'];
-        $usuario->email = $datos['email'];
-        $usuario->active = $datos['active'] ?? true;
+        $user->name = $data['name'];
+        $user->email = $data['email'];
+        $user->active = $data['active'] ?? true;
 
-        $id = $usuario->store();
+        $id = $user->store();
         return ['success' => true, 'id' => $id];
 
     } catch (VersaORMException $e) {
@@ -169,7 +169,7 @@ function crearUsuario($orm, $datos) {
 }
 
 // Uso
-$resultado = crearUsuario($orm, [
+$resultado = createUser($orm, [
     'name' => 'Juan Pérez',
     'email' => 'juan@ejemplo.com'
 ]);
@@ -184,19 +184,19 @@ if ($resultado['success']) {
 ### Errores en READ (load/find)
 
 ```php
-function obtenerUsuario($orm, $id) {
+function getUser($orm, $id) {
     try {
         if (!is_numeric($id) || $id <= 0) {
             throw new VersaORMException('ID inválido: debe ser un número positivo');
         }
 
-        $usuario = VersaModel::load('users', $id);
+        $user = VersaModel::load('users', $id);
 
-        if ($model === null) {
+        if ($user === null) {
             throw new VersaORMException('Usuario no encontrado con ID: ' . $id);
         }
 
-        return ['success' => true, 'usuario' => $usuario];
+        return ['success' => true, 'user' => $user];
 
     } catch (VersaORMException $e) {
         return ['success' => false, 'error' => $e->getMessage()];
@@ -204,10 +204,10 @@ function obtenerUsuario($orm, $id) {
 }
 
 // Uso
-$resultado = obtenerUsuario($orm, 999);
+$resultado = getUser($orm, 999);
 
 if ($resultado['success']) {
-    echo "Usuario: " . $resultado['usuario']->name;
+    echo "Usuario: " . $resultado['user']->name;
 } else {
     echo "Error: " . $resultado['error'];
 }
@@ -216,32 +216,32 @@ if ($resultado['success']) {
 ### Errores en UPDATE (store)
 
 ```php
-function actualizarUsuario($orm, $id, $datos) {
+function updateUser($orm, $id, $data) {
     try {
-        $usuario = VersaModel::load('users', $id);
+        $user = VersaModel::load('users', $id);
 
-        if ($model === null) {
+        if ($user === null) {
             throw new VersaORMException('Usuario no encontrado para actualizar');
         }
 
         // Validar email único si se está cambiando
-        if (isset($datos['email']) && $datos['email'] !== $usuario->email) {
-            $existeEmail = VersaModel::findOne('users', 'email = ? AND id != ?',
-                [$datos['email'], $id]);
+        if (isset($data['email']) && $data['email'] !== $user->email) {
+            $emailExists = VersaModel::findOne('users', 'email = ? AND id != ?',
+                [$data['email'], $id]);
 
-            if ($model !== null) {
+            if ($emailExists !== null) {
                 throw new VersaORMException('El email ya está en uso por otro usuario');
             }
         }
 
         // Actualizar solo campos proporcionados
-        foreach ($datos as $campo => $valor) {
+        foreach ($data as $campo => $valor) {
             if (in_array($campo, ['name', 'email', 'active'])) {
-                $usuario->$campo = $valor;
+                $user->$campo = $valor;
             }
         }
 
-        $usuario->store();
+        $user->store();
         return ['success' => true, 'message' => 'Usuario actualizado'];
 
     } catch (VersaORMException $e) {
@@ -250,7 +250,7 @@ function actualizarUsuario($orm, $id, $datos) {
 }
 
 // Uso
-$resultado = actualizarUsuario($orm, 1, [
+$resultado = updateUser($orm, 1, [
     'name' => 'Juan Carlos Pérez',
     'email' => 'juancarlos@ejemplo.com'
 ]);
@@ -265,11 +265,11 @@ if ($resultado['success']) {
 ### Errores en DELETE (trash)
 
 ```php
-function eliminarUsuario($orm, $id) {
+function deleteUser($orm, $id) {
     try {
-        $usuario = VersaModel::load('users', $id);
+        $user = VersaModel::load('users', $id);
 
-        if ($model === null) {
+        if ($user === null) {
             throw new VersaORMException('Usuario no encontrado para eliminar');
         }
 
@@ -281,7 +281,7 @@ function eliminarUsuario($orm, $id) {
             );
         }
 
-        $usuario->trash();
+        $user->trash();
         return ['success' => true, 'message' => 'Usuario eliminado'];
 
     } catch (VersaORMException $e) {
@@ -290,7 +290,7 @@ function eliminarUsuario($orm, $id) {
 }
 
 // Uso
-$resultado = eliminarUsuario($orm, 1);
+$resultado = deleteUser($orm, 1);
 
 if ($resultado['success']) {
     echo $resultado['message'];
@@ -313,9 +313,9 @@ function logError($message, $context = []) {
 }
 
 try {
-    $usuario = VersaModel::dispense('users');
-    $usuario->email = 'test@ejemplo.com';
-    $usuario->store();
+    $user = VersaModel::dispense('users');
+    $user->email = 'test@ejemplo.com';
+    $user->store();
 
 } catch (VersaORMException $e) {
     logError($e->getMessage(), [
@@ -375,9 +375,9 @@ class VersaORMLogger {
 $logger = new VersaORMLogger();
 
 try {
-    $usuario = VersaModel::dispense('users');
-    $usuario->name = 'Test User';
-    $id = $usuario->store();
+    $user = VersaModel::dispense('users');
+    $user->name = 'Test User';
+    $id = $user->store();
 
     $logger->logInfo('Usuario creado exitosamente', ['id' => $id]);
 
@@ -398,11 +398,11 @@ function transferirDatos($orm, $fromId, $toId, $amount) {
         $fromAccount = VersaModel::load('accounts', $fromId);
         $toAccount = VersaModel::load('accounts', $toId);
 
-        if ($model === null) {
+        if ($fromAccount === null) {
             throw new VersaORMException('Cuenta origen no encontrada');
         }
 
-        if ($model === null) {
+        if ($toAccount === null) {
             throw new VersaORMException('Cuenta destino no encontrada');
         }
 
@@ -467,7 +467,7 @@ class UserManager {
 
             // Verificar email único
             $existing = $this->orm->findOne('users', 'email = ?', [$data['email']]);
-            if ($model !== null) {
+            if ($existing !== null) {
                 throw new VersaORMException('Email ya registrado: ' . $data['email']);
             }
 
@@ -531,7 +531,7 @@ class UserManager {
 
             $user = $this->orm->load('users', $id);
 
-            if ($model === null) {
+            if ($user === null) {
                 throw new VersaORMException('Usuario no encontrado');
             }
 
@@ -589,13 +589,13 @@ try {
 ```php
 // ✅ Correcto
 try {
-    $usuario->store();
+    $user->store();
 } catch (VersaORMException $e) {
     // Manejar error específico
 }
 
 // ❌ Incorrecto
-$usuario->store(); // Puede fallar sin aviso
+$user->store(); // Puede fallar sin aviso
 ```
 
 ### 2. Validar datos antes de operaciones
@@ -607,7 +607,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 // ❌ Incorrecto
-$usuario->email = $email; // Sin validación
+$user->email = $email; // Sin validación
 ```
 
 ### 3. Proporcionar mensajes de error útiles

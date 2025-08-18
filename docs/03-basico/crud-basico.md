@@ -28,13 +28,13 @@ $orm = new VersaORM([
 
 ```php
 // Crear un nuevo usuario
-$usuario = VersaModel::dispense('users');
-$usuario->name = 'Juan Pérez';
-$usuario->email = 'juan@ejemplo.com';
-$usuario->active = true;
+$user = VersaModel::dispense('users');
+$user->name = 'Juan Pérez';
+$user->email = 'juan@ejemplo.com';
+$user->active = true;
 
-$usuario->store();
-echo "Usuario creado con ID: " . $usuario->id;
+$user->store();
+echo "Usuario creado con ID: " . $user->id;
 ```
 
 **SQL Equivalente:**
@@ -48,20 +48,21 @@ INSERT INTO users (name, email, active) VALUES ('Juan Pérez', 'juan@ejemplo.com
 
 ```php
 // Crear varios usuarios de una vez
-$usuarios = [];
+$users = [];
 
-$usuario1 = VersaModel::dispense('users');
-$usuario1->name = 'María García';
-$usuario1->email = 'maria@ejemplo.com';
-$usuarios[] = $usuario1;
+$user1 = VersaModel::dispense('users');
+$user1->name = 'María García';
+$user1->email = 'maria@ejemplo.com';
+$users[] = $user1;
 
-$usuario2 = VersaModel::dispense('users');
-$usuario2->name = 'Carlos López';
-$usuario2->email = 'carlos@ejemplo.com';
-$usuarios[] = $usuario2;
+$user2 = VersaModel::dispense('users');
+$user2->name = 'Carlos López';
+$user2->email = 'carlos@ejemplo.com';
+$users[] = $user2;
 
-VersaModel::storeAll($usuarios);
-echo "Usuarios creados con IDs: " . $usuario1->id . ', ' . $usuario2->id;
+// Devuelve array de IDs en el mismo orden
+$ids = VersaModel::storeAll($users);
+echo "Usuarios creados con IDs: " . implode(', ', $ids);
 ```
 
 **SQL Equivalente:**
@@ -71,7 +72,7 @@ INSERT INTO users (name, email) VALUES
 ('Carlos López', 'carlos@ejemplo.com');
 ```
 
-**Devuelve:** Array de modelos almacenados con IDs asignados
+**Devuelve:** Array de IDs (int|string|null) en el mismo orden de entrada
 
 ## READ - Leer registros
 
@@ -79,11 +80,11 @@ INSERT INTO users (name, email) VALUES
 
 ```php
 // Cargar usuario por ID
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    echo "Usuario encontrado: " . $usuario->name;
-    echo "Email: " . $usuario->email;
+if ($user !== null) {
+    echo "Usuario encontrado: " . $user->name;
+    echo "Email: " . $user->email;
 } else {
     echo "Usuario no encontrado";
 }
@@ -100,10 +101,10 @@ SELECT * FROM users WHERE id = 1;
 
 ```php
 // Obtener todos los usuarios activos
-$usuarios = VersaModel::findAll('users', 'active = ?', [true]);
+$users = VersaModel::findAll('users', 'active = ?', [true]);
 
-foreach ($usuarios as $usuario) {
-    echo "ID: " . $usuario->id . " - Nombre: " . $usuario->name . "\n";
+foreach ($users as $user) {
+    echo "ID: " . $user->id . " - Nombre: " . $user->name . "\n";
 }
 ```
 
@@ -118,9 +119,9 @@ SELECT * FROM users WHERE active = 1;
 
 ```php
 // Buscar usuarios por nombre y estado
-$usuarios = VersaModel::findAll('users', 'name LIKE ? AND active = ?', ['%Juan%', true]);
+$users = VersaModel::findAll('users', 'name LIKE ? AND active = ?', ['%Juan%', true]);
 
-echo "Usuarios encontrados: " . count($usuarios);
+echo "Usuarios encontrados: " . count($users);
 ```
 
 **SQL Equivalente:**
@@ -136,13 +137,13 @@ SELECT * FROM users WHERE name LIKE '%Juan%' AND active = 1;
 
 ```php
 // Cargar y actualizar usuario
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    $usuario->name = 'Juan Carlos Pérez';
-    $usuario->email = 'juancarlos@ejemplo.com';
+if ($user !== null) {
+    $user->name = 'Juan Carlos Pérez';
+    $user->email = 'juancarlos@ejemplo.com';
 
-    $usuario->store();
+    $user->store();
     echo "Usuario actualizado correctamente";
 } else {
     echo "Usuario no encontrado";
@@ -160,14 +161,14 @@ UPDATE users SET name = 'Juan Carlos Pérez', email = 'juancarlos@ejemplo.com' W
 
 ```php
 // Activar todos los usuarios inactivos
-$usuariosInactivos = VersaModel::findAll('users', 'active = ?', [false]);
+$inactiveUsers = VersaModel::findAll('users', 'active = ?', [false]);
 
-foreach ($usuariosInactivos as $usuario) {
-    $usuario->active = true;
-    $usuario->store();
+foreach ($inactiveUsers as $user) {
+    $user->active = true;
+    $user->store();
 }
 
-echo "Activados " . count($usuariosInactivos) . " usuarios";
+echo "Activados " . count($inactiveUsers) . " usuarios";
 ```
 
 **SQL Equivalente:**
@@ -179,17 +180,17 @@ UPDATE users SET active = 1 WHERE active = 0;
 
 ```php
 // Actualizar email con validación
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    $nuevoEmail = 'nuevo@ejemplo.com';
+if ($user !== null) {
+    $newEmail = 'nuevo@ejemplo.com';
 
     // Verificar que el email no exista
-    $existeEmail = VersaModel::findOne('users', 'email = ? AND id != ?', [$nuevoEmail, $usuario->id]);
+    $emailExists = VersaModel::findOne('users', 'email = ? AND id != ?', [$newEmail, $user->id]);
 
-    if ($existeEmail === null) {
-        $usuario->email = $nuevoEmail;
-        $usuario->store();
+    if ($emailExists === null) {
+        $user->email = $newEmail;
+        $user->store();
         echo "Email actualizado correctamente";
     } else {
         echo "El email ya está en uso";
@@ -203,10 +204,10 @@ if ($usuario !== null) {
 
 ```php
 // Eliminar usuario por ID
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    $usuario->trash();
+if ($user !== null) {
+    $user->trash();
     echo "Usuario eliminado correctamente";
 } else {
     echo "Usuario no encontrado";
@@ -224,13 +225,13 @@ DELETE FROM users WHERE id = 1;
 
 ```php
 // Eliminar usuarios inactivos
-$usuariosInactivos = VersaModel::findAll('users', 'active = ?', [false]);
+$inactiveUsers = VersaModel::findAll('users', 'active = ?', [false]);
 
-foreach ($usuariosInactivos as $usuario) {
-    $usuario->trash();
+foreach ($inactiveUsers as $user) {
+    $user->trash();
 }
 
-echo "Eliminados " . count($usuariosInactivos) . " usuarios inactivos";
+echo "Eliminados " . count($inactiveUsers) . " usuarios inactivos";
 ```
 
 **SQL Equivalente:**
@@ -242,12 +243,12 @@ DELETE FROM users WHERE active = 0;
 
 ```php
 // En lugar de eliminar, marcar como inactivo
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    $usuario->active = false;
-    $usuario->deleted_at = date('Y-m-d H:i:s');
-    $usuario->store();
+if ($user !== null) {
+    $user->active = false;
+    $user->deleted_at = date('Y-m-d H:i:s');
+    $user->store();
     echo "Usuario desactivado (eliminación suave)";
 }
 ```
@@ -275,40 +276,40 @@ try {
 
     // CREATE - Crear nuevo usuario
     echo "=== CREAR USUARIO ===\n";
-    $usuario = VersaModel::dispense('users');
-    $usuario->name = 'Ana Martínez';
-    $usuario->email = 'ana@ejemplo.com';
-    $usuario->active = true;
+    $user = VersaModel::dispense('users');
+    $user->name = 'Ana Martínez';
+    $user->email = 'ana@ejemplo.com';
+    $user->active = true;
 
-    $usuario->store();
-    echo "Usuario creado con ID: " . $usuario->id . "\n\n";
+    $user->store();
+    echo "Usuario creado con ID: " . $user->id . "\n\n";
 
     // READ - Leer usuario
     echo "=== LEER USUARIO ===\n";
-    $usuarioLeido = VersaModel::load('users', $usuario->id);
-    echo "Nombre: " . $usuarioLeido->name . "\n";
-    echo "Email: " . $usuarioLeido->email . "\n\n";
+    $readUser = VersaModel::load('users', $user->id);
+    echo "Nombre: " . $readUser->name . "\n";
+    echo "Email: " . $readUser->email . "\n\n";
 
     // UPDATE - Actualizar usuario
     echo "=== ACTUALIZAR USUARIO ===\n";
-    $usuarioLeido->name = 'Ana Isabel Martínez';
-    $usuarioLeido->store();
+    $readUser->name = 'Ana Isabel Martínez';
+    $readUser->store();
     echo "Usuario actualizado\n\n";
 
     // READ - Verificar actualización
     echo "=== VERIFICAR ACTUALIZACIÓN ===\n";
-    $usuarioActualizado = VersaModel::load('users', $usuario->id);
-    echo "Nuevo nombre: " . $usuarioActualizado->name . "\n\n";
+    $updatedUser = VersaModel::load('users', $user->id);
+    echo "Nuevo nombre: " . $updatedUser->name . "\n\n";
 
     // DELETE - Eliminar usuario
     echo "=== ELIMINAR USUARIO ===\n";
-    $usuarioActualizado->trash();
+    $updatedUser->trash();
     echo "Usuario eliminado\n\n";
 
     // READ - Verificar eliminación
     echo "=== VERIFICAR ELIMINACIÓN ===\n";
-    $usuarioEliminado = VersaModel::load('users', $usuario->id);
-    if ($usuarioEliminado === null) {
+    $deletedUser = VersaModel::load('users', $user->id);
+    if ($deletedUser === null) {
         echo "Usuario eliminado correctamente\n";
     }
 
@@ -321,8 +322,8 @@ try {
 
 ### 1. Siempre verificar existencia antes de actualizar/eliminar
 ```php
-$usuario = VersaModel::load('users', $id);
-if ($usuario !== null) {
+$user = VersaModel::load('users', $id);
+if ($user !== null) {
     // Proceder con la operación
 } else {
     // Manejar caso de registro no encontrado
@@ -334,8 +335,8 @@ if ($usuario !== null) {
 $orm->exec('BEGIN');
 try {
     // Múltiples operaciones
-    $usuario1->store();
-    $usuario2->store();
+    $user1->store();
+    $user2->store();
     $orm->exec('COMMIT');
 } catch (Exception $e) {
     $orm->exec('ROLLBACK');
@@ -346,8 +347,8 @@ try {
 ### 3. Validar datos antes de guardar
 ```php
 if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $usuario->email = $email;
-    $usuario->store();
+    $user->email = $email;
+    $user->store();
 } else {
     throw new InvalidArgumentException('Email inválido');
 }
@@ -358,25 +359,25 @@ if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
 ### 1. No verificar si el registro existe
 ```php
 // ❌ Incorrecto
-$usuario = VersaModel::load('users', 999);
-$usuario->name = 'Nuevo nombre'; // Error si no existe
+$user = VersaModel::load('users', 999);
+$user->name = 'Nuevo nombre'; // Error si no existe
 
 // ✅ Correcto
-$usuario = VersaModel::load('users', 999);
-if ($usuario !== null) {
-    $usuario->name = 'Nuevo nombre';
-    $usuario->store();
+$user = VersaModel::load('users', 999);
+if ($user !== null) {
+    $user->name = 'Nuevo nombre';
+    $user->store();
 }
 ```
 
 ### 2. No manejar excepciones
 ```php
 // ❌ Incorrecto
-$usuario->store(); // Puede fallar sin aviso
+$user->store(); // Puede fallar sin aviso
 
 // ✅ Correcto
 try {
-    $usuario->store();
+    $user->store();
 } catch (VersaORMException $e) {
     echo "Error al guardar: " . $e->getMessage();
 }

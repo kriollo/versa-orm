@@ -56,12 +56,12 @@ users          profiles
 ```php
 // En el modelo User
 public function profile() {
-    return $this->hasOne('profile', 'user_id');
+    return $this->hasOne('profiles', 'user_id');
 }
 
 // En el modelo Profile
 public function user() {
-    return $this->belongsTo('user', 'user_id');
+    return $this->belongsTo('users', 'user_id');
 }
 ```
 
@@ -86,12 +86,12 @@ users          posts
 ```php
 // En el modelo User
 public function posts() {
-    return $this->hasMany('post', 'user_id');
+    return $this->hasMany('posts', 'user_id');
 }
 
 // En el modelo Post
 public function user() {
-    return $this->belongsTo('user', 'user_id');
+    return $this->belongsTo('users', 'user_id');
 }
 ```
 
@@ -117,12 +117,12 @@ posts          post_tags       tags
 ```php
 // En el modelo Post
 public function tags() {
-    return $this->belongsToMany('tag', 'post_tags', 'post_id', 'tag_id');
+    return $this->belongsToMany('tags', 'post_tags', 'post_id', 'tag_id');
 }
 
 // En el modelo Tag
 public function posts() {
-    return $this->belongsToMany('post', 'post_tags', 'tag_id', 'post_id');
+    return $this->belongsToMany('posts', 'post_tags', 'tag_id', 'post_id');
 }
 ```
 
@@ -131,7 +131,7 @@ public function posts() {
 VersaORM sigue convenciones que simplifican la definición de relaciones:
 
 ### Nombres de Tablas
-- Singular en minúsculas: `user`, `post`, `tag`
+- Plural en minúsculas: `users`, `posts`, `tags`
 - Para tablas pivot: `tabla1_tabla2` en orden alfabético: `post_tags`
 
 ### Claves Foráneas
@@ -153,34 +153,40 @@ Veamos un ejemplo con las tablas de nuestro sistema de ejemplo:
 require_once 'vendor/autoload.php';
 
 // Configuración
-$orm = new VersaORM();
-$orm->setup('mysql:host=localhost;dbname=ejemplo', 'usuario', 'password');
+$orm = new VersaORM([
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'database' => 'ejemplo',
+    'username' => 'usuario',
+    'password' => 'password'
+]);
+VersaModel::setORM($orm);
 
 // Crear un usuario con posts
-$user = VersaModel::dispense('user');
+$user = VersaModel::dispense('users');
 $user->name = 'María García';
 $user->email = 'maria@ejemplo.com';
 $userId = $user->store();
 
 // Crear posts para el usuario
-$post1 = VersaModel::dispense('post');
+$post1 = VersaModel::dispense('posts');
 $post1->title = 'Mi primer post';
 $post1->content = 'Contenido del primer post';
 $post1->user_id = $userId;
 $post1->store();
 
-$post2 = VersaModel::dispense('post');
+$post2 = VersaModel::dispense('posts');
 $post2->title = 'Segundo post';
 $post2->content = 'Más contenido interesante';
 $post2->user_id = $userId;
 $post2->store();
 
 // Obtener usuario con sus posts
-$userWithPosts = VersaModel::load('user', $userId);
+$userWithPosts = VersaModel::load('users', $userId);
 echo "Usuario: " . $userWithPosts->name . "\n";
 
 // Obtener posts del usuario (esto se explica en detalle en la siguiente sección)
-$posts = VersaModel::findAll('post', 'user_id = ?', [$userId]);
+$posts = VersaModel::findAll('posts', 'user_id = ?', [$userId]);
 foreach ($posts as $post) {
     echo "- " . $post->title . "\n";
 }

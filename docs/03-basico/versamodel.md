@@ -18,7 +18,7 @@ El método `dispense()` crea un nuevo objeto VersaModel vacío, listo para ser l
 ### Sintaxis básica
 
 ```php
-$modelo = VersaModel::dispense('nombre_tabla');
+$model = VersaModel::dispense("table_name");
 ```
 
 **Devuelve:** Objeto VersaModel vacío
@@ -27,14 +27,14 @@ $modelo = VersaModel::dispense('nombre_tabla');
 
 ```php
 // Crear un nuevo usuario
-$usuario = VersaModel::dispense('users');
-echo get_class($usuario); // VersaORM\VersaModel
-echo $usuario->id; // null (aún no tiene ID)
+$user = VersaModel::dispense('users');
+echo get_class($user); // VersaORM\VersaModel
+echo $user->id; // null (aún no tiene ID)
 
 // Asignar propiedades
-$usuario->name = 'Pedro Sánchez';
-$usuario->email = 'pedro@ejemplo.com';
-$usuario->active = true;
+$user->name = 'Pedro Sánchez';
+$user->email = 'pedro@ejemplo.com';
+$user->active = true;
 
 // En este punto el usuario existe solo en memoria
 // No se ha guardado en la base de datos aún
@@ -44,14 +44,14 @@ $usuario->active = true;
 
 ```php
 // Crear varios modelos de una vez
-$usuarios = [];
+$users = [];
 for ($i = 0; $i < 3; $i++) {
-    $usuarios[] = VersaModel::dispense('users');
+    $users[] = VersaModel::dispense('users');
 }
 
-$usuarios[0]->name = 'Usuario 1';
-$usuarios[1]->name = 'Usuario 2';
-$usuarios[2]->name = 'Usuario 3';
+$users[0]->name = 'Usuario 1';
+$users[1]->name = 'Usuario 2';
+$users[2]->name = 'Usuario 3';
 
 // Todos están en memoria, no en la base de datos
 ```
@@ -65,7 +65,7 @@ El método `load()` recupera un registro existente de la base de datos y lo conv
 ### Sintaxis básica
 
 ```php
-$modelo = VersaModel::load('nombre_tabla', $id);
+$model = VersaModel::load('table_name', $id);
 ```
 
 **Devuelve:** Objeto VersaModel o null si no existe el registro
@@ -74,12 +74,12 @@ $modelo = VersaModel::load('nombre_tabla', $id);
 
 ```php
 // Cargar usuario por ID
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    echo "Usuario encontrado: " . $usuario->name;
-    echo "Email: " . $usuario->email;
-    echo "Activo: " . ($usuario->active ? 'Sí' : 'No');
+if ($user !== null) {
+    echo "Usuario encontrado: " . $user->name;
+    echo "Email: " . $user->email;
+    echo "Activo: " . ($user->active ? 'Sí' : 'No');
 } else {
     echo "Usuario con ID 1 no existe";
 }
@@ -94,16 +94,16 @@ SELECT * FROM users WHERE id = 1;
 
 ```php
 // Método recomendado para verificar existencia
-$usuario = VersaModel::load('users', 999);
+$user = VersaModel::load('users', 999);
 
-if ($usuario !== null) {
+if ($user !== null) {
     echo "El usuario existe";
 } else {
     echo "El usuario no existe";
 }
 
 // También puedes verificar directamente
-if ($usuario === null) {
+if ($user === null) {
     echo "El modelo no existe en BD";
 }
 ```
@@ -112,13 +112,13 @@ if ($usuario === null) {
 
 ```php
 // Si el usuario no existe, crear uno nuevo con valores por defecto
-$usuario = VersaModel::load('users', 999);
+$user = VersaModel::load('users', 999);
 
-if ($usuario === null) {
-    $usuario = VersaModel::dispense('users');
-    $usuario->name = 'Usuario por defecto';
-    $usuario->email = 'default@ejemplo.com';
-    $usuario->active = false;
+if ($user === null) {
+    $user = VersaModel::dispense('users');
+    $user->name = 'Usuario por defecto';
+    $user->email = 'default@ejemplo.com';
+    $user->active = false;
 }
 ```
 
@@ -129,7 +129,7 @@ El método `store()` guarda un modelo en la base de datos. Automáticamente dete
 ### Sintaxis básica
 
 ```php
-$modelo->store();
+$model->store();
 ```
 
 **Devuelve:** El modelo con ID asignado (si es nuevo)
@@ -138,16 +138,16 @@ $modelo->store();
 
 ```php
 // Crear nuevo usuario
-$usuario = VersaModel::dispense('users');
-$usuario->name = 'Laura González';
-$usuario->email = 'laura@ejemplo.com';
-$usuario->active = true;
+$user = VersaModel::dispense('users');
+$user->name = 'Laura González';
+$user->email = 'laura@ejemplo.com';
+$user->active = true;
 
-$usuario->store();
-echo "Usuario creado con ID: " . $usuario->id;
+$user->store();
+echo "Usuario creado con ID: " . $user->id;
 
 // Después del store(), el modelo tiene ID asignado automáticamente
-echo "ID del modelo: " . $usuario->id;
+echo "ID del modelo: " . $user->id;
 ```
 
 **SQL Equivalente:**
@@ -159,15 +159,15 @@ INSERT INTO users (name, email, active) VALUES ('Laura González', 'laura@ejempl
 
 ```php
 // Cargar usuario existente
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
+if ($user !== null) {
     // Modificar propiedades
-    $usuario->name = 'Laura María González';
-    $usuario->email = 'lauramaria@ejemplo.com';
+    $user->name = 'Laura María González';
+    $user->email = 'lauramaria@ejemplo.com';
 
-    $usuario->store();
-    echo "Usuario actualizado. ID: " . $usuario->id;
+    $user->store();
+    echo "Usuario actualizado. ID: " . $user->id;
 }
 ```
 
@@ -180,24 +180,25 @@ UPDATE users SET name = 'Laura María González', email = 'lauramaria@ejemplo.co
 
 ```php
 // Crear varios usuarios
-$usuarios = [];
+$users = [];
 
-$usuario1 = VersaModel::dispense('users');
-$usuario1->name = 'Usuario A';
-$usuario1->email = 'a@ejemplo.com';
-$usuarios[] = $usuario1;
+$user1 = VersaModel::dispense('users');
+$user1->name = 'Usuario A';
+$user1->email = 'a@ejemplo.com';
+$users[] = $user1;
 
-$usuario2 = VersaModel::dispense('users');
-$usuario2->name = 'Usuario B';
-$usuario2->email = 'b@ejemplo.com';
-$usuarios[] = $usuario2;
+$user2 = VersaModel::dispense('users');
+$user2->name = 'Usuario B';
+$user2->email = 'b@ejemplo.com';
+$users[] = $user2;
 
 // Guardar todos de una vez
-VersaModel::storeAll($usuarios);
-echo "IDs creados: " . $usuario1->id . ', ' . $usuario2->id;
+// Devuelve array de IDs en orden
+$ids = VersaModel::storeAll($users);
+echo "IDs creados: " . implode(', ', $ids);
 ```
 
-**Devuelve:** Array de modelos guardados con IDs asignados
+**Devuelve:** Array de IDs (int|string|null)
 
 ## trash() - Eliminar modelos
 
@@ -206,7 +207,7 @@ El método `trash()` elimina un modelo de la base de datos.
 ### Sintaxis básica
 
 ```php
-$modelo->trash();
+$model->trash();
 ```
 
 **Devuelve:** void (no devuelve valor)
@@ -215,10 +216,10 @@ $modelo->trash();
 
 ```php
 // Cargar y eliminar usuario
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
-if ($usuario !== null) {
-    $usuario->trash();
+if ($user !== null) {
+    $user->trash();
     echo "Usuario eliminado";
 
     // Después del trash(), el modelo se marca como eliminado
@@ -237,16 +238,16 @@ DELETE FROM users WHERE id = 1;
 
 ```php
 // Eliminar usuarios inactivos
-$usuariosInactivos = VersaModel::findAll('users', 'active = ?', [false]);
+$inactiveUsers = VersaModel::findAll('users', 'active = ?', [false]);
 
-foreach ($usuariosInactivos as $usuario) {
-    $usuario->trash();
+foreach ($inactiveUsers as $user) {
+    $user->trash();
 }
 
-echo "Eliminados " . count($usuariosInactivos) . " usuarios";
+echo "Eliminados " . count($inactiveUsers) . " usuarios";
 
 // O usar trashAll para eliminar múltiples
-VersaModel::trashAll($usuariosInactivos);
+VersaModel::trashAll($inactiveUsers);
 ```
 
 ## Propiedades y métodos útiles de VersaModel
@@ -254,57 +255,57 @@ VersaModel::trashAll($usuariosInactivos);
 ### Verificar estado del modelo
 
 ```php
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
 // Verificar si el modelo existe en la base de datos
-if ($usuario !== null) {
+if ($user !== null) {
     echo "El modelo tiene ID, existe en BD";
 }
 
 // Verificar si el modelo está vacío
-if ($usuario->isEmpty()) {
+if ($user->isEmpty()) {
     echo "El modelo está vacío";
 }
 
 // Obtener el nombre de la tabla
-echo $usuario->getMeta('type'); // 'users'
+echo $user->getMeta('type'); // 'users'
 ```
 
 ### Acceder a propiedades
 
 ```php
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
 // Acceso directo a propiedades
-echo $usuario->name;
-echo $usuario->email;
+echo $user->name;
+echo $user->email;
 
 // Verificar si una propiedad existe
-if (isset($usuario->phone)) {
-    echo "Teléfono: " . $usuario->phone;
+if (isset($user->phone)) {
+    echo "Teléfono: " . $user->phone;
 }
 
 // Obtener todas las propiedades como array
-$datos = $usuario->export();
-print_r($datos);
+$data = $user->export();
+print_r($data);
 ```
 
 ### Modificar propiedades
 
 ```php
-$usuario = VersaModel::load('users', 1);
+$user = VersaModel::load('users', 1);
 
 // Asignación directa
-$usuario->name = 'Nuevo nombre';
-$usuario->email = 'nuevo@email.com';
+$user->name = 'Nuevo nombre';
+$user->email = 'nuevo@email.com';
 
 // Asignación condicional
-if (!$usuario->phone) {
-    $usuario->phone = '123-456-7890';
+if (!$user->phone) {
+    $user->phone = '123-456-7890';
 }
 
 // Guardar cambios
-$usuario->store();
+$user->store();
 ```
 
 ## Ejemplo completo: Ciclo de vida de un modelo
@@ -326,46 +327,46 @@ try {
     ]);
 
     echo "=== DISPENSE: Crear modelo vacío ===\n";
-    $producto = VersaModel::dispense('products');
-    echo "Modelo creado. ID: " . ($producto->id ?? 'null') . "\n";
-    echo "¿Está vacío? " . ($producto->isEmpty() ? 'Sí' : 'No') . "\n\n";
+    $product = VersaModel::dispense('products');
+    echo "Modelo creado. ID: " . ($product->id ?? 'null') . "\n";
+    echo "¿Está vacío? " . ($product->isEmpty() ? 'Sí' : 'No') . "\n\n";
 
     echo "=== Asignar propiedades ===\n";
-    $producto->name = 'Laptop Dell';
-    $producto->price = 899.99;
-    $producto->category = 'Electronics';
-    $producto->in_stock = true;
+    $product->name = 'Laptop Dell';
+    $product->price = 899.99;
+    $product->category = 'Electronics';
+    $product->in_stock = true;
     echo "Propiedades asignadas\n\n";
 
     echo "=== STORE: Guardar modelo (INSERT) ===\n";
-    $id = $producto->store();
+    $id = $product->store();
     echo "Producto guardado con ID: $id\n";
-    echo "ID del modelo: " . $producto->id . "\n\n";
+    echo "ID del modelo: " . $product->id . "\n\n";
 
     echo "=== LOAD: Cargar modelo existente ===\n";
-    $productoLeido = VersaModel::load('products', $id);
-    echo "Producto cargado: " . $productoLeido->name . "\n";
-    echo "Precio: $" . $productoLeido->price . "\n\n";
+    $readProduct = VersaModel::load('products', $id);
+    echo "Producto cargado: " . $readProduct->name . "\n";
+    echo "Precio: $" . $readProduct->price . "\n\n";
 
     echo "=== Modificar y STORE: Actualizar (UPDATE) ===\n";
-    $productoLeido->price = 799.99;
-    $productoLeido->on_sale = true;
-    $idActualizado = $productoLeido->store();
-    echo "Producto actualizado. ID: $idActualizado\n\n";
+    $readProduct->price = 799.99;
+    $readProduct->on_sale = true;
+    $updatedId = $readProduct->store();
+    echo "Producto actualizado. ID: $updatedId\n\n";
 
     echo "=== Verificar actualización ===\n";
-    $productoActualizado = VersaModel::load('products', $id);
-    echo "Nuevo precio: $" . $productoActualizado->price . "\n";
-    echo "En oferta: " . ($productoActualizado->on_sale ? 'Sí' : 'No') . "\n\n";
+    $updatedProduct = VersaModel::load('products', $id);
+    echo "Nuevo precio: $" . $updatedProduct->price . "\n";
+    echo "En oferta: " . ($updatedProduct->on_sale ? 'Sí' : 'No') . "\n\n";
 
     echo "=== TRASH: Eliminar modelo ===\n";
-    $productoActualizado->trash();
+    $updatedProduct->trash();
     echo "Producto eliminado\n";
-    echo "ID después de eliminar: " . ($productoActualizado->id ?? 'null') . "\n\n";
+    echo "ID después de eliminar: " . ($updatedProduct->id ?? 'null') . "\n\n";
 
     echo "=== Verificar eliminación ===\n";
-    $productoEliminado = VersaModel::load('products', $id);
-    if ($productoEliminado->isEmpty()) {
+    $deletedProduct = VersaModel::load('products', $id);
+    if ($deletedProduct->isEmpty()) {
         echo "Producto eliminado correctamente\n";
     }
 
@@ -380,58 +381,58 @@ try {
 
 ```php
 // ✅ Correcto
-$usuario = VersaModel::load('users', $id);
-if ($model !== null) {
-    $usuario->name = 'Nuevo nombre';
-    $usuario->store();
+$user = VersaModel::load('users', $id);
+if ($user !== null) {
+    $user->name = 'Nuevo nombre';
+    $user->store();
 }
 
 // ❌ Incorrecto
-$usuario = VersaModel::load('users', $id);
-$usuario->name = 'Nuevo nombre'; // Error si no existe
-$usuario->store();
+$user = VersaModel::load('users', $id);
+$user->name = 'Nuevo nombre'; // Error si no existe
+$user->store();
 ```
 
 ### 2. Usar nombres de tabla consistentes
 
 ```php
 // ✅ Correcto - usar nombres en plural
-$usuario = VersaModel::dispense('users');
-$producto = VersaModel::dispense('products');
+$user = VersaModel::dispense('users');
+$product = VersaModel::dispense('products');
 
 // ❌ Evitar - inconsistencia
-$usuario = VersaModel::dispense('user');
-$producto = VersaModel::dispense('products');
+$user = VersaModel::dispense('user');
+$product = VersaModel::dispense('products');
 ```
 
 ### 3. Validar datos antes de guardar
 
 ```php
-$usuario = VersaModel::dispense('users');
-$usuario->name = trim($nombre);
+$user = VersaModel::dispense('users');
+$user->name = trim($name);
 
 // Validar email
 if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $usuario->email = $email;
+    $user->email = $email;
 } else {
     throw new InvalidArgumentException('Email inválido');
 }
 
-$usuario->store();
+$user->store();
 ```
 
 ### 4. Manejar modelos vacíos apropiadamente
 
 ```php
-$usuario = VersaModel::load('users', $id);
+$user = VersaModel::load('users', $id);
 
-if ($usuario->isEmpty()) {
+if ($user->isEmpty()) {
     // Crear nuevo usuario si no existe
-    $usuario = VersaModel::dispense('users');
-    $usuario->name = 'Usuario por defecto';
+    $user = VersaModel::dispense('users');
+    $user->name = 'Usuario por defecto';
 }
 
-$usuario->store();
+$user->store();
 ```
 
 ## Comparación con SQL tradicional
