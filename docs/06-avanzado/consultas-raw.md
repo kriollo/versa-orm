@@ -610,6 +610,289 @@ GROUP BY DAYOFWEEK(p.created_at), DAYNAME(p.created_at)
 ORDER BY day_number;
 ```
 
+### Operadores de Conjuntos (UNION / UNION ALL / INTERSECT / EXCEPT)
+
+Los operadores de conjuntos permiten combinar resultados de múltiples SELECT. Usa siempre el mismo número y orden de columnas y tipos compatibles.
+
+```php
+<?php
+// UNION (elimina duplicados) y UNION ALL (conserva duplicados)
+$sql = "SELECT id, email, 'user' AS source FROM users WHERE active = 1
+        UNION ALL
+        SELECT id, email, 'subscriber' AS source FROM newsletter_subscribers";
+$rows = $orm->query($sql);
+
+// INTERSECT y EXCEPT sólo soportados por PostgreSQL / SQLite (MySQL no):
+if (in_array($orm->getDriverName(), ['pgsql','sqlite'])) {
+    $sqlIntersect = "SELECT email FROM users
+                     INTERSECT
+                     SELECT email FROM newsletter_subscribers"; // Correos en ambos
+    $inBoth = $orm->query($sqlIntersect);
+
+    $sqlExcept = "SELECT email FROM users
+                  EXCEPT
+                  SELECT email FROM newsletter_subscribers"; // Usuarios que no están suscritos
+    $onlyUsers = $orm->query($sqlExcept);
+} else {
+    // Emulación INTERSECT en MySQL usando INNER JOIN
+    $sqlIntersectMy = "SELECT u.email
+                        FROM users u
+                        INNER JOIN newsletter_subscribers n ON n.email = u.email";
+    $inBoth = $orm->query($sqlIntersectMy);
+
+    // Emulación EXCEPT en MySQL usando LEFT JOIN + IS NULL
+    $sqlExceptMy = "SELECT u.email
+                    FROM users u
+                    LEFT JOIN newsletter_subscribers n ON n.email = u.email
+                    WHERE n.email IS NULL";
+    $onlyUsers = $orm->query($sqlExceptMy);
+}
+```
+**SQL Equivalente (UNION / UNION ALL):**
+```sql
+SELECT id, email, 'user' AS source FROM users WHERE active = 1
+UNION ALL
+SELECT id, email, 'subscriber' AS source FROM newsletter_subscribers;
+```
+**SQL INTERSECT (PostgreSQL / SQLite):**
+```sql
+SELECT email FROM users
+INTERSECT
+SELECT email FROM newsletter_subscribers;
+```
+**SQL EXCEPT (PostgreSQL / SQLite):**
+```sql
+SELECT email FROM users
+EXCEPT
+SELECT email FROM newsletter_subscribers;
+```
+**Emulación MySQL INTERSECT:**
+```sql
+SELECT u.email
+FROM users u
+INNER JOIN newsletter_subscribers n ON n.email = u.email;
+```
+**Emulación MySQL EXCEPT:**
+```sql
+SELECT u.email
+FROM users u
+LEFT JOIN newsletter_subscribers n ON n.email = u.email
+WHERE n.email IS NULL;
+```
+
+### Funciones de Ventana (Window Functions)
+
+Las window functions calculan valores sobre un set de filas relacionado sin colapsar el resultado (a diferencia de GROUP BY). Disponibles en PostgreSQL, SQLite y MySQL >= 8.0.
+
+```php
+<?php
+$sql = "SELECT
+            p.id,
+            p.user_id,
+            p.view_count,
+            ROW_NUMBER() OVER (PARTITION BY p.user_id ORDER BY p.view_count DESC) AS rn,
+            RANK()       OVER (ORDER BY p.view_count DESC) AS global_rank,
+            SUM(p.view_count) OVER (PARTITION BY p.user_id) AS user_total_views
+        FROM posts p
+        WHERE p.created_at >= ?";
+
+$rows = $orm->query($sql, [date('Y-m-01')]);
+
+foreach ($rows as $r) {
+    // rn = posición dentro del usuario, global_rank = ranking global por vistas
+}
+
+// Ventana móvil (moving average) de vistas por día (PostgreSQL / MySQL 8 / SQLite 3.28+)
+$sqlMA = "SELECT
+              DATE(p.created_at) AS day,
+              COUNT(*) AS posts,
+              AVG(COUNT(*)) OVER (ORDER BY DATE(p.created_at)
+                                   ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS ma7_posts
+          FROM posts p
+          WHERE p.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          GROUP BY DATE(p.created_at)";
+
+// Nota: Sintaxis de DATE_SUB es MySQL; para PostgreSQL usar CURRENT_DATE - INTERVAL '30 days'
+```
+**SQL Equivalente (ranking por usuario y global):**
+```sql
+SELECT p.id,
+       p.user_id,
+       p.view_count,
+       ROW_NUMBER() OVER (PARTITION BY p.user_id ORDER BY p.view_count DESC) AS rn,
+       RANK()       OVER (ORDER BY p.view_count DESC) AS global_rank,
+       SUM(p.view_count) OVER (PARTITION BY p.user_id) AS user_total_views
+FROM posts p
+WHERE p.created_at >= ?;
+```
+**SQL Equivalente (media móvil 7 días - PostgreSQL variante):**
+```sql
+SELECT DATE(p.created_at) AS day,
+       COUNT(*) AS posts,
+       AVG(COUNT(*)) OVER (ORDER BY DATE(p.created_at)
+                            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS ma7_posts
+FROM posts p
+WHERE p.created_at >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY DATE(p.created_at);
+```
+**SQLite Nota:** Usar `DATE(p.created_at)` y reemplazar CURRENT_DATE - INTERVAL '30 days' por `DATE('now','-30 day')`.
+
+### Consideraciones de Rendimiento para Window y Set Operations
+| Técnica | Recomendación |
+|---------|---------------|
+| Índices | Indexar columnas en PARTITION BY / JOIN para evitar full scans |
+| LIMIT | Encapsular en subconsulta y aplicar LIMIT externo si sólo necesitas top-N |
+| Materialización | Para cadenas de UNIONs complejos, materializa en tabla temporal si se reutiliza |
+| Filtros | Aplica WHERE antes de la ventana para reducir el conjunto |
+
+**SQL Ejemplo optimizado (materialización temporal PostgreSQL):**
+```sql
+WITH filtered AS (
+  SELECT * FROM posts WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+)
+SELECT id, user_id, view_count,
+       ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY view_count DESC) AS rn
+FROM filtered;
+```
+
+### Agregaciones Multidimensionales (GROUPING SETS / ROLLUP / CUBE)
+
+Permiten obtener múltiples niveles de agregación en una sola pasada.
+
+```php
+<?php
+if ($orm->getDriverName() === 'pgsql') {
+    $sql = "SELECT
+                DATE(created_at) AS day,
+                user_id,
+                COUNT(*) AS posts,
+                GROUPING(DATE(created_at), user_id) AS grp_mask
+            FROM posts
+            WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY GROUPING SETS ((DATE(created_at), user_id), (DATE(created_at)), (user_id), ())
+            ORDER BY day NULLS LAST, user_id NULLS LAST";
+    $rows = $orm->query($sql);
+} elseif ($orm->getDriverName() === 'mysql') {
+    // MySQL soporta ROLLUP
+    $sql = "SELECT DATE(created_at) AS day, user_id, COUNT(*) AS posts
+            FROM posts
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(created_at), user_id WITH ROLLUP";
+    $rows = $orm->query($sql);
+} else {
+    // SQLite: emulación mediante UNION ALL manual
+    $sql = "SELECT DATE(created_at) AS day, user_id, COUNT(*) AS posts
+            FROM posts
+            WHERE created_at >= DATE('now','-7 day')
+            GROUP BY DATE(created_at), user_id
+            UNION ALL
+            SELECT DATE(created_at) AS day, NULL user_id, COUNT(*) AS posts
+            FROM posts
+            WHERE created_at >= DATE('now','-7 day')
+            GROUP BY DATE(created_at)
+            UNION ALL
+            SELECT NULL day, user_id, COUNT(*) AS posts
+            FROM posts
+            WHERE created_at >= DATE('now','-7 day')
+            GROUP BY user_id
+            UNION ALL
+            SELECT NULL day, NULL user_id, COUNT(*) AS posts
+            FROM posts
+            WHERE created_at >= DATE('now','-7 day')";
+    $rows = $orm->query($sql);
+}
+```
+**SQL Equivalente (PostgreSQL GROUPING SETS):**
+```sql
+SELECT DATE(created_at) AS day,
+       user_id,
+       COUNT(*) AS posts,
+       GROUPING(DATE(created_at), user_id) AS grp_mask
+FROM posts
+WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY GROUPING SETS ((DATE(created_at), user_id), (DATE(created_at)), (user_id), ());
+```
+**SQL Equivalente (MySQL ROLLUP):**
+```sql
+SELECT DATE(created_at) AS day, user_id, COUNT(*) AS posts
+FROM posts
+WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+GROUP BY DATE(created_at), user_id WITH ROLLUP;
+```
+**Emulación SQLite (UNION ALL):**
+```sql
+SELECT DATE(created_at) AS day, user_id, COUNT(*) AS posts
+FROM posts
+WHERE created_at >= DATE('now','-7 day')
+GROUP BY DATE(created_at), user_id
+UNION ALL
+SELECT DATE(created_at) AS day, NULL user_id, COUNT(*) AS posts
+FROM posts
+WHERE created_at >= DATE('now','-7 day')
+GROUP BY DATE(created_at)
+UNION ALL
+SELECT NULL day, user_id, COUNT(*) AS posts
+FROM posts
+WHERE created_at >= DATE('now','-7 day')
+GROUP BY user_id
+UNION ALL
+SELECT NULL day, NULL user_id, COUNT(*) AS posts
+FROM posts
+WHERE created_at >= DATE('now','-7 day');
+```
+Interpretar totales: filas con `day` NULL representan subtotal por usuario; con `user_id` NULL subtotal por día; ambos NULL total general.
+
+### Construcción Segura de Listas Dinámicas (IN / VALUES)
+
+Nunca interpoles valores directamente en una cláusula IN. Genera placeholders dinámicamente.
+
+```php
+<?php
+function fetchUsersByIds(array $ids) {
+    $orm = VersaORM::getInstance();
+    if (!$ids) { return []; }
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $sql = "SELECT id, name FROM users WHERE id IN ($placeholders)";
+    return $orm->query($sql, $ids);
+}
+
+// Inserción batch segura construyendo VALUES
+function insertTags(array $names) {
+    $orm = VersaORM::getInstance();
+    if (!$names) return 0;
+    $chunks = [];
+    $params = [];
+    foreach ($names as $n) { $chunks[] = '(?)'; $params[] = $n; }
+    $sql = 'INSERT INTO tags (name) VALUES '.implode(',', $chunks);
+    return $orm->execute($sql, $params);
+}
+
+// ORDER BY dinámico con whitelisting
+function listPosts(string $orderBy = 'created_at', string $dir = 'DESC') {
+    $allowedCols = ['created_at','view_count','title'];
+    $allowedDir  = ['ASC','DESC'];
+    if (!in_array($orderBy,$allowedCols)) $orderBy = 'created_at';
+    if (!in_array(strtoupper($dir),$allowedDir)) $dir = 'DESC';
+    $sql = "SELECT id,title,created_at,view_count FROM posts ORDER BY $orderBy $dir LIMIT 50";
+    return VersaORM::getInstance()->query($sql);
+}
+```
+**SQL Equivalente (patrón IN con placeholders):**
+```sql
+SELECT id, name FROM users WHERE id IN (?, ?, ?, ...);
+```
+**SQL Equivalente (batch insert tags):**
+```sql
+INSERT INTO tags (name) VALUES (?), (?), (?);
+```
+**Anti-Pattern (NO hacer):**
+```sql
+-- Vulnerable si se concatena: id IN (1,2,3); DROP TABLE users; --
+```
+
+
+---
+
 ## Seguridad en Consultas Raw
 
 ### Uso Correcto de Parámetros
