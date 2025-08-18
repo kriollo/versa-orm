@@ -1334,6 +1334,16 @@ class PdoEngine
         $total = count($records);
         $batches = $batchSize > 0 ? (int) ceil($total / $batchSize) : 1;
         $totalInserted = 0;
+        $insertedIds = [];
+        $driverName = '';
+
+        try {
+            /** @var string $dn */
+            $dn = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $driverName = strtolower($dn);
+        } catch (Throwable) {
+            $driverName = '';
+        }
 
         for ($i = 0; $i < $total; $i += $batchSize) {
             $chunk = array_slice($records, $i, $batchSize);
@@ -1349,7 +1359,40 @@ class PdoEngine
                 $st->closeCursor();
             } catch (Throwable) { // ignore
             }
-            $totalInserted += count($chunk);
+            $chunkCount = count($chunk);
+            $totalInserted += $chunkCount;
+
+            // Intentar inferir IDs autoincrement si no se proporcionaron explícitamente
+            $explicitIdPresent = false;
+            foreach ($chunk as $row) {
+                if (is_array($row) && array_key_exists('id', $row)) {
+                    $explicitIdPresent = true;
+                    break;
+                }
+            }
+            if (!$explicitIdPresent && ($driverName === 'mysql' || $driverName === 'sqlite')) {
+                try {
+                    $lastIdRaw = $pdo->lastInsertId();
+                    if ($lastIdRaw !== false && $lastIdRaw !== '') {
+                        $lastId = (int) $lastIdRaw;
+                        if ($lastId > 0) {
+                            if ($driverName === 'mysql') {
+                                // MySQL devuelve el primer ID de la inserción multi-row
+                                $firstId = $lastId;
+                            } else { // sqlite
+                                // SQLite devuelve el último ROWID insertado
+                                $firstId = $lastId - $chunkCount + 1;
+                            }
+                            if ($firstId > 0) {
+                                for ($k = 0; $k < $chunkCount; $k++) {
+                                    $insertedIds[] = $firstId + $k;
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable) { /* ignorar */
+                }
+            }
         }
         $this->clearAllCache();
 
@@ -1358,6 +1401,7 @@ class PdoEngine
             'total_inserted' => $totalInserted,
             'batches_processed' => $batches,
             'batch_size' => $batchSize,
+            'inserted_ids' => $insertedIds,
         ];
     }
 

@@ -1491,6 +1491,87 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Guarda múltiples modelos en una sola operación lógica.
+     * Recorre cada modelo y ejecuta store() acumulando los IDs retornados.
+     * Si ocurre una excepción en medio del proceso se lanza y no se intenta continuar.
+     * NOTA: Actualmente no se agrupa en una única transacción SQL (el núcleo Rust gestiona
+     * las operaciones individuales). Futuro: optimizar usando insertMany cuando todos los
+     * modelos sean nuevos y de la misma tabla.
+     *
+     * @param array<int,self> $models
+     *
+     * @throws VersaORMException
+     *
+     * @return array<int,int|string|null> IDs devueltos por cada store() en orden
+     */
+    public static function storeAll(array $models): array
+    {
+        if ($models === []) {
+            return [];
+        }
+
+        foreach ($models as $i => $m) {
+            if (!$m instanceof self) {
+                throw new VersaORMException('storeAll expects an array of VersaModel instances at index ' . $i);
+            }
+        }
+        // Detectar si todos son nuevos (sin PK) y de la misma tabla para intentar optimización insertMany
+        /** @var self $first */
+        $first = $models[0];
+        $sameTable = true;
+        $allNew = true;
+        $table = $first->getTable();
+        $pk = 'id'; // Asumimos 'id' como PK estándar (futuro: detectar dinámicamente)
+
+        foreach ($models as $m) {
+            if ($m->getTable() !== $table) {
+                $sameTable = false;
+                break;
+            }
+            if (isset($m->$pk) && $m->$pk !== null) {
+                $allNew = false; // ya persistido
+            }
+        }
+
+        // Si cumple condiciones usar insertMany para reducir viajes
+        if ($sameTable && $allNew) {
+            try {
+                $records = [];
+                foreach ($models as $m) {
+                    $records[] = $m->getData();
+                }
+                $qb = self::orm()->table($table, static::class);
+                $result = $qb->insertMany($records); // ahora puede devolver inserted_ids
+                $insertedIds = $result['inserted_ids'] ?? [];
+                if (is_array($insertedIds) && count($insertedIds) === count($models)) {
+                    foreach ($models as $idx => $m) {
+                        $m->id = $insertedIds[$idx];
+                    }
+
+                    return $insertedIds;
+                }
+                // Fallback: obtener IDs individuales (update no cambia datos)
+                $fallbackIds = [];
+                foreach ($models as $m) {
+                    $fallbackIds[] = $m->store();
+                }
+
+                return $fallbackIds;
+            } catch (Throwable $e) {
+                // Fallback completo a inserciones individuales
+            }
+        }
+
+        // Fallback general: insert/update uno a uno
+        $ids = [];
+        foreach ($models as $model) {
+            $ids[] = $model->store();
+        }
+
+        return $ids;
+    }
+
+    /**
      * Elimina un modelo (método estático de conveniencia).
      */
     public static function trashModel(self $model): void
