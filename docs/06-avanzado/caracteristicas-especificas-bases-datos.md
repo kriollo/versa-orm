@@ -22,11 +22,23 @@ $users = $orm->table('users')
   ->whereRaw("JSON_EXTRACT(meta, '$.active') = 1") // MySQL / SQLite
   ->get();
 ```
+**SQL Equivalente:**
+```sql
+SELECT * FROM users WHERE JSON_EXTRACT(meta, '$.active') = 1;   -- MySQL / SQLite
+-- PostgreSQL aproximado:
+-- SELECT * FROM users WHERE (meta->>'active')::int = 1;
+```
 Portabilidad: encapsula condiciones JSON en métodos helper.
 
 ## Window Functions
 ```php
 $rows = $orm->raw("SELECT id, name, ROW_NUMBER() OVER (PARTITION BY role ORDER BY created_at) rn FROM users");
+```
+**SQL Equivalente (idéntico):**
+```sql
+SELECT id, name,
+       ROW_NUMBER() OVER (PARTITION BY role ORDER BY created_at) AS rn
+FROM users;
 ```
 Usos: ranking, paginación estable, agregaciones cumulativas.
 
@@ -40,20 +52,35 @@ SELECT * FROM recent ORDER BY created_at;
 SQL;
 $data = $orm->raw($sql);
 ```
+**SQL Equivalente:** (ya mostrado arriba como CTE)
 
 ## Full Text
 MySQL:
 ```php
 $orm->raw("SELECT id FROM articles WHERE MATCH(title,body) AGAINST (? IN NATURAL LANGUAGE MODE)", ['php orm']);
 ```
+**SQL Equivalente:**
+```sql
+SELECT id FROM articles
+WHERE MATCH(title, body) AGAINST ('php orm' IN NATURAL LANGUAGE MODE);
+```
 PostgreSQL:
 ```php
 $orm->raw("SELECT id FROM articles WHERE to_tsvector('simple', title || ' ' || body) @@ plainto_tsquery(?)", ['php orm']);
+```
+**SQL Equivalente:**
+```sql
+SELECT id FROM articles
+WHERE to_tsvector('simple', title || ' ' || body) @@ plainto_tsquery('php orm');
 ```
 
 ## Arrays (PostgreSQL)
 ```php
 $orm->raw('SELECT * FROM posts WHERE tags && ARRAY[?,?]', ['php','orm']);
+```
+**SQL Equivalente:**
+```sql
+SELECT * FROM posts WHERE tags && ARRAY['php','orm'];
 ```
 Estrategia cross-driver: usar JSON arrays y operadores que existan en todos.
 

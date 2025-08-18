@@ -38,6 +38,16 @@ try {
     echo "Error en consulta raw: " . $e->getMessage() . "\n";
 }
 ```
+**SQL Equivalente (ya raw - mostrado para formato):**
+```sql
+SELECT u.name, u.email, COUNT(p.id) as post_count
+FROM users u
+LEFT JOIN posts p ON u.id = p.user_id
+WHERE u.active = ?
+GROUP BY u.id, u.name, u.email
+HAVING post_count > ?
+ORDER BY post_count DESC;
+```
 
 **Devuelve:** Array de arrays asociativos con los resultados
 
@@ -69,6 +79,17 @@ try {
 } catch (VersaORMException $e) {
     echo "Error: " . $e->getMessage() . "\n";
 }
+```
+**SQL Equivalente (idéntico, enfatizando placeholders):**
+```sql
+SELECT u.name,
+       u.created_at,
+       TIMESTAMPDIFF(DAY, u.created_at, NOW()) as days_since_registration,
+       DATE_FORMAT(u.created_at, '%Y-%m') as registration_month,
+       JSON_EXTRACT(u.metadata, '$.preferences.theme') as theme_preference
+FROM users u
+WHERE u.created_at >= DATE_SUB(NOW(), INTERVAL ? MONTH)
+ORDER BY u.created_at DESC;
 ```
 
 ### Consultas con CTEs (Common Table Expressions)
@@ -108,6 +129,23 @@ try {
 } catch (VersaORMException $e) {
     echo "Error: " . $e->getMessage() . "\n";
 }
+```
+**SQL Equivalente (idéntico, PostgreSQL):**
+```sql
+WITH RECURSIVE category_tree AS (
+    SELECT id, name, parent_id, 0 as level, name as path
+    FROM categories
+    WHERE parent_id IS NULL
+    UNION ALL
+    SELECT c.id, c.name, c.parent_id, ct.level + 1, ct.path || ' > ' || c.name
+    FROM categories c
+    INNER JOIN category_tree ct ON c.parent_id = ct.id
+)
+SELECT ct.*, COUNT(p.id) as product_count
+FROM category_tree ct
+LEFT JOIN products p ON ct.id = p.category_id
+GROUP BY ct.id, ct.name, ct.parent_id, ct.level, ct.path
+ORDER BY ct.path;
 ```
 
 ## execute() - Consultas de Modificación Raw
@@ -153,6 +191,25 @@ try {
     echo "Error en operación: " . $e->getMessage() . "\n";
 }
 ```
+**SQL Equivalente (mismas sentencias):**
+```sql
+INSERT INTO user_stats (user_id, login_count, last_login)
+VALUES (?, 1, NOW())
+ON DUPLICATE KEY UPDATE login_count = login_count + 1, last_login = NOW();
+
+UPDATE posts p
+SET view_count = (
+    SELECT COUNT(*) FROM post_views pv
+    WHERE pv.post_id = p.id
+        AND pv.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+)
+WHERE p.published = true;
+
+DELETE p FROM posts p
+INNER JOIN users u ON p.user_id = u.id
+WHERE u.active = false
+    AND p.created_at < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+```
 
 **Devuelve:** Número de filas afectadas (integer)
 
@@ -189,6 +246,24 @@ try {
     echo "Error generando reportes: " . $e->getMessage() . "\n";
 }
 ```
+**SQL Equivalente (idéntico, enfatiza placeholders de fechas):**
+```sql
+INSERT INTO monthly_reports (user_id, month, year, post_count, comment_count, total_views)
+SELECT u.id,
+             MONTH(p.created_at) as month,
+             YEAR(p.created_at) as year,
+             COUNT(DISTINCT p.id) as post_count,
+             COUNT(DISTINCT c.id) as comment_count,
+             COALESCE(SUM(p.view_count), 0) as total_views
+FROM users u
+LEFT JOIN posts p ON u.id = p.user_id
+    AND p.created_at >= ?
+    AND p.created_at < ?
+LEFT JOIN comments c ON p.id = c.post_id
+WHERE u.active = true
+GROUP BY u.id, MONTH(p.created_at), YEAR(p.created_at)
+HAVING post_count > 0;
+```
 
 ## queryFirst() - Primera Fila de Consulta Raw
 
@@ -223,6 +298,18 @@ try {
 } catch (VersaORMException $e) {
     echo "Error: " . $e->getMessage() . "\n";
 }
+```
+**SQL Equivalente:**
+```sql
+SELECT COUNT(DISTINCT u.id) as total_users,
+       COUNT(DISTINCT p.id) as total_posts,
+       COUNT(DISTINCT c.id) as total_comments,
+       AVG(p.view_count) as avg_post_views,
+       MAX(u.created_at) as last_registration
+FROM users u
+LEFT JOIN posts p ON u.id = p.user_id
+LEFT JOIN comments c ON p.id = c.post_id
+WHERE u.active = ?;
 ```
 
 **Devuelve:** Array asociativo con la primera fila o null si no hay resultados
@@ -267,6 +354,20 @@ try {
 } catch (VersaORMException $e) {
     echo "Error verificando permisos: " . $e->getMessage() . "\n";
 }
+```
+**SQL Equivalente:**
+```sql
+SELECT CASE
+                 WHEN u.role = 'admin' THEN 'allowed'
+                 WHEN u.role = 'moderator' AND ? IN ('edit','delete') THEN 'allowed'
+                 WHEN u.id = p.user_id THEN 'allowed'
+                 ELSE 'denied'
+             END as permission,
+             u.name as user_name,
+             p.title as post_title
+FROM users u
+CROSS JOIN posts p
+WHERE u.id = ? AND p.id = ?;
 ```
 
 ## Casos de Uso Avanzados
@@ -493,6 +594,20 @@ function migrateUserData() {
         echo "Error en migración: " . $e->getMessage() . "\n";
     }
 }
+```
+**SQL Equivalente (idéntico, resaltando BETWEEN):**
+```sql
+SELECT DAYNAME(p.created_at) as day_name,
+       DAYOFWEEK(p.created_at) as day_number,
+       COUNT(p.id) as posts_created,
+       AVG(p.view_count) as avg_views,
+       COUNT(DISTINCT c.id) as total_comments,
+       COUNT(DISTINCT p.user_id) as unique_authors
+FROM posts p
+LEFT JOIN comments c ON p.id = c.post_id
+WHERE p.created_at BETWEEN ? AND ?
+GROUP BY DAYOFWEEK(p.created_at), DAYNAME(p.created_at)
+ORDER BY day_number;
 ```
 
 ## Seguridad en Consultas Raw

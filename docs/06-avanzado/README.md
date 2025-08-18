@@ -106,6 +106,12 @@ Procedimientos seguros para evolucionar el esquema
 - Rollback y checklist
 - Uso correcto de freeze mode
 
+### [📐 API DDL Programática](ddl-api-metodos.md)
+Referencia de métodos para manipular esquema
+- schemaCreate / schemaAlter
+- schemaDrop / schemaRename
+- Auto-creación implícita de columnas
+
 ## ✅ Prerrequisitos
 
 Antes de continuar, deberías dominar:

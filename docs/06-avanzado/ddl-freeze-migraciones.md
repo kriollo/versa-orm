@@ -24,6 +24,10 @@ if ($isProduction) {
 }
 ```
 Al ejecutar una sentencia DDL estando activo lanza `VersaORMException`.
+**SQL que quedaría bloqueado bajo freeze:**
+```sql
+ALTER TABLE users ADD COLUMN last_login DATETIME NULL;
+```
 
 ## Flujo Recomendado de Migraciones
 1. Revisión local + test.
@@ -36,6 +40,11 @@ Al ejecutar una sentencia DDL estando activo lanza `VersaORMException`.
 ```sql
 ALTER TABLE users ADD COLUMN last_login DATETIME NULL;
 CREATE INDEX idx_users_last_login ON users(last_login);
+```
+**Rollback (inverso):**
+```sql
+DROP INDEX idx_users_last_login;
+ALTER TABLE users DROP COLUMN last_login;
 ```
 
 ## Orden Seguro de Cambios
@@ -58,6 +67,10 @@ Usa introspección:
 ```php
 $cols = $orm->schema('columns','users');
 // Valida presencia de last_login
+```
+**SQL subyacente (driver MySQL):**
+```sql
+SHOW COLUMNS FROM users;
 ```
 
 ## Checklist Pre-Deploy

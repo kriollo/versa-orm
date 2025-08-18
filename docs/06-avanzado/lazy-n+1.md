@@ -18,6 +18,12 @@ foreach ($users as $u) {
     $posts = $u->postsArray(); // ❌ Si cada llamada hace una query
 }
 ```
+**SQL resultante ineficiente (esquema simplificado):**
+```sql
+SELECT * FROM users LIMIT 50; -- 1 query
+SELECT * FROM posts WHERE user_id = 1; -- repetido hasta N
+...
+```
 
 ## Estrategias de Mitigación
 | Estrategia | Uso | Beneficio |
@@ -38,6 +44,11 @@ foreach ($posts as $p) { $byUser[$p['user_id']][] = $p; }
 // Asignar
 foreach ($users as &$u) { $u['posts'] = $byUser[$u['id']] ?? []; }
 ```
+**SQL Equivalente optimizado:**
+```sql
+SELECT * FROM users LIMIT 50;
+SELECT * FROM posts WHERE user_id IN (/* lista de 50 ids */);
+```
 
 ## Lazy Seguro con Cache en Memoria
 ```php
@@ -54,6 +65,11 @@ class UserModel extends VersaModel {
   }
 }
 ```
+**SQL (primer acceso a cada user_id):**
+```sql
+SELECT * FROM posts WHERE user_id = ?;
+```
+Luego cachea en memoria y no repite query dentro del ciclo.
 Resetea la cache estática entre peticiones web si corresponde.
 
 ## Detección con Métricas
@@ -81,6 +97,12 @@ $labelsById = []; foreach ($labels as $l) { $labelsById[$l['id']] = $l; }
 $labelsByTask = [];
 foreach ($links as $lnk) { $labelsByTask[$lnk['task_id']][] = $labelsById[$lnk['label_id']]; }
 foreach ($tasks as &$t) { $t['labels'] = $labelsByTask[$t['id']] ?? []; }
+```
+**SQL Equivalente optimizado:**
+```sql
+SELECT * FROM tasks LIMIT 30;
+SELECT * FROM task_labels WHERE task_id IN (/* 30 ids */);
+SELECT * FROM labels WHERE id IN (/* ids de etiquetas únicas */);
 ```
 
 ## Checklist Anti N+1

@@ -53,6 +53,10 @@ $p = ProductModel::dispense('products');
 $p->setPrice(19.99);
 $p->store();
 ```
+**SQL Equivalente (almacenando precio en centavos):**
+```sql
+INSERT INTO products (price) VALUES (1999);
+```
 
 ## Protección Mass Assignment
 Lista blanca de campos permitidos:
@@ -62,6 +66,10 @@ foreach ($input as $k=>$v) {
   if (!in_array($k,$white,true)) { continue; }
   $user->$k = $v;
 }
+```
+**SQL potencial posterior (si se hace store()):**
+```sql
+INSERT INTO users (name,email,active) VALUES (?,?,?);
 ```
 
 ## Sincronización con Esquema
@@ -75,6 +83,10 @@ function diffSchema($orm, $table, array $expectedCols) {
     'extra' => array_diff($dbCols, $expectedCols),
   ];
 }
+```
+**SQL subyacente (ejemplo MySQL inspección columnas):**
+```sql
+SHOW COLUMNS FROM <tabla>;
 ```
 
 ## Checklist de Validación

@@ -49,6 +49,12 @@ $orm->table('users')->count();    // hit
 $orm->table('users')->insert(['name' => 'Nuevo']);
 print_r($orm->metrics());
 ```
+**SQL Equivalente emitido:**
+```sql
+SELECT COUNT(*) AS aggregate FROM users; -- primera (miss)
+-- segunda llamada count() no emite SQL (cache hit)
+INSERT INTO users (name) VALUES ('Nuevo');
+```
 
 ## Buenas Prácticas
 - Úsalas en tests de regresión o smoke de performance.

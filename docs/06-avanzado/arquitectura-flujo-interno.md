@@ -35,6 +35,15 @@ Base de Datos
 5. Ejecuta `PDOStatement->execute()`.
 6. Recupera última ID (si aplica) y se asigna al modelo.
 7. Devuelve la ID (o null si era update / sin PK auto).
+**SQL Equivalente típico (INSERT):**
+```sql
+INSERT INTO users (name) VALUES (?);
+-- Recuperación de ID autoincrement (driver) p.ej. SELECT LAST_INSERT_ID(); (MySQL)
+```
+**SQL Equivalente UPDATE:**
+```sql
+UPDATE users SET name = ? WHERE id = ?;
+```
 
 ## Flujo: Query Builder `where()->get()`
 1. `table('users')` inicia estructura con nombre de tabla.
@@ -43,6 +52,10 @@ Base de Datos
 4. `PdoEngine` prepara y ejecuta.
 5. Se obtienen filas como arrays asociativos.
 6. (Opcional) Se hidratan modelos (`toModels()` / métodos equivalentes) si se solicita.
+**SQL Equivalente:**
+```sql
+SELECT * FROM users WHERE <condiciones> ORDER BY <criterio> LIMIT <n>;
+```
 
 ## Construcción de SQL Segura
 - Siempre placeholders `?` para valores.
@@ -55,12 +68,22 @@ Base de Datos
 3. Genera `INSERT INTO tabla (c1,c2,...) VALUES (...),(...)` con placeholders.
 4. Ejecuta una sola vez.
 5. Infiero IDs si el driver lo permite y las asigna a cada modelo.
+**SQL Equivalente (3 inserciones):**
+```sql
+INSERT INTO users (name) VALUES (?), (?), (?);
+```
 
 ## Caché (Lectura)
 - Ciertas operaciones (`count()`, `exists()`, lecturas simples) consultan caché interna.
 - Cache miss: ejecuta SQL, almacena resultado.
 - Cache hit: evita roundtrip y no incrementa contador `queries`.
 - Operaciones de escritura pueden invalidar claves relacionadas (en evolución).
+**SQL involucrado en operaciones cacheables:**
+```sql
+SELECT COUNT(*) AS aggregate FROM users;            -- count()
+SELECT 1 FROM users WHERE email = ? LIMIT 1;        -- exists()
+SELECT * FROM users WHERE id = ? LIMIT 1;           -- lectura simple
+```
 
 ## Métricas
 - Hooks ligeros antes y después de ejecutar SQL miden duración y actualizan contadores.
@@ -74,6 +97,10 @@ Base de Datos
 - Boolean: normaliza a `0/1` al escribir, `true/false` al leer.
 - Date/DateTime: mantiene formato estándar `Y-m-d H:i:s`.
 - JSON (texto): codifica/decodifica según métodos utilitarios (si se aplican en modelos personalizados).
+**SQL Ejemplo multi-tipo:**
+```sql
+INSERT INTO events (active, created_at, payload) VALUES (1, '2025-08-18 10:12:00', '{"k":"v"}');
+```
 
 ## Manejo de Errores
 - Excepciones PDO se transforman / encapsulan en `VersaORMException`.
@@ -111,6 +138,13 @@ $ids = VersaModel::storeAll($list);
 
 // Query Builder
 $active = $orm->table('users')->where('active','=',1)->orderBy('id','desc')->limit(10)->get();
+```
+**SQL Equivalente de las operaciones anteriores:**
+```sql
+SELECT * FROM users WHERE id = 10 LIMIT 1;                 -- load()
+INSERT INTO users (name) VALUES ('Alice');                 -- store() nuevo
+INSERT INTO users (name) VALUES ('A'),('B'),('C');         -- storeAll() batch
+SELECT * FROM users WHERE active = 1 ORDER BY id DESC LIMIT 10; -- query builder
 ```
 
 ## Diagnóstico Rápido

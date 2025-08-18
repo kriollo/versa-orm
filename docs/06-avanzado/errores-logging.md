@@ -76,6 +76,10 @@ try {
     error_log('Bloqueado: ' . $e->getMessage());
 }
 ```
+**SQL Equivalente:**
+```sql
+ALTER TABLE users ADD COLUMN tmp INT;
+```
 Mantén este modo en producción para proteger contra cambios accidentales de esquema.
 
 ## Validación y Mass Assignment
@@ -89,6 +93,11 @@ foreach ($input as $k=>$v) {
     }
     $user->$k = $v;
 }
+```
+**SQL potencial resultante (si luego haces store()):**
+```sql
+INSERT INTO users (name,email,active) VALUES (?,?,?);
+-- o UPDATE users SET name=?, email=?, active=? WHERE id = ?;
 ```
 
 ## Batch: Errores Comunes
@@ -110,6 +119,12 @@ function retry(int $n, callable $op) {
     goto inicio;
   }
 }
+```
+**SQL Ejemplo dentro de la operación reintentada (transaccional):**
+```sql
+UPDATE accounts SET balance = balance - 100 WHERE id = 10;
+UPDATE accounts SET balance = balance + 100 WHERE id = 20;
+-- deadlock/timeout -> reintento
 ```
 
 ## Estructura de Logs Sugerida

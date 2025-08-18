@@ -81,6 +81,33 @@ try {
 }
 ```
 
+**SQL Equivalente:**
+```sql
+-- MySQL
+INSERT INTO users (email, username, name, role, settings)
+VALUES ('admin@example.com','admin_user','Administrador','admin','{"theme":"dark","notifications":true}')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    role = VALUES(role),
+    settings = VALUES(settings);
+
+-- PostgreSQL
+INSERT INTO users (email, username, name, role, settings)
+VALUES ('admin@example.com','admin_user','Administrador','admin','{"theme":"dark","notifications":true}')
+ON CONFLICT (email, username) DO UPDATE SET
+    name = EXCLUDED.name,
+    role = EXCLUDED.role,
+    settings = EXCLUDED.settings;
+
+-- SQLite
+INSERT INTO users (email, username, name, role, settings)
+VALUES ('admin@example.com','admin_user','Administrador','admin','{"theme":"dark","notifications":true}')
+ON CONFLICT(email, username) DO UPDATE SET
+    name = excluded.name,
+    role = excluded.role,
+    settings = excluded.settings;
+```
+
 ### UPSERT Masivo
 
 ```php
@@ -109,6 +136,31 @@ try {
 } catch (VersaORMException $e) {
     echo "Error en UPSERT masivo: " . $e->getMessage() . "\n";
 }
+```
+
+**SQL Equivalente (patrón repetido por cada elemento):**
+```sql
+-- Ejemplo para user1@example.com (los demás igual cambiando valores)
+-- MySQL
+INSERT INTO users (email, name, active)
+VALUES ('user1@example.com','Usuario 1',1)
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    active = VALUES(active);
+
+-- PostgreSQL
+INSERT INTO users (email, name, active)
+VALUES ('user1@example.com','Usuario 1', TRUE)
+ON CONFLICT (email) DO UPDATE SET
+    name = EXCLUDED.name,
+    active = EXCLUDED.active;
+
+-- SQLite
+INSERT INTO users (email, name, active)
+VALUES ('user1@example.com','Usuario 1',1)
+ON CONFLICT(email) DO UPDATE SET
+    name = excluded.name,
+    active = excluded.active;
 ```
 
 ## replace() - Reemplazar Registro Completo
@@ -173,6 +225,25 @@ try {
 }
 ```
 
+**SQL Equivalente:**
+```sql
+-- MySQL (REPLACE elimina y reinserta)
+REPLACE INTO app_config (`key`, `value`, description, updated_at)
+VALUES ('app_theme','dark_mode','Tema de la aplicación','2024-01-15 10:30:00');
+
+-- PostgreSQL (simular REPLACE con UPSERT completo)
+INSERT INTO app_config ("key", "value", description, updated_at)
+VALUES ('app_theme','dark_mode','Tema de la aplicación','2024-01-15 10:30:00')
+ON CONFLICT ("key") DO UPDATE SET
+    value = EXCLUDED.value,
+    description = EXCLUDED.description,
+    updated_at = EXCLUDED.updated_at;
+
+-- SQLite (INSERT OR REPLACE borra fila y crea nueva conservando rowid si coincide PK)
+INSERT OR REPLACE INTO app_config (key, value, description, updated_at)
+VALUES ('app_theme','dark_mode','Tema de la aplicación','2024-01-15 10:30:00');
+```
+
 ## Comparación: UPSERT vs REPLACE
 
 ### Diferencias Clave
@@ -204,6 +275,44 @@ $result2 = $orm->table('users')->replace($replaceData);
 // Resultado: id=1, name='Juan Reemplazado', email='juan@example.com', active=NULL, created_at='2024-01-15'
 ```
 
+**SQL Equivalente:**
+```sql
+-- UPSERT (preserva columnas no incluidas)
+-- MySQL
+INSERT INTO users (email, name)
+VALUES ('juan@example.com','Juan Actualizado')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name);
+
+-- PostgreSQL
+INSERT INTO users (email, name)
+VALUES ('juan@example.com','Juan Actualizado')
+ON CONFLICT (email) DO UPDATE SET
+    name = EXCLUDED.name;
+
+-- SQLite
+INSERT INTO users (email, name)
+VALUES ('juan@example.com','Juan Actualizado')
+ON CONFLICT(email) DO UPDATE SET
+    name = excluded.name;
+
+-- REPLACE (no preserva lo omitido)
+-- MySQL
+REPLACE INTO users (id, email, name)
+VALUES (1,'juan@example.com','Juan Reemplazado');
+
+-- PostgreSQL (simulación usando UPSERT con todos los campos que quieras forzar)
+INSERT INTO users (id, email, name)
+VALUES (1,'juan@example.com','Juan Reemplazado')
+ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name;
+
+-- SQLite (INSERT OR REPLACE)
+INSERT OR REPLACE INTO users (id, email, name)
+VALUES (1,'juan@example.com','Juan Reemplazado');
+```
+
 ### Cuándo Usar Cada Uno
 
 ```php
@@ -232,6 +341,27 @@ $cacheEntry = [
     'expires_at' => date('Y-m-d H:i:s', strtotime('+1 hour'))
 ];
 $orm->table('cache')->replace($cacheEntry);
+```
+
+**SQL Equivalente:**
+```sql
+-- UPSERT perfil
+INSERT INTO user_profiles (user_id, bio, website)
+VALUES (123,'Nueva biografía del usuario','https://nuevositio.com')
+ON CONFLICT (user_id) DO UPDATE SET
+    bio = EXCLUDED.bio,
+    website = EXCLUDED.website;
+
+-- REPLACE cache (MySQL)
+REPLACE INTO cache (cache_key, data, expires_at)
+VALUES ('user_permissions_123','{"read":true,"write":true}','2024-01-15 11:30:00');
+
+-- Cache UPSERT estilo PostgreSQL
+INSERT INTO cache (cache_key, data, expires_at)
+VALUES ('user_permissions_123','{"read":true,"write":true}','2024-01-15 11:30:00')
+ON CONFLICT (cache_key) DO UPDATE SET
+    data = EXCLUDED.data,
+    expires_at = EXCLUDED.expires_at;
 ```
 
 ## Casos de Uso Avanzados
@@ -290,6 +420,20 @@ $config->setSetting('max_users', 1000);
 echo "Nombre de la app: " . $config->getSetting('app_name') . "\n";
 $features = $config->getSetting('features', []);
 echo "Modo oscuro: " . ($features['dark_mode'] ? 'Sí' : 'No') . "\n";
+```
+
+**SQL Equivalente:**
+```sql
+-- UPSERT de configuración (clave única key)
+INSERT INTO settings (key, value, updated_at, description)
+VALUES ('features','{"dark_mode":true,"notifications":false}','2024-01-15 10:30:00',NULL)
+ON CONFLICT (key) DO UPDATE SET
+    value = EXCLUDED.value,
+    updated_at = EXCLUDED.updated_at,
+    description = COALESCE(EXCLUDED.description, settings.description);
+
+-- SELECT para lectura
+SELECT key, value, updated_at, description FROM settings WHERE key = 'features' LIMIT 1;
 ```
 
 ### Cache con Expiración
@@ -352,6 +496,22 @@ $cleaned = $cache->cleanup();
 echo "Entradas de cache limpiadas: $cleaned\n";
 ```
 
+**SQL Equivalente:**
+```sql
+-- Guardar (REPLACE / UPSERT según motor)
+REPLACE INTO cache (cache_key, data, expires_at, created_at)
+VALUES ('user_123','{"id":123,"name":"Juan","permissions":["read","write"]}','2024-01-15 11:00:00','2024-01-15 10:30:00');
+
+-- SELECT vigente
+SELECT cache_key, data, expires_at FROM cache
+WHERE cache_key = 'user_123'
+    AND expires_at > '2024-01-15 10:30:00'
+LIMIT 1;
+
+-- Delete expirados
+DELETE FROM cache WHERE expires_at <= '2024-01-15 10:30:00';
+```
+
 ### Sincronización de Datos Externos
 
 ```php
@@ -403,6 +563,18 @@ echo "- Actualizados: " . $result['updated'] . "\n";
 echo "- Errores: " . count($result['errors']) . "\n";
 ```
 
+**SQL Equivalente (patrón por usuario externo):**
+```sql
+-- Para id ext_001
+INSERT INTO users (external_id, name, email, active, last_sync)
+VALUES ('ext_001','Usuario Externo 1','ext1@example.com', TRUE, '2024-01-15 10:30:00')
+ON CONFLICT (external_id) DO UPDATE SET
+    name = EXCLUDED.name,
+    email = EXCLUDED.email,
+    active = EXCLUDED.active,
+    last_sync = EXCLUDED.last_sync;
+```
+
 ## Consideraciones de Performance
 
 ### Benchmarking UPSERT vs INSERT/UPDATE Manual
@@ -440,6 +612,21 @@ function benchmarkUpsertVsManual($testData) {
 }
 ```
 
+**SQL Equivalente (patrones):**
+```sql
+-- Método manual (pseudo secuencia por registro)
+SELECT id, email FROM users WHERE email = :email LIMIT 1; -- si existe
+UPDATE users SET name = :name, active = :active WHERE id = :id; -- cuando existe
+INSERT INTO users (email, name, active) VALUES (:email, :name, :active); -- cuando NO existe
+
+-- UPSERT (una sola sentencia por registro)
+INSERT INTO users (email, name, active)
+VALUES (:email, :name, :active)
+ON CONFLICT (email) DO UPDATE SET
+    name = EXCLUDED.name,
+    active = EXCLUDED.active;
+```
+
 ## Errores Comunes y Soluciones
 
 ### Error: Claves Únicas Faltantes
@@ -457,6 +644,16 @@ try {
 // ✅ Correcto: Especificar claves únicas
 $data = ['name' => 'Juan', 'email' => 'juan@example.com'];
 $result = $orm->table('users')->upsert($data, ['email']);
+```
+
+**SQL Equivalente:**
+```sql
+-- Sin especificar clave única (conceptual) el ORM no puede construir ON CONFLICT/ON DUPLICATE KEY.
+-- Con clave única:
+INSERT INTO users (name, email)
+VALUES ('Juan','juan@example.com')
+ON CONFLICT (email) DO UPDATE SET
+    name = EXCLUDED.name;
 ```
 
 ### Error: REPLACE con Datos Incompletos
@@ -479,6 +676,15 @@ $data = [
     'active' => true
 ];
 $orm->table('users')->replace($data);
+```
+
+**SQL Equivalente:**
+```sql
+-- Fallará (NOT NULL email)
+REPLACE INTO users (id, name) VALUES (1,'Juan');
+-- Correcto incluyendo campos NOT NULL
+REPLACE INTO users (id, name, email, active)
+VALUES (1,'Juan','juan@example.com',1);
 ```
 
 ## Siguiente Paso

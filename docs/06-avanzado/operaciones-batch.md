@@ -133,6 +133,10 @@ try {
     echo "Error: " . $e->getMessage() . "\n";
 }
 ```
+**SQL Equivalente:**
+```sql
+UPDATE users SET last_login = '2025-08-18 10:12:00' WHERE id IN (1,3,5,7);
+```
 
 ## deleteMany() - Eliminación Masiva
 
@@ -196,6 +200,10 @@ try {
     echo "Error: " . $e->getMessage() . "\n";
 }
 ```
+**SQL Equivalente (tras verificación de ownership):**
+```sql
+DELETE FROM posts WHERE id IN (10,15,20,25);
+```
 
 ## Operaciones Batch con Transacciones
 
@@ -243,6 +251,14 @@ try {
     echo "Error en operación batch: " . $e->getMessage() . "\n";
     echo "Transacción revertida\n";
 }
+```
+**SQL Equivalente aproximado dentro de la transacción:**
+```sql
+-- BEGIN
+INSERT INTO users (name,email) VALUES ('Usuario Batch 1','batch1@example.com'),('Usuario Batch 2','batch2@example.com');
+INSERT INTO posts (title,content,user_id,published) VALUES ('Post del usuario 101','Contenido generado automáticamente',101,1), ('Post del usuario 102','Contenido generado automáticamente',102,1);
+UPDATE users SET post_count = 1 WHERE id IN (101,102);
+-- COMMIT (o ROLLBACK si hay excepción)
 ```
 
 ## Optimización y Mejores Prácticas

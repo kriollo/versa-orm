@@ -15,11 +15,21 @@ Cómo tratar tipos menos triviales de forma portable.
 ```php
 $model->active = (int)!!$valor;
 ```
+**SQL Equivalente (inserción/actualización):**
+```sql
+INSERT INTO <tabla> (active) VALUES (1);
+-- o
+UPDATE <tabla> SET active = 0 WHERE id = ?;
+```
 
 ## Fechas y Tiempos
 Formato estándar recomendado: `Y-m-d H:i:s`.
 ```php
 $model->created_at = date('Y-m-d H:i:s');
+```
+**SQL:**
+```sql
+INSERT INTO <tabla> (created_at) VALUES ('2025-08-18 10:12:00');
 ```
 Conversión a objeto:
 ```php
@@ -31,6 +41,10 @@ Guardar estructuras flexibles:
 ```php
 $settings = ['theme' => 'dark','lang' => 'es'];
 $model->preferences = json_encode($settings, JSON_UNESCAPED_UNICODE);
+```
+**SQL:**
+```sql
+INSERT INTO <tabla> (preferences) VALUES ('{"theme":"dark","lang":"es"}');
 ```
 Leer:
 ```php
@@ -45,6 +59,10 @@ $roles = ['admin','user','guest'];
 if (!in_array($rol,$roles,true)) throw new InvalidArgumentException();
 $model->role = $rol;
 ```
+**SQL:**
+```sql
+INSERT INTO <tabla> (role) VALUES ('admin');
+```
 
 ## IP / INET
 Almacena como texto normalizado:
@@ -54,6 +72,10 @@ if (filter_var($ip, FILTER_VALIDATE_IP)) {
   $log->ip = $ip;
 }
 ```
+**SQL:**
+```sql
+INSERT INTO logs (ip) VALUES ('203.0.113.5');
+```
 Para búsquedas de rango, añade columna numérica opcional (IPv4 -> int).
 
 ## Cantidades Monetarias
@@ -61,6 +83,10 @@ Evita float binario:
 ```php
 $priceDecimal = '19.99';
 $model->price_cents = (int) bcmul($priceDecimal, '100');
+```
+**SQL:**
+```sql
+INSERT INTO <tabla> (price_cents) VALUES (1999);
 ```
 Formato de salida:
 ```php
@@ -72,6 +98,10 @@ Serializa como JSON:
 ```php
 $model->tags = json_encode($tags);
 $tags = json_decode($model->tags, true) ?? [];
+```
+**SQL:**
+```sql
+INSERT INTO <tabla> (tags) VALUES ('["php","orm"]');
 ```
 
 ## Texto Largo / Logs

@@ -31,12 +31,22 @@ $orm->table('users')->count(); // hit
 $after = $orm->metrics();
 // ($after['cache_hits'] - $before['cache_hits']) == 1
 ```
+**SQL emitido realmente:**
+```sql
+SELECT COUNT(*) AS aggregate FROM users; -- solo la primera vez
+```
 
 ## Invalidación
 - Escrituras relevantes deberían invalidar claves asociadas (comportamiento evolutivo: confirma en tu versión si se refleja inmediatamente).
 - Fallback manual:
 ```php
 $orm->cache('clear');
+```
+**SQL en una escritura típica que provoca invalidación:**
+```sql
+INSERT INTO users (name, email) VALUES ('Ana', 'ana@example.com');
+-- La siguiente consulta COUNT se recalcula tras invalidar:
+SELECT COUNT(*) AS aggregate FROM users;
 ```
 
 ## Estrategias
@@ -58,10 +68,26 @@ function cachedCount($orm, $table, $cond) {
   return $orm->table($table)->where(...$cond)->count();
 }
 ```
+**SQL Equivalente (primera invocación para una combinación de condición):**
+```sql
+SELECT COUNT(*) AS aggregate FROM <tabla> WHERE <condición traducida>;
+```
+En invocaciones subsecuentes con la misma condición no se emite SQL.
 
 ## Métricas Relacionadas
 - `cache_hits` incrementa cuando una operación retorna desde memoria.
 - Solo `cache_misses` incrementa `queries` reales.
+```php
+$orm->cache('enable');
+$start = $orm->metrics();
+$orm->table('users')->where('activo', true)->exists(); // miss
+$orm->table('users')->where('activo', true)->exists(); // hit
+$end = $orm->metrics();
+```
+**SQL Equivalente (solo primera vez):**
+```sql
+SELECT 1 FROM users WHERE activo = 1 LIMIT 1;
+```
 
 ## Cuándo NO Usar
 - Tras escrituras intensivas sin invalidación clara.

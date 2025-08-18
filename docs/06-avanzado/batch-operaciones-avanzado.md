@@ -28,6 +28,12 @@ $result = $orm->insertMany('users', $rows);
 // $result['affected'] === 2
 // $result['inserted_ids'] puede existir (MySQL/SQLite inferido, PostgreSQL parcial)
 ```
+**SQL Equivalente:**
+```sql
+INSERT INTO users (name, email) VALUES
+  ('A','a@x'),
+  ('B','b@x');
+```
 Notas:
 - Columnas ausentes usan DEFAULT / NULL.
 - `inserted_ids`: inferido secuencialmente cuando el motor lo permite (MySQL auto_increment + última ID, SQLite rowid). PostgreSQL puede requerir `RETURNING` para precisión total (no implementado todavía aquí).
@@ -40,6 +46,11 @@ $updates = [
 ];
 $affected = $orm->updateMany('users', $updates)['affected'];
 ```
+**SQL Equivalente (conceptual):**
+```sql
+UPDATE users SET name = 'Neo' WHERE id = 10;
+UPDATE users SET email = 'trinity@matrix' WHERE id = 11;
+```
 Reglas:
 - Cada fila DEBE incluir la PK.
 - Sólo columnas presentes se actualizan (parcial).
@@ -47,6 +58,10 @@ Reglas:
 ## deleteMany
 ```php
 $deleted = $orm->deleteMany('users', [10,11,12])['affected'];
+```
+**SQL Equivalente:**
+```sql
+DELETE FROM users WHERE id IN (10,11,12);
 ```
 Construye un `DELETE ... WHERE id IN (...)` optimizado.
 
@@ -61,6 +76,20 @@ $affected = $orm->upsertMany('users', $rows, ['email'])['affected'];
 - MySQL: `ON DUPLICATE KEY UPDATE`.
 - PostgreSQL: `ON CONFLICT (email) DO UPDATE`.
 - SQLite: `INSERT INTO ... ON CONFLICT(email) DO UPDATE`.
+**SQL Equivalente (MySQL):**
+```sql
+INSERT INTO users (email,name) VALUES
+  ('a@x','A1'),
+  ('b@x','B1')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+```
+**SQL Equivalente (PostgreSQL / SQLite):**
+```sql
+INSERT INTO users (email,name) VALUES
+  ('a@x','A1'),
+  ('b@x','B1')
+ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;
+```
 
 ## VersaModel::storeAll
 Optimiza múltiples modelos nuevos de la MISMA tabla.
@@ -71,6 +100,10 @@ $u2 = VersaModel::dispense('users');
 $u2->name = 'B';
 $ids = VersaModel::storeAll([$u1,$u2]);
 // [idA, idB]
+```
+**SQL Equivalente:**
+```sql
+INSERT INTO users (name) VALUES ('A'),('B');
 ```
 Condiciones para modo batch optimizado:
 1. Todos sin PK asignada.
