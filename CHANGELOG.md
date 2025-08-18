@@ -6,6 +6,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Added: VersaModel::storeAll(array $models) para guardar múltiples modelos y devolver array de IDs en orden.
 
 ### Añadido ⚡
 - `onRaw()` en QueryBuilder para añadir expresiones complejas y seguras en la cláusula `ON` de los `JOIN`.
