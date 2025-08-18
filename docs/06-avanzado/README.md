@@ -40,6 +40,72 @@ SQL directo para casos especiales
 - Procedimientos almacenados
 - Optimizaciones avanzadas
 
+### [📊 Métricas y Observabilidad](observabilidad/metricas.md)
+Monitoreo ligero de rendimiento interno
+- Contadores de queries / writes
+- Cache hits & misses
+- Latencia acumulada y última consulta
+- Roadmap de extensiones
+
+### [⚡ Batch Avanzado (inserciones optimizadas)](batch-operaciones-avanzado.md)
+Profundiza en heurísticas y optimización de `insertMany`, `upsertMany` y `storeAll`
+- `inserted_ids` inferidos
+- Estrategias de chunking
+- Errores comunes y mitigación
+
+### [🗄️ Características Específicas por Base de Datos](caracteristicas-especificas-bases-datos.md)
+Guía comparativa multi-driver (MySQL, PostgreSQL, SQLite)
+- JSON / Window Functions / CTE
+- Full Text / Arrays / UPSERT
+- Limitaciones y adaptaciones
+
+### [🚨 Errores y Logging](errores-logging.md)
+Captura, clasificación y registro estructurado de fallos
+- Categorías comunes
+- Patrones de retry limitado
+- Mass assignment seguro
+
+### [🏗️ Arquitectura y Flujo Interno](arquitectura-flujo-interno.md)
+Cómo se transforma una llamada de alto nivel en SQL seguro vía PDO
+- Capas y responsabilidades
+- Flujo de INSERT / SELECT / Batch
+- Puntos de extensión actuales
+
+### [🐢 Lazy Loading y N+1](lazy-n+1.md)
+Patrones para evitar tormentas de queries y optimizar relaciones
+- Pre-carga manual
+- Cache en memoria ciclo
+- Detección con métricas
+
+### [🧠 Caché Interna](cache-interna.md)
+Uso de la caché ligera integrada para count/exists y lecturas repetidas
+- Activación y estado
+- Métricas hits/misses
+- Limitaciones y buenas prácticas
+
+### [🧪 Tipado y Validación Avanzada](tipado-validacion-avanzado.md)
+Refuerza consistencia de datos y evita mass assignment
+- Reglas declarativas
+- Casting especializado
+- Comparación de esquema
+
+### [🧬 Datos Avanzados](datos-avanzados.md)
+Tratamiento práctico de tipos especiales
+- JSON / ENUM / IP / Monetario
+- Arrays y blobs de texto
+
+### [🧩 Subconsultas y RAW](subconsultas-expresiones-raw.md)
+Integración segura de SQL avanzado
+- Subconsultas IN / CTE
+- Expresiones calculadas
+- Helpers reutilizables
+
+### [🛠️ DDL, Migraciones y Freeze](ddl-freeze-migraciones.md)
+Procedimientos seguros para evolucionar el esquema
+- Estrategias de cambio
+- Rollback y checklist
+- Uso correcto de freeze mode
+
 ## ✅ Prerrequisitos
 
 Antes de continuar, deberías dominar:

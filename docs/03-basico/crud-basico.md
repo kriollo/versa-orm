@@ -74,6 +74,8 @@ INSERT INTO users (name, email) VALUES
 
 **Devuelve:** Array de IDs (int|string|null) en el mismo orden de entrada
 
+> Evolutivo: más adelante en [Operaciones Batch Avanzadas](../06-avanzado/batch-operaciones-avanzado.md) verás cómo optimizar inserciones mayores a unas decenas de filas y obtener `inserted_ids` cuando el driver lo permite.
+
 ## READ - Leer registros
 
 ### Leer un registro por ID
@@ -112,6 +114,8 @@ foreach ($users as $user) {
 ```sql
 SELECT * FROM users WHERE active = 1;
 ```
+
+> Consejo: Cuando esta consulta se repite frecuentemente en flujos de lectura considera activar la [Caché Interna](../06-avanzado/cache-interna.md) para `count()` / `exists()` y métricas asociadas.
 
 **Devuelve:** Array de objetos VersaModel
 
@@ -238,6 +242,8 @@ echo "Eliminados " . count($inactiveUsers) . " usuarios inactivos";
 ```sql
 DELETE FROM users WHERE active = 0;
 ```
+
+> En escenarios masivos (cientos/miles) compara este enfoque con `deleteMany()` descrito en [Operaciones Batch Avanzadas](../06-avanzado/batch-operaciones-avanzado.md) para reducir roundtrips.
 
 ### Eliminación suave (Soft Delete)
 
@@ -389,3 +395,16 @@ Ahora que conoces las operaciones CRUD básicas, puedes continuar con:
 - [VersaModel](versamodel.md) - Profundizar en los métodos de VersaModel
 - [Manejo de Errores](manejo-errores.md) - Aprender a manejar excepciones
 - [Query Builder](../04-query-builder/README.md) - Para consultas más complejas
+
+## Resumen Comparativo ORM vs SQL
+| Objetivo | ORM | SQL Equivalente |
+|----------|-----|-----------------|
+| Insertar 1 fila | `$user->store()` | `INSERT INTO users (...) VALUES (...);` |
+| Insertar varias | `VersaModel::storeAll($arr)` | `INSERT ... VALUES (...),(...)` |
+| Seleccionar por ID | `VersaModel::load('users',$id)` | `SELECT * FROM users WHERE id = ?` |
+| Seleccionar filtrado | `findAll('users','active = ?', [1])` | `SELECT * FROM users WHERE active = 1` |
+| Actualizar | `$user->store()` (con id) | `UPDATE users SET ... WHERE id = ?` |
+| Borrar | `$user->trash()` | `DELETE FROM users WHERE id = ?` |
+| Batch update | `updateMany('users', [...])` | `UPDATE ...` múltiples (varias sentencias) |
+
+> Próxima evolución: en la sección [Funcionalidades Avanzadas](../06-avanzado/README.md) aprenderás optimizaciones (batch, caché, lazy vs N+1) sobre estos cimientos.

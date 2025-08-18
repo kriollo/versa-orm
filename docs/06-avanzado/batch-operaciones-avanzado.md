@@ -1,0 +1,105 @@
+# Operaciones Batch Avanzadas
+
+Las operaciones batch maximizan el throughput reduciendo roundtrips y coste de parseo.
+
+## ✅ Prerrequisitos
+- Dominio de [CRUD Básico](../03-basico/crud-basico.md)
+- Familiaridad con [Query Builder](../04-query-builder/README.md)
+- Conocer inserciones múltiples con `storeAll()` (visto en CRUD)
+
+> Venido de CRUD: aquí aprendes a escalar inserciones/actualizaciones a grandes volúmenes manteniendo seguridad.
+
+## Resumen Rápido
+| Método | Propósito | Devuelve |
+|--------|----------|----------|
+| insertMany($tabla, $filas) | Inserción masiva | filas insertadas (int) + `inserted_ids` si disponible |
+| updateMany($tabla, $filas, $pk='id') | Actualizaciones múltiples por PK | filas actualizadas |
+| deleteMany($tabla, $ids, $pk='id') | Borrado múltiple por PK | filas borradas |
+| upsertMany($tabla, $filas, $uniqueCols) | Insert o update atómico | filas afectadas |
+| VersaModel::storeAll($modelos) | Persistir lote de modelos nuevos | array de IDs (o nulls) |
+
+## insertMany
+```php
+$rows = [
+  ['name' => 'A', 'email' => 'a@x'],
+  ['name' => 'B', 'email' => 'b@x'],
+];
+$result = $orm->insertMany('users', $rows);
+// $result['affected'] === 2
+// $result['inserted_ids'] puede existir (MySQL/SQLite inferido, PostgreSQL parcial)
+```
+Notas:
+- Columnas ausentes usan DEFAULT / NULL.
+- `inserted_ids`: inferido secuencialmente cuando el motor lo permite (MySQL auto_increment + última ID, SQLite rowid). PostgreSQL puede requerir `RETURNING` para precisión total (no implementado todavía aquí).
+
+## updateMany
+```php
+$updates = [
+  ['id' => 10, 'name' => 'Neo'],
+  ['id' => 11, 'email' => 'trinity@matrix']
+];
+$affected = $orm->updateMany('users', $updates)['affected'];
+```
+Reglas:
+- Cada fila DEBE incluir la PK.
+- Sólo columnas presentes se actualizan (parcial).
+
+## deleteMany
+```php
+$deleted = $orm->deleteMany('users', [10,11,12])['affected'];
+```
+Construye un `DELETE ... WHERE id IN (...)` optimizado.
+
+## upsertMany
+```php
+$rows = [
+  ['email' => 'a@x', 'name' => 'A1'],
+  ['email' => 'b@x', 'name' => 'B1']
+];
+$affected = $orm->upsertMany('users', $rows, ['email'])['affected'];
+```
+- MySQL: `ON DUPLICATE KEY UPDATE`.
+- PostgreSQL: `ON CONFLICT (email) DO UPDATE`.
+- SQLite: `INSERT INTO ... ON CONFLICT(email) DO UPDATE`.
+
+## VersaModel::storeAll
+Optimiza múltiples modelos nuevos de la MISMA tabla.
+```php
+$u1 = VersaModel::dispense('users');
+$u1->name = 'A';
+$u2 = VersaModel::dispense('users');
+$u2->name = 'B';
+$ids = VersaModel::storeAll([$u1,$u2]);
+// [idA, idB]
+```
+Condiciones para modo batch optimizado:
+1. Todos sin PK asignada.
+2. Misma tabla.
+Si no se cumplen, recurre a inserciones individuales.
+
+## Estrategias de Rendimiento
+- Agrupa por tamaño (50-500 filas) para evitar paquetes SQL enormes.
+- Normaliza claves: asegúrate que todas las filas tienen el mismo subconjunto de columnas para evitar rellenos innecesarios.
+- Usa transacciones manuales si combinas múltiples batches heterogéneos.
+
+## Errores Comunes
+| Problema | Causa | Mitigación |
+|----------|-------|------------|
+| IDs desalineados | Fallback heurístico en PostgreSQL | Implementar RETURNING (roadmap) |
+| Columnas faltantes | Tipos no-null sin DEFAULT | Añadir columnas o defaults |
+| Unique violation | Datos duplicados en upsertMany con set conflictivo | Revisa `uniqueCols` |
+
+## Buenas Prácticas
+- Valida previamente (longitud, formato) antes del batch para reducir rollbacks.
+- Registra latencia y tamaño (filas) en logs para tunear chunk size.
+- Combina con caché: invalida claves afectadas tras operaciones de escritura masiva.
+
+## Roadmap
+- Soporte preciso de `inserted_ids` en PostgreSQL vía `RETURNING`.
+- Batch mixto (insert + update) evaluado para futuro.
+- Paralelización segura por partición de clave.
+
+## ➡️ Próximos Pasos
+- Reforzar observabilidad: [Métricas](observabilidad/metricas.md)
+- Optimizar consultas derivadas: [Lazy y N+1](lazy-n+1.md)
+- Afinar consistencia de datos: [Tipado y Validación Avanzada](tipado-validacion-avanzado.md)
