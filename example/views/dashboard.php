@@ -1,4 +1,5 @@
 <?php
+
 use App\Models\Label;
 use App\Models\Project;
 use App\Models\Task;
@@ -44,7 +45,7 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Tareas</dt>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Tareas Totales</dt>
                         <dd class="text-3xl font-bold text-gray-900 dark:text-white"><?php echo $totalTasks; ?></dd>
                     </dl>
                 </div>
@@ -104,6 +105,29 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
             </div>
         </div>
     </div>
+
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-clock text-2xl text-yellow-600"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Tareas Pendientes</dt>
+                        <dd class="text-3xl font-bold text-gray-900 dark:text-white"><?php echo $pendingTasks; ?></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 px-5 py-3">
+            <div class="text-sm">
+                <a href="?action=tasks&status=todo" class="font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300">
+                    Ver pendientes <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Acciones rápidas -->
@@ -136,10 +160,10 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
     </div>
 </div>
 
-<!-- Tareas recientes -->
+<!-- Tareas pendientes -->
 <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Tareas Recientes</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Tareas Pendientes</h2>
     </div>
     <div class="divide-y divide-gray-200 dark:divide-gray-700">
         <?php if (empty($recentTasks)) { ?>
@@ -178,10 +202,10 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
                         <div class="flex items-center space-x-2">
                             <?php
                             $priorityColors = [
-                                'low' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                'low' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
                             ];
                 $priorityColor = $priorityColors[$task['priority']] ?? 'bg-gray-100 text-gray-800';
                 ?>
@@ -198,7 +222,7 @@ $title = 'Dashboard - VersaORM Trello Demo'; ?>
 </div>
 
 <!-- Sistema de tipado fuerte activo -->
-<div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 shadow rounded-lg border-l-4 border-green-400 dark:border-green-600">
+<div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 shadow rounded-lg border-l-4 border-green-400 dark:border-green-600 mt-3">
     <div class="px-6 py-4">
         <div class="flex items-center">
             <div class="flex-shrink-0">

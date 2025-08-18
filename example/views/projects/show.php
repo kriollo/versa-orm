@@ -190,13 +190,8 @@ $statusColors = [
                                                 <a href="?action=task_edit&id=<?php echo $task['id']; ?>" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 ml-2 transition-colors">
                                                     <i class="fas fa-edit text-xs"></i>
                                                 </a>
-                                                <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal <?php echo ($task['notes_count'] ?? 0) > 0 ? 'has-notes' : ''; ?> ml-2 transition-colors"
-                                                    data-task-id="<?php echo $task['id']; ?>"
-                                                    data-task-title="<?php echo htmlspecialchars($task['title']); ?>">
-                                                    <i class="fas fa-sticky-note text-xs"></i>
-                                                    <?php if (($task['notes_count'] ?? 0) > 0) { ?>
-                                                        <span class="note-count-badge"><?php echo $task['notes_count']; ?></span>
-                                                    <?php } ?>
+                                                <button class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 ml-2 transition-colors open-status-modal" data-task-id="<?php echo $task['id']; ?>" data-task-status="<?php echo $task['status']; ?>">
+                                                    <i class="fas fa-exchange-alt text-xs"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -492,6 +487,70 @@ function getPriorityClass($priority): string
     });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusModal = document.getElementById('status-modal');
+    const statusForm = document.getElementById('status-form');
+    const taskStatusSelect = document.getElementById('task-status');
+
+    document.querySelectorAll('.open-status-modal').forEach(button => {
+        button.addEventListener('click', function() {
+            const taskId = this.dataset.taskId;
+            const taskStatus = this.dataset.taskStatus;
+
+            statusForm.action = `?action=task_change_status&id=${taskId}`;
+            taskStatusSelect.value = taskStatus;
+
+            statusModal.classList.remove('hidden');
+        });
+    });
+
+    document.querySelectorAll('.close-status-modal').forEach(button => {
+        button.addEventListener('click', function() {
+            statusModal.classList.add('hidden');
+        });
+    });
+});
+</script>
+
+<!-- Modal para cambiar estado de tarea -->
+<div id="status-modal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-black/70 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200 dark:border-gray-700">
+            <form id="status-form" method="POST" action="">
+                <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 transition-colors">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/40 sm:mx-0 sm:h-10 sm:w-10 transition-colors">
+                            <i class="fas fa-exchange-alt text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white transition-colors" id="modal-title">Cambiar Estado de la Tarea</h3>
+                            <div class="mt-4">
+                                <label for="task-status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nuevo Estado</label>
+                                <select id="task-status" name="status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                                    <option value="todo">Por Hacer</option>
+                                    <option value="in_progress">En Progreso</option>
+                                    <option value="done">Completada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse transition-colors">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Guardar
+                    </button>
+                    <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm close-status-modal">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .note-count-badge {
         background-color: #3498db;
@@ -506,5 +565,9 @@ function getPriorityClass($priority): string
 
     .has-notes .fa-sticky-note {
         color: #2980b9;
+    }
+
+    #status-modal.hidden {
+        display: none;
     }
 </style>

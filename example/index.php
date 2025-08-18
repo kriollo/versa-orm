@@ -36,6 +36,7 @@ try {
             // Conteos eficientes usando el ORM
             $totalProjects = $orm->table('projects')->count();
             $totalTasks = $orm->table('tasks')->count();
+            $pendingTasks = $orm->table('tasks')->where('status', '=', 'todo')->count();
             $totalUsers = $orm->table('users')->count();
             $totalLabels = $orm->table('labels')->count();
 
@@ -45,12 +46,13 @@ try {
                 ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
                 ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // JOIN optimizado
                 ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // JOIN optimizado
+                ->where('t.status', '!=', 'done')                         // WHERE optimizado
                 ->orderBy('t.created_at', 'desc')                         // ORDER BY optimizado
                 ->limit(5)                                                 // LIMIT optimizado
                 ->collect()                                               // ✅ UNA consulta optimizada
             ;
 
-            render('dashboard', ['totalProjects' => $totalProjects, 'totalTasks' => $totalTasks, 'totalUsers' => $totalUsers, 'totalLabels' => $totalLabels, 'recentTasks' => $recentTasks]);
+            render('dashboard', ['totalProjects' => $totalProjects, 'totalTasks' => $totalTasks, 'pendingTasks' => $pendingTasks, 'totalUsers' => $totalUsers, 'totalLabels' => $totalLabels, 'recentTasks' => $recentTasks]);
             break;
 
             // ======================
