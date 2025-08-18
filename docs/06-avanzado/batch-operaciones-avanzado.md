@@ -38,6 +38,32 @@ Notas:
 - Columnas ausentes usan DEFAULT / NULL.
 - `inserted_ids`: inferido secuencialmente cuando el motor lo permite (MySQL auto_increment + última ID, SQLite rowid). PostgreSQL puede requerir `RETURNING` para precisión total (no implementado todavía aquí).
 
+### Heurística de `inserted_ids`
+```php
+$rows = [
+  ['name' => 'C'],
+  ['name' => 'D'],
+  ['name' => 'E'],
+];
+$r = $orm->insertMany('users',$rows);
+if (isset($r['inserted_ids'])) {
+  // Mapeo directo
+  foreach ($r['inserted_ids'] as $id) {
+    echo "Nuevo ID: $id\n";
+  }
+}
+```
+**SQL Equivalente (única sentencia multi-row):**
+```sql
+INSERT INTO users (name) VALUES ('C'),('D'),('E');
+-- MySQL: last_insert_id() interno devuelve ID de 'E'; se infiere rango continuo.
+-- SQLite: rowid autoincremental similar (rango continuo).
+-- PostgreSQL: sin RETURNING no se garantiza inferencia (campo puede omitirse o quedar null).
+```
+Precauciones:
+- No asumas continuidad si existe trigger que inserta en otra tabla con su propio autoincrement.
+- Para auditoría estricta en PostgreSQL, preferir inserciones individuales por ahora o implementar variante con RETURNING.
+
 ## updateMany
 ```php
 $updates = [
@@ -89,6 +115,33 @@ INSERT INTO users (email,name) VALUES
   ('a@x','A1'),
   ('b@x','B1')
 ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;
+```
+### Actualizaciones Condicionales Múltiples
+```php
+$rows = [
+  ['email' => 'c@x', 'name' => 'C1', 'active' => true],
+  ['email' => 'd@x', 'name' => 'D1', 'active' => false],
+];
+$res = $orm->upsertMany('users',$rows,['email']);
+echo $res['affected']; // filas insertadas + actualizadas
+```
+**SQL Equivalente (MySQL):**
+```sql
+INSERT INTO users (email,name,active) VALUES
+  ('c@x','C1',1),
+  ('d@x','D1',0)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  active = VALUES(active);
+```
+**SQL Equivalente (PostgreSQL/SQLite):**
+```sql
+INSERT INTO users (email,name,active) VALUES
+  ('c@x','C1',TRUE),
+  ('d@x','D1',FALSE)
+ON CONFLICT (email) DO UPDATE SET
+  name = EXCLUDED.name,
+  active = EXCLUDED.active;
 ```
 
 ## VersaModel::storeAll

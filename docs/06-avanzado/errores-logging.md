@@ -82,6 +82,22 @@ ALTER TABLE users ADD COLUMN tmp INT;
 ```
 Mantén este modo en producción para proteger contra cambios accidentales de esquema.
 
+### Logs de Seguridad
+Eventos como activación de freeze, congelar modelo o intentos bloqueados generan líneas en un archivo separado:
+```php
+$orm->freeze(true);              // FREEZE_MODE_ACTIVATED
+$orm->freezeModel(UserModel::class,true); // MODEL_FROZEN
+try { $orm->raw('ALTER TABLE users ADD xyz INT'); } catch (VersaORMException $e) {}
+```
+**SQL Equivalente tentativa bloqueada:**
+```sql
+ALTER TABLE users ADD xyz INT; -- Bloqueada por freeze
+```
+Formato de log (ejemplo):
+```
+[2025-08-17 12:01:02] [SECURITY] [FREEZE_VIOLATION_ATTEMPT] {"operation":"rawDDL","global_frozen":true,...}
+```
+
 ## Validación y Mass Assignment
 Implementa whitelists antes de asignar datos externos:
 ```php
@@ -127,6 +143,48 @@ UPDATE accounts SET balance = balance + 100 WHERE id = 20;
 -- deadlock/timeout -> reintento
 ```
 
+## Sugerencias Automáticas de Errores
+El motor en modo debug agrega sugerencias según el texto del error (conexión, sintaxis, constraint, permisos, tipos). Ejemplo conceptual:
+```php
+try {
+    $orm->raw('SELECT * FROM inexistente');
+} catch (VersaORMException $e) {
+    echo $e->getMessage(); // Incluirá bloque 'Suggestions:' en debug
+}
+```
+**SQL Equivalente fallido:**
+```sql
+SELECT * FROM inexistente;
+```
+Sugerencias típicas: verificar nombre de tabla, permisos, esquema correcto.
+
+## Límites y Salvaguardas Internas
+| Salvaguarda | Descripción | Acción si se viola |
+|-------------|-------------|--------------------|
+| Longitud máxima raw | Query > ~1MB | Lanza excepción `QUERY_TOO_LONG` |
+| Identificadores inseguros | Nombres con espacios, `;`, comentarios | Excepción `INVALID_IDENTIFIER` |
+| Referencias circulares | Parámetros anidados recursivamente | Excepción genérica de ciclo |
+| DDL bajo freeze | ALTER/CREATE/DROP detectados | Excepción `FREEZE_VIOLATION` |
+
+Ejemplo identificador bloqueado:
+```php
+try { $orm->raw('SELECT 1 FROM users; DROP TABLE users;'); } catch (VersaORMException $e) {}
+```
+**SQL (seguridad):**
+```sql
+-- El segundo comando sería potencialmente malicioso y se evita diseñando APIs que no concatenen múltiples sentencias.
+```
+
+## Stack Trace Enriquecido (Debug)
+Con `debug => true` en config, los errores incluyen un bloque `=== DEBUG STACK TRACE ===` útil para pinpoint. En producción se omite.
+```php
+$orm = new VersaORM(['driver'=>'mysql','debug'=>true,...]);
+```
+**SQL Equivalente de ejemplo que dispara error (columna inexistente):**
+```sql
+SELECT id, columna_inexistente FROM users;
+```
+
 ## Estructura de Logs Sugerida
 Formato simple por línea:
 ```
@@ -149,6 +207,9 @@ Ejemplo:
 - [ ] Evitas reintentos infinitos
 - [ ] Logueas lotes grandes
 - [ ] Proteges contra mass assignment
+- [ ] Logs de seguridad revisados periódicamente
+- [ ] debug desactivado en producción
+- [ ] Controlas longitud de consultas generadas dinámicamente
 
 ## ➡️ Próximos Pasos
 - Optimizar rendimiento: [Métricas](observabilidad/metricas.md)
