@@ -208,7 +208,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Configura la instancia global del ORM para métodos estáticos.
      */
-    public static function setORM(VersaORM $orm): void
+    public static function setORM(?VersaORM $orm): void
     {
         self::$ormInstance = $orm;
     }
@@ -1480,6 +1480,56 @@ class VersaModel implements TypedModelInterface
         }
 
         return $queryBuilder->findAll();
+    }
+
+    /**
+     * Procesa registros en lotes para manejar grandes conjuntos de datos.
+     *
+     * @param string $table nombre de la tabla
+     * @param callable $callback función a ejecutar por cada lote de modelos
+     * @param int $batchSize tamaño de cada lote
+     * @param string|null $conditions condiciones SQL opcionales
+     * @param array<mixed> $bindings bindings para las condiciones
+     * @param string $orderBy campo para ordenar los resultados (importante para la paginación)
+     */
+    public static function findInBatches(
+        string $table,
+        callable $callback,
+        int $batchSize = 1000,
+        ?string $conditions = null,
+        array $bindings = [],
+        string $orderBy = 'id',
+    ): void {
+        if (!self::$ormInstance instanceof VersaORM) {
+            throw new Exception('No ORM instance available. Call VersaModel::setORM() first.');
+        }
+
+        $offset = 0;
+
+        while (true) {
+            $query = self::$ormInstance->table($table, static::class)
+                ->orderBy($orderBy)
+                ->limit($batchSize)
+                ->offset($offset);
+
+            if ($conditions) {
+                $query->whereRaw($conditions, $bindings);
+            }
+
+            $models = $query->findAll();
+
+            if (empty($models)) {
+                break;
+            }
+
+            $callback($models);
+
+            if (count($models) < $batchSize) {
+                break;
+            }
+
+            $offset += $batchSize;
+        }
     }
 
     /**
