@@ -5,7 +5,9 @@ Esta carpeta contiene los scripts y archivos de configuración necesarios para e
 ## 📁 Archivos Incluidos
 
 ### `setup_database.php`
+
 **Script principal de configuración**
+
 - Crea las tablas de ejemplo (users, posts, tags, post_tags)
 - Inserta datos de prueba consistentes y realistas
 - Configura relaciones entre tablas
@@ -13,14 +15,18 @@ Esta carpeta contiene los scripts y archivos de configuración necesarios para e
 - Verifica que todo funcione correctamente
 
 ### `database_config.php`
+
 **Configuración de base de datos**
+
 - Tipo de base de datos (SQLite por defecto para simplicidad)
 - Parámetros de conexión personalizables
 - Configuraciones alternativas para MySQL y PostgreSQL
 - Variables de entorno para seguridad
 
 ### `example_config.php`
+
 **Funciones helper para ejemplos**
+
 - `getExampleORM()` - Inicializa VersaORM con la configuración
 - `showResults()` - Muestra resultados de forma legible
 - `showSQLEquivalent()` - Muestra el SQL equivalente
@@ -28,47 +34,13 @@ Esta carpeta contiene los scripts y archivos de configuración necesarios para e
 - `formatOutput()` - Formatea salida para mejor legibilidad
 
 ### `test_setup.php`
+
 **Verificación de configuración**
+
 - Prueba la conexión a la base de datos
 - Verifica que las tablas existan
 - Confirma que los datos de ejemplo estén disponibles
 - Ejecuta consultas de prueba básicas
-
-## 🔍 Scripts de Validación
-
-### `validate_documentation.php`
-**Validador principal de documentación**
-- Extrae y valida todos los ejemplos de código PHP
-- Verifica sintaxis y ejecución correcta
-- Confirma tipos de retorno documentados
-- Genera reporte detallado de problemas
-
-### `multi_db_validator.php`
-**Validador de compatibilidad multi-base de datos**
-- Prueba ejemplos en SQLite, MySQL y PostgreSQL
-- Verifica compatibilidad del SQL generado
-- Reporta diferencias entre motores de BD
-- Confirma portabilidad de ejemplos
-
-### `format_checker.php`
-**Verificador de consistencia de formato**
-- Valida estructura de títulos y subtítulos
-- Verifica formato de bloques de código
-- Confirma consistencia de enlaces internos
-- Revisa estilo de documentación
-
-### `run_all_validations.php`
-**Script maestro de validación**
-- Ejecuta todas las validaciones disponibles
-- Genera reporte consolidado de resultados
-- Opción de validación rápida (--quick)
-- Reportes detallados en formato JSON
-
-### `database_test_config.php`
-**Configuraciones para pruebas multi-BD**
-- Configuraciones específicas para validación
-- Soporte para variables de entorno
-- Configuración automática de motores disponibles
 
 ## 🚀 Uso Rápido
 
@@ -80,6 +52,7 @@ php docs/setup/setup_database.php
 ```
 
 Este comando:
+
 - ✅ Crea la base de datos SQLite
 - ✅ Configura todas las tablas necesarias
 - ✅ Inserta datos de ejemplo realistas
@@ -132,48 +105,10 @@ $users = $orm->table('users')->getAll();
 showResults($users, 'Todos los usuarios');
 ```
 
-## 🧪 Validación de Documentación
-
-### Validación Completa
-Ejecuta todas las validaciones (ejemplos, formato, compatibilidad multi-BD):
-```bash
-php docs/setup/run_all_validations.php
-```
-
-### Validación Rápida
-Solo validación básica y formato (más rápido):
-```bash
-php docs/setup/run_all_validations.php --quick
-```
-
-### Validaciones Individuales
-
-**Validar ejemplos de código:**
-```bash
-php docs/setup/validate_documentation.php
-```
-
-**Verificar formato:**
-```bash
-php docs/setup/format_checker.php
-```
-
-**Probar compatibilidad multi-BD:**
-```bash
-php docs/setup/multi_db_validator.php
-```
-
-### Reportes Generados
-
-Los scripts de validación generan reportes detallados:
-- `validation_report.json` - Reporte de validación básica
-- `format_report.json` - Reporte de consistencia de formato
-- `multi_db_report.json` - Reporte de compatibilidad multi-BD
-- `master_validation_report.json` - Reporte consolidado
-
 ## 📊 Estructura de Datos
 
 ### Tabla `users` (Usuarios)
+
 ```sql
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -185,6 +120,7 @@ CREATE TABLE users (
 ```
 
 ### Tabla `posts` (Publicaciones)
+
 ```sql
 CREATE TABLE posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -198,6 +134,7 @@ CREATE TABLE posts (
 ```
 
 ### Tabla `tags` (Etiquetas)
+
 ```sql
 CREATE TABLE tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -206,6 +143,7 @@ CREATE TABLE tags (
 ```
 
 ### Tabla `post_tags` (Relación Posts-Tags)
+
 ```sql
 CREATE TABLE post_tags (
     post_id INTEGER NOT NULL,
@@ -219,26 +157,31 @@ CREATE TABLE post_tags (
 ## 📈 Datos de Ejemplo Incluidos
 
 ### Usuarios (4 registros)
+
 - **Ana García** (ana@example.com) - Activa
 - **Carlos López** (carlos@example.com) - Activo
 - **María Rodríguez** (maria@example.com) - Activa
 - **Juan Pérez** (juan@example.com) - Inactivo
 
 ### Posts (5 registros)
+
 - **4 publicados** con contenido completo
 - **1 borrador** para ejemplos de filtrado
 - Distribuidos entre diferentes usuarios
 
 ### Tags (6 registros)
+
 - tecnología, php, orm, base-de-datos, tutorial, avanzado
 
 ### Relaciones Post-Tags (8 registros)
+
 - Cada post tiene 1-3 tags asociados
 - Ejemplos realistas de relaciones muchos-a-muchos
 
 ## 🎯 Casos de Uso Cubiertos
 
 Estos datos permiten demostrar:
+
 - ✅ **CRUD básico**: Crear, leer, actualizar, eliminar
 - ✅ **Filtros**: Usuarios activos/inactivos, posts publicados/borradores
 - ✅ **Relaciones 1:N**: Usuario → Posts

@@ -1,8 +1,8 @@
 {
-    "timestamp": "2025-08-16 19:57:13",
+    "timestamp": "2025-08-18 14:38:46",
     "summary": {
-        "total_examples": 477,
-        "valid_examples": 85,
+        "total_examples": 547,
+        "valid_examples": 108,
         "format_issues": 0,
         "broken_links": 0
     },
@@ -26,7 +26,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 86,
+                "line": 93,
                 "valid": false,
                 "error": "Error fatal: Class \"Illuminate\\Database\\Eloquent\\Model\" not found",
                 "return_type": null,
@@ -34,7 +34,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 101,
+                "line": 108,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -42,7 +42,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 110,
+                "line": 117,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -50,7 +50,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 129,
+                "line": 136,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected end of file, expecting \";\"",
                 "return_type": null,
@@ -58,7 +58,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 137,
+                "line": 144,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"return\"",
                 "return_type": null,
@@ -66,15 +66,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 147,
-                "valid": false,
-                "error": "Error fatal: Class \"VersaORM\" not found",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 171,
+                "line": 154,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -82,7 +74,15 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 189,
+                "line": 199,
+                "valid": true,
+                "error": "Código no ejecutable (solo definición)",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
+                "line": 221,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected end of file, expecting \";\"",
                 "return_type": null,
@@ -90,7 +90,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 202,
+                "line": 234,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -98,7 +98,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 213,
+                "line": 245,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -106,39 +106,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 222,
-                "valid": false,
-                "error": "Error fatal: Class \"VersaORM\" not found",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 229,
-                "valid": false,
-                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 243,
-                "valid": false,
-                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: usuarios",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 255,
-                "valid": false,
-                "error": "Error fatal: Class \"VersaModel\" not found",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 264,
+                "line": 254,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -146,7 +114,39 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 305,
+                "line": 273,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
+                "line": 287,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
+                "line": 299,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
+                "line": 308,
+                "valid": true,
+                "error": "Código no ejecutable (solo definición)",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
+                "line": 353,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"return\"",
                 "return_type": null,
@@ -154,7 +154,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\por-que-versaorm.md",
-                "line": 319,
+                "line": 367,
                 "valid": false,
                 "error": "Error fatal: Class \"Product\" not found",
                 "return_type": null,
@@ -171,9 +171,9 @@
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\01-introduccion\\que-es-orm.md",
                 "line": 47,
-                "valid": false,
-                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: usuarios",
-                "return_type": null,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
                 "return_value": null
             },
             {
@@ -210,7 +210,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 100,
+                "line": 99,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -218,7 +218,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 144,
+                "line": 141,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -226,7 +226,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 178,
+                "line": 174,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -234,7 +234,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 214,
+                "line": 210,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -242,7 +242,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 266,
+                "line": 263,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -250,7 +250,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 307,
+                "line": 303,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -258,7 +258,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 323,
+                "line": 320,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -266,15 +266,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 382,
-                "valid": false,
-                "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 462,
+                "line": 379,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -282,7 +274,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 517,
+                "line": 442,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -290,7 +282,15 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 596,
+                "line": 497,
+                "valid": true,
+                "error": "Código no ejecutable (solo definición)",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
+                "line": 579,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -298,7 +298,15 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 635,
+                "line": 617,
+                "valid": true,
+                "error": "Código no ejecutable (solo definición)",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
+                "line": 652,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -307,14 +315,6 @@
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
                 "line": 670,
-                "valid": true,
-                "error": "Código no ejecutable (solo definición)",
-                "return_type": null,
-                "return_value": null
-            },
-            {
-                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\configuracion.md",
-                "line": 688,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -338,7 +338,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\instalacion.md",
-                "line": 144,
+                "line": 145,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -346,7 +346,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\instalacion.md",
-                "line": 167,
+                "line": 168,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -354,7 +354,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\instalacion.md",
-                "line": 195,
+                "line": 200,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -362,7 +362,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\instalacion.md",
-                "line": 287,
+                "line": 299,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -370,7 +370,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\instalacion.md",
-                "line": 334,
+                "line": 346,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -378,7 +378,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\instalacion.md",
-                "line": 355,
+                "line": 367,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -402,7 +402,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 103,
+                "line": 105,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -410,7 +410,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 302,
+                "line": 304,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -418,7 +418,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 311,
+                "line": 313,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -426,7 +426,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 326,
+                "line": 328,
                 "valid": false,
                 "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::findAll()",
                 "return_type": null,
@@ -434,7 +434,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 339,
+                "line": 341,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"return\"",
                 "return_type": null,
@@ -442,7 +442,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 365,
+                "line": 367,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -450,7 +450,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 500,
+                "line": 504,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -458,7 +458,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 527,
+                "line": 531,
                 "valid": false,
                 "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 near \".\": syntax error",
                 "return_type": null,
@@ -466,7 +466,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\02-instalacion\\primer-ejemplo.md",
-                "line": 537,
+                "line": 541,
                 "valid": false,
                 "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::findAll()",
                 "return_type": null,
@@ -498,7 +498,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 81,
+                "line": 84,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -506,7 +506,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 102,
+                "line": 105,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -514,7 +514,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 120,
+                "line": 125,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -522,7 +522,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 138,
+                "line": 143,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -530,7 +530,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 162,
+                "line": 167,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -538,7 +538,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 181,
+                "line": 186,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -546,7 +546,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 205,
+                "line": 210,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -554,7 +554,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 226,
+                "line": 231,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -562,7 +562,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 244,
+                "line": 251,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -570,7 +570,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 258,
+                "line": 265,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -578,7 +578,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 324,
+                "line": 331,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
                 "return_type": null,
@@ -586,7 +586,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 334,
+                "line": 341,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
                 "return_type": null,
@@ -594,7 +594,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 348,
+                "line": 355,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
                 "return_type": null,
@@ -602,7 +602,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 360,
+                "line": 367,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
                 "return_type": null,
@@ -610,7 +610,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\crud-basico.md",
-                "line": 374,
+                "line": 381,
                 "valid": false,
                 "error": "Error fatal: Call to a member function store() on null",
                 "return_type": null,
@@ -842,7 +842,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 209,
+                "line": 210,
                 "valid": false,
                 "error": "Error fatal: Call to a member function trash() on null",
                 "return_type": null,
@@ -850,7 +850,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 217,
+                "line": 218,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -858,7 +858,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 239,
+                "line": 240,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -866,7 +866,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 257,
+                "line": 258,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -874,7 +874,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 276,
+                "line": 277,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -882,7 +882,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 295,
+                "line": 296,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -890,7 +890,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 313,
+                "line": 314,
                 "valid": true,
                 "error": "Código no ejecutable (solo definición)",
                 "return_type": null,
@@ -898,7 +898,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 382,
+                "line": 383,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -906,7 +906,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 398,
+                "line": 399,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -914,7 +914,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 410,
+                "line": 411,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -922,7 +922,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\03-basico\\versamodel.md",
-                "line": 426,
+                "line": 427,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1136,37 +1136,37 @@
                 "return_type": "array",
                 "return_value": [
                     {
-                        "id": 17,
+                        "id": 27,
                         "name": "Juan Pérez",
                         "email": "juan@ejemplo.com",
                         "active": 1,
                         "age": 30,
                         "created_at": {
-                            "date": "2025-08-16 19:56:29.000000",
+                            "date": "2025-08-18 14:37:47.000000",
                             "timezone_type": 3,
                             "timezone": "UTC"
                         }
                     },
                     {
-                        "id": 18,
+                        "id": 28,
                         "name": "María García",
                         "email": "maria@ejemplo.com",
                         "active": 1,
                         "age": 25,
                         "created_at": {
-                            "date": "2025-08-16 19:56:29.000000",
+                            "date": "2025-08-18 14:37:47.000000",
                             "timezone_type": 3,
                             "timezone": "UTC"
                         }
                     },
                     {
-                        "id": 19,
+                        "id": 29,
                         "name": "Carlos López",
                         "email": "carlos@ejemplo.com",
                         "active": 0,
                         "age": 35,
                         "created_at": {
-                            "date": "2025-08-16 19:56:29.000000",
+                            "date": "2025-08-18 14:37:47.000000",
                             "timezone_type": 3,
                             "timezone": "UTC"
                         }
@@ -1703,7 +1703,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 54,
+                "line": 61,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 5",
                 "return_type": null,
@@ -1711,7 +1711,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 82,
+                "line": 89,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 7",
                 "return_type": null,
@@ -1719,7 +1719,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 103,
+                "line": 110,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1727,7 +1727,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 136,
+                "line": 143,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1735,7 +1735,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 183,
+                "line": 190,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \",\" or \";\"",
                 "return_type": null,
@@ -1743,7 +1743,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 242,
+                "line": 249,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1751,7 +1751,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 259,
+                "line": 266,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1759,7 +1759,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 316,
+                "line": 323,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \",\" or \";\"",
                 "return_type": null,
@@ -1767,7 +1767,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 369,
+                "line": 376,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1775,7 +1775,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 388,
+                "line": 395,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1783,7 +1783,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 412,
+                "line": 419,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1791,7 +1791,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 447,
+                "line": 454,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1799,7 +1799,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 475,
+                "line": 482,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1807,7 +1807,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\eager-loading.md",
-                "line": 497,
+                "line": 504,
                 "valid": true,
                 "error": "",
                 "return_type": "NULL",
@@ -1823,7 +1823,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 79,
+                "line": 86,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1831,15 +1831,15 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 98,
-                "valid": false,
-                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: post",
-                "return_type": null,
+                "line": 105,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
                 "return_value": null
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 123,
+                "line": 130,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1847,15 +1847,15 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 149,
-                "valid": false,
-                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: post",
-                "return_type": null,
+                "line": 156,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
                 "return_value": null
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 176,
+                "line": 183,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 4",
                 "return_type": null,
@@ -1863,7 +1863,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 201,
+                "line": 208,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 6",
                 "return_type": null,
@@ -1871,7 +1871,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 231,
+                "line": 238,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1879,7 +1879,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 262,
+                "line": 269,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1887,7 +1887,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 282,
+                "line": 289,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1895,7 +1895,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 301,
+                "line": 308,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1903,7 +1903,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 329,
+                "line": 336,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1911,7 +1911,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 348,
+                "line": 355,
                 "valid": false,
                 "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::begin()",
                 "return_type": null,
@@ -1919,7 +1919,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\hasMany-belongsTo.md",
-                "line": 376,
+                "line": 383,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"return\"",
                 "return_type": null,
@@ -1935,7 +1935,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 94,
+                "line": 101,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -1943,7 +1943,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 128,
+                "line": 135,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -1951,7 +1951,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 155,
+                "line": 162,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 5",
                 "return_type": null,
@@ -1959,7 +1959,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 181,
+                "line": 188,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 6",
                 "return_type": null,
@@ -1967,7 +1967,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 207,
+                "line": 214,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 6",
                 "return_type": null,
@@ -1975,7 +1975,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 254,
+                "line": 261,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 5",
                 "return_type": null,
@@ -1983,7 +1983,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 278,
+                "line": 285,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 7",
                 "return_type": null,
@@ -1991,7 +1991,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 296,
+                "line": 303,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 6",
                 "return_type": null,
@@ -1999,7 +1999,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 341,
+                "line": 348,
                 "valid": false,
                 "error": "Error fatal: Class \"VersaModel\" not found",
                 "return_type": null,
@@ -2007,7 +2007,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 369,
+                "line": 376,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -2015,7 +2015,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 388,
+                "line": 395,
                 "valid": false,
                 "error": "Error fatal: VersaORM\\QueryBuilder::select(): Argument #1 ($columns) must be of type array, string given, called in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 5",
                 "return_type": null,
@@ -2023,7 +2023,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 405,
+                "line": 412,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -2031,7 +2031,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 459,
+                "line": 466,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
                 "return_type": null,
@@ -2039,7 +2039,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 471,
+                "line": 478,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
@@ -2047,7 +2047,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\05-relaciones\\many-to-many.md",
-                "line": 495,
+                "line": 502,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"return\"",
                 "return_type": null,
@@ -2086,6 +2086,161 @@
                 "return_value": null
             },
             {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\arquitectura-flujo-interno.md",
+                "line": 119,
+                "valid": true,
+                "error": "Código no ejecutable (solo definición)",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 23,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected end of file, expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 43,
+                "valid": false,
+                "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::insertMany()",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 69,
+                "valid": false,
+                "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::updateMany()",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 86,
+                "valid": false,
+                "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::deleteMany()",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 96,
+                "valid": false,
+                "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::upsertMany()",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 121,
+                "valid": false,
+                "error": "Error fatal: Call to undefined method VersaORM\\VersaORM::upsertMany()",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\batch-operaciones-avanzado.md",
+                "line": 150,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected end of file, expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\cache-interna.md",
+                "line": 21,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\cache-interna.md",
+                "line": 27,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\cache-interna.md",
+                "line": 43,
+                "valid": true,
+                "error": "",
+                "return_type": "array",
+                "return_value": {
+                    "status": "success",
+                    "data": "cache cleared"
+                }
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\cache-interna.md",
+                "line": 66,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\cache-interna.md",
+                "line": 81,
+                "valid": false,
+                "error": "Error fatal: Too few arguments to function VersaORM\\QueryBuilder::where(), 2 passed in C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\\validate_documentation.php(421) : eval()'d code on line 3 and exactly 3 expected",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\caracteristicas-especificas-bases-datos.md",
+                "line": 20,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"return\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\caracteristicas-especificas-bases-datos.md",
+                "line": 35,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such column: role",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\caracteristicas-especificas-bases-datos.md",
+                "line": 47,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\caracteristicas-especificas-bases-datos.md",
+                "line": 60,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 near \"AGAINST\": syntax error",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\caracteristicas-especificas-bases-datos.md",
+                "line": 69,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 unrecognized token: \"@\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\caracteristicas-especificas-bases-datos.md",
+                "line": 79,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 near \"&\": syntax error",
+                "return_type": null,
+                "return_value": null
+            },
+            {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
                 "line": 17,
                 "valid": false,
@@ -2095,7 +2250,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 47,
+                "line": 57,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2103,7 +2258,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 77,
+                "line": 98,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2111,7 +2266,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 118,
+                "line": 156,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2119,7 +2274,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 162,
+                "line": 219,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2127,7 +2282,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 198,
+                "line": 273,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2135,7 +2290,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 233,
+                "line": 320,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2143,7 +2298,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 277,
+                "line": 378,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2151,7 +2306,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 358,
+                "line": 459,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2159,7 +2314,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 442,
+                "line": 543,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2167,7 +2322,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 503,
+                "line": 618,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2175,7 +2330,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 532,
+                "line": 688,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2183,7 +2338,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 569,
+                "line": 763,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2191,7 +2346,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 606,
+                "line": 850,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2199,9 +2354,337 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
-                "line": 633,
+                "line": 901,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
+                "line": 930,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
+                "line": 967,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
+                "line": 1004,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\consultas-raw.md",
+                "line": 1031,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 16,
+                "valid": false,
+                "error": "Error fatal: Attempt to assign property \"active\" on null",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 28,
+                "valid": false,
+                "error": "Error fatal: Attempt to assign property \"created_at\" on null",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 36,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 42,
+                "valid": false,
+                "error": "Error fatal: Attempt to assign property \"preferences\" on null",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 51,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 58,
+                "valid": false,
+                "error": "Error de ejecución: ",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 70,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 84,
+                "valid": false,
+                "error": "Error fatal: Attempt to assign property \"price_cents\" on null",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 93,
+                "valid": true,
+                "error": "",
+                "return_type": "string",
+                "return_value": "0.00"
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\datos-avanzados.md",
+                "line": 99,
+                "valid": false,
+                "error": "Error fatal: Attempt to assign property \"tags\" on null",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-api-metodos.md",
+                "line": 26,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"return\", expecting \"]\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-api-metodos.md",
+                "line": 52,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 near \"CONSTRAINT\": syntax error",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-api-metodos.md",
+                "line": 83,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: users_tmp",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-api-metodos.md",
+                "line": 94,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-api-metodos.md",
+                "line": 103,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-freeze-migraciones.md",
+                "line": 22,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-freeze-migraciones.md",
+                "line": 35,
+                "valid": true,
+                "error": "",
+                "return_type": "object",
+                "return_value": {}
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\ddl-freeze-migraciones.md",
+                "line": 119,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected end of file, expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 16,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 41,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 54,
+                "valid": false,
+                "error": "Error fatal: Call to a member function error() on null",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 60,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 73,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 88,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"try\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 104,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 129,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 149,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: inexistente",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 171,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"try\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\errores-logging.md",
+                "line": 181,
+                "valid": false,
+                "error": "Error de sintaxis PHP",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\lazy-n+1.md",
+                "line": 16,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\lazy-n+1.md",
+                "line": 38,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\lazy-n+1.md",
+                "line": 55,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\lazy-n+1.md",
+                "line": 81,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"if\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\lazy-n+1.md",
+                "line": 90,
+                "valid": false,
+                "error": "Error VersaORM: PDO engine execution error: SQLSTATE[HY000]: General error: 1 no such table: tasks",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\observabilidad\\metricas.md",
+                "line": 12,
+                "valid": true,
+                "error": "",
+                "return_type": "boolean",
+                "return_value": true
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\observabilidad\\metricas.md",
+                "line": 17,
+                "valid": false,
+                "error": "Error de sintaxis PHP",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\observabilidad\\metricas.md",
+                "line": 45,
+                "valid": false,
+                "error": "Error de sintaxis PHP",
                 "return_type": null,
                 "return_value": null
             },
@@ -2239,7 +2722,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 142,
+                "line": 146,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2247,7 +2730,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 171,
+                "line": 175,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2255,7 +2738,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 205,
+                "line": 213,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2263,7 +2746,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 253,
+                "line": 269,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2271,7 +2754,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 283,
+                "line": 299,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2279,7 +2762,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 324,
+                "line": 340,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2287,9 +2770,89 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\operaciones-batch.md",
-                "line": 343,
+                "line": 359,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\subconsultas-expresiones-raw.md",
+                "line": 26,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\subconsultas-expresiones-raw.md",
+                "line": 32,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"return\", expecting \")\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\subconsultas-expresiones-raw.md",
+                "line": 40,
+                "valid": true,
+                "error": "",
+                "return_type": "NULL",
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\subconsultas-expresiones-raw.md",
+                "line": 51,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\tipado-validacion-avanzado.md",
+                "line": 20,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\tipado-validacion-avanzado.md",
+                "line": 34,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\tipado-validacion-avanzado.md",
+                "line": 45,
+                "valid": false,
+                "error": "Error fatal: Class \"VersaModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\tipado-validacion-avanzado.md",
+                "line": 52,
+                "valid": false,
+                "error": "Error fatal: Class \"ProductModel\" not found",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\tipado-validacion-avanzado.md",
+                "line": 64,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"}\", expecting \";\"",
+                "return_type": null,
+                "return_value": null
+            },
+            {
+                "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\tipado-validacion-avanzado.md",
+                "line": 78,
+                "valid": false,
+                "error": "Error de sintaxis: syntax error, unexpected token \"->\", expecting \")\"",
                 "return_type": null,
                 "return_value": null
             },
@@ -2399,7 +2962,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 87,
+                "line": 114,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2407,7 +2970,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 119,
+                "line": 171,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2415,7 +2978,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 156,
+                "line": 208,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2423,7 +2986,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 181,
+                "line": 252,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2431,7 +2994,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 210,
+                "line": 319,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2439,7 +3002,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 242,
+                "line": 372,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2447,7 +3010,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 298,
+                "line": 442,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2455,7 +3018,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 358,
+                "line": 518,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2463,7 +3026,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 411,
+                "line": 583,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2471,7 +3034,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 448,
+                "line": 635,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -2479,7 +3042,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\06-avanzado\\upsert-replace.md",
-                "line": 465,
+                "line": 662,
                 "valid": false,
                 "error": "Error de sintaxis: syntax error, unexpected token \"<\", expecting end of file",
                 "return_type": null,
@@ -3847,7 +4410,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\setup\\README.md",
-                "line": 100,
+                "line": 73,
                 "valid": true,
                 "error": "",
                 "return_type": "array",
@@ -3863,7 +4426,7 @@
             },
             {
                 "file": "C:\\Users\\jjara\\Desktop\\proyectos\\versaORM-PHP\\docs\\setup\/..\\setup\\README.md",
-                "line": 127,
+                "line": 100,
                 "valid": false,
                 "error": "Error fatal: Object of class DateTime could not be converted to string",
                 "return_type": null,

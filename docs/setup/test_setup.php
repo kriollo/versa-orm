@@ -3,6 +3,8 @@
  * Script de prueba para verificar que la configuración funciona correctamente
  */
 
+use VersaORM\VersaModel;
+
 require_once __DIR__ . '/example_config.php';
 
 echo "=== PRUEBA DE CONFIGURACIÓN DE VERSAORM ===\n\n";
@@ -10,14 +12,17 @@ echo "=== PRUEBA DE CONFIGURACIÓN DE VERSAORM ===\n\n";
 try {
     // Inicializar ORM
     $orm = getExampleORM();
+    VersaModel::setORM($orm);
     echo "✓ VersaORM inicializado correctamente\n";
 
+    $model = new VersaModel("", $orm);
+
     // Probar consulta básica
-    $userCount = $orm->getCell("SELECT COUNT(*) FROM users");
+    $userCount = $model->getCell("SELECT COUNT(*) FROM users");
     echo "✓ Consulta básica exitosa: $userCount usuarios encontrados\n";
 
     // Probar VersaModel
-    $user = $orm->load('users', 1);
+    $user = $model->load('users', 1);
     if ($user) {
         echo "✓ VersaModel funcionando: Usuario '{$user->name}' cargado\n";
     } else {
@@ -29,7 +34,7 @@ try {
     echo "✓ Query Builder funcionando: " . count($activeUsers) . " usuarios activos\n";
 
     // Probar relaciones
-    $postsWithAuthors = $orm->getAll("
+    $postsWithAuthors = $model->getAll("
         SELECT p.title, u.name as author
         FROM posts p
         JOIN users u ON p.user_id = u.id

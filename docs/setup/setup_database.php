@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Script de configuración inicial para ejemplos de VersaORM
  *
@@ -8,9 +9,10 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
-class DatabaseSetup
+class DatabaseSetup extends VersaModel
 {
     private $orm;
     private $config;
@@ -119,12 +121,14 @@ class DatabaseSetup
             ['name' => 'Ana Martínez', 'email' => 'ana@ejemplo.com', 'active' => 1],
         ];
 
+        versaModel::setORM($this->orm);
+
         foreach ($users as $userData) {
-            $user = $this->orm->dispense('users');
+            $user = $this->dispense('users');
             $user->name = $userData['name'];
             $user->email = $userData['email'];
             $user->active = $userData['active'];
-            $this->orm->store($user);
+            $user->store();
         }
         echo "✓ Usuarios insertados\n";
 
@@ -138,12 +142,12 @@ class DatabaseSetup
         ];
 
         foreach ($posts as $postData) {
-            $post = $this->orm->dispense('posts');
+            $post = $this->dispense('posts');
             $post->title = $postData['title'];
             $post->content = $postData['content'];
             $post->user_id = $postData['user_id'];
             $post->published = $postData['published'];
-            $this->orm->store($post);
+            $post->store();
         }
         echo "✓ Posts insertados\n";
 
@@ -158,9 +162,9 @@ class DatabaseSetup
         ];
 
         foreach ($tags as $tagData) {
-            $tag = $this->orm->dispense('tags');
+            $tag = $this->dispense('tags');
             $tag->name = $tagData['name'];
-            $this->orm->store($tag);
+            $tag->store();
         }
         echo "✓ Tags insertados\n";
 
@@ -189,10 +193,10 @@ class DatabaseSetup
     {
         echo "\n=== RESUMEN DE LA BASE DE DATOS ===\n";
 
-        $userCount = $this->orm->getCell("SELECT COUNT(*) FROM users");
-        $postCount = $this->orm->getCell("SELECT COUNT(*) FROM posts");
-        $tagCount = $this->orm->getCell("SELECT COUNT(*) FROM tags");
-        $relationCount = $this->orm->getCell("SELECT COUNT(*) FROM post_tags");
+        $userCount = $this->getCell("SELECT COUNT(*) FROM users");
+        $postCount = $this->getCell("SELECT COUNT(*) FROM posts");
+        $tagCount = $this->getCell("SELECT COUNT(*) FROM tags");
+        $relationCount = $this->getCell("SELECT COUNT(*) FROM post_tags");
 
         echo "Usuarios: $userCount\n";
         echo "Posts: $postCount\n";
@@ -200,14 +204,14 @@ class DatabaseSetup
         echo "Relaciones post-tag: $relationCount\n";
 
         echo "\n=== USUARIOS DE EJEMPLO ===\n";
-        $users = $this->orm->getAll("SELECT id, name, email, active FROM users ORDER BY id");
+        $users = $this->getAll("SELECT id, name, email, active FROM users ORDER BY id");
         foreach ($users as $user) {
             $status = $user['active'] ? 'Activo' : 'Inactivo';
             echo "ID: {$user['id']} | {$user['name']} | {$user['email']} | $status\n";
         }
 
         echo "\n=== POSTS DE EJEMPLO ===\n";
-        $posts = $this->orm->getAll("
+        $posts = $this->getAll("
             SELECT p.id, p.title, u.name as author, p.published
             FROM posts p
             JOIN users u ON p.user_id = u.id
@@ -230,6 +234,7 @@ class DatabaseSetup
             $this->showSummary();
         } catch (Exception $e) {
             echo "✗ Error durante la configuración: " . $e->getMessage() . "\n";
+            var_dump($e->getTraceAsString());
             exit(1);
         }
     }

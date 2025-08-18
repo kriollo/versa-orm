@@ -13,7 +13,7 @@ use VersaORM\VersaORM;
 /**
  * Función helper para inicializar VersaORM con la configuración de ejemplos
  */
-function getExampleORM() {
+function getExampleORM(): VersaORM {
     static $orm = null;
 
     if ($orm === null) {
