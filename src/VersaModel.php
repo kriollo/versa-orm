@@ -2028,6 +2028,35 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Summary of isValidJson.
+     *
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    protected function isValidJson(mixed $value): bool
+    {
+        if (is_string($value)) {
+            json_decode($value);
+
+            return json_last_error() === JSON_ERROR_NONE;
+        }
+
+        return false;
+    }
+
+    protected function isValidDate(mixed $value): bool
+    {
+        if (is_string($value)) {
+            $timestamp = strtotime($value);
+
+            return $timestamp !== false && $value === date('Y-m-d', $timestamp);
+        }
+
+        return false;
+    }
+
+    /**
      * Valida una sola regla contra un campo.
      */
     protected function validateSingleRule(string $field, mixed $value, string $rule): ?string
@@ -2044,10 +2073,49 @@ class VersaModel implements TypedModelInterface
                     return "The {$field} must be a valid email address.";
                 }
                 break;
+            case 'url':
+                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                    return "The {$field} must be a valid URL.";
+                }
+                break;
+            case 'boolean':
+                if (!is_bool($value) && !in_array($value, [0, 1, '0', '1', 'true', 'false'], true)) {
+                    return "The {$field} must be a boolean.";
+                }
+                break;
+
+            case 'alpha':
+                if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $value)) {
+                    return "El {$field} solo puede contener letras.";
+                }
+                break;
+
+            case 'alpha_num':
+                if (!preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+$/', $value)) {
+                    return "El {$field} solo puede contener letras y números.";
+                }
+                break;
+
+            case 'json':
+                if (!$this->isValidJson($value)) {
+                    return "El {$field} debe ser un JSON válido.";
+                }
+                break;
 
             case 'numeric':
                 if (!is_numeric($value)) {
                     return "The {$field} must be numeric.";
+                }
+                break;
+            case 'date':
+                if (!$this->isValidDate($value)) {
+                    return "El {$field} debe ser una fecha válida.";
+                }
+                break;
+
+            case 'integer':
+                if (!filter_var($value, FILTER_VALIDATE_INT)) {
+                    return "El {$field} debe ser un número entero.";
                 }
                 break;
 
@@ -2066,6 +2134,27 @@ class VersaModel implements TypedModelInterface
                         case 'min':
                             if (is_string($value) && strlen($value) < (int) $parameter) {
                                 return "The {$field} must be at least {$parameter} characters.";
+                            }
+                            break;
+
+                        case 'between':
+                            [$min, $max] = explode(',', $parameter);
+                            if (is_numeric($value) && ($value < $min || $value > $max)) {
+                                return "El {$field} debe estar entre {$min} y {$max}.";
+                            }
+                            break;
+
+                        case 'in':
+                            $allowedValues = explode(',', $parameter);
+                            if (!in_array($value, $allowedValues)) {
+                                return "El {$field} debe ser uno de: " . implode(', ', $allowedValues);
+                            }
+                            break;
+
+                        case 'not_in':
+                            $disallowedValues = explode(',', $parameter);
+                            if (in_array($value, $disallowedValues)) {
+                                return "El {$field} no debe ser uno de: " . implode(', ', $disallowedValues);
                             }
                             break;
                     }
