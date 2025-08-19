@@ -323,6 +323,16 @@ class QueryBuilder
     }
 
     /**
+     * Añade una cláusula WHERE NOT BETWEEN.
+     */
+    public function whereNotBetween(string $column, mixed $min, mixed $max): self
+    {
+        $this->addWhereEntry($column, 'NOT BETWEEN', [$min, $max], 'and');
+
+        return $this;
+    }
+
+    /**
      * Añade una cláusula WHERE con SQL raw.
      *
      * @param array<int, mixed> $bindings

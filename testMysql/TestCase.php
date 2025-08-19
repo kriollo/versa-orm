@@ -219,6 +219,8 @@ class TestCase extends BaseTestCase
         // Seed products
         self::$orm->table('products')->insert(['sku' => 'P001', 'name' => 'Laptop', 'price' => 1200.50, 'stock' => 10]);
         self::$orm->table('products')->insert(['sku' => 'P002', 'name' => 'Mouse', 'price' => 25.00, 'stock' => 100]);
+        self::$orm->table('products')->insert(['sku' => 'P003', 'name' => 'Keyboard', 'price' => 15.00, 'stock' => 50]);
+        self::$orm->table('products')->insert(['sku' => 'P004', 'name' => 'Monitor', 'price' => 300.00, 'stock' => 20]);
 
         // Seed relationships data
         self::$orm->table('profiles')->insert(['user_id' => 1, 'bio' => 'Alice bio']);

@@ -582,6 +582,13 @@ class SqlGenerator
                         $bindings[] = $value[1];
                     }
                 })(),
+                'NOT BETWEEN' => (static function () use ($value, $type, $column, $dialect, &$parts, &$bindings): void {
+                    if (is_array($value) && count($value) === 2) {
+                        $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' NOT BETWEEN ? AND ?'];
+                        $bindings[] = $value[0];
+                        $bindings[] = $value[1];
+                    }
+                })(),
                 'EXISTS', 'NOT EXISTS' => throw new VersaORMException('EXISTS subqueries not supported yet in PDO engine'),
                 default => (static function () use ($w, $type, $column, $dialect, $value, &$parts, &$bindings): void {
                     $op = $w['operator'] ?? '=';

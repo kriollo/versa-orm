@@ -135,6 +135,15 @@ class QueryBuilderTest extends TestCase
         self::assertSame('Mouse', $products[0]->name);
     }
 
+    public function testWhereNotBetween(): void
+    {
+        $products = self::$orm->table('products')->whereNotBetween('price', 20, 30)->findAll();
+        $names = array_map(fn ($p) => $p->name, $products);
+        self::assertContains('Keyboard', $names);
+        self::assertContains('Monitor', $names);
+        self::assertNotContains('Mouse', $names);
+    }
+
     public function testWhereRaw(): void
     {
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
