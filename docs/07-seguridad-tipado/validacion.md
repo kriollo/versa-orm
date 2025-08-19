@@ -109,26 +109,54 @@ if ($errors) {
 ```php
 protected static $rules = [
     'name' => ['required'],
-    'age' => ['numeric'],
+    'age' => ['integer'],
     'price' => ['numeric'],
     'active' => ['boolean'],
     'email' => ['email'],
     'website' => ['url'],
     'password' => ['min:8', 'max:50'],
     'description' => ['max:500'],
+    'status' => ['in:active,inactive,pending'],
+    'uuid' => ['uuid'],
+    'ip_address' => ['ip'],
+    'phone' => ['regex:^\+?[1-9]\d{1,14}$'], // Formato internacional
+    'postal_code' => ['digits:5'], // Código postal de 5 dígitos
+    'username' => ['alpha_num', 'size:8'], // Exactamente 8 caracteres alfanuméricos
+
     // Puedes extender validateSingleRule para agregar más reglas
 ];
 ```
 
-### Reglas de Relación
+```php
+// Ejemplo 1: Validación de fecha
+$user = new User();
+$user->fill(['birth_date' => '2023-12-31']); // ✅ Válido
+$user->fill(['birth_date' => '31/12/2023']); // ✅ Válido
+$user->fill(['birth_date' => 'invalid-date']); // ❌ Error
 
-Puedes implementar validaciones de relación extendiendo el método de validación en tu modelo, por ejemplo consultando la existencia de una relación antes de guardar.
+// Ejemplo 2: Validación de JSON
+$user->fill(['profile_data' => '{"name": "Juan", "age": 30}']); // ✅ Válido
+$user->fill(['profile_data' => '{invalid json}']); // ❌ Error
+
+// Ejemplo 3: Validación de rango numérico
+$user->fill(['age' => 25]); // ✅ Válido (entre 18 y 120)
+$user->fill(['age' => 15]); // ❌ Error (menor que 18)
+
+// Ejemplo 4: Validación de lista de valores
+$user->fill(['status' => 'active']); // ✅ Válido
+$user->fill(['status' => 'deleted']); // ❌ Error (no está en la lista)
+
+// Ejemplo 5: Validación con regex personalizada
+$user->fill(['phone' => '+56912345678']); // ✅ Válido
+$user->fill(['phone' => 'invalid-phone']); // ❌ Error
+
+// Ejemplo 6: Validación de UUID
+$user->fill(['uuid' => '550e8400-e29b-41d4-a716-446655440000']); // ✅ Válido
+$user->fill(['uuid' => 'not-a-uuid']); // ❌ Error
+```
+
 
 ## Validación Personalizada Avanzada
-
-### Métodos de Validación Personalizados
-
-Puedes agregar métodos propios en el modelo y llamarlos desde tu lógica antes de guardar, o extender `validateSingleRule` para reglas avanzadas.
 
 ### Validadores Personalizados
 

@@ -1255,7 +1255,9 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Crea un nuevo modelo vacío (método de instancia).
+     * Crea una nueva instancia del modelo y la asocia a la ORM actual.
+     *
+     * @param array<string, mixed> $attributes Atributos iniciales para el modelo
      */
     public function dispenseInstance(string $table): self
     {
@@ -1627,6 +1629,26 @@ class VersaModel implements TypedModelInterface
     public static function trashModel(self $model): void
     {
         $model->trash();
+    }
+
+    /**
+     * Elimina múltiples modelos de la base de datos.
+     *
+     * @param array<int,self> $models
+     *
+     * @throws VersaORMException
+     */
+    public static function trashAll(array $models): void
+    {
+        if ($models === []) {
+            return;
+        }
+        foreach ($models as $i => $m) {
+            if (!$m instanceof self) {
+                throw new VersaORMException('trashAll espera un array de VersaModel en el índice ' . $i);
+            }
+            $m->trash();
+        }
     }
 
     /** Acceso desde instancia ($this->orm / $this->db). */
@@ -2047,10 +2069,23 @@ class VersaModel implements TypedModelInterface
 
     protected function isValidDate(mixed $value): bool
     {
-        if (is_string($value)) {
-            $timestamp = strtotime($value);
+        if (empty($value)) {
+            return false;
+        }
 
-            return $timestamp !== false && $value === date('Y-m-d', $timestamp);
+        // Intentar parsear como fecha
+        $date = DateTime::createFromFormat('Y-m-d', $value);
+        if ($date && $date->format('Y-m-d') === $value) {
+            return true;
+        }
+
+        // Intentar otros formatos comunes
+        $formats = ['Y-m-d H:i:s', 'd/m/Y', 'm/d/Y', 'Y/m/d'];
+        foreach ($formats as $format) {
+            $date = DateTime::createFromFormat($format, $value);
+            if ($date && $date->format($format) === $value) {
+                return true;
+            }
         }
 
         return false;
@@ -2118,6 +2153,17 @@ class VersaModel implements TypedModelInterface
                     return "El {$field} debe ser un número entero.";
                 }
                 break;
+            case 'uuid':
+                if (!$this->isValidUuid($value)) {
+                    return "El {$field} debe ser un UUID válido.";
+                }
+                break;
+
+            case 'ip':
+                if (!filter_var($value, FILTER_VALIDATE_IP)) {
+                    return "El {$field} debe ser una dirección IP válida.";
+                }
+                break;
 
             default:
                 // Reglas con parámetros (ej: 'max:255', 'min:3')
@@ -2155,6 +2201,23 @@ class VersaModel implements TypedModelInterface
                             $disallowedValues = explode(',', $parameter);
                             if (in_array($value, $disallowedValues)) {
                                 return "El {$field} no debe ser uno de: " . implode(', ', $disallowedValues);
+                            }
+                            break;
+                        case 'regex':
+                            if (!preg_match("/{$parameter}/", $value)) {
+                                return "El {$field} no tiene el formato correcto.";
+                            }
+                            break;
+
+                        case 'digits':
+                            if (!preg_match('/^\d{' . $parameter . '}$/', $value)) {
+                                return "El {$field} debe tener exactamente {$parameter} dígitos.";
+                            }
+                            break;
+
+                        case 'size':
+                            if (is_string($value) && strlen($value) !== (int)$parameter) {
+                                return "El {$field} debe tener exactamente {$parameter} caracteres.";
                             }
                             break;
                     }

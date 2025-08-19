@@ -246,7 +246,7 @@ foreach ($inactiveUsers as $user) {
 
 echo "Eliminados " . count($inactiveUsers) . " usuarios";
 
-// O usar trashAll para eliminar múltiples
+// O usar trashAll para eliminar múltiples (usalo con precaución)
 VersaModel::trashAll($inactiveUsers);
 ```
 
