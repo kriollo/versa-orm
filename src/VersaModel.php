@@ -1651,20 +1651,62 @@ class VersaModel implements TypedModelInterface
         }
     }
 
-    /** Acceso desde instancia ($this->orm / $this->db). */
-    protected function getOrmInstance(): VersaORM
-    {
-        return self::orm();
-    }
-
     /**
      * Obtiene la instancia del ORM para uso en traits.
      *
      * @return array<string, mixed>|VersaORM|null
      */
-    protected function getOrm()
+    public function getOrm()
     {
         return $this->orm;
+    }
+
+    /**
+     * Crea una nueva instancia del modelo con datos actualizados desde la base de datos.
+     *
+     * @param string $primaryKey Nombre de la clave primaria (default: 'id')
+     *
+     * @throws VersaORMException Si no se puede recargar el modelo
+     *
+     * @return static Nueva instancia del modelo con datos actualizados
+     */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        // Verificar que tenemos una instancia de ORM disponible
+        $orm = $this->orm ?? self::$ormInstance;
+        if (!($orm instanceof VersaORM)) {
+            throw new VersaORMException(
+                'No ORM instance available for fresh operation',
+                'NO_ORM_INSTANCE',
+            );
+        }
+
+        // Verificar que el modelo tiene un ID para recargar
+        $currentId = $this->getAttribute($primaryKey);
+        if ($currentId === null) {
+            throw new VersaORMException(
+                'Cannot create fresh model without primary key value',
+                'NO_PRIMARY_KEY_VALUE',
+            );
+        }
+
+        // Crear nueva instancia usando findOne
+        $freshModel = static::findOne($this->table, $currentId, $primaryKey);
+
+        if ($freshModel === null) {
+            throw new VersaORMException(
+                'Model not found in database during fresh operation',
+                'MODEL_NOT_FOUND',
+            );
+        }
+
+        return $freshModel;
+    }
+
+    /** Acceso desde instancia ($this->orm / $this->db). */
+    protected function getOrmInstance(): VersaORM
+    {
+        return self::orm();
     }
 
     /**

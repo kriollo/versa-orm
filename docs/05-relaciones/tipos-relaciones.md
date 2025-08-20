@@ -2,45 +2,12 @@
 
 Las relaciones en bases de datos representan cómo las tablas se conectan entre sí. VersaORM facilita el trabajo con estas relaciones mediante métodos intuitivos que abstraen la complejidad del SQL.
 
-## Conceptos Fundamentales
+## 1. Uno-a-Uno (hasOne / belongsTo)
 
-### ¿Qué es una Relación?
+Cada registro en la tabla A se relaciona con un único registro en la tabla B. Es la relación más simple.
 
-Una relación es una asociación lógica entre dos o más tablas que permite conectar datos relacionados. Por ejemplo:
-
-- Un **usuario** puede tener muchos **posts**
-- Un **post** pertenece a un **usuario**
-- Un **post** puede tener muchos **tags**, y un **tag** puede estar en muchos **posts**
-
-### Claves Foráneas
-
-Las relaciones se implementan mediante **claves foráneas** (foreign keys):
-
-```sql
--- Tabla users
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL
-);
-
--- Tabla posts con clave foránea
-CREATE TABLE posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    content TEXT,
-    user_id INT,  -- ← Clave foránea que referencia users.id
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-## Tipos de Relaciones
-
-### 1. Uno-a-Uno (One-to-One)
-
-Cada registro en la tabla A se relaciona con exactamente un registro en la tabla B.
-
-**Ejemplo:** Usuario ↔ Perfil
+- **Ejemplo**: Un `User` tiene un `Profile`.
+- **Clave Foránea**: La tabla `profiles` contiene una `user_id`.
 
 ```
 users          profiles
@@ -48,28 +15,31 @@ users          profiles
 │ id  │ name │  │ id  │ user_id │ bio     │
 ├─────┼──────┤  ├─────┼─────────┼─────────┤
 │ 1   │ Juan │  │ 1   │ 1       │ "..."   │
-│ 2   │ Ana  │  │ 2   │ 2       │ "..."   │
 └─────┴──────┘  └─────┴─────────┴─────────┘
 ```
 
-**En VersaORM:**
+**Definición en los Modelos:**
+
 ```php
 // En el modelo User
-public function profile() {
-    return $this->hasOne('profiles', 'user_id');
+public function profile()
+{
+    return $this->hasOne(Profile::class, 'user_id');
 }
 
 // En el modelo Profile
-public function user() {
-    return $this->belongsTo('users', 'user_id');
+public function user()
+{
+    return $this->belongsTo(User::class, 'user_id');
 }
 ```
 
-### 2. Uno-a-Muchos (One-to-Many)
+## 2. Uno-a-Muchos (hasMany / belongsTo)
 
-Un registro en la tabla A puede relacionarse con múltiples registros en la tabla B.
+Un registro en la tabla A puede relacionarse con múltiples registros en la tabla B. Es la relación más común.
 
-**Ejemplo:** Usuario → Posts
+- **Ejemplo**: Un `User` tiene muchos `Posts`.
+- **Clave Foránea**: La tabla `posts` contiene una `user_id`.
 
 ```
 users          posts
@@ -77,127 +47,69 @@ users          posts
 │ id  │ name │  │ id  │ user_id │ title   │
 ├─────┼──────┤  ├─────┼─────────┼─────────┤
 │ 1   │ Juan │  │ 1   │ 1       │ "Post1" │
-│ 2   │ Ana  │  │ 2   │ 1       │ "Post2" │
-└─────┴──────┘  │ 3   │ 2       │ "Post3" │
+└─────┴──────┘  │ 2   │ 1       │ "Post2" │
                 └─────┴─────────┴─────────┘
 ```
 
-**En VersaORM:**
+**Definición en los Modelos:**
+
 ```php
 // En el modelo User
-public function posts() {
-    return $this->hasMany('posts', 'user_id');
+public function posts()
+{
+    return $this->hasMany(Post::class, 'user_id');
 }
 
 // En el modelo Post
-public function user() {
-    return $this->belongsTo('users', 'user_id');
+public function user()
+{
+    return $this->belongsTo(User::class, 'user_id');
 }
 ```
 
-### 3. Muchos-a-Muchos (Many-to-Many)
+## 3. Muchos-a-Muchos (belongsToMany)
 
-Múltiples registros en la tabla A pueden relacionarse con múltiples registros en la tabla B.
+Múltiples registros en la tabla A pueden relacionarse con múltiples registros en la tabla B. Esta relación siempre requiere una **tabla intermedia (pivot)**.
 
-**Ejemplo:** Posts ↔ Tags
+- **Ejemplo**: Un `Post` tiene muchos `Tags`, y un `Tag` pertenece a muchos `Posts`.
+- **Tabla Pivot**: `post_tag` con las columnas `post_id` y `tag_id`.
 
 ```
-posts          post_tags       tags
+posts          post_tag       tags
 ┌─────┬───────┐ ┌─────────┬────────┐ ┌─────┬──────────┐
 │ id  │ title │ │ post_id │ tag_id │ │ id  │ name     │
 ├─────┼───────┤ ├─────────┼────────┤ ├─────┼──────────┤
 │ 1   │ "P1"  │ │ 1       │ 1      │ │ 1   │ "PHP"    │
-│ 2   │ "P2"  │ │ 1       │ 2      │ │ 2   │ "MySQL"  │
-└─────┴───────┘ │ 2       │ 1      │ │ 3   │ "Web"    │
-                │ 2       │ 3      │ └─────┴──────────┘
+└─────┴───────┘ │ 1       │ 2      │ │ 2   │ "MySQL"  │
+                │ 2       │ 1      │ └─────┴──────────┘
                 └─────────┴────────┘
 ```
 
-**En VersaORM:**
+**Definición en los Modelos:**
+
 ```php
 // En el modelo Post
-public function tags() {
-    return $this->belongsToMany('tags', 'post_tags', 'post_id', 'tag_id');
+public function tags()
+{
+    return $this->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id');
 }
 
 // En el modelo Tag
-public function posts() {
-    return $this->belongsToMany('posts', 'post_tags', 'tag_id', 'post_id');
+public function posts()
+{
+    return $this->belongsToMany(Post::class, 'post_tag', 'tag_id', 'post_id');
 }
 ```
 
 ## Convenciones de Nomenclatura
 
-VersaORM sigue convenciones que simplifican la definición de relaciones:
+VersaORM utiliza convenciones para simplificar las definiciones. Si las sigues, no necesitarás especificar todos los argumentos en los métodos de relación.
 
-### Nombres de Tablas
-- Plural en minúsculas: `users`, `posts`, `tags`
-- Para tablas pivot: `tabla1_tabla2` en orden alfabético: `post_tags`
+- **Nombres de Tablas**: Plural y en `snake_case` (ej. `users`, `blog_posts`).
+- **Tabla Pivot**: Nombres de los modelos en singular, en orden alfabético, separados por guion bajo (ej. `post_tag`, `role_user`).
+- **Claves Foráneas**: Nombre del modelo en singular seguido de `_id` (ej. `user_id`).
 
-### Claves Foráneas
-- Formato: `{tabla_singular}_id`
-- Ejemplos: `user_id`, `category_id`, `product_id`
-
-### Métodos de Relación
-- `hasOne()`: Relación uno-a-uno (lado propietario)
-- `belongsTo()`: Relación uno-a-uno/muchos (lado dependiente)
-- `hasMany()`: Relación uno-a-muchos (lado propietario)
-- `belongsToMany()`: Relación muchos-a-muchos
-
-## Ejemplo Práctico Completo
-
-Veamos un ejemplo con las tablas de nuestro sistema de ejemplo:
-
-```php
-<?php
-require_once 'vendor/autoload.php';
-
-// Configuración
-$orm = new VersaORM([
-    'driver' => 'mysql',
-    'host' => 'localhost',
-    'database' => 'ejemplo',
-    'username' => 'usuario',
-    'password' => 'password'
-]);
-VersaModel::setORM($orm);
-
-// Crear un usuario con posts
-$user = VersaModel::dispense('users');
-$user->name = 'María García';
-$user->email = 'maria@ejemplo.com';
-$userId = $user->store();
-
-// Crear posts para el usuario
-$post1 = VersaModel::dispense('posts');
-$post1->title = 'Mi primer post';
-$post1->content = 'Contenido del primer post';
-$post1->user_id = $userId;
-$post1->store();
-
-$post2 = VersaModel::dispense('posts');
-$post2->title = 'Segundo post';
-$post2->content = 'Más contenido interesante';
-$post2->user_id = $userId;
-$post2->store();
-
-// Obtener usuario con sus posts
-$userWithPosts = VersaModel::load('users', $userId);
-echo "Usuario: " . $userWithPosts->name . "\n";
-
-// Obtener posts del usuario (esto se explica en detalle en la siguiente sección)
-$posts = VersaModel::findAll('posts', 'user_id = ?', [$userId]);
-foreach ($posts as $post) {
-    echo "- " . $post->title . "\n";
-}
-```
-
-**Salida:**
-```
-Usuario: María García
-- Mi primer post
-- Segundo post
-```
+Al seguir estas convenciones, el código se vuelve más limpio y consistente.
 
 ## Ventajas de las Relaciones en VersaORM
 

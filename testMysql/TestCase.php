@@ -226,6 +226,9 @@ class TestCase extends BaseTestCase
         self::$orm->table('profiles')->insert(['user_id' => 1, 'bio' => 'Alice bio']);
         self::$orm->table('roles')->insert(['name' => 'Admin']);
         self::$orm->table('roles')->insert(['name' => 'Editor']);
+        self::$orm->table('roles')->insert(['name' => 'Viewer']);
+        self::$orm->table('roles')->insert(['name' => 'externo']);
+
         self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 1]);
         self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 2]);
         self::$orm->table('role_user')->insert(['user_id' => 2, 'role_id' => 2]);

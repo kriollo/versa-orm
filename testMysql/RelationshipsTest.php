@@ -122,6 +122,56 @@ class RelationshipsTest extends TestCase
         self::assertSame('Alice', $post->getRelations()['user']->name);
     }
 
+    public function testAttachAndDetach(): void
+    {
+        /** @var UserTestModel $user */
+        $user = UserTestModel::findOne('users', 2); // Bob
+
+        // Attach
+        $user->roles()->attach(1); // Admin
+        $attached = parent::$orm->table('role_user')->where('user_id', '=', 2)->where('role_id', '=', 1)->findOne();
+        self::assertNotNull($attached);
+
+        // Detach
+        $user->roles()->detach(1);
+        $detached = parent::$orm->table('role_user')->where('user_id', '=', 2)->where('role_id', '=', 1)->findOne();
+        self::assertNull($detached);
+    }
+
+    public function testSync(): void
+    {
+        /** @var UserTestModel $user */
+        $user = UserTestModel::findOne('users', 2); // Bob
+
+        //elimino el rol 2
+        $user->roles()->detach(2);
+
+        // Initial state: attach individually
+        $user->roles()->attach(1);
+        $user->roles()->attach(3);
+
+        // Verificar estado inicial recargando
+        // $user = UserTestModel::findOne('users', 2);
+        $user->fresh()->roles;
+        self::assertCount(2, $user->roles);
+
+        // Sync: should detach 1, keep 3, and attach 4
+        $result = $user->roles()->sync([3, 4]);
+        self::assertArrayHasKey('attached', $result);
+        self::assertArrayHasKey('detached', $result);
+
+        // Recargar y verificar
+        $user->fresh()->roles;
+        $roleIds = array_map(fn ($role) => $role->id, $user->roles);
+        self::assertCount(2, $user->roles);
+        self::assertContains(3, $roleIds);
+        self::assertContains(4, $roleIds);
+        self::assertNotContains(1, $roleIds);
+
+        // atacho el rol 2
+        $user->roles()->attach(2);
+    }
+
     public function testDatabaseTransactionsCommit(): void
     {
         parent::$orm->beginTransaction();
