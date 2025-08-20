@@ -8,6 +8,10 @@ use Closure;
 use Exception;
 use ReflectionClass;
 use Throwable;
+use VersaORM\Relations\BelongsTo;
+use VersaORM\Relations\BelongsToMany;
+use VersaORM\Relations\HasMany;
+use VersaORM\Relations\HasOne;
 use VersaORM\Relations\Relation;
 use VersaORM\SQL\PdoEngine;
 
@@ -847,38 +851,39 @@ class QueryBuilder
             ];
 
             // Extraer claves específicas según el tipo de relación
+            /** @var BelongsTo|BelongsToMany|HasMany|HasOne|Relation $relationInstance */
             switch ($relationType) {
                 case 'HasOne':
                 case 'HasMany':
-                    if (property_exists($relationInstance, 'foreignKey')) {
+                    if (property_exists($relationInstance, 'foreignKey') || isset($relationInstance->foreignKey)) {
                         $relationData['foreign_key'] = $relationInstance->foreignKey;
                     }
-                    if (property_exists($relationInstance, 'localKey')) {
+                    if (property_exists($relationInstance, 'localKey') || isset($relationInstance->localKey)) {
                         $relationData['local_key'] = $relationInstance->localKey;
                     }
                     break;
                 case 'BelongsTo':
-                    if (property_exists($relationInstance, 'foreignKey')) {
+                    if (property_exists($relationInstance, 'foreignKey') || isset($relationInstance->foreignKey)) {
                         $relationData['foreign_key'] = $relationInstance->foreignKey;
                     }
-                    if (property_exists($relationInstance, 'ownerKey')) {
+                    if (property_exists($relationInstance, 'ownerKey') || isset($relationInstance->ownerKey)) {
                         $relationData['owner_key'] = $relationInstance->ownerKey; // Usar owner_key para BelongsTo
                     }
                     break;
                 case 'BelongsToMany':
-                    if (property_exists($relationInstance, 'pivotTable')) {
+                    if (property_exists($relationInstance, 'pivotTable') || isset($relationInstance->pivotTable)) {
                         $relationData['pivot_table'] = $relationInstance->pivotTable;
                     }
-                    if (property_exists($relationInstance, 'foreignPivotKey')) {
+                    if (property_exists($relationInstance, 'foreignPivotKey') || isset($relationInstance->foreignPivotKey)) {
                         $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
                     }
-                    if (property_exists($relationInstance, 'relatedPivotKey')) {
+                    if (property_exists($relationInstance, 'relatedPivotKey') || isset($relationInstance->relatedPivotKey)) {
                         $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
                     }
-                    if (property_exists($relationInstance, 'parentKey')) {
+                    if (property_exists($relationInstance, 'parentKey') || isset($relationInstance->parentKey)) {
                         $relationData['parent_key'] = $relationInstance->parentKey;
                     }
-                    if (property_exists($relationInstance, 'relatedKey')) {
+                    if (property_exists($relationInstance, 'relatedKey') || isset($relationInstance->relatedKey)) {
                         $relationData['related_key'] = $relationInstance->relatedKey;
                     }
                     break;
@@ -1260,11 +1265,11 @@ class QueryBuilder
     /**
      * Elimina los registros que coincidan con las cláusulas WHERE.
      */
-    public function delete(): ?VersaModel
+    public function delete(): void
     {
         $this->execute('delete');
 
-        return null;
+        // return null;
     }
 
     /**

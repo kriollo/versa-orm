@@ -105,9 +105,9 @@ class BelongsToMany extends Relation
      *
      * @throws \Exception Si ocurre un error durante la eliminación
      *
-     * @return int Número de registros eliminados
+     * @return void Número de registros eliminados
      */
-    public function detach($ids = null): int
+    public function detach($ids = null): void
     {
         $parentKey = $this->parent->getAttribute($this->parent->getKeyName());
 
@@ -119,15 +119,7 @@ class BelongsToMany extends Relation
             $deleteQuery->whereIn($this->relatedPivotKey, $ids);
         }
 
-        $result = $deleteQuery->delete();
-
-        // El método delete puede devolver int, float, string numérico, modelo o null.
-        // Para cumplir el tipo de retorno, convertimos a int si es numérico, y 0 en cualquier otro caso.
-        if (is_numeric($result)) {
-            return (int)$result;
-        }
-
-        return 0;
+        $deleteQuery->delete();
     }
 
     protected function addConstraints(): void
