@@ -120,18 +120,10 @@ try {
         ['email' => 'user3@example.com', 'name' => 'Usuario 3', 'active' => true]
     ];
 
-    $results = [];
-    foreach ($usersData as $userData) {
-        $result = $orm->table('users')->upsert($userData, ['email']);
-        $results[] = $result;
-    }
-
-    // Analizar resultados
-    $inserted = array_filter($results, fn($r) => $r['action'] === 'inserted');
-    $updated = array_filter($results, fn($r) => $r['action'] === 'updated');
-
-    echo "Usuarios insertados: " . count($inserted) . "\n";
-    echo "Usuarios actualizados: " . count($updated) . "\n";
+    // Mejor opción: usar upsertMany para lotes grandes
+    $result = $orm->table('users')->upsertMany($usersData, ['email']);
+    // $result = ['affected' => int] - Número total de filas afectadas (insertadas + actualizadas)
+    echo "Usuarios insertados/actualizados: " . $result['affected'] . "\n";
 
 } catch (VersaORMException $e) {
     echo "Error en UPSERT masivo: " . $e->getMessage() . "\n";
@@ -139,6 +131,7 @@ try {
 ```
 
 **SQL Equivalente (patrón repetido por cada elemento):**
+**Tip para principiantes:** Para lotes grandes, usa upsertMany en vez de bucles individuales para mejor rendimiento y menor riesgo de errores.
 ```sql
 -- Ejemplo para user1@example.com (los demás igual cambiando valores)
 -- MySQL
@@ -181,12 +174,11 @@ try {
     ];
 
     // REPLACE: elimina el registro existente y crea uno nuevo
-    $newId = $orm->table('posts')->replace($postData);
-
-    echo "Post reemplazado con ID: $newId\n";
-
+    $result = $orm->table('posts')->replaceInto($postData);
+    // $result = ['status'=>'success', 'id'=>int|string|null]
+    echo "Post reemplazado con ID: " . $result['id'] . "\n";
     // Verificar el reemplazo
-    $post = $orm->table('posts')->find($newId);
+    $post = $orm->table('posts')->find($result['id']);
     echo "Nuevo título: " . $post['title'] . "\n";
 
 } catch (VersaORMException $e) {
@@ -201,6 +193,7 @@ VALUES (5, 'Título Completamente Nuevo', 'Contenido completamente reescrito', 2
 ```
 
 **Devuelve:** ID del registro reemplazado
+**Tip para principiantes:** REPLACE elimina el registro anterior y crea uno nuevo. Asegúrate de incluir todos los campos requeridos para evitar errores de NOT NULL.
 
 ### REPLACE sin ID (Basado en Claves Únicas)
 

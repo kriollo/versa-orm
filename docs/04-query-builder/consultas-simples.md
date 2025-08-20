@@ -2,55 +2,51 @@
 
 El Query Builder te permite construir consultas SQL de manera intuitiva usando métodos encadenados. Empezaremos con los conceptos básicos.
 
+
 ## Conceptos Clave
 
-- **Método `table()`**: Especifica la tabla principal
-- **Método `where()`**: Agrega condiciones de filtrado
-- **Métodos de ejecución**: `getAll()`, `findAll()`, `firstArray()`, `findOne()`, `count()`
-- **Encadenamiento**: Los métodos se pueden encadenar para construir consultas complejas
+- **Método `table()`**: Especifica la tabla principal.
+- **Método `where()`**: Agrega condiciones de filtrado.
+- **Métodos de ejecución**: `getAll()` (array de arrays), `findAll()` (array de modelos), `firstArray()` (array asociativo), `findOne()` (modelo), `count()` (entero).
+- **Encadenamiento**: Los métodos se pueden encadenar para construir consultas complejas.
+
+> **Nota para principiantes:** Siempre verifica el tipo de retorno de cada método. Si esperas un solo resultado, usa `firstArray()` o `findOne()`. Si esperas varios, usa `getAll()` o `findAll()`.
 
 ## Seleccionar todos los registros
 
-### Ejemplo básico
 
+### Ejemplo VersaORM
 ```php
-<?php
-require_once 'config/database.php';
-
-// Obtener todos los usuarios como arrays
 $usuarios = $orm->table('users')->getAll();
-
 foreach ($usuarios as $usuario) {
     echo "ID: {$usuario['id']}, Nombre: {$usuario['name']}\n";
 }
 ```
 
-**SQL Equivalente:**
+### Ejemplo SQL equivalente
 ```sql
 SELECT * FROM users;
 ```
 
-**Devuelve:** Array de arrays asociativos con todos los registros
+**Devuelve:** Array de arrays asociativos con todos los registros.
 
 ## Seleccionar con condición WHERE simple
 
-### Ejemplo con condición básica
 
+### Ejemplo VersaORM
 ```php
-// Usuarios activos
 $usuariosActivos = $orm->table('users')
     ->where('active', '=', true)
     ->getAll();
-
 echo "Usuarios activos encontrados: " . count($usuariosActivos) . "\n";
 ```
 
-**SQL Equivalente:**
+### Ejemplo SQL equivalente
 ```sql
 SELECT * FROM users WHERE active = 1;
 ```
 
-**Devuelve:** Array de arrays asociativos que cumplen la condición
+**Devuelve:** Array de arrays asociativos que cumplen la condición.
 
 ### Ejemplo con diferentes tipos de datos
 
@@ -127,26 +123,23 @@ SELECT * FROM users WHERE status <> 'banned';
 
 ## Métodos de ejecución
 
-### `getAll()` - Obtener todos los resultados
 
+### `getAll()` - Obtener todos los resultados (array de arrays)
 ```php
 $todos = $orm->table('users')
     ->where('active', '=', true)
     ->getAll();
-
 echo "Tipo de retorno: " . gettype($todos) . "\n";
 echo "Cantidad de registros: " . count($todos) . "\n";
 ```
+**Devuelve:** Array de arrays asociativos (puede estar vacío).
 
-**Devuelve:** Array de arrays asociativos (puede estar vacío)
 
-### `firstArray()` - Obtener un solo resultado como array
-
+### `firstArray()` - Obtener un solo resultado como array asociativo
 ```php
 $primero = $orm->table('users')
     ->where('active', '=', true)
     ->firstArray();
-
 if ($primero) {
     echo "Tipo de retorno: " . gettype($primero) . "\n";
     echo "Nombre: {$primero['name']}\n";
@@ -154,56 +147,49 @@ if ($primero) {
     echo "No se encontraron resultados\n";
 }
 ```
+**Devuelve:** Array asociativo o `null` si no hay resultados.
 
-**Devuelve:** Array asociativo o `null` si no hay resultados
 
-### `findAll()` - Obtener todos los resultados como modelos
-
+### `findAll()` - Obtener todos los resultados como modelos VersaModel
 ```php
 $usuarios = $orm->table('users')
     ->where('active', '=', true)
     ->findAll();
-
 foreach ($usuarios as $usuario) {
     echo "Usuario: {$usuario->name} (ID: {$usuario->id})\n";
 }
 ```
+**Devuelve:** Array de objetos VersaModel.
 
-**Devuelve:** Array de objetos VersaModel
 
-### `findOne()` - Obtener un solo resultado como modelo
-
+### `findOne()` - Obtener un solo resultado como modelo VersaModel
 ```php
 $usuario = $orm->table('users')
     ->where('email', '=', 'juan@example.com')
     ->findOne();
-
 if ($usuario) {
     echo "Usuario encontrado: {$usuario->name}\n";
 } else {
     echo "Usuario no encontrado\n";
 }
 ```
+**Devuelve:** Objeto VersaModel o `null` si no hay resultados.
 
-**Devuelve:** Objeto VersaModel o `null` si no hay resultados
 
 ### `count()` - Contar registros
-
 ```php
 $cantidad = $orm->table('users')
     ->where('active', '=', true)
     ->count();
-
 echo "Usuarios activos: $cantidad\n";
 echo "Tipo de retorno: " . gettype($cantidad) . "\n";
 ```
 
-**SQL Equivalente:**
+### SQL equivalente
 ```sql
 SELECT COUNT(*) FROM users WHERE active = 1;
 ```
-
-**Devuelve:** Entero con el número de registros
+**Devuelve:** Entero con el número de registros.
 
 ## Ejemplo práctico completo
 
@@ -301,6 +287,11 @@ if ($usuario) {
 ```
 
 ## Siguiente paso
+
+
+---
+
+> **Tip para principiantes:** Siempre revisa el tipo de retorno y valida los resultados antes de acceder a los datos. Si tienes dudas, consulta la [Referencia SQL](../../08-referencia-sql/README.md) para ver equivalencias y ejemplos.
 
 Ahora que dominas las consultas básicas, aprende sobre [Filtros WHERE avanzados](filtros-where.md) para crear condiciones más complejas.
 
