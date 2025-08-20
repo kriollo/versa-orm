@@ -77,13 +77,21 @@ abstract class BaseModel extends VersaModel
         return $inst;
     }
 
-    /** Proxy estático alternativo: obtener todos los registros como modelos. */
+    /**
+     * Proxy estático alternativo: obtener todos los registros como modelos.
+     *
+     * @return array<int, static>
+     */
     public static function allModels(): array
     {
         return static::make()->all();
     }
 
-    /** Proxy estático alternativo: obtener todos los registros como arrays. */
+    /**
+     * Proxy estático alternativo: obtener todos los registros como arrays.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public static function allRows(): array
     {
         return static::make()->allArray();
@@ -95,7 +103,11 @@ abstract class BaseModel extends VersaModel
         return static::make()->find($id, $pk);
     }
 
-    /** Proxy estático alternativo: buscar por ID y devolver array. */
+    /**
+     * Proxy estático alternativo: buscar por ID y devolver array.
+     *
+     * @return array<string, mixed>|null
+     */
     public static function findRow(int $id, string $pk = 'id'): ?array
     {
         return static::make()->findArray($id, $pk);

@@ -103,15 +103,18 @@ Deja solo las asociaciones indicadas, eliminando las demás:
 ```php
 $user = User::findOne(2);
 $user->roles()->sync([3, 4]); // El usuario 2 solo tendrá los roles 3 y 4
+$user = $user->fresh(); // Recarga el modelo y sus relaciones
+$roles = $user->roles; // Accede a los roles actualizados
 ```
 
 ### Refrescar el modelo y sus relaciones (`fresh()`)
 
-Para recargar el modelo y obtener los datos actualizados de la tabla pivot:
+Para recargar el modelo y obtener los datos actualizados de la tabla pivot, **debes reasignar la instancia**:
 
 ```php
 $user = User::findOne(2);
-$roles = $user->fresh()->roles; // Recarga el usuario y sus roles desde la base de datos
+$user = $user->fresh(); // Recarga el usuario desde la base de datos
+$roles = $user->roles; // Accede a los roles actualizados
 ```
 
 ## Resumen y Mejores Prácticas
@@ -120,7 +123,7 @@ $roles = $user->fresh()->roles; // Recarga el usuario y sus roles desde la base 
 - **Define siempre la relación `belongsToMany`** en tus modelos. Es indispensable para consultar y gestionar asociaciones.
 - **Consulta** los datos usando la propiedad mágica (`$user->roles`).
 - **Gestiona** las asociaciones usando los métodos `attach`, `detach`, `sync` directamente en el objeto de relación (`$user->roles()`).
-- **Refresca** el modelo con `fresh()` para obtener los datos actualizados de la tabla pivot.
+- **Refresca** el modelo con `fresh()` **reasignando la instancia** (`$user = $user->fresh()`) para obtener los datos actualizados de la tabla pivot y sus relaciones.
 - **Usa transacciones** al sincronizar para mantener la integridad de los datos (el método `sync` ya lo hace internamente).
 
 ## Próximos Pasos

@@ -45,11 +45,10 @@ class BelongsToMany extends Relation
     {
         $pivotQuery = $this->query->from($this->pivotTable);
 
-        $data = [
+        $data = array_merge([
             $this->foreignPivotKey => $this->parent->getAttribute($this->parent->getKeyName()),
             $this->relatedPivotKey => $id,
-            ...$attributes,
-        ];
+        ], $attributes);
 
         $reflection = new \ReflectionClass($pivotQuery);
         $executeMethod = $reflection->getMethod('execute');
@@ -79,7 +78,7 @@ class BelongsToMany extends Relation
         $detached = array_diff($currentIds, $ids);
         $attached = array_diff($ids, $currentIds);
 
-        if (!empty($detached)) {
+        if (count($detached) > 0) {
             $this->detach($detached);
         }
 
@@ -99,7 +98,16 @@ class BelongsToMany extends Relation
      *
      * @return int Número de registros eliminados
      */
-    public function detach($ids = null): bool
+    /**
+     * Separa registros relacionados de la tabla pivote.
+     *
+     * @param array<int, int|string>|int|string|null $ids IDs específicos a separar
+     *
+     * @throws \Exception Si ocurre un error durante la eliminación
+     *
+     * @return int Número de registros eliminados
+     */
+    public function detach($ids = null): int
     {
         $parentKey = $this->parent->getAttribute($this->parent->getKeyName());
 
@@ -113,7 +121,13 @@ class BelongsToMany extends Relation
 
         $result = $deleteQuery->delete();
 
-        return $result !== null;
+        // El método delete puede devolver int, float, string numérico, modelo o null.
+        // Para cumplir el tipo de retorno, convertimos a int si es numérico, y 0 en cualquier otro caso.
+        if (is_numeric($result)) {
+            return (int)$result;
+        }
+
+        return 0;
     }
 
     protected function addConstraints(): void

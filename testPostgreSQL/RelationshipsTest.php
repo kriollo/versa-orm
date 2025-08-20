@@ -69,6 +69,72 @@ class RoleTestModel extends VersaModel
 
 class RelationshipsTest extends TestCase
 {
+    public function testAttachAndDetach(): void
+    {
+        /** @var UserTestModel $user */
+        $user = UserTestModel::findOne('users', 2); // Bob
+
+        // Attach
+        $user->roles()->attach(1); // Admin
+        $attached = parent::$orm->table('role_user')->where('user_id', '=', 2)->where('role_id', '=', 1)->findOne();
+        self::assertNotNull($attached);
+
+        // Detach
+        $user->roles()->detach(1);
+        $detached = parent::$orm->table('role_user')->where('user_id', '=', 2)->where('role_id', '=', 1)->findOne();
+        self::assertNull($detached);
+    }
+
+    public function testSync(): void
+    {
+        /** @var UserTestModel $user */
+        $user = UserTestModel::findOne('users', 2); // Bob
+
+        // Buscar dinámicamente los IDs de los roles 'Viewer' y 'externo'
+        $viewerRole = parent::$orm->table('roles')->where('name', '=', 'Viewer')->findOne();
+        $externoRole = parent::$orm->table('roles')->where('name', '=', 'externo')->findOne();
+        self::assertNotNull($viewerRole);
+        self::assertNotNull($externoRole);
+        $idViewer = $viewerRole->id;
+        $idExterno = $externoRole->id;
+
+        //elimino el rol 2
+        $user->roles()->detach(2);
+
+        // Estado inicial: attach individualmente
+        $user->roles()->attach(1);
+        $user->roles()->attach($idViewer);
+
+        // Verificar estado inicial recargando
+        $user = $user->fresh();
+        self::assertCount(2, $user->roles);
+
+        // Sync: debe dejar solo Viewer y externo
+        $result = $user->roles()->sync([$idViewer, $idExterno]);
+        self::assertArrayHasKey('attached', $result);
+        self::assertArrayHasKey('detached', $result);
+
+        // Recargar y verificar
+        $user = $user->fresh();
+        $roleIds = array_map(fn ($role) => $role->id, $user->roles);
+        self::assertCount(2, $user->roles);
+        self::assertContains($idViewer, $roleIds);
+        self::assertContains($idExterno, $roleIds);
+        self::assertNotContains(1, $roleIds);
+
+        // atacho el rol 2
+        $user->roles()->attach(2);
+    }
+
+    public function testFresh(): void
+    {
+        $user = UserTestModel::findOne('users', 2);
+        $user->roles()->attach(3);
+        $user = $user->fresh();
+        $roleIds = array_map(fn ($role) => $role->id, $user->roles);
+        self::assertContains(3, $roleIds);
+    }
+
     public function testHasOneRelationship(): void
     {
         $user = UserTestModel::findOne('users', 1);

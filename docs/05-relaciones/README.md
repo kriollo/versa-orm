@@ -3,6 +3,13 @@
 Las relaciones son una de las características más potentes de VersaORM, permitiendo modelar y trabajar con asociaciones entre tablas de manera intuitiva y eficiente. Simplifican enormemente el trabajo con datos relacionados, haciendo tu código más limpio y expresivo.
 
 ### El Trait `HasRelationships`: El Corazón de las Relaciones
+> **Nota importante:** Cuando uses el método `fresh()` para recargar un modelo y sus relaciones, **debes reasignar la instancia**:
+>
+> ```php
+> $user = $user->fresh();
+> $roles = $user->roles;
+> ```
+> Así aseguras que accedes a los datos realmente actualizados y evitas inconsistencias por caché de relaciones.
 
 Para que un modelo pueda tener relaciones, debe utilizar el trait `VersaORM\Traits\HasRelationships`. Este trait es el motor que impulsa toda la funcionalidad:
 

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace VersaORM;
 
-/*
+/**
  * VersaModel - Modelo base ActiveRecord para VersaORM.
  *
  * PROPÓSITO: Representa un registro individual de la base de datos como objeto
  * RETORNA: Siempre objetos manipulables (store, trash, propiedades dinámicas)
  * USO: Para operaciones CRUD individuales y manipulación de registros
  *
- * @package VersaORM
  * @version 1.0.0
+ *
  * @author  VersaORM Team
  * @license MIT
  */
@@ -1257,7 +1257,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Crea una nueva instancia del modelo y la asocia a la ORM actual.
      *
-     * @param array<string, mixed> $attributes Atributos iniciales para el modelo
+     * Crea una nueva instancia del modelo para la tabla dada.
      */
     public function dispenseInstance(string $table): self
     {
@@ -1514,13 +1514,15 @@ class VersaModel implements TypedModelInterface
                 ->limit($batchSize)
                 ->offset($offset);
 
-            if ($conditions) {
-                $query->whereRaw($conditions, $bindings);
+            if ($conditions !== null && $conditions !== false) {
+                if (is_string($conditions) && trim($conditions) !== '') {
+                    $query->whereRaw($conditions, $bindings);
+                }
             }
 
             $models = $query->findAll();
 
-            if (empty($models)) {
+            if (count($models) < 1) {
                 break;
             }
 
@@ -1700,6 +1702,8 @@ class VersaModel implements TypedModelInterface
             );
         }
 
+        /** @phpstan-return static */
+        /** @var static */
         return $freshModel;
     }
 
@@ -1721,7 +1725,7 @@ class VersaModel implements TypedModelInterface
     protected function filterFillableAttributes(array $attributes): array
     {
         // Si $fillable está definido y no está vacío, usar solo esos campos
-        if ($this->fillable !== []) {
+        if (count($this->fillable) > 0) {
             $filtered = [];
 
             foreach ($attributes as $key => $value) {
@@ -1796,7 +1800,7 @@ class VersaModel implements TypedModelInterface
              */
             $validationSchema = $this->getTableValidationSchema();
 
-            if (empty($validationSchema)) {
+            if (count($validationSchema) < 1) {
                 // Si no podemos obtener el esquema, usar validaciones básicas
                 return $this->basicSchemaValidation();
             }
@@ -2117,7 +2121,7 @@ class VersaModel implements TypedModelInterface
 
         // Intentar parsear como fecha
         $date = DateTime::createFromFormat('Y-m-d', $value);
-        if ($date && $date->format('Y-m-d') === $value) {
+        if ($date instanceof DateTime && $date->format('Y-m-d') === $value) {
             return true;
         }
 
@@ -2125,7 +2129,7 @@ class VersaModel implements TypedModelInterface
         $formats = ['Y-m-d H:i:s', 'd/m/Y', 'm/d/Y', 'Y/m/d'];
         foreach ($formats as $format) {
             $date = DateTime::createFromFormat($format, $value);
-            if ($date && $date->format($format) === $value) {
+            if ($date instanceof DateTime && $date->format($format) === $value) {
                 return true;
             }
         }
@@ -2191,18 +2195,18 @@ class VersaModel implements TypedModelInterface
                 break;
 
             case 'integer':
-                if (!filter_var($value, FILTER_VALIDATE_INT)) {
+                if (!is_int($value) && !(is_string($value) && filter_var($value, FILTER_VALIDATE_INT) !== false)) {
                     return "El {$field} debe ser un número entero.";
                 }
                 break;
             case 'uuid':
-                if (!$this->isValidUuid($value)) {
+                if (!is_string($value) || !$this->isValidUuid($value)) {
                     return "El {$field} debe ser un UUID válido.";
                 }
                 break;
 
             case 'ip':
-                if (!filter_var($value, FILTER_VALIDATE_IP)) {
+                if (!is_string($value) || !filter_var($value, FILTER_VALIDATE_IP)) {
                     return "El {$field} debe ser una dirección IP válida.";
                 }
                 break;
@@ -2234,14 +2238,14 @@ class VersaModel implements TypedModelInterface
 
                         case 'in':
                             $allowedValues = explode(',', $parameter);
-                            if (!in_array($value, $allowedValues)) {
+                            if (!in_array($value, $allowedValues, true)) {
                                 return "El {$field} debe ser uno de: " . implode(', ', $allowedValues);
                             }
                             break;
 
                         case 'not_in':
                             $disallowedValues = explode(',', $parameter);
-                            if (in_array($value, $disallowedValues)) {
+                            if (in_array($value, $disallowedValues, true)) {
                                 return "El {$field} no debe ser uno de: " . implode(', ', $disallowedValues);
                             }
                             break;
@@ -2252,7 +2256,7 @@ class VersaModel implements TypedModelInterface
                             break;
 
                         case 'digits':
-                            if (!preg_match('/^\d{' . $parameter . '}$/', $value)) {
+                            if (!is_string($value) || !preg_match('/^\d{' . $parameter . '}$/', $value)) {
                                 return "El {$field} debe tener exactamente {$parameter} dígitos.";
                             }
                             break;

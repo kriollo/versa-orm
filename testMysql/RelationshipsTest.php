@@ -143,29 +143,36 @@ class RelationshipsTest extends TestCase
         /** @var UserTestModel $user */
         $user = UserTestModel::findOne('users', 2); // Bob
 
+        // Buscar dinámicamente los IDs de los roles 'Viewer' y 'externo'
+        $viewerRole = parent::$orm->table('roles')->where('name', '=', 'Viewer')->findOne();
+        $externoRole = parent::$orm->table('roles')->where('name', '=', 'externo')->findOne();
+        self::assertNotNull($viewerRole);
+        self::assertNotNull($externoRole);
+        $idViewer = $viewerRole->id;
+        $idExterno = $externoRole->id;
+
         //elimino el rol 2
         $user->roles()->detach(2);
 
-        // Initial state: attach individually
+        // Estado inicial: attach individualmente
         $user->roles()->attach(1);
-        $user->roles()->attach(3);
+        $user->roles()->attach($idViewer);
 
         // Verificar estado inicial recargando
-        // $user = UserTestModel::findOne('users', 2);
-        $user->fresh()->roles;
+        $user = $user->fresh();
         self::assertCount(2, $user->roles);
 
-        // Sync: should detach 1, keep 3, and attach 4
-        $result = $user->roles()->sync([3, 4]);
+        // Sync: debe dejar solo Viewer y externo
+        $result = $user->roles()->sync([$idViewer, $idExterno]);
         self::assertArrayHasKey('attached', $result);
         self::assertArrayHasKey('detached', $result);
 
         // Recargar y verificar
-        $user->fresh()->roles;
+        $user = $user->fresh();
         $roleIds = array_map(fn ($role) => $role->id, $user->roles);
         self::assertCount(2, $user->roles);
-        self::assertContains(3, $roleIds);
-        self::assertContains(4, $roleIds);
+        self::assertContains($idViewer, $roleIds);
+        self::assertContains($idExterno, $roleIds);
         self::assertNotContains(1, $roleIds);
 
         // atacho el rol 2
