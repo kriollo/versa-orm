@@ -1,3 +1,8 @@
+# v1.1 - 2025-08-19
+- Métodos attach, detach, sync y fresh() en BelongsToMany para gestión directa de la tabla pivot.
+- Documentación actualizada para relaciones muchos-a-muchos.
+- Fixes de compatibilidad con Psalm y QueryBuilder.
+- Mejoras en los tests de relaciones y sincronización.
 # Changelog
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
