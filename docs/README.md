@@ -45,6 +45,7 @@ Documentación completa para VersaORM-PHP con enfoque en PDO. Esta guía está d
 
 ### 🚀 [06. Avanzado](06-avanzado/)
 *Funcionalidades de productividad*
+- [Eventos del Ciclo de Vida](06-avanzado/eventos-ciclo-vida.md) - hooks, listeners y triggers
 - [Operaciones Batch](06-avanzado/operaciones-batch.md) - insertMany, updateMany
 - [UPSERT y REPLACE](06-avanzado/upsert-replace.md) - Operaciones especiales
 - [Transacciones](06-avanzado/transacciones.md) - Control de transacciones

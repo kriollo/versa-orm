@@ -12,6 +12,16 @@ Esta sección cubre las funcionalidades avanzadas de VersaORM que te permitirán
 
 ## 📋 Contenido de esta sección
 
+### [⚡️ Eventos del Ciclo de Vida](eventos-ciclo-vida.md)
+Guía principal sobre hooks y triggers
+
+### [🧩 Ejemplos prácticos de eventos](eventos-ciclo-vida-ejemplos.md)
+Casos de uso frecuentes y comparaciones con triggers SQL
+Sistema de eventos para hooks y lógica personalizada
+- Registro de listeners y cancelación de operaciones
+- Métodos mágicos y triggers
+- Debug y testing de eventos
+
 ### [⚡ Operaciones Batch](operaciones-batch.md)
 Operaciones masivas eficientes para grandes volúmenes
 - `insertMany()` - Inserción masiva optimizada

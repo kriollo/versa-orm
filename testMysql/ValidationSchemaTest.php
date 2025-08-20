@@ -150,6 +150,14 @@ class ValidationSchemaTest extends TestCase
                     ],
                 ];
             }
+
+            protected static function definePropertyTypes(): array
+            {
+                return [
+                    'age' => ['type' => 'int'],
+                    'balance' => ['type' => 'decimal'],
+                ];
+            }
         };
 
         // Test: Tipo de datos incorrecto para entero
