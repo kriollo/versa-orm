@@ -48,6 +48,29 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Devuelve el nombre de la tabla asociada al modelo.
+     * Si la subclase define una propiedad estática $table, la usa; si no, infiere por convención.
+     */
+    public static function tableName(): string
+    {
+        $cls = static::class;
+        $vars = get_class_vars($cls);
+        if (isset($vars['table']) && is_string($vars['table']) && $vars['table'] !== '') {
+            return $vars['table'];
+        }
+        $class = (new \ReflectionClass($cls))->getShortName();
+        $table = strtolower($class);
+        if (str_ends_with($table, 'y')) {
+            $table = substr($table, 0, -1) . 'ies';
+        } else {
+            $table .= 's';
+        }
+        return $table;
+    }
+
+    // Métodos y traits ya definidos arriba
+
+    /**
      * Listeners de eventos por modelo.
      *
      * @var array<string, array<int, callable>>
@@ -1175,11 +1198,15 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Devuelve el nombre de la tabla asociada al modelo.
+     * Si la subclase define una propiedad estática $tableName, la usa; si no, infiere por convención.
+     */
+    /**
      * Variante estática para conveniencia cuando no se tiene instancia: UserModel::queryTable()->where(...).
      */
     public static function queryTable(?string $table = null): QueryBuilder
     {
-        return self::orm()->table($table ?? (new static('', self::orm()))->getTable(), static::class);
+        return self::orm()->table($table ?? static::tableName(), static::class);
     }
 
     /**
