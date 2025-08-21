@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\BaseModel;
+
 /**
  * Modelo Note
  * Gestiona notas de las tareas.
@@ -25,6 +27,12 @@ class Note extends BaseModel
         'task_id' => ['required'],
         'user_id' => ['required'],
     ];
+
+    /** Recargar la nota desde la base de datos (fresh). */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        return parent::fresh($primaryKey);
+    }
 
     // Buscar por ID se hace vía instancia heredada de BaseModel: (new Note(...))->find($id)
 

@@ -2,19 +2,22 @@
 
 declare(strict_types=1);
 
+use App\App;
+use App\ModelManager;
+use App\Request;
+
 /**
  * Autoloader para la aplicación demo.
  */
 
 // Cargar Composer autoloader
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Autoload temprano para App\ (Request, OrmFactory, App, ModelManager) y App\Models\
 spl_autoload_register(function ($class): void {
-    if (str_starts_with($class, 'App\Models\\')) {
-        $className = str_replace('App\Models\\', '', $class);
+    if (str_starts_with($class, 'App\\Models\\')) {
+        $className = str_replace('App\\Models\\', '', $class);
         $file = __DIR__ . '/models/' . $className . '.php';
-
         if (file_exists($file)) {
             require_once $file;
         }
@@ -23,8 +26,7 @@ spl_autoload_register(function ($class): void {
     if (str_starts_with($class, 'App\\')) {
         $relative = str_replace('App\\', '', $class);
         $relative = str_replace('\\', '/', $relative);
-        $file = __DIR__ . '/app/' . $relative . '.php';
-
+        $file = __DIR__ . '/' . $relative . '.php';
         if (file_exists($file)) {
             require_once $file;
         }
@@ -37,10 +39,6 @@ $config = require_once __DIR__ . '/config.php';
 // Configurar zona horaria
 date_default_timezone_set($config['app']['timezone'] ?? 'UTC');
 // Inicializar VersaORM por petición
-use App\App;
-use App\ModelManager;
-use App\OrmFactory;
-use App\Request;
 
 // Construir una Request y un ORM por cada ejecución (request-scoped)
 $request = Request::fromGlobals();
@@ -54,7 +52,7 @@ function render(string $view, $data = []): void
 {
     global $config;
     extract($data);
-    $viewFile = __DIR__ . '/views/' . $view . '.php';
+    $viewFile = __DIR__ . '/../views/' . $view . '.php';
 
     if (!file_exists($viewFile)) {
         exit("Vista no encontrada: {$view}");
@@ -66,7 +64,7 @@ function render(string $view, $data = []): void
 
     // Si no es una vista parcial, usar layout
     if (!isset($noLayout) || !$noLayout) {
-        include __DIR__ . '/views/layout.php';
+        include __DIR__ . '/../views/layout.php';
     } else {
         echo $content;
     }

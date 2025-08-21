@@ -7,7 +7,7 @@ declare(strict_types=1);
  * Aplicación de demostración tipo Trello para mostrar las capacidades de VersaORM.
  */
 
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/app/bootstrap.php';
 
 use App\Models\Label;
 use App\Models\Project;

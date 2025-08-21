@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\BaseModel;
+
 /**
  * Modelo Label
  * Gestiona etiquetas del sistema.
@@ -24,6 +26,43 @@ class Label extends BaseModel
         'name' => ['required', 'min:1', 'max:50'],
         'color' => ['required'],
     ];
+
+    /** Relación N:M: tareas con esta etiqueta (BelongsToMany). */
+    public function tasksRelation(): \VersaORM\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            Task::class,
+            'task_labels',
+            'label_id',
+            'task_id',
+            'id',
+            'id',
+        );
+    }
+
+    /** Adjuntar tarea a la etiqueta. */
+    public function attachTask(int $taskId): void
+    {
+        $this->tasksRelation()->attach($taskId);
+    }
+
+    /** Separar tarea de la etiqueta. */
+    public function detachTask(int $taskId): void
+    {
+        $this->tasksRelation()->detach($taskId);
+    }
+
+    /** Sincronizar tareas de la etiqueta. */
+    public function syncTasks(array $taskIds): array
+    {
+        return $this->tasksRelation()->sync($taskIds);
+    }
+
+    /** Recargar la etiqueta desde la base de datos (fresh). */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        return parent::fresh($primaryKey);
+    }
 
     /** Crear etiqueta (instancia) usando strong typing y mass-assignment seguro. */
     public function createOne(array $attributes): self
@@ -61,8 +100,7 @@ class Label extends BaseModel
             ->table('task_labels')
             ->select(['COUNT(*) AS count'])
             ->where('label_id', '=', $this->id)
-            ->get()
-        ;
+            ->get();
         $row = $rows[0] ?? [];
 
         return (int) ($row['count'] ?? 0);

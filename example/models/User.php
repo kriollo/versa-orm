@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\BaseModel;
 use Exception;
 
 use function count;
@@ -31,6 +32,44 @@ class User extends BaseModel
         'email' => ['required', 'email', 'max:150'],
     ];
 
+    /** Relación N:M: proyectos donde el usuario es miembro (BelongsToMany). */
+    public function projectsRelation(): \VersaORM\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            Project::class,
+            'project_users',
+            'user_id',
+            'project_id',
+            'id',
+            'id',
+        );
+    }
+
+    /** Adjuntar usuario a un proyecto (como miembro). */
+    public function attachProject(int $projectId): void
+    {
+        $this->projectsRelation()->attach($projectId);
+    }
+
+    /** Separar usuario de un proyecto (como miembro). */
+    public function detachProject(int $projectId): void
+    {
+        $this->projectsRelation()->detach($projectId);
+    }
+
+    /** Sincronizar proyectos del usuario (N:M). */
+    public function syncProjects(array $projectIds): array
+    {
+        return $this->projectsRelation()->sync($projectIds);
+    }
+
+    /** Recargar el usuario desde la base de datos (fresh). */
+    /** Recargar el usuario desde la base de datos (fresh). */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        return parent::fresh($primaryKey);
+    }
+
     /** Crear usuario con defaults y casting consistente (instancia). */
     public function createOne(array $attributes): self
     {
@@ -54,8 +93,7 @@ class User extends BaseModel
             // Proyectos donde es propietario
             $ownedProjects = $this->getOrm()->table('projects', Project::class)
                 ->where('owner_id', '=', $this->id)
-                ->get()
-            ;
+                ->get();
 
             if ($ownedProjects) {
                 $allProjects = array_merge($allProjects, $ownedProjects);
@@ -66,8 +104,7 @@ class User extends BaseModel
                 ->join('project_users', 'projects.id', '=', 'project_users.project_id')
                 ->where('project_users.user_id', '=', $this->id)
                 ->select(['projects.*'])
-                ->get()
-            ;
+                ->get();
 
             if ($memberProjects) {
                 $allProjects = array_merge($allProjects, $memberProjects);
@@ -92,8 +129,7 @@ class User extends BaseModel
             try {
                 $projects = $this->getOrm()->table('projects', Project::class)
                     ->where('owner_id', '=', $this->id)
-                    ->get()
-                ;
+                    ->get();
 
                 return $projects ?: [];
             } catch (Exception) {
@@ -111,8 +147,7 @@ class User extends BaseModel
             $tasks = $this->getOrm()->table('tasks', Task::class)
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')
-                ->get()
-            ;
+                ->get();
 
             return $tasks ?: [];
         } catch (Exception) {

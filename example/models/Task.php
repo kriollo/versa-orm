@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\BaseModel;
 use Exception;
 use VersaORM\VersaModel;
 
@@ -48,6 +49,43 @@ class Task extends BaseModel
         'title' => ['required', 'min:3', 'max:200'],
         'project_id' => ['required'],
     ];
+
+    /** Relación N:M: etiquetas de la tarea (BelongsToMany). */
+    public function labelsRelation(): \VersaORM\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            Label::class,
+            'task_labels',
+            'task_id',
+            'label_id',
+            'id',
+            'id',
+        );
+    }
+
+    /** Adjuntar etiqueta a la tarea. */
+    public function attachLabel(int $labelId): void
+    {
+        $this->labelsRelation()->attach($labelId);
+    }
+
+    /** Separar etiqueta de la tarea. */
+    public function detachLabel(int $labelId): void
+    {
+        $this->labelsRelation()->detach($labelId);
+    }
+
+    /** Sincronizar etiquetas de la tarea. */
+    public function syncLabels(array $labelIds): array
+    {
+        return $this->labelsRelation()->sync($labelIds);
+    }
+
+    /** Recargar la tarea desde la base de datos (fresh). */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        return parent::fresh($primaryKey);
+    }
 
     /** Crear nueva tarea con defaults delegando validación a store(). */
     public function createOne(array $attributes): self
@@ -107,8 +145,7 @@ class Task extends BaseModel
             ->table('task_labels')
             ->select(['label_id'])
             ->where('task_id', '=', $this->id)
-            ->get()
-        ;
+            ->get();
 
         return array_column($rows, 'label_id');
     }
@@ -122,8 +159,7 @@ class Task extends BaseModel
         $existingLabels = $this->getOrm()
             ->table('task_labels')
             ->where('task_id', '=', $this->id)
-            ->get()
-        ;
+            ->get();
 
         foreach ($existingLabels as $existing) {
             if (isset($existing['id'])) {

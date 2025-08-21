@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\BaseModel;
+
 /**
  * Modelo Project modernizado para usar QueryBuilder de VersaORM y evitar SQL crudo.
  */
@@ -24,6 +26,43 @@ class Project extends BaseModel
         'name' => ['required', 'min:2', 'max:100'],
         'owner_id' => ['required'],
     ];
+
+    /** Relación N:M: miembros del proyecto (BelongsToMany). */
+    public function membersRelation(): \VersaORM\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'project_users',
+            'project_id',
+            'user_id',
+            'id',
+            'id',
+        );
+    }
+
+    /** Adjuntar miembro al proyecto. */
+    public function attachMember(int $userId): void
+    {
+        $this->membersRelation()->attach($userId);
+    }
+
+    /** Separar miembro del proyecto. */
+    public function detachMember(int $userId): void
+    {
+        $this->membersRelation()->detach($userId);
+    }
+
+    /** Sincronizar miembros del proyecto. */
+    public function syncMembers(array $userIds): array
+    {
+        return $this->membersRelation()->sync($userIds);
+    }
+
+    /** Recargar el proyecto desde la base de datos (fresh). */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        return parent::fresh($primaryKey);
+    }
 
     // ===================== Métodos CRUD de instancia =====================
     /** Crear nuevo proyecto (usa reglas y strong typing internos). */
@@ -82,8 +121,7 @@ class Project extends BaseModel
         $exists = $this->getOrm()->table('project_users')
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
-            ->exists()
-        ;
+            ->exists();
 
         if ($exists) {
             return;
@@ -101,8 +139,7 @@ class Project extends BaseModel
             ->select(['id'])
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
-            ->get()
-        ;
+            ->get();
 
         foreach ($rows as $row) {
             if (!isset($row['id'])) {
