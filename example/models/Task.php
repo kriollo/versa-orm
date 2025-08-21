@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\BaseModel;
 use Exception;
+use VersaORM\Relations\BelongsTo;
+use VersaORM\Relations\BelongsToMany;
 use VersaORM\VersaModel;
 
 use function in_array;
@@ -49,6 +51,29 @@ class Task extends BaseModel
         'title' => ['required', 'min:3', 'max:200'],
         'project_id' => ['required'],
     ];
+
+    /** Obtener el conteo total de tareas. */
+    public static function countAll(): int
+    {
+        return self::queryTable()->count();
+    }
+
+    /** Obtener el conteo de tareas pendientes. */
+    public static function countPending(): int
+    {
+        return models()->task()->getOrm()->table('tasks')->where('status', '=', self::STATUS_TODO)->count();
+    }
+
+    /** Obtener las tareas recientes con información relacionada. */
+    public static function getRecent(int $limit = 5): array
+    {
+        return self::queryTable()
+            ->lazy()
+            ->with(['project', 'user', 'labels'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->collect();
+    }
 
     /** Relación N:M: etiquetas de la tarea (BelongsToMany). */
     public function labelsRelation(): \VersaORM\Relations\BelongsToMany
@@ -101,39 +126,25 @@ class Task extends BaseModel
     /**
      * Obtener proyecto de la tarea.
      */
-    public function project(): ?array
+    public function project(): BelongsTo
     {
-        $project = $this->getOrm()->table('projects', Project::class)->where('id', '=', (int) $this->project_id)->findOne();
-
-        return $project ? $project->export() : null;
+        return $this->belongsTo(Project::class, 'id', 'project_id');
     }
 
     /**
      * Obtener usuario asignado.
      */
-    public function user(): ?array
+    public function user(): BelongsTo
     {
-        if (!$this->user_id) {
-            return null;
-        }
-        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int) $this->user_id)->findOne();
-
-        return $user ? $user->export() : null;
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
      * Obtener etiquetas de la tarea.
      */
-    public function labels(): array
+    public function labels(): BelongsToMany
     {
-        return $this->getOrm()
-            ->table('labels', Label::class)
-            ->join('task_labels', 'labels.id', '=', 'task_labels.label_id')
-            ->where('task_labels.task_id', '=', $this->id)
-            ->orderBy('labels.created_at', 'DESC')
-            ->select(['labels.*'])
-            ->get()
-        ;
+        return $this->belongsToMany(Label::class, 'task_labels', 'task_id', 'label_id');
     }
 
     /**

@@ -32,6 +32,12 @@ class User extends BaseModel
         'email' => ['required', 'email', 'max:150'],
     ];
 
+    /** Obtener el conteo total de usuarios. */
+    public static function countAll(): int
+    {
+        return self::queryTable()->count();
+    }
+
     /** Relación N:M: proyectos donde el usuario es miembro (BelongsToMany). */
     public function projectsRelation(): \VersaORM\Relations\BelongsToMany
     {

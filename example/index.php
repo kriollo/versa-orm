@@ -23,6 +23,7 @@ spl_autoload_register(function ($class) {
 // Obtener la acción y parámetros de la URL
 $action = $_GET['action'] ?? 'dashboard';
 $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+app()->orm();
 
 try {
     if ($action === 'dashboard') {

@@ -14,18 +14,26 @@ class Label extends BaseModel
 {
     protected string $table = 'labels';
 
+    /** Campos asignables en masa */
     protected array $fillable = [
         'name',
         'color',
         'description',
     ];
 
+    /** Campos protegidos contra asignación en masa */
     protected array $guarded = [];
 
     protected array $rules = [
         'name' => ['required', 'min:1', 'max:50'],
         'color' => ['required'],
     ];
+
+    /** Obtener el conteo total de etiquetas. */
+    public static function countAll(): int
+    {
+        return self::queryTable()->count();
+    }
 
     /** Relación N:M: tareas con esta etiqueta (BelongsToMany). */
     public function tasksRelation(): \VersaORM\Relations\BelongsToMany

@@ -28,6 +28,12 @@ class Project extends BaseModel
         'owner_id' => ['required'],
     ];
 
+    /** Obtener el conteo total de proyectos. */
+    public static function countAll(): int
+    {
+        return self::queryTable()->count();
+    }
+
     /** Relación N:M: miembros del proyecto (BelongsToMany). */
     public function membersRelation(): BelongsToMany
     {
