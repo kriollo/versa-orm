@@ -1,3 +1,42 @@
+# v1.1.1 (21-08-2025)
+
+## 🧩 Compatibilidad y mejoras en el ORM
+
+- **Relaciones ORM ahora compatibles con QueryBuilder**
+  Las relaciones (`hasOne`, `hasMany`, `belongsTo`, `belongsToMany`) permiten manipulación avanzada de consultas mediante el QueryBuilder, soportando filtros, joins, ordenamientos y paginación directamente sobre las relaciones.
+  Ejemplo:
+  ```php
+  $user->posts()->where('published', true)->orderBy('created_at', 'desc')->limit(5)->get();
+  ```
+
+- **Exposición directa del QueryBuilder en métodos de relación**
+  Los métodos de relación devuelven instancias del QueryBuilder, permitiendo encadenar métodos y construir consultas complejas sin perder el tipado ni la seguridad.
+
+- **Soporte de FULL OUTER JOIN para SQLite**
+  El motor de consultas ahora traduce y simula correctamente los `FULL OUTER JOIN` en SQLite, permitiendo compatibilidad total con sentencias avanzadas que antes solo funcionaban en MySQL/PostgreSQL.
+
+- **Mejoras en la inferencia de nombres de tabla**
+  El método `tableName` ahora es más robusto y consistente, permitiendo inferir el nombre de la tabla asociada a cada modelo de forma automática y segura.
+
+## ⚡️ Refactor y optimización
+
+- Refactorización profunda del script de integración QA (`qa-integration.php`), permitiendo la ejecución ordenada y sin conflictos de Rector, Pint, PHP-CS-Fixer, PHPStan y Psalm.
+- Mejoras de legibilidad y estructura en controladores y modelos, optimizando el conteo de registros y la manipulación de datos.
+
+## 🛡️ Seguridad y consistencia
+
+- Ajuste de operadores lógicos y condicionales en tests y binarios para mayor claridad y robustez.
+- Validación y limpieza de datos en scripts de setup y migraciones.
+
+## 🧰 Herramientas y configuración
+
+- Integración avanzada de Laravel Pint, con configuración para evitar conflictos con PHP-CS-Fixer y mantener el estilo PSR-12/Laravel.
+- Actualización de dependencias y scripts en `composer.json` para facilitar el desarrollo y la integración continua.
+
+## 📝 Documentación y ejemplos
+
+- Ejemplos actualizados para reflejar las nuevas capacidades del ORM y el uso avanzado de relaciones y QueryBuilder.
+- Mejoras en los scripts de setup y migración para facilitar la adopción y pruebas.
 # v1.1 - 2025-08-19
 - Métodos attach, detach, sync y fresh() en BelongsToMany para gestión directa de la tabla pivot.
 - Documentación actualizada para relaciones muchos-a-muchos.
