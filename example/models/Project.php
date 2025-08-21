@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\BaseModel;
+use VersaORM\Relations\BelongsToMany;
 
 /**
  * Modelo Project modernizado para usar QueryBuilder de VersaORM y evitar SQL crudo.
@@ -28,7 +29,7 @@ class Project extends BaseModel
     ];
 
     /** Relación N:M: miembros del proyecto (BelongsToMany). */
-    public function membersRelation(): \VersaORM\Relations\BelongsToMany
+    public function membersRelation(): BelongsToMany
     {
         return $this->belongsToMany(
             User::class,
