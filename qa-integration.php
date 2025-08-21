@@ -12,13 +12,16 @@ declare(strict_types=1);
  * 4. Psalm (security & complementary analysis)
  * 5. PHPUnit (tests)
  */
-
 class QAIntegration
 {
     private array $tools = [];
+
     private bool $fix = false;
+
     private bool $verbose = false;
+
     private array $onlyTools = [];
+
     private array $skipTools = [];
 
     public function __construct(array $args = [])
@@ -34,26 +37,26 @@ class QAIntegration
                 'name' => 'Rector',
                 'command' => $this->getToolCommand('rector', 'process --dry-run'),
                 'fix_command' => $this->getToolCommand('rector', 'process'),
-                'description' => 'Code modernization and refactoring'
+                'description' => 'Code modernization and refactoring',
             ],
             'php-cs-fixer' => [
                 'name' => 'PHP-CS-Fixer',
                 'command' => $this->getToolCommand('php-cs-fixer', 'fix --dry-run --diff'),
                 'fix_command' => $this->getToolCommand('php-cs-fixer', 'fix'),
-                'description' => 'Code style formatting'
+                'description' => 'Code style formatting',
             ],
             'phpstan' => [
                 'name' => 'PHPStan',
                 'command' => $this->getToolCommand('phpstan', 'analyse --memory-limit=512M'),
                 'fix_command' => null,
-                'description' => 'Static analysis and type checking'
+                'description' => 'Static analysis and type checking',
             ],
             'psalm' => [
                 'name' => 'Psalm',
                 'command' => $this->getToolCommand('psalm', '--show-info=false'),
                 'fix_command' => null,
-                'description' => 'Security analysis and complementary checks'
-            ]
+                'description' => 'Security analysis and complementary checks',
+            ],
         ];
     }
 
@@ -96,7 +99,7 @@ class QAIntegration
         $overallSuccess = true;
 
         foreach ($this->tools as $toolKey => $tool) {
-            if (!empty($this->onlyTools) && !in_array($toolKey, $this->onlyTools)) {
+            if (! empty($this->onlyTools) && ! in_array($toolKey, $this->onlyTools)) {
                 continue;
             }
 
@@ -107,11 +110,11 @@ class QAIntegration
             $result = $this->runTool($toolKey, $tool);
             $results[$toolKey] = $result;
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 $overallSuccess = false;
 
                 // Stop on first failure unless fixing
-                if (!$this->fix) {
+                if (! $this->fix) {
                     break;
                 }
             }
@@ -139,13 +142,13 @@ class QAIntegration
         // Execute command
         $output = [];
         $returnCode = 0;
-        exec($command . ' 2>&1', $output, $returnCode);
+        exec($command.' 2>&1', $output, $returnCode);
 
         $duration = microtime(true) - $startTime;
         $success = $returnCode === 0;
 
         // Print output
-        if (!empty($output)) {
+        if (! empty($output)) {
             foreach ($output as $line) {
                 echo "  {$line}\n";
             }
@@ -157,7 +160,7 @@ class QAIntegration
             'success' => $success,
             'duration' => $duration,
             'output' => $output,
-            'return_code' => $returnCode
+            'return_code' => $returnCode,
         ];
     }
 
@@ -182,18 +185,18 @@ class QAIntegration
 
     private function printToolHeader(string $name, string $description): void
     {
-        echo "┌─ {$name} " . str_repeat('─', 60 - strlen($name)) . "┐\n";
-        echo "│ {$description}" . str_repeat(' ', 58 - strlen($description)) . "│\n";
-        echo "└" . str_repeat('─', 60) . "┘\n";
+        echo "┌─ {$name} ".str_repeat('─', 60 - strlen($name))."┐\n";
+        echo "│ {$description}".str_repeat(' ', 58 - strlen($description))."│\n";
+        echo '└'.str_repeat('─', 60)."┘\n";
     }
 
     private function printToolResult(string $name, bool $success, float $duration): void
     {
         $status = $success ? '✅ PASSED' : '❌ FAILED';
-        $time = number_format($duration, 2) . 's';
+        $time = number_format($duration, 2).'s';
 
         echo "\n{$status} - {$name} ({$time})\n";
-        echo str_repeat('─', 60) . "\n\n";
+        echo str_repeat('─', 60)."\n\n";
     }
 
     private function printSummary(array $results, bool $overallSuccess): void
@@ -206,20 +209,20 @@ class QAIntegration
         foreach ($results as $toolKey => $result) {
             $tool = $this->tools[$toolKey];
             $status = $result['success'] ? '✅' : '❌';
-            $time = number_format($result['duration'], 2) . 's';
+            $time = number_format($result['duration'], 2).'s';
             $totalTime += $result['duration'];
 
-            echo "{$status} {$tool['name']}" . str_repeat(' ', 20 - strlen($tool['name'])) . "{$time}\n";
+            echo "{$status} {$tool['name']}".str_repeat(' ', 20 - strlen($tool['name']))."{$time}\n";
         }
 
-        echo str_repeat('─', 60) . "\n";
-        echo "Total time: " . number_format($totalTime, 2) . "s\n";
+        echo str_repeat('─', 60)."\n";
+        echo 'Total time: '.number_format($totalTime, 2)."s\n";
 
         if ($overallSuccess) {
             echo "\n🎉 All QA checks passed!\n";
         } else {
             echo "\n💥 Some QA checks failed. Review the output above.\n";
-            if (!$this->fix) {
+            if (! $this->fix) {
                 echo "💡 Use --fix to automatically fix issues where possible.\n";
             }
         }
