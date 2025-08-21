@@ -1,6 +1,7 @@
+
 # 🔍 Query Builder - Constructor de Consultas
 
-El Query Builder de VersaORM es una interfaz fluida que te permite construir consultas SQL de manera programática sin escribir SQL directamente. Es especialmente útil para consultas dinámicas y complejas.
+El Query Builder de VersaORM es una interfaz fluida que te permite construir consultas SQL de manera programática sin escribir SQL directamente. Es especialmente útil para consultas dinámicas y complejas. **Ahora también puedes encadenar consultas sobre relaciones usando la API dual de VersaORM.**
 
 ## 🎯 ¿Cuándo usar Query Builder?
 
@@ -72,6 +73,7 @@ Al completar esta sección, sabrás:
 - **Agregaciones**: 20-30 minutos
 - **Total**: 95-135 minutos
 
+
 ## 💡 Ejemplo Rápido
 
 ```php
@@ -83,11 +85,18 @@ $usuarios = $orm->table('users')
     ->limit(10)
     ->getAll();
 
-// SQL equivalente:
-// SELECT * FROM users WHERE active = 1 AND age > 18 ORDER BY name ASC LIMIT 10
+// Encadenamiento sobre relaciones (Eloquent-style)
+$user = User::findOne(1);
+$totalPosts = $user->posts()->where('published', true)->count();
+$primerPost = $user->posts()->orderBy('created_at', 'asc')->firstArray();
+
+// Acceso tradicional (lazy/eager loading)
+$posts = $user->posts; // Retorna los resultados directamente
 ```
 
-**Devuelve:** Array de arrays asociativos con los datos de usuarios.
+**Devuelve:**
+- QueryBuilder: array, modelo, entero, según método final (`getAll`, `count`, etc.)
+- Relación: propiedad retorna resultados, método retorna objeto encadenable.
 
 ## 🗺️ Progresión Recomendada
 

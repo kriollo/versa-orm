@@ -22,6 +22,23 @@ class BelongsToMany extends Relation
     }
 
     /**
+     * Redirigir llamadas al QueryBuilder interno.
+     */
+    public function __call($method, $arguments)
+    {
+        $this->addConstraints();
+
+        return $this->query->$method(...$arguments);
+    }
+
+    public function query(): QueryBuilder
+    {
+        $this->addConstraints();
+
+        return $this->query;
+    }
+
+    /**
      * @return array<int, VersaModel>
      */
     public function getResults(): array

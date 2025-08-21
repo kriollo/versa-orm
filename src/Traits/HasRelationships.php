@@ -29,7 +29,13 @@ trait HasRelationships
         }
 
         if (method_exists($this, $key)) {
-            return $this->getRelationshipFromMethod($key);
+            $relation = $this->{$key}();
+            if ($relation instanceof Relation) {
+                $result = $relation->getResults();
+                $this->relations[$key] = $result;
+
+                return $result;
+            }
         }
 
         return $this->getAttribute($key);
@@ -142,7 +148,11 @@ trait HasRelationships
 
     public function setRelation(string $relation, mixed $value): void
     {
-        $this->relations[$relation] = $value;
+        if ($value instanceof Relation) {
+            $this->relations[$relation] = $value->getResults();
+        } else {
+            $this->relations[$relation] = $value;
+        }
     }
 
     protected function getRelationshipFromMethod(string $method): mixed
