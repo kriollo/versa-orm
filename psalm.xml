@@ -65,7 +65,6 @@
         <MixedMethodCall errorLevel="suppress" />
         <MixedPropertyFetch errorLevel="suppress" />
         <MixedReturnStatement errorLevel="suppress" />
-        <MixedInferredReturnType errorLevel="suppress" />
         <MixedArrayAccess errorLevel="suppress" />
         <MixedArrayAssignment errorLevel="suppress" />
         <MixedStringOffsetAssignment errorLevel="suppress" />

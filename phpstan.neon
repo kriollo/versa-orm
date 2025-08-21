@@ -9,8 +9,6 @@ parameters:
 
     # === COMPATIBILITY SETTINGS ===
     treatPhpDocTypesAsCertain: false
-    checkMissingIterableValueType: true
-    checkGenericClassInNonGenericObjectType: true
     reportUnmatchedIgnoredErrors: false
 
     # Reduce conflicts with other tools

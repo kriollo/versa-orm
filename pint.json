@@ -1,7 +1,21 @@
 {
+    "preset": "psr12",
     "exclude": [
         "tests",
-        "vendor"
-        
-    ]
+        "vendor",
+        "var"
+    ],
+    "rules": {
+        "ordered_imports": false,
+        "single_line_comment_style": false,
+        "array_syntax": false,
+        "phpdoc_align": false,
+        "phpdoc_order": false,
+        "phpdoc_types": false,
+        "visibility_required": false,
+        "phpdoc_var_annotation_correct_order": false,
+        "phpdoc_var_without_name": false,
+        "class_attributes_separation": false,
+        "method_chaining_indentation": false
+    }
 }

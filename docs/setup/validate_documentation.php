@@ -719,7 +719,7 @@ class DocumentationValidator
 
 // Ejecutar validación si se llama directamente
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_NAME'])) {
-    $validator = new DocumentationValidator;
+    $validator = new DocumentationValidator();
     $success = $validator->validateAll();
     exit($success ? 0 : 1);
 }

@@ -244,5 +244,5 @@ class DatabaseSetup extends VersaModel
 // Ejecutar configuración
 echo "=== CONFIGURACIÓN DE BASE DE DATOS PARA EJEMPLOS ===\n\n";
 
-$setup = new DatabaseSetup;
+$setup = new DatabaseSetup();
 $setup->run();

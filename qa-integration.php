@@ -39,6 +39,12 @@ class QAIntegration
                 'fix_command' => $this->getToolCommand('rector', 'process'),
                 'description' => 'Code modernization and refactoring',
             ],
+            'pint' => [
+                'name' => 'Pint',
+                'command' => $this->getToolCommand('pint', '--test'),
+                'fix_command' => $this->getToolCommand('pint', ''),
+                'description' => 'Laravel Pint code style (PSR-12/Laravel)',
+            ],
             'php-cs-fixer' => [
                 'name' => 'PHP-CS-Fixer',
                 'command' => $this->getToolCommand('php-cs-fixer', 'fix --dry-run --diff'),
@@ -142,7 +148,7 @@ class QAIntegration
         // Execute command
         $output = [];
         $returnCode = 0;
-        exec($command.' 2>&1', $output, $returnCode);
+        exec($command . ' 2>&1', $output, $returnCode);
 
         $duration = microtime(true) - $startTime;
         $success = $returnCode === 0;
@@ -185,18 +191,18 @@ class QAIntegration
 
     private function printToolHeader(string $name, string $description): void
     {
-        echo "┌─ {$name} ".str_repeat('─', 60 - strlen($name))."┐\n";
-        echo "│ {$description}".str_repeat(' ', 58 - strlen($description))."│\n";
-        echo '└'.str_repeat('─', 60)."┘\n";
+        echo "┌─ {$name} " . str_repeat('─', 60 - strlen($name)) . "┐\n";
+        echo "│ {$description}" . str_repeat(' ', 58 - strlen($description)) . "│\n";
+        echo '└' . str_repeat('─', 60) . "┘\n";
     }
 
     private function printToolResult(string $name, bool $success, float $duration): void
     {
         $status = $success ? '✅ PASSED' : '❌ FAILED';
-        $time = number_format($duration, 2).'s';
+        $time = number_format($duration, 2) . 's';
 
         echo "\n{$status} - {$name} ({$time})\n";
-        echo str_repeat('─', 60)."\n\n";
+        echo str_repeat('─', 60) . "\n\n";
     }
 
     private function printSummary(array $results, bool $overallSuccess): void
@@ -209,14 +215,14 @@ class QAIntegration
         foreach ($results as $toolKey => $result) {
             $tool = $this->tools[$toolKey];
             $status = $result['success'] ? '✅' : '❌';
-            $time = number_format($result['duration'], 2).'s';
+            $time = number_format($result['duration'], 2) . 's';
             $totalTime += $result['duration'];
 
-            echo "{$status} {$tool['name']}".str_repeat(' ', 20 - strlen($tool['name']))."{$time}\n";
+            echo "{$status} {$tool['name']}" . str_repeat(' ', 20 - strlen($tool['name'])) . "{$time}\n";
         }
 
-        echo str_repeat('─', 60)."\n";
-        echo 'Total time: '.number_format($totalTime, 2)."s\n";
+        echo str_repeat('─', 60) . "\n";
+        echo 'Total time: ' . number_format($totalTime, 2) . "s\n";
 
         if ($overallSuccess) {
             echo "\n🎉 All QA checks passed!\n";
@@ -239,7 +245,7 @@ class QAIntegration
         echo "  --only=tool1,tool2 Run only specified tools\n";
         echo "  --skip=tool1,tool2 Skip specified tools\n";
         echo "  --help, -h         Show this help message\n\n";
-        echo "Available tools: rector, php-cs-fixer, phpstan, psalm\n\n";
+        echo "Available tools: rector, pint, php-cs-fixer, phpstan, psalm\n\n";
         echo "Examples:\n";
         echo "  php qa-integration.php                    # Check all tools\n";
         echo "  php qa-integration.php --fix              # Fix all issues\n";
