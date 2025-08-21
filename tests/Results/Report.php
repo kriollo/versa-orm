@@ -127,7 +127,7 @@ class Report
 
         foreach ($this->recommendations as $recommendation) {
             if (is_array($recommendation) && isset($recommendation['level']) && $recommendation['level'] === 'error') {
-                ++$criticalAlerts;
+                $criticalAlerts++;
             }
         }
 
@@ -204,7 +204,7 @@ class Report
     {
         $directory = dirname($filepath);
 
-        if (!is_dir($directory)) {
+        if (! is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
 

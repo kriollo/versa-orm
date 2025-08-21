@@ -86,16 +86,16 @@
                 </span>
                 <form method="GET" action="?action=tasks" class="flex items-center space-x-2">
                     <input type="hidden" name="action" value="tasks">
-                    <?php if (!empty($filters['status'])) { ?>
+                    <?php if (! empty($filters['status'])) { ?>
                         <input type="hidden" name="status" value="<?php echo htmlspecialchars($filters['status']); ?>">
                     <?php } ?>
-                    <?php if (!empty($filters['priority'])) { ?>
+                    <?php if (! empty($filters['priority'])) { ?>
                         <input type="hidden" name="priority" value="<?php echo htmlspecialchars($filters['priority']); ?>">
                     <?php } ?>
-                    <?php if (!empty($filters['project_id'])) { ?>
+                    <?php if (! empty($filters['project_id'])) { ?>
                         <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($filters['project_id']); ?>">
                     <?php } ?>
-                    <?php if (!empty($filters['user_id'])) { ?>
+                    <?php if (! empty($filters['user_id'])) { ?>
                         <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($filters['user_id']); ?>">
                     <?php } ?>
                     <label class="text-sm text-gray-700 dark:text-gray-300 transition-colors">Por página:</label>
@@ -197,7 +197,7 @@ $doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] ===
 </div>
 
 <!-- Lista de tareas -->
-<?php if (!empty($tasks)) { ?>
+<?php if (! empty($tasks)) { ?>
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -427,7 +427,7 @@ $doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] ===
                     <?php } ?>
 
                     <!-- Páginas en el rango actual -->
-                    <?php for ($i = $start_page; $i <= $end_page; ++$i) { ?>
+                    <?php for ($i = $start_page; $i <= $end_page; $i++) { ?>
                         <?php if ($i === $pagination['current_page']) { ?>
                             <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
                                 <?php echo $i; ?>
@@ -548,7 +548,7 @@ $doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] ===
         });
 
         function loadNotes(taskId) {
-            fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
+            fetch('app/notes_ajax.php?action=get_notes&task_id=' + taskId)
                 .then(response => response.json())
                 .then(data => {
                     notesContainer.innerHTML = '';
@@ -579,7 +579,7 @@ $doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] ===
             const formData = new FormData(this);
             formData.append('action', 'add_note');
 
-            fetch('notes_ajax.php', {
+            fetch('app/notes_ajax.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -622,7 +622,7 @@ $doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] ===
                 const noteId = button.dataset.noteId;
 
                 if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
-                    fetch('notes_ajax.php', {
+                    fetch('app/notes_ajax.php', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -647,7 +647,7 @@ $doneTasks = count(array_filter($tasks, static fn ($t): bool => $t['status'] ===
                 const formData = new FormData(e.target);
                 formData.append('action', 'update_note');
 
-                fetch('notes_ajax.php', {
+                fetch('app/notes_ajax.php', {
                         method: 'POST',
                         body: formData
                     })

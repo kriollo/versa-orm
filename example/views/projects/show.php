@@ -41,10 +41,10 @@
                         <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Propietario</label>
                         <div class="flex items-center mt-1">
                             <?php if ($owner) { ?>
-                                <div class="avatar mr-2" style="background-color: <?php echo htmlspecialchars($owner['avatar_color']); ?>">
-                                    <?php echo strtoupper(substr($owner['name'], 0, 2)); ?>
+                                <div class="avatar mr-2" style="background-color: <?php echo htmlspecialchars($owner->avatar_color); ?>">
+                                    <?php echo strtoupper(substr($owner->name, 0, 2)); ?>
                                 </div>
-                                <span class="text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($owner['name']); ?></span>
+                                <span class="text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($owner->name); ?></span>
                             <?php } else { ?>
                                 <span class="text-gray-400">Sin propietario</span>
                             <?php } ?>
@@ -73,22 +73,22 @@
                     </button>
                 </div>
 
-                <?php if (!empty($members)) { ?>
+                <?php if (! empty($members)) { ?>
                     <div class="space-y-2">
                         <?php foreach ($members as $member) { ?>
                             <div class="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group transition-colors">
                                 <div class="flex items-center">
-                                    <div class="avatar mr-3" style="background-color: <?php echo htmlspecialchars($member['avatar_color']); ?>">
-                                        <?php echo strtoupper(substr($member['name'], 0, 2)); ?>
+                                    <div class="avatar mr-3" style="background-color: <?php echo htmlspecialchars($member->avatar_color); ?>">
+                                        <?php echo strtoupper(substr($member->name, 0, 2)); ?>
                                     </div>
                                     <div>
-                                        <p class="font-medium text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($member['name']); ?></p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?php echo htmlspecialchars($member['email']); ?></p>
+                                        <p class="font-medium text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($member->name); ?></p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?php echo htmlspecialchars($member->email); ?></p>
                                     </div>
                                 </div>
                                 <form method="POST" action="?action=project_remove_member" class="inline">
                                     <input type="hidden" name="project_id" value="<?php echo $project->id; ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $member['id']; ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo $member->id; ?>">
                                     <button type="submit"
                                         class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-all duration-200 opacity-50 group-hover:opacity-100"
                                         onclick="return confirm('¿Estás seguro de que quieres eliminar este miembro?')"
@@ -119,7 +119,7 @@
                 <!-- Progreso general -->
                 <?php if (count($tasks) > 0) { ?>
                     <?php
-                    $completedTasks = array_filter($tasks, static fn ($t): bool => $t['status'] === 'done');
+                    $completedTasks = array_filter($tasks, static fn ($t): bool => $t->status === 'done');
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
                     <div class="mb-6">
@@ -136,9 +136,9 @@
                 <!-- Lista de tareas por estado -->
                 <?php
                 $tasksByStatus = [
-                    'todo' => array_filter($tasks, static fn ($t): bool => $t['status'] === 'todo'),
-                    'in_progress' => array_filter($tasks, static fn ($t): bool => $t['status'] === 'in_progress'),
-                    'done' => array_filter($tasks, static fn ($t): bool => $t['status'] === 'done'),
+                    'todo' => array_filter($tasks, static fn ($t): bool => $t->status === 'todo'),
+                    'in_progress' => array_filter($tasks, static fn ($t): bool => $t->status === 'in_progress'),
+                    'done' => array_filter($tasks, static fn ($t): bool => $t->status === 'done'),
                 ];
 $statusNames = [
     'todo' => 'Por Hacer',
@@ -164,20 +164,19 @@ $statusColors = [
                                 <div class="space-y-2">
                                     <?php foreach ($statusTasks as $task) { ?>
                                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 transition-colors">
-                                            <div class="flex items-start justify-between">
+                                            <div class="grid ">
                                                 <div class="flex-1">
-                                                    <h5 class="font-medium text-sm mb-1 text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($task['title']); ?></h5>
-                                                    <?php if ($task['description']) { ?>
-                                                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2 transition-colors"><?php echo htmlspecialchars(substr($task['description'], 0, 80)); ?><?php echo strlen($task['description']) > 80 ? '...' : ''; ?></p>
+                                                    <h5 class="font-medium text-sm mb-1 text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($task->title); ?></h5>
+                                                    <?php if ($task->description) { ?>
+                                                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2 transition-colors"><?php echo htmlspecialchars(substr($task->description, 0, 80)); ?><?php echo strlen($task->description) > 80 ? '...' : ''; ?></p>
                                                     <?php } ?>
 
                                                     <div class="flex items-center justify-between">
-                                                        <span class="text-xs px-2 py-1 rounded <?php echo getPriorityClass($task['priority']); ?>">
-                                                            <?php echo ucfirst($task['priority']); ?>
+                                                        <span class="text-xs px-2 py-1 rounded <?php echo getPriorityClass($task->priority); ?>">
+                                                            <?php echo ucfirst($task->priority); ?>
                                                         </span>
-                                                        <?php if ($task['due_date']) { ?>
-                                                            <?php
-                                            $dueRaw = $task['due_date'];
+                                                        <?php if ($task->due_date) { ?>
+                                                            <?php $dueRaw = $task->due_date;
 
                                                             $fmt = $dueRaw instanceof DateTimeInterface ? $dueRaw->format('d/m') : safe_date_format($dueRaw, 'd/m');
                                                             ?>
@@ -187,12 +186,18 @@ $statusColors = [
                                                         <?php } ?>
                                                     </div>
                                                 </div>
-                                                <a href="?action=task_edit&id=<?php echo $task['id']; ?>" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 ml-2 transition-colors">
-                                                    <i class="fas fa-edit text-xs"></i>
-                                                </a>
-                                                <button class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 ml-2 transition-colors open-status-modal" data-task-id="<?php echo $task['id']; ?>" data-task-status="<?php echo $task['status']; ?>">
-                                                    <i class="fas fa-exchange-alt text-xs"></i>
-                                                </button>
+                                                <div class="flex align-items-end justify-end mt-2 gap-2">
+                                                    <a href="?action=task_edit&id=<?php echo $task->id; ?>" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors">
+                                                        <i class="fas fa-edit text-xs"></i>
+                                                    </a>
+                                                    <button class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors open-status-modal" data-task-id="<?php echo $task->id; ?>" data-task-status="<?php echo $task->status; ?>">
+                                                        <i class="fas fa-exchange-alt text-xs"></i>
+                                                    </button>
+                                                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal has-notes" data-task-id="<?php echo $task->id; ?>" data-task-title="<?php echo $task->title; ?>">
+                                                        <i class="fas fa-sticky-note"></i>
+                                                        <span class="note-count-badge"><?php echo $task->notes()->count(); ?></span>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     <?php } ?>
@@ -203,6 +208,7 @@ $statusColors = [
                         </div>
                     <?php } ?>
                 </div>
+
             </div>
         </div>
     </div>
@@ -371,7 +377,7 @@ function getPriorityClass($priority): string
         });
 
         function loadNotes(taskId) {
-            fetch('notes_ajax.php?action=get_notes&task_id=' + taskId)
+            fetch('app/notes_ajax.php?action=get_notes&task_id=' + taskId)
                 .then(response => response.json())
                 .then(data => {
                     notesContainer.innerHTML = '';
@@ -402,7 +408,7 @@ function getPriorityClass($priority): string
             const formData = new FormData(this);
             formData.append('action', 'add_note');
 
-            fetch('notes_ajax.php', {
+            fetch('app/notes_ajax.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -445,7 +451,7 @@ function getPriorityClass($priority): string
                 const noteId = button.dataset.noteId;
 
                 if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
-                    fetch('notes_ajax.php', {
+                    fetch('app/notes_ajax.php', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -470,7 +476,7 @@ function getPriorityClass($priority): string
                 const formData = new FormData(e.target);
                 formData.append('action', 'update_note');
 
-                fetch('notes_ajax.php', {
+                fetch('app/notes_ajax.php', {
                         method: 'POST',
                         body: formData
                     })
@@ -488,29 +494,29 @@ function getPriorityClass($priority): string
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const statusModal = document.getElementById('status-modal');
-    const statusForm = document.getElementById('status-form');
-    const taskStatusSelect = document.getElementById('task-status');
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusModal = document.getElementById('status-modal');
+        const statusForm = document.getElementById('status-form');
+        const taskStatusSelect = document.getElementById('task-status');
 
-    document.querySelectorAll('.open-status-modal').forEach(button => {
-        button.addEventListener('click', function() {
-            const taskId = this.dataset.taskId;
-            const taskStatus = this.dataset.taskStatus;
+        document.querySelectorAll('.open-status-modal').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.dataset.taskId;
+                const taskStatus = this.dataset.taskStatus;
 
-            statusForm.action = `?action=task_change_status&id=${taskId}`;
-            taskStatusSelect.value = taskStatus;
+                statusForm.action = `?action=task_change_status&id=${taskId}`;
+                taskStatusSelect.value = taskStatus;
 
-            statusModal.classList.remove('hidden');
+                statusModal.classList.remove('hidden');
+            });
+        });
+
+        document.querySelectorAll('.close-status-modal').forEach(button => {
+            button.addEventListener('click', function() {
+                statusModal.classList.add('hidden');
+            });
         });
     });
-
-    document.querySelectorAll('.close-status-modal').forEach(button => {
-        button.addEventListener('click', function() {
-            statusModal.classList.add('hidden');
-        });
-    });
-});
 </script>
 
 <!-- Modal para cambiar estado de tarea -->

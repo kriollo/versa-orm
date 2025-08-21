@@ -53,7 +53,7 @@ class DatabaseSpecificTypesTest extends TestCase
     /**
      * @group mysql
      */
-    public function testMySQLSpecificTypes(): void
+    public function test_my_sql_specific_types(): void
     {
         if ($this->databaseType !== 'mysql') {
             self::assertTrue(true); // Excluido por grupo en suite PostgreSQL
@@ -97,7 +97,7 @@ class DatabaseSpecificTypesTest extends TestCase
     /**
      * @group postgres
      */
-    public function testPostgreSQLSpecificTypes(): void
+    public function test_postgre_sql_specific_types(): void
     {
         if ($this->databaseType !== 'postgresql') {
             self::assertTrue(true);
@@ -157,7 +157,7 @@ class DatabaseSpecificTypesTest extends TestCase
     /**
      * @group sqlite
      */
-    public function testSQLiteSpecificTypes(): void
+    public function test_sq_lite_specific_types(): void
     {
         if ($this->databaseType !== 'sqlite') {
             self::assertTrue(true);
@@ -186,7 +186,7 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertIsString($model->datetime_field);
     }
 
-    public function testTypeCastingConsistency(): void
+    public function test_type_casting_consistency(): void
     {
         $model = new VersaModel('test_type_casting', self::$orm);
 
@@ -210,7 +210,7 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertFalse($this->isValidUuid($invalidUuid));
     }
 
-    public function testBinaryDataHandling(): void
+    public function test_binary_data_handling(): void
     {
         // Crear tabla para binarios
         self::$orm->schemaCreate('test_binary', [
@@ -230,7 +230,7 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertSame($originalData, $decoded);
     }
 
-    public function testComplexTypeMapping(): void
+    public function test_complex_type_mapping(): void
     {
         // Crear tabla para mapeo complejo
         self::$orm->schemaCreate('test_complex_mapping', [
@@ -261,7 +261,7 @@ class DatabaseSpecificTypesTest extends TestCase
         self::assertContains('admin', $model->complex_data['permissions']);
     }
 
-    public function testTypeValidationErrors(): void
+    public function test_type_validation_errors(): void
     {
         // Crear un modelo de prueba con tipos definidos
         $testModel = new class ('test_validation', self::$orm) extends VersaModel {
@@ -281,7 +281,7 @@ class DatabaseSpecificTypesTest extends TestCase
         $testModel->castToPhpType('uuid_field', 'invalid-uuid');
     }
 
-    public function testPerformanceWithLargeDatasets(): void
+    public function test_performance_with_large_datasets(): void
     {
         $startTime = microtime(true);
 

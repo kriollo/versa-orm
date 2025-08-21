@@ -172,7 +172,7 @@ function buildRectorCommand(array $options, bool $dryRun): string
         $path = $options['path'];
         $validPaths = ['src', 'tests', 'example'];
 
-        if (!in_array($path, $validPaths, true)) {
+        if (! in_array($path, $validPaths, true)) {
             throw new Exception('Invalid path. Valid paths: ' . implode(', ', $validPaths));
         }
 
@@ -223,19 +223,19 @@ function parseRectorOutput(string $output): array
 
             // Categorize rules
             if (str_contains($rule, 'Type') || str_contains($rule, 'Return')) {
-                ++$changes['categories']['type_declarations'];
+                $changes['categories']['type_declarations']++;
             } elseif (str_contains($rule, 'Quality') || str_contains($rule, 'Simplify')) {
-                ++$changes['categories']['code_quality'];
+                $changes['categories']['code_quality']++;
             } elseif (str_contains($rule, 'Dead') || str_contains($rule, 'Unused')) {
-                ++$changes['categories']['dead_code'];
+                $changes['categories']['dead_code']++;
             } elseif (str_contains($rule, 'Early') || str_contains($rule, 'Return')) {
-                ++$changes['categories']['early_return'];
+                $changes['categories']['early_return']++;
             } elseif (str_contains($rule, 'Style') || str_contains($rule, 'Format')) {
-                ++$changes['categories']['coding_style'];
+                $changes['categories']['coding_style']++;
             } elseif (str_contains($rule, 'Php') || str_contains($rule, 'PHP')) {
-                ++$changes['categories']['php_upgrades'];
+                $changes['categories']['php_upgrades']++;
             } else {
-                ++$changes['categories']['other'];
+                $changes['categories']['other']++;
             }
         }
     }
@@ -261,7 +261,7 @@ function displayChangeSummary(array $changes): void
         }
     }
 
-    if (!empty($changes['rules_applied'])) {
+    if (! empty($changes['rules_applied'])) {
         echo "\n🔧 Applied rules:\n";
 
         foreach (array_slice($changes['rules_applied'], 0, 10) as $rule) {
@@ -305,7 +305,7 @@ function parseArguments(array $argv): array
     $options = [];
     $counter = count($argv);
 
-    for ($i = 1; $i < $counter; ++$i) {
+    for ($i = 1; $i < $counter; $i++) {
         $arg = $argv[$i];
 
         if (str_starts_with($arg, '--')) {

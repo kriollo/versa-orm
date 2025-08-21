@@ -104,6 +104,7 @@ class TestCase extends BaseTestCase
             ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
             ['name' => 'content', 'type' => 'TEXT'],
             ['name' => 'published_at', 'type' => 'TEXT'],
+            ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
         ], [
             'constraints' => [
                 'foreign' => [[

@@ -13,7 +13,7 @@ use VersaORM\VersaORMException;
  */
 class SetOperationsUnsupportedTest extends TestCase
 {
-    public function testIntersectUnsupported(): void
+    public function test_intersect_unsupported(): void
     {
         $this->expectException(VersaORMException::class);
         $qb1 = new QueryBuilder(self::$orm, 'users');
@@ -21,7 +21,7 @@ class SetOperationsUnsupportedTest extends TestCase
         $qb1->intersect($qb2);
     }
 
-    public function testExceptUnsupported(): void
+    public function test_except_unsupported(): void
     {
         $this->expectException(VersaORMException::class);
         $qb1 = new QueryBuilder(self::$orm, 'users');

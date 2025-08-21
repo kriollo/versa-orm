@@ -7,18 +7,18 @@ use Rector\Config\RectorConfig;
 return static function (RectorConfig $rectorConfig): void {
     // Only process core src files
     $rectorConfig->paths([
-        __DIR__ . '/src',
+        __DIR__.'/src',
     ]);
 
     // Skip everything that might cause issues
     $rectorConfig->skip([
-        __DIR__ . '/vendor',
-        __DIR__ . '/tests',
-        __DIR__ . '/example',
-        __DIR__ . '/testMysql',
-        __DIR__ . '/testPostgreSQL',
-        __DIR__ . '/testSQLite',
-        __DIR__ . '/src/binary',
+        __DIR__.'/vendor',
+        __DIR__.'/tests',
+        __DIR__.'/example',
+        __DIR__.'/testMysql',
+        __DIR__.'/testPostgreSQL',
+        __DIR__.'/testSQLite',
+        __DIR__.'/src/binary',
         '*/node_modules/*',
         '*/vendor/*',
         '*.phar',
@@ -34,5 +34,5 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->memoryLimit('256M');
 
     // Cache directory
-    $rectorConfig->cacheDirectory(__DIR__ . '/var/cache/rector');
+    $rectorConfig->cacheDirectory(__DIR__.'/var/cache/rector');
 };

@@ -98,7 +98,7 @@ function parseArguments(array $argv): array
     $options = [];
     $counter = count($argv);
 
-    for ($i = 1; $i < $counter; ++$i) {
+    for ($i = 1; $i < $counter; $i++) {
         $arg = $argv[$i];
 
         if (str_starts_with($arg, '--')) {

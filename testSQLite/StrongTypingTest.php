@@ -24,52 +24,52 @@ class StrongTypingTest extends TestCase
         TestTypedModel::clearPropertyTypesCache();
     }
 
-    public function testCastInt(): void
+    public function test_cast_int(): void
     {
         self::assertSame(123, $this->model->castToPhpType('id', '123'));
     }
 
-    public function testCastJson(): void
+    public function test_cast_json(): void
     {
         $arr = $this->model->castToPhpType('settings', '{"a":1}');
         self::assertSame(['a' => 1], $arr);
     }
 
-    public function testInvalidJson(): void
+    public function test_invalid_json(): void
     {
         $this->expectException(VersaORMException::class);
         $this->model->castToPhpType('settings', '{bad json');
     }
 
-    public function testUuidValidation(): void
+    public function test_uuid_validation(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
         self::assertSame($uuid, $this->model->castToPhpType('uuid', $uuid));
     }
 
-    public function testInvalidUuid(): void
+    public function test_invalid_uuid(): void
     {
         $this->expectException(VersaORMException::class);
         $this->model->castToPhpType('uuid', 'not-a-uuid');
     }
 
-    public function testEnumValid(): void
+    public function test_enum_valid(): void
     {
         self::assertSame('active', $this->model->castToPhpType('status', 'active'));
     }
 
-    public function testEnumInvalid(): void
+    public function test_enum_invalid(): void
     {
         $this->expectException(VersaORMException::class);
         $this->model->castToPhpType('status', 'zzz');
     }
 
-    public function testSetValid(): void
+    public function test_set_valid(): void
     {
         self::assertSame(['work', 'personal'], $this->model->castToPhpType('tags', 'work,personal'));
     }
 
-    public function testSetInvalid(): void
+    public function test_set_invalid(): void
     {
         $this->expectException(VersaORMException::class);
         $this->model->castToPhpType('tags', 'work,invalid');

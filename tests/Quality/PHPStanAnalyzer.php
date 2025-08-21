@@ -29,7 +29,7 @@ class PHPStanAnalyzer
         }
         $this->phpstanPath = $phpstanPath;
 
-        if (!is_dir($this->reportsDir)) {
+        if (! is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
         }
     }
@@ -215,7 +215,7 @@ class PHPStanAnalyzer
             ($analysisResult['passed'] ? 'PASSED' : 'FAILED') . '</span></p>
     </div>';
 
-        if (!empty($analysisResult['errors'])) {
+        if (! empty($analysisResult['errors'])) {
             $html .= '<div class="section">
                 <h2>Errors</h2>';
 
@@ -225,7 +225,7 @@ class PHPStanAnalyzer
             $html .= '</div>';
         }
 
-        if (!empty($analysisResult['warnings'])) {
+        if (! empty($analysisResult['warnings'])) {
             $html .= '<div class="section">
                 <h2>Warnings</h2>';
 
@@ -290,7 +290,7 @@ class PHPStanAnalyzer
 
         $output = shell_exec($testCommand);
 
-        return !($output === '' || $output === '0' || $output === false || $output === null);
+        return ! ($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -310,10 +310,10 @@ class PHPStanAnalyzer
 
         // Add other options
         foreach ($options as $key => $value) {
-            if (!in_array($key, ['memory-limit', 'error-format'], true)) {
+            if (! in_array($key, ['memory-limit', 'error-format'], true)) {
                 if (is_bool($value) && $value) {
                     $command .= ' --' . $key;
-                } elseif (!is_bool($value)) {
+                } elseif (! is_bool($value)) {
                     $command .= ' --' . $key . '=' . $value;
                 }
             }

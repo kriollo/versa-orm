@@ -144,7 +144,7 @@ trait HasStrongTyping
         /** @var PropertyTypeMap $types */
         $types = static::getPropertyTypes();
 
-        if (!isset($types[$property])) { // fallback heurístico
+        if (! isset($types[$property])) { // fallback heurístico
             if (is_string($value)) {
                 $trim = trim($value);
 
@@ -195,7 +195,7 @@ trait HasStrongTyping
         /** @var PropertyTypeMap $types */
         $types = static::getPropertyTypes();
 
-        if (!isset($types[$property])) {
+        if (! isset($types[$property])) {
             if ($value instanceof DateTimeInterface) {
                 return $value->format('Y-m-d H:i:s');
             }
@@ -237,13 +237,13 @@ trait HasStrongTyping
         }
 
         try {
-            if (!$this->orm instanceof VersaORM) {
+            if (! $this->orm instanceof VersaORM) {
                 return ['Se requiere una instancia válida de VersaORM para validar el esquema'];
             }
             /** @var false|list<array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $schema */
             $schema = $this->orm->schema('columns', $this->table);
 
-            if (!$schema) {
+            if (! $schema) {
                 return ["No se pudo obtener información de esquema para la tabla '{$this->table}'"];
             }
             /** @var array<string,array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $db */
@@ -257,8 +257,9 @@ trait HasStrongTyping
             foreach ($types as $prop => $def) {
                 $c = strtolower($prop);
 
-                if (!isset($db[$c])) {
+                if (! isset($db[$c])) {
                     $errs[] = "⚠️  ADVERTENCIA: La propiedad '{$prop}' no existe en la base de datos";
+
                     continue;
                 }
                 $dbCol = $db[$c];
@@ -266,7 +267,7 @@ trait HasStrongTyping
                 $modelType = strtolower((string) ($def['type'] ?? ''));
                 $expected = $map[$dbType] ?? $dbType;
 
-                if ($expected !== $modelType && !$this->isCompatibleType($expected, $modelType)) {
+                if ($expected !== $modelType && ! $this->isCompatibleType($expected, $modelType)) {
                     $errs[] = "⚠️  INCONSISTENCIA: '{$prop}' - DB: {$dbType} ({$expected}) vs Modelo: {$modelType}";
                 }
                 $nullable = strtolower($dbCol['is_nullable'] ?? 'no') === 'yes';
@@ -278,7 +279,7 @@ trait HasStrongTyping
             }
 
             foreach ($db as $cn => $cinfo) {
-                if (!isset($types[$cn])) {
+                if (! isset($types[$cn])) {
                     $errs[] = "💡 INFO: Columna '{$cn}' existe en DB pero no está definida en el modelo";
                 }
             }
@@ -449,7 +450,7 @@ trait HasStrongTyping
                 }
             }
 
-            if ($allowed !== [] && !in_array($val, $allowed, true)) {
+            if ($allowed !== [] && ! in_array($val, $allowed, true)) {
                 throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed));
             }
 
@@ -486,7 +487,7 @@ trait HasStrongTyping
 
             if ($allowed !== []) {
                 foreach ($vals as $vv) {
-                    if (!in_array((string) $vv, $allowed, true)) {
+                    if (! in_array((string) $vv, $allowed, true)) {
                         throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed));
                     }
                 }
@@ -503,7 +504,7 @@ trait HasStrongTyping
         $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string) $v;
 
-            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
             }
             // Normaliza (comprime) IPv6 y asegura forma canónica usando inet_pton/inet_ntop
@@ -597,7 +598,7 @@ trait HasStrongTyping
                 }
             }
 
-            if ($allowed !== [] && !in_array($val, $allowed, true)) {
+            if ($allowed !== [] && ! in_array($val, $allowed, true)) {
                 throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed));
             }
 
@@ -634,7 +635,7 @@ trait HasStrongTyping
 
             if ($allowed !== []) {
                 foreach ($vals as $vv) {
-                    if (!in_array((string) $vv, $allowed, true)) {
+                    if (! in_array((string) $vv, $allowed, true)) {
                         throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed));
                     }
                 }
@@ -651,7 +652,7 @@ trait HasStrongTyping
         $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string) $v;
 
-            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
             }
             $packed = @inet_pton($ip);
@@ -708,7 +709,7 @@ trait HasStrongTyping
         $compat = ['int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'], 'float' => ['float', 'double', 'real', 'decimal', 'numeric'], 'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'], 'bool' => ['tinyint', 'boolean', 'bit'], 'boolean' => ['tinyint', 'boolean', 'bit'], 'datetime' => ['datetime', 'timestamp', 'date'], 'date' => ['date', 'datetime', 'timestamp'], 'json' => ['json', 'jsonb', 'text'], 'uuid' => ['uuid', 'char', 'varchar'], 'enum' => ['enum'], 'set' => ['set'], 'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'], 'inet' => ['inet', 'varchar', 'char']];
         $ok = in_array($dbType, $compat[$modelType] ?? [], true) || $dbType === $modelType;
 
-        if (!$ok) {
+        if (! $ok) {
             $errs[] = "Type mismatch for property '{$p}': model={$modelType} db={$dbType}";
         }
 

@@ -17,7 +17,7 @@ namespace VersaORM\Tests\Mysql;
  */
 class StressTest extends TestCase
 {
-    public function testPlaceholder(): void
+    public function test_placeholder(): void
     {
         // Placeholder test to prevent PHPUnit warnings
         // TODO: Implement actual stress tests for:

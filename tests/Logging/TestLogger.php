@@ -128,7 +128,7 @@ class TestLogger
      */
     public function getTailLines(int $lines = 50): array
     {
-        if (!file_exists($this->currentLogFile)) {
+        if (! file_exists($this->currentLogFile)) {
             return [];
         }
 
@@ -171,7 +171,7 @@ class TestLogger
      */
     private function log(string $level, string $message, array $context = []): void
     {
-        if (!$this->shouldLog($level)) {
+        if (! $this->shouldLog($level)) {
             return;
         }
 
@@ -227,7 +227,7 @@ class TestLogger
      */
     private function ensureLogDirectory(): void
     {
-        if (!is_dir($this->outputDir)) {
+        if (! is_dir($this->outputDir)) {
             mkdir($this->outputDir, 0755, true);
         }
     }
@@ -271,7 +271,7 @@ class TestLogger
     {
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; ++$i) {
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 

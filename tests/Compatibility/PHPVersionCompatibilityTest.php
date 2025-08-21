@@ -64,7 +64,7 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group core
      */
-    public function testPHPVersionSupported(): void
+    public function test_php_version_supported(): void
     {
         $currentVersion = self::getCurrentPHPVersion();
 
@@ -85,7 +85,7 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group core
      */
-    public function testBasicVersaORMInstantiation(): void
+    public function test_basic_versa_orm_instantiation(): void
     {
         $config = [
             'driver' => 'sqlite',
@@ -112,7 +112,7 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group core
      */
-    public function testQueryBuilderInstantiation(): void
+    public function test_query_builder_instantiation(): void
     {
         $config = [
             'driver' => 'sqlite',
@@ -128,9 +128,9 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group features
      */
-    public function testPHP74SpecificFeatures(): void
+    public function test_ph_p74_specific_features(): void
     {
-        if (!$this->isVersionAtLeast('7.4')) {
+        if (! $this->isVersionAtLeast('7.4')) {
             self::markTestSkipped('PHP 7.4+ required for this test');
         }
 
@@ -151,9 +151,9 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group features
      */
-    public function testPHP80SpecificFeatures(): void
+    public function test_ph_p80_specific_features(): void
     {
-        if (!$this->isVersionAtLeast('8.0')) {
+        if (! $this->isVersionAtLeast('8.0')) {
             self::markTestSkipped('PHP 8.0+ required for this test');
         }
 
@@ -180,9 +180,9 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group features
      */
-    public function testPHP81SpecificFeatures(): void
+    public function test_ph_p81_specific_features(): void
     {
-        if (!$this->isVersionAtLeast('8.1')) {
+        if (! $this->isVersionAtLeast('8.1')) {
             self::markTestSkipped('PHP 8.1+ required for this test');
         }
 
@@ -206,9 +206,9 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group features
      */
-    public function testPHP82SpecificFeatures(): void
+    public function test_ph_p82_specific_features(): void
     {
-        if (!$this->isVersionAtLeast('8.2')) {
+        if (! $this->isVersionAtLeast('8.2')) {
             self::markTestSkipped('PHP 8.2+ required for this test');
         }
 
@@ -226,9 +226,9 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group features
      */
-    public function testPHP83SpecificFeatures(): void
+    public function test_ph_p83_specific_features(): void
     {
-        if (!$this->isVersionAtLeast('8.3')) {
+        if (! $this->isVersionAtLeast('8.3')) {
             self::markTestSkipped('PHP 8.3+ required for this test');
         }
 
@@ -246,14 +246,14 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group memory
      */
-    public function testMemoryUsageByVersion(): void
+    public function test_memory_usage_by_version(): void
     {
         $initialMemory = memory_get_usage(true);
 
         // Create multiple ORM instances to test memory usage
         $instances = [];
 
-        for ($i = 0; $i < 10; ++$i) {
+        for ($i = 0; $i < 10; $i++) {
             $config = [
                 'driver' => 'sqlite',
                 'database' => ':memory:',
@@ -279,13 +279,13 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group performance
      */
-    public function testPerformanceByVersion(): void
+    public function test_performance_by_version(): void
     {
         $iterations = 1000;
         $startTime = microtime(true);
 
         // Test basic operations performance
-        for ($i = 0; $i < $iterations; ++$i) {
+        for ($i = 0; $i < $iterations; $i++) {
             $config = [
                 'driver' => 'sqlite',
                 'database' => ':memory:',
@@ -310,7 +310,7 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group error-handling
      */
-    public function testErrorHandlingByVersion(): void
+    public function test_error_handling_by_version(): void
     {
         // Test that error handling works consistently across PHP versions
         // VersaORM is tolerant of configuration errors, so we test basic functionality instead
@@ -335,7 +335,7 @@ class PHPVersionCompatibilityTest extends TestCase
      * @group php-compatibility
      * @group type-system
      */
-    public function testTypeSystemCompatibility(): void
+    public function test_type_system_compatibility(): void
     {
         // Test that type declarations work across versions
         $config = [

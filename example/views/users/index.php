@@ -58,7 +58,7 @@
     </div>
 
     <!-- Lista de usuarios -->
-    <?php if (!empty($users)) { ?>
+    <?php if (! empty($users)) { ?>
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors duration-200">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 <?php foreach ($users as $user) { ?>

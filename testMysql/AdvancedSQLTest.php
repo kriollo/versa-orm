@@ -55,7 +55,7 @@ class AdvancedSQLTest extends TestCase
         $this->queryBuilder = null;
     }
 
-    public function testWindowFunctionRowNumber(): void
+    public function test_window_function_row_number(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -75,7 +75,7 @@ class AdvancedSQLTest extends TestCase
         self::assertArrayHasKey('row_num', $result[0] ?? []);
     }
 
-    public function testWindowFunctionRank(): void
+    public function test_window_function_rank(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -92,7 +92,7 @@ class AdvancedSQLTest extends TestCase
         self::assertNotEmpty($result);
     }
 
-    public function testWindowFunctionLag(): void
+    public function test_window_function_lag(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -108,7 +108,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testWindowFunctionInvalidFunction(): void
+    public function test_window_function_invalid_function(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Unsupported window function: invalid_function');
@@ -117,7 +117,7 @@ class AdvancedSQLTest extends TestCase
         $qb->windowFunction('invalid_function', 'salary');
     }
 
-    public function testWithCte(): void
+    public function test_with_cte(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -137,7 +137,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testWithCteRecursive(): void
+    public function test_with_cte_recursive(): void
     {
         // Crear tabla para pruebas recursivas (MySQL syntax)
         $this->orm->exec('DROP TABLE IF EXISTS employees');
@@ -173,7 +173,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testWithCteEmpty(): void
+    public function test_with_cte_empty(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('At least one CTE must be provided');
@@ -182,7 +182,7 @@ class AdvancedSQLTest extends TestCase
         $qb->withCte([], 'SELECT * FROM test');
     }
 
-    public function testUnion(): void
+    public function test_union(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -202,7 +202,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testUnionAll(): void
+    public function test_union_all(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -222,7 +222,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testUnionInsufficientQueries(): void
+    public function test_union_insufficient_queries(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Each UNION query must have sql and bindings keys');
@@ -231,7 +231,7 @@ class AdvancedSQLTest extends TestCase
         $qb->union([['sql' => 'SELECT * FROM test_table']]);
     }
 
-    public function testAdvancedAggregationGroupConcat(): void
+    public function test_advanced_aggregation_group_concat(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -246,7 +246,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testAdvancedAggregationPercentile(): void
+    public function test_advanced_aggregation_percentile(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -261,7 +261,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testAdvancedAggregationMedian(): void
+    public function test_advanced_aggregation_median(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -276,7 +276,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testAdvancedAggregationVariance(): void
+    public function test_advanced_aggregation_variance(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -291,7 +291,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testAdvancedAggregationInvalidType(): void
+    public function test_advanced_aggregation_invalid_type(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid aggregation type: invalid_type');
@@ -300,7 +300,7 @@ class AdvancedSQLTest extends TestCase
         $qb->advancedAggregation('invalid_type', 'salary');
     }
 
-    public function testAdvancedAggregationPercentileInvalid(): void
+    public function test_advanced_aggregation_percentile_invalid(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Percentile must be between 0 and 1');
@@ -309,7 +309,7 @@ class AdvancedSQLTest extends TestCase
         $qb->advancedAggregation('percentile', 'salary', ['percentile' => 1.5]);
     }
 
-    public function testJsonOperationExtract(): void
+    public function test_json_operation_extract(): void
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
@@ -322,7 +322,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testJsonOperationArrayLength(): void
+    public function test_json_operation_array_length(): void
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
@@ -335,7 +335,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testJsonOperationContains(): void
+    public function test_json_operation_contains(): void
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
@@ -349,7 +349,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testJsonOperationSearch(): void
+    public function test_json_operation_search(): void
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
@@ -363,7 +363,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testJsonOperationInvalid(): void
+    public function test_json_operation_invalid(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid JSON operation: invalid_op. Valid operations: extract, contains, search, array_length, type, keys');
@@ -372,7 +372,7 @@ class AdvancedSQLTest extends TestCase
         $qb->jsonOperation('invalid_op', 'profile');
     }
 
-    public function testJsonOperationExtractMissingPath(): void
+    public function test_json_operation_extract_missing_path(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('JSON operation extract requires a path');
@@ -381,7 +381,7 @@ class AdvancedSQLTest extends TestCase
         $qb->jsonOperation('extract', 'profile', '');
     }
 
-    public function testFullTextSearch(): void
+    public function test_full_text_search(): void
     {
         $qb = new QueryBuilder($this->orm, 'articles');
 
@@ -390,7 +390,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testFullTextSearchEmptyColumns(): void
+    public function test_full_text_search_empty_columns(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('At least one column must be specified for full-text search');
@@ -399,7 +399,7 @@ class AdvancedSQLTest extends TestCase
         $qb->fullTextSearch([], 'search term');
     }
 
-    public function testFullTextSearchEmptyTerm(): void
+    public function test_full_text_search_empty_term(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Search term cannot be empty');
@@ -408,7 +408,7 @@ class AdvancedSQLTest extends TestCase
         $qb->fullTextSearch(['title'], '');
     }
 
-    public function testGetDriverCapabilities(): void
+    public function test_get_driver_capabilities(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -419,7 +419,7 @@ class AdvancedSQLTest extends TestCase
         self::assertArrayHasKey('driver', $result);
     }
 
-    public function testOptimizeQuery(): void
+    public function test_optimize_query(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -428,7 +428,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testOptimizeQueryEmpty(): void
+    public function test_optimize_query_empty(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Query cannot be empty');
@@ -437,7 +437,7 @@ class AdvancedSQLTest extends TestCase
         $qb->optimizeQuery([]);
     }
 
-    public function testGetDriverLimits(): void
+    public function test_get_driver_limits(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
@@ -446,7 +446,7 @@ class AdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testCombinedAdvancedFeatures(): void
+    public function test_combined_advanced_features(): void
     {
         // Prueba que combina múltiples características avanzadas
         $qb = new QueryBuilder($this->orm, 'test_table');
@@ -460,13 +460,12 @@ class AdvancedSQLTest extends TestCase
                 ['department'],
                 [['column' => 'salary', 'direction' => 'DESC']],
                 'rank_in_dept',
-            )
-        ;
+            );
 
         self::assertIsArray($result);
     }
 
-    public function testAdvancedSQLWithInvalidColumn(): void
+    public function test_advanced_sql_with_invalid_column(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid column name');
@@ -475,7 +474,7 @@ class AdvancedSQLTest extends TestCase
         $qb->windowFunction('row_number', 'invalid--column');
     }
 
-    public function testAdvancedSQLWithUnsafeExpression(): void
+    public function test_advanced_sql_with_unsafe_expression(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe');

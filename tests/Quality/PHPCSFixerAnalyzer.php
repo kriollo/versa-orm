@@ -31,7 +31,7 @@ class PHPCSFixerAnalyzer
 
         $this->phpcsFixerPath = $phpcsFixerPath;
 
-        if (!is_dir($this->reportsDir)) {
+        if (! is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
         }
     }
@@ -129,10 +129,10 @@ class PHPCSFixerAnalyzer
         foreach ($result['violations'] as $violation) {
             $rule = $violation['rule'] ?? 'unknown';
 
-            if (!isset($metrics['violation_types'][$rule])) {
+            if (! isset($metrics['violation_types'][$rule])) {
                 $metrics['violation_types'][$rule] = 0;
             }
-            ++$metrics['violation_types'][$rule];
+            $metrics['violation_types'][$rule]++;
         }
 
         return $metrics;
@@ -143,7 +143,7 @@ class PHPCSFixerAnalyzer
      */
     public function validateConfig(): array
     {
-        if (!file_exists($this->configPath)) {
+        if (! file_exists($this->configPath)) {
             return [
                 'valid' => false,
                 'error' => 'Configuration file not found: ' . $this->configPath,
@@ -154,7 +154,7 @@ class PHPCSFixerAnalyzer
         try {
             $config = include $this->configPath;
 
-            if (!$config instanceof Config) {
+            if (! $config instanceof Config) {
                 return [
                     'valid' => false,
                     'error' => 'Configuration file does not return a PhpCsFixer\Config instance',
@@ -212,7 +212,7 @@ exit 0
             // Create .git/hooks directory if it doesn't exist
             $hooksDir = dirname($hookPath);
 
-            if (!is_dir($hooksDir)) {
+            if (! is_dir($hooksDir)) {
                 mkdir($hooksDir, 0755, true);
             }
 
@@ -282,7 +282,7 @@ exit 0
         </div>
     </div>';
 
-        if (!empty($analysisResult['violations'])) {
+        if (! empty($analysisResult['violations'])) {
             $html .= '<div class="section">
                 <h2>Style Violations</h2>';
 
@@ -351,7 +351,7 @@ exit 0
 
         $output = shell_exec($testCommand);
 
-        return !($output === '' || $output === '0' || $output === false || $output === null);
+        return ! ($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -381,7 +381,7 @@ exit 0
         foreach ($allOptions as $key => $value) {
             if (is_bool($value) && $value) {
                 $command .= ' --' . ltrim($key, '-');
-            } elseif (!is_bool($value)) {
+            } elseif (! is_bool($value)) {
                 $command .= ' --' . ltrim($key, '-') . '=' . $value;
             }
         }
@@ -401,14 +401,14 @@ exit 0
         foreach ($output as $line) {
             // Count processed files
             if (preg_match('/(\d+)\) (.+\.php)/', $line, $matches)) {
-                ++$filesProcessed;
+                $filesProcessed++;
 
                 // Extract file path
                 $filePath = $matches[2];
 
                 // Check if file was fixed (contains diff markers)
                 if (str_contains($line, '--- Original') || str_contains($line, '+++ New')) {
-                    ++$filesFixed;
+                    $filesFixed++;
                 }
 
                 // Parse violations from diff output

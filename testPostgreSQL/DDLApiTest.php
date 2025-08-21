@@ -11,7 +11,7 @@ use function is_array;
 
 class DDLApiTest extends TestCase
 {
-    public function testCreateAlterRenameDrop(): void
+    public function test_create_alter_rename_drop(): void
     {
         $orm = self::$orm;
 
@@ -55,7 +55,7 @@ class DDLApiTest extends TestCase
         self::assertFalse(in_array('ddl_mvp_people', array_map('strtolower', array_map(static fn ($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string) $t) : (string) $t, $tablesAfter)), true));
     }
 
-    public function testFreezeBlocksDDL(): void
+    public function test_freeze_blocks_ddl(): void
     {
         $orm = self::$orm;
         $orm->freeze(true);

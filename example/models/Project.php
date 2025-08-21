@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\BaseModel;
+use VersaORM\Relations\BelongsTo;
 use VersaORM\Relations\BelongsToMany;
+use VersaORM\Relations\HasMany;
 
 /**
  * Modelo Project modernizado para usar QueryBuilder de VersaORM y evitar SQL crudo.
@@ -89,37 +91,21 @@ class Project extends BaseModel
     // ===================== Relaciones y consultas =====================
 
     /** Propietario del proyecto como array exportado. */
-    public function owner(): ?array
+    public function owner(): BelongsTo
     {
-        if (!property_exists($this, 'owner_id') || $this->owner_id === null) {
-            return null;
-        }
-        // Obtener usuario vía QueryBuilder usando el ORM inyectado en la instancia
-        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int) $this->owner_id)->findOne();
-
-        return $user?->export();
+        return $this->belongsTo(User::class, 'owner_id', 'id');
     }
 
     /** Miembros del proyecto (usuarios) vía tabla pivote project_users. */
-    public function members(): array
+    public function members(): BelongsToMany
     {
-        return $this->getOrm()
-            ->table('users', User::class)
-            ->join('project_users', 'users.id', '=', 'project_users.user_id')
-            ->where('project_users.project_id', '=', $this->id)
-            ->get() // arrays ya casteados
-        ;
+        return $this->belongsToMany(User::class, 'project_users', 'project_id', 'user_id');
     }
 
     /** Tareas asociadas al proyecto ordenadas por creación desc. */
-    public function tasks(): array
+    public function tasks(): HasMany
     {
-        return $this->getOrm()
-            ->table('tasks', Task::class)
-            ->where('project_id', '=', $this->id)
-            ->orderBy('created_at', 'DESC')
-            ->get()
-        ;
+        return $this->hasMany(Task::class, 'project_id', 'id');
     }
 
     /** Añadir miembro (inserta en project_users si no existe ya). */
@@ -149,7 +135,7 @@ class Project extends BaseModel
             ->get();
 
         foreach ($rows as $row) {
-            if (!isset($row['id'])) {
+            if (! isset($row['id'])) {
                 continue;
             }
             $pivot = $this->load('project_users', (int) $row['id']);
@@ -177,7 +163,7 @@ class Project extends BaseModel
     /** Genera color aleatorio si no viene definido. */
     private function ensureColor(array &$attributes): void
     {
-        if (!isset($attributes['color'])) {
+        if (! isset($attributes['color'])) {
             $attributes['color'] = $this->generateRandomColor();
         }
     }

@@ -19,20 +19,19 @@ class QueryBuilderJoinTest extends TestCase
     // JOIN Clauses - All Types
     // ======================================================================
 
-    public function testInnerJoin(): void
+    public function test_inner_join(): void
     {
         $posts = self::$orm->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('users.status', '=', 'active')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertCount(2, $posts);
         self::assertSame('Alice', $posts[0]['author']);
     }
 
-    public function testLeftJoin(): void
+    public function test_left_join(): void
     {
         // Insert a user without posts to test LEFT JOIN properly
         self::$orm->table('users')->insert(['name' => 'Eve', 'email' => 'eve@example.com', 'status' => 'active']);
@@ -41,21 +40,19 @@ class QueryBuilderJoinTest extends TestCase
             ->select(['users.name', 'posts.id as post_id'])
             ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
             ->whereNull('posts.id')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertGreaterThanOrEqual(2, count($users)); // Charlie and Eve have no posts
     }
 
-    public function testRightJoin(): void
+    public function test_right_join(): void
     {
         // Test RIGHT JOIN with existing data instead of creating orphaned records
         // RIGHT JOIN should return all records from the right table (posts)
         $results = self::$orm->table('users')
             ->select(['users.name', 'posts.title'])
             ->rightJoin('posts', 'users.id', '=', 'posts.user_id')
-            ->getAll()
-        ;
+            ->getAll();
 
         // Should return at least the existing posts
         self::assertGreaterThanOrEqual(1, count($results));
@@ -67,7 +64,7 @@ class QueryBuilderJoinTest extends TestCase
         }
     }
 
-    public function testFullOuterJoin(): void
+    public function test_full_outer_join(): void
     {
         // Test FULL OUTER JOIN with existing data
         // Insert a user without posts
@@ -76,8 +73,7 @@ class QueryBuilderJoinTest extends TestCase
         $results = self::$orm->table('users')
             ->select(['users.name', 'posts.title'])
             ->fullOuterJoin('posts', 'users.id', '=', 'posts.user_id')
-            ->getAll()
-        ;
+            ->getAll();
 
         // Should include all users and all posts
         self::assertGreaterThanOrEqual(3, count($results));
@@ -89,15 +85,14 @@ class QueryBuilderJoinTest extends TestCase
         }
     }
 
-    public function testCrossJoin(): void
+    public function test_cross_join(): void
     {
         // Test CROSS JOIN with existing tables (users and posts)
         $results = self::$orm->table('users')
             ->select(['users.name as user_name', 'posts.title as post_title'])
             ->crossJoin('posts')
             ->limit(10) // Limit to avoid too many results
-            ->getAll()
-        ;
+            ->getAll();
 
         // CROSS JOIN should return Cartesian product
         self::assertGreaterThanOrEqual(1, count($results));
@@ -109,15 +104,14 @@ class QueryBuilderJoinTest extends TestCase
         }
     }
 
-    public function testMultipleJoins(): void
+    public function test_multiple_joins(): void
     {
         // Test multiple JOINs with only existing tables
         $results = self::$orm->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('users.status', '=', 'active')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertGreaterThanOrEqual(1, count($results));
 
@@ -127,7 +121,7 @@ class QueryBuilderJoinTest extends TestCase
         }
     }
 
-    public function testCompositeJoinViaOn(): void
+    public function test_composite_join_via_on(): void
     {
         // Simular join compuesto: posts/user y adicionalmente asegurar otra igualdad artificial (posts.user_id = users.id AND posts.user_id = users.id)
         $results = self::$orm->table('posts as p')
@@ -136,8 +130,7 @@ class QueryBuilderJoinTest extends TestCase
             ->on('p.user_id', '=', 'u.id')
             ->on('p.user_id', '=', 'u.id') // segunda condición redundante para probar encadenamiento
             ->where('u.status', '=', 'active')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertGreaterThanOrEqual(1, count($results));
 
@@ -146,15 +139,14 @@ class QueryBuilderJoinTest extends TestCase
         }
     }
 
-    public function testJoinWithComplexConditions(): void
+    public function test_join_with_complex_conditions(): void
     {
         $results = self::$orm->table('users')
             ->select(['users.name', 'posts.title'])
             ->join('posts', 'users.id', '=', 'posts.user_id')
             ->where('users.status', '=', 'active')
             ->where('posts.title', 'LIKE', '%Post%')
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertGreaterThanOrEqual(1, count($results));
 
@@ -168,7 +160,7 @@ class QueryBuilderJoinTest extends TestCase
     // JOIN Security Tests
     // ======================================================================
 
-    public function testJoinMethodsExist(): void
+    public function test_join_methods_exist(): void
     {
         // Test that new JOIN methods exist and are chainable
         $query = self::$orm->table('users');
@@ -182,26 +174,23 @@ class QueryBuilderJoinTest extends TestCase
         self::assertInstanceOf(QueryBuilder::class, $chainedQuery);
     }
 
-    public function testJoinSqlGeneration(): void
+    public function test_join_sql_generation(): void
     {
         // Test that JOIN SQL is generated correctly (we can't easily test actual execution)
         // This is more of a smoke test to ensure methods work
         $query = self::$orm->table('users')
             ->select(['users.name', 'posts.title'])
-            ->rightJoin('posts', 'users.id', '=', 'posts.user_id')
-        ;
+            ->rightJoin('posts', 'users.id', '=', 'posts.user_id');
 
         self::assertInstanceOf(QueryBuilder::class, $query);
 
         $query2 = self::$orm->table('users')
-            ->fullOuterJoin('posts', 'users.id', '=', 'posts.user_id')
-        ;
+            ->fullOuterJoin('posts', 'users.id', '=', 'posts.user_id');
 
         self::assertInstanceOf(QueryBuilder::class, $query2);
 
         $query3 = self::$orm->table('users')
-            ->crossJoin('posts')
-        ;
+            ->crossJoin('posts');
 
         self::assertInstanceOf(QueryBuilder::class, $query3);
     }
@@ -210,50 +199,45 @@ class QueryBuilderJoinTest extends TestCase
     // JOIN Performance and Edge Cases
     // ======================================================================
 
-    public function testJoinWithEmptyResult(): void
+    public function test_join_with_empty_result(): void
     {
         $results = self::$orm->table('users')
             ->join('posts', 'users.id', '=', 'posts.user_id')
             ->where('users.id', '=', 99999) // Non-existent user
-            ->getAll()
-        ;
+            ->getAll();
 
         self::assertCount(0, $results);
     }
 
-    public function testJoinChaining(): void
+    public function test_join_chaining(): void
     {
         $query = self::$orm->table('posts')
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->leftJoin('categories', 'posts.category_id', '=', 'categories.id')
-            ->rightJoin('tags', 'posts.id', '=', 'tags.post_id')
-        ;
+            ->rightJoin('tags', 'posts.id', '=', 'tags.post_id');
 
         // Test that the query builder is chainable
         self::assertInstanceOf(QueryBuilder::class, $query);
 
         // Test that we can continue building the query
         $finalQuery = $query->select(['posts.title', 'users.name'])
-            ->where('users.status', '=', 'active')
-        ;
+            ->where('users.status', '=', 'active');
 
         self::assertInstanceOf(QueryBuilder::class, $finalQuery);
     }
 
-    public function testJoinWithSubquery(): void
+    public function test_join_with_subquery(): void
     {
         // This tests the integration between JOINs and subqueries
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
-            ->having('post_count', '>', 1)
-        ;
+            ->having('post_count', '>', 1);
 
         $results = self::$orm->table('users')
             ->select(['users.name', 'active_users.post_count'])
             ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
-            ->getAll()
-        ;
+            ->getAll();
 
         // The test should work now with Rust engine support
         self::assertIsArray($results);

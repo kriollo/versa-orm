@@ -25,7 +25,7 @@ class QueryBuilderBatchTest extends TestCase
     // INSERT MANY TESTS
     // ======================================================================
 
-    public function testInsertManyBasic(): void
+    public function test_insert_many_basic(): void
     {
         $records = [
             ['name' => 'Test User 1', 'email' => 'test1@example.com', 'status' => 'active'],
@@ -45,11 +45,11 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame(3, $count);
     }
 
-    public function testInsertManyWithBatchSize(): void
+    public function test_insert_many_with_batch_size(): void
     {
         $records = [];
 
-        for ($i = 1; $i <= 5; ++$i) {
+        for ($i = 1; $i <= 5; $i++) {
             $records[] = [
                 'name' => "Batch User {$i}",
                 'email' => "batch{$i}@example.com",
@@ -66,7 +66,7 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame('success', $result['status']);
     }
 
-    public function testInsertManyEmptyRecords(): void
+    public function test_insert_many_empty_records(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('insertMany requires at least one record to insert');
@@ -74,7 +74,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany([]);
     }
 
-    public function testInsertManyInvalidRecord(): void
+    public function test_insert_many_invalid_record(): void
     {
         $records = [
             ['name' => 'Valid User', 'email' => 'valid@example.com'],
@@ -87,7 +87,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany($records);
     }
 
-    public function testInsertManyInconsistentStructure(): void
+    public function test_insert_many_inconsistent_structure(): void
     {
         $records = [
             ['name' => 'User 1', 'email' => 'user1@example.com'],
@@ -100,7 +100,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany($records);
     }
 
-    public function testInsertManyInvalidBatchSize(): void
+    public function test_insert_many_invalid_batch_size(): void
     {
         $records = [
             ['name' => 'Test User', 'email' => 'test@example.com'],
@@ -112,7 +112,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->insertMany($records, 0);
     }
 
-    public function testInsertManyMaliciousColumnNames(): void
+    public function test_insert_many_malicious_column_names(): void
     {
         $records = [
             ['name; DROP TABLE users; --' => 'Malicious', 'email' => 'hack@example.com'],
@@ -128,7 +128,7 @@ class QueryBuilderBatchTest extends TestCase
     // UPDATE MANY TESTS
     // ======================================================================
 
-    public function testUpdateManyBasic(): void
+    public function test_update_many_basic(): void
     {
         // Insertar datos de prueba con marcadores únicos
         $uniqueMarker = 'update_test_' . time() . '_' . mt_rand(1000, 9999);
@@ -140,8 +140,7 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')
             ->where('status', '=', $uniqueMarker . '_inactive')
-            ->updateMany(['status' => $uniqueMarker . '_updated'], 1000)
-        ;
+            ->updateMany(['status' => $uniqueMarker . '_updated'], 1000);
 
         self::assertIsArray($result);
         self::assertSame(2, $result['rows_affected']);
@@ -152,13 +151,13 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame(2, $updatedCount);
     }
 
-    public function testUpdateManyWithMaxRecordsLimit(): void
+    public function test_update_many_with_max_records_limit(): void
     {
         // Insertar varios registros con marcador único
         $uniqueMarker = 'limit_test_' . time() . '_' . mt_rand(1000, 9999);
         $records = [];
 
-        for ($i = 1; $i <= 5; ++$i) {
+        for ($i = 1; $i <= 5; $i++) {
             $records[] = [
                 'name' => "Limit Test {$i}",
                 'email' => "limit{$i}@example.com",
@@ -173,11 +172,10 @@ class QueryBuilderBatchTest extends TestCase
 
         self::$orm->table('users')
             ->where('status', '=', $uniqueMarker . '_pending')
-            ->updateMany(['status' => 'active'], 2) // Límite de 2, pero hay 5 registros
-        ;
+            ->updateMany(['status' => 'active'], 2); // Límite de 2, pero hay 5 registros
     }
 
-    public function testUpdateManyNoWhereCondition(): void
+    public function test_update_many_no_where_condition(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('updateMany requires WHERE conditions to prevent accidental mass updates');
@@ -185,7 +183,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->updateMany(['status' => 'updated']);
     }
 
-    public function testUpdateManyEmptyData(): void
+    public function test_update_many_empty_data(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('updateMany requires data to update');
@@ -193,23 +191,21 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->where('id', '>', 0)->updateMany([]);
     }
 
-    public function testUpdateManyMaliciousColumnNames(): void
+    public function test_update_many_malicious_column_names(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid or malicious column name detected');
 
         self::$orm->table('users')
             ->where('id', '>', 0)
-            ->updateMany(['name; DROP TABLE users; --' => 'malicious'])
-        ;
+            ->updateMany(['name; DROP TABLE users; --' => 'malicious']);
     }
 
-    public function testUpdateManyNoMatchingRecords(): void
+    public function test_update_many_no_matching_records(): void
     {
         $result = self::$orm->table('users')
             ->where('email', '=', 'nonexistent@example.com')
-            ->updateMany(['status' => 'updated'])
-        ;
+            ->updateMany(['status' => 'updated']);
 
         self::assertSame(0, $result['rows_affected']);
         self::assertSame('success', $result['status']);
@@ -220,7 +216,7 @@ class QueryBuilderBatchTest extends TestCase
     // DELETE MANY TESTS
     // ======================================================================
 
-    public function testDeleteManyBasic(): void
+    public function test_delete_many_basic(): void
     {
         // Insertar datos de prueba
         self::$orm->table('users')->insertMany([
@@ -231,8 +227,7 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')
             ->where('status', '=', 'to_delete')
-            ->deleteMany(1000)
-        ;
+            ->deleteMany(1000);
 
         self::assertIsArray($result);
         self::assertSame(2, $result['rows_affected']);
@@ -246,12 +241,12 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame(1, $remainingCount);
     }
 
-    public function testDeleteManyWithMaxRecordsLimit(): void
+    public function test_delete_many_with_max_records_limit(): void
     {
         // Insertar varios registros
         $records = [];
 
-        for ($i = 1; $i <= 5; ++$i) {
+        for ($i = 1; $i <= 5; $i++) {
             $records[] = [
                 'name' => "Delete Limit Test {$i}",
                 'email' => "delete_limit{$i}@example.com",
@@ -266,11 +261,10 @@ class QueryBuilderBatchTest extends TestCase
 
         self::$orm->table('users')
             ->where('status', '=', 'bulk_delete')
-            ->deleteMany(2) // Límite de 2, pero hay 5 registros
-        ;
+            ->deleteMany(2); // Límite de 2, pero hay 5 registros
     }
 
-    public function testDeleteManyNoWhereCondition(): void
+    public function test_delete_many_no_where_condition(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('deleteMany requires WHERE conditions to prevent accidental mass deletions');
@@ -278,12 +272,11 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->deleteMany();
     }
 
-    public function testDeleteManyNoMatchingRecords(): void
+    public function test_delete_many_no_matching_records(): void
     {
         $result = self::$orm->table('users')
             ->where('email', '=', 'nonexistent_delete@example.com')
-            ->deleteMany()
-        ;
+            ->deleteMany();
 
         self::assertSame(0, $result['rows_affected']);
         self::assertSame('success', $result['status']);
@@ -294,7 +287,7 @@ class QueryBuilderBatchTest extends TestCase
     // UPSERT MANY TESTS
     // ======================================================================
 
-    public function testUpsertManyBasic(): void
+    public function test_upsert_many_basic(): void
     {
         // Primero insertar algunos registros base
         $insertResult = self::$orm->table('products')->insertMany([
@@ -313,8 +306,7 @@ class QueryBuilderBatchTest extends TestCase
         ];
 
         $result = self::$orm->table('products')
-            ->upsertMany($records, ['sku'], ['name', 'price'])
-        ;
+            ->upsertMany($records, ['sku'], ['name', 'price']);
 
         self::assertIsArray($result);
         self::assertSame(3, $result['total_processed']);
@@ -334,7 +326,7 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame('New Product 3', $newProduct['name']);
     }
 
-    public function testUpsertManyEmptyRecords(): void
+    public function test_upsert_many_empty_records(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('upsertMany requires at least one record');
@@ -342,7 +334,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->upsertMany([], ['sku']);
     }
 
-    public function testUpsertManyEmptyUniqueKeys(): void
+    public function test_upsert_many_empty_unique_keys(): void
     {
         $records = [
             ['sku' => 'TEST001', 'name' => 'Test Product'],
@@ -354,7 +346,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->upsertMany($records, []);
     }
 
-    public function testUpsertManyMissingUniqueKey(): void
+    public function test_upsert_many_missing_unique_key(): void
     {
         $records = [
             ['name' => 'Product without SKU', 'price' => 100.0], // Falta 'sku'
@@ -366,7 +358,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->upsertMany($records, ['sku']);
     }
 
-    public function testUpsertManyInvalidUniqueKeyName(): void
+    public function test_upsert_many_invalid_unique_key_name(): void
     {
         $records = [
             ['sku' => 'TEST001', 'name' => 'Test Product'],
@@ -378,7 +370,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('products')->upsertMany($records, ['sku; DROP TABLE products; --']);
     }
 
-    public function testUpsertManyInvalidUpdateColumnName(): void
+    public function test_upsert_many_invalid_update_column_name(): void
     {
         $records = [
             ['sku' => 'TEST001', 'name' => 'Test Product'],
@@ -398,7 +390,7 @@ class QueryBuilderBatchTest extends TestCase
     // UPSERT INDIVIDUAL TESTS
     // ======================================================================
 
-    public function testUpsertIndividualBasic(): void
+    public function test_upsert_individual_basic(): void
     {
         // Test básico de upsert para un registro individual
         $data = [
@@ -421,7 +413,7 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame(199.99, (float) $created['price']);
     }
 
-    public function testUpsertIndividualUpdate(): void
+    public function test_upsert_individual_update(): void
     {
         // Insertar registro inicial
         self::$orm->table('products')->insert([
@@ -449,7 +441,7 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame(150.0, (float) $updated['price']);
     }
 
-    public function testUpsertIndividualWithoutUpdateColumns(): void
+    public function test_upsert_individual_without_update_columns(): void
     {
         // Test upsert sin especificar columnas de actualización (debería actualizar todas)
         self::$orm->table('products')->insert([
@@ -479,12 +471,12 @@ class QueryBuilderBatchTest extends TestCase
     // EDGE CASES AND SECURITY TESTS
     // ======================================================================
 
-    public function testBatchOperationsWithLargeDatasets(): void
+    public function test_batch_operations_with_large_datasets(): void
     {
         // Test con un dataset más grande para verificar el rendimiento
         $records = [];
 
-        for ($i = 1; $i <= 100; ++$i) {
+        for ($i = 1; $i <= 100; $i++) {
             $records[] = [
                 'name' => "Performance Test User {$i}",
                 'email' => "perf{$i}@example.com",
@@ -508,7 +500,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->where('status', '=', 'performance_test')->deleteMany(200);
     }
 
-    public function testBatchOperationsTransactionIntegrity(): void
+    public function test_batch_operations_transaction_integrity(): void
     {
         // Insertar registros válidos seguidos de uno inválido
         // Esto debería fallar y no insertar ningún registro del lote fallido
@@ -531,7 +523,7 @@ class QueryBuilderBatchTest extends TestCase
         }
     }
 
-    public function testBatchOperationsWithSpecialCharacters(): void
+    public function test_batch_operations_with_special_characters(): void
     {
         $records = [
             ['name' => "Test with 'quotes'", 'email' => 'quotes@example.com', 'status' => 'special'],
@@ -557,7 +549,7 @@ class QueryBuilderBatchTest extends TestCase
         self::$orm->table('users')->where('status', '=', 'special')->deleteMany(10);
     }
 
-    public function testBatchOperationsErrorRecovery(): void
+    public function test_batch_operations_error_recovery(): void
     {
         // Test que verifica el manejo de errores y recuperación
         $validRecords = [
@@ -572,8 +564,7 @@ class QueryBuilderBatchTest extends TestCase
         // Ahora intentar actualización con condiciones que no matchean
         $updateResult = self::$orm->table('users')
             ->where('status', '=', 'nonexistent_status')
-            ->updateMany(['name' => 'Updated'])
-        ;
+            ->updateMany(['name' => 'Updated']);
 
         self::assertSame(0, $updateResult['rows_affected']);
         self::assertSame('No records matched the WHERE conditions', $updateResult['message']);

@@ -16,14 +16,13 @@ class AliasValidationTest extends TestCase
     /**
      * Test para alias de tabla simples.
      */
-    public function testTableAliasSimple(): void
+    public function test_table_alias_simple(): void
     {
         // Alias con palabras completas
         $result = self::$orm->table('users as u')
             ->select(['u.*'])
             ->limit(1)
-            ->get()
-        ;
+            ->get();
 
         self::assertIsArray($result);
     }
@@ -31,14 +30,13 @@ class AliasValidationTest extends TestCase
     /**
      * Test para patrones de columna con asterisco (el caso que estaba fallando).
      */
-    public function testColumnWildcardPatterns(): void
+    public function test_column_wildcard_patterns(): void
     {
         // Patrón table.* - este era el que causaba "Invalid or malicious column name detected: t.*"
         $result = self::$orm->table('users as u')
             ->select(['u.*'])
             ->limit(1)
-            ->get()
-        ;
+            ->get();
 
         self::assertIsArray($result);
 
@@ -46,8 +44,7 @@ class AliasValidationTest extends TestCase
         $result = self::$orm->table('users')
             ->select(['*'])
             ->limit(1)
-            ->get()
-        ;
+            ->get();
 
         self::assertIsArray($result);
     }
@@ -55,18 +52,17 @@ class AliasValidationTest extends TestCase
     /**
      * Test para alias de columna.
      */
-    public function testColumnAliases(): void
+    public function test_column_aliases(): void
     {
         // Alias simple de columna
         $result = self::$orm->table('users')
             ->select(['name as user_name'])
             ->limit(1)
-            ->get()
-        ;
+            ->get();
 
         self::assertIsArray($result);
 
-        if (!empty($result)) {
+        if (! empty($result)) {
             self::assertArrayHasKey('user_name', $result[0]);
         }
     }
@@ -74,14 +70,13 @@ class AliasValidationTest extends TestCase
     /**
      * Test para JOINs básicos con alias (usando esquema más simple).
      */
-    public function testBasicJoinWithAliases(): void
+    public function test_basic_join_with_aliases(): void
     {
         // JOIN simple con alias solo si existe la relación
         $result = self::$orm->table('users as u')
             ->select(['u.id', 'u.name'])
             ->limit(1)
-            ->get()
-        ;
+            ->get();
 
         self::assertIsArray($result);
 
@@ -89,8 +84,7 @@ class AliasValidationTest extends TestCase
         $result = self::$orm->table('users as u1')
             ->select(['u1.name as user1_name'])
             ->limit(1)
-            ->get()
-        ;
+            ->get();
 
         self::assertIsArray($result);
     }
@@ -98,7 +92,7 @@ class AliasValidationTest extends TestCase
     /**
      * Test para casos que DEBEN fallar (seguridad).
      */
-    public function testInvalidAliasesShouldFail(): void
+    public function test_invalid_aliases_should_fail(): void
     {
         // Alias con caracteres maliciosos deben fallar
         $maliciousAliases = [
@@ -112,8 +106,7 @@ class AliasValidationTest extends TestCase
                 self::$orm->table($maliciousAlias)
                     ->select(['*'])
                     ->limit(1)
-                    ->get()
-                ;
+                    ->get();
 
                 self::fail("Se esperaba que el alias malicioso fallara: {$maliciousAlias}");
             } catch (VersaORMException $e) {

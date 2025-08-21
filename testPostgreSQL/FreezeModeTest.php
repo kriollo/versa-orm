@@ -8,7 +8,7 @@ use VersaORM\VersaModel;
 
 class FreezeModeTest extends TestCase
 {
-    public function testFreezeGlobalToggle(): void
+    public function test_freeze_global_toggle(): void
     {
         $orm = self::$orm;
 
@@ -24,14 +24,14 @@ class FreezeModeTest extends TestCase
         self::assertFalse($orm->isFrozen());
     }
 
-    public function testFreezePerModel(): void
+    public function test_freeze_per_model(): void
     {
         $orm = self::$orm;
 
         // Definir un modelo inline de pruebas
         $modelClass = __NAMESPACE__ . '\FreezeDummyModel';
 
-        if (!class_exists($modelClass)) {
+        if (! class_exists($modelClass)) {
             eval('namespace ' . __NAMESPACE__ . '; class FreezeDummyModel extends \VersaORM\VersaModel { public function __construct($orm=null){ parent::__construct("test_users", $orm ?? \VersaORM\VersaModel::getGlobalORM()); } }');
         }
 
@@ -48,14 +48,14 @@ class FreezeModeTest extends TestCase
         self::assertFalse($orm->isModelFrozen($modelClass));
     }
 
-    public function testModelStaticHelpers(): void
+    public function test_model_static_helpers(): void
     {
         $orm = self::$orm;
 
         // Definir un modelo inline y set global ORM
         $modelClass = __NAMESPACE__ . '\FreezeStaticModel';
 
-        if (!class_exists($modelClass)) {
+        if (! class_exists($modelClass)) {
             eval('namespace ' . __NAMESPACE__ . '; class FreezeStaticModel extends \VersaORM\VersaModel { public function __construct($orm=null){ parent::__construct("test_users", $orm ?? \VersaORM\VersaModel::getGlobalORM()); } }');
         }
 

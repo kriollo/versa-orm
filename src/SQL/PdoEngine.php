@@ -190,7 +190,7 @@ class PdoEngine
         if ($count <= 0) {
             return;
         }
-        ++self::$metrics['hydration_fastpath_uses'];
+        self::$metrics['hydration_fastpath_uses']++;
         self::$metrics['hydration_fastpath_rows'] += $count;
         self::$metrics['hydration_fastpath_ms'] += $elapsedMs;
         // También acumular en métricas generales de hidratación
@@ -292,7 +292,7 @@ class PdoEngine
         if ($action === 'query_plan') {
             $operations = $params['operations'] ?? [];
 
-            if (!is_array($operations) || $operations === []) {
+            if (! is_array($operations) || $operations === []) {
                 return [];
             }
             // Ejecutar sólo la primera operación como fallback
@@ -376,26 +376,26 @@ class PdoEngine
                             throw new VersaORMException('set_operation requires at least 2 queries');
                         }
                         $valid = ['UNION', 'UNION ALL', 'INTERSECT', 'INTERSECT ALL', 'EXCEPT', 'EXCEPT ALL'];
-                        if (!in_array($setType, $valid, true)) {
+                        if (! in_array($setType, $valid, true)) {
                             throw new VersaORMException('Invalid set operation type: ' . $setType);
                         }
                         // Soporte según driver: MySQL y SQLite no manejan INTERSECT/EXCEPT ALL nativamente en versiones antiguas
                         // Simplificación: si no soporta, lanzar excepción explícita.
                         $supportsIntersectExcept = str_contains($driver, 'postgres');
-                        if (!$supportsIntersectExcept && (str_starts_with($setType, 'INTERSECT') || str_starts_with($setType, 'EXCEPT'))) {
+                        if (! $supportsIntersectExcept && (str_starts_with($setType, 'INTERSECT') || str_starts_with($setType, 'EXCEPT'))) {
                             throw new VersaORMException('Driver does not support ' . $setType . ' in PDO mode');
                         }
                         // Construir SQL concatenando queries con operador
                         $parts = [];
                         $bindings = [];
                         foreach ($queries as $q) {
-                            if (!is_array($q) || !isset($q['sql']) || !is_string($q['sql'])) {
+                            if (! is_array($q) || ! isset($q['sql']) || ! is_string($q['sql'])) {
                                 throw new VersaORMException('Each set_operation query must have sql');
                             }
                             // Nota: SQLite puede fallar con paréntesis envolviendo selects simples en UNION.
                             // Estrategia: no envolver cuando es UNION / UNION ALL y la consulta no contiene palabras clave que requieran aislamiento.
                             $sqlPart = $q['sql'];
-                            $needsWrap = !str_starts_with($setType, 'UNION');
+                            $needsWrap = ! str_starts_with($setType, 'UNION');
                             if ($needsWrap) {
                                 $sqlPart = '(' . $sqlPart . ')';
                             }
@@ -489,7 +489,7 @@ class PdoEngine
                         $baseQualifierQuoted = $this->dialect->quoteIdentifier($baseQualifier);
                         $over = [];
 
-                        if (!empty($partition)) {
+                        if (! empty($partition)) {
                             // Calificar columnas de PARTITION BY con alias/tabla base si no vienen calificadas
                             $parts = array_map(function ($p) use ($baseQualifierQuoted): string {
                                 if ($p === '*' || str_contains($p, '(')) {
@@ -505,14 +505,14 @@ class PdoEngine
                             $over[] = 'PARTITION BY ' . implode(', ', $parts);
                         }
 
-                        if (!empty($orderBy)) {
+                        if (! empty($orderBy)) {
                             $ob = [];
 
                             foreach ($orderBy as $o) {
                                 $dir = strtoupper((string) ($o['direction'] ?? 'ASC'));
                                 $col = (string) ($o['column'] ?? '');
 
-                                if ($col !== '' && $col !== '*' && !str_contains($col, '.') && !str_contains($col, '(')) {
+                                if ($col !== '' && $col !== '*' && ! str_contains($col, '.') && ! str_contains($col, '(')) {
                                     $col = $baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($col);
                                 }
                                 $ob[] = $col . ' ' . (in_array($dir, ['ASC', 'DESC'], true) ? $dir : 'ASC');
@@ -589,12 +589,12 @@ class PdoEngine
                             $querySql = (string) ($c['query'] ?? '');
                             $colsDef = '';
 
-                            if (!empty($c['columns']) && is_array($c['columns'])) {
+                            if (! empty($c['columns']) && is_array($c['columns'])) {
                                 $quotedCols = array_map(fn ($col): string => $this->dialect->quoteIdentifier((string) $col), $c['columns']);
                                 $colsDef = ' (' . implode(', ', $quotedCols) . ')';
                             }
 
-                            if (!empty($c['recursive'])) {
+                            if (! empty($c['recursive'])) {
                                 $isRecursive = true;
                             }
                             $withParts[] = $this->dialect->quoteIdentifier($name) . $colsDef . ' AS (' . $querySql . ')';
@@ -692,7 +692,7 @@ class PdoEngine
                             if ($arrowStyle) {
                                 // Convertir col->a->b->>c en JSON_EXTRACT(col,'$.a.b.c') y opcional JSON_UNQUOTE
                                 $segments = preg_split('/->>?/', $path);
-                                if (!is_array($segments)) {
+                                if (! is_array($segments)) {
                                     $segments = [];
                                 }
                                 // Filtrar segmentos vacíos o que repitan el nombre de la columna
@@ -774,7 +774,7 @@ class PdoEngine
                             $match = 'MATCH(' . implode(', ', $cols) . ') AGAINST (?' . $modeSql . ')';
                             $select = '*';
 
-                            if (!empty($options['with_score'])) {
+                            if (! empty($options['with_score'])) {
                                 $select = '*, ' . $match . ' AS score';
                             }
                             $sql = 'SELECT ' . $select . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $match;
@@ -790,7 +790,7 @@ class PdoEngine
                             // Usar to_tsvector/tsquery; si la columna ya es tsvector, comparar directamente
                             $language = (string) ($options['language'] ?? 'english');
                             $operator = (string) ($options['operator'] ?? '@@');
-                            $rank = !empty($options['rank']);
+                            $rank = ! empty($options['rank']);
                             $colExpr = implode(' || \" \" || ', array_map(static fn ($c): string => "to_tsvector('" . $language . "', " . $c . ')', $cols));
 
                             // Si solo una columna y parece tsvector, usarla directa
@@ -885,7 +885,7 @@ class PdoEngine
                             }
                             $sql = 'SELECT ' . (empty($groupBy) ? $expr : implode(', ', $groupBy) . ', ' . $expr) . ' FROM ' . $this->dialect->quoteIdentifier($table);
 
-                            if (!empty($groupBy)) {
+                            if (! empty($groupBy)) {
                                 $sql .= ' GROUP BY ' . implode(', ', $groupBy);
                             }
                             $stmt = $this->prepareCached($pdo, $sql);
@@ -1202,10 +1202,10 @@ class PdoEngine
     /** Registra ejecución de consulta */
     private function recordQuery(bool $isWrite, float $elapsedMs): void
     {
-        ++self::$metrics['queries'];
+        self::$metrics['queries']++;
 
         if ($isWrite) {
-            ++self::$metrics['writes'];
+            self::$metrics['writes']++;
         }
         self::$metrics['last_query_ms'] = $elapsedMs;
         self::$metrics['total_query_ms'] += $elapsedMs;
@@ -1214,13 +1214,13 @@ class PdoEngine
     /** Registra hit de caché */
     private function recordCacheHit(): void
     {
-        ++self::$metrics['cache_hits'];
+        self::$metrics['cache_hits']++;
     }
 
     /** Registra miss de caché */
     private function recordCacheMiss(): void
     {
-        ++self::$metrics['cache_misses'];
+        self::$metrics['cache_misses']++;
     }
 
     /**
@@ -1277,7 +1277,7 @@ class PdoEngine
         $key = md5($sql);
 
         if (isset(self::$stmtCache[$key])) {
-            ++self::$metrics['stmt_cache_hits'];
+            self::$metrics['stmt_cache_hits']++;
             // LRU: mover al final (reinsertar)
             $stmt = self::$stmtCache[$key];
             unset(self::$stmtCache[$key]);
@@ -1285,7 +1285,7 @@ class PdoEngine
 
             return $stmt;
         }
-        ++self::$metrics['stmt_cache_misses'];
+        self::$metrics['stmt_cache_misses']++;
         $start = microtime(true);
         $stmt = $pdo->prepare($sql);
         self::$metrics['total_prepare_ms'] += (microtime(true) - $start) * 1000;
@@ -1323,7 +1323,7 @@ class PdoEngine
         $records = $params['records'] ?? [];
         $batchSize = (int) ($params['batch_size'] ?? 1000);
 
-        if (!is_array($records) || $records === []) {
+        if (! is_array($records) || $records === []) {
             return [
                 'status' => 'success',
                 'total_inserted' => 0,
@@ -1370,7 +1370,7 @@ class PdoEngine
                     break;
                 }
             }
-            if (!$explicitIdPresent && ($driverName === 'mysql' || $driverName === 'sqlite')) {
+            if (! $explicitIdPresent && ($driverName === 'mysql' || $driverName === 'sqlite')) {
                 try {
                     $lastIdRaw = $pdo->lastInsertId();
                     if ($lastIdRaw !== false && $lastIdRaw !== '') {
@@ -1806,7 +1806,7 @@ class PdoEngine
         $joinConditions = isset($op['join_conditions']) && is_array($op['join_conditions']) ? array_values($op['join_conditions']) : [];
 
         foreach ($joinConditions as $j) {
-            if (!is_array($j)) {
+            if (! is_array($j)) {
                 continue;
             }
             $params['joins'][] = [
@@ -1822,7 +1822,7 @@ class PdoEngine
         $whereConditions = isset($op['conditions']) && is_array($op['conditions']) ? array_values($op['conditions']) : [];
 
         foreach ($whereConditions as $w) {
-            if (!is_array($w)) {
+            if (! is_array($w)) {
                 continue;
             }
             $params['where'][] = [
@@ -1904,7 +1904,7 @@ class PdoEngine
             self::$tableKeyIndex[$table] ??= [];
 
             // Evitar inflar con duplicados
-            if (!in_array($key, self::$tableKeyIndex[$table], true)) {
+            if (! in_array($key, self::$tableKeyIndex[$table], true)) {
                 self::$tableKeyIndex[$table][] = $key;
             }
         }
@@ -1914,7 +1914,7 @@ class PdoEngine
     {
         $t = strtolower($table);
 
-        if (!isset(self::$tableKeyIndex[$t])) {
+        if (! isset(self::$tableKeyIndex[$t])) {
             return;
         }
 

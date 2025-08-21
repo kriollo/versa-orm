@@ -43,7 +43,7 @@ class TransactionsRollbackTest extends TestCase
         }
     }
 
-    public function testCommitPersistsChanges(): void
+    public function test_commit_persists_changes(): void
     {
         self::$orm->beginTransaction();
         self::$orm->table('tx_users')->insert(['name' => 'Tx Commit', 'email' => 'tx.commit@example.com']);
@@ -54,7 +54,7 @@ class TransactionsRollbackTest extends TestCase
         self::assertSame('Tx Commit', $found->name);
     }
 
-    public function testRollbackRevertsChanges(): void
+    public function test_rollback_reverts_changes(): void
     {
         // Estado inicial vacío
         $pre = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();

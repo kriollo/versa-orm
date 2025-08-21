@@ -11,7 +11,7 @@ require_once __DIR__ . '/TestCase.php';
 
 class AdvancedTypeMappingTest extends TestCase
 {
-    public function testJsonTypeConversion(): void
+    public function test_json_type_conversion(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $jsonString = '{"key": "value"}';
@@ -23,7 +23,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['key' => 'value'], $result);
     }
 
-    public function testJsonTypeConversionWithAlreadyDecodedData(): void
+    public function test_json_type_conversion_with_already_decoded_data(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $arrayData = ['key' => 'value'];
@@ -35,7 +35,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['key' => 'value'], $result);
     }
 
-    public function testUuidTypeConversion(): void
+    public function test_uuid_type_conversion(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
@@ -47,7 +47,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame($uuid, $result);
     }
 
-    public function testArrayTypeConversionFromJsonString(): void
+    public function test_array_type_conversion_from_json_string(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $arrayData = '["value1", "value2"]';
@@ -59,7 +59,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['value1', 'value2'], $result);
     }
 
-    public function testArrayTypeConversionFromArray(): void
+    public function test_array_type_conversion_from_array(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $arrayData = ['value1', 'value2'];
@@ -71,7 +71,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['value1', 'value2'], $result);
     }
 
-    public function testArrayTypeConversionFromScalarValue(): void
+    public function test_array_type_conversion_from_scalar_value(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $scalarValue = 'single_value';
@@ -83,7 +83,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['single_value'], $result);
     }
 
-    public function testSetTypeConversionFromCommaSeparated(): void
+    public function test_set_type_conversion_from_comma_separated(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $setValue = 'option1,option2,option3';
@@ -95,7 +95,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['option1', 'option2', 'option3'], $result);
     }
 
-    public function testEnumTypeConversionFromCommaSeparated(): void
+    public function test_enum_type_conversion_from_comma_separated(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $enumValue = 'active,pending';
@@ -107,7 +107,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame(['active', 'pending'], $result);
     }
 
-    public function testUnknownTypeReturnsOriginalValue(): void
+    public function test_unknown_type_returns_original_value(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $value = 'some_value';
@@ -118,7 +118,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame('some_value', $result);
     }
 
-    public function testTypeMappingThrowsExceptionWhenTypeNotDefined(): void
+    public function test_type_mapping_throws_exception_when_type_not_defined(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Type mapping not defined for field: test_field');
@@ -130,7 +130,7 @@ class AdvancedTypeMappingTest extends TestCase
         $model->convertValueByTypeMapping('test_field', $value, $fieldSchema);
     }
 
-    public function testComplexJsonConversion(): void
+    public function test_complex_json_conversion(): void
     {
         $model = new VersaModel('test_table', self::$orm);
         $complexJson = '{"users": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}], "total": 2}';
@@ -150,7 +150,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame($expected, $result);
     }
 
-    public function testLoadTypeMappingConfig(): void
+    public function test_load_type_mapping_config(): void
     {
         $configPath = __DIR__ . '/type_mapping_config.json';
         $config = VersaModel::loadTypeMappingConfig($configPath);
@@ -164,7 +164,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame('array', $config['array_field']['type']);
     }
 
-    public function testLoadTypeMappingConfigFileNotFound(): void
+    public function test_load_type_mapping_config_file_not_found(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Type mapping configuration file not found:');
@@ -172,7 +172,7 @@ class AdvancedTypeMappingTest extends TestCase
         VersaModel::loadTypeMappingConfig('/nonexistent/path.json');
     }
 
-    public function testLoadTypeMappingConfigInvalidJson(): void
+    public function test_load_type_mapping_config_invalid_json(): void
     {
         $invalidJsonPath = sys_get_temp_dir() . '/invalid_type_mapping.json';
         file_put_contents($invalidJsonPath, '{invalid json}');

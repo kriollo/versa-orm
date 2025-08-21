@@ -13,14 +13,14 @@ use function count;
  */
 class SecurityTest extends TestCase
 {
-    public function testSqlInjectionInWhereClause(): void
+    public function test_sql_injection_in_where_clause(): void
     {
         $malicious = "' OR 1=1 --";
         $users = self::$orm->table('users')->where('email', '=', $malicious)->getAll();
         self::assertCount(0, $users);
     }
 
-    public function testSqlInjectionBooleanAttack(): void
+    public function test_sql_injection_boolean_attack(): void
     {
         foreach (["' OR 1=1--", "' OR 'a'='a"] as $attack) {
             $users = self::$orm->table('users')->where('email', '=', $attack)->getAll();
@@ -28,7 +28,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testMaliciousTableNames(): void
+    public function test_malicious_table_names(): void
     {
         foreach (['users; DROP TABLE posts;', 'table--comment', "users'name"] as $tbl) {
             try {
@@ -40,7 +40,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testMaliciousColumnNames(): void
+    public function test_malicious_column_names(): void
     {
         foreach (['id;DROP', 'col--x', "field'name"] as $col) {
             try {
@@ -52,7 +52,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testOrderByInjection(): void
+    public function test_order_by_injection(): void
     {
         try {
             self::$orm->table('users')->orderBy('id; DROP TABLE users;', 'asc')->count();
@@ -62,13 +62,13 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testLimitCasting(): void
+    public function test_limit_casting(): void
     {
         $one = self::$orm->table('users')->limit('1')->getAll();
         self::assertLessThanOrEqual(1, count($one));
     }
 
-    public function testBindParameterInjection(): void
+    public function test_bind_parameter_injection(): void
     {
         foreach (["'; DROP TABLE users; --", "1' UNION SELECT"] as $bind) {
             $res = self::$orm->exec('SELECT * FROM users WHERE email = ?', [$bind]);
@@ -77,7 +77,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testNullByteInjection(): void
+    public function test_null_byte_injection(): void
     {
         $attack = "admin\x00'; DROP TABLE users; --";
         $users = self::$orm->table('users')->where('name', '=', $attack)->getAll();

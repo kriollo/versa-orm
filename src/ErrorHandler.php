@@ -64,7 +64,7 @@ class ErrorHandler
         }
 
         // Crear directorio de logs si no existe
-        if (self::$logPath && !is_dir(self::$logPath)) {
+        if (self::$logPath && ! is_dir(self::$logPath)) {
             mkdir(self::$logPath, 0755, true);
         }
     }
@@ -162,7 +162,7 @@ class ErrorHandler
         }
 
         // Sugerencias
-        if (!empty($errorData['suggestions'])) {
+        if (! empty($errorData['suggestions'])) {
             $output .= "\n💡 Suggestions:\n";
 
             foreach ($errorData['suggestions'] as $suggestion) {
@@ -171,7 +171,7 @@ class ErrorHandler
         }
 
         // Stack trace simplificado
-        if (!empty($errorData['stack_trace'])) {
+        if (! empty($errorData['stack_trace'])) {
             $output .= "\n📍 Stack Trace:\n";
 
             foreach (array_slice($errorData['stack_trace'], 0, 5) as $frame) {
@@ -272,7 +272,7 @@ class ErrorHandler
             $function = $frame['function'] ?? '';
 
             // Buscar el primer frame que no sea de VersaORM interno
-            if (!str_contains($file, 'VersaORM') && !str_contains($file, 'vendor')) {
+            if (! str_contains($file, 'VersaORM') && ! str_contains($file, 'vendor')) {
                 $origin['location'] = 'application';
                 $origin['file'] = $file;
                 $origin['line'] = $frame['line'] ?? null;
@@ -361,7 +361,7 @@ class ErrorHandler
                 'call' => $class ? "{$class}::{$function}" : $function,
             ];
 
-            ++$count;
+            $count++;
         }
 
         return $simplified;

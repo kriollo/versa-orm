@@ -11,7 +11,7 @@ require_once __DIR__ . '/bootstrap.php';
  */
 class HydrationMetricsTest extends TestCase
 {
-    public function testHydrationFastPathAndMetrics(): void
+    public function test_hydration_fast_path_and_metrics(): void
     {
         self::$orm->metricsReset();
         $before = self::$orm->metrics();

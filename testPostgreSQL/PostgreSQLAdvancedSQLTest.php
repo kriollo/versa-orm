@@ -43,7 +43,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         }
     }
 
-    public function testPostgreSQLArrayOperations(): void
+    public function test_postgre_sql_array_operations(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -54,7 +54,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertNotEmpty($result);
     }
 
-    public function testPostgreSQLArrayOverlap(): void
+    public function test_postgre_sql_array_overlap(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -64,7 +64,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLJSONBOperations(): void
+    public function test_postgre_sqljsonb_operations(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -74,7 +74,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLJSONBPathQueries(): void
+    public function test_postgre_sqljsonb_path_queries(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -84,7 +84,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLFullTextSearchWithTSVector(): void
+    public function test_postgre_sql_full_text_search_with_ts_vector(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -98,7 +98,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLWindowFunctionsAdvanced(): void
+    public function test_postgre_sql_window_functions_advanced(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -115,7 +115,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLRecursiveCTE(): void
+    public function test_postgre_sql_recursive_cte(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -138,7 +138,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLAdvancedAggregations(): void
+    public function test_postgre_sql_advanced_aggregations(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
 
@@ -151,7 +151,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testUnion(): void
+    public function test_union(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $queries = [
@@ -168,7 +168,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testUnionAll(): void
+    public function test_union_all(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $queries = [
@@ -185,35 +185,35 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testGetDriverCapabilities(): void
+    public function test_get_driver_capabilities(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->getDriverCapabilities();
         self::assertIsArray($result);
     }
 
-    public function testOptimizeQuery(): void
+    public function test_optimize_query(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->optimizeQuery(['query' => 'SELECT * FROM employees WHERE salary > 50000']);
         self::assertIsArray($result);
     }
 
-    public function testGetDriverLimits(): void
+    public function test_get_driver_limits(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->getDriverLimits();
         self::assertIsArray($result);
     }
 
-    public function testAdvancedAggregationGroupConcat(): void
+    public function test_advanced_aggregation_group_concat(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->advancedAggregation('group_concat', 'name', ['separator' => ', '], ['department'], 'employee_names');
         self::assertIsArray($result);
     }
 
-    public function testPostgreSQLIntersectAndExcept(): void
+    public function test_postgre_sql_intersect_and_except(): void
     {
         $qb1 = new QueryBuilder(self::$orm, 'employees');
         $qb1->where('department', '=', 'Engineering');

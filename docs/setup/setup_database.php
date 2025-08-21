@@ -7,7 +7,7 @@
  * utilizados en toda la documentación.
  */
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__.'/../../vendor/autoload.php';
 
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
@@ -15,6 +15,7 @@ use VersaORM\VersaORM;
 class DatabaseSetup extends VersaModel
 {
     private $orm;
+
     private $config;
 
     public function __construct()
@@ -25,18 +26,18 @@ class DatabaseSetup extends VersaModel
 
     private function loadConfig()
     {
-        $configFile = __DIR__ . '/database_config.php';
+        $configFile = __DIR__.'/database_config.php';
         if (file_exists($configFile)) {
             $this->config = require $configFile;
         } else {
             // Configuración por defecto para SQLite
             $this->config = [
                 'driver' => 'sqlite',
-                'database' => __DIR__ . '/../../docs_examples.sqlite',
+                'database' => __DIR__.'/../../docs_examples.sqlite',
                 'host' => '',
                 'username' => '',
                 'password' => '',
-                'charset' => 'utf8mb4'
+                'charset' => 'utf8mb4',
             ];
         }
     }
@@ -47,7 +48,7 @@ class DatabaseSetup extends VersaModel
             $this->orm = new VersaORM($this->config);
             echo "✓ Conexión a base de datos establecida\n";
         } catch (Exception $e) {
-            die("✗ Error conectando a la base de datos: " . $e->getMessage() . "\n");
+            exit('✗ Error conectando a la base de datos: '.$e->getMessage()."\n");
         }
     }
 
@@ -56,7 +57,7 @@ class DatabaseSetup extends VersaModel
         echo "Creando tablas de ejemplo...\n";
 
         // Tabla users
-        $this->orm->exec("
+        $this->orm->exec('
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name VARCHAR(100) NOT NULL,
@@ -64,11 +65,11 @@ class DatabaseSetup extends VersaModel
                 active BOOLEAN DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        ");
+        ');
         echo "✓ Tabla 'users' creada\n";
 
         // Tabla posts
-        $this->orm->exec("
+        $this->orm->exec('
             CREATE TABLE IF NOT EXISTS posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title VARCHAR(200) NOT NULL,
@@ -78,20 +79,20 @@ class DatabaseSetup extends VersaModel
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
-        ");
+        ');
         echo "✓ Tabla 'posts' creada\n";
 
         // Tabla tags
-        $this->orm->exec("
+        $this->orm->exec('
             CREATE TABLE IF NOT EXISTS tags (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name VARCHAR(50) NOT NULL UNIQUE
             )
-        ");
+        ');
         echo "✓ Tabla 'tags' creada\n";
 
         // Tabla post_tags (many-to-many)
-        $this->orm->exec("
+        $this->orm->exec('
             CREATE TABLE IF NOT EXISTS post_tags (
                 post_id INTEGER,
                 tag_id INTEGER,
@@ -99,7 +100,7 @@ class DatabaseSetup extends VersaModel
                 FOREIGN KEY (post_id) REFERENCES posts(id),
                 FOREIGN KEY (tag_id) REFERENCES tags(id)
             )
-        ");
+        ');
         echo "✓ Tabla 'post_tags' creada\n";
     }
 
@@ -108,10 +109,10 @@ class DatabaseSetup extends VersaModel
         echo "Insertando datos de ejemplo...\n";
 
         // Limpiar datos existentes
-        $this->orm->exec("DELETE FROM post_tags");
-        $this->orm->exec("DELETE FROM posts");
-        $this->orm->exec("DELETE FROM tags");
-        $this->orm->exec("DELETE FROM users");
+        $this->orm->exec('DELETE FROM post_tags');
+        $this->orm->exec('DELETE FROM posts');
+        $this->orm->exec('DELETE FROM tags');
+        $this->orm->exec('DELETE FROM users');
 
         // Usuarios de ejemplo
         $users = [
@@ -182,7 +183,7 @@ class DatabaseSetup extends VersaModel
 
         foreach ($postTags as $relation) {
             $this->orm->exec(
-                "INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)",
+                'INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)',
                 [$relation['post_id'], $relation['tag_id']]
             );
         }
@@ -193,10 +194,10 @@ class DatabaseSetup extends VersaModel
     {
         echo "\n=== RESUMEN DE LA BASE DE DATOS ===\n";
 
-        $userCount = $this->getCell("SELECT COUNT(*) FROM users");
-        $postCount = $this->getCell("SELECT COUNT(*) FROM posts");
-        $tagCount = $this->getCell("SELECT COUNT(*) FROM tags");
-        $relationCount = $this->getCell("SELECT COUNT(*) FROM post_tags");
+        $userCount = $this->getCell('SELECT COUNT(*) FROM users');
+        $postCount = $this->getCell('SELECT COUNT(*) FROM posts');
+        $tagCount = $this->getCell('SELECT COUNT(*) FROM tags');
+        $relationCount = $this->getCell('SELECT COUNT(*) FROM post_tags');
 
         echo "Usuarios: $userCount\n";
         echo "Posts: $postCount\n";
@@ -204,19 +205,19 @@ class DatabaseSetup extends VersaModel
         echo "Relaciones post-tag: $relationCount\n";
 
         echo "\n=== USUARIOS DE EJEMPLO ===\n";
-        $users = $this->getAll("SELECT id, name, email, active FROM users ORDER BY id");
+        $users = $this->getAll('SELECT id, name, email, active FROM users ORDER BY id');
         foreach ($users as $user) {
             $status = $user['active'] ? 'Activo' : 'Inactivo';
             echo "ID: {$user['id']} | {$user['name']} | {$user['email']} | $status\n";
         }
 
         echo "\n=== POSTS DE EJEMPLO ===\n";
-        $posts = $this->getAll("
+        $posts = $this->getAll('
             SELECT p.id, p.title, u.name as author, p.published
             FROM posts p
             JOIN users u ON p.user_id = u.id
             ORDER BY p.id
-        ");
+        ');
         foreach ($posts as $post) {
             $status = $post['published'] ? 'Publicado' : 'Borrador';
             echo "ID: {$post['id']} | {$post['title']} | Autor: {$post['author']} | $status\n";
@@ -233,7 +234,7 @@ class DatabaseSetup extends VersaModel
             $this->insertSampleData();
             $this->showSummary();
         } catch (Exception $e) {
-            echo "✗ Error durante la configuración: " . $e->getMessage() . "\n";
+            echo '✗ Error durante la configuración: '.$e->getMessage()."\n";
             var_dump($e->getTraceAsString());
             exit(1);
         }
@@ -243,5 +244,5 @@ class DatabaseSetup extends VersaModel
 // Ejecutar configuración
 echo "=== CONFIGURACIÓN DE BASE DE DATOS PARA EJEMPLOS ===\n\n";
 
-$setup = new DatabaseSetup();
+$setup = new DatabaseSetup;
 $setup->run();

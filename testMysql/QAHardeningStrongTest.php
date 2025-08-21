@@ -11,7 +11,7 @@ use Throwable;
  */
 final class QAHardeningStrongTest extends TestCase
 {
-    public function testDangerousIdentifiersAreRejected(): void
+    public function test_dangerous_identifiers_are_rejected(): void
     {
         $orm = self::$orm;
         $this->expectException(Throwable::class);
@@ -19,7 +19,7 @@ final class QAHardeningStrongTest extends TestCase
         $orm->table('users` -- ')->get();
     }
 
-    public function testRawExpressionGuardrails(): void
+    public function test_raw_expression_guardrails(): void
     {
         $orm = self::$orm;
         // whereRaw seguro: con bindings
@@ -30,7 +30,7 @@ final class QAHardeningStrongTest extends TestCase
         $orm->table('users')->whereRaw("name = 'x'; DROP TABLE users;", [])->get();
     }
 
-    public function testIndexCreationWithMaliciousNameFails(): void
+    public function test_index_creation_with_malicious_name_fails(): void
     {
         $orm = self::$orm;
 

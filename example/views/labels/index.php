@@ -38,7 +38,7 @@
                     <i class="fas fa-check-circle text-green-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(array_filter($labels, static fn ($l): bool => !empty($l->tasks_count) && $l->tasks_count > 0)); ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(array_filter($labels, static fn ($l): bool => ! empty($l->tasks_count) && $l->tasks_count > 0)); ?></p>
                     <p class="text-gray-600 dark:text-gray-400 text-sm transition-colors">En Uso</p>
                 </div>
             </div>
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Lista de etiquetas -->
-    <?php if (!empty($labels)) { ?>
+    <?php if (! empty($labels)) { ?>
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden transition-colors">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-6">
                 <?php foreach ($labels as $label) { ?>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Configuración de base de datos para ejemplos de VersaORM
  *
@@ -9,7 +10,7 @@
 return [
     // Configuración SQLite (por defecto)
     'driver' => 'sqlite',
-    'database' => __DIR__ . '/../../docs_examples.sqlite',
+    'database' => __DIR__.'/../../docs_examples.sqlite',
     'host' => '',
     'username' => '',
     'password' => '',

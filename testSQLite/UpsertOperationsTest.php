@@ -8,7 +8,7 @@ use VersaORM\QueryBuilder;
 
 class UpsertOperationsTest extends TestCase
 {
-    public function testUpsertInsertAndUpdate(): void
+    public function test_upsert_insert_and_update(): void
     {
         $qb = new QueryBuilder(self::$orm, 'products');
 

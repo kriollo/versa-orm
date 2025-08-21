@@ -66,7 +66,7 @@ class PsalmCLI
         echo 'Security issues: ' . count($result['security_issues']) . "\n";
         echo 'Type issues: ' . count($result['type_issues']) . "\n";
 
-        if (!empty($result['issues'])) {
+        if (! empty($result['issues'])) {
             echo "\nIssues found:\n";
             $this->displayIssues($result['issues'], $argv);
         }
@@ -95,7 +95,7 @@ class PsalmCLI
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
         echo 'Security issues found: ' . count($result['security_issues']) . "\n";
 
-        if (!empty($result['security_issues'])) {
+        if (! empty($result['security_issues'])) {
             echo "\nSecurity issues:\n";
 
             foreach ($result['security_issues'] as $issue) {
@@ -130,7 +130,7 @@ class PsalmCLI
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
         echo 'Type issues found: ' . count($result['type_issues']) . "\n";
 
-        if (!empty($result['type_issues'])) {
+        if (! empty($result['type_issues'])) {
             echo "\nType issues:\n";
             $this->displayIssues($result['type_issues'], $argv);
         } else {
@@ -180,7 +180,7 @@ class PsalmCLI
         echo '  Security Score: ' . number_format($metrics['security_score'], 1) . "/100\n";
         echo '  Type Safety Score: ' . number_format($metrics['type_safety_score'], 1) . "/100\n";
 
-        if (!empty($metrics['issue_categories'])) {
+        if (! empty($metrics['issue_categories'])) {
             echo "\nIssue Categories:\n";
             arsort($metrics['issue_categories']);
 
@@ -233,13 +233,13 @@ class PsalmCLI
         $verbose = in_array('--verbose', $argv, true) || in_array('-v', $argv, true);
         $maxIssues = $verbose ? count($issues) : min(10, count($issues));
 
-        for ($i = 0; $i < $maxIssues; ++$i) {
+        for ($i = 0; $i < $maxIssues; $i++) {
             $issue = $issues[$i];
             echo "  - {$issue['type']}: {$issue['message']}\n";
             echo "    File: {$issue['file']}:{$issue['line']}\n";
         }
 
-        if (!$verbose && count($issues) > 10) {
+        if (! $verbose && count($issues) > 10) {
             echo '  ... and ' . (count($issues) - 10) . " more issues (use --verbose to see all)\n";
         }
     }
@@ -249,7 +249,7 @@ class PsalmCLI
         $options = [];
         $counter = count($argv);
 
-        for ($i = 2; $i < $counter; ++$i) {
+        for ($i = 2; $i < $counter; $i++) {
             $arg = $argv[$i];
 
             if (str_starts_with($arg, '--')) {

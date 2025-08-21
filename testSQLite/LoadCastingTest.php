@@ -34,7 +34,7 @@ class LoadCastingTest extends TestCase
         ]);
     }
 
-    public function testLoadMethodAppliesCasting(): void
+    public function test_load_method_applies_casting(): void
     {
         // Modelo con tipado fuerte
         $model = new class ('load_cast_test', self::$orm) extends VersaModel {
@@ -70,7 +70,7 @@ class LoadCastingTest extends TestCase
         self::assertSame('2025-08-12 10:30:00', $data['created_at']->format('Y-m-d H:i:s'));
     }
 
-    public function testLoadMethodWithUpdate(): void
+    public function test_load_method_with_update(): void
     {
         // Modelo con tipado fuerte - sin validación de esquema para evitar conflictos con SQLite
         $model = new class ('load_cast_test', self::$orm) extends VersaModel {
@@ -106,7 +106,7 @@ class LoadCastingTest extends TestCase
         self::assertTrue($data['active'], 'El campo active debe preservarse cuando solo se modifica otro campo');
     }
 
-    public function testLoadMethodWithUpdateBoolean(): void
+    public function test_load_method_with_update_boolean(): void
     {
         // Modelo con tipado fuerte
         $model = new class ('load_cast_test', self::$orm) extends VersaModel {
@@ -135,7 +135,7 @@ class LoadCastingTest extends TestCase
 
         // Negar el valor de active (toggle)
         $originalActive = $loaded->active;
-        $loaded->active = !$loaded->active;
+        $loaded->active = ! $loaded->active;
         $loaded->store(); // Esto debe manejar el cambio de boolean correctamente
 
         // Recargar y verificar que el valor active se actualizó correctamente
@@ -148,7 +148,7 @@ class LoadCastingTest extends TestCase
         self::assertNotSame($originalActive, $data['active'], 'El valor debe haber cambiado');
     }
 
-    public function testLoadMethodWithBooleanValidationEdgeCases(): void
+    public function test_load_method_with_boolean_validation_edge_cases(): void
     {
         // Modelo con tipado fuerte y validación required
         $model = new class ('load_cast_test', self::$orm) extends VersaModel {

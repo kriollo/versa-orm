@@ -5,7 +5,7 @@ use VersaORM\VersaORMException;
 // Vista para editar un proyecto existente.
 
 // Verifica que $project esté definido y es un objeto válido
-if (!isset($project) || !is_object($project)) {
+if (! isset($project) || ! is_object($project)) {
     throw new VersaORMException('El proyecto no está definido. Asegúrate de cargar el modelo antes de mostrar la vista.');
 }
 ?>

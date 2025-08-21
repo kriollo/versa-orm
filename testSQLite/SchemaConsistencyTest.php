@@ -17,14 +17,14 @@ class SchemaConsistencyTest extends TestCase
         TestSchemaModel::clearPropertyTypesCache();
     }
 
-    public function testValidateSchemaConsistencyWithEmptyPropertyTypes(): void
+    public function test_validate_schema_consistency_with_empty_property_types(): void
     {
         $model = new EmptySchemaModel('empty_table', null);
         $errors = $model->validateSchemaConsistency();
         self::assertCount(1, $errors);
     }
 
-    public function testPropertyConsistencyValidationTypeMismatch(): void
+    public function test_property_consistency_validation_type_mismatch(): void
     {
         $model = new TestSchemaModel('test_table', null);
         $ref = new ReflectionClass($model);

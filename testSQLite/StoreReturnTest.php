@@ -13,7 +13,7 @@ require_once __DIR__ . '/TestCase.php';
  */
 class StoreReturnTest extends TestCase
 {
-    public function testStoreReturnsIdOnInsert(): void
+    public function test_store_returns_id_on_insert(): void
     {
         $user = VersaModel::dispense('users');
         $user->name = 'ReturnTest';
@@ -24,7 +24,7 @@ class StoreReturnTest extends TestCase
         self::assertSame($id, $user->id);
     }
 
-    public function testStoreReturnsIdOnUpdate(): void
+    public function test_store_returns_id_on_update(): void
     {
         $user = VersaModel::load('users', 1);
         $originalId = $user->id;
@@ -32,7 +32,7 @@ class StoreReturnTest extends TestCase
         self::assertSame($originalId, $returned);
     }
 
-    public function testStoreAndGetIdConvenience(): void
+    public function test_store_and_get_id_convenience(): void
     {
         $user = VersaModel::dispense('users');
         $user->name = 'ReturnTest2';
@@ -43,7 +43,7 @@ class StoreReturnTest extends TestCase
         self::assertSame($id, $user->id);
     }
 
-    public function testStaticStoreModelReturnsId(): void
+    public function test_static_store_model_returns_id(): void
     {
         $user = VersaModel::dispense('users');
         $user->name = 'ReturnTest3';

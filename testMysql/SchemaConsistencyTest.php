@@ -27,7 +27,7 @@ class SchemaConsistencyTest extends TestCase
         $this->model->clearDatabaseSchemaCache();
     }
 
-    public function testValidateSchemaConsistencyWithEmptyPropertyTypes(): void
+    public function test_validate_schema_consistency_with_empty_property_types(): void
     {
         $model = new EmptySchemaModel('empty_table', null);
         $errors = $model->validateSchemaConsistency();
@@ -36,7 +36,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertStringContainsString('No property types defined', $errors[0]);
     }
 
-    public function testValidateSchemaConsistencyWithMatchingTypes(): void
+    public function test_validate_schema_consistency_with_matching_types(): void
     {
         // Mock the database schema to match our model
         $model = new ConsistentSchemaModel('consistent_table', null);
@@ -47,7 +47,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertTrue(method_exists($model, 'validateSchemaConsistency'));
     }
 
-    public function testPropertyConsistencyValidation(): void
+    public function test_property_consistency_validation(): void
     {
         // Test internal property consistency validation logic
         $model = new TestSchemaModel('test_table', null);
@@ -73,7 +73,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertStringContainsString('Type mismatch for property', $errors[0]);
     }
 
-    public function testNullabilityConsistencyValidation(): void
+    public function test_nullability_consistency_validation(): void
     {
         $model = new TestSchemaModel('test_table', null);
 
@@ -90,7 +90,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertStringContainsString('Nullability mismatch for property', $errors[0]);
     }
 
-    public function testLengthConsistencyValidation(): void
+    public function test_length_consistency_validation(): void
     {
         $model = new TestSchemaModel('test_table', null);
 
@@ -107,7 +107,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertStringContainsString('Length mismatch for property', $errors[0]);
     }
 
-    public function testTypeCompatibilityMapping(): void
+    public function test_type_compatibility_mapping(): void
     {
         $model = new TestSchemaModel('test_table', null);
 
@@ -156,7 +156,7 @@ class SchemaConsistencyTest extends TestCase
         }
     }
 
-    public function testIncompatibleTypes(): void
+    public function test_incompatible_types(): void
     {
         $model = new TestSchemaModel('test_table', null);
 
@@ -176,7 +176,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertNotEmpty($typeMismatchErrors);
     }
 
-    public function testClearDatabaseSchemaCache(): void
+    public function test_clear_database_schema_cache(): void
     {
         $model = new TestSchemaModel('test_table', null);
 
@@ -188,7 +188,7 @@ class SchemaConsistencyTest extends TestCase
         self::assertTrue(true); // Test passes if no exception is thrown
     }
 
-    public function testSchemaConsistencyIntegration(): void
+    public function test_schema_consistency_integration(): void
     {
         // Integration test that checks the full consistency validation flow
         $model = new TestSchemaModel('test_table', null);

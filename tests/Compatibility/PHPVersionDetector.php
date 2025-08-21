@@ -262,7 +262,7 @@ class PHPVersionDetector
      */
     public static function getOpcacheInfo(): ?array
     {
-        if (!function_exists('opcache_get_status')) {
+        if (! function_exists('opcache_get_status')) {
             return null;
         }
 
@@ -355,7 +355,7 @@ class PHPVersionDetector
         $extensions = self::getRelevantExtensions();
 
         foreach (['pdo', 'json', 'mbstring'] as $required) {
-            if (!$extensions[$required]['loaded']) {
+            if (! $extensions[$required]['loaded']) {
                 $results["extension_{$required}"] = [
                     'status' => 'fail',
                     'message' => "Required extension {$required} is not loaded",
@@ -417,7 +417,7 @@ class PHPVersionDetector
 
         // Verificar extensiones faltantes
         $extensions = self::getRelevantExtensions();
-        $missingExtensions = array_filter($extensions, static fn ($ext): bool => !$ext['loaded']);
+        $missingExtensions = array_filter($extensions, static fn ($ext): bool => ! $ext['loaded']);
 
         if ($missingExtensions !== []) {
             $recommendations[] = [
@@ -436,7 +436,7 @@ class PHPVersionDetector
             ];
         }
 
-        if (!$config['opcache.enable'] || !$config['opcache.enable_cli']) {
+        if (! $config['opcache.enable'] || ! $config['opcache.enable_cli']) {
             $recommendations[] = [
                 'type' => 'info',
                 'message' => 'OPcache is not enabled. Enabling it can improve performance.',

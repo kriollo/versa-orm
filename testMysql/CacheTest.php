@@ -40,7 +40,7 @@ class CacheTest extends TestCase
         $this->clearCache();
     }
 
-    public function testCacheEnable(): void
+    public function test_cache_enable(): void
     {
         $result = self::$orm->cache('enable');
         self::assertIsArray($result);
@@ -48,7 +48,7 @@ class CacheTest extends TestCase
         self::assertStringContainsString('enabled', $result['data']);
     }
 
-    public function testCacheDisable(): void
+    public function test_cache_disable(): void
     {
         $result = self::$orm->cache('disable');
         self::assertIsArray($result);
@@ -56,7 +56,7 @@ class CacheTest extends TestCase
         self::assertStringContainsString('disabled', $result['data']);
     }
 
-    public function testCacheClear(): void
+    public function test_cache_clear(): void
     {
         // Primero habilitar caché
         self::$orm->cache('enable');
@@ -68,7 +68,7 @@ class CacheTest extends TestCase
         self::assertStringContainsString('cleared', $result['data']);
     }
 
-    public function testCacheStatus(): void
+    public function test_cache_status(): void
     {
         $result = self::$orm->cache('status');
         self::assertIsArray($result);
@@ -77,7 +77,7 @@ class CacheTest extends TestCase
         self::assertGreaterThanOrEqual(0, $result['data']);
     }
 
-    public function testCacheStats(): void
+    public function test_cache_stats(): void
     {
         // Solo probar las acciones básicas disponibles
         self::$orm->cache('enable');
@@ -95,7 +95,7 @@ class CacheTest extends TestCase
     // public function testCacheInvalidateByPattern() ...
     // public function testCacheCleanup() ...
 
-    public function testCacheQueryIntegration(): void
+    public function test_cache_query_integration(): void
     {
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
@@ -115,7 +115,7 @@ class CacheTest extends TestCase
         self::assertSame('success', $status['status']);
     }
 
-    public function testCacheInvalidationAfterInsert(): void
+    public function test_cache_invalidation_after_insert(): void
     {
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
@@ -143,7 +143,7 @@ class CacheTest extends TestCase
         self::$orm->table('users')->where('email', '=', 'cache.test@example.com')->delete();
     }
 
-    public function testCacheInvalidationAfterUpdate(): void
+    public function test_cache_invalidation_after_update(): void
     {
         // Limpiar y habilitar caché
         self::$orm->cache('clear');
@@ -156,8 +156,7 @@ class CacheTest extends TestCase
         // Actualizar el usuario (esto debería invalidar el caché)
         self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
-            ->update(['status' => 'updated_test'])
-        ;
+            ->update(['status' => 'updated_test']);
 
         // Consultar de nuevo (debería ir a la base de datos)
         $updatedUser = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
@@ -167,11 +166,10 @@ class CacheTest extends TestCase
         // Restaurar el estado original
         self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
-            ->update(['status' => $originalStatus])
-        ;
+            ->update(['status' => $originalStatus]);
     }
 
-    public function testCacheInvalidationAfterDelete(): void
+    public function test_cache_invalidation_after_delete(): void
     {
         // Crear un usuario de prueba
         self::$orm->table('users')->insert([
@@ -197,13 +195,13 @@ class CacheTest extends TestCase
         self::assertNull($deletedUser);
     }
 
-    public function testInvalidCacheAction(): void
+    public function test_invalid_cache_action(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->cache('invalid_action');
     }
 
-    public function testCacheInvalidateWithoutParameters(): void
+    public function test_cache_invalidate_without_parameters(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->cache('invalidate'); // Sin table ni pattern

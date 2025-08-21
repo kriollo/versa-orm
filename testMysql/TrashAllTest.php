@@ -15,7 +15,7 @@ require_once __DIR__ . '/TestCase.php';
  */
 class TrashAllTest extends TestCase
 {
-    public function testTrashAllRemovesAllModels(): void
+    public function test_trash_all_removes_all_models(): void
     {
         // Crear y guardar varios usuarios
         $users = [];
@@ -44,13 +44,13 @@ class TrashAllTest extends TestCase
         }
     }
 
-    public function testTrashAllWithEmptyArrayDoesNothing(): void
+    public function test_trash_all_with_empty_array_does_nothing(): void
     {
         VersaModel::trashAll([]); // No debe lanzar excepción
         self::assertTrue(true);
     }
 
-    public function testTrashAllThrowsOnInvalidInput(): void
+    public function test_trash_all_throws_on_invalid_input(): void
     {
         $this->expectException(\VersaORM\VersaORMException::class);
         VersaModel::trashAll(['no es modelo']);

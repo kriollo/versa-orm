@@ -78,13 +78,13 @@ function runFullAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogger 
     outputResults($result, $options);
 
     // Generate additional reports
-    if (!isset($options['no-gaps'])) {
+    if (! isset($options['no-gaps'])) {
         $logger->info('Generating coverage gaps report');
         $gapsReport = $analyzer->generateCoverageGapsReport();
         echo "\nCoverage gaps report generated: " . $gapsReport['report_path'] . "\n";
     }
 
-    if (!isset($options['no-alerts'])) {
+    if (! isset($options['no-alerts'])) {
         $logger->info('Generating coverage alerts');
         $alerts = $analyzer->generateCoverageAlerts();
 
@@ -152,7 +152,7 @@ function runGapsAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogger 
     echo "Coverage Gaps Report:\n";
     echo "Report saved to: {$gapsReport['report_path']}\n\n";
 
-    if (!empty($gapsReport['consolidated_gaps'])) {
+    if (! empty($gapsReport['consolidated_gaps'])) {
         echo "Files with coverage gaps:\n";
 
         foreach ($gapsReport['consolidated_gaps'] as $gap) {
@@ -253,7 +253,7 @@ function generateTextOutput(mixed $result): string
     $output .= "Total Lines: {$result->metrics['total_lines']}\n";
     $output .= "Covered Lines: {$result->metrics['covered_lines']}\n\n";
 
-    if (!empty($result->issues)) {
+    if (! empty($result->issues)) {
         $output .= "Issues:\n";
 
         foreach ($result->issues as $issue) {
@@ -327,7 +327,7 @@ function parseArguments(array $argv): array
     $options = [];
     $counter = count($argv);
 
-    for ($i = 1; $i < $counter; ++$i) {
+    for ($i = 1; $i < $counter; $i++) {
         $arg = $argv[$i];
 
         if (str_starts_with($arg, '--')) {

@@ -45,7 +45,7 @@ class PHPVersionMatrixRunner
         $currentVersion = $this->detector->getCurrentVersion()['short_version'];
 
         // Solo podemos ejecutar tests para la versión actual
-        if (!in_array($currentVersion, $this->supportedVersions, true)) {
+        if (! in_array($currentVersion, $this->supportedVersions, true)) {
             throw new RuntimeException("Current PHP version {$currentVersion} is not supported");
         }
 
@@ -96,7 +96,7 @@ class PHPVersionMatrixRunner
         if ($filepath !== null && $filepath !== '' && $filepath !== '0') {
             $directory = dirname($filepath);
 
-            if (!is_dir($directory)) {
+            if (! is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
             file_put_contents($filepath, $json);
@@ -116,7 +116,7 @@ class PHPVersionMatrixRunner
         if ($filepath !== null && $filepath !== '' && $filepath !== '0') {
             $directory = dirname($filepath);
 
-            if (!is_dir($directory)) {
+            if (! is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
             file_put_contents($filepath, $html);
@@ -282,11 +282,11 @@ class PHPVersionMatrixRunner
 
         foreach ($matrix as $info) {
             if ($info['test_status']['can_test']) {
-                ++$testableVersions;
+                $testableVersions++;
             }
 
             if ($info['status'] === 'supported') {
-                ++$supportedVersions;
+                $supportedVersions++;
             }
 
             if ($info['eol_date']) {
@@ -294,7 +294,7 @@ class PHPVersionMatrixRunner
                 $now = new DateTime();
 
                 if ($eolDate < $now) {
-                    ++$eolVersions;
+                    $eolVersions++;
                 }
             }
 

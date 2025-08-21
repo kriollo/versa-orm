@@ -22,7 +22,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     // REPLACE INTO TESTS
     // ======================================================================
 
-    public function testReplaceIntoBasic(): void
+    public function test_replace_into_basic(): void
     {
         // Insertar un registro inicial
         $initialData = [
@@ -60,7 +60,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame('New description', $replaced['description']);
     }
 
-    public function testReplaceIntoNewRecord(): void
+    public function test_replace_into_new_record(): void
     {
         // Usar replaceInto para insertar un registro completamente nuevo
         $newData = [
@@ -81,7 +81,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame(150.0, (float) $new['price']);
     }
 
-    public function testReplaceIntoEmptyData(): void
+    public function test_replace_into_empty_data(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('replaceInto requires data to replace/insert');
@@ -89,7 +89,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->replaceInto([]);
     }
 
-    public function testReplaceIntoMaliciousColumnNames(): void
+    public function test_replace_into_malicious_column_names(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid or malicious column name detected');
@@ -100,7 +100,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         ]);
     }
 
-    public function testReplaceIntoNonMySQLDriver(): void
+    public function test_replace_into_non_my_sql_driver(): void
     {
         // En PostgreSQL ahora emulamos REPLACE como UPSERT, no debe lanzar excepción
         $result = self::$orm->table('products')->replaceInto(['sku' => 'TEST', 'name' => 'Test']);
@@ -113,7 +113,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     // REPLACE INTO MANY TESTS
     // ======================================================================
 
-    public function testReplaceIntoManyBasic(): void
+    public function test_replace_into_many_basic(): void
     {
         // Insertar algunos registros iniciales
         $initialRecords = [
@@ -147,11 +147,11 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame('New 3', $newProduct['description']);
     }
 
-    public function testReplaceIntoManyWithBatchSize(): void
+    public function test_replace_into_many_with_batch_size(): void
     {
         $records = [];
 
-        for ($i = 1; $i <= 5; ++$i) {
+        for ($i = 1; $i <= 5; $i++) {
             $records[] = [
                 'sku' => "BATCH_REPLACE{$i}",
                 'name' => "Batch Replace Product {$i}",
@@ -172,7 +172,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame(5, $count);
     }
 
-    public function testReplaceIntoManyEmptyRecords(): void
+    public function test_replace_into_many_empty_records(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('replaceIntoMany requires at least one record');
@@ -180,7 +180,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->replaceIntoMany([]);
     }
 
-    public function testReplaceIntoManyInconsistentStructure(): void
+    public function test_replace_into_many_inconsistent_structure(): void
     {
         $records = [
             ['sku' => 'CONSIST001', 'name' => 'Product 1'],
@@ -193,7 +193,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->replaceIntoMany($records);
     }
 
-    public function testReplaceIntoManyInvalidBatchSize(): void
+    public function test_replace_into_many_invalid_batch_size(): void
     {
         $records = [
             ['sku' => 'TEST001', 'name' => 'Test Product'],
@@ -209,7 +209,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     // UPSERT INDIVIDUAL TESTS
     // ======================================================================
 
-    public function testUpsertInsertNewRecord(): void
+    public function test_upsert_insert_new_record(): void
     {
         // Test upsert que debería insertar un nuevo registro
         $data = [
@@ -233,7 +233,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame(199.99, (float) $created['price']);
     }
 
-    public function testUpsertUpdateExistingRecord(): void
+    public function test_upsert_update_existing_record(): void
     {
         // Primero insertar un registro
         $initialData = [
@@ -263,7 +263,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame(150.0, (float) $updated['price']);
     }
 
-    public function testUpsertWithMultipleUniqueKeys(): void
+    public function test_upsert_with_multiple_unique_keys(): void
     {
         // Test upsert con múltiples claves únicas
         $data = [
@@ -282,12 +282,11 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $created = self::$orm->table('products')
             ->where('sku', '=', 'MULTI_KEY001')
             ->where('category', '=', 'electronics')
-            ->firstArray()
-        ;
+            ->firstArray();
         self::assertSame('Multi Key Product', $created['name']);
     }
 
-    public function testUpsertEmptyData(): void
+    public function test_upsert_empty_data(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('upsert requires data to insert/update');
@@ -295,7 +294,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->upsert([], ['sku']);
     }
 
-    public function testUpsertEmptyUniqueKeys(): void
+    public function test_upsert_empty_unique_keys(): void
     {
         $data = ['sku' => 'TEST001', 'name' => 'Test Product'];
 
@@ -305,7 +304,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->upsert($data, []);
     }
 
-    public function testUpsertMissingUniqueKey(): void
+    public function test_upsert_missing_unique_key(): void
     {
         $data = ['name' => 'Product without SKU', 'price' => 100.0]; // Falta 'sku'
 
@@ -315,7 +314,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->upsert($data, ['sku']);
     }
 
-    public function testUpsertInvalidUniqueKeyName(): void
+    public function test_upsert_invalid_unique_key_name(): void
     {
         $data = ['sku' => 'TEST001', 'name' => 'Test Product'];
 
@@ -325,7 +324,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->upsert($data, ['sku; DROP TABLE products; --']);
     }
 
-    public function testUpsertInvalidUpdateColumnName(): void
+    public function test_upsert_invalid_update_column_name(): void
     {
         $data = ['sku' => 'TEST001', 'name' => 'Test Product'];
 
@@ -339,7 +338,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         );
     }
 
-    public function testUpsertWithSpecificUpdateColumns(): void
+    public function test_upsert_with_specific_update_columns(): void
     {
         // Insertar registro inicial
         $initialData = [
@@ -378,7 +377,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     // INTEGRATION AND EDGE CASES
     // ======================================================================
 
-    public function testUpsertWithSpecialCharacters(): void
+    public function test_upsert_with_special_characters(): void
     {
         $data = [
             'sku' => 'SPECIAL_CHARS001',
@@ -400,7 +399,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertStringContainsString('🚀', $saved['description']);
     }
 
-    public function testReplaceIntoVsUpsertBehaviorDifference(): void
+    public function test_replace_into_vs_upsert_behavior_difference(): void
     {
         // Insertar registro inicial con campo extra
         $initialData = [
@@ -451,12 +450,12 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame('original_category', $afterUpsert['category']);
     }
 
-    public function testLargeDatasetPerformance(): void
+    public function test_large_dataset_performance(): void
     {
         // Test de rendimiento con dataset mediano
         $records = [];
 
-        for ($i = 1; $i <= 50; ++$i) {
+        for ($i = 1; $i <= 50; $i++) {
             $records[] = [
                 'sku' => "PERF_REPLACE{$i}",
                 'name' => "Performance Test Product {$i}",
@@ -490,7 +489,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
      */
     protected function setUpConfig(): void
     {
-        if (!isset(self::$config)) {
+        if (! isset(self::$config)) {
             self::$config = self::$orm->getConfig();
         }
     }

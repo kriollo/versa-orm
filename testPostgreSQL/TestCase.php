@@ -111,6 +111,7 @@ class TestCase extends BaseTestCase
                 ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
                 ['name' => 'content', 'type' => 'TEXT'],
                 ['name' => 'published_at', 'type' => 'DATETIME'],
+                ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
             ], ['engine' => 'InnoDB']);
             self::$orm->exec('ALTER TABLE `posts` ADD CONSTRAINT `fk_posts_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
 

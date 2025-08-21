@@ -55,8 +55,6 @@ class BelongsToMany extends Relation
      * @param array<string, mixed> $attributes Atributos adicionales para la tabla pivote
      *
      * @throws \Exception Si ocurre un error durante la inserción
-     *
-     * @return void
      */
     public function attach($id, array $attributes = []): void
     {

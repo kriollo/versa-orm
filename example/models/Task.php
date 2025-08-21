@@ -8,6 +8,7 @@ use App\BaseModel;
 use Exception;
 use VersaORM\Relations\BelongsTo;
 use VersaORM\Relations\BelongsToMany;
+use VersaORM\Relations\HasMany;
 use VersaORM\VersaModel;
 
 use function in_array;
@@ -22,15 +23,20 @@ class Task extends BaseModel
      * Estados disponibles para las tareas.
      */
     public const STATUS_TODO = 'todo';
+
     public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_DONE = 'done';
 
     /**
      * Prioridades disponibles.
      */
     public const PRIORITY_LOW = 'low';
+
     public const PRIORITY_MEDIUM = 'medium';
+
     public const PRIORITY_HIGH = 'high';
+
     public const PRIORITY_URGENT = 'urgent';
 
     protected string $table = 'tasks';
@@ -52,76 +58,9 @@ class Task extends BaseModel
         'project_id' => ['required'],
     ];
 
-    /** Obtener el conteo total de tareas. */
-    public static function countAll(): int
-    {
-        return self::queryTable()->count();
-    }
-
-    /** Obtener el conteo de tareas pendientes. */
-    public static function countPending(): int
-    {
-        return models()->task()->getOrm()->table('tasks')->where('status', '=', self::STATUS_TODO)->count();
-    }
-
-    /** Obtener las tareas recientes con información relacionada. */
-    public static function getRecent(int $limit = 5): array
-    {
-        return self::queryTable()
-            ->lazy()
-            ->with(['project', 'user', 'labels'])
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->collect();
-    }
-
-    /** Relación N:M: etiquetas de la tarea (BelongsToMany). */
-    public function labelsRelation(): \VersaORM\Relations\BelongsToMany
-    {
-        return $this->belongsToMany(
-            Label::class,
-            'task_labels',
-            'task_id',
-            'label_id',
-            'id',
-            'id',
-        );
-    }
-
-    /** Adjuntar etiqueta a la tarea. */
-    public function attachLabel(int $labelId): void
-    {
-        $this->labelsRelation()->attach($labelId);
-    }
-
-    /** Separar etiqueta de la tarea. */
-    public function detachLabel(int $labelId): void
-    {
-        $this->labelsRelation()->detach($labelId);
-    }
-
-    /** Sincronizar etiquetas de la tarea. */
-    public function syncLabels(array $labelIds): array
-    {
-        return $this->labelsRelation()->sync($labelIds);
-    }
-
-    /** Recargar la tarea desde la base de datos (fresh). */
-    public function fresh(string $primaryKey = 'id'): static
-    {
-        return parent::fresh($primaryKey);
-    }
-
-    /** Crear nueva tarea con defaults delegando validación a store(). */
-    public function createOne(array $attributes): self
-    {
-        $attributes['status'] ??= self::STATUS_TODO;
-        $attributes['priority'] ??= self::PRIORITY_MEDIUM;
-        $this->fill($attributes);
-        $this->store();
-
-        return $this;
-    }
+    /** Relaciones de las tareas.
+     * //////////////////////////
+     */
 
     /**
      * Obtener proyecto de la tarea.
@@ -145,6 +84,73 @@ class Task extends BaseModel
     public function labels(): BelongsToMany
     {
         return $this->belongsToMany(Label::class, 'task_labels', 'task_id', 'label_id');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(Note::class, 'task_id', 'id');
+    }
+
+    /** metodos auxiliares.
+     * //////////////////////////
+     */
+
+    /** Obtener el conteo total de tareas. */
+    public static function countAll(): int
+    {
+        return self::queryTable()->count();
+    }
+
+    /** Obtener el conteo de tareas pendientes. */
+    public static function countPending(): int
+    {
+        return self::queryTable()->where('status', '=', self::STATUS_TODO)->count();
+    }
+
+    /** Obtener las tareas recientes con información relacionada. */
+    public static function getRecent(int $limit = 5): array
+    {
+        return self::queryTable()
+            ->lazy()
+            ->with(['project', 'user', 'labels'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->collect();
+    }
+
+    /** Adjuntar etiqueta a la tarea. */
+    public function attachLabel(int $labelId): void
+    {
+        $this->labels()->attach($labelId);
+    }
+
+    /** Separar etiqueta de la tarea. */
+    public function detachLabel(int $labelId): void
+    {
+        $this->labels()->detach($labelId);
+    }
+
+    /** Sincronizar etiquetas de la tarea. */
+    public function syncLabels(array $labelIds): array
+    {
+        return $this->labels()->sync($labelIds);
+    }
+
+    /** Recargar la tarea desde la base de datos (fresh). */
+    public function fresh(string $primaryKey = 'id'): static
+    {
+        return parent::fresh($primaryKey);
+    }
+
+    /** Crear nueva tarea con defaults delegando validación a store(). */
+    public function createOne(array $attributes): self
+    {
+        $attributes['status'] ??= self::STATUS_TODO;
+        $attributes['priority'] ??= self::PRIORITY_MEDIUM;
+        $this->fill($attributes);
+        $this->store();
+
+        return $this;
     }
 
     /**
@@ -184,7 +190,7 @@ class Task extends BaseModel
 
         // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
-            if (!empty($labelId)) {
+            if (! empty($labelId)) {
                 $taskLabel = $this->dispenseInstance('task_labels');
                 $taskLabel->task_id = $this->id;
                 $taskLabel->label_id = $labelId;
@@ -200,7 +206,7 @@ class Task extends BaseModel
     {
         $validStatuses = [self::STATUS_TODO, self::STATUS_IN_PROGRESS, self::STATUS_DONE];
 
-        if (!in_array($status, $validStatuses, true)) {
+        if (! in_array($status, $validStatuses, true)) {
             throw new Exception('Estado inválido');
         }
 
@@ -231,7 +237,7 @@ class Task extends BaseModel
      */
     public function isOverdue(): bool
     {
-        if (!$this->due_date) {
+        if (! $this->due_date) {
             return false;
         }
 

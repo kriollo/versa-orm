@@ -31,7 +31,7 @@ class ValidationSchemaTest extends TestCase
         ) ENGINE=InnoDB');
     }
 
-    public function testSchemaValidationWithRequiredFields(): void
+    public function test_schema_validation_with_required_fields(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance', 'bio', 'is_active'];
@@ -74,7 +74,7 @@ class ValidationSchemaTest extends TestCase
         self::assertEmpty($errors, 'Valid data should not produce validation errors');
     }
 
-    public function testSchemaValidationFailsOnRequiredFields(): void
+    public function test_schema_validation_fails_on_required_fields(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance'];
@@ -105,7 +105,7 @@ class ValidationSchemaTest extends TestCase
         self::assertContains('The name field is required.', $errors);
     }
 
-    public function testSchemaValidationMaxLength(): void
+    public function test_schema_validation_max_length(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
@@ -130,7 +130,7 @@ class ValidationSchemaTest extends TestCase
         self::assertContains('The name may not be greater than 10 characters.', $errors);
     }
 
-    public function testSchemaValidationDataTypes(): void
+    public function test_schema_validation_data_types(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['age', 'balance'];
@@ -173,7 +173,7 @@ class ValidationSchemaTest extends TestCase
         self::assertContains('The balance must be a number.', $errors);
     }
 
-    public function testSchemaValidationWithNullableFields(): void
+    public function test_schema_validation_with_nullable_fields(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'age', 'bio'];
@@ -207,7 +207,7 @@ class ValidationSchemaTest extends TestCase
         self::assertEmpty($errors, 'Nullable fields with null values should be valid');
     }
 
-    public function testSchemaValidationFallbackToBasic(): void
+    public function test_schema_validation_fallback_to_basic(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
@@ -226,7 +226,7 @@ class ValidationSchemaTest extends TestCase
         self::assertEmpty($errors);
     }
 
-    public function testSchemaValidationWithCustomRules(): void
+    public function test_schema_validation_with_custom_rules(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
@@ -263,7 +263,7 @@ class ValidationSchemaTest extends TestCase
         self::assertContains('The email must be a valid email address.', $errors);
     }
 
-    public function testSchemaValidationMissingRequiredFields(): void
+    public function test_schema_validation_missing_required_fields(): void
     {
         $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];

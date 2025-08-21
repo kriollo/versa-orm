@@ -21,7 +21,7 @@ class ReplaceIntoTest extends TestCase
     // TESTS PARA MÉTODO replaceInto()
     // ======================================================================
 
-    public function testReplaceIntoNewRecord(): void
+    public function test_replace_into_new_record(): void
     {
         // Test: REPLACE INTO debe insertar un nuevo registro
         $newProduct = [
@@ -46,7 +46,7 @@ class ReplaceIntoTest extends TestCase
         self::assertSame('Producto creado con REPLACE INTO', $inserted['description']);
     }
 
-    public function testReplaceIntoExistingRecord(): void
+    public function test_replace_into_existing_record(): void
     {
         // Test: REPLACE INTO debe reemplazar completamente un registro existente
 
@@ -86,7 +86,7 @@ class ReplaceIntoTest extends TestCase
         self::assertSame('Descripción original', $replaced['description']);
     }
 
-    public function testReplaceIntoWithAllFields(): void
+    public function test_replace_into_with_all_fields(): void
     {
         // Test: REPLACE INTO con todos los campos disponibles en el esquema
         $completeProduct = [
@@ -112,7 +112,7 @@ class ReplaceIntoTest extends TestCase
         self::assertSame('Electronics', $inserted['category']);
     }
 
-    public function testReplaceIntoWithNullValues(): void
+    public function test_replace_into_with_null_values(): void
     {
         // Test: REPLACE INTO debe manejar valores NULL correctamente
         $productWithNulls = [
@@ -136,7 +136,7 @@ class ReplaceIntoTest extends TestCase
         self::assertNull($inserted['category']);
     }
 
-    public function testReplaceIntoWithEmptyData(): void
+    public function test_replace_into_with_empty_data(): void
     {
         // Test: REPLACE INTO debe fallar con datos vacíos
         $this->expectException(VersaORMException::class);
@@ -145,7 +145,7 @@ class ReplaceIntoTest extends TestCase
         self::$orm->table('products')->replaceInto([]);
     }
 
-    public function testReplaceIntoWithSpecialCharacters(): void
+    public function test_replace_into_with_special_characters(): void
     {
         // Test: REPLACE INTO debe manejar caracteres especiales correctamente
         $productWithSpecialChars = [
@@ -174,7 +174,7 @@ class ReplaceIntoTest extends TestCase
     // TESTS DE DIFERENCIAS ENTRE REPLACE INTO VS UPSERT
     // ======================================================================
 
-    public function testReplaceIntoVsUpsertBehavior(): void
+    public function test_replace_into_vs_upsert_behavior(): void
     {
         // Test: Demostrar la diferencia entre REPLACE INTO y UPSERT
 
@@ -229,12 +229,12 @@ class ReplaceIntoTest extends TestCase
     // TESTS DE RENDIMIENTO Y CASOS EDGE
     // ======================================================================
 
-    public function testReplaceIntoPerformance(): void
+    public function test_replace_into_performance(): void
     {
         // Test: Rendimiento con múltiples operaciones REPLACE INTO
         $startTime = microtime(true);
 
-        for ($i = 1; $i <= 20; ++$i) {
+        for ($i = 1; $i <= 20; $i++) {
             $data = [
                 'sku' => 'REPLACE-PERF-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
                 'name' => "Producto Replace Performance {$i}",
@@ -252,8 +252,7 @@ class ReplaceIntoTest extends TestCase
         // Verificar que todas las operaciones fueron exitosas
         $count = self::$orm->table('products')
             ->where('sku', 'LIKE', 'REPLACE-PERF-%')
-            ->count()
-        ;
+            ->count();
 
         self::assertSame(20, $count);
 
@@ -265,7 +264,7 @@ class ReplaceIntoTest extends TestCase
         );
     }
 
-    public function testReplaceIntoWithLargeData(): void
+    public function test_replace_into_with_large_data(): void
     {
         // Test: REPLACE INTO con datos grandes
         $largeDescription = str_repeat('Este es un texto muy largo para probar el manejo de datos grandes. ', 100);
@@ -289,7 +288,7 @@ class ReplaceIntoTest extends TestCase
         self::assertGreaterThan(5000, strlen($inserted['description']));
     }
 
-    public function testReplaceIntoIdempotency(): void
+    public function test_replace_into_idempotency(): void
     {
         // Test: REPLACE INTO debe ser idempotente
         $productData = [
@@ -321,7 +320,7 @@ class ReplaceIntoTest extends TestCase
         self::assertSame(1, $count);
     }
 
-    public function testReplaceIntoWithInvalidColumnName(): void
+    public function test_replace_into_with_invalid_column_name(): void
     {
         // Test: REPLACE INTO debe validar nombres de columnas
         $this->expectException(VersaORMException::class);
@@ -339,7 +338,7 @@ class ReplaceIntoTest extends TestCase
     // TESTS DE INTEGRACIÓN CON VersaModel
     // ======================================================================
 
-    public function testReplaceIntoWithVersaModel(): void
+    public function test_replace_into_with_versa_model(): void
     {
         // Test: REPLACE INTO debe funcionar con VersaModel
         $product = new VersaModel('products', self::$orm);

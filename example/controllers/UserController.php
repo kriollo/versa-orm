@@ -34,7 +34,7 @@ class UserController
                     redirect('?action=users');
                 }
                 $user = models()->user()->find($id);
-                if (!$user instanceof User) {
+                if (! $user instanceof User) {
                     flash('error', 'Usuario no encontrado');
                     redirect('?action=users');
                 }

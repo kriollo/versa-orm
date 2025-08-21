@@ -25,7 +25,7 @@ class InetCastingConsistencyTest extends TestCase
         self::$orm->table('access_logs_inet_cast')->insert(['ip_address' => '2001:0db8:85a3:0000:0000:8a2e:0370:7334']);
     }
 
-    public function testInetCastingConsistency(): void
+    public function test_inet_casting_consistency(): void
     {
         $model = new class ('access_logs_inet_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array

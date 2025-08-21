@@ -20,8 +20,7 @@ switch ($action) {
             $notes = $orm->table('task_notes')
                 ->where('task_id', '=', (int) $taskId)
                 ->orderBy('created_at', 'DESC')
-                ->get() // array<int,array>
-            ;
+                ->get(); // array<int,array>
             $notesData = [];
 
             foreach ($notes as $noteArr) {

@@ -72,7 +72,7 @@ class RoleTestModel extends VersaModel
 
 class RelationshipsTest extends TestCase
 {
-    public function testAttachAndDetach(): void
+    public function test_attach_and_detach(): void
     {
         /** @var UserTestModel $user */
         $user = UserTestModel::findOne('users', 2); // Bob
@@ -88,7 +88,7 @@ class RelationshipsTest extends TestCase
         self::assertNull($detached);
     }
 
-    public function testSync(): void
+    public function test_sync(): void
     {
         /** @var UserTestModel $user */
         $user = UserTestModel::findOne('users', 2); // Bob
@@ -101,7 +101,7 @@ class RelationshipsTest extends TestCase
         $idViewer = $viewerRole->id;
         $idExterno = $externoRole->id;
 
-        //elimino el rol 2
+        // elimino el rol 2
         $user->roles()->detach(2);
 
         // Estado inicial: attach individualmente
@@ -129,7 +129,7 @@ class RelationshipsTest extends TestCase
         $user->roles()->attach(2);
     }
 
-    public function testFresh(): void
+    public function test_fresh(): void
     {
         $user = UserTestModel::findOne('users', 2);
         $user->roles()->attach(3);
@@ -138,21 +138,21 @@ class RelationshipsTest extends TestCase
         self::assertContains(3, $roleIds);
     }
 
-    public function testHasOneRelationship(): void
+    public function test_has_one_relationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
         self::assertInstanceOf(ProfileTestModel::class, $user->profile);
         self::assertSame('Alice bio', $user->profile->bio);
     }
 
-    public function testBelongsToRelationship(): void
+    public function test_belongs_to_relationship(): void
     {
         $profile = ProfileTestModel::findOne('profiles', 1);
         self::assertInstanceOf(UserTestModel::class, $profile->user);
         self::assertSame('Alice', $profile->user->name);
     }
 
-    public function testHasManyRelationship(): void
+    public function test_has_many_relationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
         self::assertIsArray($user->posts);
@@ -161,7 +161,7 @@ class RelationshipsTest extends TestCase
         self::assertSame('Alice Post 1', $user->posts[0]->title);
     }
 
-    public function testBelongsToManyRelationship(): void
+    public function test_belongs_to_many_relationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
         self::assertIsArray($user->roles);
@@ -170,7 +170,7 @@ class RelationshipsTest extends TestCase
         self::assertSame('Admin', $user->roles[0]->name);
     }
 
-    public function testEagerLoadingWithHasMany(): void
+    public function test_eager_loading_with_has_many(): void
     {
         $user = parent::$orm->table('users', UserTestModel::class)->with('posts')->findOne();
         self::assertNotNull($user);
@@ -179,7 +179,7 @@ class RelationshipsTest extends TestCase
         self::assertSame('Alice Post 1', $user->getRelations()['posts'][0]->title);
     }
 
-    public function testEagerLoadingWithBelongsTo(): void
+    public function test_eager_loading_with_belongs_to(): void
     {
         $post = parent::$orm->table('posts', PostTestModel::class)->with('user')->findOne();
         self::assertNotNull($post);
@@ -188,7 +188,7 @@ class RelationshipsTest extends TestCase
         self::assertSame('Alice', $post->getRelations()['user']->name);
     }
 
-    public function testDatabaseTransactionsCommit(): void
+    public function test_database_transactions_commit(): void
     {
         parent::$orm->beginTransaction();
         parent::$orm->table('users')->insert(['name' => 'Test Commit', 'email' => 'test.commit@example.com']);

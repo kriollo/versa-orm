@@ -94,7 +94,7 @@ try {
     // Mostrar recomendaciones si las hay
     $recommendations = $report->getRecommendations();
 
-    if (!empty($recommendations)) {
+    if (! empty($recommendations)) {
         echo "\n💡 Recomendaciones:\n";
 
         foreach ($recommendations as $recommendation) {
@@ -130,7 +130,7 @@ function parseArguments(array $argv): array
     $command = null;
     $counter = count($argv);
 
-    for ($i = 1; $i < $counter; ++$i) {
+    for ($i = 1; $i < $counter; $i++) {
         $arg = $argv[$i];
 
         if (str_starts_with($arg, '--')) {
@@ -145,12 +145,12 @@ function parseArguments(array $argv): array
             $value = true;
 
             // Verificar si el siguiente argumento es un valor
-            if ($i + 1 < count($argv) && !str_starts_with($argv[$i + 1], '-')) {
+            if ($i + 1 < count($argv) && ! str_starts_with($argv[$i + 1], '-')) {
                 $value = $argv[++$i];
             }
 
             $options[$key] = $value;
-        } elseif (!$command) {
+        } elseif (! $command) {
             // Comando principal
             $command = $arg;
         }

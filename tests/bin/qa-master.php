@@ -57,14 +57,14 @@ try {
     }
 
     // Step 1: Rector (Code Modernization)
-    if (!isset($options['skip-rector'])) {
+    if (! isset($options['skip-rector'])) {
         echo "📝 Step 1: Running Rector (Code Modernization)\n";
         echo "--------------------------------------------\n";
 
         $rectorResult = runRector($options, $logger);
         $results['rector'] = $rectorResult;
 
-        if (!$rectorResult['success']) {
+        if (! $rectorResult['success']) {
             $overallSuccess = false;
             echo "❌ Rector failed. Continuing with other tools...\n\n";
         } else {
@@ -75,14 +75,14 @@ try {
     }
 
     // Step 2: PHP-CS-Fixer (Code Formatting)
-    if (!isset($options['skip-cs-fixer'])) {
+    if (! isset($options['skip-cs-fixer'])) {
         echo "🎨 Step 2: Running PHP-CS-Fixer (Code Formatting)\n";
         echo "------------------------------------------------\n";
 
         $csFixerResult = runPhpCsFixer($options, $logger);
         $results['php-cs-fixer'] = $csFixerResult;
 
-        if (!$csFixerResult['success']) {
+        if (! $csFixerResult['success']) {
             $overallSuccess = false;
             echo "❌ PHP-CS-Fixer failed. Continuing with other tools...\n\n";
         } else {
@@ -93,14 +93,14 @@ try {
     }
 
     // Step 3: PHPStan (Static Analysis)
-    if (!isset($options['skip-phpstan'])) {
+    if (! isset($options['skip-phpstan'])) {
         echo "🔍 Step 3: Running PHPStan (Static Analysis)\n";
         echo "-------------------------------------------\n";
 
         $phpstanResult = runPhpStan($options, $logger);
         $results['phpstan'] = $phpstanResult;
 
-        if (!$phpstanResult['success']) {
+        if (! $phpstanResult['success']) {
             $overallSuccess = false;
             echo "❌ PHPStan found issues. Check the report for details.\n\n";
         } else {
@@ -111,14 +111,14 @@ try {
     }
 
     // Step 4: Psalm (Additional Analysis)
-    if (!isset($options['skip-psalm'])) {
+    if (! isset($options['skip-psalm'])) {
         echo "🔮 Step 4: Running Psalm (Additional Analysis)\n";
         echo "---------------------------------------------\n";
 
         $psalmResult = runPsalm($options, $logger);
         $results['psalm'] = $psalmResult;
 
-        if (!$psalmResult['success']) {
+        if (! $psalmResult['success']) {
             $overallSuccess = false;
             echo "❌ Psalm found issues. Check the report for details.\n\n";
         } else {
@@ -129,14 +129,14 @@ try {
     }
 
     // Step 5: Tests (Verification)
-    if (!isset($options['skip-tests'])) {
+    if (! isset($options['skip-tests'])) {
         echo "🧪 Step 5: Running Tests (Verification)\n";
         echo "--------------------------------------\n";
 
         $testsResult = runTests($options, $logger);
         $results['tests'] = $testsResult;
 
-        if (!$testsResult['success']) {
+        if (! $testsResult['success']) {
             $overallSuccess = false;
             echo "❌ Tests failed. Check the output for details.\n\n";
         } else {
@@ -359,7 +359,7 @@ function generateSummaryReport(array $results, bool $overallSuccess, array $opti
 
     echo "\nOverall Status: " . ($overallSuccess ? '✅ SUCCESS' : '❌ FAILED') . "\n\n";
 
-    if (!$overallSuccess) {
+    if (! $overallSuccess) {
         echo "💡 Recommendations:\n";
         echo "  1. Check individual tool outputs above for specific issues\n";
         echo "  2. Fix issues in the order they were run (Rector → PHP-CS-Fixer → PHPStan → Psalm → Tests)\n";

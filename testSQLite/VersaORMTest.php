@@ -19,13 +19,13 @@ require_once __DIR__ . '/TestCase.php';
  */
 class VersaORMTest extends TestCase
 {
-    public function testConnection(): void
+    public function test_connection(): void
     {
         self::assertNotNull(self::$orm, 'ORM instance should not be null');
         self::assertInstanceOf(VersaORM::class, self::$orm);
     }
 
-    public function testExecSelect(): void
+    public function test_exec_select(): void
     {
         $users = self::$orm->exec('SELECT * FROM users WHERE status = ? ORDER BY id ASC', ['active']);
         self::assertCount(2, $users);
@@ -33,7 +33,7 @@ class VersaORMTest extends TestCase
         self::assertSame('Charlie', $users[1]['name']);
     }
 
-    public function testExecInsert()
+    public function test_exec_insert()
     {
         $query = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
         $result = self::$orm->exec($query);
@@ -44,21 +44,21 @@ class VersaORMTest extends TestCase
         );
     }
 
-    public function testExecUpdate(): void
+    public function test_exec_update(): void
     {
         self::$orm->exec('UPDATE users SET status = ? WHERE email = ?', ['banned', 'alice@example.com']);
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
         self::assertSame('banned', $user->status);
     }
 
-    public function testExecDelete(): void
+    public function test_exec_delete(): void
     {
         self::$orm->exec('DELETE FROM users WHERE email = ?', ['alice@example.com']);
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
         self::assertNull($user);
     }
 
-    public function testTransactionSuccess(): void
+    public function test_transaction_success(): void
     {
         self::$orm->exec('BEGIN TRANSACTION');
         self::$orm->exec("UPDATE users SET status = 'pending' WHERE email = ?", ['alice@example.com']);
@@ -72,7 +72,7 @@ class VersaORMTest extends TestCase
         self::assertSame('pending', $bob->status);
     }
 
-    public function testTransactionRollback(): void
+    public function test_transaction_rollback(): void
     {
         // Primero obtener el estado actual de Alice
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
@@ -99,7 +99,7 @@ class VersaORMTest extends TestCase
         }
     }
 
-    public function testSchemaGetTables(): void
+    public function test_schema_get_tables(): void
     {
         $tables = self::$orm->schema('tables');
         self::assertContains('users', $tables);
@@ -107,7 +107,7 @@ class VersaORMTest extends TestCase
         self::assertContains('products', $tables);
     }
 
-    public function testSchemaGetColumns(): void
+    public function test_schema_get_columns(): void
     {
         $columns = self::$orm->schema('columns', 'users');
         self::assertIsArray($columns, 'Schema should return an array');
@@ -167,7 +167,7 @@ class VersaORMTest extends TestCase
         self::assertTrue($hasEmailColumn, 'Schema should include email column');
     }
 
-    public function testThrowsExceptionOnInvalidQuery(): void
+    public function test_throws_exception_on_invalid_query(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->exec('SELECT * FROM non_existent_table');

@@ -115,7 +115,7 @@ class CoverageAnalyzer
         $reportsDir = "{$this->projectRoot}/tests/reports/coverage/{$engine}";
 
         // Ensure reports directory exists
-        if (!is_dir($reportsDir)) {
+        if (! is_dir($reportsDir)) {
             mkdir($reportsDir, 0755, true);
         }
 
@@ -270,7 +270,7 @@ class CoverageAnalyzer
     {
         $cloverFile = "{$this->projectRoot}/tests/reports/coverage/{$engine}/clover.xml";
 
-        if (!file_exists($cloverFile)) {
+        if (! file_exists($cloverFile)) {
             throw new Exception("Clover coverage file not found for {$engine}");
         }
 
@@ -299,11 +299,11 @@ class CoverageAnalyzer
         } else {
             // Calculate metrics by aggregating file data
             foreach ($xml->project->file as $file) {
-                ++$filesAnalyzed;
+                $filesAnalyzed++;
 
                 if (property_exists($file, 'class') && $file->class !== null) {
                     foreach ($file->class as $class) {
-                        ++$classesAnalyzed;
+                        $classesAnalyzed++;
 
                         if (property_exists($class, 'metrics') && $class->metrics !== null) {
                             $classMetrics = $class->metrics;
@@ -423,7 +423,7 @@ class CoverageAnalyzer
             foreach ($gaps as $gap) {
                 $fileName = $gap['file'];
 
-                if (!isset($consolidated[$fileName])) {
+                if (! isset($consolidated[$fileName])) {
                     $consolidated[$fileName] = [
                         'file' => $fileName,
                         'engines' => [],
@@ -577,13 +577,13 @@ class CoverageAnalyzer
             'sqlite' => 'phpunit-sqlite.xml',
         ];
 
-        if (!isset($configFiles[$engine])) {
+        if (! isset($configFiles[$engine])) {
             throw new Exception("Unknown database engine: {$engine}");
         }
 
         $configFile = "{$this->projectRoot}/{$configFiles[$engine]}";
 
-        if (!file_exists($configFile)) {
+        if (! file_exists($configFile)) {
             throw new Exception("PHPUnit configuration file not found: {$configFile}");
         }
 

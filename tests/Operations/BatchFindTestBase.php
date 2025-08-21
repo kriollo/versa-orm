@@ -22,7 +22,7 @@ trait BatchFindTestBase
         $batches = [];
         $invocations = 0;
         VersaModel::findInBatches('users', function (array $models) use (&$batches, &$invocations): void {
-            ++$invocations;
+            $invocations++;
             $batches[] = array_map(static function (VersaModel $m): int {
                 return (int) $m->id;
             }, $models);
@@ -44,7 +44,7 @@ trait BatchFindTestBase
         $invocations = 0;
 
         VersaModel::findInBatches('users', function (array $models) use (&$ids, &$invocations): void {
-            ++$invocations;
+            $invocations++;
             foreach ($models as $m) {
                 $ids[] = (int) $m->id;
             }
@@ -69,7 +69,7 @@ trait BatchFindTestBase
         $count = 0;
         $ids = [];
         VersaModel::findInBatches('users', function (array $models) use (&$count, &$ids): void {
-            ++$count;
+            $count++;
             foreach ($models as $m) {
                 $ids[] = (int) $m->id;
             }

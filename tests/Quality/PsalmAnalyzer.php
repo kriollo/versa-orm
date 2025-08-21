@@ -31,7 +31,7 @@ class PsalmAnalyzer
 
         $this->psalmPath = $psalmPath;
 
-        if (!is_dir($this->reportsDir)) {
+        if (! is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
         }
     }
@@ -124,10 +124,10 @@ class PsalmAnalyzer
         foreach ($result['issues'] as $issue) {
             $category = $issue['type'] ?? 'unknown';
 
-            if (!isset($metrics['issue_categories'][$category])) {
+            if (! isset($metrics['issue_categories'][$category])) {
                 $metrics['issue_categories'][$category] = 0;
             }
-            ++$metrics['issue_categories'][$category];
+            $metrics['issue_categories'][$category]++;
         }
 
         // Calculate security score (100 - security_issue_density)
@@ -172,7 +172,7 @@ class PsalmAnalyzer
      */
     public function validateConfig(): array
     {
-        if (!file_exists($this->configPath)) {
+        if (! file_exists($this->configPath)) {
             return [
                 'valid' => false,
                 'error' => 'Configuration file not found: ' . $this->configPath,
@@ -281,7 +281,7 @@ class PsalmAnalyzer
         </div>
     </div>';
 
-        if (!empty($analysisResult['security_issues'])) {
+        if (! empty($analysisResult['security_issues'])) {
             $html .= '<div class="section">
                 <h2>Security Issues</h2>';
 
@@ -295,7 +295,7 @@ class PsalmAnalyzer
             $html .= '</div>';
         }
 
-        if (!empty($analysisResult['type_issues'])) {
+        if (! empty($analysisResult['type_issues'])) {
             $html .= '<div class="section">
                 <h2>Type Issues</h2>';
 
@@ -364,7 +364,7 @@ class PsalmAnalyzer
 
         $output = shell_exec($testCommand);
 
-        return !($output === '' || $output === '0' || $output === false || $output === null);
+        return ! ($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -389,7 +389,7 @@ class PsalmAnalyzer
         foreach ($allOptions as $key => $value) {
             if (is_bool($value) && $value) {
                 $command .= ' --' . ltrim($key, '-');
-            } elseif (!is_bool($value)) {
+            } elseif (! is_bool($value)) {
                 $command .= ' --' . ltrim($key, '-') . '=' . $value;
             }
         }

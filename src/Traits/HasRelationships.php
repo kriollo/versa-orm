@@ -22,6 +22,22 @@ trait HasRelationships
      */
     protected array $relations = [];
 
+    /**
+     * Permite acceder a la relación como método: $modelo->relacion()
+     * Retorna el objeto Relation para encadenar QueryBuilder.
+     */
+    public function __call($method, $arguments)
+    {
+        if (method_exists($this, $method)) {
+            $relation = $this->{$method}();
+            if ($relation instanceof Relation) {
+                return $relation;
+            }
+        }
+
+        throw new Exception("Método '$method' no existe o no es una relación válida en " . static::class);
+    }
+
     public function __get($key)
     {
         if ($this->relationLoaded($key)) {
@@ -158,11 +174,9 @@ trait HasRelationships
     protected function getRelationshipFromMethod(string $method): mixed
     {
         $relation = $this->{$method}();
-
-        if (!$relation instanceof Relation) {
+        if (! $relation instanceof Relation) {
             throw new Exception('Relationship method must return an object of type Relation.');
         }
-
         $result = $relation->getResults();
         $this->relations[$method] = $result;
 

@@ -13,7 +13,7 @@ require_once __DIR__ . '/TestCase.php';
  */
 class StoreAllTest extends TestCase
 {
-    public function testStoreAllInsertsMultipleModels(): void
+    public function test_store_all_inserts_multiple_models(): void
     {
         $u1 = VersaModel::dispense('users');
         $u1->name = 'BatchP1';
@@ -33,7 +33,7 @@ class StoreAllTest extends TestCase
         self::assertSame($ids[1], $u2->id);
     }
 
-    public function testStoreAllWithEmptyArrayReturnsEmpty(): void
+    public function test_store_all_with_empty_array_returns_empty(): void
     {
         self::assertSame([], VersaModel::storeAll([]));
     }

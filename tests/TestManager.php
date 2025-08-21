@@ -125,7 +125,7 @@ class TestManager implements TestManagerInterface
             return $this->mergeTestResults($results, 'unit');
         }
 
-        if (!in_array($engine, $this->supportedEngines, true)) {
+        if (! in_array($engine, $this->supportedEngines, true)) {
             throw new InvalidArgumentException("Unsupported engine: {$engine}");
         }
 

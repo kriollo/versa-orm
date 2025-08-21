@@ -79,7 +79,7 @@ class CoverageDashboard
 
                 if ($engineData['coverage'] > 0) {
                     $totalCoverage += $engineData['coverage'];
-                    ++$validEngines;
+                    $validEngines++;
                     $data['overall']['total_lines'] += $engineData['total_lines'];
                     $data['overall']['covered_lines'] += $engineData['covered_lines'];
                     $data['overall']['files_analyzed'] += $engineData['files_analyzed'];
@@ -183,7 +183,7 @@ class CoverageDashboard
     {
         $cloverFile = "{$this->projectRoot}/tests/reports/coverage/{$engine}/clover.xml";
 
-        if (!file_exists($cloverFile)) {
+        if (! file_exists($cloverFile)) {
             throw new Exception("Coverage data not found for {$engine}");
         }
 
@@ -336,7 +336,7 @@ class CoverageDashboard
         $coverages = [];
 
         foreach ($coverageData['engines'] as $engine => $data) {
-            if (!isset($data['error'])) {
+            if (! isset($data['error'])) {
                 $engines[] = "'" . ucfirst($engine) . "'";
                 $coverages[] = $data['coverage'];
             }

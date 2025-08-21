@@ -9,7 +9,7 @@ namespace VersaORM\Tests\Mysql;
  */
 final class DDLAlterOperationsTest extends TestCase
 {
-    public function testAddAndDropIndexAndForeign(): void
+    public function test_add_and_drop_index_and_foreign(): void
     {
         $orm = self::$orm;
         // base tables
@@ -55,7 +55,7 @@ final class DDLAlterOperationsTest extends TestCase
         $orm->schemaDrop('dept');
     }
 
-    public function testRenameModifyDropColumns(): void
+    public function test_rename_modify_drop_columns(): void
     {
         $orm = self::$orm;
 

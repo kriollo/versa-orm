@@ -22,7 +22,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para selectRaw con expresiones seguras.
      */
-    public function testSelectRawWithSafeExpressions(): void
+    public function test_select_raw_with_safe_expressions(): void
     {
         // Expresión segura
         $result = self::$orm->table('users')->selectRaw('COUNT(*) as total_users');
@@ -36,7 +36,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para selectRaw con expresiones peligrosas.
      */
-    public function testSelectRawWithUnsafeExpressions(): void
+    public function test_select_raw_with_unsafe_expressions(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
@@ -47,7 +47,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para selectRaw con expresión vacía.
      */
-    public function testSelectRawWithEmptyExpression(): void
+    public function test_select_raw_with_empty_expression(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('selectRaw expression cannot be empty');
@@ -58,7 +58,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para orderByRaw con expresiones seguras.
      */
-    public function testOrderByRawWithSafeExpressions(): void
+    public function test_order_by_raw_with_safe_expressions(): void
     {
         $result = self::$orm->table('users')->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['active']);
         self::assertInstanceOf(QueryBuilder::class, $result);
@@ -67,7 +67,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para orderByRaw con expresiones peligrosas.
      */
-    public function testOrderByRawWithUnsafeExpressions(): void
+    public function test_order_by_raw_with_unsafe_expressions(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in orderByRaw');
@@ -78,7 +78,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para groupByRaw con expresiones seguras.
      */
-    public function testGroupByRawWithSafeExpressions(): void
+    public function test_group_by_raw_with_safe_expressions(): void
     {
         $result = self::$orm->table('users')->groupByRaw('YEAR(created_at), MONTH(created_at)');
         self::assertInstanceOf(QueryBuilder::class, $result);
@@ -87,7 +87,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para groupByRaw con expresiones peligrosas.
      */
-    public function testGroupByRawWithUnsafeExpressions(): void
+    public function test_group_by_raw_with_unsafe_expressions(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in groupByRaw');
@@ -98,7 +98,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereRaw con validación de seguridad.
      */
-    public function testWhereRawWithSafeExpressions(): void
+    public function test_where_raw_with_safe_expressions(): void
     {
         $result = self::$orm->table('users')->whereRaw('age > ? AND status = ?', [18, 'active']);
         self::assertInstanceOf(QueryBuilder::class, $result);
@@ -107,7 +107,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereRaw con expresiones peligrosas.
      */
-    public function testWhereRawWithUnsafeExpressions(): void
+    public function test_where_raw_with_unsafe_expressions(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in whereRaw');
@@ -118,7 +118,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para selectSubQuery con closure.
      */
-    public function testSelectSubQueryWithClosure(): void
+    public function test_select_sub_query_with_closure(): void
     {
         $result = self::$orm->table('users')->selectSubQuery(static function (QueryBuilder $query): void {
             $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
@@ -130,7 +130,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para selectSubQuery con alias inválido.
      */
-    public function testSelectSubQueryWithInvalidAlias(): void
+    public function test_select_sub_query_with_invalid_alias(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid alias name in selectSubQuery');
@@ -143,7 +143,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereSubQuery con operadores válidos.
      */
-    public function testWhereSubQueryWithValidOperators(): void
+    public function test_where_sub_query_with_valid_operators(): void
     {
         $result = self::$orm->table('users')->whereSubQuery('id', 'IN', static function (QueryBuilder $query): void {
             $query->select(['user_id'])->where('status', '=', 'active');
@@ -155,7 +155,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereSubQuery con operador inválido.
      */
-    public function testWhereSubQueryWithInvalidOperator(): void
+    public function test_where_sub_query_with_invalid_operator(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid operator in whereSubQuery');
@@ -168,7 +168,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereSubQuery con columna inválida.
      */
-    public function testWhereSubQueryWithInvalidColumn(): void
+    public function test_where_sub_query_with_invalid_column(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid column name in whereSubQuery');
@@ -181,7 +181,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereExists.
      */
-    public function testWhereExists(): void
+    public function test_where_exists(): void
     {
         $result = self::$orm->table('users')->whereExists(static function (QueryBuilder $query): void {
             $query->from('posts')->where('user_id', '=', 'users.id');
@@ -193,7 +193,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para whereNotExists.
      */
-    public function testWhereNotExists(): void
+    public function test_where_not_exists(): void
     {
         $result = self::$orm->table('users')->whereNotExists(static function (QueryBuilder $query): void {
             $query->from('banned_users')->where('user_id', '=', 'users.id');
@@ -205,7 +205,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para buildSubQuery con QueryBuilder existente.
      */
-    public function testBuildSubQueryWithExistingQueryBuilder(): void
+    public function test_build_sub_query_with_existing_query_builder(): void
     {
         // Construir el QueryBuilder existente a partir del ORM estático para evitar notices
         $subQuery = self::$orm->table('posts');
@@ -218,7 +218,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para buildSubQuery con tipo inválido.
      */
-    public function testBuildSubQueryWithInvalidType(): void
+    public function test_build_sub_query_with_invalid_type(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Subquery callback must be a Closure or QueryBuilder instance');
@@ -234,7 +234,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para validación de paréntesis balanceados.
      */
-    public function testUnbalancedParenthesesValidation(): void
+    public function test_unbalanced_parentheses_validation(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
@@ -245,7 +245,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para expresiones demasiado largas.
      */
-    public function testTooLongExpressionValidation(): void
+    public function test_too_long_expression_validation(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
@@ -257,7 +257,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para detección de comentarios SQL.
      */
-    public function testSQLCommentsDetection(): void
+    public function test_sql_comments_detection(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
@@ -268,7 +268,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para detección de UNION attacks.
      */
-    public function testUnionAttackDetection(): void
+    public function test_union_attack_detection(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
@@ -279,7 +279,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para detección de funciones peligrosas.
      */
-    public function testDangerousFunctionDetection(): void
+    public function test_dangerous_function_detection(): void
     {
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
@@ -290,7 +290,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test para funciones SQL permitidas.
      */
-    public function testAllowedSQLFunctions(): void
+    public function test_allowed_sql_functions(): void
     {
         $allowedFunctions = [
             'COUNT(*)',
@@ -317,25 +317,22 @@ class QueryBuilderSubqueriesTest extends TestCase
     /**
      * Test combinado: subconsulta compleja con múltiples condiciones.
      */
-    public function testComplexSubqueryWithMultipleConditions(): void
+    public function test_complex_subquery_with_multiple_conditions(): void
     {
         $result = self::$orm->table('users')
             ->select(['id', 'name', 'email'])
             ->selectSubQuery(static function (QueryBuilder $query): void {
                 $query->select(['COUNT(*)'])
                     ->where('user_id', '=', 'users.id')
-                    ->where('status', '=', 'published')
-                ;
+                    ->where('status', '=', 'published');
             }, 'published_posts_count')
             ->whereExists(static function (QueryBuilder $query): void {
                 $query->from('user_roles')
                     ->where('user_id', '=', 'users.id')
-                    ->where('role', '=', 'author')
-                ;
+                    ->where('role', '=', 'author');
             })
             ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['premium'])
-            ->groupByRaw('YEAR(created_at), status')
-        ;
+            ->groupByRaw('YEAR(created_at), status');
 
         self::assertInstanceOf(QueryBuilder::class, $result);
     }

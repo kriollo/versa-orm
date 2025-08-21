@@ -11,37 +11,37 @@ require_once __DIR__ . '/TestCase.php';
  */
 class CacheTest extends TestCase
 {
-    public function testCacheEnable(): void
+    public function test_cache_enable(): void
     {
         $result = self::$orm->cache('enable');
         self::assertTrue($result === null || is_array($result), 'Cache enable should return null or array');
     }
 
-    public function testCacheDisable(): void
+    public function test_cache_disable(): void
     {
         $result = self::$orm->cache('disable');
         self::assertTrue($result === null || is_array($result), 'Cache disable should return null or array');
     }
 
-    public function testCacheClear(): void
+    public function test_cache_clear(): void
     {
         $result = self::$orm->cache('clear');
         self::assertTrue($result === null || is_array($result), 'Cache clear should return null or array');
     }
 
-    public function testCacheStatus(): void
+    public function test_cache_status(): void
     {
         $result = self::$orm->cache('status');
         self::assertTrue($result === null || is_array($result), 'Cache status should return null or array');
     }
 
-    public function testCacheStats(): void
+    public function test_cache_stats(): void
     {
         $result = self::$orm->cache('stats');
         self::assertTrue($result === null || is_array($result), 'Cache stats should return null or array');
     }
 
-    public function testCacheQueryIntegration(): void
+    public function test_cache_query_integration(): void
     {
         // Enable cache
         self::$orm->cache('enable');
@@ -58,7 +58,7 @@ class CacheTest extends TestCase
         self::$orm->cache('disable');
     }
 
-    public function testCacheInvalidationAfterInsert(): void
+    public function test_cache_invalidation_after_insert(): void
     {
         // Enable cache
         self::$orm->cache('enable');
@@ -77,7 +77,7 @@ class CacheTest extends TestCase
         self::$orm->cache('disable');
     }
 
-    public function testCacheInvalidationAfterUpdate(): void
+    public function test_cache_invalidation_after_update(): void
     {
         // Enable cache
         self::$orm->cache('enable');
@@ -98,7 +98,7 @@ class CacheTest extends TestCase
         self::$orm->cache('disable');
     }
 
-    public function testCacheInvalidationAfterDelete(): void
+    public function test_cache_invalidation_after_delete(): void
     {
         // Enable cache
         self::$orm->cache('enable');
@@ -121,13 +121,13 @@ class CacheTest extends TestCase
         self::$orm->cache('disable');
     }
 
-    public function testInvalidCacheAction(): void
+    public function test_invalid_cache_action(): void
     {
         $this->expectException(\VersaORM\VersaORMException::class);
         self::$orm->cache('invalid_action');
     }
 
-    public function testCacheInvalidateWithoutParameters(): void
+    public function test_cache_invalidate_without_parameters(): void
     {
         $result = self::$orm->cache('invalidate');
         self::assertTrue($result === null || is_array($result), 'Cache invalidate should return null or array');

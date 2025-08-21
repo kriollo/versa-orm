@@ -6,33 +6,30 @@ namespace VersaORM\Tests\PostgreSQL;
 
 final class BatchOperationsTypedBindTest extends TestCase
 {
-    public function testInsertManyAndUpdateManyDeleteMany(): void
+    public function test_insert_many_and_update_many_delete_many(): void
     {
         $res = self::$orm->table('users')
             ->insertMany([
                 ['name' => 'Zara', 'email' => 'zara@example.com', 'status' => 'active'],
                 ['name' => 'Yuri', 'email' => 'yuri@example.com', 'status' => 'inactive'],
-            ], batchSize: 1000)
-        ;
+            ], batchSize: 1000);
         self::assertSame('success', $res['status'] ?? null);
         self::assertSame(2, $res['total_inserted'] ?? 0);
 
         $resU = self::$orm->table('users')
             ->where('id', '>=', 1)
-            ->updateMany(['status' => 'checked'], maxRecords: 1000)
-        ;
+            ->updateMany(['status' => 'checked'], maxRecords: 1000);
         self::assertSame('success', $resU['status'] ?? null);
         self::assertGreaterThanOrEqual(2, $resU['rows_affected'] ?? 0);
 
         $resD = self::$orm->table('users')
             ->where('id', '>', 1000000)
-            ->deleteMany(maxRecords: 1000)
-        ;
+            ->deleteMany(maxRecords: 1000);
         self::assertSame('success', $resD['status'] ?? null);
         self::assertSame(0, $resD['rows_affected'] ?? -1);
     }
 
-    public function testRawSelectWithParamBinding(): void
+    public function test_raw_select_with_param_binding(): void
     {
         $rows = self::$orm->exec('SELECT COUNT(*) AS c FROM users WHERE id > ?', [1]);
         self::assertIsArray($rows);

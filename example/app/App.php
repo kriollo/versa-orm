@@ -26,7 +26,7 @@ class App
 
     public function orm(): VersaORM
     {
-        if (!$this->orm instanceof VersaORM) {
+        if (! $this->orm instanceof VersaORM) {
             // Construcción perezosa: crear ORM hasta el primer uso
             $this->orm = OrmFactory::make($this->config, $this->request);
             // Registrar global para compatibilidad interna (QueryBuilder que no recibe explícito)
@@ -38,7 +38,7 @@ class App
 
     public function models(): ModelManager
     {
-        if (!$this->models instanceof ModelManager) {
+        if (! $this->models instanceof ModelManager) {
             // Entregar el ORM perezosamente al manager
             $this->models = new ModelManager($this->orm());
         }

@@ -23,7 +23,7 @@ try {
     // Obtener instancia de VersaORM
     $orm = VersaModel::getGlobalORM();
 
-    if (!$orm instanceof VersaORM) {
+    if (! $orm instanceof VersaORM) {
         throw new Exception('No se pudo obtener la instancia de VersaORM');
     }
 

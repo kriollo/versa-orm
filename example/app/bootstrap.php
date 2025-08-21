@@ -54,7 +54,7 @@ function render(string $view, $data = []): void
     extract($data);
     $viewFile = __DIR__ . '/../views/' . $view . '.php';
 
-    if (!file_exists($viewFile)) {
+    if (! file_exists($viewFile)) {
         exit("Vista no encontrada: {$view}");
     }
 
@@ -63,7 +63,7 @@ function render(string $view, $data = []): void
     $content = ob_get_clean();
 
     // Si no es una vista parcial, usar layout
-    if (!isset($noLayout) || !$noLayout) {
+    if (! isset($noLayout) || ! $noLayout) {
         include __DIR__ . '/../views/layout.php';
     } else {
         echo $content;

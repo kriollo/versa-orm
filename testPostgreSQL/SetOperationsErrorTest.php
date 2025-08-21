@@ -12,7 +12,7 @@ use VersaORM\VersaORMException;
  */
 class SetOperationsErrorTest extends TestCase
 {
-    public function testSetOperationTooFewQueries(): void
+    public function test_set_operation_too_few_queries(): void
     {
         $this->expectException(VersaORMException::class);
         $qb = new QueryBuilder(self::$orm, 'users');
@@ -22,7 +22,7 @@ class SetOperationsErrorTest extends TestCase
         ]);
     }
 
-    public function testSetOperationInvalidTypeViaHack(): void
+    public function test_set_operation_invalid_type_via_hack(): void
     {
         // Simulamos llamada directa al método protegido executeAdvancedSQL mediante reflexión para inyectar set_type inválido
         $this->expectException(VersaORMException::class);

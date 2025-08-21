@@ -33,7 +33,7 @@ class SchemaValidationTest extends TestCase
     /**
      * Test básico de obtención de esquema desde Rust CLI.
      */
-    public function testGetTableValidationSchemaBasic(): void
+    public function test_get_table_validation_schema_basic(): void
     {
         $model = new TestUserModel('users', self::$orm);
 
@@ -68,7 +68,7 @@ class SchemaValidationTest extends TestCase
     /**
      * Test de procesamiento de metadatos de esquema a reglas de validación.
      */
-    public function testProcessSchemaToValidationRules(): void
+    public function test_process_schema_to_validation_rules(): void
     {
         $model = new TestUserModel('users', self::$orm);
 
@@ -162,7 +162,7 @@ class SchemaValidationTest extends TestCase
     /**
      * Test de validación automática usando esquema simulado.
      */
-    public function testValidateAgainstSchema(): void
+    public function test_validate_against_schema(): void
     {
         $model = new TestUserModelWithMockSchema('users', self::$orm);
 
@@ -207,7 +207,7 @@ class SchemaValidationTest extends TestCase
     /**
      * Test de manejo de errores cuando CLI Rust no está disponible.
      */
-    public function testSchemaValidationFallback(): void
+    public function test_schema_validation_fallback(): void
     {
         $model = new TestUserModelWithFailingSchema('users', self::$orm);
 
@@ -228,7 +228,7 @@ class SchemaValidationTest extends TestCase
     /**
      * Test de validación de campos individuales contra esquema.
      */
-    public function testValidateFieldAgainstSchema(): void
+    public function test_validate_field_against_schema(): void
     {
         $model = new TestUserModel('users', self::$orm);
 
@@ -266,7 +266,7 @@ class SchemaValidationTest extends TestCase
     /**
      * Test de integración completa con modelo real.
      */
-    public function testFullIntegrationWithRealModel(): void
+    public function test_full_integration_with_real_model(): void
     {
         // Crear un modelo que use la validación automática real
         $user = new TestUserModel('users', self::$orm);

@@ -79,7 +79,7 @@ class User extends BaseModel
     /** Crear usuario con defaults y casting consistente (instancia). */
     public function createOne(array $attributes): self
     {
-        if (!isset($attributes['avatar_color'])) {
+        if (! isset($attributes['avatar_color'])) {
             $attributes['avatar_color'] = $this->generateRandomColor();
         }
         $this->fill($attributes);
@@ -123,7 +123,7 @@ class User extends BaseModel
             foreach ($allProjects as $project) {
                 $projectId = $project['id'] ?? null;
 
-                if ($projectId && !in_array($projectId, $seenIds, true)) {
+                if ($projectId && ! in_array($projectId, $seenIds, true)) {
                     $uniqueProjects[] = $project;
                     $seenIds[] = $projectId;
                 }

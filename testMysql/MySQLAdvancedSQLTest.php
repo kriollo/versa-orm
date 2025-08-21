@@ -54,7 +54,7 @@ class MySQLAdvancedSQLTest extends TestCase
         $this->orm->exec('DROP TABLE IF EXISTS employees_mysql_adv');
     }
 
-    public function testMySQLWindowFunctionWithSpecificSyntax(): void
+    public function test_my_sql_window_function_with_specific_syntax(): void
     {
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
@@ -74,7 +74,7 @@ class MySQLAdvancedSQLTest extends TestCase
         self::assertArrayHasKey('row_num', $result[0] ?? []);
     }
 
-    public function testMySQLJSONOperationsWithArrowSyntax(): void
+    public function test_my_sqljson_operations_with_arrow_syntax(): void
     {
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
@@ -85,7 +85,7 @@ class MySQLAdvancedSQLTest extends TestCase
         self::assertNotEmpty($result);
     }
 
-    public function testMySQLFullTextSearchWithMatch(): void
+    public function test_my_sql_full_text_search_with_match(): void
     {
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
@@ -98,7 +98,7 @@ class MySQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testMySQLQueryHints(): void
+    public function test_my_sql_query_hints(): void
     {
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
@@ -112,7 +112,7 @@ class MySQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testMySQLAdvancedAggregationGroupConcat(): void
+    public function test_my_sql_advanced_aggregation_group_concat(): void
     {
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
@@ -125,7 +125,7 @@ class MySQLAdvancedSQLTest extends TestCase
         self::assertIsArray($result);
     }
 
-    public function testMySQLCTEWithRecursive(): void
+    public function test_my_sqlcte_with_recursive(): void
     {
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 

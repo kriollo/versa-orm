@@ -16,7 +16,7 @@ class QueryBuilderTest extends TestCase
     // SELECT and GET Methods
     // ======================================================================
 
-    public function testGetAll(): void
+    public function test_get_all(): void
     {
         $users = self::$orm->table('users')->getAll();
         self::assertCount(3, $users);
@@ -24,7 +24,7 @@ class QueryBuilderTest extends TestCase
         self::assertArrayHasKey('email', $users[0]);
     }
 
-    public function testFindAll(): void
+    public function test_find_all(): void
     {
         $users = self::$orm->table('users')->findAll();
         self::assertCount(3, $users);
@@ -32,7 +32,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame('alice@example.com', $users[0]->email);
     }
 
-    public function testSelectSpecificColumns(): void
+    public function test_select_specific_columns(): void
     {
         $user = self::$orm->table('users')->select(['id', 'name'])->where('email', '=', 'alice@example.com')->firstArray();
         self::assertCount(2, $user);
@@ -41,41 +41,41 @@ class QueryBuilderTest extends TestCase
         self::assertArrayNotHasKey('email', $user);
     }
 
-    public function testFirstArray(): void
+    public function test_first_array(): void
     {
         $user = self::$orm->table('users')->where('status', '=', 'active')->orderBy('id', 'asc')->firstArray();
         self::assertIsArray($user);
         self::assertSame('Alice', $user['name']);
     }
 
-    public function testFindOne(): void
+    public function test_find_one(): void
     {
         $user = self::$orm->table('users')->where('status', '=', 'active')->orderBy('id', 'asc')->findOne();
         self::assertInstanceOf(VersaModel::class, $user);
         self::assertSame('Alice', $user->name);
     }
 
-    public function testFind(): void
+    public function test_find(): void
     {
         $user = self::$orm->table('users')->find(1);
         self::assertInstanceOf(VersaModel::class, $user);
         self::assertSame('Alice', $user->name);
     }
 
-    public function testFindWithCustomPk(): void
+    public function test_find_with_custom_pk(): void
     {
         $product = self::$orm->table('products')->find('P001', 'sku');
         self::assertInstanceOf(VersaModel::class, $product);
         self::assertSame('Laptop', $product->name);
     }
 
-    public function testCount(): void
+    public function test_count(): void
     {
         $count = self::$orm->table('users')->where('status', '=', 'active')->count();
         self::assertSame(2, $count);
     }
 
-    public function testExists(): void
+    public function test_exists(): void
     {
         $exists = self::$orm->table('users')->where('email', '=', 'bob@example.com')->exists();
         self::assertTrue($exists);
@@ -85,26 +85,26 @@ class QueryBuilderTest extends TestCase
     }
 
     /** @only */
-    public function testWhere(): void
+    public function test_where(): void
     {
         $users = self::$orm->table('users')->where('status', '=', 'inactive')->findAll();
         self::assertCount(1, $users);
         self::assertSame('Bob', $users[0]->name);
     }
 
-    public function testWhereGreaterThan(): void
+    public function test_where_greater_than(): void
     {
         $users = self::$orm->table('users')->where('id', '>', 1)->findAll();
         self::assertCount(2, $users);
     }
 
-    public function testOrWhere(): void
+    public function test_or_where(): void
     {
         $users = self::$orm->table('users')->where('status', '=', 'inactive')->orWhere('id', '=', 3)->findAll();
         self::assertCount(2, $users);
     }
 
-    public function testWhereInDebug(): void
+    public function test_where_in_debug(): void
     {
         // Unificado: usar el ORM compartido del TestCase, sin crear configuración local
         $query = self::$orm->table('users')->whereIn('id', [1, 3]);
@@ -112,7 +112,7 @@ class QueryBuilderTest extends TestCase
         self::assertCount(2, $users);
     }
 
-    public function testWhereIn(): void
+    public function test_where_in(): void
     {
         $query = self::$orm->table('users')->whereIn('id', [1, 3]);
         // The query will be dumped and exit in execute method
@@ -120,35 +120,35 @@ class QueryBuilderTest extends TestCase
         self::assertCount(2, $users);
     }
 
-    public function testWhereNotIn(): void
+    public function test_where_not_in(): void
     {
         $users = self::$orm->table('users')->whereNotIn('id', [1, 3])->findAll();
         self::assertCount(1, $users);
         self::assertSame('Bob', $users[0]->name);
     }
 
-    public function testWhereNull(): void
+    public function test_where_null(): void
     {
         self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Draft Post', 'content' => '...', 'published_at' => null]);
         $posts = self::$orm->table('posts')->whereNull('published_at')->findAll();
         self::assertCount(4, $posts); // 3 from seed + 1 new
     }
 
-    public function testWhereNotNull(): void
+    public function test_where_not_null(): void
     {
         self::$orm->table('posts')->where('id', '=', 1)->update(['published_at' => date('Y-m-d H:i:s')]);
         $posts = self::$orm->table('posts')->whereNotNull('published_at')->findAll();
         self::assertCount(1, $posts);
     }
 
-    public function testWhereBetween(): void
+    public function test_where_between(): void
     {
         $products = self::$orm->table('products')->whereBetween('price', 20, 30)->findAll();
         self::assertCount(1, $products);
         self::assertSame('Mouse', $products[0]->name);
     }
 
-    public function testWhereNotBetween(): void
+    public function test_where_not_between(): void
     {
         $products = self::$orm->table('products')->whereNotBetween('price', 20, 30)->findAll();
         $names = array_map(fn ($p) => $p->name, $products);
@@ -157,7 +157,7 @@ class QueryBuilderTest extends TestCase
         self::assertNotContains('Mouse', $names);
     }
 
-    public function testWhereRaw(): void
+    public function test_where_raw(): void
     {
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
         self::assertCount(1, $users);
@@ -168,7 +168,7 @@ class QueryBuilderTest extends TestCase
     // JOIN Clauses
     // ======================================================================
 
-    public function testJoin(): void
+    public function test_join(): void
     {
         $posts = self::$orm->table('posts')
             ->select(['posts.title', 'users.name as author'])
@@ -180,7 +180,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame('Alice', $posts[0]['author']);
     }
 
-    public function testLeftJoin(): void
+    public function test_left_join(): void
     {
         self::$orm->table('users')->insert(['name' => 'Eve', 'email' => 'eve@example.com']);
         $users = self::$orm->table('users')
@@ -196,7 +196,7 @@ class QueryBuilderTest extends TestCase
     // Order, Group, Limit, Offset
     // ======================================================================
 
-    public function testOrderBy(): void
+    public function test_order_by(): void
     {
         $users = self::$orm->table('users')->orderBy('name', 'desc')->findAll();
         self::assertSame('Charlie', $users[0]->name);
@@ -204,21 +204,21 @@ class QueryBuilderTest extends TestCase
         self::assertSame('Alice', $users[2]->name);
     }
 
-    public function testLimit(): void
+    public function test_limit(): void
     {
         $users = self::$orm->table('users')->limit(2)->orderBy('id', 'asc')->findAll();
         self::assertCount(2, $users);
         self::assertSame('Alice', $users[0]->name);
     }
 
-    public function testOffset(): void
+    public function test_offset(): void
     {
         $users = self::$orm->table('users')->limit(1)->offset(1)->orderBy('id', 'asc')->findAll();
         self::assertCount(1, $users);
         self::assertSame('Bob', $users[0]->name);
     }
 
-    public function testGroupBy(): void
+    public function test_group_by(): void
     {
         // Test simple groupBy
         $results = self::$orm->table('users')
@@ -234,7 +234,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame(1, $results[1]['count']);
     }
 
-    public function testGroupByMultipleColumns(): void
+    public function test_group_by_multiple_columns(): void
     {
         // Test groupBy with multiple columns
         $results = self::$orm->table('posts')
@@ -250,7 +250,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame(1, $results[1]['post_count']);
     }
 
-    public function testHaving(): void
+    public function test_having(): void
     {
         // Test groupBy with having
         // En PostgreSQL, el alias en HAVING no siempre es reconocido; usar la expresión
@@ -265,7 +265,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame(2, $results[0]['count']);
     }
 
-    public function testHavingMultipleConditions(): void
+    public function test_having_multiple_conditions(): void
     {
         // Test having with multiple conditions
         $results = self::$orm->table('users')
@@ -285,7 +285,7 @@ class QueryBuilderTest extends TestCase
     // Write Operations (INSERT, UPDATE, DELETE)
     // ======================================================================
 
-    public function testInsert(): void
+    public function test_insert(): void
     {
         self::$orm->table('users')->insert([
             'name' => 'Frank',
@@ -298,7 +298,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame('Frank', $frank->name);
     }
 
-    public function testInsertGetId(): void
+    public function test_insert_get_id(): void
     {
         $id = self::$orm->table('users')->insertGetId([
             'name' => 'Grace',
@@ -316,7 +316,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame('Grace', $grace->name);
     }
 
-    public function testUpdate(): void
+    public function test_update(): void
     {
         $updated = self::$orm->table('users')
             ->where('email', '=', 'alice@example.com')
@@ -328,7 +328,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame('on_vacation', $alice->status);
     }
 
-    public function testDelete(): void
+    public function test_delete(): void
     {
         $deleted = self::$orm->table('users')
             ->where('email', '=', 'bob@example.com')
@@ -343,7 +343,7 @@ class QueryBuilderTest extends TestCase
     // Derived UNION (fromUnion)
     // ================================================================
 
-    public function testFromUnionDerivedTable(): void
+    public function test_from_union_derived_table(): void
     {
         $rows = self::$orm->table('posts')
             ->fromUnion([
@@ -365,7 +365,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame('Alice', $rows[0]['author']);
     }
 
-    public function testFromUnionAllDuplicates(): void
+    public function test_from_union_all_duplicates(): void
     {
         $rows = self::$orm->table('posts')
             ->fromUnion([
@@ -384,7 +384,7 @@ class QueryBuilderTest extends TestCase
         self::assertSame((int) $rows[0]['id'], (int) $rows[1]['id']);
     }
 
-    public function testFromUnionInvalidEmpty(): void
+    public function test_from_union_invalid_empty(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->table('posts')->fromUnion([], 'x');

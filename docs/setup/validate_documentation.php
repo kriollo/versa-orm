@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Validador de Documentación VersaORM
  *
@@ -9,23 +10,27 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__.'/../../vendor/autoload.php';
 
-use VersaORM\VersaORM;
 use VersaORM\VersaModel;
+use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 class DocumentationValidator
 {
     private array $supportedDatabases = ['sqlite', 'mysql', 'postgresql'];
+
     private array $validationResults = [];
+
     private array $codeExamples = [];
+
     private string $docsPath;
+
     private ?VersaORM $orm = null;
 
     public function __construct()
     {
-        $this->docsPath = __DIR__ . '/..';
+        $this->docsPath = __DIR__.'/..';
         $this->initializeDatabase();
     }
 
@@ -39,11 +44,11 @@ class DocumentationValidator
             $config = [
                 'engine' => 'pdo',
                 'driver' => 'sqlite',
-                'database' => __DIR__ . '/validation_test.sqlite',
+                'database' => __DIR__.'/validation_test.sqlite',
                 'host' => '',
                 'username' => '',
                 'password' => '',
-                'charset' => 'utf8mb4'
+                'charset' => 'utf8mb4',
             ];
 
             $this->orm = new VersaORM($config);
@@ -53,7 +58,7 @@ class DocumentationValidator
 
             echo "✓ Base de datos de prueba inicializada\n";
         } catch (Exception $e) {
-            die("✗ Error inicializando base de datos: " . $e->getMessage() . "\n");
+            exit('✗ Error inicializando base de datos: '.$e->getMessage()."\n");
         }
     }
 
@@ -63,7 +68,7 @@ class DocumentationValidator
     private function setupTestTables(): void
     {
         $tables = [
-            'users' => "
+            'users' => '
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(100) NOT NULL,
@@ -72,8 +77,8 @@ class DocumentationValidator
                     age INTEGER,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
-            ",
-            'posts' => "
+            ',
+            'posts' => '
                 CREATE TABLE IF NOT EXISTS posts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title VARCHAR(200) NOT NULL,
@@ -84,14 +89,14 @@ class DocumentationValidator
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
-            ",
-            'tags' => "
+            ',
+            'tags' => '
                 CREATE TABLE IF NOT EXISTS tags (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(50) NOT NULL UNIQUE
                 )
-            ",
-            'post_tags' => "
+            ',
+            'post_tags' => '
                 CREATE TABLE IF NOT EXISTS post_tags (
                     post_id INTEGER,
                     tag_id INTEGER,
@@ -99,7 +104,7 @@ class DocumentationValidator
                     FOREIGN KEY (post_id) REFERENCES posts(id),
                     FOREIGN KEY (tag_id) REFERENCES tags(id)
                 )
-            "
+            ',
         ];
 
         foreach ($tables as $tableName => $sql) {
@@ -113,10 +118,10 @@ class DocumentationValidator
     private function insertTestData(): void
     {
         // Limpiar datos existentes
-        $this->orm->exec("DELETE FROM post_tags");
-        $this->orm->exec("DELETE FROM posts");
-        $this->orm->exec("DELETE FROM tags");
-        $this->orm->exec("DELETE FROM users");
+        $this->orm->exec('DELETE FROM post_tags');
+        $this->orm->exec('DELETE FROM posts');
+        $this->orm->exec('DELETE FROM tags');
+        $this->orm->exec('DELETE FROM users');
 
         // Insertar usuarios
         $users = [
@@ -171,7 +176,7 @@ class DocumentationValidator
 
         foreach ($postTags as $relation) {
             $this->orm->exec(
-                "INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)",
+                'INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)',
                 [$relation['post_id'], $relation['tag_id']]
             );
         }
@@ -208,7 +213,7 @@ class DocumentationValidator
             $this->codeExamples = array_merge($this->codeExamples, $examples);
         }
 
-        echo "   Encontrados " . count($this->codeExamples) . " ejemplos de código\n\n";
+        echo '   Encontrados '.count($this->codeExamples)." ejemplos de código\n\n";
     }
 
     /**
@@ -256,7 +261,7 @@ class DocumentationValidator
                 'file' => $file,
                 'line' => $lineNumber,
                 'code' => $code,
-                'index' => $index
+                'index' => $index,
             ];
         }
 
@@ -301,13 +306,14 @@ class DocumentationValidator
             'valid' => false,
             'error' => '',
             'return_type' => null,
-            'return_value' => null
+            'return_value' => null,
         ];
 
         try {
             // Verificar sintaxis PHP
-            if (!$this->validatePhpSyntax($example['code'])) {
+            if (! $this->validatePhpSyntax($example['code'])) {
                 $result['error'] = 'Error de sintaxis PHP';
+
                 return $result;
             }
 
@@ -317,6 +323,7 @@ class DocumentationValidator
             if ($executableCode === null) {
                 $result['valid'] = true; // Código no ejecutable pero sintácticamente válido
                 $result['error'] = 'Código no ejecutable (solo definición)';
+
                 return $result;
             }
 
@@ -341,8 +348,8 @@ class DocumentationValidator
     private function validatePhpSyntax(string $code): bool
     {
         // Agregar tags PHP si no existen
-        if (!str_starts_with(trim($code), '<?php')) {
-            $code = "<?php\n" . $code;
+        if (! str_starts_with(trim($code), '<?php')) {
+            $code = "<?php\n".$code;
         }
 
         // Verificar sintaxis usando php -l
@@ -386,16 +393,16 @@ class DocumentationValidator
         $code = str_replace('$orm', '$this->orm', $code);
 
         // Agregar return para capturar el resultado
-        if (!str_contains($code, 'return ') && !str_contains($code, 'echo ')) {
+        if (! str_contains($code, 'return ') && ! str_contains($code, 'echo ')) {
             $lines = explode("\n", trim($code));
             $lastLine = trim(end($lines));
 
-            if (!empty($lastLine) && !str_ends_with($lastLine, ';')) {
+            if (! empty($lastLine) && ! str_ends_with($lastLine, ';')) {
                 $lastLine .= ';';
             }
 
-            if (!str_starts_with($lastLine, 'return ') && !str_contains($lastLine, '=')) {
-                $lines[count($lines) - 1] = 'return ' . $lastLine;
+            if (! str_starts_with($lastLine, 'return ') && ! str_contains($lastLine, '=')) {
+                $lines[count($lines) - 1] = 'return '.$lastLine;
                 $code = implode("\n", $lines);
             }
         }
@@ -412,12 +419,12 @@ class DocumentationValidator
             'success' => false,
             'error' => '',
             'return_type' => null,
-            'return_value' => null
+            'return_value' => null,
         ];
 
         try {
             // Crear función temporal para ejecutar el código
-            $function = function() use ($code) {
+            $function = function () use ($code) {
                 return eval($code);
             };
 
@@ -428,13 +435,13 @@ class DocumentationValidator
             $result['return_value'] = $returnValue;
 
         } catch (ParseError $e) {
-            $result['error'] = 'Error de sintaxis: ' . $e->getMessage();
+            $result['error'] = 'Error de sintaxis: '.$e->getMessage();
         } catch (VersaORMException $e) {
-            $result['error'] = 'Error VersaORM: ' . $e->getMessage();
+            $result['error'] = 'Error VersaORM: '.$e->getMessage();
         } catch (Exception $e) {
-            $result['error'] = 'Error de ejecución: ' . $e->getMessage();
+            $result['error'] = 'Error de ejecución: '.$e->getMessage();
         } catch (Throwable $e) {
-            $result['error'] = 'Error fatal: ' . $e->getMessage();
+            $result['error'] = 'Error fatal: '.$e->getMessage();
         }
 
         return $result;
@@ -460,7 +467,7 @@ class DocumentationValidator
         $typeMismatches = 0;
 
         foreach ($this->validationResults['code_examples'] ?? [] as $result) {
-            if (!$result['valid'] || $result['return_type'] === null) {
+            if (! $result['valid'] || $result['return_type'] === null) {
                 continue;
             }
 
@@ -513,7 +520,7 @@ class DocumentationValidator
         if (empty($formatIssues)) {
             echo "   ✓ Formato consistente en todos los archivos\n";
         } else {
-            echo "   ✗ Encontrados " . count($formatIssues) . " problemas de formato:\n";
+            echo '   ✗ Encontrados '.count($formatIssues)." problemas de formato:\n";
             foreach ($formatIssues as $issue) {
                 echo "     - {$this->getRelativePath($issue['file'])}: {$issue['message']}\n";
             }
@@ -531,7 +538,7 @@ class DocumentationValidator
         $issues = [];
 
         // Verificar estructura de títulos
-        if (!preg_match('/^# /', $content)) {
+        if (! preg_match('/^# /', $content)) {
             $issues[] = ['file' => $file, 'message' => 'Falta título principal (# )'];
         }
 
@@ -540,13 +547,13 @@ class DocumentationValidator
         $phpBlocks = preg_match_all('/```php\n(.*?)\n```/s', $content);
 
         // Verificar que haya ejemplos PHP
-        if ($phpBlocks === 0 && str_contains($file, '/docs/') && !str_contains($file, 'README.md')) {
+        if ($phpBlocks === 0 && str_contains($file, '/docs/') && ! str_contains($file, 'README.md')) {
             $issues[] = ['file' => $file, 'message' => 'No contiene ejemplos de código PHP'];
         }
 
         // Verificar formato de "Devuelve:"
         if (str_contains($content, '**Devuelve:**')) {
-            if (!preg_match('/\*\*Devuelve:\*\* [A-Z]/', $content)) {
+            if (! preg_match('/\*\*Devuelve:\*\* [A-Z]/', $content)) {
                 $issues[] = ['file' => $file, 'message' => 'Formato incorrecto en "Devuelve:"'];
             }
         }
@@ -569,10 +576,10 @@ class DocumentationValidator
             $links = $this->extractInternalLinks($content);
 
             foreach ($links as $link) {
-                if (!$this->linkExists($link, dirname($file))) {
+                if (! $this->linkExists($link, dirname($file))) {
                     $brokenLinks[] = [
                         'file' => $file,
-                        'link' => $link
+                        'link' => $link,
                     ];
                 }
             }
@@ -581,7 +588,7 @@ class DocumentationValidator
         if (empty($brokenLinks)) {
             echo "   ✓ Todos los enlaces internos son válidos\n";
         } else {
-            echo "   ✗ Encontrados " . count($brokenLinks) . " enlaces rotos:\n";
+            echo '   ✗ Encontrados '.count($brokenLinks)." enlaces rotos:\n";
             foreach ($brokenLinks as $broken) {
                 echo "     - {$this->getRelativePath($broken['file'])}: {$broken['link']}\n";
             }
@@ -601,7 +608,7 @@ class DocumentationValidator
         // Enlaces markdown [texto](enlace)
         preg_match_all('/\[([^\]]+)\]\(([^)]+)\)/', $content, $matches);
         foreach ($matches[2] as $link) {
-            if (!str_starts_with($link, 'http') && !str_starts_with($link, '#')) {
+            if (! str_starts_with($link, 'http') && ! str_starts_with($link, '#')) {
                 $links[] = $link;
             }
         }
@@ -614,7 +621,8 @@ class DocumentationValidator
      */
     private function linkExists(string $link, string $baseDir): bool
     {
-        $fullPath = realpath($baseDir . '/' . $link);
+        $fullPath = realpath($baseDir.'/'.$link);
+
         return $fullPath !== false && file_exists($fullPath);
     }
 
@@ -628,7 +636,7 @@ class DocumentationValidator
         $totalExamples = count($this->codeExamples);
         $validExamples = count(array_filter(
             $this->validationResults['code_examples'] ?? [],
-            fn($r) => $r['valid']
+            fn ($r) => $r['valid']
         ));
 
         $formatIssues = count($this->validationResults['format_issues'] ?? []);
@@ -662,19 +670,19 @@ class DocumentationValidator
      */
     private function saveDetailedReport(): void
     {
-        $reportFile = __DIR__ . '/validation_report.json';
+        $reportFile = __DIR__.'/validation_report.json';
         $report = [
             'timestamp' => date('Y-m-d H:i:s'),
             'summary' => [
                 'total_examples' => count($this->codeExamples),
                 'valid_examples' => count(array_filter(
                     $this->validationResults['code_examples'] ?? [],
-                    fn($r) => $r['valid']
+                    fn ($r) => $r['valid']
                 )),
                 'format_issues' => count($this->validationResults['format_issues'] ?? []),
-                'broken_links' => count($this->validationResults['broken_links'] ?? [])
+                'broken_links' => count($this->validationResults['broken_links'] ?? []),
             ],
-            'details' => $this->validationResults
+            'details' => $this->validationResults,
         ];
 
         file_put_contents($reportFile, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -690,7 +698,7 @@ class DocumentationValidator
         $filePath = realpath($file);
 
         if ($filePath && str_starts_with($filePath, $docsPath)) {
-            return 'docs' . substr($filePath, strlen($docsPath));
+            return 'docs'.substr($filePath, strlen($docsPath));
         }
 
         return basename($file);
@@ -702,7 +710,7 @@ class DocumentationValidator
     public function __destruct()
     {
         // Limpiar base de datos de prueba
-        $testDb = __DIR__ . '/validation_test.sqlite';
+        $testDb = __DIR__.'/validation_test.sqlite';
         if (file_exists($testDb)) {
             unlink($testDb);
         }
@@ -711,7 +719,7 @@ class DocumentationValidator
 
 // Ejecutar validación si se llama directamente
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_NAME'])) {
-    $validator = new DocumentationValidator();
+    $validator = new DocumentationValidator;
     $success = $validator->validateAll();
     exit($success ? 0 : 1);
 }

@@ -34,7 +34,7 @@ class ModelEvent
     /**
      * Cancela la operación y opcionalmente define un mensaje de error.
      */
-    public function cancel(string $error = null): void
+    public function cancel(?string $error = null): void
     {
         $this->cancel = true;
         $this->error = $error;

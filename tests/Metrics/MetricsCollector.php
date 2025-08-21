@@ -45,7 +45,7 @@ class MetricsCollector
      */
     public function recordExecutionTime(string $operation, float $time): void
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return;
         }
 
@@ -61,7 +61,7 @@ class MetricsCollector
      */
     public function recordMemoryUsage(string $operation, int $peakMemory, int $currentMemory): void
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return;
         }
 
@@ -80,7 +80,7 @@ class MetricsCollector
      */
     public function recordTestMetrics(string $testType, string $engine, array $metrics): void
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return;
         }
 
@@ -97,7 +97,7 @@ class MetricsCollector
      */
     public function recordQualityMetrics(string $tool, int $score, int $issueCount, array $details = []): void
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return;
         }
 
@@ -115,7 +115,7 @@ class MetricsCollector
      */
     public function recordBenchmarkMetrics(string $benchmark, string $engine, array $metrics): void
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return;
         }
 
@@ -132,7 +132,7 @@ class MetricsCollector
      */
     public function recordCustomMetric(string $name, array $data): void
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return;
         }
 
@@ -148,7 +148,7 @@ class MetricsCollector
      */
     public function getMetrics(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): array
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return [];
         }
 
@@ -250,7 +250,7 @@ class MetricsCollector
         foreach ($qualityMetrics as $metric) {
             $tool = $metric['data']['tool'];
 
-            if (!isset($toolMetrics[$tool])) {
+            if (! isset($toolMetrics[$tool])) {
                 $toolMetrics[$tool] = [];
             }
             $toolMetrics[$tool][] = $metric;
@@ -280,7 +280,7 @@ class MetricsCollector
      */
     public function getSummary(): array
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return ['enabled' => false];
         }
 
@@ -290,10 +290,10 @@ class MetricsCollector
         foreach ($allMetrics as $metric) {
             $type = $metric['type'];
 
-            if (!isset($metricsByType[$type])) {
+            if (! isset($metricsByType[$type])) {
                 $metricsByType[$type] = 0;
             }
-            ++$metricsByType[$type];
+            $metricsByType[$type]++;
         }
 
         return [
@@ -380,7 +380,7 @@ class MetricsCollector
      */
     private function ensureMetricsDirectory(): void
     {
-        if (!is_dir($this->outputDir)) {
+        if (! is_dir($this->outputDir)) {
             mkdir($this->outputDir, 0755, true);
         }
     }
@@ -438,7 +438,7 @@ class MetricsCollector
     {
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; ++$i) {
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 

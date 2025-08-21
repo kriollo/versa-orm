@@ -35,7 +35,7 @@ foreach ($autoloadPaths as $autoloadPath) {
 }
 
 // Si no hay autoloader, cargar clases manualmente
-if (!$autoloaded) {
+if (! $autoloaded) {
     // Cargar clases de VersaORM
     $versaormPaths = [
         __DIR__ . '/../../src/VersaORM.php',
@@ -60,7 +60,7 @@ if (!$autoloaded) {
 // Crear directorio de reportes si no existe
 $reportsDir = __DIR__ . '/../reports/php-compatibility';
 
-if (!is_dir($reportsDir)) {
+if (! is_dir($reportsDir)) {
     mkdir($reportsDir, 0755, true);
 }
 
@@ -93,7 +93,7 @@ $requiredExtensions = ['pdo', 'json', 'mbstring'];
 $missingExtensions = [];
 
 foreach ($requiredExtensions as $extension) {
-    if (!extension_loaded($extension)) {
+    if (! extension_loaded($extension)) {
         $missingExtensions[] = $extension;
     }
 }
@@ -107,7 +107,7 @@ $recommendedExtensions = ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite', 'openssl', 'cu
 $missingRecommended = [];
 
 foreach ($recommendedExtensions as $extension) {
-    if (!extension_loaded($extension)) {
+    if (! extension_loaded($extension)) {
         $missingRecommended[] = $extension;
     }
 }

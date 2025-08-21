@@ -12,7 +12,7 @@ require_once __DIR__ . '/TestCase.php';
 
 class VersaModelTest extends TestCase
 {
-    public function testDispenseAndCreate(): void
+    public function test_dispense_and_create(): void
     {
         $user = VersaModel::dispense('users');
         $user->name = 'Heidi';
@@ -26,20 +26,20 @@ class VersaModelTest extends TestCase
         self::assertSame('Heidi', $dbUser->name);
     }
 
-    public function testLoad(): void
+    public function test_load(): void
     {
         $user = VersaModel::load('users', 1);
         self::assertInstanceOf(VersaModel::class, $user);
         self::assertSame('Alice', $user->name);
     }
 
-    public function testLoadReturnsNullForNonExistent(): void
+    public function test_load_returns_null_for_non_existent(): void
     {
         $user = VersaModel::load('users', 999);
         self::assertNull($user);
     }
 
-    public function testUpdate(): void
+    public function test_update(): void
     {
         $user = VersaModel::load('users', 1);
         $user->name = 'Alicia';
@@ -51,7 +51,7 @@ class VersaModelTest extends TestCase
         self::assertSame('away', $updatedUser->status);
     }
 
-    public function testTrash(): void
+    public function test_trash(): void
     {
         $user = VersaModel::load('users', 2);
         self::assertNotNull($user);
@@ -62,7 +62,7 @@ class VersaModelTest extends TestCase
         self::assertNull($deletedUser);
     }
 
-    public function testMagicMethods(): void
+    public function test_magic_methods(): void
     {
         $user = VersaModel::dispense('users');
         $user->name = 'Test';
@@ -75,7 +75,7 @@ class VersaModelTest extends TestCase
         self::assertFalse(isset($user->name));
     }
 
-    public function testExport(): void
+    public function test_export(): void
     {
         $user = VersaModel::load('users', 1);
         $data = $user->export();
@@ -85,7 +85,7 @@ class VersaModelTest extends TestCase
         self::assertSame('Alice', $data['name']);
     }
 
-    public function testExportAll(): void
+    public function test_export_all(): void
     {
         $users = VersaModel::findAll('users', 'status = ?', ['active']);
         $data = VersaModel::exportAll($users);
@@ -95,21 +95,21 @@ class VersaModelTest extends TestCase
         self::assertSame('Alice', $data[0]['name']);
     }
 
-    public function testFindAllStatic(): void
+    public function test_find_all_static(): void
     {
         $users = VersaModel::findAll('users', 'id > ?', [1]);
         self::assertCount(2, $users);
         self::assertInstanceOf(VersaModel::class, $users[0]);
     }
 
-    public function testFindOneStatic(): void
+    public function test_find_one_static(): void
     {
         $user = VersaModel::findOne('users', 1);
         self::assertInstanceOf(VersaModel::class, $user);
         self::assertSame(1, $user->id);
     }
 
-    public function testCountStatic(): void
+    public function test_count_static(): void
     {
         $count = VersaModel::count('users', 'status = ?', ['active']);
         self::assertSame(2, $count);

@@ -6,7 +6,7 @@ namespace VersaORM\Tests\SQLite;
 
 class MetricsTest extends TestCase
 {
-    public function testMetricsIncrementQueries(): void
+    public function test_metrics_increment_queries(): void
     {
         $orm = self::$orm; // instancia compartida
         $m0 = $orm->metrics();

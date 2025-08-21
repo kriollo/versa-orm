@@ -35,6 +35,11 @@ class Label extends BaseModel
         return self::queryTable()->count();
     }
 
+    public static function getAllLabels()
+    {
+        return self::queryTable()->findAll();
+    }
+
     /** Relación N:M: tareas con esta etiqueta (BelongsToMany). */
     public function tasksRelation(): \VersaORM\Relations\BelongsToMany
     {
@@ -75,7 +80,7 @@ class Label extends BaseModel
     /** Crear etiqueta (instancia) usando strong typing y mass-assignment seguro. */
     public function createOne(array $attributes): self
     {
-        if (!isset($attributes['color'])) {
+        if (! isset($attributes['color'])) {
             $attributes['color'] = $this->generateRandomColor();
         }
         $this->fill($attributes);
@@ -95,8 +100,7 @@ class Label extends BaseModel
             ->where('task_labels.label_id', '=', $this->id)
             ->orderBy('tasks.created_at', 'DESC')
             ->select(['tasks.*'])
-            ->get()
-        ;
+            ->get();
     }
 
     /**

@@ -45,9 +45,9 @@
                     <!-- Estadísticas del proyecto -->
                     <?php
                     // Usar directamente el modelo de proyecto ya provisto (instancia), evitando llamadas estáticas
-                    $tasks = $project->tasks();
-            $members = $project->members();
-            $completedTasks = array_filter($tasks, static fn ($t): bool => $t['status'] === 'done');
+                    $tasks = $project->tasks()->findAll();
+            $members = $project->members()->findAll();
+            $completedTasks = array_filter($tasks, static fn ($t): bool => $t->status === 'done');
             ?>
 
                     <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -81,13 +81,13 @@
                     <?php } ?>
 
                     <!-- Miembros (avatares) -->
-                    <?php if (!empty($members)) { ?>
+                    <?php if (! empty($members)) { ?>
                         <div class="flex items-center mb-4">
                             <span class="text-xs text-gray-500 dark:text-gray-400 mr-2">Miembros:</span>
                             <div class="flex -space-x-2">
                                 <?php foreach (array_slice($members, 0, 3) as $member) { ?>
-                                    <div class="avatar border-2 border-white dark:border-gray-800" style="background-color: <?php echo htmlspecialchars($member['avatar_color']); ?>" title="<?php echo htmlspecialchars($member['name']); ?>">
-                                        <?php echo strtoupper(substr($member['name'], 0, 2)); ?>
+                                    <div class="avatar border-2 border-white dark:border-gray-800" style="background-color: <?php echo htmlspecialchars($member->avatar_color); ?>" title="<?php echo htmlspecialchars($member->name); ?>">
+                                        <?php echo strtoupper(substr($member->name, 0, 2)); ?>
                                     </div>
                                 <?php } ?>
                                 <?php if (count($members) > 3) { ?>

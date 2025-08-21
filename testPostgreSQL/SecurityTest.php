@@ -24,7 +24,7 @@ class SecurityTest extends TestCase
     // SQL INJECTION TESTS - WHERE CLAUSES
     // ======================================================================
 
-    public function testSqlInjectionInWhereClause(): void
+    public function test_sql_injection_in_where_clause(): void
     {
         $maliciousInput = "' OR 1=1 --";
         $users = self::$orm->table('users')->where('email', '=', $maliciousInput)->getAll();
@@ -33,7 +33,7 @@ class SecurityTest extends TestCase
         self::assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
     }
 
-    public function testSqlInjectionUnionAttack(): void
+    public function test_sql_injection_union_attack(): void
     {
         $unionAttack = "999' UNION SELECT password FROM admin_users WHERE '1'='1";
         // Usar columna de texto para evitar error de tipo en Postgres
@@ -43,7 +43,7 @@ class SecurityTest extends TestCase
         self::assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
     }
 
-    public function testSqlInjectionBooleanAttack(): void
+    public function test_sql_injection_boolean_attack(): void
     {
         $booleanAttacks = [
             "' OR 1=1--",
@@ -59,7 +59,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testSqlInjectionStackedQueries(): void
+    public function test_sql_injection_stacked_queries(): void
     {
         $stackedAttacks = [
             "'; INSERT INTO users (username, password) VALUES ('hacker', 'pass'); --",
@@ -77,14 +77,14 @@ class SecurityTest extends TestCase
     // SQL INJECTION TESTS - WHERE RAW CLAUSES
     // ======================================================================
 
-    public function testWhereRawWithProperParameterization(): void
+    public function test_where_raw_with_proper_parameterization(): void
     {
         // Uso correcto de whereRaw con parámetros
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
         self::assertCount(1, $users, 'Properly parameterized whereRaw should work.');
     }
 
-    public function testWhereRawInjectionPrevention(): void
+    public function test_where_raw_injection_prevention(): void
     {
         // Este test verifica que whereRaw sin parámetros no cause problemas
         $maliciousInput = '999=999; DROP TABLE users;';
@@ -99,7 +99,7 @@ class SecurityTest extends TestCase
     // IDENTIFIER VALIDATION TESTS
     // ======================================================================
 
-    public function testMaliciousTableNames(): void
+    public function test_malicious_table_names(): void
     {
         $maliciousTableNames = [
             'users; DROP DATABASE test;',
@@ -122,7 +122,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testMaliciousColumnNames(): void
+    public function test_malicious_column_names(): void
     {
         $maliciousColumns = [
             'id; DROP TABLE users;',
@@ -143,7 +143,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testSafeIdentifiers(): void
+    public function test_safe_identifiers(): void
     {
         // Estos identificadores deberían ser aceptados
         $safeIdentifiers = [
@@ -171,7 +171,7 @@ class SecurityTest extends TestCase
     // ORDER BY, LIMIT, OFFSET INJECTION TESTS
     // ======================================================================
 
-    public function testOrderByInjection(): void
+    public function test_order_by_injection(): void
     {
         $maliciousOrderBy = 'id; DROP TABLE users;';
 
@@ -183,7 +183,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testLimitInjection(): void
+    public function test_limit_injection(): void
     {
         // LIMIT debe aceptar solo números enteros
         $users = self::$orm->table('users')->limit(1)->getAll();
@@ -198,7 +198,7 @@ class SecurityTest extends TestCase
     // INSERT/UPDATE DATA SANITIZATION TESTS
     // ======================================================================
 
-    public function testXssInInsertData(): void
+    public function test_xss_in_insert_data(): void
     {
         $xssPayloads = [
             '<script>alert("xss")</script>',
@@ -224,7 +224,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testSpecialCharactersSanitization(): void
+    public function test_special_characters_sanitization(): void
     {
         $specialChars = [
             "test\x00\n\r\t\"\\value",  // Null byte, newlines, tabs, quotes, backslash
@@ -262,7 +262,7 @@ class SecurityTest extends TestCase
     // NUMERIC INJECTION TESTS
     // ======================================================================
 
-    public function testNumericInjectionAttempts(): void
+    public function test_numeric_injection_attempts(): void
     {
         $numericAttacks = [
             '999; DROP TABLE users',
@@ -282,7 +282,7 @@ class SecurityTest extends TestCase
     // BIND PARAMETER SECURITY TESTS
     // ======================================================================
 
-    public function testBindParameterInjection(): void
+    public function test_bind_parameter_injection(): void
     {
         // Test que los parámetros bind están correctamente escapados
         $maliciousBinds = [
@@ -302,7 +302,7 @@ class SecurityTest extends TestCase
     // TYPE CASTING SECURITY TESTS
     // ======================================================================
 
-    public function testTypeCastingSecurity(): void
+    public function test_type_casting_security(): void
     {
         // Test que la conversión de tipos no introduce vulnerabilidades
         $maliciousData = [
@@ -334,7 +334,7 @@ class SecurityTest extends TestCase
     // TRANSACTION SECURITY TESTS
     // ======================================================================
 
-    public function testTransactionInjectionPrevention(): void
+    public function test_transaction_injection_prevention(): void
     {
         // Test que las transacciones no permiten inyección
         try {
@@ -356,7 +356,7 @@ class SecurityTest extends TestCase
     // EDGE CASES AND STRESS TESTS
     // ======================================================================
 
-    public function testExtremeLengthInputs(): void
+    public function test_extreme_length_inputs(): void
     {
         // Test con inputs extremadamente largos
         $veryLongString = str_repeat('A', 1000); // 1KB string (más manejable para pruebas)
@@ -381,7 +381,7 @@ class SecurityTest extends TestCase
         }
     }
 
-    public function testNullByteInjection(): void
+    public function test_null_byte_injection(): void
     {
         // Test con null bytes que podrían truncar consultas
         $nullByteAttack = "admin\x00'; DROP TABLE users; --";
@@ -390,12 +390,12 @@ class SecurityTest extends TestCase
         self::assertCount(0, $users, 'Null byte injection was not prevented.');
     }
 
-    public function testConcurrentSecurityOperations(): void
+    public function test_concurrent_security_operations(): void
     {
         // Test que operaciones concurrentes no introducen vulnerabilidades de race condition
         $results = [];
 
-        for ($i = 0; $i < 5; ++$i) {
+        for ($i = 0; $i < 5; $i++) {
             $maliciousInput = "'; DROP TABLE users; -- attempt {$i}";
             $result = self::$orm->table('users')->where('email', '=', $maliciousInput)->count();
             $results[] = $result;

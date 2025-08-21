@@ -59,14 +59,14 @@ class PHPCSFixerCLI
         echo 'Files processed: ' . $result['files_processed'] . "\n";
         echo 'Violations found: ' . count($result['violations']) . "\n";
 
-        if (!empty($result['violations'])) {
+        if (! empty($result['violations'])) {
             echo "\nStyle violations detected:\n";
             $fileGroups = [];
 
             foreach ($result['violations'] as $violation) {
                 $file = $violation['file'];
 
-                if (!isset($fileGroups[$file])) {
+                if (! isset($fileGroups[$file])) {
                     $fileGroups[$file] = [];
                 }
                 $fileGroups[$file][] = $violation;
@@ -138,7 +138,7 @@ class PHPCSFixerCLI
         echo '  Total Violations: ' . $metrics['total_violations'] . "\n";
         echo '  Quality Score: ' . number_format($metrics['quality_score'], 1) . "/100\n";
 
-        if (!empty($metrics['violation_types'])) {
+        if (! empty($metrics['violation_types'])) {
             echo "\nViolation Types:\n";
             arsort($metrics['violation_types']);
 
@@ -194,7 +194,7 @@ class PHPCSFixerCLI
         $options = [];
         $counter = count($argv);
 
-        for ($i = 2; $i < $counter; ++$i) {
+        for ($i = 2; $i < $counter; $i++) {
             $arg = $argv[$i];
 
             if (str_starts_with($arg, '--')) {

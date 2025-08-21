@@ -40,32 +40,32 @@ class SetOperationsTest extends TestCase
         self::$orm->schemaDrop('set_ops_b');
     }
 
-    public function testUnionBasic(): void
+    public function test_union_basic(): void
     {
         $qb = new QueryBuilder(self::$orm, 'set_ops_a');
         $rows = $qb->union([
             ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], false);
-        $values = array_map(static fn ($r) => (int)$r['value'], $rows);
+        $values = array_map(static fn ($r) => (int) $r['value'], $rows);
         sort($values);
         $unique = array_values(array_unique($values));
         sort($unique);
         self::assertSame($unique, $values, 'UNION debe eliminar duplicados');
     }
 
-    public function testUnionAllBasic(): void
+    public function test_union_all_basic(): void
     {
         $qb = new QueryBuilder(self::$orm, 'set_ops_a');
         $rows = $qb->union([
             ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], true);
-        $values = array_map(static fn ($r) => (int)$r['value'], $rows);
+        $values = array_map(static fn ($r) => (int) $r['value'], $rows);
         self::assertGreaterThan(count(array_unique($values)), count($values), 'UNION ALL debe conservar duplicados');
     }
 
-    public function testIntersectUnsupported(): void
+    public function test_intersect_unsupported(): void
     {
         $this->expectException(VersaORMException::class);
         $qb1 = new QueryBuilder(self::$orm, 'set_ops_a');
@@ -73,7 +73,7 @@ class SetOperationsTest extends TestCase
         $qb1->intersect($qb2);
     }
 
-    public function testExceptUnsupported(): void
+    public function test_except_unsupported(): void
     {
         $this->expectException(VersaORMException::class);
         $qb1 = new QueryBuilder(self::$orm, 'set_ops_a');

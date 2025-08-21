@@ -23,7 +23,7 @@ class LoggingErrorTest extends TestCase
         if (is_dir($this->logDir)) {
             $this->cleanupLogs();
         }
-        if (!is_dir($this->logDir)) {
+        if (! is_dir($this->logDir)) {
             mkdir($this->logDir, 0775, true);
         }
 
@@ -49,7 +49,7 @@ class LoggingErrorTest extends TestCase
         $this->cleanupLogs();
     }
 
-    public function testErrorLogsAreCreatedOnSqlError(): void
+    public function test_error_logs_are_created_on_sql_error(): void
     {
         // 1er error: tabla inexistente
         try {
@@ -93,7 +93,7 @@ class LoggingErrorTest extends TestCase
 
     private function cleanupLogs(): void
     {
-        if (!is_dir($this->logDir)) {
+        if (! is_dir($this->logDir)) {
             return;
         }
         foreach (glob($this->logDir . DIRECTORY_SEPARATOR . 'versaorm_errors_*') as $f) {

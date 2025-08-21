@@ -108,7 +108,7 @@ class FeatureCoverageAnalyzer
      */
     public function trackFeatureCoverage(string $featureName): array
     {
-        if (!isset($this->featureDefinitions[$featureName])) {
+        if (! isset($this->featureDefinitions[$featureName])) {
             throw new Exception("Feature '{$featureName}' not defined in configuration");
         }
 
@@ -267,7 +267,7 @@ class FeatureCoverageAnalyzer
 
                 if ($engineCoverage['coverage'] > 0) {
                     $totalCoverage += $engineCoverage['coverage'];
-                    ++$validEngines;
+                    $validEngines++;
                 }
             } catch (Exception $e) {
                 $this->logger->warning("Failed to analyze feature '{$featureName}' for engine '{$engine}': " . $e->getMessage());
@@ -361,12 +361,12 @@ class FeatureCoverageAnalyzer
     {
         $cloverFile = "{$this->projectRoot}/tests/reports/coverage/{$engine}/clover.xml";
 
-        if (!file_exists($cloverFile)) {
+        if (! file_exists($cloverFile)) {
             // Try to generate coverage if it doesn't exist
             $this->generateCoverageForEngine($engine);
         }
 
-        if (!file_exists($cloverFile)) {
+        if (! file_exists($cloverFile)) {
             throw new Exception("Coverage data not available for {$engine}");
         }
 
@@ -392,7 +392,7 @@ class FeatureCoverageAnalyzer
             'sqlite' => 'phpunit-sqlite.xml',
         ];
 
-        if (!isset($configFiles[$engine])) {
+        if (! isset($configFiles[$engine])) {
             throw new Exception("Unknown engine: {$engine}");
         }
 
@@ -538,7 +538,7 @@ class FeatureCoverageAnalyzer
             $totalCoverage += $result['average_coverage'];
 
             if ($result['status'] === 'PASS') {
-                ++$featuresMeetingThreshold;
+                $featuresMeetingThreshold++;
             }
         }
 
@@ -613,7 +613,7 @@ class FeatureCoverageAnalyzer
         foreach ($testFiles as $testFile) {
             $fullPath = "{$this->projectRoot}/{$testFile}";
 
-            if (!file_exists($fullPath)) {
+            if (! file_exists($fullPath)) {
                 $missing[] = $testFile;
             }
         }

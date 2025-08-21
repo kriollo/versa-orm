@@ -11,7 +11,7 @@ use VersaORM\VersaORMException;
  */
 class QueryBuilderOnRawTest extends TestCase
 {
-    public function testOnRawSimple(): void
+    public function test_on_raw_simple(): void
     {
         $rows = self::$orm->table('posts as p')
             ->select(['p.title'])
@@ -25,7 +25,7 @@ class QueryBuilderOnRawTest extends TestCase
         }
     }
 
-    public function testOnRawWithAdditionalOn(): void
+    public function test_on_raw_with_additional_on(): void
     {
         $rows = self::$orm->table('posts as p')
             ->select(['p.title'])
@@ -38,7 +38,7 @@ class QueryBuilderOnRawTest extends TestCase
         self::assertNotEmpty($rows);
     }
 
-    public function testMultipleOnRaw(): void
+    public function test_multiple_on_raw(): void
     {
         $rows = self::$orm->table('posts as p')
             ->select(['p.title'])
@@ -50,7 +50,7 @@ class QueryBuilderOnRawTest extends TestCase
         self::assertNotEmpty($rows);
     }
 
-    public function testOnRawBindingsApplied(): void
+    public function test_on_raw_bindings_applied(): void
     {
         $rows = self::$orm->table('posts as p')
             ->select(['p.title'])
@@ -65,7 +65,7 @@ class QueryBuilderOnRawTest extends TestCase
         }
     }
 
-    public function testOnRawSecurityRejectsSemicolon(): void
+    public function test_on_raw_security_rejects_semicolon(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->table('posts as p')
@@ -73,7 +73,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->onRaw('p.user_id = u.id; DROP TABLE users', []);
     }
 
-    public function testOnRawSecurityRejectsComment(): void
+    public function test_on_raw_security_rejects_comment(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->table('posts as p')
@@ -81,7 +81,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->onRaw('p.user_id = u.id -- comentario', []);
     }
 
-    public function testOnRawSecurityRejectsDangerousKeyword(): void
+    public function test_on_raw_security_rejects_dangerous_keyword(): void
     {
         $this->expectException(VersaORMException::class);
         self::$orm->table('posts as p')

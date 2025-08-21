@@ -124,6 +124,7 @@ class TestCase extends BaseTestCase
             ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
             ['name' => 'content', 'type' => 'TEXT'],
             ['name' => 'published_at', 'type' => 'DATETIME'],
+            ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
         ], [
             'engine' => 'InnoDB',
             'constraints' => [
@@ -212,7 +213,7 @@ class TestCase extends BaseTestCase
         self::$orm->table('users')->insert(['name' => 'Charlie', 'email' => 'charlie@example.com', 'status' => 'active']);
 
         // Seed posts (usar IDs 1, 2, 3 como user_id)
-        self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Alice Post 1', 'content' => 'Content 1']);
+        self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Alice Post 1', 'content' => 'Content 1', 'published' => true]);
         self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Alice Post 2', 'content' => 'Content 2']);
         self::$orm->table('posts')->insert(['user_id' => 2, 'title' => 'Bob Post 1', 'content' => 'Content 3']);
 

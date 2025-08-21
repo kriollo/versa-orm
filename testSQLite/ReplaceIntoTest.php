@@ -8,7 +8,7 @@ use VersaORM\QueryBuilder;
 
 class ReplaceIntoTest extends TestCase
 {
-    public function testReplaceIntoEmulation(): void
+    public function test_replace_into_emulation(): void
     {
         $qb = new QueryBuilder(self::$orm, 'products');
 

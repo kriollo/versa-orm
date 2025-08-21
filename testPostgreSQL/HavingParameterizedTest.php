@@ -6,21 +6,20 @@ namespace VersaORM\Tests\PostgreSQL;
 
 final class HavingParameterizedTest extends TestCase
 {
-    public function testHavingCountParametrized(): void
+    public function test_having_count_parametrized(): void
     {
         $results = self::$orm->table('users')
             ->select(['status', 'COUNT(*) as cnt'])
             ->groupBy('status')
             ->having('COUNT(*)', '>', 1)
-            ->get()
-        ;
+            ->get();
 
         self::assertCount(1, $results);
         self::assertSame('active', $results[0]['status']);
         self::assertSame(2, $results[0]['cnt']);
     }
 
-    public function testHavingCountBetweenParametrized(): void
+    public function test_having_count_between_parametrized(): void
     {
         $results = self::$orm->table('users')
             ->select(['status', 'COUNT(*) as cnt'])
@@ -28,8 +27,7 @@ final class HavingParameterizedTest extends TestCase
             ->having('COUNT(*)', '>=', 1)
             ->having('COUNT(*)', '<=', 2)
             ->orderBy('status', 'asc')
-            ->get()
-        ;
+            ->get();
 
         self::assertCount(2, $results);
         self::assertSame('active', $results[0]['status']);

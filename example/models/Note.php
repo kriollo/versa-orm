@@ -43,8 +43,7 @@ class Note extends BaseModel
             ->table('task_notes', static::class)
             ->where('task_id', '=', $taskId)
             ->orderBy('created_at', 'DESC')
-            ->get()
-        ;
+            ->get();
     }
 
     /** Crear nueva nota usando strong typing (instancia). */

@@ -66,7 +66,7 @@ class QAHardeningTest extends TestCase
         $this->orm->exec('DROP TABLE IF EXISTS qa_docs;');
     }
 
-    public function testReservedIdentifiersAreQuoted(): void
+    public function test_reserved_identifiers_are_quoted(): void
     {
         $qb = new QueryBuilder($this->orm, 'order');
         $rows = $qb->select(['select'])->where('group', '=', 'g1')->get();
@@ -74,7 +74,7 @@ class QAHardeningTest extends TestCase
         self::assertSame('s1', $rows[0]['select'] ?? null);
     }
 
-    public function testWindowFunctionQualificationAndAlias(): void
+    public function test_window_function_qualification_and_alias(): void
     {
         $this->orm->table('order')->insert(['select' => 's2', 'group' => 'g1', 'name' => 'n2']);
         $this->orm->table('order')->insert(['select' => 's3', 'group' => 'g1', 'name' => 'n3']);
@@ -84,7 +84,7 @@ class QAHardeningTest extends TestCase
         self::assertArrayHasKey('rn', $rows[0]);
     }
 
-    public function testFullTextSearchBooleanModeWithScore(): void
+    public function test_full_text_search_boolean_mode_with_score(): void
     {
         $qb = new QueryBuilder($this->orm, 'qa_docs');
         // Usar una consulta que garantice coincidencias (exigir "foo" y excluir "baz")
@@ -94,7 +94,7 @@ class QAHardeningTest extends TestCase
         self::assertArrayHasKey('score', $rows[0] ?? []);
     }
 
-    public function testCteWithBindings(): void
+    public function test_cte_with_bindings(): void
     {
         $qb = new QueryBuilder($this->orm, 'qa_docs');
         $rows = $qb->withCte([
@@ -106,7 +106,7 @@ class QAHardeningTest extends TestCase
         self::assertNotEmpty($rows);
     }
 
-    public function testGroupConcatWithSpecialSeparator(): void
+    public function test_group_concat_with_special_separator(): void
     {
         $qb = new QueryBuilder($this->orm, 'qa_docs');
         $rows = $qb->advancedAggregation('group_concat', 'title', ['separator' => "'|,|'", 'order_by' => 'id ASC']);

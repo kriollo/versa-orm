@@ -24,7 +24,7 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 1: Verificar que las tablas base funcionan correctamente
     // ======================================================================
 
-    public function testBasicTablesExist(): void
+    public function test_basic_tables_exist(): void
     {
         // Verificar que las tablas básicas existen y tienen datos
         $users = self::$orm->table('users')->getAll();
@@ -38,7 +38,7 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 2: Verificar que los joins básicos funcionan
     // ======================================================================
 
-    public function testBasicJoinWorks(): void
+    public function test_basic_join_works(): void
     {
         $results = self::$orm->table('posts')
             ->select(['posts.title', 'users.name as author'])
@@ -56,13 +56,12 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 6: Test mínimo de joinSub - ejecución simple
     // ======================================================================
 
-    public function testJoinSubMinimalExecution(): void
+    public function test_join_sub_minimal_execution(): void
     {
         // Subconsulta lo más simple posible
         $subquery = self::$orm->table('posts')
             ->select(['user_id'])
-            ->where('id', '=', 1) // Solo un post específico
-        ;
+            ->where('id', '=', 1); // Solo un post específico
 
         try {
             $results = self::$orm->table('users')
@@ -81,7 +80,7 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 7: Test de joinSub con COUNT - similar al original que falla
     // ======================================================================
 
-    public function testJoinSubWithCount(): void
+    public function test_join_sub_with_count(): void
     {
         // Esta es la versión que falló originalmente
         $subquery = self::$orm->table('posts')
@@ -117,7 +116,7 @@ class JoinSubDiagnosticTest extends TestCase
     // Test 8: Verificar SQL generado (debug)
     // ======================================================================
 
-    public function testJoinSubSqlGeneration(): void
+    public function test_join_sub_sql_generation(): void
     {
         $subquery = self::$orm->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
@@ -137,10 +136,10 @@ class JoinSubDiagnosticTest extends TestCase
     /**
      * @group postgresql
      */
-    public function testDirectPostgreSQLExecution(): void
+    public function test_direct_postgre_sql_execution(): void
     {
         // Verificar si el driver PostgreSQL está disponible
-        if (!in_array('pgsql', PDO::getAvailableDrivers(), true)) {
+        if (! in_array('pgsql', PDO::getAvailableDrivers(), true)) {
             self::markTestSkipped('PostgreSQL PDO driver not available');
         }
 
@@ -187,7 +186,7 @@ class JoinSubDiagnosticTest extends TestCase
             self::assertIsArray($results);
 
             // Verificar estructura de datos
-            if (!empty($results)) {
+            if (! empty($results)) {
                 foreach ($results as $result) {
                     self::assertArrayHasKey('name', $result);
                     self::assertArrayHasKey('post_count', $result);
@@ -208,7 +207,7 @@ class JoinSubDiagnosticTest extends TestCase
         }
     }
 
-    public function testRustCommunication(): void
+    public function test_rust_communication(): void
     {
         // Test simple para verificar que la comunicación con Rust funciona
         try {

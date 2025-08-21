@@ -284,7 +284,7 @@ trait HandlesErrors
                     break;
 
                 case 'update':
-                    if (!$this->exists()) {
+                    if (! $this->exists()) {
                         throw new VersaORMException(
                             'Cannot update model that does not exist in database',
                             'MODEL_NOT_EXISTS',
@@ -293,7 +293,7 @@ trait HandlesErrors
                     break;
 
                 case 'delete':
-                    if (!$this->exists()) {
+                    if (! $this->exists()) {
                         throw new VersaORMException(
                             'Cannot delete model that does not exist in database',
                             'MODEL_NOT_EXISTS',
@@ -315,7 +315,7 @@ trait HandlesErrors
      */
     protected function exists(): bool
     {
-        if (!isset($this->attributes['id'])) {
+        if (! isset($this->attributes['id'])) {
             return false;
         }
 

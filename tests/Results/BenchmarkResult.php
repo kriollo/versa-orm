@@ -60,7 +60,7 @@ class BenchmarkResult
         $bytes = $this->getMemoryUsage();
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; ++$i) {
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 
@@ -82,7 +82,7 @@ class BenchmarkResult
     {
         $comparison = $this->getComparisonWith($orm);
 
-        if ($comparison === null || $comparison === [] || !isset($comparison['throughput'])) {
+        if ($comparison === null || $comparison === [] || ! isset($comparison['throughput'])) {
             return null;
         }
 

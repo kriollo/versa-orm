@@ -18,7 +18,7 @@ class UpsertOperationsTest extends TestCase
     // TESTS PARA MÉTODO upsert()
     // ======================================================================
 
-    public function testUpsertNewRecord(): void
+    public function test_upsert_new_record(): void
     {
         // Test: Insertar un nuevo producto usando upsert
         $productData = [
@@ -46,7 +46,7 @@ class UpsertOperationsTest extends TestCase
         self::assertEquals(299.99, (float) $inserted['price']);
     }
 
-    public function testUpsertExistingRecord(): void
+    public function test_upsert_existing_record(): void
     {
         // Test: Actualizar un producto existente usando upsert
         $existingProduct = [
@@ -75,7 +75,7 @@ class UpsertOperationsTest extends TestCase
         self::assertSame(25, $updated['stock']);
     }
 
-    public function testUpsertWithMultipleUniqueKeys(): void
+    public function test_upsert_with_multiple_unique_keys(): void
     {
         // Test: Upsert con múltiples claves únicas
         $userData = [
@@ -99,7 +99,7 @@ class UpsertOperationsTest extends TestCase
         self::assertSame('super_active', $updated['status']);
     }
 
-    public function testUpsertWithEmptyUniqueKeys(): void
+    public function test_upsert_with_empty_unique_keys(): void
     {
         // Test: Upsert debe fallar sin claves únicas
         $this->expectException(VersaORMException::class);
@@ -112,7 +112,7 @@ class UpsertOperationsTest extends TestCase
         );
     }
 
-    public function testUpsertWithInvalidColumnNames(): void
+    public function test_upsert_with_invalid_column_names(): void
     {
         // Test: Upsert debe validar nombres de columnas
         $this->expectException(VersaORMException::class);
@@ -128,7 +128,7 @@ class UpsertOperationsTest extends TestCase
     // TESTS PARA MÉTODO insertOrUpdate()
     // ======================================================================
 
-    public function testInsertOrUpdateNewRecord(): void
+    public function test_insert_or_update_new_record(): void
     {
         // Test: insertOrUpdate debe insertar un nuevo registro
         $userData = [
@@ -151,7 +151,7 @@ class UpsertOperationsTest extends TestCase
         self::assertSame('New InsertOrUpdate User', $inserted['name']);
     }
 
-    public function testInsertOrUpdateExistingRecord(): void
+    public function test_insert_or_update_existing_record(): void
     {
         // Test: insertOrUpdate debe actualizar registro existente
         $updatedData = [
@@ -178,7 +178,7 @@ class UpsertOperationsTest extends TestCase
     // TESTS PARA MÉTODO save()
     // ======================================================================
 
-    public function testSaveNewRecord(): void
+    public function test_save_new_record(): void
     {
         // Test: save() debe detectar registro nuevo e insertar
         $newUser = [
@@ -199,7 +199,7 @@ class UpsertOperationsTest extends TestCase
         self::assertSame('Usuario Save', $inserted['name']);
     }
 
-    public function testSaveExistingRecord(): void
+    public function test_save_existing_record(): void
     {
         // Test: save() debe detectar registro existente y actualizar
         // Primero obtener un ID existente
@@ -223,7 +223,7 @@ class UpsertOperationsTest extends TestCase
         self::assertSame('super_active', $updated['status']);
     }
 
-    public function testSaveWithoutRequiredData(): void
+    public function test_save_without_required_data(): void
     {
         // Test: save() debe fallar con datos vacíos
         $this->expectException(VersaORMException::class);
@@ -236,7 +236,7 @@ class UpsertOperationsTest extends TestCase
     // TESTS PARA MÉTODO createOrUpdate()
     // ======================================================================
 
-    public function testCreateOrUpdateNew(): void
+    public function test_create_or_update_new(): void
     {
         // Test: createOrUpdate debe crear un nuevo registro (usar tabla users que tiene ID)
         $userData = [
@@ -260,7 +260,7 @@ class UpsertOperationsTest extends TestCase
         self::assertSame('Usuario CreateOrUpdate', $created['name']);
     }
 
-    public function testCreateOrUpdateExisting(): void
+    public function test_create_or_update_existing(): void
     {
         // Test: createOrUpdate debe actualizar registro existente
         $updateData = [
@@ -289,7 +289,7 @@ class UpsertOperationsTest extends TestCase
     // TESTS DE INTEGRACIÓN Y CASOS EDGE
     // ======================================================================
 
-    public function testUpsertWithNullValues(): void
+    public function test_upsert_with_null_values(): void
     {
         // Test: Manejo de valores NULL en upsert
         $dataWithNulls = [
@@ -314,7 +314,7 @@ class UpsertOperationsTest extends TestCase
         self::assertNull($inserted['description']);
     }
 
-    public function testUpsertWithSpecialCharacters(): void
+    public function test_upsert_with_special_characters(): void
     {
         // Test: Manejo de caracteres especiales en upsert
         $dataWithSpecialChars = [
@@ -339,7 +339,7 @@ class UpsertOperationsTest extends TestCase
         self::assertStringContainsString('ñáéíóú', $inserted['description']);
     }
 
-    public function testSaveWithAutoDetection(): void
+    public function test_save_with_auto_detection(): void
     {
         // Test: save() debe detectar automáticamente si insertar o actualizar
 
@@ -371,12 +371,12 @@ class UpsertOperationsTest extends TestCase
         self::assertSame('updated', $final['status']);
     }
 
-    public function testPerformanceWithMultipleUpserts(): void
+    public function test_performance_with_multiple_upserts(): void
     {
         // Test: Rendimiento con múltiples operaciones upsert consecutivas
         $startTime = microtime(true);
 
-        for ($i = 1; $i <= 10; ++$i) {
+        for ($i = 1; $i <= 10; $i++) {
             $data = [
                 'sku' => 'PERF-TEST-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
                 'name' => "Producto Performance {$i}",
@@ -399,8 +399,7 @@ class UpsertOperationsTest extends TestCase
         // Verificar que todas las operaciones fueron exitosas
         $count = self::$orm->table('products')
             ->where('sku', 'LIKE', 'PERF-TEST-%')
-            ->count()
-        ;
+            ->count();
 
         self::assertSame(10, $count);
 

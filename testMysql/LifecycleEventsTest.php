@@ -11,7 +11,7 @@ class LifecycleEventsTest extends TestCase
 {
     private static $table = 'users';
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         // Asegurar que el esquema y la tabla existen antes de limpiar
         TestCase::createSchema();
@@ -21,7 +21,7 @@ class LifecycleEventsTest extends TestCase
         }
     }
 
-    public function testCreatingEventListenerIsCalled()
+    public function test_creating_event_listener_is_called()
     {
         $called = false;
         VersaModel::on('creating', function ($model, ModelEvent $event) use (&$called) {
@@ -35,7 +35,7 @@ class LifecycleEventsTest extends TestCase
         $this->assertTrue($called, 'Listener de creating fue llamado');
     }
 
-    public function testCreatedEventListenerIsCalled()
+    public function test_created_event_listener_is_called()
     {
         $called = false;
         VersaModel::on('created', function ($model, ModelEvent $event) use (&$called) {
@@ -49,7 +49,7 @@ class LifecycleEventsTest extends TestCase
         $this->assertTrue($called, 'Listener de created fue llamado');
     }
 
-    public function testUpdatingEventListenerIsCalled()
+    public function test_updating_event_listener_is_called()
     {
         $called = false;
         VersaModel::on('updating', function ($model, ModelEvent $event) use (&$called) {
@@ -65,7 +65,7 @@ class LifecycleEventsTest extends TestCase
         $this->assertTrue($called, 'Listener de updating fue llamado');
     }
 
-    public function testDeletingEventListenerIsCalled()
+    public function test_deleting_event_listener_is_called()
     {
         $called = false;
         VersaModel::on('deleting', function ($model, ModelEvent $event) use (&$called) {
@@ -80,7 +80,7 @@ class LifecycleEventsTest extends TestCase
         $this->assertTrue($called, 'Listener de deleting fue llamado');
     }
 
-    public function testCancelOperationFromListener()
+    public function test_cancel_operation_from_listener()
     {
         VersaModel::on('creating', function ($model, ModelEvent $event) {
             $event->cancel = true;
@@ -93,7 +93,7 @@ class LifecycleEventsTest extends TestCase
         $this->assertNull($result, 'La operación fue cancelada por el listener');
     }
 
-    public function testMagicMethodIsCalled()
+    public function test_magic_method_is_called()
     {
         $called = false;
         $model = new class (self::$table, TestCase::$orm) extends VersaModel {

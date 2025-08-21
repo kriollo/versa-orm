@@ -72,7 +72,7 @@ class PHPVersionTestExecutor
      */
     public function runVersionSpecificTests(string $version): Report
     {
-        if (!$this->detector->isVersionSupported($version)) {
+        if (! $this->detector->isVersionSupported($version)) {
             throw new InvalidArgumentException("PHP version {$version} is not supported");
         }
 
@@ -261,7 +261,7 @@ class PHPVersionTestExecutor
             // Test 1: Tiempo de instanciación de VersaORM
             $instantiationTimes = [];
 
-            for ($i = 0; $i < 100; ++$i) {
+            for ($i = 0; $i < 100; $i++) {
                 $start = microtime(true);
                 $config = ['driver' => 'sqlite', 'database' => ':memory:'];
                 $orm = new VersaORM($config);
@@ -285,7 +285,7 @@ class PHPVersionTestExecutor
             $initialMemory = memory_get_usage(true);
             $instances = [];
 
-            for ($i = 0; $i < 50; ++$i) {
+            for ($i = 0; $i < 50; $i++) {
                 $config = ['driver' => 'sqlite', 'database' => ':memory:'];
                 $instances[] = new VersaORM($config);
             }
@@ -335,7 +335,7 @@ class PHPVersionTestExecutor
             // Test 1: Memory leak detection
             $initialMemory = memory_get_usage(true);
 
-            for ($i = 0; $i < 1000; ++$i) {
+            for ($i = 0; $i < 1000; $i++) {
                 $config = ['driver' => 'sqlite', 'database' => ':memory:'];
                 $orm = new VersaORM($config);
                 $qb = $orm->table('test');

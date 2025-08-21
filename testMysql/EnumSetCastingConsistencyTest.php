@@ -29,7 +29,7 @@ class EnumSetCastingConsistencyTest extends TestCase
         self::$orm->table('labels_enum_cast')->insert(['status' => 'inactive', 'tags' => 'personal']);
     }
 
-    public function testEnumSetCastingConsistency(): void
+    public function test_enum_set_casting_consistency(): void
     {
         $model = new class ('labels_enum_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array

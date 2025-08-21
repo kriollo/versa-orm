@@ -28,7 +28,7 @@ class DateTimeCastingConsistencyTest extends TestCase
         self::$orm->table('posts_dt_cast')->insert(['title' => 'P2', 'published_at' => null]);
     }
 
-    public function testDateTimeCastingConsistent(): void
+    public function test_date_time_casting_consistent(): void
     {
         $model = new class ('posts_dt_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
