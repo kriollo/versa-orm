@@ -11,7 +11,7 @@
 - Última versión estable: 1.1
 - Compatible con PHP 8.1+
 
-# <p align="center"><img src="art/versaORMLogo.png" alt="VersaORM Logo" width="160" /></p>
+# <p align="center"><img src="art/versaORMLogo.png" alt="VersaORM Logo" width="320" /></p>
 
 > VersaORM-PHP está construido sobre **PDO** para máxima compatibilidad y simplicidad. No requiere compilar nada: solo PHP + tu base de datos.
 
