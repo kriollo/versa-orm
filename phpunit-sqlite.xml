@@ -11,54 +11,7 @@
          beStrictAboutChangesToGlobalState="true">
 
     <testsuites>
-        <!-- Core functionality tests -->
-        <testsuite name="Core">
-            <file>./testSQLite/QueryBuilderTest.php</file>
-        </testsuite>
-
-        <!-- SQLite-specific functionality and limitations -->
-        <testsuite name="SQLite-Specific">
-            <file>./testSQLite/ReplaceIntoTest.php</file>
-            <file>./testSQLite/UpsertOperationsTest.php</file>
-        </testsuite>
-
-        <!-- Advanced SQL operations (with SQLite limitations) -->
-        <testsuite name="Advanced-SQL">
-            <file>./testSQLite/QueryBuilderSubqueriesTest.php</file>
-        </testsuite>
-
-        <!-- Data type and casting tests -->
-        <testsuite name="Type-Mapping">
-            <file>./testSQLite/StrongTypingTest.php</file>
-        </testsuite>
-
-        <!-- Performance and optimization tests -->
-        <testsuite name="Performance">
-            <file>./testSQLite/MetricsTest.php</file>
-        </testsuite>
-
-        <!-- Security tests -->
-        <testsuite name="Security">
-            <file>./testSQLite/SecurityTest.php</file>
-        </testsuite>
-
-        <!-- Schema and DDL tests (with SQLite limitations) -->
-        <testsuite name="Schema">
-            <file>./testSQLite/SchemaConsistencyTest.php</file>
-        </testsuite>
-
-        <!-- Transaction tests -->
-        <testsuite name="Transactions">
-            <file>./testSQLite/TransactionsRollbackTest.php</file>
-        </testsuite>
-
-        <!-- Batch operations -->
-        <testsuite name="Batch-Operations">
-            <file>./testSQLite/BatchOperationsTypedBindTest.php</file>
-            <file>./testSQLite/HavingParameterizedTest.php</file>
-        </testsuite>
-
-        <!-- All tests suite -->
+        <!-- All tests suite - using directory to avoid duplication -->
         <testsuite name="All">
             <directory>./testSQLite</directory>
         </testsuite>
@@ -94,6 +47,7 @@
     -->
 
     <!-- Code coverage configuration -->
+    <!--
     <coverage includeUncoveredFiles="true"
               ignoreDeprecatedCodeUnits="true"
               disableCodeCoverageIgnore="false">
@@ -105,6 +59,21 @@
             <cobertura outputFile="./tests/reports/coverage/sqlite/cobertura.xml"/>
         </report>
     </coverage>
+    -->
+        <!-- Code coverage configuration (disabled to avoid Xdebug requirement) -->
+        <!--
+        <coverage includeUncoveredFiles="true"
+                  ignoreDeprecatedCodeUnits="true"
+                  disableCodeCoverageIgnore="false">
+            <report>
+                <html outputDirectory="./tests/reports/coverage/sqlite/html" lowUpperBound="50" highLowerBound="95"/>
+                <xml outputDirectory="./tests/reports/coverage/sqlite/xml"/>
+                <clover outputFile="./tests/reports/coverage/sqlite/clover.xml"/>
+                <text outputFile="./tests/reports/coverage/sqlite/coverage.txt" showUncoveredFiles="true"/>
+                <cobertura outputFile="./tests/reports/coverage/sqlite/cobertura.xml"/>
+            </report>
+        </coverage>
+        -->
 
     <!-- Source code configuration -->
     <source>

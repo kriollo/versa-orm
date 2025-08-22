@@ -38,7 +38,8 @@
     </groups>
     -->
 
-    <!-- Code coverage configuration -->
+    <!-- Code coverage configuration (disabled in CI when xdebug not available) -->
+    <!--
     <coverage includeUncoveredFiles="true"
               ignoreDeprecatedCodeUnits="true"
               disableCodeCoverageIgnore="false">
@@ -50,6 +51,7 @@
             <cobertura outputFile="./tests/reports/coverage/mysql/cobertura.xml"/>
         </report>
     </coverage>
+    -->
 
     <!-- Source code configuration -->
     <source>

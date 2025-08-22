@@ -32,6 +32,8 @@ Thumbs.db
 *.tmp
 *.bak
 .php-cs-fixer.cache
+tests.sqlite
+/docs/setup/validation_test.sqlite-*
 
 # Archivos de compilación Rust
 /versaorm_cli/target/

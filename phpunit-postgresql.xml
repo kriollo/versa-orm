@@ -42,7 +42,8 @@
     </groups>
     -->
 
-    <!-- Code coverage configuration -->
+    <!-- Code coverage configuration (disabled to avoid Xdebug dependency) -->
+    <!--
     <coverage includeUncoveredFiles="true"
               ignoreDeprecatedCodeUnits="true"
               disableCodeCoverageIgnore="false">
@@ -54,6 +55,7 @@
             <cobertura outputFile="./tests/reports/coverage/postgresql/cobertura.xml"/>
         </report>
     </coverage>
+    -->
 
     <!-- Source code configuration -->
     <source>
