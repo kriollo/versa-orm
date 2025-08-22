@@ -186,4 +186,28 @@ class AdvancedTypeMappingTest extends TestCase
             unlink($invalidJsonPath);
         }
     }
+
+    public function test_settimezone_affects_gettimezone_and_date_casting(): void
+    {
+        $orm = self::$orm;
+
+        // Establecer timezone
+        $orm->setTimezone('America/Mexico_City');
+        self::assertSame('America/Mexico_City', $orm->getTimezone());
+
+        // Definir un modelo con propertyTypes para forzar cast a datetime
+        $modelClass = new class ('tz_table', $orm) extends VersaModel {
+            public static function propertyTypes(): array
+            {
+                return ['any' => ['type' => 'datetime']];
+            }
+        };
+        // Crear instancia (anónima ya instanciada)
+        $model = $modelClass;
+        $timestamp = 1700000000; // unix timestamp fijo
+
+        $phpDt = $model->castToPhpType('any', $timestamp);
+        self::assertInstanceOf(\DateTimeInterface::class, $phpDt);
+        self::assertSame('America/Mexico_City', $phpDt->getTimezone()->getName());
+    }
 }

@@ -313,6 +313,58 @@ trait HasStrongTyping
         $this->databaseSchemaCache = null;
     }
 
+    /**
+     * Registrar un conversor de tipo en tiempo de ejecución (PHP side).
+     * $name: nombre del tipo (por ejemplo 'money')
+     * $phpHandler: callable(object,string,mixed,array): mixed para convertir a PHP
+     * $dbHandler: callable(object,string,mixed,array): mixed para convertir a DB (opcional).
+     */
+    public static function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
+    {
+        $lname = strtolower($name);
+
+        // Inicializar handlers si están vacíos
+        if (self::$phpCastHandlers === []) {
+            self::getPhpCastHandlers();
+        }
+
+        if (self::$dbCastHandlers === []) {
+            self::getDbCastHandlers();
+        }
+
+        // Añadir/sobrescribir en los registries
+        self::$phpCastHandlers[$lname] = $phpHandler;
+
+        if ($dbHandler !== null) {
+            self::$dbCastHandlers[$lname] = $dbHandler;
+        } else {
+            // Por defecto, serializar a string/JSON inteligentemente para BD
+            self::$dbCastHandlers[$lname] = static function ($s, $p, $v, $_ = []) {
+                if (is_array($v) || is_object($v)) {
+                    return json_encode($v, JSON_UNESCAPED_UNICODE);
+                }
+
+                return (string) $v;
+            };
+        }
+    }
+
+    /**
+     * Eliminar un conversor previamente registrado (si existe).
+     */
+    public static function removeTypeConverter(string $name): void
+    {
+        $lname = strtolower($name);
+
+        if (isset(self::$phpCastHandlers[$lname])) {
+            unset(self::$phpCastHandlers[$lname]);
+        }
+
+        if (isset(self::$dbCastHandlers[$lname])) {
+            unset(self::$dbCastHandlers[$lname]);
+        }
+    }
+
     protected function applyMutator(string $k, $v)
     {
         return isset($this->mutators[$k]) ? ($this->mutators[$k])($v) : $this->castToDatabaseType($k, $v);

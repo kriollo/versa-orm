@@ -17,15 +17,36 @@ use function sprintf;
  */
 class BenchmarkResult
 {
+    private string $benchmarkName;
+
+    private string $engine;
+
+    private array $metrics;
+
+    private array $comparisons;
+
+    private array $dataPoints;
+
+    private float $executionTime;
+
+    private DateTime $timestamp;
+
     public function __construct(
-        public readonly string $benchmarkName,
-        public readonly string $engine,
-        public readonly array $metrics,
-        public readonly array $comparisons,
-        public readonly array $dataPoints,
-        public readonly float $executionTime,
-        public readonly DateTime $timestamp,
+        string $benchmarkName,
+        string $engine,
+        array $metrics,
+        array $comparisons,
+        array $dataPoints,
+        float $executionTime,
+        DateTime $timestamp,
     ) {
+        $this->benchmarkName = $benchmarkName;
+        $this->engine = $engine;
+        $this->metrics = $metrics;
+        $this->comparisons = $comparisons;
+        $this->dataPoints = $dataPoints;
+        $this->executionTime = $executionTime;
+        $this->timestamp = $timestamp;
     }
 
     /**

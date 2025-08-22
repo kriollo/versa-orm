@@ -188,4 +188,72 @@ class AdvancedTypeMappingTest extends TestCase
             unlink($invalidJsonPath);
         }
     }
+
+    public function test_runtime_money_converter_registration(): void
+    {
+        // Registrar un conversor 'money' que convierte centavos a float y viceversa
+        $orm = self::$orm;
+
+        $orm->addTypeConverter(
+            'money',
+            // php handler: cents (int) -> float
+            function ($s, $p, $v, $_ = []) {
+                if (is_int($v) || ctype_digit((string) $v)) {
+                    return ((int) $v) / 100.0;
+                }
+
+                if (is_string($v) && preg_match('/^\d+(?:\.\d+)?$/', $v)) {
+                    return (float) $v;
+                }
+
+                return (float) $v;
+            },
+            // db handler: float -> integer cents
+            function ($s, $p, $v, $_ = []) {
+                return (int) round((float) $v * 100);
+            },
+        );
+
+        // Definir un modelo de prueba con propertyTypes
+        $modelClass = new class ('money_table', $orm) extends \VersaORM\VersaModel {
+            public static function propertyTypes(): array
+            {
+                return ['amount' => ['type' => 'money']];
+            }
+        };
+
+        // Crear instancia y comprobar conversiones directas
+        $model = $modelClass;
+
+        $dbVal = $model->castToDatabaseType('amount', 123.45);
+        self::assertSame(12345, $dbVal);
+
+        $phpVal = $model->castToPhpType('amount', 12345);
+        self::assertIsFloat($phpVal);
+        self::assertSame(123.45, $phpVal);
+    }
+
+    public function test_settimezone_affects_gettimezone_and_date_casting(): void
+    {
+        $orm = self::$orm;
+
+        // Establecer timezone
+        $orm->setTimezone('America/Mexico_City');
+        self::assertSame('America/Mexico_City', $orm->getTimezone());
+
+        // Definir un modelo con propertyTypes para forzar cast a datetime
+        $modelClass = new class ('tz_table', $orm) extends \VersaORM\VersaModel {
+            public static function propertyTypes(): array
+            {
+                return ['any' => ['type' => 'datetime']];
+            }
+        };
+        // Crear instancia (anónima ya instanciada)
+        $model = $modelClass;
+        $timestamp = 1700000000; // unix timestamp fijo
+
+        $phpDt = $model->castToPhpType('any', $timestamp);
+        self::assertInstanceOf(\DateTimeInterface::class, $phpDt);
+        self::assertSame('America/Mexico_City', $phpDt->getTimezone()->getName());
+    }
 }

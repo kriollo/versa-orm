@@ -262,6 +262,48 @@ class VersaORM
     }
 
     /**
+     * Conveniencia para registrar un conversor de tipo en tiempo de ejecución.
+     * Delegará a HasStrongTyping::addTypeConverter para actualizar los registries.
+     * Ejemplo: $orm->addTypeConverter('money', $phpHandler, $dbHandler);.
+     */
+    public function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
+    {
+        // Usar VersaModel como punto único para registries del trait
+        // Llamada estática segura: la clase VersaModel usa HasStrongTyping
+        \VersaORM\VersaModel::addTypeConverter($name, $phpHandler, $dbHandler);
+    }
+
+    /**
+     * Establece la zona horaria a usar por el runtime de VersaORM y
+     * devuelve la configuración al entorno global (date_default_timezone_set).
+     *
+     * Esto permite ejemplos en la documentación ($orm->setTimezone(...))
+     * sin romper el comportamiento de conversores que usan
+     * date_default_timezone_get() internamente.
+     *
+     * @param string $tz Identificador de timezone válido (ej. 'UTC', 'America/Mexico_City')
+     */
+    public function setTimezone(string $tz): void
+    {
+        // Guardar en la configuración para ser consultada por instancias/handlers
+        $this->config['timezone'] = $tz;
+
+        // Aplicar globalmente para compatibilidad con DateTimeImmutable::setTimezone
+        // y handlers que usan date_default_timezone_get().
+        date_default_timezone_set($tz);
+    }
+
+    /**
+     * Obtener la zona horaria configurada para esta instancia (fallback a la global).
+     *
+     * @return string
+     */
+    public function getTimezone(): string
+    {
+        return (string) ($this->config['timezone'] ?? date_default_timezone_get());
+    }
+
+    /**
      * Método público para que QueryBuilder ejecute consultas estructuradas.
      *
      * @param array<string, mixed> $params

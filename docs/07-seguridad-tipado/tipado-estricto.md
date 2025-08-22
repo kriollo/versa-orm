@@ -2,6 +2,42 @@
 
 VersaORM implementa un sistema de tipado estricto que convierte automáticamente los datos entre PHP y la base de datos, garantizando la integridad y consistencia de la información.
 
+## Personalizar conversores de tipo (runtime)
+
+Puedes registrar conversores en tiempo de ejecución desde tu bootstrap o código de inicialización. Hay dos opciones:
+
+- Usar el cargador de configuraciones JSON:
+
+```php
+use VersaORM\VersaModel;
+
+$mapping = VersaModel::loadTypeMappingConfig(__DIR__ . '/type_mappings.json');
+// $mapping es un array por campo con 'type' y metadata
+```
+
+- Registrar un conversor en tiempo de ejecución (API de conveniencia):
+
+```php
+use VersaORM\VersaORM;
+
+$orm = new VersaORM($config);
+
+$orm->addTypeConverter('money',
+    // php handler: convertir cents(int) -> float
+    function ($self, $prop, $value, $meta = []) {
+        return is_int($value) ? $value / 100.0 : (float) $value;
+    },
+    // db handler: convertir float -> cents(int)
+    function ($self, $prop, $value, $meta = []) {
+        return (int) round((float) $value * 100);
+    }
+);
+
+// A partir de aquí, modelos que declaren propertyTypes con 'money' usarán estos handlers
+```
+
+La API `addTypeConverter` delega internamente en el trait `HasStrongTyping` y registra handlers tanto para la conversión a PHP como para la conversión hacia la base de datos.
+
 ## ¿Qué es el Tipado Estricto?
 
 El tipado estricto es un sistema que:
@@ -63,25 +99,33 @@ var_dump($user->metadata);    // array(1) { ["role"]=> string(5) "admin" }
 class UserModel extends VersaModel {
     protected static $table = 'users';
 
-    // Definir tipos específicos para columnas
-    protected static $types = [
-        'id' => 'integer',
-        'name' => 'string',
-        'email' => 'string',
-        'age' => 'integer',
-        'salary' => 'decimal',
-        'active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'metadata' => 'json',
-        'score' => 'float'
-    ];
+    // Definir tipos específicos para columnas mediante un método estático.
+    // El trait HasStrongTyping consume la salida de `propertyTypes()`
+    // a través del método público `getPropertyTypes()`.
+    public static function propertyTypes(): array
+    {
+        return [
+            'id' => ['type' => 'integer'],
+            'name' => ['type' => 'string'],
+            'email' => ['type' => 'string'],
+            'age' => ['type' => 'integer'],
+            'salary' => ['type' => 'decimal'],
+            'active' => ['type' => 'boolean'],
+            'created_at' => ['type' => 'datetime'],
+            'updated_at' => ['type' => 'datetime'],
+            'metadata' => ['type' => 'json'],
+            'score' => ['type' => 'float']
+        ];
+    }
 
-    // Configurar precisión para decimales
-    protected static $precision = [
-        'salary' => [10, 2],  // 10 dígitos totales, 2 decimales
-        'score' => [5, 3]     // 5 dígitos totales, 3 decimales
-    ];
+    // Configurar precisión para decimales mediante otro método auxiliar
+    public static function propertyPrecision(): array
+    {
+        return [
+            'salary' => [10, 2],  // 10 dígitos totales, 2 decimales
+            'score' => [5, 3]     // 5 dígitos totales, 3 decimales
+        ];
+    }
 }
 ```
 
@@ -211,7 +255,7 @@ echo $retrieved->created_at->format('Y-m-d H:i:s'); // 2024-01-15 10:30:00
 ### Zonas Horarias
 
 ```php
-// Configurar zona horaria por defecto
+// Configurar zona horaria por defecto para el runtime de VersaORM
 $orm->setTimezone('America/Mexico_City');
 
 $event = VersaModel::dispense('events');
@@ -219,7 +263,7 @@ $event->event_date = new DateTime('2024-12-25 15:00:00', new DateTimeZone('UTC')
 
 $event->store();
 
-// Al recuperar, se respeta la zona horaria configurada
+// Al recuperar, los conversores respetarán la zona configurada
 $retrieved = VersaModel::load('events', $event->id);
 echo $retrieved->event_date->getTimezone()->getName(); // America/Mexico_City
 ```
@@ -252,9 +296,12 @@ echo $retrieved->preferences['theme']; // dark
 class ConfigModel extends VersaModel {
     protected static $table = 'configurations';
 
-    protected static $types = [
-        'settings' => 'json'
-    ];
+    public static function propertyTypes(): array
+    {
+        return [
+            'settings' => ['type' => 'json']
+        ];
+    }
 
     // Validar estructura del JSON
     public function beforeStore() {
