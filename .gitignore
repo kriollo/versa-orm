@@ -53,6 +53,8 @@ yarn-error.log*
 example_with_real_data.php
 test_database.db
 
-.github
+.github/instructions/*
+.github/copilot-instructions.md
+.github/rule.md
 logs/
 src/binary/

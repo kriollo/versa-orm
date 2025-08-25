@@ -7,7 +7,7 @@
 [![Codecov](https://codecov.io/gh/kriollo/versa-orm/branch/main/graph/badge.svg)](https://codecov.io/gh/kriollo/versa-orm)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kriollo/versa-orm)
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)](#)
-[![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4.svg)](#)
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
 
@@ -132,7 +132,7 @@ composer require versaorm/versaorm-php
 
 ### Requisitos del Sistema
 
-- **PHP**: 7.4 o superior
+- **PHP**: 8.1 o superior
 - **Extensiones**: PDO, json, mbstring
 - **Base de datos**: MySQL 5.7+, PostgreSQL 10+, o SQLite 3.6+
 - **Sistema operativo**: Windows, Linux, macOS
