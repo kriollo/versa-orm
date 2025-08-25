@@ -85,7 +85,7 @@ jobs:
         run: composer install --no-progress --prefer-dist --no-interaction
 
       - name: Run SQLite tests
-        run: vendor/bin/phpunit -c phpunit-sqlite-test.xml --colors=always --coverage-clover=coverage-${{ matrix.php }}-sqlite.clover || true
+        run: vendor/bin/phpunit -c phpunit-sqlite-test.xml --colors=always --coverage-php=coverage-${{ matrix.php }}-sqlite.cov || true
 
       - name: Ensure MySQL test user exists
         run: |
@@ -106,7 +106,7 @@ jobs:
           DB_DATABASE: test
           DB_USERNAME: local
           DB_PASSWORD: local
-        run: vendor/bin/phpunit -c phpunit-mysql-test.xml --colors=always --coverage-clover=coverage-${{ matrix.php }}-mysql.clover || true
+        run: vendor/bin/phpunit -c phpunit-mysql-test.xml --colors=always --coverage-php=coverage-${{ matrix.php }}-mysql.cov || true
 
       - name: Ensure Postgres test role exists
         run: |
@@ -134,16 +134,24 @@ jobs:
           DB_DATABASE: test
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
-        run: vendor/bin/phpunit -c phpunit-postgresql-test.xml --colors=always --coverage-clover=coverage-${{ matrix.php }}-postgres.clover || true
+        run: vendor/bin/phpunit -c phpunit-postgresql-test.xml --colors=always --coverage-php=coverage-${{ matrix.php }}-postgres.cov || true
+
+      - name: Merge coverage with phpcov
+        if: always()
+        run: |
+          echo "Downloading phpcov..."
+          wget -q -O phpcov.phar https://phar.phpunit.de/phpcov.phar || curl -sSf -o phpcov.phar https://phar.phpunit.de/phpcov.phar
+          chmod +x phpcov.phar
+          mkdir -p cov-dir
+          # move any .cov files into a dir and merge into clover
+          mv coverage-${{ matrix.php }}-*.cov cov-dir/ || true
+          php phpcov.phar merge --clover coverage-${{ matrix.php }}.clover cov-dir || true
 
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v4
         with:
-          files: |
-            coverage-${{ matrix.php }}-sqlite.clover
-            coverage-${{ matrix.php }}-mysql.clover
-            coverage-${{ matrix.php }}-postgres.clover
+          files: coverage-${{ matrix.php }}.clover
           fail_ci_if_error: false
 
       - name: Upload test results (optional)
