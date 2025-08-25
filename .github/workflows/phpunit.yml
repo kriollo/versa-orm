@@ -103,7 +103,8 @@ jobs:
       - name: Ensure Postgres test role exists
         run: |
           echo "Creating 'local' role in Postgres if not exists..."
-          PGPASSWORD=${{ job.services.postgres.credentials.password }} psql -h 127.0.0.1 -p 5432 -U ${{ job.services.postgres.credentials.username }} -d ${{ job.services.postgres.credentials.database }} -c "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN CREATE ROLE local WITH LOGIN PASSWORD 'local'; GRANT ALL PRIVILEGES ON DATABASE \"${{ job.services.postgres.credentials.database }}\" TO local; END IF; END $$;"
+          # Use the same credentials the service was started with to avoid empty vars
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN CREATE ROLE local WITH LOGIN PASSWORD 'local'; GRANT ALL PRIVILEGES ON DATABASE \"test\" TO local; END IF; END $$;"
 
       - name: Run PostgreSQL tests
         env:
