@@ -28,7 +28,7 @@ Tu primer "Hello World" con VersaORM
 ## ✅ Prerequisitos
 
 Antes de empezar, asegúrate de tener:
-- **PHP 7.4 o superior**
+- **PHP 8.1 o superior**
 - **Extensión PDO habilitada**
 - **Una base de datos** (MySQL, PostgreSQL, o SQLite)
 - **Composer** (recomendado) o acceso para instalación manual

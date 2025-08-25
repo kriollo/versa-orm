@@ -2,12 +2,12 @@
 
 ## Introducción
 
-Esta guía te llevará paso a paso por el proceso de instalación de VersaORM en tu proyecto PHP. VersaORM es compatible con PHP 7.4+ y funciona con MySQL, PostgreSQL y SQLite.
+Esta guía te llevará paso a paso por el proceso de instalación de VersaORM en tu proyecto PHP. VersaORM requiere PHP 8.1+ y funciona con MySQL, PostgreSQL y SQLite.
 
 ## Requisitos del Sistema
 
 ### Requisitos Mínimos
-- **PHP**: 7.4 o superior
+- **PHP**: 8.1 o superior
 - **PDO**: Extensión PDO habilitada
 - **Base de datos**: MySQL 5.7+, PostgreSQL 9.6+, o SQLite 3.8+
 
@@ -369,10 +369,10 @@ echo "=== Verificación de Instalación VersaORM ===\n\n";
 
 // 1. Verificar PHP
 echo "1. Versión de PHP: " . PHP_VERSION;
-if (version_compare(PHP_VERSION, '7.4.0', '>=')) {
+if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
     echo " ✅\n";
 } else {
-    echo " ❌ (Requiere 7.4+)\n";
+    echo " ❌ (Requiere 8.1+)\n";
 }
 
 // 2. Verificar PDO

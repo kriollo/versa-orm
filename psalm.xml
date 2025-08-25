@@ -4,7 +4,7 @@
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
     errorLevel="5"
-    phpVersion="8.0"
+    phpVersion="8.1"
     cacheDirectory="var/cache/psalm"
     ensureArrayStringOffsetsExist="false"
     findUnusedVariablesAndParams="false"
