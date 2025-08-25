@@ -91,13 +91,25 @@ jobs:
       - name: Run SQLite tests
         run: vendor/bin/phpunit -c phpunit-sqlite-test.xml --colors=always || true
 
+      - name: Ensure MySQL test user exists
+        run: |
+          echo "Creating MySQL user 'local' if not exists..."
+
+          # wait for mysql to accept connections
+          for i in $(seq 1 15); do
+            mysql -h 127.0.0.1 -P 3306 -u root -proot -e 'select 1' >/dev/null 2>&1 && break || { echo "mysql attempt $i..."; sleep 2; }
+          done
+
+          # Create user 'local' and grant privileges (works with MySQL 8+)
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE USER IF NOT EXISTS 'local'@'%' IDENTIFIED BY 'local'; GRANT ALL PRIVILEGES ON test.* TO 'local'@'%'; FLUSH PRIVILEGES;" || true
+
       - name: Run MySQL tests
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_DATABASE: test
-          DB_USERNAME: root
-          DB_PASSWORD: root
+          DB_USERNAME: local
+          DB_PASSWORD: local
         run: vendor/bin/phpunit -c phpunit-mysql-test.xml --colors=always || true
 
       - name: Ensure Postgres test role exists
