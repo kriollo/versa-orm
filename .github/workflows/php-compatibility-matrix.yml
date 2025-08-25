@@ -64,20 +64,12 @@ jobs:
       - name: Validate Test Results
         run: |
           echo "=== Test Results Validation ==="
-          if [ -f "tests/reports/php-compatibility/junit-php${{ matrix.php-version }}.xml" ]; then
-            echo "✓ PHPUnit results found"
-            php -r "\
-              \$xml = @simplexml_load_file('tests/reports/php-compatibility/junit-php${{ matrix.php-version }}.xml');\n\
-              if (\$xml) {\n\
-                \$tests = (int)\$xml['tests'];\n\
-                \$failures = (int)\$xml['failures'];\n\
-                \$errors = (int)\$xml['errors'];\n\
-                echo \"Tests: \$tests, Failures: \$failures, Errors: \$errors\n\";\n\
-                if (\$failures > 0 || \$errors > 0) { exit(1); }\n\
-              } else { exit(1); }\n\
-            "
+          JUNIT=tests/reports/php-compatibility/junit-php${{ matrix.php-version }}.xml
+          if [ -f "$JUNIT" ]; then
+            echo "✓ PHPUnit results found: $JUNIT"
+            php .github/scripts/validate-junit.php "$JUNIT"
           else
-            echo "❌ No PHPUnit results found"
+            echo "❌ No PHPUnit results found: $JUNIT"
             exit 1
           fi
 

@@ -1,23 +1,42 @@
 <?php
 // Consolidate PHPUnit JUnit reports produced by the PHP compatibility matrix
-$results = [];
-$versions = ['8.1', '8.2', '8.3'];
 
-foreach ($versions as $version) {
-    $artifactDir = "artifacts/php-compatibility-results-$version/tests/reports/php-compatibility";
-    if (is_dir($artifactDir)) {
-        $junitFile = $artifactDir . "/junit-php$version.xml";
-        if (file_exists($junitFile)) {
-            $xml = @simplexml_load_file($junitFile);
-            if ($xml) {
-                $results[$version] = [
-                    'tests' => (int)$xml['tests'],
-                    'failures' => (int)$xml['failures'],
-                    'errors' => (int)$xml['errors'],
-                    'time' => (float)$xml['time'],
-                    'success_rate' => ((int)$xml['tests']) > 0 ? (((int)$xml['tests'] - (int)$xml['failures'] - (int)$xml['errors']) / (int)$xml['tests']) * 100 : 0
-                ];
-            }
+$root = __DIR__ . '/../../';
+$artifactsBase = $root . 'artifacts/';
+
+// Find junit files recursively under artifacts/
+$results = [];
+
+if (!is_dir($artifactsBase)) {
+    fwrite(STDERR, "No artifacts directory found at: $artifactsBase\n");
+    exit(1);
+}
+
+$rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($artifactsBase));
+foreach ($rii as $file) {
+    if ($file->isDir()) continue;
+    $filename = $file->getFilename();
+    if (preg_match('/^junit-php(\d+(?:\.\d+)*)\.xml$/', $filename, $m)) {
+        $version = $m[1];
+        $path = $file->getPathname();
+        $xml = @simplexml_load_file($path);
+        if ($xml) {
+            $tests = (int)$xml['tests'];
+            $failures = (int)$xml['failures'];
+            $errors = (int)$xml['errors'];
+            $time = (float)$xml['time'];
+            $successRate = $tests > 0 ? (($tests - $failures - $errors) / $tests) * 100 : 0;
+            $results[$version] = [
+                'tests' => $tests,
+                'failures' => $failures,
+                'errors' => $errors,
+                'time' => $time,
+                'success_rate' => $successRate,
+                'path' => $path,
+            ];
+        } else {
+            // parse error reading xml
+            fwrite(STDERR, "Failed to parse XML at: $path\n");
         }
     }
 }
@@ -31,6 +50,7 @@ $totalFailures = 0;
 $totalErrors = 0;
 $totalTime = 0.0;
 
+ksort($results, SORT_NATURAL);
 foreach ($results as $version => $data) {
     $successRate = number_format($data['success_rate'], 1);
     $time = number_format($data['time'], 2);
@@ -46,7 +66,11 @@ $overallTime = number_format($totalTime, 2);
 echo "|-------------|-------|----------|--------|--------------|------|\n";
 echo "| **TOTAL** | $totalTests | $totalFailures | $totalErrors | " . number_format($overallSuccessRate, 1) . "% | {$overallTime}s |\n";
 
-file_put_contents('consolidated-reports/matrix-summary.json', json_encode([
+if (!is_dir($root . 'consolidated-reports')) {
+    @mkdir($root . 'consolidated-reports', 0777, true);
+}
+
+file_put_contents($root . 'consolidated-reports/matrix-summary.json', json_encode([
     'timestamp' => date('c'),
     'versions' => $results,
     'summary' => [
@@ -58,9 +82,15 @@ file_put_contents('consolidated-reports/matrix-summary.json', json_encode([
     ]
 ], JSON_PRETTY_PRINT));
 
+if (count($results) === 0) {
+    echo "\n⚠️ No JUnit report files were found in artifacts/.\n";
+    exit(1);
+}
+
 if ($totalFailures > 0 || $totalErrors > 0) {
     echo "\n❌ Some tests failed across PHP versions\n";
     exit(1);
 } else {
     echo "\n✅ All tests passed across all PHP versions\n";
+    exit(0);
 }
