@@ -12,7 +12,8 @@
 
   <testsuites>
     <testsuite name="VersaORM SQLite Test Suite">
-      <directory>./testSQLite</directory>
+  <directory>./testSQLite</directory>
+  <directory>./tests/unit</directory>
     </testsuite>
   </testsuites>
 
