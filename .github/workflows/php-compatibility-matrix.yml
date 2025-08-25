@@ -1,0 +1,325 @@
+name: PHP Compatibility Matrix
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      php_versions:
+        description: 'PHP versions to test (comma-separated)'
+        required: false
+        default: '8.1,8.2,8.3'
+      generate_report:
+        description: 'Generate detailed reports'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  php-compatibility-matrix:
+    name: PHP ${{ matrix.php-version }} Compatibility
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+        include:
+          - php-version: '8.1'
+            extensions: 'pdo, pdo_mysql, pdo_pgsql, pdo_sqlite, json, mbstring, openssl, curl, zip, xml'
+            coverage: true
+          - php-version: '8.2'
+            extensions: 'pdo, pdo_mysql, pdo_pgsql, pdo_sqlite, json, mbstring, openssl, curl, zip, xml'
+            coverage: false
+          - php-version: '8.3'
+            extensions: 'pdo, pdo_mysql, pdo_pgsql, pdo_sqlite, json, mbstring, openssl, curl, zip, xml'
+            coverage: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: ${{ matrix.extensions }}
+          ini-values: |
+            memory_limit=256M
+            max_execution_time=300
+            error_reporting=E_ALL
+            display_errors=On
+            log_errors=On
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
+          tools: composer:v2
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest --optimize-autoloader
+
+      - name: Create reports directory
+        run: mkdir -p tests/reports/php-compatibility
+
+      - name: Display PHP information
+        run: |
+          echo "=== PHP Information ==="
+          php -v
+          echo ""
+          echo "=== PHP Configuration ==="
+          php -i | grep -E "(memory_limit|max_execution_time|error_reporting|display_errors)"
+          echo ""
+          echo "=== Loaded Extensions ==="
+          php -m | sort
+          echo ""
+          echo "=== OPcache Status ==="
+          php -r "if (function_exists('opcache_get_status')) { var_dump(opcache_get_status(false)); } else { echo 'OPcache not available'; }"
+
+      - name: Run PHP Compatibility Tests (PHPUnit)
+        run: |
+          echo "Running PHPUnit compatibility tests..."
+          ./vendor/bin/phpunit --configuration phpunit-php-compatibility.xml \
+            --testsuite "PHP Compatibility Tests" \
+            --log-junit tests/reports/php-compatibility/junit-php${{ matrix.php-version }}.xml \
+            --testdox-html tests/reports/php-compatibility/testdox-php${{ matrix.php-version }}.html \
+            --testdox-text tests/reports/php-compatibility/testdox-php${{ matrix.php-version }}.txt
+        continue-on-error: true
+
+      - name: Run PHP Compatibility CLI Tool
+        run: |
+          echo "Running PHP compatibility CLI tool..."
+          php tests/bin/run-php-compatibility.php \
+            --output=tests/reports/php-compatibility \
+            --format=both \
+            --verbose
+        continue-on-error: true
+
+      - name: Generate Coverage Report
+        if: matrix.coverage
+        run: |
+          echo "Generating coverage report for PHP ${{ matrix.php-version }}..."
+          ./vendor/bin/phpunit --configuration phpunit-php-compatibility.xml \
+            --coverage-html tests/reports/php-compatibility/coverage-html-php${{ matrix.php-version }} \
+            --coverage-xml tests/reports/php-compatibility/coverage-xml-php${{ matrix.php-version }} \
+            --coverage-clover tests/reports/php-compatibility/clover-php${{ matrix.php-version }}.xml \
+            --coverage-text=tests/reports/php-compatibility/coverage-php${{ matrix.php-version }}.txt
+        continue-on-error: true
+
+      - name: Validate Test Results
+        run: |
+          echo "=== Test Results Validation ==="
+          if [ -f "tests/reports/php-compatibility/junit-php${{ matrix.php-version }}.xml" ]; then
+            echo "✓ PHPUnit results found"
+            # Parse JUnit XML to get test counts
+            php -r "
+              \$xml = simplexml_load_file('tests/reports/php-compatibility/junit-php${{ matrix.php-version }}.xml');
+              if (\$xml) {
+                \$tests = (int)\$xml['tests'];
+                \$failures = (int)\$xml['failures'];
+                \$errors = (int)\$xml['errors'];
+                echo \"Tests: \$tests, Failures: \$failures, Errors: \$errors\n\";
+                if (\$failures > 0 || \$errors > 0) {
+                  echo \"❌ Some tests failed\n\";
+                  exit(1);
+                } else {
+                  echo \"✅ All tests passed\n\";
+                }
+              } else {
+                echo \"❌ Could not parse JUnit XML\n\";
+                exit(1);
+              }
+            "
+          else
+            echo "❌ No PHPUnit results found"
+            exit 1
+          fi
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: php-compatibility-results-${{ matrix.php-version }}
+          path: |
+            tests/reports/php-compatibility/
+            tests/logs/
+          retention-days: 30
+
+      - name: Upload Coverage to Codecov
+        if: matrix.coverage && success()
+        uses: codecov/codecov-action@v3
+        with:
+          file: tests/reports/php-compatibility/clover-php${{ matrix.php-version }}.xml
+          flags: php-compatibility,php${{ matrix.php-version }}
+          name: php-compatibility-${{ matrix.php-version }}
+          fail_ci_if_error: false
+
+  consolidate-results:
+    name: Consolidate Matrix Results
+    runs-on: ubuntu-latest
+    needs: php-compatibility-matrix
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo, json, mbstring, xml
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts/
+
+      - name: Consolidate Results
+        run: |
+          echo "=== Consolidating PHP Compatibility Results ==="
+          mkdir -p consolidated-reports
+
+          # Create consolidated report
+          php -r "
+            \$results = [];
+            \$versions = ['8.1', '8.2', '8.3'];
+
+            foreach (\$versions as \$version) {
+              \$artifactDir = \"artifacts/php-compatibility-results-\$version/tests/reports/php-compatibility\";
+              if (is_dir(\$artifactDir)) {
+                \$junitFile = \$artifactDir . \"/junit-php\$version.xml\";
+                if (file_exists(\$junitFile)) {
+                  \$xml = simplexml_load_file(\$junitFile);
+                  if (\$xml) {
+                    \$results[\$version] = [
+                      'tests' => (int)\$xml['tests'],
+                      'failures' => (int)\$xml['failures'],
+                      'errors' => (int)\$xml['errors'],
+                      'time' => (float)\$xml['time'],
+                      'success_rate' => \$xml['tests'] > 0 ? ((\$xml['tests'] - \$xml['failures'] - \$xml['errors']) / \$xml['tests']) * 100 : 0
+                    ];
+                  }
+                }
+              }
+            }
+
+            echo \"=== PHP Compatibility Matrix Results ===\n\";
+            echo \"| PHP Version | Tests | Failures | Errors | Success Rate | Time |\n\";
+            echo \"|-------------|-------|----------|--------|--------------|------|\n\";
+
+            \$totalTests = 0;
+            \$totalFailures = 0;
+            \$totalErrors = 0;
+            \$totalTime = 0;
+
+            foreach (\$results as \$version => \$data) {
+              \$successRate = number_format(\$data['success_rate'], 1);
+              \$time = number_format(\$data['time'], 2);
+              echo \"| PHP \$version | {\$data['tests']} | {\$data['failures']} | {\$data['errors']} | \$successRate% | {\$time}s |\n\";
+
+              \$totalTests += \$data['tests'];
+              \$totalFailures += \$data['failures'];
+              \$totalErrors += \$data['errors'];
+              \$totalTime += \$data['time'];
+            }
+
+            \$overallSuccessRate = \$totalTests > 0 ? ((\$totalTests - \$totalFailures - \$totalErrors) / \$totalTests) * 100 : 0;
+            \$overallTime = number_format(\$totalTime, 2);
+            echo \"|-------------|-------|----------|--------|--------------|------|\n\";
+            echo \"| **TOTAL** | \$totalTests | \$totalFailures | \$totalErrors | \" . number_format(\$overallSuccessRate, 1) . \"% | {\$overallTime}s |\n\";
+
+            // Save consolidated results
+            file_put_contents('consolidated-reports/matrix-summary.json', json_encode([
+              'timestamp' => date('c'),
+              'versions' => \$results,
+              'summary' => [
+                'total_tests' => \$totalTests,
+                'total_failures' => \$totalFailures,
+                'total_errors' => \$totalErrors,
+                'overall_success_rate' => \$overallSuccessRate,
+                'total_time' => \$totalTime
+              ]
+            ], JSON_PRETTY_PRINT));
+
+            // Exit with error if there are failures
+            if (\$totalFailures > 0 || \$totalErrors > 0) {
+              echo "\n❌ Some tests failed across PHP versions\n";
+              exit(1);
+            } else {
+              echo "\n✅ All tests passed across all PHP versions\n";
+            }
+          "
+
+      - name: Upload Consolidated Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: php-compatibility-consolidated
+          path: |
+            consolidated-reports/
+            artifacts/
+          retention-days: 90
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+
+            if (fs.existsSync('consolidated-reports/matrix-summary.json')) {
+              const results = JSON.parse(fs.readFileSync('consolidated-reports/matrix-summary.json', 'utf8'));
+
+              let comment = '## 🧪 PHP Compatibility Matrix Results\n\n';
+              comment += '| PHP Version | Tests | Failures | Errors | Success Rate | Time |\n';
+              comment += '|-------------|-------|----------|--------|--------------|------|\n';
+
+              for (const [version, data] of Object.entries(results.versions)) {
+                const successRate = data.success_rate.toFixed(1);
+                const time = data.time.toFixed(2);
+                const status = data.failures === 0 && data.errors === 0 ? '✅' : '❌';
+                comment += `| ${status} PHP ${version} | ${data.tests} | ${data.failures} | ${data.errors} | ${successRate}% | ${time}s |\n`;
+              }
+
+              const summary = results.summary;
+              const overallStatus = summary.total_failures === 0 && summary.total_errors === 0 ? '✅' : '❌';
+              const overallSuccessRate = summary.overall_success_rate.toFixed(1);
+              const totalTime = summary.total_time.toFixed(2);
+
+              comment += '|-------------|-------|----------|--------|--------------|------|\n';
+              comment += `| ${overallStatus} **TOTAL** | ${summary.total_tests} | ${summary.total_failures} | ${summary.total_errors} | ${overallSuccessRate}% | ${totalTime}s |\n\n`;
+
+              if (summary.total_failures === 0 && summary.total_errors === 0) {
+                comment += '🎉 All PHP compatibility tests passed!\n';
+              } else {
+                comment += '⚠️ Some PHP compatibility tests failed. Please review the detailed results.\n';
+              }
+
+              comment += `\n*Generated at: ${results.timestamp}*`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
