@@ -188,7 +188,7 @@
     - [ ] Operaciones batch vs individuales
     - [ ] Comparación con Eloquent, Doctrine, PDO
 - [ ] **Testing automatizado**
-    - [ ] Matriz de compatibilidad (PHP 7.4-8.3, MySQL/PG/SQLite)
+    - [ ] Matriz de compatibilidad (PHP 8.1-8.4, MySQL/PG/SQLite)
     - [ ] Tests de rendimiento en CI/CD
     - [ ] Tests de memoria y memory leaks
     - [ ] Tests de seguridad automatizados
@@ -438,7 +438,7 @@ Los tests fallan actualmente por problemas de **comunicación con binario Rust**
 - `/docs/deployment/production.md`
 
 ### 🧪 **Testing Estratégico**
-- **Matrix testing**: PHP 7.4-8.3 × MySQL/PG/SQLite × Linux/Windows/MacOS
+- **Matrix testing**: PHP 8.1-8.4 × MySQL/PG/SQLite × Linux/Windows/MacOS
 - **Performance baselines**: Establecer métricas objetivo vs otros ORMs
 - **Security testing**: Automated penetration testing en cada release
 - **Compatibility testing**: Con frameworks populares (Laravel, Symfony, etc.)

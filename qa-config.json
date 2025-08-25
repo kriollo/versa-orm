@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "description": "Centralized QA tools configuration for VersaORM",
-    "php_version": "8.0",
+    "php_version": "8.1",
     "tools": {
         "rector": {
             "enabled": true,
@@ -21,7 +21,7 @@
                 "tests/logs",
                 "src/binary"
             ],
-            "target_php_version": "8.0",
+            "target_php_version": "8.1",
             "focus": "code_modernization"
         },
         "php_cs_fixer": {
