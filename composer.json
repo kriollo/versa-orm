@@ -1,5 +1,4 @@
 {
-  "version": "1.1.1",
   "name": "versaorm/versaorm-php",
   "description": "ORM ligero y seguro para PHP (modo PDO por defecto) - Query Builder fluido, Active Record simple, preparado para núcleo nativo opcional",
   "type": "library",
