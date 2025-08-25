@@ -14,6 +14,7 @@
         <!-- All tests suite - using directory to avoid duplication -->
         <testsuite name="All">
             <directory>./testSQLite</directory>
+            <directory>./tests/unit</directory>
         </testsuite>
     </testsuites>
 
