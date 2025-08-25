@@ -1,5 +1,8 @@
 name: PHP Compatibility Matrix
 
+permissions:
+  contents: read
+  issues: write
 on:
   push:
     branches: [ main, develop ]
