@@ -153,7 +153,7 @@ jobs:
           fi
 
       - name: Upload Test Results
-  uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: php-compatibility-results-${{ matrix.php-version }}
@@ -192,7 +192,7 @@ jobs:
         run: composer install --prefer-dist --no-progress --optimize-autoloader
 
       - name: Download all artifacts
-  uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
@@ -273,7 +273,7 @@ jobs:
           "
 
       - name: Upload Consolidated Results
-  uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: php-compatibility-consolidated
