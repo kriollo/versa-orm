@@ -103,22 +103,21 @@ jobs:
       - name: Ensure Postgres test role exists
         run: |
           echo "Creating 'local' role in Postgres if not exists..."
-          SQL=$(cat <<'SQL'
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN
-              CREATE ROLE local WITH LOGIN PASSWORD 'local';
-              GRANT ALL PRIVILEGES ON DATABASE "test" TO local;
-            END IF;
-          END
-          $$;
-          SQL
 
-          # Try connecting up to 10 times to allow Postgres to be fully ready
-          for i in $(seq 1 10); do
-            PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -v ON_ERROR_STOP=1 -c "$SQL" && break || \
-              { echo "psql attempt $i failed, retrying..."; sleep 2; }
+          # wait for postgres to accept connections
+          for i in $(seq 1 15); do
+            pg_isready -h 127.0.0.1 -p 5432 -U postgres >/dev/null 2>&1 && break || { echo "pg_isready attempt $i..."; sleep 2; }
           done
+
+          # Check if role exists; if not, create it
+          exists=$(PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -tAc "SELECT 1 FROM pg_roles WHERE rolname='local';" || true)
+          if [ -z "$exists" ]; then
+            echo "Role 'local' not found, creating..."
+            PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "CREATE ROLE local WITH LOGIN PASSWORD 'local';" -v ON_ERROR_STOP=1
+            PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "GRANT ALL PRIVILEGES ON DATABASE \"test\" TO local;" -v ON_ERROR_STOP=1
+          else
+            echo "Role 'local' already exists."
+          fi
 
       - name: Run PostgreSQL tests
         env:
