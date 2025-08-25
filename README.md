@@ -3,10 +3,12 @@
 
 **ORM sencillo y seguro para PHP – minimiza SQL manual y acelera tu desarrollo.**
 
+[![CI](https://github.com/kriollo/versa-orm/actions/workflows/phpunit.yml/badge.svg)](https://github.com/kriollo/versa-orm/actions/workflows/phpunit.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kriollo/versa-orm)
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)](#)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
+
 
 - Última versión estable: 1.1
 - Compatible con PHP 8.1+
