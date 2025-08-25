@@ -43,7 +43,7 @@ Crear el ORM más rápido y seguro para PHP, ofreciendo hasta 10x mejor rendimie
 **INFORMACIÓN DEL PROYECTO:**
 - **Nombre**: `versaorm/versaorm-php`
 - **Licencia**: MIT
-- **PHP**: 7.4+ | 8.0+ (Tested hasta 8.3)
+- **PHP**: 8.1+ (Tested hasta 8.4)
 - **Bases de Datos**: MySQL 5.7+, PostgreSQL 10+, SQLite 3.6+
 - **Estado**: 85% completo para v1.0 - Core estable, herramientas en desarrollo
 -   **Fácil Integración:** Diseñado para integrarse sin problemas en proyectos PHP existentes.
@@ -54,7 +54,7 @@ Crear el ORM más rápido y seguro para PHP, ofreciendo hasta 10x mejor rendimie
 -   **Tipo:** `library`
 -   **Palabras Clave:** `orm`, `database`, `mysql`, `postgresql`, `sqlite`, `rust`, `performance`, `query-builder`, `redbean`, `eloquent`
 -   **Licencia:** MIT
--   **Requisitos PHP:** `^7.4|^8.0`
+-   **Requisitos PHP:** `^8.1`
 -   **Extensiones PHP:** `ext-json` (obligatorio), `ext-mbstring` (sugerido)
 -   **Dependencias de Desarrollo:** `phpunit/phpunit: ^10.0`, `phpstan/phpstan: ^1.10`, `squizlabs/php_codesniffer: ^3.7`
 -   **Autoloading:** `PSR-4` para `VersaORM\` en `src/` y `VersaORM\Tests\` en `tests/`.
