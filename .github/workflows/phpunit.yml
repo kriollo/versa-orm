@@ -68,9 +68,11 @@ jobs:
             ${{ runner.os }}-composer-${{ matrix.php }}-
             ${{ runner.os }}-composer-
 
-      - name: Setup MySQL client (for tests)
+      - name: Setup DB clients (for tests)
         if: always()
-        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-mysql-client postgresql-client
 
       - name: Wait for DB services
         run: |
@@ -98,6 +100,11 @@ jobs:
           DB_PASSWORD: root
         run: vendor/bin/phpunit -c phpunit-mysql-test.xml --colors=always || true
 
+      - name: Ensure Postgres test role exists
+        run: |
+          echo "Creating 'local' role in Postgres if not exists..."
+          PGPASSWORD=${{ job.services.postgres.credentials.password }} psql -h 127.0.0.1 -p 5432 -U ${{ job.services.postgres.credentials.username }} -d ${{ job.services.postgres.credentials.database }} -c "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN CREATE ROLE local WITH LOGIN PASSWORD 'local'; GRANT ALL PRIVILEGES ON DATABASE \"${{ job.services.postgres.credentials.database }}\" TO local; END IF; END $$;"
+
       - name: Run PostgreSQL tests
         env:
           DB_HOST: 127.0.0.1
@@ -112,4 +119,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phpunit-results-${{ matrix.php }}
-          path: tests/_output || ./build/logs || .
+          path: tests/_output
