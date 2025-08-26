@@ -20,7 +20,7 @@ final class ErrorHandlerFormatTest extends TestCase
 
     public function test_handle_exception_format_and_wrap_callable(): void
     {
-        $ex = new VersaORMException('Test message', 'TEST_CODE', "SELECT 1", [1], [], null);
+        $ex = new VersaORMException('Test message', 'TEST_CODE', 'SELECT 1', [1], [], null);
 
         $errorData = ErrorHandler::handleException($ex, ['test' => true]);
         $this->assertIsArray($errorData);
@@ -35,7 +35,7 @@ final class ErrorHandlerFormatTest extends TestCase
         $this->assertNotEmpty($log);
 
         // wrap should accept a callable and return its result
-        $result = ErrorHandler::wrap(fn() => 'ok', ['ctx' => 1]);
+        $result = ErrorHandler::wrap(fn () => 'ok', ['ctx' => 1]);
         $this->assertSame('ok', $result);
     }
 }

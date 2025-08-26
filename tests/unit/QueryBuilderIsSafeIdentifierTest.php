@@ -20,7 +20,7 @@ final class QueryBuilderIsSafeIdentifierTest extends TestCase
 
         $this->assertTrue($m->invoke($qb, '*'));
         $this->assertTrue($m->invoke($qb, 'users.name'));
-        $this->assertFalse($m->invoke($qb, "name; DROP TABLE users;"));
-        $this->assertFalse($m->invoke($qb, "name -- comment"));
+        $this->assertFalse($m->invoke($qb, 'name; DROP TABLE users;'));
+        $this->assertFalse($m->invoke($qb, 'name -- comment'));
     }
 }
