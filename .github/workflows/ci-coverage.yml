@@ -1,0 +1,44 @@
+name: CI — Tests & Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  phpunit-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP with Xdebug
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+          extensions: json, pdo_sqlite
+
+      - name: Validate composer
+        run: composer --version
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Run tests and generate clover
+        run: composer test-coverage
+
+      - name: Upload clover artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clover-xml
+          path: build/logs/clover.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: build/logs/clover.xml
+          flags: phpunit
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}

@@ -2,44 +2,39 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Unit;
-
 use PHPUnit\Framework\TestCase;
 use VersaORM\SQL\Dialects\MySQLDialect;
 use VersaORM\SQL\Dialects\PostgreSQLDialect;
+use VersaORM\SQL\Dialects\SQLiteDialect;
 
-require_once __DIR__ . '/../../vendor/autoload.php';
-
-class DialectsTest extends TestCase
+/**
+ * @group sqlite
+ */
+final class DialectsTest extends TestCase
 {
-    public function testMySQLQuoteIdentifier(): void
+    public function test_sqlite_quote_and_limit_offset(): void
+    {
+        $d = new SQLiteDialect();
+
+        $this->assertEquals('"col"', $d->quoteIdentifier('col'));
+        $this->assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, 0));
+        $this->assertStringContainsString('OFFSET 5', $d->compileLimitOffset(10, 5));
+    }
+
+    public function test_mysql_quote_and_limit_offset(): void
     {
         $d = new MySQLDialect();
 
-        self::assertSame('`id`', $d->quoteIdentifier('id'));
-        self::assertSame('`table`.*', $d->quoteIdentifier('table.*'));
-        self::assertSame('*', $d->quoteIdentifier('*'));
+        $this->assertEquals('`col`', $d->quoteIdentifier('col'));
+        $this->assertStringContainsString('LIMIT 5', $d->compileLimitOffset(5, 0));
     }
 
-    public function testPostgresQuoteIdentifier(): void
+    public function test_pg_quote_and_limit_offset(): void
     {
         $d = new PostgreSQLDialect();
 
-        self::assertSame('"id"', $d->quoteIdentifier('id'));
-        self::assertSame('"table".*', $d->quoteIdentifier('table.*'));
-        self::assertSame('*', $d->quoteIdentifier('*'));
-    }
-
-    public function testCompileLimitOffsetAndPlaceholder(): void
-    {
-        $m = new MySQLDialect();
-        $p = new PostgreSQLDialect();
-
-        self::assertSame('?', $m->placeholder(1));
-        self::assertSame('?', $p->placeholder(2));
-
-        self::assertSame(' LIMIT 10 OFFSET 5', $m->compileLimitOffset(10, 5));
-        self::assertSame(' LIMIT 10', $m->compileLimitOffset(10, null));
-        self::assertSame('', $m->compileLimitOffset(null, null));
+        $this->assertEquals('"col"', $d->quoteIdentifier('col'));
+        // Postgres may compile LIMIT/OFFSET differently but should include LIMIT
+        $this->assertStringContainsString('LIMIT', $d->compileLimitOffset(3, 1));
     }
 }

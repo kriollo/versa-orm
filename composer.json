@@ -92,11 +92,11 @@
       "@test-postgresql"
     ],
     "test-coverage": [
-  "@putenv XDEBUG_MODE=coverage",
-  "@putenv DB_DRIVER=sqlite",
-  "@putenv DB_NAME=:memory:",
-  "@php -r \"if (!is_dir('build/logs')) { mkdir('build/logs', 0755, true); }\"",
-  "phpunit --configuration phpunit-sqlite.xml --coverage-clover build/logs/clover.xml --testdox"
+      "@putenv XDEBUG_MODE=coverage",
+      "@putenv DB_DRIVER=sqlite",
+      "@putenv DB_NAME=:memory:",
+      "@php -r \"if (!is_dir('build/logs')) { mkdir('build/logs', 0755, true); }\"",
+      "phpunit --configuration phpunit-sqlite.xml --coverage-clover build/logs/clover.xml --testdox"
     ],
     "psalm-check": "psalm --no-cache --show-info=true",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
