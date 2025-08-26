@@ -11,11 +11,6 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
-class TestModel extends VersaModel
-{
-    protected string $table = 'custom_table';
-}
-
 class VersaModelBehaviorTest extends TestCase
 {
     public function testTableNameFromStaticProperty(): void

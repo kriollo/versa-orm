@@ -2196,6 +2196,17 @@ class VersaORM
         // Devolver solo el JSON válido
         $cleanJson = substr($jsonCandidate, 0, $jsonEnd + 1);
 
+        // Intentar des-escapar comillas si el JSON tiene backslashes antes de las comillas
+        $unescaped = str_replace('\\"', '"', $cleanJson);
+        // Si al des-escapar obtenemos JSON válido, devolver la versión des-escapada
+        if (json_decode($unescaped) !== null) {
+            if ($this->config['debug'] ?? false) {
+                error_log('[VersaORM] Cleaned Rust debug output (unescaped). Original length: ' . strlen($output) . ', Clean length: ' . strlen($unescaped));
+            }
+
+            return $unescaped;
+        }
+
         // Log de debug si está habilitado
         if ($this->config['debug'] ?? false) {
             error_log('[VersaORM] Cleaned Rust debug output. Original length: ' . strlen($output) . ', Clean length: ' . strlen($cleanJson));

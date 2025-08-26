@@ -1503,11 +1503,34 @@ class VersaModel implements TypedModelInterface
         if (! self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call VersaModel::setORM() first.');
         }
-        $result = self::$ormInstance->table($table, static::class)->where($pk, '=', $id)->findOne();
+
+        // Si $id es un arreglo asociativo se interpreta como condiciones columna=>valor
+        if (is_array($id)) {
+            $qb = self::$ormInstance->table($table, static::class);
+
+            foreach ($id as $col => $val) {
+                // Solo columnas no vacías
+                if (is_string($col) && $col !== '') {
+                    $qb->where($col, '=', $val);
+                }
+            }
+
+            $result = $qb->findOne();
+        } else {
+            $result = self::$ormInstance->table($table, static::class)->where($pk, '=', $id)->findOne();
+        }
 
         // Si el resultado es instancia de modelo pero no tiene atributos, intentar cargar los datos manualmente
         if ($result instanceof self && ($result->getData() === [] || ! isset($result->getData()['id']))) {
-            $data = self::$ormInstance->exec("SELECT * FROM {$table} WHERE {$pk} = ?", [$id]);
+            // Si $id es array, construir WHERE con la primera condición encontrada
+            if (is_array($id) && $id !== []) {
+                $firstKey = array_key_first($id);
+                $firstVal = $id[$firstKey];
+
+                $data = self::$ormInstance->exec("SELECT * FROM {$table} WHERE {$firstKey} = ?", [$firstVal]);
+            } else {
+                $data = self::$ormInstance->exec("SELECT * FROM {$table} WHERE {$pk} = ?", [$id]);
+            }
 
             if (is_array($data) && $data !== [] && is_array($data[0])) {
                 $result->loadInstance($data[0]);

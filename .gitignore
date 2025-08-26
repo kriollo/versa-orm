@@ -58,3 +58,4 @@ test_database.db
 .github/rule.md
 logs/
 src/binary/
+.gh-artifacts/
