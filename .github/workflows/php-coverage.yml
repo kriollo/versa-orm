@@ -28,16 +28,20 @@ jobs:
         run: composer install --prefer-dist --no-progress --optimize-autoloader
 
       - name: Run tests with coverage
+        id: run-tests
         run: |
           mkdir -p build/logs
           XDEBUG_MODE=coverage ./vendor/bin/phpunit --configuration phpunit-sqlite.xml --coverage-clover build/logs/clover.xml --testdox || true
 
       - name: Parse clover and upload results
+        id: parse
         run: |
           if [ -f build/logs/clover.xml ]; then
             php .github/scripts/parse-clover.php build/logs/clover.xml 70 > build/logs/coverage-summary.txt || true
+            echo "clover=true" >> $GITHUB_OUTPUT
           else
             echo "No clover found" > build/logs/coverage-summary.txt
+            echo "clover=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload coverage artifacts
@@ -50,6 +54,7 @@ jobs:
           retention-days: 7
 
       - name: Upload coverage to Codecov
+        if: steps.parse.outputs.clover == 'true'
         uses: codecov/codecov-action@v4
         with:
           files: build/logs/clover.xml
