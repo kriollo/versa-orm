@@ -13,6 +13,8 @@ class QBStubForHasOne extends QueryBuilder
 
     public function __construct()
     {
+        // parent signature: ($orm, string $table, ?string $modelClass = null)
+        parent::__construct([], 'children');
     }
 
     public function where(string $column, string $op, $val): self
@@ -36,6 +38,7 @@ class ModelStubForHasOne extends VersaModel
 
     public function __construct(array $attrs = [])
     {
+        parent::__construct('parents', null);
         $this->attrs = $attrs;
     }
 
