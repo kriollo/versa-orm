@@ -55,8 +55,12 @@ class VersaORMTest extends TestCase
         $orm = new VersaORM();
 
         // Asegurarse de que no lanza excepciones al delegar
-        VersaModel::addTypeConverter('test_conv', function ($s, $p, $v) { return $v; }, null);
-        $orm->addTypeConverter('test_conv2', function ($s, $p, $v) { return $v; }, null);
+        VersaModel::addTypeConverter('test_conv', function ($s, $p, $v) {
+            return $v;
+        }, null);
+        $orm->addTypeConverter('test_conv2', function ($s, $p, $v) {
+            return $v;
+        }, null);
 
         $this->assertTrue(true);
     }
