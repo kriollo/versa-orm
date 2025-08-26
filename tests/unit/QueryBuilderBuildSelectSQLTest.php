@@ -6,17 +6,19 @@ use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\VersaORM;
 
-class VersaORMStub extends VersaORM
-{
-    public function __construct()
+if (!class_exists('VersaORMStub')) {
+    class VersaORMStub extends VersaORM
     {
-        // minimal stub: no real config
-    }
+        public function __construct()
+        {
+            // minimal stub: no real config
+        }
 
-    public function executeQuery(string $action, array $params = [])
-    {
-        // Not used by these tests
-        return [];
+        public function executeQuery(string $action, array $params = [])
+        {
+            // Not used by these tests
+            return [];
+        }
     }
 }
 
