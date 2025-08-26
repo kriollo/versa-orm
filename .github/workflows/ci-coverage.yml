@@ -1,5 +1,7 @@
 name: CI — Tests & Coverage
 
+permissions:
+  contents: read
 on:
   push:
     branches: [ main ]
