@@ -59,3 +59,4 @@ test_database.db
 logs/
 src/binary/
 .gh-artifacts/
+build/
