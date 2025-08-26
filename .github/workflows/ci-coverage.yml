@@ -18,15 +18,17 @@ jobs:
       - name: Setup PHP with Xdebug
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           coverage: xdebug
           extensions: json, pdo_sqlite
 
       - name: Validate composer
         run: composer --version
 
-      - name: Install dependencies
-        run: composer install --no-progress --no-suggest --prefer-dist
+      - name: Install dependencies (with composer cache)
+        uses: php-actions/composer@v6
+        with:
+          args: install --no-progress --no-suggest --prefer-dist
 
       - name: Run tests and generate clover
         run: composer test-coverage
@@ -43,4 +45,4 @@ jobs:
           files: build/logs/clover.xml
           flags: phpunit
           fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # repo público: token no es necesario (action soporta omitido)
