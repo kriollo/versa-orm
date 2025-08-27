@@ -12,6 +12,9 @@ if (! class_exists('DummyHandlesModel')) {
     {
         use HandlesErrors;
 
+        // Provide a table name to avoid uninitialized access in trait
+        protected string $table = 'dummy_handles';
+
         public function __construct()
         {
         }
@@ -19,6 +22,11 @@ if (! class_exists('DummyHandlesModel')) {
         public function save(string $primaryKey = 'id'): array
         {
             throw new VersaORMException('boom', 'E_BOOM');
+        }
+
+        public function store(): int
+        {
+            throw new VersaORMException('store failed', 'E_STORE');
         }
 
         public static function find(mixed $id): mixed
@@ -52,7 +60,11 @@ final class HandlesErrorsTest extends TestCase
 
     public function testWithStaticErrorHandlingDoesNotCrash(): void
     {
+        // Ensure static handler does not rethrow by disabling throw_on_error for this model
+        DummyHandlesModel::configureErrorHandling(['throw_on_error' => false]);
+
         $res = DummyHandlesModel::safeFind(1);
+
         $this->assertNull($res);
     }
 }

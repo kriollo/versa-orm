@@ -5,6 +5,9 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 use VersaORM\SQL\PdoEngine;
 
+/**
+ * @group sqlite
+ */
 final class PdoEngineNewTest extends TestCase
 {
     public function testMetricsResetAndGet(): void
@@ -58,6 +61,11 @@ final class PdoEngineNewTest extends TestCase
 
         foreach ($tables as $t) {
             if (is_array($t) && isset($t['table_name']) && $t['table_name'] === 'test_x') {
+                $found = true;
+                break;
+            }
+
+            if (is_string($t) && $t === 'test_x') {
                 $found = true;
                 break;
             }

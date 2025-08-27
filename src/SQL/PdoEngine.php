@@ -1050,6 +1050,11 @@ class PdoEngine
         }
 
         if ($action === 'raw') {
+            // Preparar SQL/bindings directamente desde params para el caso 'raw'
+            $sql = (string) ($params['sql'] ?? $params['query'] ?? '');
+            /** @var array<int,mixed> $bindings */
+            $bindings = is_array($params['bindings'] ?? null) ? array_values($params['bindings']) : [];
+
             // Soporte explícito para transacciones
             $normalized = strtoupper(trim($sql));
 
