@@ -526,6 +526,17 @@ class VersaORM
         $indexesList = (array) ($options['indexes'] ?? []);
 
         foreach ($indexesList as $idx) {
+            // Si el driver es sqlite, eliminar claves 'using' para evitar SQL no soportado
+            if ($driver === 'sqlite' && isset($idx['using'])) {
+                unset($idx['using']);
+            }
+
+            // DEBUG: registrar el contenido del índice antes de crear
+            try {
+                @file_put_contents(__DIR__ . '/../var/tmp_idx_dump.log', var_export($idx, true) . "\n", FILE_APPEND | LOCK_EX);
+            } catch (\Throwable) {
+            }
+
             $this->createIndexPortable($table, $idx, $driver);
         }
     }
@@ -586,6 +597,9 @@ class VersaORM
             $idxList = (array) $changes['addIndex'];
 
             foreach ($idxList as $idx) {
+                if ($driver === 'sqlite' && isset($idx['using'])) {
+                    unset($idx['using']);
+                }
                 $this->createIndexPortable($table, $idx, $driver);
             }
         }
@@ -1334,10 +1348,6 @@ class VersaORM
         }
         $sql .= $q($name) . ' ON ' . $q($table);
 
-        if ($using !== '') {
-            // MySQL: USING BTREE/HASH; Postgres: USING GIN/GIST/...
-            $sql .= ' USING ' . $using;
-        }
         $colsSql = [];
 
         foreach ($cols as $c) {
@@ -1352,9 +1362,31 @@ class VersaORM
         }
         $sql .= ' (' . implode(', ', $colsSql) . ')';
 
+        // Posicionamiento del USING depende del driver:
+        // - En SQLite no usamos USING (no soportado)
+        // - En MySQL/MariaDB es más compatible colocarlo después de la lista: ON table (cols) USING BTREE
+        // - En Postgres se puede usar: ON table USING gin (cols)
+        if ($using !== '') {
+            if ($driver === 'sqlite') {
+                // Omitir USING por incompatibilidad (tratamiento defensivo más abajo)
+            } elseif ($driver === 'mysql' || $driver === 'mariadb') {
+                $sql .= ' USING ' . $using;
+            } else {
+                // Para Postgres y otros, insertar USING antes de la lista de columnas
+                $sql = str_ireplace(' ON ' . $q($table) . ' (', ' ON ' . $q($table) . ' USING ' . $using . ' (', $sql);
+            }
+        }
+
+        // Defender: si el driver es sqlite, eliminar cualquier cláusula USING que pudiera haber sido añadida
+        if ($driver === 'sqlite') {
+            // Eliminar patrones como ' USING BTREE' o ' USING gin' (ignorar mayúsculas/minúsculas)
+            $sql = preg_replace('/\s+USING\s+[A-Za-z0-9_]+/i', '', $sql) ?: $sql;
+        }
+
         if (($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') && $where !== '') {
             $sql .= ' WHERE ' . $where;
         }
+
         $this->exec($sql);
     }
 
