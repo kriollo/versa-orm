@@ -14,6 +14,7 @@ use VersaORM\Relations\HasMany;
 use VersaORM\Relations\HasOne;
 use VersaORM\Relations\Relation;
 use VersaORM\SQL\PdoEngine;
+use VersaORM\VersaORM as VersaORMClass;
 
 use function array_key_exists;
 use function assert;
@@ -1277,7 +1278,15 @@ class QueryBuilder
      */
     public function dispense(): VersaModel
     {
-        error_log('[DEBUG] Executing SQL with QueryBuilder');
+        if ($this->orm instanceof VersaORMClass) {
+            try {
+                if ($this->orm->isDebugMode()) {
+                    error_log('[DEBUG] Executing SQL with QueryBuilder');
+                }
+            } catch (Throwable) {
+                // ignore
+            }
+        }
 
         return new VersaModel($this->table, $this->orm);
     }
@@ -1367,8 +1376,16 @@ class QueryBuilder
         ];
 
         // Debug: Log what we're sending
-        error_log('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null));
-        error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
+        if ($this->orm instanceof VersaORMClass) {
+            try {
+                if ($this->orm->isDebugMode()) {
+                    error_log('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null));
+                    error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
+                }
+            } catch (Throwable) {
+                // ignore
+            }
+        }
 
         /** @var mixed $rawResult */
         $rawResult = $this->execute('insertMany', $params); // ejecutar solo una vez
@@ -3100,7 +3117,15 @@ class QueryBuilder
                 // Merge batch parameters directly into params rather than nesting under 'data'
                 $params = array_merge($params, $data);
                 // Debug: Log the final merged params
-                error_log('[DEBUG] buildPayload - Final merged params for ' . $method . ': ' . json_encode($params));
+                if ($this->orm instanceof VersaORMClass) {
+                    try {
+                        if ($this->orm->isDebugMode()) {
+                            error_log('[DEBUG] buildPayload - Final merged params for ' . $method . ': ' . json_encode($params));
+                        }
+                    } catch (Throwable) {
+                        // ignore
+                    }
+                }
             } else {
                 // For normal operations, keep existing behavior
                 $params['data'] = $data;
@@ -3748,7 +3773,15 @@ class QueryBuilder
         // echo "=== DEBUG executeAdvancedSQL (Private) ===\n";
         // echo "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n";
 
-        error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
+        if ($this->orm instanceof VersaORMClass) {
+            try {
+                if ($this->orm->isDebugMode()) {
+                    error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
+                }
+            } catch (Throwable) {
+                // ignore
+            }
+        }
 
         if (! $this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for advanced SQL execution.');

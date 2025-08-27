@@ -988,6 +988,26 @@ class VersaORM
     }
 
     /**
+     * Verifica si está habilitado el modo debug.
+     */
+    /**
+     * Indica si el modo debug está habilitado.
+     *
+     * Prioriza la variable de entorno VERBOSE_LOGS: si VERBOSE_LOGS=true
+     * entonces el logging se habilita independientemente de la config.
+     */
+    public function isDebugMode(): bool
+    {
+        $env = getenv('VERBOSE_LOGS');
+
+        if ($env !== false) {
+            return strtolower($env) === 'true';
+        }
+
+        return isset($this->config['debug']) && $this->config['debug'];
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param array<string, mixed> $params
@@ -1101,7 +1121,9 @@ class VersaORM
             //     fwrite(STDERR, $payload . "\n");
             //     fwrite(STDERR, "=== END PAYLOAD ===\n");
             // }
-            error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
+            if ($this->isDebugMode()) {
+                error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
+            }
 
             // If in debug mode and JSON_DUMP environment variable is set, dump and exit
             if ($this->isDebugMode() && getenv('JSON_DUMP') === 'true') {
@@ -1758,14 +1780,6 @@ class VersaORM
     private function buildSimpleErrorMessage(string $errorCode, string $errorMessage): string
     {
         return sprintf('Database Error [%s]: %s', $errorCode, $errorMessage);
-    }
-
-    /**
-     * Verifica si está habilitado el modo debug.
-     */
-    private function isDebugMode(): bool
-    {
-        return isset($this->config['debug']) && $this->config['debug'];
     }
 
     /**

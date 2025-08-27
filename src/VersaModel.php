@@ -27,6 +27,7 @@ use VersaORM\Relations\BelongsToMany;
 use VersaORM\Relations\HasMany;
 use VersaORM\Traits\HasRelationships;
 use VersaORM\Traits\HasStrongTyping;
+use VersaORM\VersaORM as VersaORMClass;
 
 use function assert;
 use function count;
@@ -2597,13 +2598,25 @@ class VersaModel implements TypedModelInterface
             }
 
             // Debug log
-            error_log("VersaORM: Table '{$this->table}' existing columns: " . implode(', ', $existingColumnNames));
-            error_log('VersaORM: Model attributes: ' . implode(', ', array_keys($this->attributes)));
-            error_log('VersaORM: Missing columns to create: ' . implode(', ', array_keys($missingColumns)));
+            try {
+                if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
+                    error_log("VersaORM: Table '{$this->table}' existing columns: " . implode(', ', $existingColumnNames));
+                    error_log('VersaORM: Model attributes: ' . implode(', ', array_keys($this->attributes)));
+                    error_log('VersaORM: Missing columns to create: ' . implode(', ', array_keys($missingColumns)));
+                }
+            } catch (Throwable) {
+                // ignore logging errors
+            }
 
             // Crear columnas faltantes
             foreach ($missingColumns as $columnName => $columnType) {
-                error_log("VersaORM: Attempting to create column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+                try {
+                    if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
+                        error_log("VersaORM: Attempting to create column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+                    }
+                } catch (Throwable) {
+                    // ignore
+                }
                 $this->createColumn($orm, $columnName, $columnType);
             }
         } catch (Exception $e) {
@@ -2653,7 +2666,13 @@ class VersaModel implements TypedModelInterface
                 }
             } else {
                 // Otros errores: loguear y continuar
-                error_log("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage());
+                try {
+                    if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
+                        error_log("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage());
+                    }
+                } catch (Throwable) {
+                    // ignore
+                }
             }
         }
     }
@@ -2731,7 +2750,13 @@ class VersaModel implements TypedModelInterface
             $orm->exec($sql);
 
             // Log de la creación automática de columna
-            error_log("VersaORM: Created column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+            try {
+                if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
+                    error_log("VersaORM: Created column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+                }
+            } catch (Throwable) {
+                // ignore
+            }
         } catch (Exception $e) {
             throw new VersaORMException(
                 "Failed to create column '{$columnName}' in table '{$this->table}': " . $e->getMessage(),
