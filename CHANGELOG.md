@@ -1,3 +1,29 @@
+## [1.2] - 2025-08-27
+
+### Cambios en `src/` (resumen)
+
+- Mejoras en la generación de esquema y creación de índices:
+  - `createIndexPortable` y `schemaCreate` ahora generan DDL portable y manejan correctamente diferencias entre MySQL, PostgreSQL y SQLite (evitan cláusulas inválidas en SQLite, posicionan `USING` según driver).
+
+- `VersaORM`:
+  - Mejoras en el flujo de `execute()`, validaciones DDL (freeze) y sanitización de identificadores.
+  - Logging y manejo de errores reforzados.
+
+- `VersaModel`:
+  - Reutilización de la instancia de ORM para preservar estado de conexión.
+  - Mejoras en helpers de consulta y en la resolución de condiciones (p. ej. `findOne` y métodos auxiliares).
+
+- `QueryBuilder`:
+  - Mejoras en la exportación y carga de relaciones; manejo más robusto de eager-loading y errores asociados.
+
+- `SQL/PdoEngine`:
+  - Ajustes en `query_plan` y soporte de métricas para entornos de pruebas.
+
+- `HasStrongTyping`:
+  - Incorporación de soporte para conversores de tipo en tiempo de ejecución y mejoras en mapeo de tipos.
+
+> Nota: múltiples pruebas unitarias nuevas cubren estos cambios (tests en `tests/`).
+
 # v1.1.1 (21-08-2025)
 
 ## 🧩 Compatibilidad y mejoras en el ORM
@@ -68,7 +94,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
 ### Interno 🔧
 
 ---
-## [1.4.0] - 2025-08-05
+## [1.4_beta] - 2025-08-05
 
 ### Añadido ⚡
   - Método `upsert()` individual para inserción inteligente con detección automática de duplicados
@@ -148,7 +174,7 @@ $result = $orm->table('settings')->insertOrUpdate(
 );
 ```
 
-## [1.3.0] - 2025-08-06
+## [1.3.0_beta] - 2025-08-06
 
 ### Añadido ⚡
 - **Operaciones UPSERT y REPLACE INTO**: Nuevas operaciones avanzadas de inserción/actualización inteligente
@@ -224,7 +250,7 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
 
 ---
 
-## [1.2.0] - 2025-08-05
+## [1.2.0_beta] - 2025-08-05
 
 ### Añadido ⚡
 - **Modo Lazy y Planificador de Consultas**: Nueva funcionalidad revolucionaria que optimiza automáticamente las consultas complejas
@@ -278,7 +304,7 @@ $users = $orm->table('users')
 
 ---
 
-## [1.1.0] - 2025-07-30
+## [1.1.0_beta] - 2025-07-30
 
 ### Añadido
 - Sistema de caché básico
@@ -293,7 +319,7 @@ $users = $orm->table('users')
 
 ---
 
-## [1.0.0] - 2025-07-15
+## [1.0.0_beta] - 2025-07-15
 
 ### Añadido
 - Lanzamiento inicial de VersaORM-PHP
