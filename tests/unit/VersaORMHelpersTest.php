@@ -2,61 +2,122 @@
 
 declare(strict_types=1);
 
-namespace VersaORM\Tests\Unit;
-
 use PHPUnit\Framework\TestCase;
-
-require_once __DIR__ . '/../../vendor/autoload.php';
-
-use VersaORM\SQL\PdoEngine;
 use VersaORM\VersaORM;
 
-class VersaORMHelpersTest extends TestCase
+/**
+ * @group sqlite
+ */
+final class VersaORMHelpersTest extends TestCase
 {
-    public function testQuoteIdentAndFormatDefault(): void
+    public function testDropIndexPortableForDrivers(): void
     {
-        $orm = new VersaORM();
-        $orm->setConfig(['driver' => 'mysql', 'database' => ':memory:']);
+        $drivers = [
+            'mysql' => 'ALTER TABLE `users` DROP INDEX `idx_name`',
+            'sqlite' => 'DROP INDEX IF EXISTS "idx_name"',
+            'postgresql' => 'DROP INDEX IF EXISTS "idx_name"',
+        ];
 
-        $r = new \ReflectionClass($orm);
-        $mQuote = $r->getMethod('quoteIdent');
-        $mQuote->setAccessible(true);
-        $quoted = $mQuote->invoke($orm, 'col', 'mysql');
-        $this->assertStringContainsString('`', $quoted);
+        foreach ($drivers as $driver => $expectedSql) {
+            $config = ['driver' => $driver, 'debug' => false];
 
-        $mFormat = $r->getMethod('formatDefault');
-        $mFormat->setAccessible(true);
-        $this->assertSame('NULL', $mFormat->invoke($orm, null, 'mysql'));
-        $this->assertSame('1', $mFormat->invoke($orm, true, 'mysql'));
-        $this->assertSame('TRUE', $mFormat->invoke($orm, true, 'postgres'));
-        $this->assertSame("'abc'", $mFormat->invoke($orm, 'abc', 'sqlite'));
+            $mock = $this->getMockBuilder(VersaORM::class)
+                ->setConstructorArgs([$config])
+                ->onlyMethods(['exec'])
+                ->getMock();
+
+            $mock->expects($this->once())->method('exec')->with($this->equalTo($expectedSql));
+
+            // Invocar método privado
+            $this->invokePrivate($mock, 'dropIndexPortable', ['users', 'idx_name', $driver]);
+        }
     }
 
-    public function testIsDdlOperationAndIsRawQueryDDL(): void
+    public function testBuildDetailedAndSimpleErrorMessagesIncludeExpectedParts(): void
     {
-        $orm = new VersaORM();
-        $r = new \ReflectionClass($orm);
-        $mDdl = $r->getMethod('isDdlOperation');
-        $mDdl->setAccessible(true);
-        $this->assertTrue($mDdl->invoke($orm, 'createTable'));
-        $this->assertFalse($mDdl->invoke($orm, 'query'));
+        $orm = new VersaORM([]);
 
-        $mRaw = $r->getMethod('isRawQueryDDL');
-        $mRaw->setAccessible(true);
-        $this->assertTrue($mRaw->invoke($orm, 'CREATE TABLE x (id INT)'));
-        $this->assertFalse($mRaw->invoke($orm, 'SELECT 1'));
+        $detailed = $this->invokePrivate(
+            $orm,
+            'buildDetailedErrorMessage',
+            [
+                'E_CODE',
+                'Connection refused',
+                ['detail' => 'socket error'],
+                '08001',
+                'raw',
+                'SELECT 1',
+                [1, 2],
+            ],
+        );
+
+        $this->assertStringContainsString('VersaORM Error [E_CODE]: Connection refused', $detailed);
+        $this->assertStringContainsString('Query: SELECT 1', $detailed);
+        $this->assertStringContainsString('Bindings:', $detailed);
+        $this->assertStringContainsString('SQL State: 08001', $detailed);
+        $this->assertStringContainsString('Suggestions:', $detailed);
+
+        $simple = $this->invokePrivate($orm, 'buildSimpleErrorMessage', ['E2', 'Bad things']);
+        $this->assertSame('Database Error [E2]: Bad things', $simple);
     }
 
-    public function testPdoEngineInvalidateCacheByPattern(): void
+    public function testLogErrorWritesFileAndCleanOldLogsRemovesOld(): void
     {
-        $cfg = ['driver' => 'sqlite', 'database' => ':memory:'];
-        $engine = new PdoEngine($cfg);
+        $tmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'versaorm_logs_' . uniqid();
+        if (! mkdir($tmp) && ! is_dir($tmp)) {
+            $this->markTestSkipped('Could not create temp dir for logs');
+        }
 
-        $res = $engine->execute('cache', ['action' => 'enable']);
-        $this->assertSame('cache enabled', $res);
+        $config = ['debug' => true, 'log_path' => $tmp];
+        $orm = new VersaORM($config);
 
-        // Invalidate without table on sqlite should skip gracefully
-        $res2 = $engine->execute('cache', ['action' => 'invalidate']);
-        $this->assertStringContainsString('skipped', (string) $res2);
+        // Ensure no log exists yet
+        $todayFile = $tmp . DIRECTORY_SEPARATOR . 'php-' . date('Y-m-d') . '.log';
+        if (file_exists($todayFile)) {
+            unlink($todayFile);
+        }
+
+        // Invoke logError (private)
+        $this->invokePrivate($orm, 'logError', ['E100', 'Test error', 'SELECT 1', ['a' => 'b'], 'Full message']);
+
+        $this->assertFileExists($todayFile);
+        $content = file_get_contents($todayFile);
+        $this->assertStringContainsString('[ERROR] [E100] Test error', $content);
+        $this->assertStringContainsString('SELECT 1', $content);
+
+        // Create an old log file and assert cleanOldLogs removes it
+        $oldDate = date('Y-m-d', strtotime('-10 days'));
+        $oldFile = $tmp . DIRECTORY_SEPARATOR . $oldDate . '.log';
+        file_put_contents($oldFile, "old\n");
+        $this->assertFileExists($oldFile);
+
+        $this->invokePrivate($orm, 'cleanOldLogs', [$tmp]);
+
+        // old file should be removed
+        $this->assertFileDoesNotExist($oldFile);
+
+        // Cleanup
+        @unlink($todayFile);
+        @rmdir($tmp);
+    }
+
+    public function testGetErrorSuggestionsFindsRelevantHints(): void
+    {
+        $orm = new VersaORM([]);
+
+        $sug1 = $this->invokePrivate($orm, 'getErrorSuggestions', ['Connection failed: timeout']);
+        $this->assertIsArray($sug1);
+        $this->assertContains('Check database server is running', $sug1);
+
+        $sug2 = $this->invokePrivate($orm, 'getErrorSuggestions', ['Table users not found']);
+        $this->assertContains('Check if the table name is spelled correctly', $sug2);
+    }
+
+    private function invokePrivate(object $obj, string $method, array $args = [])
+    {
+        $ref = new \ReflectionMethod($obj, $method);
+        $ref->setAccessible(true);
+
+        return $ref->invokeArgs($obj, $args);
     }
 }
