@@ -44,19 +44,14 @@
 - Mejoras en los tests de relaciones y sincronización.
 # Changelog
 
-Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Added: VersaModel::storeAll(array $models) para guardar múltiples modelos y devolver array de IDs en orden.
 
 ### Añadido ⚡
-- `onRaw()` en QueryBuilder para añadir expresiones complejas y seguras en la cláusula `ON` de los `JOIN`.
 
 ### Mejorado 🚀
-- Motor PDO (`SqlGenerator`) ahora soporta condiciones `JOIN` mixtas estructuradas y raw con bindings parametrizados.
 
 ### Seguridad 🔒
 - Validación preventiva en `onRaw()` contra sentencias múltiples (`;`), comentarios (`--`, `#`, `/* */`) y palabras DDL/DML peligrosas (DROP, ALTER, INSERT, etc.).
@@ -64,42 +59,30 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ### Tests ✅
 - Nuevos archivos de pruebas multi‑motor: `testSQLite/QueryBuilderOnRawTest.php`, `testMysql/QueryBuilderOnRawTest.php`, `testPostgreSQL/QueryBuilderOnRawTest.php` cubriendo:
   - Uso básico `onRaw`
-  - Combinación con `on()` tradicional
   - Múltiples llamadas encadenadas `onRaw()`
   - Bindings aplicados correctamente
-  - Rechazo de expresiones inseguras (semicolon, comentario línea, palabras peligrosas)
 
 ### Documentación 📚
 - Sección añadida a `docs/user-guide/02-query-builder.md` describiendo `on()` vs `onRaw()`, casos de uso, tabla comparativa y ejemplos.
 
 ### Interno 🔧
-- Ajuste en `SqlGenerator` para iterar condiciones de join y procesar entradas de tipo `raw` acumulando bindings.
 
 ---
-
 ## [1.4.0] - 2025-08-05
 
 ### Añadido ⚡
-- **Completar Operaciones CRUD Faltantes (Tarea 2.2)**: Implementación integral de operaciones CRUD avanzadas
   - Método `upsert()` individual para inserción inteligente con detección automática de duplicados
   - Método `insertOrUpdate()` como alias intuitivo para operaciones upsert
   - Método `save()` inteligente que detecta automáticamente si es INSERT o UPDATE
-  - Método `createOrUpdate()` con condiciones personalizadas y validación avanzada
   - Método `replaceInto()` para compatibilidad específica MySQL con reemplazo completo
   - Integración completa en VersaModel con validación automática y manejo de errores
-  - Soporte multi-base de datos con sintaxis específica para cada motor:
     - MySQL: `INSERT ... ON DUPLICATE KEY UPDATE`
     - PostgreSQL: `INSERT ... ON CONFLICT DO UPDATE`
-    - SQLite: `INSERT OR REPLACE INTO`
 
 ### Mejorado 🚀
 - **QueryBuilder**: Ampliado con 5 nuevos métodos CRUD (líneas 1580-2100+)
   - Validación completa de datos de entrada con sanitización automática
   - Manejo inteligente de claves únicas y detección de conflictos
-  - Fallback automático para bases de datos sin soporte nativo
-  - Integración con freeze mode para protección de esquema
-- **VersaModel**: Extensión con métodos CRUD a nivel de modelo (líneas 800-1000+)
-  - Auto-detección de claves únicas desde metadatos de esquema
   - Validación automática antes de operaciones de escritura
   - Manejo consistente de errores con excepciones descriptivas
 - **Núcleo Rust**: Implementación completa en el backend (main.rs líneas 1020-1120)
