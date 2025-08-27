@@ -1281,7 +1281,13 @@ class QueryBuilder
         if ($this->orm instanceof VersaORMClass) {
             try {
                 if ($this->orm->isDebugMode()) {
-                    error_log('[DEBUG] Executing SQL with QueryBuilder');
+                    try {
+                        if ($this->orm instanceof VersaORMClass) {
+                            $this->orm->logDebug('[DEBUG] Executing SQL with QueryBuilder');
+                        }
+                    } catch (Throwable) {
+                        // ignore logging errors
+                    }
                 }
             } catch (Throwable) {
                 // ignore
@@ -1379,8 +1385,13 @@ class QueryBuilder
         if ($this->orm instanceof VersaORMClass) {
             try {
                 if ($this->orm->isDebugMode()) {
-                    error_log('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null));
-                    error_log('[DEBUG] insertMany PHP - All records: ' . json_encode($records));
+                    try {
+                        if ($this->orm instanceof VersaORMClass) {
+                            $this->orm->logDebug('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null), ['records' => $records]);
+                        }
+                    } catch (Throwable) {
+                        // ignore logging errors
+                    }
                 }
             } catch (Throwable) {
                 // ignore
@@ -3120,7 +3131,13 @@ class QueryBuilder
                 if ($this->orm instanceof VersaORMClass) {
                     try {
                         if ($this->orm->isDebugMode()) {
-                            error_log('[DEBUG] buildPayload - Final merged params for ' . $method . ': ' . json_encode($params));
+                            try {
+                                if ($this->orm instanceof VersaORMClass) {
+                                    $this->orm->logDebug('[DEBUG] buildPayload - Final merged params for ' . $method . ': ' . json_encode($params), ['params' => $params]);
+                                }
+                            } catch (Throwable) {
+                                // ignore
+                            }
                         }
                     } catch (Throwable) {
                         // ignore
@@ -3776,7 +3793,13 @@ class QueryBuilder
         if ($this->orm instanceof VersaORMClass) {
             try {
                 if ($this->orm->isDebugMode()) {
-                    error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
+                    try {
+                        $this->orm->logDebug('[DEBUG] Executing advanced SQL operation from QueryBuilder...', ['params' => $params]);
+                    } catch (Throwable) {
+                        if (function_exists('error_log')) {
+                            error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
+                        }
+                    }
                 }
             } catch (Throwable) {
                 // ignore

@@ -170,9 +170,7 @@ class SqlGenerator
 
         // Debug logging para diagnosticar errores de sintaxis en subconsultas UNION derivadas.
         // Controlado por variable de entorno VERSA_DEBUG_SQL=1 para evitar ruido en entornos productivos.
-        if ($fromSub !== null && \function_exists('error_log') && getenv('VERSA_DEBUG_SQL') === '1') {
-            error_log('[DEBUG][SqlGenerator] from_sub SQL: ' . $sql . ' | bindings=' . json_encode($bindings));
-
+        if ($fromSub !== null && getenv('VERSA_DEBUG_SQL') === '1') {
             try {
                 $logDir = __DIR__ . '/../../logs';
                 if (! is_dir($logDir)) {

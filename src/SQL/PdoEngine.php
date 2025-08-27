@@ -15,7 +15,6 @@ use VersaORM\VersaORMException;
 
 use function array_slice;
 use function count;
-use function function_exists;
 use function in_array;
 use function is_array;
 use function is_bool;
@@ -545,10 +544,8 @@ class PdoEngine
                             1,
                         );
 
-                        // Log de depuración opcional
-                        if (function_exists('error_log')) {
-                            @error_log('[PDO][advanced_sql][window_function] SQL: ' . $sql);
-                        }
+                        // Log de depuración opcional vía logger inyectado
+                        $this->log('[PDO][advanced_sql][window_function] SQL: ' . $sql, ['sql' => $sql]);
 
                         try {
                             $stmt = $this->prepareCached($pdo, $sql);

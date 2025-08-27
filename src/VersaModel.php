@@ -2600,9 +2600,9 @@ class VersaModel implements TypedModelInterface
             // Debug log
             try {
                 if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
-                    error_log("VersaORM: Table '{$this->table}' existing columns: " . implode(', ', $existingColumnNames));
-                    error_log('VersaORM: Model attributes: ' . implode(', ', array_keys($this->attributes)));
-                    error_log('VersaORM: Missing columns to create: ' . implode(', ', array_keys($missingColumns)));
+                    $this->orm->logDebug("VersaORM: Table '{$this->table}' existing columns: " . implode(', ', $existingColumnNames), ['existing' => $existingColumnNames]);
+                    $this->orm->logDebug('VersaORM: Model attributes: ' . implode(', ', array_keys($this->attributes)), ['attributes' => array_keys($this->attributes)]);
+                    $this->orm->logDebug('VersaORM: Missing columns to create: ' . implode(', ', array_keys($missingColumns)), ['missing' => array_keys($missingColumns)]);
                 }
             } catch (Throwable) {
                 // ignore logging errors
@@ -2612,7 +2612,7 @@ class VersaModel implements TypedModelInterface
             foreach ($missingColumns as $columnName => $columnType) {
                 try {
                     if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
-                        error_log("VersaORM: Attempting to create column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+                        $this->orm->logDebug("VersaORM: Attempting to create column '{$columnName}' ({$columnType}) in table '{$this->table}'", ['column' => $columnName, 'type' => $columnType]);
                     }
                 } catch (Throwable) {
                     // ignore
@@ -2668,7 +2668,13 @@ class VersaModel implements TypedModelInterface
                 // Otros errores: loguear y continuar
                 try {
                     if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
-                        error_log("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage());
+                        try {
+                            if ($this->orm instanceof VersaORMClass) {
+                                $this->orm->logDebug("VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage(), ['exception' => $e->getMessage()]);
+                            }
+                        } catch (Throwable) {
+                            // ignore logging errors
+                        }
                     }
                 } catch (Throwable) {
                     // ignore
@@ -2752,7 +2758,13 @@ class VersaModel implements TypedModelInterface
             // Log de la creación automática de columna
             try {
                 if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
-                    error_log("VersaORM: Created column '{$columnName}' ({$columnType}) in table '{$this->table}'");
+                    try {
+                        if ($this->orm instanceof VersaORMClass) {
+                            $this->orm->logDebug("VersaORM: Created column '{$columnName}' ({$columnType}) in table '{$this->table}'", ['column' => $columnName, 'type' => $columnType]);
+                        }
+                    } catch (Throwable) {
+                        // ignore logging errors
+                    }
                 }
             } catch (Throwable) {
                 // ignore

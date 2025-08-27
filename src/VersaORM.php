@@ -1008,6 +1008,47 @@ class VersaORM
     }
 
     /**
+     * Registra información de debug en log.
+     *
+     * @param array<string, mixed> $context
+     */
+    public function logDebug(string $message, array $context = []): void
+    {
+        if (! $this->isDebugMode()) {
+            return;
+        }
+
+        try {
+            $logDir = $this->getLogDirectory();
+
+            if (! is_dir($logDir) && (! mkdir($logDir, 0755, true) && ! is_dir($logDir))) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
+            }
+
+            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
+            $timestamp = date('Y-m-d H:i:s');
+
+            $logEntry = sprintf(
+                "[%s] [PHP] [DEBUG] %s\n",
+                $timestamp,
+                $message,
+            );
+
+            if ($context !== []) {
+                $logEntry .= sprintf(
+                    "[%s] [PHP] [CONTEXT] %s\n",
+                    $timestamp,
+                    json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                );
+            }
+
+            file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+        } catch (Throwable) {
+            // Silenciar errores de logging para no interferir con la ejecución principal
+        }
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param array<string, mixed> $params
@@ -1064,9 +1105,13 @@ class VersaORM
                 if (class_exists(ErrorHandler::class) && ErrorHandler::isConfigured()) {
                     ErrorHandler::handleException($ex, ['phase' => 'pdo_engine']);
                 } else {
-                    // fallback mínimo
-                    if (function_exists('error_log')) {
-                        @error_log('[VersaORM][ERROR] ' . json_encode($ex->toLogArray()));
+                    // Intentar usar el logger central; si falla, fallback a error_log
+                    try {
+                        $this->logDebug('[VersaORM][ERROR]', ['exception' => $ex->toLogArray(), 'phase' => 'pdo_engine']);
+                    } catch (Throwable) {
+                        if (function_exists('error_log')) {
+                            @error_log('[VersaORM][ERROR] ' . json_encode($ex->toLogArray()));
+                        }
                     }
                 }
 
@@ -1122,7 +1167,13 @@ class VersaORM
             //     fwrite(STDERR, "=== END PAYLOAD ===\n");
             // }
             if ($this->isDebugMode()) {
-                error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
+                try {
+                    $this->logDebug('[DEBUG] JSON payload being sent to Rust', ['payload' => $payload]);
+                } catch (Throwable) {
+                    if (function_exists('error_log')) {
+                        error_log('[DEBUG] JSON payload being sent to Rust: ' . $payload);
+                    }
+                }
             }
 
             // If in debug mode and JSON_DUMP environment variable is set, dump and exit
@@ -1805,47 +1856,6 @@ class VersaORM
     }
 
     /**
-     * Registra información de debug en log.
-     *
-     * @param array<string, mixed> $context
-     */
-    private function logDebug(string $message, array $context = []): void
-    {
-        if (! $this->isDebugMode()) {
-            return;
-        }
-
-        try {
-            $logDir = $this->getLogDirectory();
-
-            if (! is_dir($logDir) && (! mkdir($logDir, 0755, true) && ! is_dir($logDir))) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
-            }
-
-            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
-            $timestamp = date('Y-m-d H:i:s');
-
-            $logEntry = sprintf(
-                "[%s] [PHP] [DEBUG] %s\n",
-                $timestamp,
-                $message,
-            );
-
-            if ($context !== []) {
-                $logEntry .= sprintf(
-                    "[%s] [PHP] [CONTEXT] %s\n",
-                    $timestamp,
-                    json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-                );
-            }
-
-            file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
-        } catch (Throwable) {
-            // Silenciar errores de logging para no interferir con la ejecución principal
-        }
-    }
-
-    /**
      * Registra el error en log si está en modo debug.
      *
      * @param array<int, mixed> $bindings
@@ -2215,7 +2225,13 @@ class VersaORM
         // Si al des-escapar obtenemos JSON válido, devolver la versión des-escapada
         if (json_decode($unescaped) !== null) {
             if ($this->config['debug'] ?? false) {
-                error_log('[VersaORM] Cleaned Rust debug output (unescaped). Original length: ' . strlen($output) . ', Clean length: ' . strlen($unescaped));
+                try {
+                    $this->logDebug('[VersaORM] Cleaned Rust debug output (unescaped)', ['original_len' => strlen($output), 'clean_len' => strlen($unescaped)]);
+                } catch (Throwable) {
+                    if (function_exists('error_log')) {
+                        error_log('[VersaORM] Cleaned Rust debug output (unescaped). Original length: ' . strlen($output) . ', Clean length: ' . strlen($unescaped));
+                    }
+                }
             }
 
             return $unescaped;
@@ -2223,7 +2239,13 @@ class VersaORM
 
         // Log de debug si está habilitado
         if ($this->config['debug'] ?? false) {
-            error_log('[VersaORM] Cleaned Rust debug output. Original length: ' . strlen($output) . ', Clean length: ' . strlen($cleanJson));
+            try {
+                $this->logDebug('[VersaORM] Cleaned Rust debug output', ['original_len' => strlen($output), 'clean_len' => strlen($cleanJson)]);
+            } catch (Throwable) {
+                if (function_exists('error_log')) {
+                    error_log('[VersaORM] Cleaned Rust debug output. Original length: ' . strlen($output) . ', Clean length: ' . strlen($cleanJson));
+                }
+            }
         }
 
         return $cleanJson;
