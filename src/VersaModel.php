@@ -1171,6 +1171,11 @@ class VersaModel implements TypedModelInterface
             throw new Exception('ORM configuration not found.');
         }
 
+        // Reuse existing ORM instance when possible to preserve connection state
+        if ($ormInstance instanceof VersaORM) {
+            return $ormInstance->table($this->table, static::class);
+        }
+
         return (new VersaORM($config))->table($this->table, static::class);
     }
 

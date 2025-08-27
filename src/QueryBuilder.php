@@ -1018,8 +1018,35 @@ class QueryBuilder
             try {
                 $m = new $modelClass($this->table, $this->orm);
                 $m->loadInstance($row);
+                // Cargar relaciones solicitadas (eager load) para que export incluya datos relacionados
+                foreach ($this->with as $relation) {
+                    $rname = $relation['name'] ?? null;
+                    if (is_string($rname) && $rname !== '') {
+                        try {
+                            $m->getRelationValue($rname);
+                        } catch (Throwable) {
+                            // ignorar errores en eager load para no romper la exportación
+                        }
+                    }
+                }
                 // Export aplica casting; garantizar consistencia
-                $exported[] = $m->export();
+                $rowExport = $m->export();
+
+                // Incluir relaciones cargadas (si las hubiera) en el array exportado
+                try {
+                    if (method_exists($m, 'getRelations')) {
+                        $rels = $m->getRelations();
+                        if (is_array($rels) && $rels !== []) {
+                            foreach ($rels as $rk => $rv) {
+                                $rowExport[$rk] = $rv;
+                            }
+                        }
+                    }
+                } catch (Throwable) {
+                    // no bloquear la exportación si falla obtener relaciones
+                }
+
+                $exported[] = $rowExport;
             } catch (Throwable) {
                 // Fallback al row original si algo falla
                 $exported[] = $row;
