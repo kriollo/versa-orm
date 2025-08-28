@@ -604,12 +604,30 @@ class VersaORM
             }
         }
 
-        if (! empty($changes['dropIndex'])) {
-            /** @var list<string> $dropIdx */
-            $dropIdx = (array) $changes['dropIndex'];
+        // Support several possible keys for drop index list
+        $dropIndexKeys = ['dropIndex', 'drop_index', 'drop_indexes', 'dropIndexes', 'dropIndexs'];
+        foreach ($dropIndexKeys as $key) {
+            if (empty($changes[$key])) {
+                continue;
+            }
 
-            foreach ($dropIdx as $idxName) {
-                $this->dropIndexPortable($table, (string) $idxName, $driver);
+            $dropIdx = (array) $changes[$key];
+            foreach ($dropIdx as $idxEntry) {
+                $idxName = '';
+                if (is_string($idxEntry)) {
+                    $idxName = $idxEntry;
+                } elseif (is_array($idxEntry)) {
+                    if (isset($idxEntry['name'])) {
+                        $idxName = (string) $idxEntry['name'];
+                    } elseif (isset($idxEntry[0])) {
+                        $idxName = (string) $idxEntry[0];
+                    }
+                }
+
+                $idxName = trim($idxName);
+                if ($idxName !== '') {
+                    $this->dropIndexPortable($table, $idxName, $driver);
+                }
             }
         }
 
@@ -683,12 +701,25 @@ class VersaORM
 
         // Drop columns
         if (! empty($changes['drop'])) {
-            /** @var list<string> $cols */
+            /** @var list<array<string,mixed>|string> $cols */
             $cols = (array) $changes['drop'];
             $clauses = [];
 
             foreach ($cols as $c) {
-                $name = (string) $c;
+                $name = '';
+
+                if (is_string($c)) {
+                    $name = $c;
+                } elseif (is_array($c)) {
+                    // Accept formats like ['name' => 'col'] or numeric arrays
+                    if (isset($c['name'])) {
+                        $name = (string) $c['name'];
+                    } elseif (isset($c[0])) {
+                        $name = (string) $c[0];
+                    }
+                }
+
+                $name = trim($name);
 
                 if ($name !== '') {
                     $clauses[] = 'DROP COLUMN ' . $q($name);
