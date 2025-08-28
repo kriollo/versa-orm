@@ -31,6 +31,8 @@ final class CreateIndexPgTest extends TestCase
         $columns = [
             ['name' => 'id', 'type' => 'INT', 'nullable' => false, 'primary' => true, 'autoIncrement' => true],
             ['name' => 'id_empresa', 'type' => 'INT', 'nullable' => false],
+            ['name' => 'created_at', 'type' => 'TIMESTAMP', 'nullable' => true],
+            ['name' => 'updated_at', 'type' => 'TIMESTAMP', 'nullable' => true],
         ];
 
         $options = [

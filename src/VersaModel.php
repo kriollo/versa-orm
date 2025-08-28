@@ -561,6 +561,30 @@ class VersaModel implements TypedModelInterface
                 'NO_ORM_INSTANCE',
             );
         }
+        // Si no hay atributos (modelo vacío), no intentar insertar timestamps
+        // ni llamar al motor de base de datos: lanzar excepción esperada por tests.
+        if ($this->attributes === []) {
+            throw new VersaORMException(
+                'No data to insert',
+                'NO_DATA_TO_INSERT',
+            );
+        }
+
+        // Asignar timestamps automáticos antes de asegurar columnas para que
+        // ensureColumnsExist pueda crear las columnas si faltan.
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        if (isset($this->attributes['id'])) {
+            // UPDATE: actualizar updated_at para que exista durante la verificación de columnas
+            $this->attributes['updated_at'] = $now;
+        } else {
+            // INSERT: establecer created_at y updated_at solo si no fueron provistos
+            if (! array_key_exists('created_at', $this->attributes) || $this->attributes['created_at'] === null) {
+                $this->attributes['created_at'] = $now;
+            }
+            if (! array_key_exists('updated_at', $this->attributes) || $this->attributes['updated_at'] === null) {
+                $this->attributes['updated_at'] = $now;
+            }
+        }
 
         // Intentar asegurar que tabla/columnas existan si freeze está desactivado
         try {
@@ -601,6 +625,7 @@ class VersaModel implements TypedModelInterface
         if (! $this->fireEvent('creating')) {
             return null;
         }
+        // timestamps ya asignados antes de ensureColumnsExist
         $filteredAttributes = $this->attributes;
         unset($filteredAttributes['id']); // No insertar ID manualmente
         // Preparar valores para la base de datos (convertir DateTime a string, etc.)
@@ -627,8 +652,12 @@ class VersaModel implements TypedModelInterface
 
                 return $this->attributes['id']; // Insert completado con ID asignado
             }
-        } catch (Throwable) {
-            // Continuar con fallback silencioso
+        } catch (Throwable $e) {
+            // Temporal: relanzar la excepción para diagnóstico directo en tests/CLI
+            if ($orm->isDebugMode()) {
+                throw $e;
+            }
+            // Continuar con fallback silencioso en modo no-debug
         }
         // Fallback: buscar el registro más reciente que coincida con los datos insertados
         $whereConditions = [];
@@ -1685,7 +1714,17 @@ class VersaModel implements TypedModelInterface
             try {
                 $records = [];
                 foreach ($models as $m) {
-                    $records[] = $m->getData();
+                    $raw = $m->getData();
+                    // Preparar cada valor para la base de datos (DateTime -> string, json, bool -> int, etc.)
+                    $prepared = [];
+                    foreach ($raw as $k => $v) {
+                        if ($k === 'id') {
+                            continue; // no enviar id para insertMany
+                        }
+                        // Usar el método privado prepareValueForDatabase disponible en la clase
+                        $prepared[$k] = $m->prepareValueForDatabase($k, $v);
+                    }
+                    $records[] = $prepared;
                 }
                 $qb = self::orm()->table($table, static::class);
                 $result = $qb->insertMany($records); // ahora puede devolver inserted_ids
@@ -2111,8 +2150,12 @@ class VersaModel implements TypedModelInterface
         if ($value === null && (bool) ($columnSchema['is_nullable'] ?? false)) {
             return $errors;
         }
-        // Max length validation
-        if (isset($columnSchema['max_length']) && $columnSchema['max_length'] > 0 && is_string($value) && strlen($value) > $columnSchema['max_length']) {
+        // Max length validation (no aplicar para tipos fecha/hora ya que la "precision"
+        // puede haber sido confundida con character_maximum_length por algunos drivers)
+        $dataType = strtolower((string) ($columnSchema['data_type'] ?? ''));
+        $isDateTimeType = in_array($dataType, ['datetime', 'timestamp', 'date', 'time'], true);
+
+        if (! $isDateTimeType && isset($columnSchema['max_length']) && $columnSchema['max_length'] > 0 && is_string($value) && strlen($value) > $columnSchema['max_length']) {
             $errors[] = "The {$field} may not be greater than {$columnSchema['max_length']} characters.";
         }
         $propertyTypes = static::getPropertyTypes();
@@ -2463,11 +2506,12 @@ class VersaModel implements TypedModelInterface
                 case 'date':
                 case 'timestamp':
                     if ($value instanceof DateTime) {
-                        return $value->format('Y-m-d H:i:s');
+                        // Preservar microssegundos para evitar colisiones en tests
+                        return $value->format('Y-m-d H:i:s.u');
                     }
 
                     if ($value instanceof DateTimeInterface) {
-                        return $value->format('Y-m-d H:i:s');
+                        return $value->format('Y-m-d H:i:s.u');
                     }
 
                     // Si es string, asumir que ya está en formato correcto
@@ -2489,11 +2533,11 @@ class VersaModel implements TypedModelInterface
 
         // Fallback: conversiones automáticas sin tipo específico
         if ($value instanceof DateTime) {
-            return $value->format('Y-m-d H:i:s');
+            return $value->format('Y-m-d H:i:s.u');
         }
 
         if ($value instanceof DateTimeInterface) {
-            return $value->format('Y-m-d H:i:s');
+            return $value->format('Y-m-d H:i:s.u');
         }
 
         if (is_bool($value)) {
@@ -2701,8 +2745,8 @@ class VersaModel implements TypedModelInterface
             return 'VARCHAR(255)'; // Tipo por defecto para valores null
         }
 
-        // Mapear DateTime a tipo de fecha
-        if ($value instanceof DateTime) {
+        // Mapear DateTime / DateTimeImmutable (DateTimeInterface) a tipo de fecha
+        if ($value instanceof DateTime || $value instanceof DateTimeInterface) {
             return 'DATETIME';
         }
 
@@ -2754,8 +2798,90 @@ class VersaModel implements TypedModelInterface
         $sql = null;
 
         try {
-            // Construir la consulta ALTER TABLE
-            $sql = "ALTER TABLE `{$this->table}` ADD COLUMN `{$columnName}` {$columnType}";
+            // Determinar driver para generar SQL compatible
+            $cfg = $orm->getConfig();
+            $driver = strtolower((string) ($cfg['driver'] ?? $cfg['database_type'] ?? 'mysql'));
+
+            // Normalizar tipo destino según driver
+            $dbType = strtoupper($columnType);
+            if ($driver === 'pgsql' || $driver === 'postgres' || $driver === 'postgresql') {
+                // Mapear tipos a PostgreSQL
+                switch ($dbType) {
+                    case 'DATETIME':
+                        // Usar precision de microsegundos para preservar micros
+                        $mappedType = 'TIMESTAMP(6) WITHOUT TIME ZONE';
+                        break;
+                    case 'INT':
+                        $mappedType = 'INTEGER';
+                        break;
+                    case 'BOOLEAN':
+                        $mappedType = 'BOOLEAN';
+                        break;
+                    case 'JSON':
+                        $mappedType = 'JSONB';
+                        break;
+                    case 'TEXT':
+                    case 'LONGTEXT':
+                        $mappedType = 'TEXT';
+                        break;
+                    default:
+                        $mappedType = $columnType;
+                }
+
+                $sql = "ALTER TABLE \"{$this->table}\" ADD COLUMN \"{$columnName}\" {$mappedType}";
+            } elseif ($driver === 'sqlite') {
+                // SQLite: usar comillas dobles y tipos flexibles; JSON -> TEXT
+                switch ($dbType) {
+                    case 'DATETIME':
+                        // SQLite acepta DATETIME sin precision, pero usaremos TEXT-like storage
+                        $mappedType = 'DATETIME';
+                        break;
+                    case 'INT':
+                        $mappedType = 'INTEGER';
+                        break;
+                    case 'BOOLEAN':
+                        $mappedType = 'INTEGER';
+                        break;
+                    case 'JSON':
+                        $mappedType = 'TEXT';
+                        break;
+                    case 'TEXT':
+                    case 'LONGTEXT':
+                        $mappedType = 'TEXT';
+                        break;
+                    default:
+                        $mappedType = $columnType;
+                }
+
+                $sql = "ALTER TABLE \"{$this->table}\" ADD COLUMN \"{$columnName}\" {$mappedType}";
+            } else {
+                // MySQL / MariaDB (por defecto)
+                switch ($dbType) {
+                    case 'DATETIME':
+                        // MySQL: preservar micros usando DATETIME(6)
+                        $mappedType = 'DATETIME(6)';
+                        break;
+                    case 'INT':
+                        $mappedType = 'INT';
+                        break;
+                    case 'BOOLEAN':
+                        $mappedType = 'TINYINT(1)';
+                        break;
+                    case 'JSON':
+                        $mappedType = 'JSON';
+                        break;
+                    case 'TEXT':
+                        $mappedType = 'TEXT';
+                        break;
+                    case 'LONGTEXT':
+                        $mappedType = 'LONGTEXT';
+                        break;
+                    default:
+                        $mappedType = $columnType;
+                }
+
+                $sql = "ALTER TABLE `{$this->table}` ADD COLUMN `{$columnName}` {$mappedType}";
+            }
 
             // Ejecutar la consulta
             $orm->exec($sql);
@@ -2765,7 +2891,7 @@ class VersaModel implements TypedModelInterface
                 if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
                     try {
                         if ($this->orm instanceof VersaORMClass) {
-                            $this->orm->logDebug("VersaORM: Created column '{$columnName}' ({$columnType}) in table '{$this->table}'", ['column' => $columnName, 'type' => $columnType]);
+                            $this->orm->logDebug("VersaORM: Created column '{$columnName}' ({$mappedType}) in table '{$this->table}'", ['column' => $columnName, 'type' => $mappedType, 'sql' => $sql]);
                         }
                     } catch (Throwable) {
                         // ignore logging errors
@@ -2775,6 +2901,12 @@ class VersaModel implements TypedModelInterface
                 // ignore
             }
         } catch (Exception $e) {
+            // Si la columna ya existe, ignorar el error (condición de carrera posible)
+            $msg = strtolower($e->getMessage());
+            if (str_contains($msg, 'duplicate column') || str_contains($msg, 'already exists') || str_contains($msg, 'column "' . strtolower($columnName) . '" of relation') || str_contains($msg, 'duplicate column name')) {
+                return; // idempotente
+            }
+
             throw new VersaORMException(
                 "Failed to create column '{$columnName}' in table '{$this->table}': " . $e->getMessage(),
                 'COLUMN_CREATION_FAILED',

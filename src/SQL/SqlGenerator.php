@@ -760,6 +760,18 @@ class SqlGenerator
                 }
                 $sql .= implode(', ', $valuesSql);
 
+                // Añadir RETURNING id para Postgres solo si la columna 'id' está presente
+                try {
+                    if (is_array($columns) && in_array('id', $columns, true) && is_object($dialect) && method_exists($dialect, 'getName')) {
+                        $driverHint = $dialect->getName();
+                        if (stripos((string) $driverHint, 'postgres') !== false) {
+                            $sql .= ' RETURNING id';
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // ignore any unexpected errors detecting driver
+                }
+
                 return [$sql, $bindings];
             })(),
             'updateMany' => self::compileUpdate([

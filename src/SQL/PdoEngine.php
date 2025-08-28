@@ -1134,6 +1134,8 @@ class PdoEngine
         }
 
         if ($action === 'insert') {
+            // Log SQL y bindings para diagnosticar problemas de inserción
+            $this->log('[PdoEngine] Executing INSERT', ['sql' => $sql, 'bindings' => $bindings]);
             $stmt = $this->prepareCached($pdo, $sql);
             $start = microtime(true);
 
@@ -1150,6 +1152,8 @@ class PdoEngine
         }
 
         if ($action === 'insertGetId') {
+            // Log SQL y bindings para diagnosticar problemas de insertGetId
+            $this->log('[PdoEngine] Executing INSERT (get id)', ['sql' => $sql, 'bindings' => $bindings]);
             $stmt = $this->prepareCached($pdo, $sql);
             $start = microtime(true);
 
@@ -1164,6 +1168,8 @@ class PdoEngine
 
             // Convertir lastInsertId a int, con fallback a null si falla
             $lastId = $pdo->lastInsertId();
+
+            $this->log('[PdoEngine] lastInsertId', ['lastId' => $lastId]);
 
             if ($lastId === false || $lastId === '') {
                 return null;
@@ -1279,7 +1285,10 @@ class PdoEngine
      */
     private function prepareCached(PDO $pdo, string $sql): PDOStatement
     {
-        $key = md5($sql);
+        // Incluir el identificador del objeto PDO en la clave para evitar reusar
+        // PDOStatement preparados por otra instancia de conexión (p. ej. :memory: vs file)
+        $pdoId = function_exists('spl_object_id') ? spl_object_id($pdo) : spl_object_hash($pdo);
+        $key = md5($sql . '|' . (string) $pdoId);
 
         if (isset(self::$stmtCache[$key])) {
             self::$metrics['stmt_cache_hits']++;
@@ -1350,55 +1359,132 @@ class PdoEngine
             $driverName = '';
         }
 
-        for ($i = 0; $i < $total; $i += $batchSize) {
-            $chunk = array_slice($records, $i, $batchSize);
-            [$chunkSql, $chunkBindings] = SqlGenerator::generate('query', [
-                'method' => 'insertMany',
-                'table' => $params['table'] ?? '',
-                'records' => $chunk,
-            ], $this->dialect);
-            $st = $this->prepareCached($pdo, $chunkSql);
-            $st->execute($chunkBindings);
+        // Ejecutar inserción por lotes dentro de una transacción para evitar
+        // inserciones parciales que luego provoquen errores de unicidad
+        $startedTransaction = false;
 
-            try {
-                $st->closeCursor();
-            } catch (Throwable) { // ignore
+        try {
+            if (! $pdo->inTransaction()) {
+                $startedTransaction = $pdo->beginTransaction();
             }
-            $chunkCount = count($chunk);
-            $totalInserted += $chunkCount;
 
-            // Intentar inferir IDs autoincrement si no se proporcionaron explícitamente
-            $explicitIdPresent = false;
-            foreach ($chunk as $row) {
-                if (is_array($row) && array_key_exists('id', $row)) {
-                    $explicitIdPresent = true;
-                    break;
+            for ($i = 0; $i < $total; $i += $batchSize) {
+                $chunk = array_slice($records, $i, $batchSize);
+                [$chunkSql, $chunkBindings] = SqlGenerator::generate('query', [
+                    'method' => 'insertMany',
+                    'table' => $params['table'] ?? '',
+                    'records' => $chunk,
+                ], $this->dialect);
+                $st = $this->prepareCached($pdo, $chunkSql);
+                $st->execute($chunkBindings);
+
+                $chunkCount = count($chunk);
+                $totalInserted += $chunkCount;
+
+                // Intentar inferir IDs autoincrement si no se proporcionaron explícitamente
+                $explicitIdPresent = false;
+                foreach ($chunk as $row) {
+                    if (is_array($row) && array_key_exists('id', $row)) {
+                        $explicitIdPresent = true;
+                        break;
+                    }
                 }
-            }
-            if (! $explicitIdPresent && ($driverName === 'mysql' || $driverName === 'sqlite')) {
-                try {
-                    $lastIdRaw = $pdo->lastInsertId();
-                    if ($lastIdRaw !== false && $lastIdRaw !== '') {
-                        $lastId = (int) $lastIdRaw;
-                        if ($lastId > 0) {
-                            if ($driverName === 'mysql') {
-                                // MySQL devuelve el primer ID de la inserción multi-row
-                                $firstId = $lastId;
-                            } else { // sqlite
-                                // SQLite devuelve el último ROWID insertado
-                                $firstId = $lastId - $chunkCount + 1;
-                            }
-                            if ($firstId > 0) {
-                                for ($k = 0; $k < $chunkCount; $k++) {
-                                    $insertedIds[] = $firstId + $k;
+
+                if (! $explicitIdPresent) {
+                    // Para Postgres intentamos leer filas devueltas por RETURNING id
+                    if ($driverName === 'pgsql' || $driverName === 'postgres' || $driverName === 'postgresql') {
+                        try {
+                            $returned = $st->fetchAll(PDO::FETCH_COLUMN);
+                            if (is_array($returned) && count($returned) > 0) {
+                                foreach ($returned as $rid) {
+                                    $insertedIds[] = (int) $rid;
+                                }
+                            } else {
+                                // Si no devolvió nada, fall back a lastInsertId para otros drivers
+                                try {
+                                    $lastIdRaw = $pdo->lastInsertId();
+                                    if ($lastIdRaw !== false && $lastIdRaw !== '') {
+                                        $lastId = (int) $lastIdRaw;
+                                        if ($lastId > 0) {
+                                            $firstId = $lastId - $chunkCount + 1;
+                                            if ($firstId > 0) {
+                                                for ($k = 0; $k < $chunkCount; $k++) {
+                                                    $insertedIds[] = $firstId + $k;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (Throwable) {
+                                    // ignore
                                 }
                             }
+                        } catch (Throwable) {
+                            // Si fetchAll falla, intentar lastInsertId como fallback
+                            try {
+                                $lastIdRaw = $pdo->lastInsertId();
+                                if ($lastIdRaw !== false && $lastIdRaw !== '') {
+                                    $lastId = (int) $lastIdRaw;
+                                    if ($lastId > 0) {
+                                        $firstId = $lastId - $chunkCount + 1;
+                                        if ($firstId > 0) {
+                                            for ($k = 0; $k < $chunkCount; $k++) {
+                                                $insertedIds[] = $firstId + $k;
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Throwable) {
+                                // ignore
+                            }
+                        }
+                    } elseif ($driverName === 'mysql' || $driverName === 'sqlite') {
+                        try {
+                            $lastIdRaw = $pdo->lastInsertId();
+                            if ($lastIdRaw !== false && $lastIdRaw !== '') {
+                                $lastId = (int) $lastIdRaw;
+                                if ($lastId > 0) {
+                                    if ($driverName === 'mysql') {
+                                        // MySQL devuelve el primer ID de la inserción multi-row
+                                        $firstId = $lastId;
+                                    } else { // sqlite
+                                        // SQLite devuelve el último ROWID insertado
+                                        $firstId = $lastId - $chunkCount + 1;
+                                    }
+                                    if ($firstId > 0) {
+                                        for ($k = 0; $k < $chunkCount; $k++) {
+                                            $insertedIds[] = $firstId + $k;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Throwable) { /* ignorar */
                         }
                     }
-                } catch (Throwable) { /* ignorar */
+                }
+
+                try {
+                    $st->closeCursor();
+                } catch (Throwable) { // ignore
                 }
             }
+
+            if ($startedTransaction) {
+                $pdo->commit();
+            }
+        } catch (Throwable $e) {
+            // Si falló la inserción, hacer rollback si iniciamos la transacción
+            try {
+                if ($startedTransaction && $pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+            } catch (Throwable) {
+                // ignore rollback errors
+            }
+
+            // Re-lanzar para que el caller (por ejemplo storeAll) pueda aplicar fallback
+            throw $e;
         }
+
         $this->clearAllCache();
 
         return [
@@ -1621,6 +1707,11 @@ class PdoEngine
                 if (preg_match('/^(\w+)\((\d+)\)/', $type, $m) === 1) {
                     $type = $m[1];
                     $length = (int) $m[2];
+                    // Para tipos de fecha/hora MySQL (ej. datetime(6)) la parte entre paréntesis
+                    // es precision, no longitud de caracteres; no exponer como character_maximum_length
+                    if (in_array(strtolower($type), ['datetime', 'timestamp', 'time', 'date'], true)) {
+                        $length = null;
+                    }
                 }
                 $name = (string) ($col['Field'] ?? '');
                 $result[] = [

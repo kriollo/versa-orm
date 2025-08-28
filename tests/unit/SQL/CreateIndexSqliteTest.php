@@ -34,6 +34,8 @@ final class CreateIndexSqliteTest extends TestCase
         $columns = [
             ['name' => 'id', 'type' => 'INTEGER', 'nullable' => false, 'primary' => true, 'autoIncrement' => true],
             ['name' => 'id_empresa', 'type' => 'INT', 'nullable' => false],
+            ['name' => 'created_at', 'type' => 'DATETIME', 'nullable' => true],
+            ['name' => 'updated_at', 'type' => 'DATETIME', 'nullable' => true],
         ];
 
         $options = [

@@ -82,6 +82,8 @@ class PdoConnection
                 'sqlite' => (function (): array {
                     $path = (string) ($this->config['database'] ?? ':memory:');
                     $dsn = sprintf('sqlite:%s', $path);
+                    // Para ':memory:' NO usar pool para que cada instancia tenga su propio
+                    // PDO (los tests unitarios esperan que ':memory:' no reutilice la conexión)
                     $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
 
                     return [$dsn, $poolKey];
