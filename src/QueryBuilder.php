@@ -635,7 +635,7 @@ class QueryBuilder
     /**
      * Añade condición adicional a la última cláusula JOIN (patrón encadenado on()).
      */
-    public function on(string $local, string $operator, string $foreign, string $boolean = 'AND'): self
+    public function on(string $local, string $operator, string|int $foreign, string $boolean = 'AND'): self
     {
         $count = count($this->joins);
 
