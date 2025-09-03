@@ -102,7 +102,10 @@ class Report
             'report_id' => $this->report_id,
             'test_type' => $this->test_type,
             'php_version' => $this->php_version,
-            'results' => array_map(static fn ($result) => $result instanceof TestResult ? $result->toArray() : $result, $this->results),
+            'results' => array_map(
+                static fn($result) => $result instanceof TestResult ? $result->toArray() : $result,
+                $this->results,
+            ),
             'summary' => $this->summary,
             'execution_time' => $this->execution_time,
             'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
@@ -151,11 +154,13 @@ class Report
     /**
      * Obtiene la puntuación de calidad si está disponible.
      */
-    public function getQualityScore(): ?int
+    public function getQualityScore(): null|int
     {
-        if (isset($this->results['quality_analysis'])
+        if (
+            isset($this->results['quality_analysis'])
             && is_object($this->results['quality_analysis'])
-            && property_exists($this->results['quality_analysis'], 'score')) {
+            && property_exists($this->results['quality_analysis'], 'score')
+        ) {
             return $this->results['quality_analysis']->score;
         }
 
@@ -179,9 +184,11 @@ class Report
         }
 
         // Agregar recomendaciones basadas en resultados de calidad
-        if (isset($this->results['quality_analysis'])
+        if (
+            isset($this->results['quality_analysis'])
             && is_object($this->results['quality_analysis'])
-            && method_exists($this->results['quality_analysis'], 'getRecommendations')) {
+            && method_exists($this->results['quality_analysis'], 'getRecommendations')
+        ) {
             $qualityRecommendations = $this->results['quality_analysis']->getRecommendations();
             $recommendations = array_merge($recommendations, $qualityRecommendations);
         }
@@ -204,7 +211,7 @@ class Report
     {
         $directory = dirname($filepath);
 
-        if (! is_dir($directory)) {
+        if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
 
@@ -247,8 +254,10 @@ class Report
         $html .= "<p><strong>Passed:</strong> <span class='pass'>{$this->getPassedTests()}</span></p>\n";
         $html .= "<p><strong>Failed:</strong> <span class='fail'>{$this->getFailedTests()}</span></p>\n";
         $html .= '<p><strong>Success Rate:</strong> ' . number_format($this->getSuccessRate(), 1) . "%</p>\n";
-        $html .= "<p><strong>Overall Status:</strong> <span class='{$this->getOverallStatus()}'>" .
-                 strtoupper($this->getOverallStatus()) . "</span></p>\n";
+        $html .=
+            "<p><strong>Overall Status:</strong> <span class='{$this->getOverallStatus()}'>"
+            . strtoupper($this->getOverallStatus())
+            . "</span></p>\n";
         $html .= "</div>\n";
 
         // Results

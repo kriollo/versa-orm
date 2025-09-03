@@ -47,7 +47,8 @@ class JoinSubDiagnosticTest extends TestCase
 
     public function test_basic_join_works(): void
     {
-        $results = self::$orm->table('posts')
+        $results = self::$orm
+            ->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->getAll();
@@ -62,9 +63,7 @@ class JoinSubDiagnosticTest extends TestCase
 
     public function test_basic_subquery_works(): void
     {
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id');
+        $subquery = self::$orm->table('posts')->select(['user_id', 'COUNT(*) as post_count'])->groupBy('user_id');
 
         // Verificar que podemos construir la subconsulta
         self::assertInstanceOf(QueryBuilder::class, $subquery);
@@ -95,12 +94,11 @@ class JoinSubDiagnosticTest extends TestCase
 
     public function test_join_sub_construction(): void
     {
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id'])
-            ->limit(1);
+        $subquery = self::$orm->table('posts')->select(['user_id'])->limit(1);
 
         try {
-            $query = self::$orm->table('users')
+            $query = self::$orm
+                ->table('users')
                 ->select(['users.name'])
                 ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id');
 
@@ -117,12 +115,11 @@ class JoinSubDiagnosticTest extends TestCase
     public function test_join_sub_minimal_execution(): void
     {
         // Subconsulta lo más simple posible
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id'])
-            ->where('id', '=', 1); // Solo un post específico
+        $subquery = self::$orm->table('posts')->select(['user_id'])->where('id', '=', 1); // Solo un post específico
 
         try {
-            $results = self::$orm->table('users')
+            $results = self::$orm
+                ->table('users')
                 ->select(['users.name'])
                 ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id')
                 ->getAll();
@@ -141,13 +138,15 @@ class JoinSubDiagnosticTest extends TestCase
     public function test_join_sub_with_count(): void
     {
         // Esta es la versión que falló originalmente
-        $subquery = self::$orm->table('posts')
+        $subquery = self::$orm
+            ->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
             ->having('post_count', '>', 1);
 
         try {
-            $results = self::$orm->table('users')
+            $results = self::$orm
+                ->table('users')
                 ->select(['users.name', 'active_users.post_count'])
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
                 ->getAll();
@@ -182,16 +181,18 @@ class JoinSubDiagnosticTest extends TestCase
             'debug' => true,
         ]);
 
-        $subquery = $debugOrm->table('posts')
-            ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id');
+        $subquery = $debugOrm->table('posts')->select(['user_id', 'COUNT(*) as post_count'])->groupBy('user_id');
 
         try {
             // Esto debería mostrar el SQL generado
 
-            $query = $debugOrm->table('users')
-                ->select(['users.name', 'active_users.post_count'])
-                ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
+            $query = $debugOrm->table('users')->select(['users.name', 'active_users.post_count'])->joinSub(
+                $subquery,
+                'active_users',
+                'users.id',
+                '=',
+                'active_users.user_id',
+            );
 
             // Intentar capturar el SQL sin ejecutar
             self::assertInstanceOf(QueryBuilder::class, $query);
@@ -243,7 +244,7 @@ class JoinSubDiagnosticTest extends TestCase
             self::assertIsArray($results);
 
             // Verificar estructura de datos
-            if (! empty($results)) {
+            if (!empty($results)) {
                 foreach ($results as $result) {
                     self::assertArrayHasKey('name', $result);
                     self::assertArrayHasKey('post_count', $result);

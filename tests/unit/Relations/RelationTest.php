@@ -25,7 +25,7 @@ final class RelationTest extends TestCase
         // get() should return a predictable result
         $qb->method('get')->willReturn(['item1', 'item2']);
 
-        $relation = new class ($qb, $parent) extends Relation {
+        $relation = new class($qb, $parent) extends Relation {
             public function getResults(): mixed
             {
                 // ensure constraints are applied

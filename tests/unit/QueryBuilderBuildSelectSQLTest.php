@@ -85,7 +85,12 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
                 'type' => 'inner',
                 'table' => 'profiles',
                 'conditions' => [
-                    ['type' => 'raw', 'sql' => 'profiles.user_id = users.id AND profiles.active = ?', 'bindings' => [1], 'boolean' => 'AND'],
+                    [
+                        'type' => 'raw',
+                        'sql' => 'profiles.user_id = users.id AND profiles.active = ?',
+                        'bindings' => [1],
+                        'boolean' => 'AND',
+                    ],
                 ],
             ],
         ]);

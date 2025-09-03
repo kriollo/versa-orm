@@ -18,9 +18,9 @@ use VersaORM\VersaORMException;
  */
 class QueryBuilderSubqueriesTest extends TestCase
 {
-    private ?QueryBuilder $queryBuilder = null;
+    private null|QueryBuilder $queryBuilder = null;
 
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
     protected function setUp(): void
     {
@@ -331,14 +331,10 @@ class QueryBuilderSubqueriesTest extends TestCase
         $result = $this->queryBuilder
             ->select(['id', 'name', 'email'])
             ->selectSubQuery(static function (QueryBuilder $query): void {
-                $query->select(['COUNT(*)'])
-                    ->where('user_id', '=', 'users.id')
-                    ->where('status', '=', 'published');
+                $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id')->where('status', '=', 'published');
             }, 'published_posts_count')
             ->whereExists(static function (QueryBuilder $query): void {
-                $query->from('user_roles')
-                    ->where('user_id', '=', 'users.id')
-                    ->where('role', '=', 'author');
+                $query->from('user_roles')->where('user_id', '=', 'users.id')->where('role', '=', 'author');
             })
             ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['premium'])
             ->groupByRaw('YEAR(created_at), status');

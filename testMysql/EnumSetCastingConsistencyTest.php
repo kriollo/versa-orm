@@ -31,7 +31,7 @@ class EnumSetCastingConsistencyTest extends TestCase
 
     public function test_enum_set_casting_consistency(): void
     {
-        $model = new class ('labels_enum_cast', self::$orm) extends VersaModel {
+        $model = new class('labels_enum_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [

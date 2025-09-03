@@ -24,7 +24,7 @@ class QBStubForHasOne extends QueryBuilder
         return $this;
     }
 
-    public function findOne(): ?VersaModel
+    public function findOne(): null|VersaModel
     {
         $this->called[] = ['findOne'];
 

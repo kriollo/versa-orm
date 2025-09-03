@@ -141,11 +141,15 @@ return (new PhpCsFixer\Config())
         'switch_case_space' => true,
 
         // === FUNCTIONS ===
-        'function_declaration' => ['closure_function_spacing' => 'one'],
+        'function_declaration' => ['closure_function_spacing' => 'none'], // Compatible con Mago: fn() en lugar de fn ()
         'lambda_not_used_import' => true,
         'method_argument_space' => ['on_multiline' => 'ensure_fully_multiline'],
         'no_spaces_after_function_name' => true,
         'return_type_declaration' => ['space_before' => 'none'],
+
+        // === MAGO COMPATIBILITY ADDITIONS ===
+        'single_line_empty_body' => true, // Constructor vacío en una línea: {}
+        'compact_nullable_type_declaration' => true,
 
         // === SECURITY AND BEST PRACTICES ===
         'no_php4_constructor' => true,

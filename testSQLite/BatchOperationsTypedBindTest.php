@@ -9,7 +9,8 @@ final class BatchOperationsTypedBindTest extends TestCase
     public function test_insert_many_and_update_many_delete_many(): void
     {
         // insertMany
-        $res = self::$orm->table('users')
+        $res = self::$orm
+            ->table('users')
             ->insertMany([
                 ['name' => 'Zara', 'email' => 'zara@example.com', 'status' => 'active'],
                 ['name' => 'Yuri', 'email' => 'yuri@example.com', 'status' => 'inactive'],
@@ -18,16 +19,12 @@ final class BatchOperationsTypedBindTest extends TestCase
         self::assertSame(2, $res['total_inserted'] ?? 0);
 
         // updateMany con where por entero (PARAM_INT)
-        $resU = self::$orm->table('users')
-            ->where('id', '>=', 1)
-            ->updateMany(['status' => 'checked'], maxRecords: 1000);
+        $resU = self::$orm->table('users')->where('id', '>=', 1)->updateMany(['status' => 'checked'], maxRecords: 1000);
         self::assertSame('success', $resU['status'] ?? null);
         self::assertGreaterThanOrEqual(2, $resU['rows_affected'] ?? 0);
 
         // deleteMany con rango
-        $resD = self::$orm->table('users')
-            ->where('id', '>', 1000)
-            ->deleteMany(maxRecords: 1000);
+        $resD = self::$orm->table('users')->where('id', '>', 1000)->deleteMany(maxRecords: 1000);
         self::assertSame('success', $resD['status'] ?? null);
         self::assertSame(0, $resD['rows_affected'] ?? -1);
     }

@@ -23,7 +23,7 @@ class LoggingErrorTest extends TestCase
         if (is_dir($this->logDir)) {
             $this->cleanupLogs();
         }
-        if (! is_dir($this->logDir)) {
+        if (!is_dir($this->logDir)) {
             mkdir($this->logDir, 0775, true);
         }
 
@@ -53,7 +53,10 @@ class LoggingErrorTest extends TestCase
     {
         // 1er error: tabla inexistente
         try {
-            $this->orm->table('non_existing_table')->select(['id'])->getAll();
+            $this->orm
+                ->table('non_existing_table')
+                ->select(['id'])
+                ->getAll();
             $this->fail('Se esperaba VersaORMException por tabla inexistente.');
         } catch (VersaORMException $e) {
             $this->assertStringContainsString('non_existing_table', strtolower($e->getMessage()));
@@ -65,7 +68,10 @@ class LoggingErrorTest extends TestCase
             $this->fail('Se esperaba VersaORMException por SQL inválido.');
         } catch (VersaORMException $e) {
             $msg = strtolower($e->getMessage());
-            $this->assertTrue(str_contains($msg, 'syntax') || str_contains($msg, 'incomplete'), 'Mensaje inesperado: ' . $msg);
+            $this->assertTrue(
+                str_contains($msg, 'syntax') || str_contains($msg, 'incomplete'),
+                'Mensaje inesperado: ' . $msg,
+            );
         }
 
         $date = date('Y-m-d');
@@ -93,7 +99,7 @@ class LoggingErrorTest extends TestCase
 
     private function cleanupLogs(): void
     {
-        if (! is_dir($this->logDir)) {
+        if (!is_dir($this->logDir)) {
             return;
         }
         foreach (glob($this->logDir . DIRECTORY_SEPARATOR . 'versaorm_errors_*') as $f) {

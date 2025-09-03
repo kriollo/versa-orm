@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use VersaORM\SQL\PdoEngine;
 use VersaORM\VersaORMException;
 
-if (! class_exists(PdoEngineExtraTest::class)) {
+if (!class_exists(PdoEngineExtraTest::class)) {
     /**
      * @group sqlite
      */

@@ -8,9 +8,7 @@ use VersaORM\VersaORM;
 
 class VersaORMStub4 extends VersaORM
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function executeQuery(string $action, array $params = [])
     {

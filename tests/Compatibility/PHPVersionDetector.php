@@ -132,7 +132,7 @@ class PHPVersionDetector
     /**
      * Obtiene información de soporte para la versión actual.
      */
-    public static function getCurrentVersionSupport(): ?array
+    public static function getCurrentVersionSupport(): null|array
     {
         $currentVersion = self::getCurrentVersion()['short_version'];
 
@@ -210,11 +210,25 @@ class PHPVersionDetector
     public static function getRelevantExtensions(): array
     {
         $relevantExtensions = [
-            'pdo', 'pdo_mysql', 'pdo_pgsql', 'pdo_sqlite',
-            'json', 'mbstring', 'openssl', 'curl',
-            'zip', 'xml', 'dom', 'simplexml',
-            'reflection', 'spl', 'pcre', 'hash',
-            'filter', 'ctype', 'tokenizer',
+            'pdo',
+            'pdo_mysql',
+            'pdo_pgsql',
+            'pdo_sqlite',
+            'json',
+            'mbstring',
+            'openssl',
+            'curl',
+            'zip',
+            'xml',
+            'dom',
+            'simplexml',
+            'reflection',
+            'spl',
+            'pcre',
+            'hash',
+            'filter',
+            'ctype',
+            'tokenizer',
         ];
 
         $loadedExtensions = get_loaded_extensions();
@@ -222,9 +236,10 @@ class PHPVersionDetector
 
         foreach ($relevantExtensions as $extension) {
             // Check both lowercase and uppercase versions for case-insensitive matching
-            $isLoaded = in_array($extension, $loadedExtensions, true)
-                       || in_array(strtoupper($extension), $loadedExtensions, true)
-                       || in_array(ucfirst($extension), $loadedExtensions, true);
+            $isLoaded =
+                in_array($extension, $loadedExtensions, true)
+                || in_array(strtoupper($extension), $loadedExtensions, true)
+                || in_array(ucfirst($extension), $loadedExtensions, true);
 
             $extensionStatus[$extension] = [
                 'loaded' => $isLoaded,
@@ -260,9 +275,9 @@ class PHPVersionDetector
     /**
      * Obtiene información de OPcache si está disponible.
      */
-    public static function getOpcacheInfo(): ?array
+    public static function getOpcacheInfo(): null|array
     {
-        if (! function_exists('opcache_get_status')) {
+        if (!function_exists('opcache_get_status')) {
             return null;
         }
 
@@ -355,7 +370,7 @@ class PHPVersionDetector
         $extensions = self::getRelevantExtensions();
 
         foreach (['pdo', 'json', 'mbstring'] as $required) {
-            if (! $extensions[$required]['loaded']) {
+            if (!$extensions[$required]['loaded']) {
                 $results["extension_{$required}"] = [
                     'status' => 'fail',
                     'message' => "Required extension {$required} is not loaded",
@@ -373,8 +388,8 @@ class PHPVersionDetector
             'test_results' => $results,
             'summary' => [
                 'total_tests' => count($results),
-                'passed' => count(array_filter($results, static fn ($r): bool => $r['status'] === 'pass')),
-                'failed' => count(array_filter($results, static fn ($r): bool => $r['status'] === 'fail')),
+                'passed' => count(array_filter($results, static fn($r): bool => $r['status'] === 'pass')),
+                'failed' => count(array_filter($results, static fn($r): bool => $r['status'] === 'fail')),
             ],
             'timestamp' => date('c'),
         ];
@@ -383,7 +398,7 @@ class PHPVersionDetector
     /**
      * Genera recomendaciones basadas en la versión PHP.
      */
-    private static function generateRecommendations(array $version, ?array $support): array
+    private static function generateRecommendations(array $version, null|array $support): array
     {
         $recommendations = [];
 
@@ -417,7 +432,7 @@ class PHPVersionDetector
 
         // Verificar extensiones faltantes
         $extensions = self::getRelevantExtensions();
-        $missingExtensions = array_filter($extensions, static fn ($ext): bool => ! $ext['loaded']);
+        $missingExtensions = array_filter($extensions, static fn($ext): bool => !$ext['loaded']);
 
         if ($missingExtensions !== []) {
             $recommendations[] = [
@@ -429,14 +444,15 @@ class PHPVersionDetector
         // Verificar configuración
         $config = self::getRelevantConfiguration();
 
-        if ($config['memory_limit'] !== '-1' && self::parseMemoryLimit($config['memory_limit']) < 128 * 1024 * 1024) {
+        if ($config['memory_limit'] !== '-1' && self::parseMemoryLimit($config['memory_limit']) < (128 * 1024 * 1024)) {
             $recommendations[] = [
                 'type' => 'warning',
-                'message' => 'Memory limit is low (' . $config['memory_limit'] . '). Consider increasing to at least 128M.',
+                'message' =>
+                    'Memory limit is low (' . $config['memory_limit'] . '). Consider increasing to at least 128M.',
             ];
         }
 
-        if (! $config['opcache.enable'] || ! $config['opcache.enable_cli']) {
+        if (!$config['opcache.enable'] || !$config['opcache.enable_cli']) {
             $recommendations[] = [
                 'type' => 'info',
                 'message' => 'OPcache is not enabled. Enabling it can improve performance.',
@@ -462,10 +478,10 @@ class PHPVersionDetector
         switch ($last) {
             case 'g':
                 $value *= 1024;
-                // no break
+            // no break
             case 'm':
                 $value *= 1024;
-                // no break
+            // no break
             case 'k':
                 $value *= 1024;
         }

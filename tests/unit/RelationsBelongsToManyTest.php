@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\VersaModel;
 
-if (! class_exists('TBtmQuery')) {
+if (!class_exists('TBtmQuery')) {
     class TBtmQuery extends QueryBuilder
     {
         public array $called = [];
@@ -51,7 +51,7 @@ if (! class_exists('TBtmQuery')) {
     }
 }
 
-if (! class_exists('TBtmModel')) {
+if (!class_exists('TBtmModel')) {
     class TBtmModel extends VersaModel
     {
         public function __construct()
@@ -79,7 +79,15 @@ final class RelationsBelongsToManyTest extends TestCase
         $query = new TBtmQuery();
         $parent = new TBtmModel();
 
-        $relation = new \VersaORM\Relations\BelongsToMany($query, $parent, 'pivot', 'parent_id', 'related_id', 'id', 'id');
+        $relation = new \VersaORM\Relations\BelongsToMany(
+            $query,
+            $parent,
+            'pivot',
+            'parent_id',
+            'related_id',
+            'id',
+            'id',
+        );
 
         // attach should call from(...) then call execute via reflection
         $relation->attach(42, ['extra' => 'x']);

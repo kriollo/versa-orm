@@ -59,7 +59,7 @@ class VersaORMSmallTest extends TestCase
         $orm = self::$orm;
 
         // Delegate addTypeConverter - ensure it doesn't throw
-        $orm->addTypeConverter('test_conv', fn ($v) => (string) $v, null);
+        $orm->addTypeConverter('test_conv', fn($v) => (string) $v, null);
 
         // executeQuery wrapper should proxy to exec/raw; use a simple select
         $res = $orm->executeQuery('raw', ['query' => 'SELECT 1 as one', 'bindings' => []]);

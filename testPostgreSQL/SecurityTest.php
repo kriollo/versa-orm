@@ -208,11 +208,13 @@ class SecurityTest extends TestCase
         ];
 
         foreach ($xssPayloads as $payload) {
-            $id = self::$orm->table('users')->insertGetId([
-                'name' => 'XSS Test User',
-                'email' => 'xss' . mt_rand() . '@example.com',
-                'status' => $payload,
-            ]);
+            $id = self::$orm
+                ->table('users')
+                ->insertGetId([
+                    'name' => 'XSS Test User',
+                    'email' => 'xss' . mt_rand() . '@example.com',
+                    'status' => $payload,
+                ]);
 
             $user = self::$orm->table('users')->find($id);
 
@@ -227,19 +229,21 @@ class SecurityTest extends TestCase
     public function test_special_characters_sanitization(): void
     {
         $specialChars = [
-            "test\x00\n\r\t\"\\value",  // Null byte, newlines, tabs, quotes, backslash
-            'emoji🔥💻🚀test',           // Unicode/emoji
-            str_repeat('a', 45),          // Long string within VARCHAR(50) limit
-            "''",                         // Already escaped quotes
-            '',                           // Empty string
+            "test\x00\n\r\t\"\\value", // Null byte, newlines, tabs, quotes, backslash
+            'emoji🔥💻🚀test', // Unicode/emoji
+            str_repeat('a', 45), // Long string within VARCHAR(50) limit
+            "''", // Already escaped quotes
+            '', // Empty string
         ];
 
         foreach ($specialChars as $input) {
-            $id = self::$orm->table('users')->insertGetId([
-                'name' => 'Special Chars Test',
-                'email' => 'special' . mt_rand() . '@example.com',
-                'status' => $input,
-            ]);
+            $id = self::$orm
+                ->table('users')
+                ->insertGetId([
+                    'name' => 'Special Chars Test',
+                    'email' => 'special' . mt_rand() . '@example.com',
+                    'status' => $input,
+                ]);
 
             $user = self::$orm->table('users')->find($id);
 
@@ -313,11 +317,13 @@ class SecurityTest extends TestCase
 
         // Intentar insertar datos maliciosos
         try {
-            self::$orm->table('users')->insert([
-                'name' => 'Type Cast Test',
-                'email' => 'typecast@example.com',
-                'status' => $maliciousData['status'],
-            ]);
+            self::$orm
+                ->table('users')
+                ->insert([
+                    'name' => 'Type Cast Test',
+                    'email' => 'typecast@example.com',
+                    'status' => $maliciousData['status'],
+                ]);
 
             // Si la inserción es exitosa, verificar que los datos están seguros
             $user = self::$orm->table('users')->where('email', '=', 'typecast@example.com')->firstArray();
@@ -362,11 +368,13 @@ class SecurityTest extends TestCase
         $veryLongString = str_repeat('A', 1000); // 1KB string (más manejable para pruebas)
 
         try {
-            $id = self::$orm->table('users')->insertGetId([
-                'name' => 'Long String Test',
-                'email' => 'longstring@example.com',
-                'status' => $veryLongString,
-            ]);
+            $id = self::$orm
+                ->table('users')
+                ->insertGetId([
+                    'name' => 'Long String Test',
+                    'email' => 'longstring@example.com',
+                    'status' => $veryLongString,
+                ]);
 
             $user = self::$orm->table('users')->find($id);
             // El string puede ser cortado por límites de la base de datos, eso está bien

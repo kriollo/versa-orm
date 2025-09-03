@@ -15,7 +15,8 @@ final class QueryBuilderSelectComplexTest extends TestCase
         $qb = new QueryBuilder(null, 'users');
 
         // Build a moderately complex query via public API
-        $qb->select(['users.id', 'users.name'])
+        $qb
+            ->select(['users.id', 'users.name'])
             ->join('profiles', 'users.id', '=', 'profiles.user_id')
             ->groupBy(['users.id'])
             ->having('COUNT(profiles.id)', '>', 1)

@@ -37,7 +37,7 @@ class LoadCastingTest extends TestCase
     public function test_load_method_applies_casting(): void
     {
         // Modelo con tipado fuerte
-        $model = new class ('load_cast_test', self::$orm) extends VersaModel {
+        $model = new class('load_cast_test', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
@@ -73,7 +73,7 @@ class LoadCastingTest extends TestCase
     public function test_load_method_with_update(): void
     {
         // Modelo con tipado fuerte
-        $model = new class ('load_cast_test', self::$orm) extends VersaModel {
+        $model = new class('load_cast_test', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
@@ -109,7 +109,7 @@ class LoadCastingTest extends TestCase
     public function test_load_method_with_update_boolean(): void
     {
         // Modelo con tipado fuerte
-        $model = new class ('load_cast_test', self::$orm) extends VersaModel {
+        $model = new class('load_cast_test', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [
@@ -135,7 +135,7 @@ class LoadCastingTest extends TestCase
 
         // Negar el valor de active (toggle)
         $originalActive = $loaded->active;
-        $loaded->active = ! $loaded->active;
+        $loaded->active = !$loaded->active;
         $loaded->store(); // Esto debe manejar el cambio de boolean correctamente
 
         // Recargar y verificar que el valor active se actualizó correctamente
@@ -151,7 +151,7 @@ class LoadCastingTest extends TestCase
     public function test_load_method_with_boolean_validation_edge_cases(): void
     {
         // Modelo con tipado fuerte y validación required
-        $model = new class ('load_cast_test', self::$orm) extends VersaModel {
+        $model = new class('load_cast_test', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [

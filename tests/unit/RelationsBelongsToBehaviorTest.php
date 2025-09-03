@@ -5,7 +5,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 
 // Stubs para usar en los tests: declarar en el espacio global para evitar clases anidadas
-if (! class_exists('TestQueryBuilder')) {
+if (!class_exists('TestQueryBuilder')) {
     class TestQueryBuilder extends \VersaORM\QueryBuilder
     {
         public array $recordedWheres = [];
@@ -24,14 +24,14 @@ if (! class_exists('TestQueryBuilder')) {
         }
 
         // Firma compatible con QueryBuilder::findOne(): ?\VersaORM\VersaModel
-        public function findOne(): ?\VersaORM\VersaModel
+        public function findOne(): null|\VersaORM\VersaModel
         {
             return new TestVersaModel();
         }
     }
 }
 
-if (! class_exists('TestVersaModel')) {
+if (!class_exists('TestVersaModel')) {
     class TestVersaModel extends \VersaORM\VersaModel
     {
         public function __construct()

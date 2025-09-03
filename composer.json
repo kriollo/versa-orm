@@ -100,6 +100,17 @@
     "psalm-check": "psalm --no-cache --show-info=true",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "php-cs-fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
+    "php-cs-check": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php --dry-run --diff",
+    "mago-fmt": "mago fmt",
+    "mago-check": "mago fmt --check",
+    "format": [
+      "@php-cs-fix",
+      "@mago-fmt"
+    ],
+    "format-check": [
+      "@php-cs-check",
+      "@mago-check"
+    ],
     "qa": "php qa-integration.php",
     "qa-fix": "php qa-integration.php --fix",
     "qa-full": "php tests/bin/qa-runner.php full",

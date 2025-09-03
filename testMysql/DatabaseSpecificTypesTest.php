@@ -15,7 +15,7 @@ use VersaORM\VersaORM;
  */
 class DatabaseSpecificTypesTest extends TestCase
 {
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
     private string $databaseType;
 
@@ -162,7 +162,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_type_validation_errors(): void
     {
         // Crear un modelo de prueba con tipos definidos
-        $testModel = new class ('test_validation', $this->orm) extends VersaModel {
+        $testModel = new class('test_validation', $this->orm) extends VersaModel {
             public static function getPropertyTypes(): array
             {
                 return [

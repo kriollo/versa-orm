@@ -31,7 +31,7 @@ class BooleanCastingConsistencyTest extends TestCase
     public function test_boolean_casting_consistent_across_paths(): void
     {
         // Modelo con tipado fuerte
-        $model = new class ('users_bool_cast', self::$orm) extends VersaModel {
+        $model = new class('users_bool_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [

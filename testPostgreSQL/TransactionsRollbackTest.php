@@ -22,17 +22,21 @@ class TransactionsRollbackTest extends TestCase
         }
 
         // Crear tabla portable con PK autoincremental y UNIQUE(email)
-        self::$orm->schemaCreate('tx_users', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
-            ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
-        ], [
-            'constraints' => [
-                'unique' => [
-                    ['name' => 'uniq_tx_users_email', 'columns' => ['email']],
+        self::$orm->schemaCreate(
+            'tx_users',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+            ],
+            [
+                'constraints' => [
+                    'unique' => [
+                        ['name' => 'uniq_tx_users_email', 'columns' => ['email']],
+                    ],
                 ],
             ],
-        ]);
+        );
     }
 
     protected function tearDown(): void

@@ -45,7 +45,7 @@ class MetricsCollector
      */
     public function recordExecutionTime(string $operation, float $time): void
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return;
         }
 
@@ -61,7 +61,7 @@ class MetricsCollector
      */
     public function recordMemoryUsage(string $operation, int $peakMemory, int $currentMemory): void
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return;
         }
 
@@ -80,7 +80,7 @@ class MetricsCollector
      */
     public function recordTestMetrics(string $testType, string $engine, array $metrics): void
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return;
         }
 
@@ -97,7 +97,7 @@ class MetricsCollector
      */
     public function recordQualityMetrics(string $tool, int $score, int $issueCount, array $details = []): void
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return;
         }
 
@@ -115,7 +115,7 @@ class MetricsCollector
      */
     public function recordBenchmarkMetrics(string $benchmark, string $engine, array $metrics): void
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return;
         }
 
@@ -132,7 +132,7 @@ class MetricsCollector
      */
     public function recordCustomMetric(string $name, array $data): void
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return;
         }
 
@@ -146,9 +146,9 @@ class MetricsCollector
     /**
      * Obtiene métricas por tipo y rango de fechas.
      */
-    public function getMetrics(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): array
+    public function getMetrics(null|string $type = null, null|DateTime $from = null, null|DateTime $to = null): array
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return [];
         }
 
@@ -195,7 +195,7 @@ class MetricsCollector
         ];
 
         // Analizar tiempos de ejecución
-        $executionTimes = array_map(static fn ($m) => $m['data']['time_seconds'], $executionMetrics);
+        $executionTimes = array_map(static fn($m) => $m['data']['time_seconds'], $executionMetrics);
 
         if ($executionTimes !== []) {
             $stats['execution_times'] = [
@@ -207,7 +207,7 @@ class MetricsCollector
         }
 
         // Analizar uso de memoria
-        $memoryUsages = array_map(static fn ($m) => $m['data']['peak_memory_bytes'], $memoryMetrics);
+        $memoryUsages = array_map(static fn($m) => $m['data']['peak_memory_bytes'], $memoryMetrics);
 
         if ($memoryUsages !== []) {
             $stats['memory_usage'] = [
@@ -221,7 +221,7 @@ class MetricsCollector
         }
 
         // Analizar operaciones más frecuentes
-        $operations = array_count_values(array_map(static fn ($m) => $m['data']['operation'], $executionMetrics));
+        $operations = array_count_values(array_map(static fn($m) => $m['data']['operation'], $executionMetrics));
         arsort($operations);
         $stats['operations'] = array_slice($operations, 0, 10, true);
 
@@ -250,7 +250,7 @@ class MetricsCollector
         foreach ($qualityMetrics as $metric) {
             $tool = $metric['data']['tool'];
 
-            if (! isset($toolMetrics[$tool])) {
+            if (!isset($toolMetrics[$tool])) {
                 $toolMetrics[$tool] = [];
             }
             $toolMetrics[$tool][] = $metric;
@@ -258,8 +258,8 @@ class MetricsCollector
 
         // Analizar cada herramienta
         foreach ($toolMetrics as $tool => $metrics) {
-            $scores = array_map(static fn ($m) => $m['data']['score'], $metrics);
-            $issues = array_map(static fn ($m) => $m['data']['issue_count'], $metrics);
+            $scores = array_map(static fn($m) => $m['data']['score'], $metrics);
+            $issues = array_map(static fn($m) => $m['data']['issue_count'], $metrics);
 
             $trends['tools'][$tool] = [
                 'total_runs' => count($metrics),
@@ -280,7 +280,7 @@ class MetricsCollector
      */
     public function getSummary(): array
     {
-        if (! $this->enabled) {
+        if (!$this->enabled) {
             return ['enabled' => false];
         }
 
@@ -290,7 +290,7 @@ class MetricsCollector
         foreach ($allMetrics as $metric) {
             $type = $metric['type'];
 
-            if (! isset($metricsByType[$type])) {
+            if (!isset($metricsByType[$type])) {
                 $metricsByType[$type] = 0;
             }
             $metricsByType[$type]++;
@@ -310,7 +310,7 @@ class MetricsCollector
     /**
      * Exporta métricas a formato CSV.
      */
-    public function exportToCsv(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): string
+    public function exportToCsv(null|string $type = null, null|DateTime $from = null, null|DateTime $to = null): string
     {
         $metrics = $this->getMetrics($type, $from, $to);
 
@@ -380,7 +380,7 @@ class MetricsCollector
      */
     private function ensureMetricsDirectory(): void
     {
-        if (! is_dir($this->outputDir)) {
+        if (!is_dir($this->outputDir)) {
             mkdir($this->outputDir, 0755, true);
         }
     }
@@ -424,8 +424,8 @@ class MetricsCollector
         sort($numbers);
         $count = count($numbers);
 
-        if ($count % 2 === 0) {
-            return ($numbers[$count / 2 - 1] + $numbers[$count / 2]) / 2;
+        if (($count % 2) === 0) {
+            return ($numbers[($count / 2) - 1] + $numbers[$count / 2]) / 2;
         }
 
         return $numbers[(int) ($count / 2)];
@@ -438,7 +438,7 @@ class MetricsCollector
     {
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        for ($i = 0; $bytes > 1024 && $i < (count($units) - 1); $i++) {
             $bytes /= 1024;
         }
 

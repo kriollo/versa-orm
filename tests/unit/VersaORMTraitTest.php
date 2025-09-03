@@ -20,7 +20,7 @@ class VersaORMTraitTest extends TestCase
             unset($GLOBALS['config']);
         }
 
-        $obj = new class () {
+        $obj = new class() {
             use VersaORMTrait;
 
             // expose protected getORM for assertions (already public in trait)
@@ -49,11 +49,11 @@ class VersaORMTraitTest extends TestCase
             ],
         ];
 
-        $obj = new class () {
+        $obj = new class() {
             use VersaORMTrait;
 
             // helper to expose internal ORM for assertions
-            public function getOrmPublic(): ?VersaORM
+            public function getOrmPublic(): null|VersaORM
             {
                 return $this->getORM();
             }

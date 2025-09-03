@@ -20,9 +20,9 @@ use VersaORM\VersaORM;
  */
 class MySQLAdvancedSQLTest extends TestCase
 {
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
-    private ?QueryBuilder $queryBuilder = null;
+    private null|QueryBuilder $queryBuilder = null;
 
     protected function setUp(): void
     {
@@ -130,12 +130,16 @@ class MySQLAdvancedSQLTest extends TestCase
         $qb = new QueryBuilder($this->orm, 'employees_mysql_adv');
 
         // CTE recursivo en MySQL 8.0+
-        $result = $qb->withCte([
-            'salary_levels' => [
-                'query' => 'SELECT department, AVG(salary) as avg_salary FROM employees_mysql_adv GROUP BY department',
-                'bindings' => [],
+        $result = $qb->withCte(
+            [
+                'salary_levels' => [
+                    'query' => 'SELECT department, AVG(salary) as avg_salary FROM employees_mysql_adv GROUP BY department',
+                    'bindings' => [],
+                ],
             ],
-        ], 'SELECT * FROM salary_levels WHERE avg_salary > 75000', []);
+            'SELECT * FROM salary_levels WHERE avg_salary > 75000',
+            [],
+        );
 
         self::assertIsArray($result);
     }
@@ -143,7 +147,9 @@ class MySQLAdvancedSQLTest extends TestCase
     private function createMySQLTestTables(): void
     {
         // Tabla con full-text index para MySQL
-        $this->orm->exec("\n            CREATE TABLE IF NOT EXISTS employees_mysql_adv (\n                id INT AUTO_INCREMENT PRIMARY KEY,\n                name VARCHAR(255) NOT NULL,\n                department VARCHAR(100),\n                salary DECIMAL(10,2),\n                hire_date DATE,\n                profile JSON,\n                bio TEXT,\n                INDEX idx_department (department),\n                FULLTEXT(bio)\n            ) ENGINE=InnoDB\n        ");
+        $this->orm->exec(
+            "\n            CREATE TABLE IF NOT EXISTS employees_mysql_adv (\n                id INT AUTO_INCREMENT PRIMARY KEY,\n                name VARCHAR(255) NOT NULL,\n                department VARCHAR(100),\n                salary DECIMAL(10,2),\n                hire_date DATE,\n                profile JSON,\n                bio TEXT,\n                INDEX idx_department (department),\n                FULLTEXT(bio)\n            ) ENGINE=InnoDB\n        ",
+        );
 
         // Insertar datos de prueba
         $employees = [

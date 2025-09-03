@@ -375,7 +375,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('createTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn(string $id): string => $this->quoteIdent($id, $driver);
         $ifNotExists = !empty($options['if_not_exists']);
 
         $colSql = [];
@@ -556,7 +556,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('alterTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn(string $id): string => $this->quoteIdent($id, $driver);
 
         $tableIdent = $q($table);
         /** @var AlterChanges $changes */
@@ -839,7 +839,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('dropTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn(string $id): string => $this->quoteIdent($id, $driver);
         $sql = 'DROP TABLE ' . ($ifExists ? 'IF EXISTS ' : '') . $q($table);
         $this->exec($sql);
     }
@@ -851,7 +851,7 @@ class VersaORM
     {
         $this->validateFreezeOperation('alterTable');
         $driver = strtolower((string) ($this->config['driver'] ?? $this->config['database_type'] ?? 'mysql'));
-        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn(string $id): string => $this->quoteIdent($id, $driver);
 
         if ($driver === 'mysql' || $driver === 'mariadb') {
             $sql = 'RENAME TABLE ' . $q($from) . ' TO ' . $q($to);
@@ -1211,7 +1211,7 @@ class VersaORM
      */
     private function createIndexPortable(string $table, array $idx, string $driver): void
     {
-        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn(string $id): string => $this->quoteIdent($id, $driver);
         /** @var IndexDef $idx */
         $name = (string) ($idx['name'] ?? '');
         /** @var list<IndexColumn> $cols */
@@ -1284,7 +1284,7 @@ class VersaORM
     /** Elimina índice portable según driver. */
     private function dropIndexPortable(string $table, string $indexName, string $driver): void
     {
-        $q = fn (string $id): string => $this->quoteIdent($id, $driver);
+        $q = fn(string $id): string => $this->quoteIdent($id, $driver);
         $iname = $q($indexName);
 
         if ($driver === 'mysql' || $driver === 'mariadb') {

@@ -73,7 +73,11 @@ class QueryBuilderExtraTest extends TestCase
     public function testInsertOrUpdateUpsertManyReplaceIntoScenarios()
     {
         // upsertMany via SqlGenerator compileBatch (use SQLite dialect instance)
-        $params = ['table' => 'posts', 'records' => [['title' => 'A', 'body' => 'x'], ['title' => 'B', 'body' => 'y']], 'unique_keys' => ['id']];
+        $params = [
+            'table' => 'posts',
+            'records' => [['title' => 'A', 'body' => 'x'], ['title' => 'B', 'body' => 'y']],
+            'unique_keys' => ['id'],
+        ];
         $generator = new ReflectionClass(\VersaORM\SQL\SqlGenerator::class);
         $method = $generator->getMethod('compileBatch');
         $method->setAccessible(true);
@@ -126,7 +130,7 @@ class QueryBuilderExtraTest extends TestCase
 
         // arrayOperations signature: (operation, column, value)
         // Esta operación es específica de PostgreSQL; en otros drivers debe lanzar excepción.
-        $driver = getenv('DB_DRIVER') ?: ($_SERVER['DB_DRIVER'] ?? 'sqlite');
+        $driver = getenv('DB_DRIVER') ?: $_SERVER['DB_DRIVER'] ?? 'sqlite';
         if ($driver === 'postgresql') {
             $arrOps = $qb->arrayOperations('length', 'body');
             $this->assertIsArray($arrOps);

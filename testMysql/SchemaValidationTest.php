@@ -28,7 +28,7 @@ use function in_array;
  */
 class SchemaValidationTest extends TestCase
 {
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
     protected function setUp(): void
     {
@@ -65,7 +65,7 @@ class SchemaValidationTest extends TestCase
             self::assertIsArray($schema);
 
             // Si el CLI Rust está disponible y funciona, debería tener datos
-            if (! empty($schema)) {
+            if (!empty($schema)) {
                 self::assertArrayHasKey('id', $schema);
                 self::assertArrayHasKey('name', $schema);
                 self::assertArrayHasKey('email', $schema);
@@ -211,7 +211,7 @@ class SchemaValidationTest extends TestCase
         self::assertNotEmpty($errors4);
         self::assertTrue(
             in_array('The name may not be greater than 255 characters.', $errors4, true)
-                || in_array('The name must be at least 255 characters.', $errors4, true),
+            || in_array('The name must be at least 255 characters.', $errors4, true),
         );
 
         // Test 5: Tipo de datos incorrecto

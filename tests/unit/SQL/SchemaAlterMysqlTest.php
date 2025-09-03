@@ -12,7 +12,7 @@ final class SchemaAlterMysqlTest extends TestCase
 {
     public function test_schema_alter_drop_column_and_index_generates_valid_sql_for_mysql(): void
     {
-        $orm = new class () extends VersaORM {
+        $orm = new class() extends VersaORM {
             public array $captured = [];
 
             public function __construct()
@@ -49,7 +49,7 @@ final class SchemaAlterMysqlTest extends TestCase
             if (str_contains($upper, 'DROP COLUMN') || str_contains($upper, 'DROP `ID_EMPRESA`')) {
                 $dropColumnFound = true;
             }
-            if (str_contains($upper, 'DROP INDEX') || (str_contains($upper, 'DROP KEY'))) {
+            if (str_contains($upper, 'DROP INDEX') || str_contains($upper, 'DROP KEY')) {
                 $dropIndexFound = true;
             }
         }

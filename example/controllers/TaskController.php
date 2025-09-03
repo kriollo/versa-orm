@@ -122,7 +122,7 @@ class TaskController
                 ]);
                 break;
 
-                // ...otros casos: task_create, task_edit, task_delete, task_change_status
+            // ...otros casos: task_create, task_edit, task_delete, task_change_status
         }
     }
 }

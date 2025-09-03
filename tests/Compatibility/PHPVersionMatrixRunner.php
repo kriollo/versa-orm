@@ -45,7 +45,7 @@ class PHPVersionMatrixRunner
         $currentVersion = $this->detector->getCurrentVersion()['short_version'];
 
         // Solo podemos ejecutar tests para la versión actual
-        if (! in_array($currentVersion, $this->supportedVersions, true)) {
+        if (!in_array($currentVersion, $this->supportedVersions, true)) {
             throw new RuntimeException("Current PHP version {$currentVersion} is not supported");
         }
 
@@ -88,7 +88,7 @@ class PHPVersionMatrixRunner
     /**
      * Exporta matriz de compatibilidad a JSON.
      */
-    public function exportMatrixToJson(?string $filepath = null): string
+    public function exportMatrixToJson(null|string $filepath = null): string
     {
         $report = $this->runCompatibilityMatrix();
         $json = $report->toJson();
@@ -96,7 +96,7 @@ class PHPVersionMatrixRunner
         if ($filepath !== null && $filepath !== '' && $filepath !== '0') {
             $directory = dirname($filepath);
 
-            if (! is_dir($directory)) {
+            if (!is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
             file_put_contents($filepath, $json);
@@ -108,7 +108,7 @@ class PHPVersionMatrixRunner
     /**
      * Exporta matriz de compatibilidad a HTML.
      */
-    public function exportMatrixToHtml(?string $filepath = null): string
+    public function exportMatrixToHtml(null|string $filepath = null): string
     {
         $report = $this->runCompatibilityMatrix();
         $html = $this->generateMatrixHtml($report);
@@ -116,7 +116,7 @@ class PHPVersionMatrixRunner
         if ($filepath !== null && $filepath !== '' && $filepath !== '0') {
             $directory = dirname($filepath);
 
-            if (! is_dir($directory)) {
+            if (!is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
             file_put_contents($filepath, $html);
@@ -146,7 +146,8 @@ class PHPVersionMatrixRunner
             $supportInfo = $this->detector->getCurrentVersionSupport();
             $tests['version_support_analysis'] = [
                 'status' => $supportInfo !== null && $supportInfo !== [] ? 'pass' : 'fail',
-                'message' => $supportInfo !== null && $supportInfo !== [] ? 'Version is supported' : 'Version is not supported',
+                'message' =>
+                    $supportInfo !== null && $supportInfo !== [] ? 'Version is supported' : 'Version is not supported',
                 'details' => $supportInfo,
             ];
 
@@ -204,11 +205,11 @@ class PHPVersionMatrixRunner
             'test_type' => 'version_matrix_analysis',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
-            'skipped_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'skip')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
+            'skipped_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'skip')),
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -389,7 +390,10 @@ class PHPVersionMatrixRunner
         }
 
         // Recomendaciones sobre versiones más nuevas
-        $newerVersions = array_filter($this->supportedVersions, static fn ($version): bool|int => version_compare($version, $currentVersion, '>'));
+        $newerVersions = array_filter(
+            $this->supportedVersions,
+            static fn($version): bool|int => version_compare($version, $currentVersion, '>'),
+        );
 
         if ($newerVersions !== []) {
             $latestVersion = max($newerVersions);
@@ -457,8 +461,10 @@ class PHPVersionMatrixRunner
         $html .= "<p><strong>Passed:</strong> <span class='pass'>{$summary['passed_tests']}</span></p>\n";
         $html .= "<p><strong>Failed:</strong> <span class='fail'>{$summary['failed_tests']}</span></p>\n";
         $html .= '<p><strong>Success Rate:</strong> ' . number_format($summary['success_rate'], 1) . "%</p>\n";
-        $html .= "<p><strong>Overall Status:</strong> <span class='{$summary['overall_status']}'>" .
-                 strtoupper($summary['overall_status']) . "</span></p>\n";
+        $html .=
+            "<p><strong>Overall Status:</strong> <span class='{$summary['overall_status']}'>"
+            . strtoupper($summary['overall_status'])
+            . "</span></p>\n";
         $html .= "</div>\n";
 
         // Compatibility Matrix Table

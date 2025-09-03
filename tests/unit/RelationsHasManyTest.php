@@ -7,7 +7,7 @@ use VersaORM\QueryBuilder;
 use VersaORM\Relations\HasMany;
 use VersaORM\VersaModel;
 
-if (! class_exists('THasManyQuery')) {
+if (!class_exists('THasManyQuery')) {
     class THasManyQuery extends QueryBuilder
     {
         public array $recordedWheres = [];
@@ -31,7 +31,7 @@ if (! class_exists('THasManyQuery')) {
     }
 }
 
-if (! class_exists('THasManyModel')) {
+if (!class_exists('THasManyModel')) {
     class THasManyModel extends VersaModel
     {
         public function __construct()
@@ -69,6 +69,7 @@ final class RelationsHasManyTest extends TestCase
         $this->assertNotEmpty($query->recordedWheres);
     }
 }
+
 /**
  * Additional quick reflection test to ensure methods exist.
  */

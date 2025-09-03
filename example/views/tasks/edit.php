@@ -46,7 +46,7 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="Describe los detalles de la tarea"><?php echo
                             htmlspecialchars($task->description ?? '')
-; ?></textarea>
+                        ; ?></textarea>
                 </div>
 
                 <!-- Asignación y configuración -->
@@ -65,7 +65,7 @@
                         <option value="">Selecciona un proyecto</option>
                         <?php foreach ($projects as $project) { ?>
                             <option value="<?php echo $project['id']; ?>" <?php echo
-        $task->project_id === $project['id'] ? 'selected' : ''
+                                $task->project_id === $project['id'] ? 'selected' : ''
                             ; ?>>
                                 <?php echo htmlspecialchars($project['name']); ?>
                             </option>
@@ -85,7 +85,7 @@
                             ; ?>>
                                 <?php echo htmlspecialchars($user['name']); ?> (<?php echo
                                     htmlspecialchars($user['email'])
-                            ; ?>)
+                                ; ?>)
                             </option>
                         <?php } ?>
                     </select>
@@ -138,11 +138,11 @@
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
                                     <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo
-                                    htmlspecialchars($label['color'])
-                            ; ?>"></div>
+                                        htmlspecialchars($label['color'])
+                                    ; ?>"></div>
                                     <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo
-                                htmlspecialchars($label['name'])
-                            ; ?></span>
+                                        htmlspecialchars($label['name'])
+                                    ; ?></span>
                                 </div>
                             </label>
                         <?php } ?>
@@ -156,12 +156,12 @@
                     <div>
                         <strong>Creada:</strong> <?php echo
                             isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : ''
-; ?>
+                        ; ?>
                     </div>
                     <div>
                         <strong>Actualizada:</strong> <?php echo
-    isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''
-; ?>
+                            isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''
+                        ; ?>
                     </div>
                 </div>
             </div>

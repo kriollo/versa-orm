@@ -18,8 +18,7 @@ abstract class Relation
          * The parent model instance.
          */
         protected VersaModel $parent,
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the query and get the results.

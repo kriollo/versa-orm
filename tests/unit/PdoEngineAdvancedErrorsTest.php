@@ -23,6 +23,10 @@ final class PdoEngineAdvancedErrorsTest extends TestCase
         $e = new PdoEngine($cfg);
 
         $this->expectException(VersaORMException::class);
-        $e->execute('advanced_sql', ['operation_type' => 'set_operation', 'set_type' => 'BAD', 'queries' => [['sql' => 'SELECT 1'], ['sql' => 'SELECT 2']]]);
+        $e->execute('advanced_sql', [
+            'operation_type' => 'set_operation',
+            'set_type' => 'BAD',
+            'queries' => [['sql' => 'SELECT 1'], ['sql' => 'SELECT 2']],
+        ]);
     }
 }

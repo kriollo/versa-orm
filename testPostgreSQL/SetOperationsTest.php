@@ -18,14 +18,22 @@ class SetOperationsTest extends TestCase
         // Aseguramos tablas básicas
         self::$orm->schemaDrop('set_ops_a');
         self::$orm->schemaDrop('set_ops_b');
-        self::$orm->schemaCreate('set_ops_a', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true],
-            ['name' => 'value', 'type' => 'INT'],
-        ], ['if_not_exists' => true]);
-        self::$orm->schemaCreate('set_ops_b', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true],
-            ['name' => 'value', 'type' => 'INT'],
-        ], ['if_not_exists' => true]);
+        self::$orm->schemaCreate(
+            'set_ops_a',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true],
+                ['name' => 'value', 'type' => 'INT'],
+            ],
+            ['if_not_exists' => true],
+        );
+        self::$orm->schemaCreate(
+            'set_ops_b',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true],
+                ['name' => 'value', 'type' => 'INT'],
+            ],
+            ['if_not_exists' => true],
+        );
         // Insertar datos con solapamientos y duplicados
         foreach ([1, 2, 2, 3, 5] as $v) {
             self::$orm->table('set_ops_a')->insert(['value' => $v]);
@@ -48,7 +56,7 @@ class SetOperationsTest extends TestCase
             ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], true); // UNION ALL
-        $values = array_map(static fn ($r) => (int) $r['value'], $result);
+        $values = array_map(static fn($r) => (int) $r['value'], $result);
         // Conteo esperado: 5 + 5 = 10 filas (sin eliminar duplicados)
         self::assertCount(10, $values, 'UNION ALL debe conservar duplicados');
     }
@@ -60,7 +68,7 @@ class SetOperationsTest extends TestCase
             ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], false); // UNION
-        $values = array_map(static fn ($r) => (int) $r['value'], $result);
+        $values = array_map(static fn($r) => (int) $r['value'], $result);
         $unique = array_values(array_unique($values));
         sort($unique);
         $expected = [1, 2, 3, 4, 5, 6];
@@ -75,7 +83,7 @@ class SetOperationsTest extends TestCase
         $qb2 = new QueryBuilder(self::$orm, 'set_ops_b');
         $qb2->select(['value']);
         $result = $qb1->intersect($qb2, false);
-        $values = array_map(static fn ($r) => (int) $r['value'], $result);
+        $values = array_map(static fn($r) => (int) $r['value'], $result);
         sort($values);
         // Intersección sin duplicados: valores comunes {2,3}
         self::assertSame([2, 3], $values);
@@ -88,7 +96,7 @@ class SetOperationsTest extends TestCase
         $qb2 = new QueryBuilder(self::$orm, 'set_ops_b');
         $qb2->select(['value']);
         $result = $qb1->intersect($qb2, true);
-        $values = array_map(static fn ($r) => (int) $r['value'], $result);
+        $values = array_map(static fn($r) => (int) $r['value'], $result);
         sort($values);
         // Duplicados comunes: el valor 2 aparece al menos dos veces en ambos -> debería aparecer min(2,2)=2 veces + 3 una vez => [2,2,3]
         self::assertSame([2, 2, 3], $values);
@@ -101,7 +109,7 @@ class SetOperationsTest extends TestCase
         $qb2 = new QueryBuilder(self::$orm, 'set_ops_b');
         $qb2->select(['value']);
         $result = $qb1->except($qb2, false);
-        $values = array_map(static fn ($r) => (int) $r['value'], $result);
+        $values = array_map(static fn($r) => (int) $r['value'], $result);
         sort($values);
         // A \ B sin duplicados: A={1,2,2,3,5}, B={2,2,3,4,6} => {1,5}
         self::assertSame([1, 5], $values);
@@ -114,7 +122,7 @@ class SetOperationsTest extends TestCase
         $qb2 = new QueryBuilder(self::$orm, 'set_ops_b');
         $qb2->select(['value']);
         $result = $qb1->except($qb2, true);
-        $values = array_map(static fn ($r) => (int) $r['value'], $result);
+        $values = array_map(static fn($r) => (int) $r['value'], $result);
         sort($values);
         // A \ B con multiplicidades: para 2 min(A:2,B:2)=2 se eliminan; para 3 min(A:1,B:1)=1 se elimina -> queda [1,5]
         self::assertSame([1, 5], $values);

@@ -120,9 +120,11 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_select_sub_query_with_closure(): void
     {
-        $result = self::$orm->table('users')->selectSubQuery(static function (QueryBuilder $query): void {
-            $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
-        }, 'posts_count');
+        $result = self::$orm
+            ->table('users')
+            ->selectSubQuery(static function (QueryBuilder $query): void {
+                $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
+            }, 'posts_count');
 
         self::assertInstanceOf(QueryBuilder::class, $result);
     }
@@ -135,9 +137,11 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid alias name in selectSubQuery');
 
-        self::$orm->table('users')->selectSubQuery(static function (QueryBuilder $query): void {
-            $query->select(['COUNT(*)']);
-        }, 'invalid--alias');
+        self::$orm
+            ->table('users')
+            ->selectSubQuery(static function (QueryBuilder $query): void {
+                $query->select(['COUNT(*)']);
+            }, 'invalid--alias');
     }
 
     /**
@@ -145,9 +149,11 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_where_sub_query_with_valid_operators(): void
     {
-        $result = self::$orm->table('users')->whereSubQuery('id', 'IN', static function (QueryBuilder $query): void {
-            $query->select(['user_id'])->where('status', '=', 'active');
-        });
+        $result = self::$orm
+            ->table('users')
+            ->whereSubQuery('id', 'IN', static function (QueryBuilder $query): void {
+                $query->select(['user_id'])->where('status', '=', 'active');
+            });
 
         self::assertInstanceOf(QueryBuilder::class, $result);
     }
@@ -160,9 +166,11 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid operator in whereSubQuery');
 
-        self::$orm->table('users')->whereSubQuery('id', 'LIKE', static function (QueryBuilder $query): void {
-            $query->select(['user_id']);
-        });
+        self::$orm
+            ->table('users')
+            ->whereSubQuery('id', 'LIKE', static function (QueryBuilder $query): void {
+                $query->select(['user_id']);
+            });
     }
 
     /**
@@ -173,9 +181,11 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid column name in whereSubQuery');
 
-        self::$orm->table('users')->whereSubQuery('id; DROP TABLE users', '=', static function (QueryBuilder $query): void {
-            $query->select(['user_id']);
-        });
+        self::$orm
+            ->table('users')
+            ->whereSubQuery('id; DROP TABLE users', '=', static function (QueryBuilder $query): void {
+                $query->select(['user_id']);
+            });
     }
 
     /**
@@ -183,9 +193,11 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_where_exists(): void
     {
-        $result = self::$orm->table('users')->whereExists(static function (QueryBuilder $query): void {
-            $query->from('posts')->where('user_id', '=', 'users.id');
-        });
+        $result = self::$orm
+            ->table('users')
+            ->whereExists(static function (QueryBuilder $query): void {
+                $query->from('posts')->where('user_id', '=', 'users.id');
+            });
 
         self::assertInstanceOf(QueryBuilder::class, $result);
     }
@@ -195,9 +207,11 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_where_not_exists(): void
     {
-        $result = self::$orm->table('users')->whereNotExists(static function (QueryBuilder $query): void {
-            $query->from('banned_users')->where('user_id', '=', 'users.id');
-        });
+        $result = self::$orm
+            ->table('users')
+            ->whereNotExists(static function (QueryBuilder $query): void {
+                $query->from('banned_users')->where('user_id', '=', 'users.id');
+            });
 
         self::assertInstanceOf(QueryBuilder::class, $result);
     }
@@ -319,17 +333,14 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_complex_subquery_with_multiple_conditions(): void
     {
-        $result = self::$orm->table('users')
+        $result = self::$orm
+            ->table('users')
             ->select(['id', 'name', 'email'])
             ->selectSubQuery(static function (QueryBuilder $query): void {
-                $query->select(['COUNT(*)'])
-                    ->where('user_id', '=', 'users.id')
-                    ->where('status', '=', 'published');
+                $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id')->where('status', '=', 'published');
             }, 'published_posts_count')
             ->whereExists(static function (QueryBuilder $query): void {
-                $query->from('user_roles')
-                    ->where('user_id', '=', 'users.id')
-                    ->where('role', '=', 'author');
+                $query->from('user_roles')->where('user_id', '=', 'users.id')->where('role', '=', 'author');
             })
             ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['premium'])
             ->groupByRaw('YEAR(created_at), status');

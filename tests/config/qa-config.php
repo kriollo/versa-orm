@@ -13,7 +13,6 @@ return [
     // Configuración general
     'version' => '1.0.0',
     'environment' => $_ENV['QA_ENVIRONMENT'] ?? 'development',
-
     // Configuración de logging
     'logging' => [
         'level' => $_ENV['QA_LOG_LEVEL'] ?? 'info',
@@ -22,7 +21,6 @@ return [
         'console_output' => true,
         'structured_logging' => true,
     ],
-
     // Configuración de métricas
     'metrics' => [
         'enabled' => true,
@@ -32,7 +30,6 @@ return [
         'collect_timing' => true,
         'collect_custom' => true,
     ],
-
     // Configuración de reportes
     'reports' => [
         'output_dir' => 'tests/reports',
@@ -42,7 +39,6 @@ return [
         'auto_cleanup' => true,
         'retention_days' => 60,
     ],
-
     // Gates de calidad
     'quality_gates' => [
         'min_coverage' => 95.0,
@@ -51,7 +47,6 @@ return [
         'max_duplicated_lines' => 3,
         'max_technical_debt' => 30, // minutos
     ],
-
     // Configuración de motores de BD
     'database_engines' => [
         'mysql' => [
@@ -73,14 +68,12 @@ return [
             'phpunit_config' => 'phpunit-sqlite.xml',
         ],
     ],
-
     // Configuración de PHP
     'php_versions' => [
         'supported' => ['7.4', '8.0', '8.1', '8.2', '8.3'],
         'primary' => '8.2',
         'test_matrix' => true,
     ],
-
     // Configuración de herramientas de calidad
     'quality_tools' => [
         'phpstan' => [
@@ -108,7 +101,6 @@ return [
             'deny' => ['warnings'],
         ],
     ],
-
     // Configuración de benchmarks
     'benchmarks' => [
         'enabled' => true,
@@ -123,7 +115,6 @@ return [
             'pdo' => true,
         ],
     ],
-
     // Configuración de tests de seguridad
     'security_tests' => [
         'enabled' => true,
@@ -132,7 +123,6 @@ return [
         'input_validation' => true,
         'taint_analysis' => true,
     ],
-
     // Configuración de CI/CD
     'ci_cd' => [
         'github_actions' => true,
@@ -145,7 +135,6 @@ return [
             'discord' => false,
         ],
     ],
-
     // Configuración de alertas
     'alerts' => [
         'enabled' => true,
@@ -161,7 +150,6 @@ return [
             'file' => true,
         ],
     ],
-
     // Configuración de cache
     'cache' => [
         'enabled' => true,
@@ -169,7 +157,6 @@ return [
         'ttl' => 3600, // 1 hora
         'directory' => 'tests/cache',
     ],
-
     // Configuración de paralelización
     'parallel' => [
         'enabled' => true,
@@ -177,7 +164,6 @@ return [
         'chunk_size' => 10,
         'timeout' => 300, // 5 minutos
     ],
-
     // Configuración de desarrollo
     'development' => [
         'debug_mode' => false,

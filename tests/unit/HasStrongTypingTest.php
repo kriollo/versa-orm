@@ -68,7 +68,11 @@ final class HasStrongTypingTest extends TestCase
         $this->assertSame('100', $orig);
 
         // Register custom converter
-        TestStrongModel::addTypeConverter('money', static fn ($s, $p, $v, $_ = []) => (int) $v, static fn ($s, $p, $v, $_ = []) => 'DB:' . (string) $v);
+        TestStrongModel::addTypeConverter(
+            'money',
+            static fn($s, $p, $v, $_ = []) => (int) $v,
+            static fn($s, $p, $v, $_ = []) => 'DB:' . (string) $v,
+        );
 
         // Now salary type 'money' should use converter
         $val = $m->castToPhpType('salary', '100');
@@ -85,7 +89,7 @@ final class HasStrongTypingTest extends TestCase
     }
 }
 
-if (! class_exists('TestStrongModel')) {
+if (!class_exists('TestStrongModel')) {
     class TestStrongModel
     {
         use HasStrongTyping;

@@ -502,7 +502,7 @@ class SqlGenerator
                 $havingParts[] = [$col, self::compileSelectPart($col, $dialect) . ' ' . $op . ' ?'];
                 $bindings[] = $h['value'] ?? null;
             }
-            $sql .= ' HAVING ' . implode(' AND ', array_map(static fn ($hp): string => $hp[1], $havingParts));
+            $sql .= ' HAVING ' . implode(' AND ', array_map(static fn($hp): string => $hp[1], $havingParts));
         }
 
         // ORDER BY (single or raw)

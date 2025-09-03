@@ -7,7 +7,7 @@ use VersaORM\Traits\HandlesErrors;
 use VersaORM\VersaModel;
 use VersaORM\VersaORMException;
 
-if (! class_exists('DummyHandlesModel')) {
+if (!class_exists('DummyHandlesModel')) {
     class DummyHandlesModel extends VersaModel
     {
         use HandlesErrors;
@@ -15,9 +15,7 @@ if (! class_exists('DummyHandlesModel')) {
         // Provide a table name to avoid uninitialized access in trait
         protected string $table = 'dummy_handles';
 
-        public function __construct()
-        {
-        }
+        public function __construct() {}
 
         public function save(string $primaryKey = 'id'): array
         {

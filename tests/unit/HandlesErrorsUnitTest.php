@@ -80,7 +80,7 @@ class HandlesErrorsUnitTest extends TestCase
 
         // format for api should include debug block when debug mode is on
         // use a subclass exposing protected methods for testing
-        $tester = new class () extends MinimalModelForHandleErrors {
+        $tester = new class() extends MinimalModelForHandleErrors {
             public function publicFormatErrorForApi(array $errorData): array
             {
                 return $this->formatErrorForApi($errorData);

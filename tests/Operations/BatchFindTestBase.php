@@ -21,12 +21,16 @@ trait BatchFindTestBase
     {
         $batches = [];
         $invocations = 0;
-        VersaModel::findInBatches('users', function (array $models) use (&$batches, &$invocations): void {
-            $invocations++;
-            $batches[] = array_map(static function (VersaModel $m): int {
-                return (int) $m->id;
-            }, $models);
-        }, 2);
+        VersaModel::findInBatches(
+            'users',
+            function (array $models) use (&$batches, &$invocations): void {
+                $invocations++;
+                $batches[] = array_map(static function (VersaModel $m): int {
+                    return (int) $m->id;
+                }, $models);
+            },
+            2,
+        );
 
         self::assertSame(2, $invocations);
         self::assertCount(2, $batches);
@@ -43,12 +47,18 @@ trait BatchFindTestBase
         $ids = [];
         $invocations = 0;
 
-        VersaModel::findInBatches('users', function (array $models) use (&$ids, &$invocations): void {
-            $invocations++;
-            foreach ($models as $m) {
-                $ids[] = (int) $m->id;
-            }
-        }, 1, 'status = ?', ['active']); // batchSize=1 -> 2 invocaciones
+        VersaModel::findInBatches(
+            'users',
+            function (array $models) use (&$ids, &$invocations): void {
+                $invocations++;
+                foreach ($models as $m) {
+                    $ids[] = (int) $m->id;
+                }
+            },
+            1,
+            'status = ?',
+            ['active'],
+        ); // batchSize=1 -> 2 invocaciones
 
         sort($ids);
         self::assertSame([1, 3], $ids);
@@ -58,9 +68,14 @@ trait BatchFindTestBase
     public function testFindInBatchesOnEmptyResult(): void
     {
         $called = false;
-        VersaModel::findInBatches('users', function () use (&$called): void {
-            $called = true;
-        }, 10, 'id < 0'); // condición imposible => conjunto vacío
+        VersaModel::findInBatches(
+            'users',
+            function () use (&$called): void {
+                $called = true;
+            },
+            10,
+            'id < 0',
+        ); // condición imposible => conjunto vacío
         self::assertFalse($called);
     }
 
@@ -68,12 +83,16 @@ trait BatchFindTestBase
     {
         $count = 0;
         $ids = [];
-        VersaModel::findInBatches('users', function (array $models) use (&$count, &$ids): void {
-            $count++;
-            foreach ($models as $m) {
-                $ids[] = (int) $m->id;
-            }
-        }, 50); // batchSize > total
+        VersaModel::findInBatches(
+            'users',
+            function (array $models) use (&$count, &$ids): void {
+                $count++;
+                foreach ($models as $m) {
+                    $ids[] = (int) $m->id;
+                }
+            },
+            50,
+        ); // batchSize > total
 
         sort($ids);
         self::assertSame([1, 2, 3], $ids);

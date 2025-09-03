@@ -68,7 +68,11 @@ class PHPVersionCompatibilityTest extends TestCase
     {
         $currentVersion = self::getCurrentPHPVersion();
 
-        $this->assertContains($currentVersion, self::$supportedVersions, "PHP version {$currentVersion} is not in supported versions list");
+        $this->assertContains(
+            $currentVersion,
+            self::$supportedVersions,
+            "PHP version {$currentVersion} is not in supported versions list",
+        );
 
         // Log version info for reporting
         $this->addToAssertionCount(1);
@@ -130,7 +134,7 @@ class PHPVersionCompatibilityTest extends TestCase
      */
     public function test_ph_p74_specific_features(): void
     {
-        if (! $this->isVersionAtLeast('7.4')) {
+        if (!$this->isVersionAtLeast('7.4')) {
             self::markTestSkipped('PHP 7.4+ required for this test');
         }
 
@@ -153,7 +157,7 @@ class PHPVersionCompatibilityTest extends TestCase
      */
     public function test_ph_p80_specific_features(): void
     {
-        if (! $this->isVersionAtLeast('8.0')) {
+        if (!$this->isVersionAtLeast('8.0')) {
             self::markTestSkipped('PHP 8.0+ required for this test');
         }
 
@@ -182,7 +186,7 @@ class PHPVersionCompatibilityTest extends TestCase
      */
     public function test_ph_p81_specific_features(): void
     {
-        if (! $this->isVersionAtLeast('8.1')) {
+        if (!$this->isVersionAtLeast('8.1')) {
             self::markTestSkipped('PHP 8.1+ required for this test');
         }
 
@@ -208,7 +212,7 @@ class PHPVersionCompatibilityTest extends TestCase
      */
     public function test_ph_p82_specific_features(): void
     {
-        if (! $this->isVersionAtLeast('8.2')) {
+        if (!$this->isVersionAtLeast('8.2')) {
             self::markTestSkipped('PHP 8.2+ required for this test');
         }
 
@@ -228,7 +232,7 @@ class PHPVersionCompatibilityTest extends TestCase
      */
     public function test_ph_p83_specific_features(): void
     {
-        if (! $this->isVersionAtLeast('8.3')) {
+        if (!$this->isVersionAtLeast('8.3')) {
             self::markTestSkipped('PHP 8.3+ required for this test');
         }
 
@@ -265,11 +269,14 @@ class PHPVersionCompatibilityTest extends TestCase
         $memoryUsed = $finalMemory - $initialMemory;
 
         // Memory usage should be reasonable (less than 10MB for 10 instances)
-        $this->assertLessThan(10 * 1024 * 1024, $memoryUsed, 'Memory usage too high: ' . number_format($memoryUsed / 1024 / 1024, 2) . 'MB');
+        $this->assertLessThan(
+            10 * 1024 * 1024,
+            $memoryUsed,
+            'Memory usage too high: ' . number_format(($memoryUsed / 1024) / 1024, 2) . 'MB',
+        );
 
         // Log memory usage for version-specific analysis
-        echo "\nMemory usage for PHP " . PHP_VERSION . ': ' .
-             number_format($memoryUsed / 1024 / 1024, 2) . "MB\n";
+        echo "\nMemory usage for PHP " . PHP_VERSION . ': ' . number_format(($memoryUsed / 1024) / 1024, 2) . "MB\n";
 
         // Clean up
         unset($instances);
@@ -299,11 +306,20 @@ class PHPVersionCompatibilityTest extends TestCase
         $executionTime = $endTime - $startTime;
 
         // Performance should be reasonable (less than 5 seconds for 1000 iterations)
-        $this->assertLessThan(5.0, $executionTime, "Performance too slow: {$executionTime}s for {$iterations} iterations");
+        $this->assertLessThan(
+            5.0,
+            $executionTime,
+            "Performance too slow: {$executionTime}s for {$iterations} iterations",
+        );
 
         // Log performance for version-specific analysis
-        echo "\nPerformance for PHP " . PHP_VERSION . ': ' .
-             number_format($executionTime, 4) . "s for {$iterations} iterations\n";
+        echo
+            "\nPerformance for PHP "
+            . PHP_VERSION
+            . ': '
+            . number_format($executionTime, 4)
+                . "s for {$iterations} iterations\n"
+        ;
     }
 
     /**

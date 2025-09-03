@@ -8,7 +8,8 @@ final class HavingParameterizedTest extends TestCase
 {
     public function test_having_count_parametrized(): void
     {
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->select(['status', 'COUNT(*) as cnt'])
             ->groupBy('status')
             ->having('COUNT(*)', '>', 1)
@@ -21,7 +22,8 @@ final class HavingParameterizedTest extends TestCase
 
     public function test_having_count_between_parametrized(): void
     {
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->select(['status', 'COUNT(*) as cnt'])
             ->groupBy('status')
             ->having('COUNT(*)', '>=', 1)

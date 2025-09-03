@@ -120,9 +120,10 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         $qb = new QueryBuilder(self::$orm, 'employees');
 
         // CTE recursivo complejo para jerarquía organizacional
-        $result = $qb->withCte([
-            'dept_hierarchy' => [
-                'query' => 'WITH RECURSIVE dept_tree AS (
+        $result = $qb->withCte(
+            [
+                'dept_hierarchy' => [
+                    'query' => 'WITH RECURSIVE dept_tree AS (
                     SELECT department, department as root_dept, 1 as level
                     FROM employees WHERE department = ?
                     UNION ALL
@@ -131,9 +132,12 @@ class PostgreSQLAdvancedSQLTest extends TestCase
                     JOIN dept_tree dt ON e.department != dt.department
                     WHERE dt.level < 3
                 ) SELECT * FROM dept_tree',
-                'bindings' => ['Engineering'],
+                    'bindings' => ['Engineering'],
+                ],
             ],
-        ], 'SELECT * FROM dept_hierarchy ORDER BY level', []);
+            'SELECT * FROM dept_hierarchy ORDER BY level',
+            [],
+        );
 
         self::assertIsArray($result);
     }
@@ -145,7 +149,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // Agregaciones estadísticas avanzadas
         $result = $qb->advancedAggregation('percentile', 'salary', [
             'percentile' => 0.95,
-            'method' => 'cont',  // percentile_cont
+            'method' => 'cont', // percentile_cont
         ]);
 
         self::assertIsArray($result);
@@ -209,7 +213,13 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     public function test_advanced_aggregation_group_concat(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
-        $result = $qb->advancedAggregation('group_concat', 'name', ['separator' => ', '], ['department'], 'employee_names');
+        $result = $qb->advancedAggregation(
+            'group_concat',
+            'name',
+            ['separator' => ', '],
+            ['department'],
+            'employee_names',
+        );
         self::assertIsArray($result);
     }
 
@@ -233,24 +243,33 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     private function createPostgreSQLTestTables(): void
     {
         // Tabla con tipos específicos de PostgreSQL
-        self::$orm->schemaCreate('employees', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ['name' => 'department', 'type' => 'VARCHAR(100)'],
-            ['name' => 'salary', 'type' => 'DECIMAL(10,2)'],
-            ['name' => 'hire_date', 'type' => 'DATE'],
-            ['name' => 'profile', 'type' => 'JSONB'],
-            ['name' => 'skills', 'type' => 'TEXT[]'],
-            ['name' => 'bio', 'type' => 'TEXT'],
-            ['name' => 'search_vector', 'type' => 'TSVECTOR'],
-        ], [
-            'if_not_exists' => true,
-            'indexes' => [
-                ['name' => 'idx_profile_gin', 'columns' => ['profile'], 'using' => 'GIN', 'if_not_exists' => true],
-                ['name' => 'idx_skills_gin', 'columns' => ['skills'], 'using' => 'GIN', 'if_not_exists' => true],
-                ['name' => 'idx_search_gin', 'columns' => ['search_vector'], 'using' => 'GIN', 'if_not_exists' => true],
+        self::$orm->schemaCreate(
+            'employees',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'department', 'type' => 'VARCHAR(100)'],
+                ['name' => 'salary', 'type' => 'DECIMAL(10,2)'],
+                ['name' => 'hire_date', 'type' => 'DATE'],
+                ['name' => 'profile', 'type' => 'JSONB'],
+                ['name' => 'skills', 'type' => 'TEXT[]'],
+                ['name' => 'bio', 'type' => 'TEXT'],
+                ['name' => 'search_vector', 'type' => 'TSVECTOR'],
             ],
-        ]);
+            [
+                'if_not_exists' => true,
+                'indexes' => [
+                    ['name' => 'idx_profile_gin', 'columns' => ['profile'], 'using' => 'GIN', 'if_not_exists' => true],
+                    ['name' => 'idx_skills_gin', 'columns' => ['skills'], 'using' => 'GIN', 'if_not_exists' => true],
+                    [
+                        'name' => 'idx_search_gin',
+                        'columns' => ['search_vector'],
+                        'using' => 'GIN',
+                        'if_not_exists' => true,
+                    ],
+                ],
+            ],
+        );
 
         // Insertar datos de prueba con tipos PostgreSQL
         $employees = [
@@ -284,20 +303,17 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         ];
 
         foreach ($employees as $employee) {
-            self::$orm->exec(
-                "INSERT INTO employees (name, department, salary, hire_date, profile, skills, bio, search_vector)
-                 VALUES (?, ?, ?, ?, ?::jsonb, ?::text[], ?, to_tsvector('english', ?))",
-                [
-                    $employee['name'],
-                    $employee['department'],
-                    $employee['salary'],
-                    $employee['hire_date'],
-                    $employee['profile'],
-                    $employee['skills'],
-                    $employee['bio'],
-                    $employee['bio'],
-                ],
-            );
+            self::$orm->exec("INSERT INTO employees (name, department, salary, hire_date, profile, skills, bio, search_vector)
+                 VALUES (?, ?, ?, ?, ?::jsonb, ?::text[], ?, to_tsvector('english', ?))", [
+                $employee['name'],
+                $employee['department'],
+                $employee['salary'],
+                $employee['hire_date'],
+                $employee['profile'],
+                $employee['skills'],
+                $employee['bio'],
+                $employee['bio'],
+            ]);
         }
     }
 }

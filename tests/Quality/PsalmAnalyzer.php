@@ -20,7 +20,7 @@ class PsalmAnalyzer
     private string $psalmPath;
 
     public function __construct(
-        ?string $psalmPath = null,
+        null|string $psalmPath = null,
         private string $configPath = 'psalm.xml',
         private string $reportsDir = 'tests/reports/psalm',
     ) {
@@ -31,7 +31,7 @@ class PsalmAnalyzer
 
         $this->psalmPath = $psalmPath;
 
-        if (! is_dir($this->reportsDir)) {
+        if (!is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
         }
     }
@@ -124,7 +124,7 @@ class PsalmAnalyzer
         foreach ($result['issues'] as $issue) {
             $category = $issue['type'] ?? 'unknown';
 
-            if (! isset($metrics['issue_categories'][$category])) {
+            if (!isset($metrics['issue_categories'][$category])) {
                 $metrics['issue_categories'][$category] = 0;
             }
             $metrics['issue_categories'][$category]++;
@@ -149,11 +149,7 @@ class PsalmAnalyzer
      */
     public function generateBaseline(): array
     {
-        $command = sprintf(
-            '%s --set-baseline=%s',
-            $this->psalmPath,
-            'psalm-baseline.xml',
-        );
+        $command = sprintf('%s --set-baseline=%s', $this->psalmPath, 'psalm-baseline.xml');
 
         $output = [];
         $returnCode = 0;
@@ -172,7 +168,7 @@ class PsalmAnalyzer
      */
     public function validateConfig(): array
     {
-        if (! file_exists($this->configPath)) {
+        if (!file_exists($this->configPath)) {
             return [
                 'valid' => false,
                 'error' => 'Configuration file not found: ' . $this->configPath,
@@ -235,7 +231,8 @@ class PsalmAnalyzer
      */
     public function generateHTMLReport(array $analysisResult): string
     {
-        $html = '<!DOCTYPE html>
+        $html =
+            '<!DOCTYPE html>
 <html>
 <head>
     <title>Psalm Security Analysis Report</title>
@@ -260,66 +257,103 @@ class PsalmAnalyzer
 <body>
     <div class="header">
         <h1>Psalm Security Analysis Report</h1>
-        <p><strong>Timestamp:</strong> ' . $analysisResult['timestamp'] . '</p>
-        <p><strong>Execution Time:</strong> ' . number_format($analysisResult['execution_time'], 2) . 's</p>
-        <p><strong>Status:</strong> <span class="' . ($analysisResult['passed'] ? 'passed' : 'failed') . '">' .
-            ($analysisResult['passed'] ? 'PASSED' : 'FAILED') . '</span></p>
+        <p><strong>Timestamp:</strong> '
+            . $analysisResult['timestamp']
+            . '</p>
+        <p><strong>Execution Time:</strong> '
+            . number_format($analysisResult['execution_time'], 2)
+            . 's</p>
+        <p><strong>Status:</strong> <span class="'
+            . ($analysisResult['passed'] ? 'passed' : 'failed')
+            . '">'
+            . ($analysisResult['passed'] ? 'PASSED' : 'FAILED')
+            . '</span></p>
     </div>
 
     <div class="stats">
         <div class="stat">
-            <div class="stat-number">' . count($analysisResult['issues']) . '</div>
+            <div class="stat-number">'
+            . count($analysisResult['issues'])
+            . '</div>
             <div class="stat-label">Total Issues</div>
         </div>
         <div class="stat">
-            <div class="stat-number">' . count($analysisResult['security_issues']) . '</div>
+            <div class="stat-number">'
+            . count($analysisResult['security_issues'])
+            . '</div>
             <div class="stat-label">Security Issues</div>
         </div>
         <div class="stat">
-            <div class="stat-number">' . count($analysisResult['type_issues']) . '</div>
+            <div class="stat-number">'
+            . count($analysisResult['type_issues'])
+            . '</div>
             <div class="stat-label">Type Issues</div>
         </div>
     </div>';
 
-        if (! empty($analysisResult['security_issues'])) {
+        if (!empty($analysisResult['security_issues'])) {
             $html .= '<div class="section">
                 <h2>Security Issues</h2>';
 
             foreach ($analysisResult['security_issues'] as $issue) {
-                $html .= '<div class="issue security-issue">
-                    <div class="file-path">' . htmlspecialchars($issue['file']) . ':' . $issue['line'] . '</div>
-                    <div><span class="issue-type">' . htmlspecialchars($issue['type']) . '</span>: ' .
-                    htmlspecialchars($issue['message']) . '</div>
+                $html .=
+                    '<div class="issue security-issue">
+                    <div class="file-path">'
+                    . htmlspecialchars($issue['file'])
+                    . ':'
+                    . $issue['line']
+                    . '</div>
+                    <div><span class="issue-type">'
+                    . htmlspecialchars($issue['type'])
+                    . '</span>: '
+                    . htmlspecialchars($issue['message'])
+                    . '</div>
                 </div>';
             }
             $html .= '</div>';
         }
 
-        if (! empty($analysisResult['type_issues'])) {
+        if (!empty($analysisResult['type_issues'])) {
             $html .= '<div class="section">
                 <h2>Type Issues</h2>';
 
             foreach ($analysisResult['type_issues'] as $issue) {
-                $html .= '<div class="issue type-issue">
-                    <div class="file-path">' . htmlspecialchars($issue['file']) . ':' . $issue['line'] . '</div>
-                    <div><span class="issue-type">' . htmlspecialchars($issue['type']) . '</span>: ' .
-                    htmlspecialchars($issue['message']) . '</div>
+                $html .=
+                    '<div class="issue type-issue">
+                    <div class="file-path">'
+                    . htmlspecialchars($issue['file'])
+                    . ':'
+                    . $issue['line']
+                    . '</div>
+                    <div><span class="issue-type">'
+                    . htmlspecialchars($issue['type'])
+                    . '</span>: '
+                    . htmlspecialchars($issue['message'])
+                    . '</div>
                 </div>';
             }
             $html .= '</div>';
         }
 
-        return $html . ('<div class="section">
+        return (
+            $html . (
+                '<div class="section">
             <h2>Full Output</h2>
-            <pre>' . htmlspecialchars($analysisResult['output']) . '</pre>
+            <pre>'
+                . htmlspecialchars($analysisResult['output'])
+                . '</pre>
         </div>
 
         <div class="section">
             <h2>Command Executed</h2>
-            <pre>' . htmlspecialchars($analysisResult['command']) . '</pre>
+            <pre>'
+                . htmlspecialchars($analysisResult['command'])
+                . '</pre>
         </div>
     </body>
-</html>');
+</html>'
+            )
+        );
     }
 
     /**
@@ -364,7 +398,7 @@ class PsalmAnalyzer
 
         $output = shell_exec($testCommand);
 
-        return ! ($output === '' || $output === '0' || $output === false || $output === null);
+        return !($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -389,7 +423,7 @@ class PsalmAnalyzer
         foreach ($allOptions as $key => $value) {
             if (is_bool($value) && $value) {
                 $command .= ' --' . ltrim($key, '-');
-            } elseif (! is_bool($value)) {
+            } elseif (!is_bool($value)) {
                 $command .= ' --' . ltrim($key, '-') . '=' . $value;
             }
         }
@@ -449,9 +483,7 @@ class PsalmAnalyzer
     private function countLinesOfCode(): int
     {
         $totalLines = 0;
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator('src'),
-        );
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator('src'));
 
         foreach ($iterator as $file) {
             if ($file->getExtension() === 'php') {
@@ -469,7 +501,10 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $sqlInjectionIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedSql'));
+        $sqlInjectionIssues = array_filter($result['issues'], static fn($issue): bool => str_contains(
+            $issue['type'],
+            'TaintedSql',
+        ));
 
         return [
             'issues_found' => count($sqlInjectionIssues),
@@ -485,7 +520,10 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $xssIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedHtml'));
+        $xssIssues = array_filter($result['issues'], static fn($issue): bool => str_contains(
+            $issue['type'],
+            'TaintedHtml',
+        ));
 
         return [
             'issues_found' => count($xssIssues),
@@ -501,7 +539,10 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $fileIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedFile'));
+        $fileIssues = array_filter($result['issues'], static fn($issue): bool => str_contains(
+            $issue['type'],
+            'TaintedFile',
+        ));
 
         return [
             'issues_found' => count($fileIssues),
@@ -517,7 +558,10 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $commandIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedShell'));
+        $commandIssues = array_filter($result['issues'], static fn($issue): bool => str_contains(
+            $issue['type'],
+            'TaintedShell',
+        ));
 
         return [
             'issues_found' => count($commandIssues),
@@ -533,7 +577,10 @@ class PsalmAnalyzer
     {
         $result = $this->analyze(['--taint-analysis' => true, '--output-format' => 'json']);
 
-        $taintedIssues = array_filter($result['issues'], static fn ($issue): bool => str_contains($issue['type'], 'TaintedInput'));
+        $taintedIssues = array_filter($result['issues'], static fn($issue): bool => str_contains(
+            $issue['type'],
+            'TaintedInput',
+        ));
 
         return [
             'issues_found' => count($taintedIssues),

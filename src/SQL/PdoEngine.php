@@ -626,7 +626,7 @@ class PdoEngine
 
                             if (!empty($c['columns']) && is_array($c['columns'])) {
                                 $quotedCols = array_map(
-                                    fn ($col): string => $this->dialect->quoteIdentifier((string) $col),
+                                    fn($col): string => $this->dialect->quoteIdentifier((string) $col),
                                     $c['columns'],
                                 );
                                 $colsDef = ' (' . implode(', ', $quotedCols) . ')';
@@ -741,7 +741,7 @@ class PdoEngine
                                 // Filtrar segmentos vacíos o que repitan el nombre de la columna
                                 $segments = array_values(array_filter(
                                     $segments,
-                                    static fn ($s): bool => $s !== '' && $s !== $col,
+                                    static fn($s): bool => $s !== '' && $s !== $col,
                                 ));
 
                                 // Si el path original incluía col al inicio, removerlo
@@ -754,7 +754,7 @@ class PdoEngine
                                     $jsonPath .=
                                         '.'
                                         . implode('.', array_map(
-                                            static fn ($s): string => trim($s, "'\"` "),
+                                            static fn($s): string => trim($s, "'\"` "),
                                             $segments,
                                         ));
                                 }
@@ -770,7 +770,7 @@ class PdoEngine
                                 $bind = [$path];
                             }
                         } elseif ($driver === 'postgres') {
-                            $segments = array_filter(explode('.', trim($path, '$.')), static fn ($s): bool => $s !== '');
+                            $segments = array_filter(explode('.', trim($path, '$.')), static fn($s): bool => $s !== '');
                             $expr = $col;
 
                             foreach ($segments as $idx => $s) {
@@ -855,7 +855,7 @@ class PdoEngine
                             $operator = (string) ($options['operator'] ?? '@@');
                             $rank = !empty($options['rank']);
                             $colExpr = implode(' || \" \" || ', array_map(
-                                static fn ($c): string => "to_tsvector('" . $language . "', " . $c . ')',
+                                static fn($c): string => "to_tsvector('" . $language . "', " . $c . ')',
                                 $cols,
                             ));
 
@@ -1019,7 +1019,7 @@ class PdoEngine
                             'features' => $features,
                         ];
                     })(),
-                    'get_driver_limits' => (static fn (): array => (
+                    'get_driver_limits' => (static fn(): array => (
                         // Valores aproximados comunes o seguros
                         [
                             'max_columns' => 2000,

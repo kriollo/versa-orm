@@ -21,7 +21,10 @@ final class PdoEngineCacheStoreInvalidateTest extends TestCase
         $this->assertSame('cache enabled', $res);
 
         // Create a simple table and insert a row
-        $engine->execute('raw', ['query' => 'CREATE TABLE test_cache (id INTEGER PRIMARY KEY, val TEXT)', 'bindings' => []]);
+        $engine->execute('raw', [
+            'query' => 'CREATE TABLE test_cache (id INTEGER PRIMARY KEY, val TEXT)',
+            'bindings' => [],
+        ]);
         $engine->execute('raw', ['query' => "INSERT INTO test_cache (val) VALUES ('a')", 'bindings' => []]);
 
         // Perform a 'get' query via execute('query', ...) to cause storeInCache

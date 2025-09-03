@@ -54,7 +54,7 @@ if (!isset($project) || !is_object($project)) {
                                     class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                                     placeholder="Describe el propósito y objetivos del proyecto..."><?php echo
                                         htmlspecialchars($project->description ?? '')
-; ?></textarea>
+                                    ; ?></textarea>
                             </div>
                         </div>
                     </div>
@@ -69,19 +69,19 @@ if (!isset($project) || !is_object($project)) {
 
                                 <?php
                                 $colors = [
-'#3498db',
-'#e74c3c',
-'#2ecc71',
-'#f39c12',
-'#9b59b6',
-'#1abc9c',
-'#34495e',
-'#e67e22',
-'#95a5a6',
-'#f1c40f',
+                                    '#3498db',
+                                    '#e74c3c',
+                                    '#2ecc71',
+                                    '#f39c12',
+                                    '#9b59b6',
+                                    '#1abc9c',
+                                    '#34495e',
+                                    '#e67e22',
+                                    '#95a5a6',
+                                    '#f1c40f',
                                 ];
 
-foreach ($colors as $color) { ?>
+                                foreach ($colors as $color) { ?>
                                     <label class="cursor-pointer">
                                         <input type="radio"
                                             name="color"
@@ -113,11 +113,11 @@ foreach ($colors as $color) { ?>
 
                                 <?php foreach ($users as $user) { ?>
                                     <option value="<?php echo $user->id; ?>" <?php echo
-        $project->owner_id === $user->id ? 'selected' : ''
+                                        $project->owner_id === $user->id ? 'selected' : ''
                                     ; ?>>
                                         <?php echo htmlspecialchars($user->name); ?> (<?php echo
                                             htmlspecialchars($user->email)
-                                    ; ?>)
+                                        ; ?>)
                                     </option>
                                 <?php } ?>
                             </select>
@@ -131,7 +131,7 @@ foreach ($colors as $color) { ?>
                         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 transition-colors">Vista Previa</h3>
                         <div x-data="{ previewName: '<?php echo htmlspecialchars($project->name); ?>', previewColor: '<?php echo
                             $project->color
-; ?>' }">
+                        ; ?>' }">
                             <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 transition-colors bg-white dark:bg-gray-900">
                                 <div class="flex items-center mb-4">
                                     <div class="w-4 h-4 rounded-full mr-3"
@@ -142,16 +142,16 @@ foreach ($colors as $color) { ?>
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
 
                                         <?php
-                $owner = array_filter(
-                    $users,
-                    static fn ($u): bool => $u->id === $project->owner_id,
-                );
-echo $owner !== [] ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
-?>
+                                        $owner = array_filter(
+                                            $users,
+                                            static fn($u): bool => $u->id === $project->owner_id,
+                                        );
+                                        echo $owner !== [] ? htmlspecialchars(current($owner)->name) : 'Sin asignar';
+                                        ?>
                                     </p>
                                     <p><i class="fas fa-calendar mr-2"></i>Creado: <?php echo
-isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''
-; ?></p>
+                                        isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''
+                                    ; ?></p>
                                 </div>
                             </div>
                         </div>
@@ -166,12 +166,12 @@ isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''
                     <div>
                         <strong>Creado:</strong> <?php echo
                             isset($project->created_at) ? safe_date('d/m/Y H:i', $project->created_at) : ''
-; ?>
+                        ; ?>
                     </div>
                     <div>
                         <strong>Actualizado:</strong> <?php echo
-    isset($project->updated_at) ? safe_date('d/m/Y H:i', $project->updated_at) : ''
-; ?>
+                            isset($project->updated_at) ? safe_date('d/m/Y H:i', $project->updated_at) : ''
+                        ; ?>
                     </div>
                     <div>
                         <strong>ID:</strong> #<?php echo $project->id; ?>
@@ -183,8 +183,8 @@ isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''
             <div class="mt-8 flex items-center justify-between">
                 <button type="button"
                     onclick="if(confirm('¿Estás seguro de que quieres eliminar este proyecto? Esta acción eliminará también todas las tareas asociadas.')) { window.location.href = '?action=project_delete&id=<?php echo
-$project->id
-; ?>'; }"
+                        $project->id
+                    ; ?>'; }"
                     class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
                     <i class="fas fa-trash mr-2"></i>
                     Eliminar Proyecto

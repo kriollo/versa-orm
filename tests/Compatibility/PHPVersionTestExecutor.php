@@ -72,7 +72,7 @@ class PHPVersionTestExecutor
      */
     public function runVersionSpecificTests(string $version): Report
     {
-        if (! $this->detector->isVersionSupported($version)) {
+        if (!$this->detector->isVersionSupported($version)) {
             throw new InvalidArgumentException("PHP version {$version} is not supported");
         }
 
@@ -145,7 +145,8 @@ class PHPVersionTestExecutor
             $support = $this->detector->getCurrentVersionSupport();
             $tests['support_info'] = [
                 'status' => $support !== null && $support !== [] ? 'pass' : 'fail',
-                'message' => $support !== null && $support !== [] ? 'Support information available' : 'No support information',
+                'message' =>
+                    $support !== null && $support !== [] ? 'Support information available' : 'No support information',
                 'details' => $support,
             ];
         } catch (Exception $e) {
@@ -160,11 +161,11 @@ class PHPVersionTestExecutor
             'test_type' => 'version_detection',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -239,11 +240,11 @@ class PHPVersionTestExecutor
             'test_type' => 'feature_compatibility',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -293,11 +294,11 @@ class PHPVersionTestExecutor
             unset($instances);
 
             $tests['memory_usage'] = [
-                'status' => $memoryUsed < 5 * 1024 * 1024 ? 'pass' : 'warning', // 5MB threshold
-                'message' => 'Memory usage for 50 instances: ' . number_format($memoryUsed / 1024 / 1024, 2) . 'MB',
+                'status' => $memoryUsed < (5 * 1024 * 1024) ? 'pass' : 'warning', // 5MB threshold
+                'message' => 'Memory usage for 50 instances: ' . number_format(($memoryUsed / 1024) / 1024, 2) . 'MB',
                 'details' => [
                     'memory_used_bytes' => $memoryUsed,
-                    'memory_used_mb' => $memoryUsed / 1024 / 1024,
+                    'memory_used_mb' => ($memoryUsed / 1024) / 1024,
                     'instances_created' => 50,
                 ],
             ];
@@ -313,11 +314,11 @@ class PHPVersionTestExecutor
             'test_type' => 'performance',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -342,7 +343,7 @@ class PHPVersionTestExecutor
                 unset($orm, $qb);
 
                 // Force garbage collection every 100 iterations
-                if ($i % 100 === 0) {
+                if (($i % 100) === 0) {
                     gc_collect_cycles();
                 }
             }
@@ -351,7 +352,7 @@ class PHPVersionTestExecutor
             $memoryDiff = $finalMemory - $initialMemory;
 
             $tests['memory_leak_detection'] = [
-                'status' => $memoryDiff < 1024 * 1024 ? 'pass' : 'fail', // 1MB threshold
+                'status' => $memoryDiff < (1024 * 1024) ? 'pass' : 'fail', // 1MB threshold
                 'message' => 'Memory difference after 1000 iterations: ' . number_format($memoryDiff / 1024, 2) . 'KB',
                 'details' => [
                     'initial_memory' => $initialMemory,
@@ -365,7 +366,7 @@ class PHPVersionTestExecutor
             $peakMemory = memory_get_peak_usage(true);
             $tests['peak_memory_usage'] = [
                 'status' => 'info',
-                'message' => 'Peak memory usage: ' . number_format($peakMemory / 1024 / 1024, 2) . 'MB',
+                'message' => 'Peak memory usage: ' . number_format(($peakMemory / 1024) / 1024, 2) . 'MB',
                 'details' => ['peak_memory_bytes' => $peakMemory],
             ];
         } catch (Exception $e) {
@@ -380,11 +381,11 @@ class PHPVersionTestExecutor
             'test_type' => 'memory',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -438,11 +439,11 @@ class PHPVersionTestExecutor
             'test_type' => 'extensions',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -465,7 +466,7 @@ class PHPVersionTestExecutor
             if ($memoryLimit !== '-1') {
                 $memoryBytes = $this->parseMemoryLimit($memoryLimit);
                 $tests['memory_limit'] = [
-                    'status' => $memoryBytes >= 128 * 1024 * 1024 ? 'pass' : 'warning',
+                    'status' => $memoryBytes >= (128 * 1024 * 1024) ? 'pass' : 'warning',
                     'message' => "Memory limit: {$memoryLimit}",
                     'details' => ['memory_limit' => $memoryLimit, 'memory_bytes' => $memoryBytes],
                 ];
@@ -499,7 +500,9 @@ class PHPVersionTestExecutor
             if ($opcacheInfo !== null && $opcacheInfo !== []) {
                 $tests['opcache'] = [
                     'status' => $opcacheInfo['enabled'] ? 'pass' : 'info',
-                    'message' => $opcacheInfo['enabled'] ? 'OPcache is enabled' : 'OPcache is available but not enabled',
+                    'message' => $opcacheInfo['enabled']
+                        ? 'OPcache is enabled'
+                        : 'OPcache is available but not enabled',
                     'details' => $opcacheInfo,
                 ];
             } else {
@@ -521,11 +524,11 @@ class PHPVersionTestExecutor
             'test_type' => 'configuration',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -609,11 +612,11 @@ class PHPVersionTestExecutor
             'test_type' => 'orm_functionality',
             'engine' => 'php',
             'total_tests' => count($tests),
-            'passed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'pass')),
-            'failed_tests' => count(array_filter($tests, static fn ($t): bool => $t['status'] === 'fail')),
+            'passed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'pass')),
+            'failed_tests' => count(array_filter($tests, static fn($t): bool => $t['status'] === 'fail')),
             'skipped_tests' => 0,
             'execution_time' => microtime(true) - $startTime,
-            'failures' => array_filter($tests, static fn ($t): bool => $t['status'] === 'fail'),
+            'failures' => array_filter($tests, static fn($t): bool => $t['status'] === 'fail'),
             'metrics' => ['tests' => $tests],
             'timestamp' => new DateTime(),
         ]);
@@ -692,10 +695,10 @@ class PHPVersionTestExecutor
         switch ($last) {
             case 'g':
                 $value *= 1024;
-                // no break
+            // no break
             case 'm':
                 $value *= 1024;
-                // no break
+            // no break
             case 'k':
                 $value *= 1024;
         }

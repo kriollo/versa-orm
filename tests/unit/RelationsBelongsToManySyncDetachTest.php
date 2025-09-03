@@ -27,9 +27,7 @@ if (!class_exists('TBMQuery')) {
     {
         public $lastExecute;
 
-        public function __construct()
-        {
-        }
+        public function __construct() {}
 
         public function insert(array $data): bool
         {
@@ -73,9 +71,7 @@ if (!class_exists('TBMQuery')) {
 if (!class_exists('TBMModel')) {
     class TBMModel extends VersaModel
     {
-        public function __construct()
-        {
-        }
+        public function __construct() {}
 
         public function getAttribute(string $key)
         {

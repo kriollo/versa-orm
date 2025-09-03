@@ -23,7 +23,10 @@ final class PdoEngineReflectionTest extends TestCase
         $this->assertSame('cache enabled', $engine->execute('cache', ['action' => 'enable']));
 
         // crear tabla y datos via raw
-        $engine->execute('raw', ['query' => 'CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)', 'bindings' => []]);
+        $engine->execute('raw', [
+            'query' => 'CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)',
+            'bindings' => [],
+        ]);
         $engine->execute('raw', ['query' => "INSERT INTO users (name) VALUES ('Alice')", 'bindings' => []]);
 
         // primera lectura (llenará la cache)
@@ -38,7 +41,9 @@ final class PdoEngineReflectionTest extends TestCase
         $this->assertTrue($stats['enabled']);
 
         // invalidate without criteria on sqlite debe devolver mensaje benigno
-        $this->assertSame('cache invalidation skipped (no criteria)', $engine->execute('cache', ['action' => 'invalidate']));
+        $this->assertSame('cache invalidation skipped (no criteria)', $engine->execute('cache', [
+            'action' => 'invalidate',
+        ]));
 
         // clear cache
         $this->assertSame('cache cleared', $engine->execute('cache', ['action' => 'clear']));

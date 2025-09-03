@@ -80,7 +80,7 @@
                             <option value="<?php echo $user['id']; ?>">
                                 <?php echo htmlspecialchars($user['name']); ?> (<?php echo
                                     htmlspecialchars($user['email'])
-                            ; ?>)
+                                ; ?>)
                             </option>
                         <?php } ?>
                     </select>
@@ -131,11 +131,11 @@
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
                                     <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo
-                                    htmlspecialchars($label['color'])
-                            ; ?>"></div>
+                                        htmlspecialchars($label['color'])
+                                    ; ?>"></div>
                                     <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo
-                                htmlspecialchars($label['name'])
-                            ; ?></span>
+                                        htmlspecialchars($label['name'])
+                                    ; ?></span>
                                 </div>
                             </label>
                         <?php } ?>

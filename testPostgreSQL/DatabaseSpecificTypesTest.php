@@ -105,15 +105,19 @@ class DatabaseSpecificTypesTest extends TestCase
             return;
         }
         // Crear tabla con tipos específicos de PostgreSQL
-        self::$orm->schemaCreate('test_postgresql_types', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'uuid', 'type' => 'UUID'],
-            ['name' => 'data', 'type' => 'JSONB'],
-            ['name' => 'ip_address', 'type' => 'INET'],
-            ['name' => 'text_array', 'type' => 'TEXT[]'],
-            ['name' => 'network', 'type' => 'CIDR'],
-            ['name' => 'mac_address', 'type' => 'MACADDR'],
-        ], ['if_not_exists' => true]);
+        self::$orm->schemaCreate(
+            'test_postgresql_types',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'uuid', 'type' => 'UUID'],
+                ['name' => 'data', 'type' => 'JSONB'],
+                ['name' => 'ip_address', 'type' => 'INET'],
+                ['name' => 'text_array', 'type' => 'TEXT[]'],
+                ['name' => 'network', 'type' => 'CIDR'],
+                ['name' => 'mac_address', 'type' => 'MACADDR'],
+            ],
+            ['if_not_exists' => true],
+        );
         $model = new VersaModel('test_postgresql_types', self::$orm);
 
         // Test UUID
@@ -213,10 +217,14 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_binary_data_handling(): void
     {
         // Crear tabla para binarios
-        self::$orm->schemaCreate('test_binary', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'binary_field', 'type' => 'TEXT'],
-        ], ['if_not_exists' => true]);
+        self::$orm->schemaCreate(
+            'test_binary',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'binary_field', 'type' => 'TEXT'],
+            ],
+            ['if_not_exists' => true],
+        );
         $model = new VersaModel('test_binary', self::$orm);
 
         // Test Base64 encoding/decoding
@@ -233,10 +241,14 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_complex_type_mapping(): void
     {
         // Crear tabla para mapeo complejo
-        self::$orm->schemaCreate('test_complex_mapping', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'complex_data', 'type' => 'JSONB'],
-        ], ['if_not_exists' => true]);
+        self::$orm->schemaCreate(
+            'test_complex_mapping',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'complex_data', 'type' => 'JSONB'],
+            ],
+            ['if_not_exists' => true],
+        );
         $model = new VersaModel('test_complex_mapping', self::$orm);
 
         // Test mapeo de tipo complejo con configuración personalizada
@@ -264,7 +276,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_type_validation_errors(): void
     {
         // Crear un modelo de prueba con tipos definidos
-        $testModel = new class ('test_validation', self::$orm) extends VersaModel {
+        $testModel = new class('test_validation', self::$orm) extends VersaModel {
             public static function getPropertyTypes(): array
             {
                 return [

@@ -39,6 +39,10 @@ class PdoEngineAdvancedTest extends TestCase
         $cfg = ['driver' => 'sqlite', 'database' => ':memory:'];
         $e = new PdoEngine($cfg);
 
-        $e->execute('advanced_sql', ['operation_type' => 'set_operation', 'set_type' => 'UNION', 'queries' => [['sql' => 'SELECT 1']]]);
+        $e->execute('advanced_sql', [
+            'operation_type' => 'set_operation',
+            'set_type' => 'UNION',
+            'queries' => [['sql' => 'SELECT 1']],
+        ]);
     }
 }

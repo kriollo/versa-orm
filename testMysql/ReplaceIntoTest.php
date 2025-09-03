@@ -254,9 +254,7 @@ class ReplaceIntoTest extends TestCase
         $executionTime = $endTime - $startTime;
 
         // Verificar que todas las operaciones fueron exitosas
-        $count = self::$orm->table('products')
-            ->where('sku', 'LIKE', 'REPLACE-PERF-%')
-            ->count();
+        $count = self::$orm->table('products')->where('sku', 'LIKE', 'REPLACE-PERF-%')->count();
 
         self::assertSame(20, $count);
 

@@ -33,7 +33,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_with_required_fields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance', 'bio', 'is_active'];
 
             protected function getTableValidationSchema(): array
@@ -76,7 +76,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_fails_on_required_fields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email', 'age', 'balance'];
 
             protected function getTableValidationSchema(): array
@@ -107,7 +107,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_max_length(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -132,7 +132,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_data_types(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['age', 'balance'];
 
             protected function getTableValidationSchema(): array
@@ -175,7 +175,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_with_nullable_fields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'age', 'bio'];
 
             protected function getTableValidationSchema(): array
@@ -209,7 +209,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_fallback_to_basic(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array
@@ -228,7 +228,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_with_custom_rules(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
@@ -265,7 +265,7 @@ class ValidationSchemaTest extends TestCase
 
     public function test_schema_validation_missing_required_fields(): void
     {
-        $model = new class ('test_validation_schema', self::$orm) extends VersaModel {
+        $model = new class('test_validation_schema', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected function getTableValidationSchema(): array

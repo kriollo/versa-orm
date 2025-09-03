@@ -13,7 +13,7 @@ final class EventDispatcherTest extends TestCase
         $called = [];
 
         // Stub implementation in-place
-        $dispatcher = new class ($called) implements EventDispatcher {
+        $dispatcher = new class($called) implements EventDispatcher {
             private $listeners = [];
 
             private $calledRef;

@@ -14,7 +14,7 @@ require_once __DIR__ . '/bootstrap.php';
  */
 class TestCase extends BaseTestCase
 {
-    public static ?VersaORM $orm = null;
+    public static null|VersaORM $orm = null;
 
     private static bool $schemaCreated = false;
 
@@ -85,98 +85,124 @@ class TestCase extends BaseTestCase
         if ($config['DB']['DB_DRIVER'] === 'mysql') {
             // Desactivar checks durante la creación para evitar problemas de orden
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
-            self::$orm->exec('SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";');
+            self::$orm->exec(
+                'SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";',
+            );
         }
 
-        self::$orm->schemaCreate('users', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false, 'default' => ''],
-            ['name' => 'status', 'type' => 'VARCHAR(50)'],
-            ['name' => 'created_at', 'type' => 'TIMESTAMP', 'default' => 'CURRENT_TIMESTAMP'],
-        ], [
-            'engine' => 'InnoDB',
-            'constraints' => [
-                'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+        self::$orm->schemaCreate(
+            'users',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false, 'default' => ''],
+                ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                ['name' => 'created_at', 'type' => 'TIMESTAMP', 'default' => 'CURRENT_TIMESTAMP'],
             ],
-        ]);
-
-        self::$orm->schemaCreate('profiles', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'user_id', 'type' => 'INT'],
-            ['name' => 'bio', 'type' => 'TEXT'],
-        ], [
-            'engine' => 'InnoDB',
-            'constraints' => [
-                'foreign' => [[
-                    'name' => 'fk_profiles_users',
-                    'columns' => ['user_id'],
-                    'refTable' => 'users',
-                    'refColumns' => ['id'],
-                    'onDelete' => 'cascade',
-                ]],
+            [
+                'engine' => 'InnoDB',
+                'constraints' => [
+                    'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+                ],
             ],
-        ]);
+        );
 
-        self::$orm->schemaCreate('posts', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'user_id', 'type' => 'INT'],
-            ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ['name' => 'content', 'type' => 'TEXT'],
-            ['name' => 'published_at', 'type' => 'DATETIME'],
-            ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
-        ], [
-            'engine' => 'InnoDB',
-            'constraints' => [
-                'foreign' => [[
-                    'name' => 'fk_posts_users',
-                    'columns' => ['user_id'],
-                    'refTable' => 'users',
-                    'refColumns' => ['id'],
-                    'onDelete' => 'cascade',
-                ]],
+        self::$orm->schemaCreate(
+            'profiles',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'bio', 'type' => 'TEXT'],
             ],
-        ]);
-
-        self::$orm->schemaCreate('roles', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-        ], ['engine' => 'InnoDB']);
-
-        self::$orm->schemaCreate('role_user', [
-            ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
-            ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
-        ], [
-            'engine' => 'InnoDB',
-            'primary_key' => ['user_id', 'role_id'],
-            'constraints' => [
-                'foreign' => [
-                    [
-                        'name' => 'fk_ru_user',
+            [
+                'engine' => 'InnoDB',
+                'constraints' => [
+                    'foreign' => [[
+                        'name' => 'fk_profiles_users',
                         'columns' => ['user_id'],
                         'refTable' => 'users',
                         'refColumns' => ['id'],
                         'onDelete' => 'cascade',
-                    ],
-                    [
-                        'name' => 'fk_ru_role',
-                        'columns' => ['role_id'],
-                        'refTable' => 'roles',
+                    ]],
+                ],
+            ],
+        );
+
+        self::$orm->schemaCreate(
+            'posts',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'content', 'type' => 'TEXT'],
+                ['name' => 'published_at', 'type' => 'DATETIME'],
+                ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
+            ],
+            [
+                'engine' => 'InnoDB',
+                'constraints' => [
+                    'foreign' => [[
+                        'name' => 'fk_posts_users',
+                        'columns' => ['user_id'],
+                        'refTable' => 'users',
                         'refColumns' => ['id'],
                         'onDelete' => 'cascade',
+                    ]],
+                ],
+            ],
+        );
+
+        self::$orm->schemaCreate(
+            'roles',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+            ],
+            ['engine' => 'InnoDB'],
+        );
+
+        self::$orm->schemaCreate(
+            'role_user',
+            [
+                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+            ],
+            [
+                'engine' => 'InnoDB',
+                'primary_key' => ['user_id', 'role_id'],
+                'constraints' => [
+                    'foreign' => [
+                        [
+                            'name' => 'fk_ru_user',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ],
+                        [
+                            'name' => 'fk_ru_role',
+                            'columns' => ['role_id'],
+                            'refTable' => 'roles',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ],
                     ],
                 ],
             ],
-        ]);
+        );
 
-        self::$orm->schemaCreate('products', [
-            ['name' => 'sku', 'type' => 'VARCHAR(50)', 'primary' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
-            ['name' => 'stock', 'type' => 'INT', 'default' => 0],
-            ['name' => 'description', 'type' => 'TEXT'],
-            ['name' => 'category', 'type' => 'VARCHAR(100)'],
-        ], ['engine' => 'InnoDB']);
+        self::$orm->schemaCreate(
+            'products',
+            [
+                ['name' => 'sku', 'type' => 'VARCHAR(50)', 'primary' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
+                ['name' => 'stock', 'type' => 'INT', 'default' => 0],
+                ['name' => 'description', 'type' => 'TEXT'],
+                ['name' => 'category', 'type' => 'VARCHAR(100)'],
+            ],
+            ['engine' => 'InnoDB'],
+        );
 
         if ($config['DB']['DB_DRIVER'] === 'mysql') {
             // Reactivar checks una vez creado todo
@@ -210,10 +236,14 @@ class TestCase extends BaseTestCase
         // Seed users (omitir ID, dejar que SQLite asigne automáticamente)
         self::$orm->table('users')->insert(['name' => 'Alice', 'email' => 'alice@example.com', 'status' => 'active']);
         self::$orm->table('users')->insert(['name' => 'Bob', 'email' => 'bob@example.com', 'status' => 'inactive']);
-        self::$orm->table('users')->insert(['name' => 'Charlie', 'email' => 'charlie@example.com', 'status' => 'active']);
+        self::$orm
+            ->table('users')
+            ->insert(['name' => 'Charlie', 'email' => 'charlie@example.com', 'status' => 'active']);
 
         // Seed posts (usar IDs 1, 2, 3 como user_id)
-        self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Alice Post 1', 'content' => 'Content 1', 'published' => true]);
+        self::$orm
+            ->table('posts')
+            ->insert(['user_id' => 1, 'title' => 'Alice Post 1', 'content' => 'Content 1', 'published' => true]);
         self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Alice Post 2', 'content' => 'Content 2']);
         self::$orm->table('posts')->insert(['user_id' => 2, 'title' => 'Bob Post 1', 'content' => 'Content 3']);
 

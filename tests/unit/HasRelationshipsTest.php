@@ -9,16 +9,14 @@ use VersaORM\VersaModel;
 // Dummy model that uses HasRelationships via VersaModel methods
 class DummyRelationModel extends VersaModel
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     // create a dummy relation method that returns a Relation-like object
     public function fakeRelation(): Relation
     {
         $qb = $this->newQuery();
 
-        return new class ($qb, $this) extends Relation {
+        return new class($qb, $this) extends Relation {
             public function getResults(): mixed
             {
                 return ['a'];

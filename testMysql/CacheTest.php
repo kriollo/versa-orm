@@ -14,7 +14,7 @@ use function count;
  */
 class CacheTest extends TestCase
 {
-    public static ?VersaORM $orm = null;
+    public static null|VersaORM $orm = null;
 
     public static function setUpBeforeClass(): void
     {
@@ -126,11 +126,13 @@ class CacheTest extends TestCase
         $initialCount = count($initialUsers);
 
         // Insertar un nuevo usuario (esto debería invalidar el caché)
-        self::$orm->table('users')->insert([
-            'name' => 'Cache Test User',
-            'email' => 'cache.test@example.com',
-            'status' => 'active',
-        ]);
+        self::$orm
+            ->table('users')
+            ->insert([
+                'name' => 'Cache Test User',
+                'email' => 'cache.test@example.com',
+                'status' => 'active',
+            ]);
 
         // Consultar de nuevo (debería ir a la base de datos, no al caché)
         $updatedUsers = self::$orm->table('users')->get();
@@ -154,9 +156,7 @@ class CacheTest extends TestCase
         $originalStatus = $user->status ?? 'active';
 
         // Actualizar el usuario (esto debería invalidar el caché)
-        self::$orm->table('users')
-            ->where('email', '=', 'alice@example.com')
-            ->update(['status' => 'updated_test']);
+        self::$orm->table('users')->where('email', '=', 'alice@example.com')->update(['status' => 'updated_test']);
 
         // Consultar de nuevo (debería ir a la base de datos)
         $updatedUser = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
@@ -164,19 +164,19 @@ class CacheTest extends TestCase
         self::assertSame('updated_test', $updatedUser->status);
 
         // Restaurar el estado original
-        self::$orm->table('users')
-            ->where('email', '=', 'alice@example.com')
-            ->update(['status' => $originalStatus]);
+        self::$orm->table('users')->where('email', '=', 'alice@example.com')->update(['status' => $originalStatus]);
     }
 
     public function test_cache_invalidation_after_delete(): void
     {
         // Crear un usuario de prueba
-        self::$orm->table('users')->insert([
-            'name' => 'Delete Test User',
-            'email' => 'delete.test@example.com',
-            'status' => 'active',
-        ]);
+        self::$orm
+            ->table('users')
+            ->insert([
+                'name' => 'Delete Test User',
+                'email' => 'delete.test@example.com',
+                'status' => 'active',
+            ]);
 
         // Limpiar y habilitar caché
         self::$orm->cache('clear');

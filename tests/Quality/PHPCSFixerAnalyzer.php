@@ -20,7 +20,7 @@ class PHPCSFixerAnalyzer
     private string $phpcsFixerPath;
 
     public function __construct(
-        ?string $phpcsFixerPath = null,
+        null|string $phpcsFixerPath = null,
         private string $configPath = '.php-cs-fixer.dist.php',
         private string $reportsDir = 'tests/reports/php-cs-fixer',
     ) {
@@ -31,7 +31,7 @@ class PHPCSFixerAnalyzer
 
         $this->phpcsFixerPath = $phpcsFixerPath;
 
-        if (! is_dir($this->reportsDir)) {
+        if (!is_dir($this->reportsDir)) {
             mkdir($this->reportsDir, 0755, true);
         }
     }
@@ -62,7 +62,7 @@ class PHPCSFixerAnalyzer
             'dry_run' => $dryRun,
             'output' => implode("\n", $output),
             'report_file' => $reportFile,
-            'passed' => $dryRun ? ($returnCode === 0 || $returnCode === 8) : $returnCode === 0,
+            'passed' => $dryRun ? $returnCode === 0 || $returnCode === 8 : $returnCode === 0,
             'files_processed' => 0,
             'files_fixed' => 0,
             'violations' => [],
@@ -116,9 +116,7 @@ class PHPCSFixerAnalyzer
         $metrics['total_violations'] = $violationCount;
 
         if ($result['files_processed'] > 0) {
-            $metrics['files_with_violations'] = count(array_unique(
-                array_column($result['violations'], 'file'),
-            ));
+            $metrics['files_with_violations'] = count(array_unique(array_column($result['violations'], 'file')));
 
             // Calculate quality score (100 - violation_density)
             $violationDensity = ($violationCount / $result['files_processed']) * 10;
@@ -129,7 +127,7 @@ class PHPCSFixerAnalyzer
         foreach ($result['violations'] as $violation) {
             $rule = $violation['rule'] ?? 'unknown';
 
-            if (! isset($metrics['violation_types'][$rule])) {
+            if (!isset($metrics['violation_types'][$rule])) {
                 $metrics['violation_types'][$rule] = 0;
             }
             $metrics['violation_types'][$rule]++;
@@ -143,7 +141,7 @@ class PHPCSFixerAnalyzer
      */
     public function validateConfig(): array
     {
-        if (! file_exists($this->configPath)) {
+        if (!file_exists($this->configPath)) {
             return [
                 'valid' => false,
                 'error' => 'Configuration file not found: ' . $this->configPath,
@@ -154,7 +152,7 @@ class PHPCSFixerAnalyzer
         try {
             $config = include $this->configPath;
 
-            if (! $config instanceof Config) {
+            if (!$config instanceof Config) {
                 return [
                     'valid' => false,
                     'error' => 'Configuration file does not return a PhpCsFixer\Config instance',
@@ -181,7 +179,8 @@ class PHPCSFixerAnalyzer
     public function createPreCommitHook(): array
     {
         $hookPath = '.git/hooks/pre-commit';
-        $hookContent = '#!/bin/sh
+        $hookContent =
+            '#!/bin/sh
 # PHP-CS-Fixer pre-commit hook
 
 echo "Running PHP-CS-Fixer..."
@@ -195,11 +194,19 @@ if [ -z "$STAGED_FILES" ]; then
 fi
 
 # Run PHP-CS-Fixer on staged files
-' . $this->phpcsFixerPath . ' fix --config=' . $this->configPath . ' --dry-run --diff --verbose
+'
+            . $this->phpcsFixerPath
+            . ' fix --config='
+            . $this->configPath
+            . ' --dry-run --diff --verbose
 
 if [ $? -ne 0 ]; then
     echo "PHP-CS-Fixer found style violations. Please run:"
-    echo "  ' . $this->phpcsFixerPath . ' fix --config=' . $this->configPath . '"
+    echo "  '
+            . $this->phpcsFixerPath
+            . ' fix --config='
+            . $this->configPath
+            . '"
     echo "Then add the fixed files and commit again."
     exit 1
 fi
@@ -212,7 +219,7 @@ exit 0
             // Create .git/hooks directory if it doesn't exist
             $hooksDir = dirname($hookPath);
 
-            if (! is_dir($hooksDir)) {
+            if (!is_dir($hooksDir)) {
                 mkdir($hooksDir, 0755, true);
             }
 
@@ -237,7 +244,8 @@ exit 0
      */
     public function generateHTMLReport(array $analysisResult): string
     {
-        $html = '<!DOCTYPE html>
+        $html =
+            '<!DOCTYPE html>
 <html>
 <head>
     <title>PHP-CS-Fixer Analysis Report</title>
@@ -260,53 +268,82 @@ exit 0
 <body>
     <div class="header">
         <h1>PHP-CS-Fixer Analysis Report</h1>
-        <p><strong>Timestamp:</strong> ' . $analysisResult['timestamp'] . '</p>
-        <p><strong>Execution Time:</strong> ' . number_format($analysisResult['execution_time'], 2) . 's</p>
-        <p><strong>Mode:</strong> ' . ($analysisResult['dry_run'] ? 'Check Only' : 'Fix Mode') . '</p>
-        <p><strong>Status:</strong> <span class="' . ($analysisResult['passed'] ? 'passed' : 'failed') . '">' .
-            ($analysisResult['passed'] ? 'PASSED' : 'FAILED') . '</span></p>
+        <p><strong>Timestamp:</strong> '
+            . $analysisResult['timestamp']
+            . '</p>
+        <p><strong>Execution Time:</strong> '
+            . number_format($analysisResult['execution_time'], 2)
+            . 's</p>
+        <p><strong>Mode:</strong> '
+            . ($analysisResult['dry_run'] ? 'Check Only' : 'Fix Mode')
+            . '</p>
+        <p><strong>Status:</strong> <span class="'
+            . ($analysisResult['passed'] ? 'passed' : 'failed')
+            . '">'
+            . ($analysisResult['passed'] ? 'PASSED' : 'FAILED')
+            . '</span></p>
     </div>
 
     <div class="stats">
         <div class="stat">
-            <div class="stat-number">' . $analysisResult['files_processed'] . '</div>
+            <div class="stat-number">'
+            . $analysisResult['files_processed']
+            . '</div>
             <div class="stat-label">Files Processed</div>
         </div>
         <div class="stat">
-            <div class="stat-number">' . $analysisResult['files_fixed'] . '</div>
+            <div class="stat-number">'
+            . $analysisResult['files_fixed']
+            . '</div>
             <div class="stat-label">Files Fixed</div>
         </div>
         <div class="stat">
-            <div class="stat-number">' . count($analysisResult['violations']) . '</div>
+            <div class="stat-number">'
+            . count($analysisResult['violations'])
+            . '</div>
             <div class="stat-label">Violations Found</div>
         </div>
     </div>';
 
-        if (! empty($analysisResult['violations'])) {
+        if (!empty($analysisResult['violations'])) {
             $html .= '<div class="section">
                 <h2>Style Violations</h2>';
 
             foreach ($analysisResult['violations'] as $violation) {
-                $html .= '<div class="violation">
-                    <div class="file-path">' . htmlspecialchars($violation['file']) . '</div>
-                    <div><span class="rule-name">' . htmlspecialchars($violation['rule']) . '</span>: ' .
-                    htmlspecialchars($violation['message']) . '</div>
+                $html .=
+                    '<div class="violation">
+                    <div class="file-path">'
+                    . htmlspecialchars($violation['file'])
+                    . '</div>
+                    <div><span class="rule-name">'
+                    . htmlspecialchars($violation['rule'])
+                    . '</span>: '
+                    . htmlspecialchars($violation['message'])
+                    . '</div>
                 </div>';
             }
             $html .= '</div>';
         }
 
-        return $html . ('<div class="section">
+        return (
+            $html . (
+                '<div class="section">
             <h2>Full Output</h2>
-            <pre>' . htmlspecialchars($analysisResult['output']) . '</pre>
+            <pre>'
+                . htmlspecialchars($analysisResult['output'])
+                . '</pre>
         </div>
 
         <div class="section">
             <h2>Command Executed</h2>
-            <pre>' . htmlspecialchars($analysisResult['command']) . '</pre>
+            <pre>'
+                . htmlspecialchars($analysisResult['command'])
+                . '</pre>
         </div>
     </body>
-</html>');
+</html>'
+            )
+        );
     }
 
     /**
@@ -338,7 +375,9 @@ exit 0
         }
 
         // Fallback to composer execution
-        return $isWindows ? 'php vendor\friendsofphp\php-cs-fixer\php-cs-fixer' : 'php vendor/friendsofphp/php-cs-fixer/php-cs-fixer';
+        return $isWindows
+            ? 'php vendor\friendsofphp\php-cs-fixer\php-cs-fixer'
+            : 'php vendor/friendsofphp/php-cs-fixer/php-cs-fixer';
     }
 
     /**
@@ -351,7 +390,7 @@ exit 0
 
         $output = shell_exec($testCommand);
 
-        return ! ($output === '' || $output === '0' || $output === false || $output === null);
+        return !($output === '' || $output === '0' || $output === false || $output === null);
     }
 
     /**
@@ -381,7 +420,7 @@ exit 0
         foreach ($allOptions as $key => $value) {
             if (is_bool($value) && $value) {
                 $command .= ' --' . ltrim($key, '-');
-            } elseif (! is_bool($value)) {
+            } elseif (!is_bool($value)) {
                 $command .= ' --' . ltrim($key, '-') . '=' . $value;
             }
         }

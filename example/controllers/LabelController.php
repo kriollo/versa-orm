@@ -14,7 +14,7 @@ class LabelController
             case 'labels':
                 $labels = models()->label()->all();
                 if ($labels !== []) {
-                    $labelIds = array_map(static fn ($l) => $l->id, $labels);
+                    $labelIds = array_map(static fn($l) => $l->id, $labels);
                     $countsRows = app()
                         ->orm()
                         ->table('task_labels')

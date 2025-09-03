@@ -30,7 +30,7 @@
                 <!-- Header del proyecto con color -->
                 <div class="h-24" style="background: linear-gradient(135deg, <?php echo
                     htmlspecialchars($project->color)
-            ; ?>, <?php echo htmlspecialchars($project->color); ?>80);">
+                ; ?>, <?php echo htmlspecialchars($project->color); ?>80);">
                     <div class="p-4 h-full flex items-end">
                         <h3 class="text-white font-bold text-lg truncate"><?php echo htmlspecialchars($project->name); ?></h3>
                     </div>
@@ -46,11 +46,11 @@
 
                     <!-- Estadísticas del proyecto -->
                     <?php
-                // Usar directamente el modelo de proyecto ya provisto (instancia), evitando llamadas estáticas
-                $tasks = $project->tasks()->findAll();
-            $members = $project->members()->findAll();
-            $completedTasks = array_filter($tasks, static fn ($t): bool => $t->status === 'done');
-            ?>
+                    // Usar directamente el modelo de proyecto ya provisto (instancia), evitando llamadas estáticas
+                    $tasks = $project->tasks()->findAll();
+                    $members = $project->members()->findAll();
+                    $completedTasks = array_filter($tasks, static fn($t): bool => $t->status === 'done');
+                    ?>
 
                     <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                         <div class="flex items-center space-x-4">
@@ -77,8 +77,8 @@
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo
-                            count($tasks) > 0 ? (count($completedTasks) / count($tasks)) * 100 : 0
-                        ; ?>%"></div>
+                                    count($tasks) > 0 ? (count($completedTasks) / count($tasks)) * 100 : 0
+                                ; ?>%"></div>
                             </div>
                         </div>
 
@@ -91,7 +91,7 @@
                             <div class="flex -space-x-2">
                                 <?php foreach (array_slice($members, 0, 3) as $member) { ?>
                                     <div class="avatar border-2 border-white dark:border-gray-800" style="background-color: <?php echo
-                                htmlspecialchars($member->avatar_color)
+                                        htmlspecialchars($member->avatar_color)
                                     ; ?>" title="<?php echo htmlspecialchars($member->name); ?>">
                                         <?php echo strtoupper(substr($member->name, 0, 2)); ?>
                                     </div>

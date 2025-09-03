@@ -15,7 +15,8 @@ final class QueryBuilderWhereVariationsTest extends TestCase
         $qb = new QueryBuilder(null, 'items');
 
         // Compose diverse where clauses
-        $qb->select(['id', 'sku'])
+        $qb
+            ->select(['id', 'sku'])
             ->where('id', '>', 10)
             ->orWhere('sku', 'LIKE', 'ABC%')
             ->whereIn('id', [11, 12, 13])

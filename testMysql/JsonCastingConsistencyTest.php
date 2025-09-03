@@ -23,12 +23,14 @@ class JsonCastingConsistencyTest extends TestCase
             ['name' => 'name', 'type' => 'VARCHAR(50)', 'nullable' => false],
             ['name' => 'settings', 'type' => 'TEXT', 'nullable' => false],
         ]);
-        self::$orm->table('configs_json_cast')->insert(['name' => 'conf_a', 'settings' => '{"theme":"dark","lang":"es"}']);
+        self::$orm
+            ->table('configs_json_cast')
+            ->insert(['name' => 'conf_a', 'settings' => '{"theme":"dark","lang":"es"}']);
     }
 
     public function test_json_casting_consistency(): void
     {
-        $model = new class ('configs_json_cast', self::$orm) extends VersaModel {
+        $model = new class('configs_json_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [

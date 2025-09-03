@@ -199,7 +199,7 @@ class AdvancedTypeMappingTest extends TestCase
             // php handler: cents (int) -> float
             function ($s, $p, $v, $_ = []) {
                 if (is_int($v) || ctype_digit((string) $v)) {
-                    return ((int) $v) / 100.0;
+                    return (int) $v / 100.0;
                 }
 
                 if (is_string($v) && preg_match('/^\d+(?:\.\d+)?$/', $v)) {
@@ -215,7 +215,7 @@ class AdvancedTypeMappingTest extends TestCase
         );
 
         // Definir un modelo de prueba con propertyTypes
-        $modelClass = new class ('money_table', $orm) extends \VersaORM\VersaModel {
+        $modelClass = new class('money_table', $orm) extends \VersaORM\VersaModel {
             public static function propertyTypes(): array
             {
                 return ['amount' => ['type' => 'money']];
@@ -242,7 +242,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame('America/Mexico_City', $orm->getTimezone());
 
         // Definir un modelo con propertyTypes para forzar cast a datetime
-        $modelClass = new class ('tz_table', $orm) extends \VersaORM\VersaModel {
+        $modelClass = new class('tz_table', $orm) extends \VersaORM\VersaModel {
             public static function propertyTypes(): array
             {
                 return ['any' => ['type' => 'datetime']];

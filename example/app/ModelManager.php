@@ -17,8 +17,7 @@ class ModelManager
 {
     public function __construct(
         private VersaORM $orm,
-    ) {
-    }
+    ) {}
 
     public function project(): Project
     {

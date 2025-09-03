@@ -60,7 +60,7 @@
                     <div class="flex items-center space-x-4">
                         <div class="avatar-lg" style="background-color: <?php echo
                             htmlspecialchars($user->avatar_color)
-; ?>">
+                        ; ?>">
                             <?php echo strtoupper(substr($user->name, 0, 2)); ?>
                         </div>
 
@@ -104,13 +104,13 @@
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                     <div>
                         <strong>Creado:</strong> <?php echo
-    isset($user->created_at) ? safe_date_format($user->created_at, 'd/m/Y H:i') : 'N/A'
-; ?>
+                            isset($user->created_at) ? safe_date_format($user->created_at, 'd/m/Y H:i') : 'N/A'
+                        ; ?>
                     </div>
                     <div>
                         <strong>Actualizado:</strong> <?php echo
-    isset($user->updated_at) ? safe_date_format($user->updated_at, 'd/m/Y H:i') : 'N/A'
-; ?>
+                            isset($user->updated_at) ? safe_date_format($user->updated_at, 'd/m/Y H:i') : 'N/A'
+                        ; ?>
                     </div>
                 </div>
             </div>
@@ -119,8 +119,8 @@
             <div class="mt-8 flex items-center justify-between">
                 <button type="button"
                     onclick="if(confirm('¿Estás seguro de que quieres eliminar este usuario?')) { window.location.href = '?action=user_delete&id=<?php echo
-$user->id
-; ?>'; }"
+                        $user->id
+                    ; ?>'; }"
                     class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
                     <i class="fas fa-trash mr-2"></i>
                     Eliminar Usuario

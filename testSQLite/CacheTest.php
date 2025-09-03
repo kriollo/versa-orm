@@ -104,7 +104,9 @@ class CacheTest extends TestCase
         self::$orm->cache('enable');
 
         // Insert a test user
-        self::$orm->table('users')->insert(['name' => 'Delete Test', 'email' => 'delete@test.com', 'status' => 'active']);
+        self::$orm
+            ->table('users')
+            ->insert(['name' => 'Delete Test', 'email' => 'delete@test.com', 'status' => 'active']);
 
         // Verify user exists
         $user = self::$orm->table('users')->where('email', '=', 'delete@test.com')->findOne();

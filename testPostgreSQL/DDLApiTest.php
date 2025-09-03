@@ -20,13 +20,17 @@ class DDLApiTest extends TestCase
         $orm->schemaDrop('ddl_mvp_people');
 
         // 1) Create
-        $orm->schemaCreate('ddl_mvp_users', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
-            ['name' => 'active', 'type' => 'BOOLEAN', 'default' => true],
-        ], [
-            'if_not_exists' => true,
-        ]);
+        $orm->schemaCreate(
+            'ddl_mvp_users',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
+                ['name' => 'active', 'type' => 'BOOLEAN', 'default' => true],
+            ],
+            [
+                'if_not_exists' => true,
+            ],
+        );
 
         // Validar existencia por columns
         $cols = $orm->schema('columns', 'ddl_mvp_users');
@@ -40,19 +44,36 @@ class DDLApiTest extends TestCase
             ],
         ]);
         $cols2 = $orm->schema('columns', 'ddl_mvp_users');
-        $colNames2 = array_map(static fn ($c) => strtolower($c['name'] ?? ($c['column_name'] ?? ($c['Field'] ?? ''))), $cols2);
+        $colNames2 = array_map(
+            static fn($c) => strtolower($c['name'] ?? $c['column_name'] ?? $c['Field'] ?? ''),
+            $cols2,
+        );
         self::assertContains('email', $colNames2);
 
         // 3) Rename
         $orm->schemaRename('ddl_mvp_users', 'ddl_mvp_people');
         $tables = $orm->schema('tables');
         self::assertIsArray($tables);
-        self::assertTrue(in_array('ddl_mvp_people', array_map('strtolower', array_map(static fn ($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string) $t) : (string) $t, $tables)), true));
+        self::assertTrue(in_array(
+            'ddl_mvp_people',
+            array_map('strtolower', array_map(
+                static fn($t) => is_array($t) ? $t['table_name'] ?? $t['name'] ?? (string) $t : (string) $t,
+                $tables,
+            )),
+            true,
+        ));
 
         // 4) Drop
         $orm->schemaDrop('ddl_mvp_people');
         $tablesAfter = $orm->schema('tables');
-        self::assertFalse(in_array('ddl_mvp_people', array_map('strtolower', array_map(static fn ($t) => is_array($t) ? ($t['table_name'] ?? $t['name'] ?? (string) $t) : (string) $t, $tablesAfter)), true));
+        self::assertFalse(in_array(
+            'ddl_mvp_people',
+            array_map('strtolower', array_map(
+                static fn($t) => is_array($t) ? $t['table_name'] ?? $t['name'] ?? (string) $t : (string) $t,
+                $tablesAfter,
+            )),
+            true,
+        ));
     }
 
     public function test_freeze_blocks_ddl(): void

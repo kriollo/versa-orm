@@ -14,16 +14,16 @@ final class StoreHappyPathTest extends TestCase
     public function testStoreReturnsInsertedIdAndSetsAttribute(): void
     {
         // Crear un QueryBuilder falso que devuelva 123 como insertGetId
-        $fakeQb = new class (null, 'users', null) extends \VersaORM\QueryBuilder {
+        $fakeQb = new class(null, 'users', null) extends \VersaORM\QueryBuilder {
             public static bool $called = false;
 
-            public function __construct($orm, string $table, ?string $modelClass = null)
+            public function __construct($orm, string $table, null|string $modelClass = null)
             {
                 // llamar al padre con valores mínimos
                 parent::__construct($orm, $table, $modelClass);
             }
 
-            public function insertGetId(array $data): ?int
+            public function insertGetId(array $data): null|int
             {
                 self::$called = true;
                 file_put_contents(sys_get_temp_dir() . '/versa_store_spy.txt', "called\n", FILE_APPEND);
@@ -33,7 +33,7 @@ final class StoreHappyPathTest extends TestCase
 
             public function getModelInstance(): \VersaORM\VersaModel
             {
-                return new class ('users', null) extends VersaModel {
+                return new class('users', null) extends VersaModel {
                     public function getData(): array
                     {
                         return [];
@@ -48,7 +48,7 @@ final class StoreHappyPathTest extends TestCase
         };
 
         // Crear un VersaORM falso que devuelva el QueryBuilder falso (firma compatible)
-        $fakeOrm = new class ($fakeQb) extends VersaORM {
+        $fakeOrm = new class($fakeQb) extends VersaORM {
             private $qb;
 
             public function __construct($qb)
@@ -57,7 +57,7 @@ final class StoreHappyPathTest extends TestCase
                 $this->qb = $qb;
             }
 
-            public function table(string $table, ?string $modelClass = null): \VersaORM\QueryBuilder
+            public function table(string $table, null|string $modelClass = null): \VersaORM\QueryBuilder
             {
                 return $this->qb;
             }
@@ -71,7 +71,7 @@ final class StoreHappyPathTest extends TestCase
         // Registrar ORM global (no necesario si lo pasamos por instancia)
         VersaModel::setORM(null);
 
-        $m = new class ('users', $fakeOrm) extends VersaModel {
+        $m = new class('users', $fakeOrm) extends VersaModel {
             protected array $fillable = ['name'];
 
             public function validate(): array

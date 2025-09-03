@@ -34,7 +34,8 @@ class LazyQueryPlannerTest extends TestCase
 
     public function test_lazy_query_building(): void
     {
-        $query = self::$orm->table('users')
+        $query = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['id', 'name'])
             ->where('active', '=', true)
@@ -50,7 +51,8 @@ class LazyQueryPlannerTest extends TestCase
         // Crear datos de prueba
         self::$orm->exec("INSERT INTO users (name, email, status) VALUES ('Test User', 'test@example.com', 'active')");
 
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['name', 'email'])
             ->where('status', '=', 'active')
@@ -73,7 +75,8 @@ class LazyQueryPlannerTest extends TestCase
 
     public function test_explain_plan(): void
     {
-        $explanation = self::$orm->table('users')
+        $explanation = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['id', 'name'])
             ->where('status', '=', 'active')
@@ -94,7 +97,8 @@ class LazyQueryPlannerTest extends TestCase
             ('User 2', 'user2@example.com', 'active'),
             ('User 3', 'user3@example.com', 'inactive')");
 
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['users.id', 'users.name', 'users.email'])
             ->where('users.status', '=', 'active')
@@ -121,7 +125,8 @@ class LazyQueryPlannerTest extends TestCase
             (1, 'Post 2', 'Content 2'),
             (2, 'Post 3', 'Content 3')");
 
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['users.name', 'posts.title'])
             ->join('posts', 'users.id', '=', 'posts.user_id')
@@ -136,7 +141,8 @@ class LazyQueryPlannerTest extends TestCase
 
     public function test_query_optimization(): void
     {
-        $explanation = self::$orm->table('users')
+        $explanation = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['id'])
             ->where('status', '=', 'active')
@@ -157,20 +163,20 @@ class LazyQueryPlannerTest extends TestCase
         // Crear más datos de prueba para comparación
         for ($i = 1; $i <= 100; $i++) {
             self::$orm->exec("INSERT INTO users (name, email, status) VALUES
-                ('User {$i}', 'user{$i}@example.com', '" . (($i % 2 === 0) ? 'active' : 'inactive') . "')");
+                ('User {$i}', 'user{$i}@example.com', '"
+            . (($i % 2) === 0 ? 'active' : 'inactive')
+            . "')");
         }
 
         // Consulta normal
         $start = microtime(true);
-        $normalResults = self::$orm->table('users')
-            ->select(['id', 'name'])
-            ->where('status', '=', 'active')
-            ->get();
+        $normalResults = self::$orm->table('users')->select(['id', 'name'])->where('status', '=', 'active')->get();
         $normalTime = microtime(true) - $start;
 
         // Consulta lazy
         $start = microtime(true);
-        $lazyResults = self::$orm->table('users')
+        $lazyResults = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['id', 'name'])
             ->where('status', '=', 'active')
@@ -187,7 +193,8 @@ class LazyQueryPlannerTest extends TestCase
 
     public function test_lazy_query_with_complex_operations(): void
     {
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['users.name', 'COUNT(posts.id) as post_count'])
             ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
@@ -206,15 +213,13 @@ class LazyQueryPlannerTest extends TestCase
         $this->expectException(Exception::class);
 
         // Intentar usar una tabla que no existe
-        self::$orm->table('nonexistent_table')
-            ->lazy()
-            ->select(['id'])
-            ->collect();
+        self::$orm->table('nonexistent_table')->lazy()->select(['id'])->collect();
     }
 
     public function test_lazy_query_sql_generation(): void
     {
-        $explanation = self::$orm->table('users')
+        $explanation = self::$orm
+            ->table('users')
             ->lazy()
             ->select(['id', 'name', 'email'])
             ->where('status', '=', 'active')

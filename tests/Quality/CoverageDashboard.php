@@ -161,7 +161,10 @@ class CoverageDashboard
                 'coverage_alerts' => $coverageAlerts,
                 'feature_alerts' => $featureAlerts,
                 'total_alerts' => count($coverageAlerts) + count($featureAlerts),
-                'critical_alerts' => $this->countAlertsBySeverity(array_merge($coverageAlerts, $featureAlerts), 'critical'),
+                'critical_alerts' => $this->countAlertsBySeverity(
+                    array_merge($coverageAlerts, $featureAlerts),
+                    'critical',
+                ),
                 'high_alerts' => $this->countAlertsBySeverity(array_merge($coverageAlerts, $featureAlerts), 'high'),
             ];
         } catch (Exception $e) {
@@ -183,7 +186,7 @@ class CoverageDashboard
     {
         $cloverFile = "{$this->projectRoot}/tests/reports/coverage/{$engine}/clover.xml";
 
-        if (! file_exists($cloverFile)) {
+        if (!file_exists($cloverFile)) {
             throw new Exception("Coverage data not found for {$engine}");
         }
 
@@ -214,7 +217,7 @@ class CoverageDashboard
      */
     private function countAlertsBySeverity(array $alerts, string $severity): int
     {
-        return count(array_filter($alerts, static fn ($alert): bool => $alert['severity'] === $severity));
+        return count(array_filter($alerts, static fn($alert): bool => $alert['severity'] === $severity));
     }
 
     /**
@@ -227,7 +230,11 @@ class CoverageDashboard
         // Replace placeholders with actual data
         $html = str_replace('{{OVERALL_COVERAGE}}', (string) round($coverageData['overall']['coverage'], 1), $html);
         $html = str_replace('{{OVERALL_STATUS}}', $coverageData['overall']['coverage'] >= 95 ? 'PASS' : 'FAIL', $html);
-        $html = str_replace('{{OVERALL_STATUS_CLASS}}', $coverageData['overall']['coverage'] >= 95 ? 'success' : 'error', $html);
+        $html = str_replace(
+            '{{OVERALL_STATUS_CLASS}}',
+            $coverageData['overall']['coverage'] >= 95 ? 'success' : 'error',
+            $html,
+        );
         $html = str_replace('{{TOTAL_LINES}}', number_format($coverageData['overall']['total_lines']), $html);
         $html = str_replace('{{COVERED_LINES}}', number_format($coverageData['overall']['covered_lines']), $html);
         $html = str_replace('{{FILES_ANALYZED}}', number_format($coverageData['overall']['files_analyzed']), $html);
@@ -336,7 +343,7 @@ class CoverageDashboard
         $coverages = [];
 
         foreach ($coverageData['engines'] as $engine => $data) {
-            if (! isset($data['error'])) {
+            if (!isset($data['error'])) {
                 $engines[] = "'" . ucfirst($engine) . "'";
                 $coverages[] = $data['coverage'];
             }

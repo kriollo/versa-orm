@@ -193,7 +193,7 @@ class SchemaValidationTest extends TestCase
         self::assertNotEmpty($errors4);
         self::assertTrue(
             in_array('The name may not be greater than 255 characters.', $errors4, true)
-                || in_array('The name must be at least 255 characters.', $errors4, true),
+            || in_array('The name must be at least 255 characters.', $errors4, true),
         );
 
         // Test 5: Tipo de datos incorrecto

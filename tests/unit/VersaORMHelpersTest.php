@@ -37,19 +37,15 @@ final class VersaORMHelpersTest extends TestCase
     {
         $orm = new VersaORM([]);
 
-        $detailed = $this->invokePrivate(
-            $orm,
-            'buildDetailedErrorMessage',
-            [
-                'E_CODE',
-                'Connection refused',
-                ['detail' => 'socket error'],
-                '08001',
-                'raw',
-                'SELECT 1',
-                [1, 2],
-            ],
-        );
+        $detailed = $this->invokePrivate($orm, 'buildDetailedErrorMessage', [
+            'E_CODE',
+            'Connection refused',
+            ['detail' => 'socket error'],
+            '08001',
+            'raw',
+            'SELECT 1',
+            [1, 2],
+        ]);
 
         $this->assertStringContainsString('VersaORM Error [E_CODE]: Connection refused', $detailed);
         $this->assertStringContainsString('Query: SELECT 1', $detailed);
@@ -64,7 +60,7 @@ final class VersaORMHelpersTest extends TestCase
     public function testLogErrorWritesFileAndCleanOldLogsRemovesOld(): void
     {
         $tmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'versaorm_logs_' . uniqid();
-        if (! mkdir($tmp) && ! is_dir($tmp)) {
+        if (!mkdir($tmp) && !is_dir($tmp)) {
             $this->markTestSkipped('Could not create temp dir for logs');
         }
 

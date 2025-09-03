@@ -31,7 +31,11 @@ class QueryBuilderTest extends TestCase
 
     public function test_select_specific_columns(): void
     {
-        $user = self::$orm->table('users')->select(['id', 'name'])->where('email', '=', 'alice@example.com')->firstArray();
+        $user = self::$orm
+            ->table('users')
+            ->select(['id', 'name'])
+            ->where('email', '=', 'alice@example.com')
+            ->firstArray();
         self::assertCount(2, $user);
         self::assertArrayHasKey('id', $user);
         self::assertArrayHasKey('name', $user);
@@ -116,7 +120,9 @@ class QueryBuilderTest extends TestCase
 
     public function test_where_null(): void
     {
-        self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Draft Post', 'content' => '...', 'published_at' => null]);
+        self::$orm
+            ->table('posts')
+            ->insert(['user_id' => 1, 'title' => 'Draft Post', 'content' => '...', 'published_at' => null]);
         $posts = self::$orm->table('posts')->whereNull('published_at')->findAll();
         self::assertCount(4, $posts);
     }
@@ -138,7 +144,7 @@ class QueryBuilderTest extends TestCase
     public function test_where_not_between(): void
     {
         $products = self::$orm->table('products')->whereNotBetween('price', 20, 30)->findAll();
-        $names = array_map(fn ($p) => $p->name, $products);
+        $names = array_map(fn($p) => $p->name, $products);
         self::assertContains('Keyboard', $names);
         self::assertContains('Monitor', $names);
         self::assertNotContains('Mouse', $names);
@@ -154,7 +160,8 @@ class QueryBuilderTest extends TestCase
     // JOIN Clauses
     public function test_join(): void
     {
-        $posts = self::$orm->table('posts')
+        $posts = self::$orm
+            ->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('users.status', '=', 'active')
@@ -167,7 +174,8 @@ class QueryBuilderTest extends TestCase
     public function test_left_join(): void
     {
         self::$orm->table('users')->insert(['name' => 'Eve', 'email' => 'eve@example.com']);
-        $users = self::$orm->table('users')
+        $users = self::$orm
+            ->table('users')
             ->select(['users.name', 'posts.id as post_id'])
             ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
             ->whereNull('posts.id')
@@ -201,7 +209,8 @@ class QueryBuilderTest extends TestCase
 
     public function test_group_by(): void
     {
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
             ->orderBy('status', 'asc')
@@ -216,7 +225,8 @@ class QueryBuilderTest extends TestCase
 
     public function test_group_by_multiple_columns(): void
     {
-        $results = self::$orm->table('posts')
+        $results = self::$orm
+            ->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy(['user_id'])
             ->orderBy('user_id', 'asc')
@@ -231,7 +241,8 @@ class QueryBuilderTest extends TestCase
 
     public function test_having(): void
     {
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
             ->having('COUNT(*)', '>', 1)
@@ -244,7 +255,8 @@ class QueryBuilderTest extends TestCase
 
     public function test_having_multiple_conditions(): void
     {
-        $results = self::$orm->table('users')
+        $results = self::$orm
+            ->table('users')
             ->select(['status', 'COUNT(*) as count'])
             ->groupBy('status')
             ->having('COUNT(*)', '>=', 1)
@@ -260,11 +272,13 @@ class QueryBuilderTest extends TestCase
     // Write Operations
     public function test_insert(): void
     {
-        self::$orm->table('users')->insert([
-            'name' => 'Frank',
-            'email' => 'frank@example.com',
-            'status' => 'active',
-        ]);
+        self::$orm
+            ->table('users')
+            ->insert([
+                'name' => 'Frank',
+                'email' => 'frank@example.com',
+                'status' => 'active',
+            ]);
 
         $frank = self::$orm->table('users')->where('email', '=', 'frank@example.com')->findOne();
         self::assertNotNull($frank);
@@ -273,11 +287,13 @@ class QueryBuilderTest extends TestCase
 
     public function test_insert_get_id(): void
     {
-        $id = self::$orm->table('users')->insertGetId([
-            'name' => 'Grace',
-            'email' => 'grace@example.com',
-            'status' => 'active',
-        ]);
+        $id = self::$orm
+            ->table('users')
+            ->insertGetId([
+                'name' => 'Grace',
+                'email' => 'grace@example.com',
+                'status' => 'active',
+            ]);
 
         // Verificar que el ID devuelto es un entero, no un string
         self::assertIsInt($id, 'insertGetId() should return an integer');
@@ -291,7 +307,8 @@ class QueryBuilderTest extends TestCase
 
     public function test_update(): void
     {
-        $updated = self::$orm->table('users')
+        $updated = self::$orm
+            ->table('users')
             ->where('email', '=', 'alice@example.com')
             ->update(['status' => 'on_vacation']);
 
@@ -303,9 +320,7 @@ class QueryBuilderTest extends TestCase
 
     public function test_delete(): void
     {
-        $deleted = self::$orm->table('users')
-            ->where('email', '=', 'bob@example.com')
-            ->delete();
+        $deleted = self::$orm->table('users')->where('email', '=', 'bob@example.com')->delete();
 
         self::assertNull($deleted);
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
@@ -318,7 +333,8 @@ class QueryBuilderTest extends TestCase
 
     public function test_from_union_derived_table(): void
     {
-        $rows = self::$orm->table('posts')
+        $rows = self::$orm
+            ->table('posts')
             ->fromUnion([
                 function (QueryBuilder $q): void {
                     $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
@@ -340,15 +356,20 @@ class QueryBuilderTest extends TestCase
 
     public function test_from_union_all_duplicates(): void
     {
-        $rows = self::$orm->table('posts')
-            ->fromUnion([
-                function (QueryBuilder $q): void {
-                    $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
-                },
-                function (QueryBuilder $q): void {
-                    $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
-                },
-            ], 'pu', true)
+        $rows = self::$orm
+            ->table('posts')
+            ->fromUnion(
+                [
+                    function (QueryBuilder $q): void {
+                        $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
+                    },
+                    function (QueryBuilder $q): void {
+                        $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
+                    },
+                ],
+                'pu',
+                true,
+            )
             ->select(['pu.id', 'pu.user_id', 'pu.title'])
             ->orderBy('pu.id', 'asc')
             ->getAll();

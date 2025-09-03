@@ -15,7 +15,7 @@ final class UpsertHappyPathTest extends TestCase
     {
         // (No instanciamos la clase anónima aquí; la crearemos dentro de fakeOrm->table())
 
-        $fakeOrm = new class () extends VersaORM {
+        $fakeOrm = new class() extends VersaORM {
             public function __construct()
             {
                 parent::__construct([]);
@@ -32,15 +32,15 @@ final class UpsertHappyPathTest extends TestCase
                 return true;
             }
 
-            public function table(string $table, ?string $modelClass = null): \VersaORM\QueryBuilder
+            public function table(string $table, null|string $modelClass = null): \VersaORM\QueryBuilder
             {
-                return new class ($this, $table, $modelClass) extends \VersaORM\QueryBuilder {
+                return new class($this, $table, $modelClass) extends \VersaORM\QueryBuilder {
                     public function upsert(array $attributes, array $uniqueKeys, array $updateColumns = []): array
                     {
                         return ['operation' => 'inserted_or_updated'];
                     }
 
-                    public function firstArray(): ?array
+                    public function firstArray(): null|array
                     {
                         return ['id' => 555];
                     }
@@ -53,7 +53,7 @@ final class UpsertHappyPathTest extends TestCase
             }
         };
 
-        $m = new class ('users', $fakeOrm) extends VersaModel {
+        $m = new class('users', $fakeOrm) extends VersaModel {
             protected array $fillable = ['email'];
 
             public function validate(): array

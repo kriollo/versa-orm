@@ -22,6 +22,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 {
     /** @var array<string, mixed> */
     protected static array $config;
+
     // ======================================================================
     // REPLACE INTO TESTS (MySQL específico)
     // ======================================================================
@@ -118,10 +119,12 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid or malicious column name detected');
 
-        self::$orm->table('products')->replaceInto([
-            'sku; DROP TABLE products; --' => 'malicious',
-            'name' => 'Test Product',
-        ]);
+        self::$orm
+            ->table('products')
+            ->replaceInto([
+                'sku; DROP TABLE products; --' => 'malicious',
+                'name' => 'Test Product',
+            ]);
     }
 
     // ======================================================================
@@ -319,7 +322,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::assertSame(['sku', 'category'], $result['unique_keys']);
 
         // Verificar que el registro se creó
-        $created = self::$orm->table('products')
+        $created = self::$orm
+            ->table('products')
             ->where('sku', '=', 'MULTI_KEY001')
             ->where('category', '=', 'electronics')
             ->firstArray();
@@ -371,11 +375,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid update column name detected');
 
-        self::$orm->table('products')->upsert(
-            $data,
-            ['sku'],
-            ['name; DROP TABLE products; --'],
-        );
+        self::$orm->table('products')->upsert($data, ['sku'], ['name; DROP TABLE products; --']);
     }
 
     public function test_upsert_with_specific_update_columns(): void
@@ -393,15 +393,11 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $updateData = [
             'sku' => 'SPECIFIC_UPDATE001',
             'name' => 'New Name', // Este no debería actualizarse
-            'price' => 200.0,     // Este sí debería actualizarse
+            'price' => 200.0, // Este sí debería actualizarse
             'description' => 'New Description', // Este no debería actualizarse
         ];
 
-        $result = self::$orm->table('products')->upsert(
-            $updateData,
-            ['sku'],
-            ['price'], // Solo actualizar el precio
-        );
+        $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['price']); // Solo actualizar el precio
 
         self::assertSame('success', $result['status']);
         self::assertSame(['price'], $result['update_columns']);
@@ -539,7 +535,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
      */
     protected function setUpConfig(): void
     {
-        if (! isset(self::$config)) {
+        if (!isset(self::$config)) {
             self::$config = self::$orm->getConfig();
         }
     }

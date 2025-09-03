@@ -168,7 +168,7 @@ class User extends BaseModel
             $tasks = $this->tasks();
             $completedTasks = array_filter(
                 $tasks,
-                static fn ($task): bool => isset($task['status']) && $task['status'] === 'done',
+                static fn($task): bool => isset($task['status']) && $task['status'] === 'done',
             );
 
             return [

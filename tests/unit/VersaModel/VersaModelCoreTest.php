@@ -14,14 +14,14 @@ final class VersaModelCoreTest extends TestCase
 {
     public function testFillableAllowsDefinedFieldAndBlocksWhenGuardedStar(): void
     {
-        $model = new class ('users', null) extends VersaModel {
+        $model = new class('users', null) extends VersaModel {
             protected array $fillable = ['name'];
         };
 
         $model->fill(['name' => 'Alice']);
         $this->assertSame('Alice', $model->getAttribute('name'));
 
-        $blocked = new class ('users', null) extends VersaModel {
+        $blocked = new class('users', null) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['*'];
@@ -34,7 +34,7 @@ final class VersaModelCoreTest extends TestCase
 
     public function testFillableThrowsForSpecificGuardedField(): void
     {
-        $m = new class ('users', null) extends VersaModel {
+        $m = new class('users', null) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['email'];
@@ -47,7 +47,7 @@ final class VersaModelCoreTest extends TestCase
 
     public function testPrepareValueForDatabaseSimpleHandlesBooleansDateAndArray(): void
     {
-        $model = new class ('users', null) extends VersaModel {};
+        $model = new class('users', null) extends VersaModel {};
 
         $ref = new ReflectionObject($model);
         $method = $ref->getMethod('prepareValueForDatabaseSimple');
@@ -67,7 +67,7 @@ final class VersaModelCoreTest extends TestCase
 
     public function testValidateFieldAgainstSchemaIntegerAndEmail(): void
     {
-        $model = new class ('users', null) extends VersaModel {};
+        $model = new class('users', null) extends VersaModel {};
 
         $ref = new ReflectionObject($model);
         $method = $ref->getMethod('validateFieldAgainstSchema');
@@ -86,7 +86,7 @@ final class VersaModelCoreTest extends TestCase
 
     public function testStoreThrowsOnValidation(): void
     {
-        $vFail = new class ('users', null) extends VersaModel {
+        $vFail = new class('users', null) extends VersaModel {
             public function validate(): array
             {
                 return ['some error'];
@@ -100,7 +100,7 @@ final class VersaModelCoreTest extends TestCase
 
     public function testStoreThrowsWhenNoOrm(): void
     {
-        $noOrm = new class ('users', null) extends VersaModel {
+        $noOrm = new class('users', null) extends VersaModel {
             public function validate(): array
             {
                 return [];
@@ -121,7 +121,7 @@ final class VersaModelCoreTest extends TestCase
         $realOrm = new VersaORM([]);
         VersaModel::setORM($realOrm);
 
-        $mNoData = new class ('users', null) extends VersaModel {
+        $mNoData = new class('users', null) extends VersaModel {
             // attributes default empty -> preparedAttributes will be empty
             public function validate(): array
             {

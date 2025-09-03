@@ -17,15 +17,19 @@ class TransactionsRollbackTest extends TestCase
 
         // Crear tabla de pruebas aislada para transacciones
         self::$orm->exec('DROP TABLE IF EXISTS tx_users');
-        self::$orm->schemaCreate('tx_users', [
-            ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
-            ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
-        ], [
-            'constraints' => [
-                'unique' => [['name' => 'tx_users_email_unique', 'columns' => ['email']]],
+        self::$orm->schemaCreate(
+            'tx_users',
+            [
+                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(100)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
             ],
-        ]);
+            [
+                'constraints' => [
+                    'unique' => [['name' => 'tx_users_email_unique', 'columns' => ['email']]],
+                ],
+            ],
+        );
     }
 
     protected function tearDown(): void

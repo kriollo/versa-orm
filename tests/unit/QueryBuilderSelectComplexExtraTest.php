@@ -24,7 +24,8 @@ final class QueryBuilderSelectComplexExtraTest extends TestCase
         $subRes = $mSub->invoke($sub);
 
         // Use selectRaw to inject a safe raw expression as select column
-        $qb->select(['orders.id'])
+        $qb
+            ->select(['orders.id'])
             ->selectRaw('(' . $subRes['sql'] . ') AS items_count')
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->groupBy(['orders.id'])

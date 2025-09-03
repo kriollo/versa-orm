@@ -12,7 +12,7 @@ final class CreateIndexSqliteTest extends TestCase
 {
     public function test_schema_create_generates_valid_index_sql_for_sqlite(): void
     {
-        $orm = new class () extends VersaORM {
+        $orm = new class() extends VersaORM {
             public array $captured = [];
 
             public function __construct()
@@ -62,7 +62,7 @@ final class CreateIndexSqliteTest extends TestCase
 
     public function test_schema_alter_drop_column_and_index_generates_valid_sql_for_sqlite(): void
     {
-        $orm = new class () extends VersaORM {
+        $orm = new class() extends VersaORM {
             public array $captured = [];
 
             public function __construct()

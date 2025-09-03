@@ -12,7 +12,7 @@ require_once __DIR__ . '/bootstrap.php';
 
 class TestCase extends BaseTestCase
 {
-    public static ?VersaORM $orm = null;
+    public static null|VersaORM $orm = null;
 
     private static bool $schemaCreated = false;
 
@@ -87,60 +87,94 @@ class TestCase extends BaseTestCase
         if ($driver === 'mysql') {
             // Desactivar checks durante la creación para evitar problemas de orden
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
-            self::$orm->exec('SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";');
+            self::$orm->exec(
+                'SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";',
+            );
             // users
-            self::$orm->schemaCreate('users', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
-                ['name' => 'status', 'type' => 'VARCHAR(50)'],
-                ['name' => 'created_at', 'type' => 'TIMESTAMP'],
-            ], ['engine' => 'InnoDB']);
+            self::$orm->schemaCreate(
+                'users',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+                    ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                    ['name' => 'created_at', 'type' => 'TIMESTAMP'],
+                ],
+                ['engine' => 'InnoDB'],
+            );
             // unique email
             self::$orm->exec('ALTER TABLE `users` ADD UNIQUE (`email`)');
 
             // profiles
-            self::$orm->schemaCreate('profiles', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'user_id', 'type' => 'INT'],
-                ['name' => 'bio', 'type' => 'TEXT'],
-            ], ['engine' => 'InnoDB']);
-            self::$orm->exec('ALTER TABLE `profiles` ADD CONSTRAINT `fk_profiles_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
+            self::$orm->schemaCreate(
+                'profiles',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'user_id', 'type' => 'INT'],
+                    ['name' => 'bio', 'type' => 'TEXT'],
+                ],
+                ['engine' => 'InnoDB'],
+            );
+            self::$orm->exec(
+                'ALTER TABLE `profiles` ADD CONSTRAINT `fk_profiles_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE',
+            );
 
             // posts
-            self::$orm->schemaCreate('posts', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'user_id', 'type' => 'INT'],
-                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'content', 'type' => 'TEXT'],
-                ['name' => 'published_at', 'type' => 'DATETIME'],
-                ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
-            ], ['engine' => 'InnoDB']);
-            self::$orm->exec('ALTER TABLE `posts` ADD CONSTRAINT `fk_posts_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
+            self::$orm->schemaCreate(
+                'posts',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'user_id', 'type' => 'INT'],
+                    ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'content', 'type' => 'TEXT'],
+                    ['name' => 'published_at', 'type' => 'DATETIME'],
+                    ['name' => 'published', 'type' => 'BOOLEAN', 'default' => false],
+                ],
+                ['engine' => 'InnoDB'],
+            );
+            self::$orm->exec(
+                'ALTER TABLE `posts` ADD CONSTRAINT `fk_posts_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE',
+            );
 
             // roles
-            self::$orm->schemaCreate('roles', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ], ['engine' => 'InnoDB']);
+            self::$orm->schemaCreate(
+                'roles',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ],
+                ['engine' => 'InnoDB'],
+            );
 
             // role_user (pivot)
-            self::$orm->schemaCreate('role_user', [
-                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
-                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
-            ], ['engine' => 'InnoDB', 'primary_key' => ['user_id', 'role_id']]);
-            self::$orm->exec('ALTER TABLE `role_user` ADD CONSTRAINT `fk_ru_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE');
-            self::$orm->exec('ALTER TABLE `role_user` ADD CONSTRAINT `fk_ru_role` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE');
+            self::$orm->schemaCreate(
+                'role_user',
+                [
+                    ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                    ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+                ],
+                ['engine' => 'InnoDB', 'primary_key' => ['user_id', 'role_id']],
+            );
+            self::$orm->exec(
+                'ALTER TABLE `role_user` ADD CONSTRAINT `fk_ru_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE',
+            );
+            self::$orm->exec(
+                'ALTER TABLE `role_user` ADD CONSTRAINT `fk_ru_role` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE',
+            );
 
             // products
-            self::$orm->schemaCreate('products', [
-                ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
-                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
-                ['name' => 'stock', 'type' => 'INT'],
-                ['name' => 'description', 'type' => 'TEXT'],
-                ['name' => 'category', 'type' => 'VARCHAR(100)'],
-            ], ['engine' => 'InnoDB']);
+            self::$orm->schemaCreate(
+                'products',
+                [
+                    ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
+                    ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
+                    ['name' => 'stock', 'type' => 'INT'],
+                    ['name' => 'description', 'type' => 'TEXT'],
+                    ['name' => 'category', 'type' => 'VARCHAR(100)'],
+                ],
+                ['engine' => 'InnoDB'],
+            );
 
             // Reactivar checks una vez creado todo
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
@@ -161,81 +195,97 @@ class TestCase extends BaseTestCase
             ]);
 
             // PostgreSQL DDL (sin ENGINE, con identity columns y tipos compatibles)
-            self::$orm->schemaCreate('users', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
-                ['name' => 'status', 'type' => 'VARCHAR(50)'],
-                ['name' => 'created_at', 'type' => 'TIMESTAMP'],
-            ], [
-                'constraints' => [
-                    'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+            self::$orm->schemaCreate(
+                'users',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+                    ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                    ['name' => 'created_at', 'type' => 'TIMESTAMP'],
                 ],
-            ]);
+                [
+                    'constraints' => [
+                        'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+                    ],
+                ],
+            );
 
-            self::$orm->schemaCreate('profiles', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'user_id', 'type' => 'INT'],
-                ['name' => 'bio', 'type' => 'TEXT'],
-            ], [
-                'constraints' => [
-                    'foreign' => [[
-                        'name' => 'fk_profiles_users',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
-                        'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
-                    ]],
+            self::$orm->schemaCreate(
+                'profiles',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'user_id', 'type' => 'INT'],
+                    ['name' => 'bio', 'type' => 'TEXT'],
                 ],
-            ]);
+                [
+                    'constraints' => [
+                        'foreign' => [[
+                            'name' => 'fk_profiles_users',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ]],
+                    ],
+                ],
+            );
 
-            self::$orm->schemaCreate('posts', [
-                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'user_id', 'type' => 'INT'],
-                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'content', 'type' => 'TEXT'],
-                ['name' => 'published_at', 'type' => 'TIMESTAMP'],
-            ], [
-                'constraints' => [
-                    'foreign' => [[
-                        'name' => 'fk_posts_users',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
-                        'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
-                    ]],
+            self::$orm->schemaCreate(
+                'posts',
+                [
+                    ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                    ['name' => 'user_id', 'type' => 'INT'],
+                    ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'content', 'type' => 'TEXT'],
+                    ['name' => 'published_at', 'type' => 'TIMESTAMP'],
                 ],
-            ]);
+                [
+                    'constraints' => [
+                        'foreign' => [[
+                            'name' => 'fk_posts_users',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ]],
+                    ],
+                ],
+            );
 
             self::$orm->schemaCreate('roles', [
                 ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
                 ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
             ]);
 
-            self::$orm->schemaCreate('role_user', [
-                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
-                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
-            ], [
-                'primary_key' => ['user_id', 'role_id'],
-                'constraints' => [
-                    'foreign' => [
-                        [
-                            'name' => 'fk_role_user_user',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
-                        ],
-                        [
-                            'name' => 'fk_role_user_role',
-                            'columns' => ['role_id'],
-                            'refTable' => 'roles',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
+            self::$orm->schemaCreate(
+                'role_user',
+                [
+                    ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                    ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+                ],
+                [
+                    'primary_key' => ['user_id', 'role_id'],
+                    'constraints' => [
+                        'foreign' => [
+                            [
+                                'name' => 'fk_role_user_user',
+                                'columns' => ['user_id'],
+                                'refTable' => 'users',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ],
+                            [
+                                'name' => 'fk_role_user_role',
+                                'columns' => ['role_id'],
+                                'refTable' => 'roles',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ],
                         ],
                     ],
                 ],
-            ]);
+            );
 
             self::$orm->schemaCreate('products', [
                 ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
@@ -257,12 +307,16 @@ class TestCase extends BaseTestCase
                 ['name' => 'estado', 'type' => 'BOOLEAN', 'default' => true, 'nullable' => false],
             ]);
 
-            self::$orm->schemaCreate('empresa_modulo', [
-                ['name' => 'id_empresa', 'type' => 'INT', 'nullable' => false],
-                ['name' => 'id_modulo', 'type' => 'INT', 'nullable' => false],
-            ], [
-                'primary_key' => ['id_empresa', 'id_modulo'],
-            ]);
+            self::$orm->schemaCreate(
+                'empresa_modulo',
+                [
+                    ['name' => 'id_empresa', 'type' => 'INT', 'nullable' => false],
+                    ['name' => 'id_modulo', 'type' => 'INT', 'nullable' => false],
+                ],
+                [
+                    'primary_key' => ['id_empresa', 'id_modulo'],
+                ],
+            );
         } else {
             // Driver genérico (SQLite u otros) - sintaxis portable con constraints
             if ($driver === 'sqlite') {
@@ -270,81 +324,115 @@ class TestCase extends BaseTestCase
                 self::$orm->exec('PRAGMA foreign_keys = ON;');
             }
 
-            self::$orm->schemaCreate('users', [
-                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
-                ['name' => 'status', 'type' => 'VARCHAR(50)'],
-                ['name' => 'created_at', 'type' => 'TEXT'],
-            ], [
-                'constraints' => [
-                    'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+            self::$orm->schemaCreate(
+                'users',
+                [
+                    [
+                        'name' => 'id',
+                        'type' => 'INTEGER',
+                        'primary' => true,
+                        'autoIncrement' => true,
+                        'nullable' => false,
+                    ],
+                    ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'email', 'type' => 'VARCHAR(191)', 'nullable' => false],
+                    ['name' => 'status', 'type' => 'VARCHAR(50)'],
+                    ['name' => 'created_at', 'type' => 'TEXT'],
                 ],
-            ]);
+                [
+                    'constraints' => [
+                        'unique' => [['name' => 'users_email_unique', 'columns' => ['email']]],
+                    ],
+                ],
+            );
 
-            self::$orm->schemaCreate('profiles', [
-                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'user_id', 'type' => 'INT'],
-                ['name' => 'bio', 'type' => 'TEXT'],
-            ], [
-                'constraints' => [
-                    'foreign' => [[
-                        'name' => 'fk_profiles_users',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
-                        'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
-                    ]],
+            self::$orm->schemaCreate(
+                'profiles',
+                [
+                    [
+                        'name' => 'id',
+                        'type' => 'INTEGER',
+                        'primary' => true,
+                        'autoIncrement' => true,
+                        'nullable' => false,
+                    ],
+                    ['name' => 'user_id', 'type' => 'INT'],
+                    ['name' => 'bio', 'type' => 'TEXT'],
                 ],
-            ]);
+                [
+                    'constraints' => [
+                        'foreign' => [[
+                            'name' => 'fk_profiles_users',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ]],
+                    ],
+                ],
+            );
 
-            self::$orm->schemaCreate('posts', [
-                ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-                ['name' => 'user_id', 'type' => 'INT'],
-                ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
-                ['name' => 'content', 'type' => 'TEXT'],
-                ['name' => 'published_at', 'type' => 'TEXT'],
-            ], [
-                'constraints' => [
-                    'foreign' => [[
-                        'name' => 'fk_posts_users',
-                        'columns' => ['user_id'],
-                        'refTable' => 'users',
-                        'refColumns' => ['id'],
-                        'onDelete' => 'cascade',
-                    ]],
+            self::$orm->schemaCreate(
+                'posts',
+                [
+                    [
+                        'name' => 'id',
+                        'type' => 'INTEGER',
+                        'primary' => true,
+                        'autoIncrement' => true,
+                        'nullable' => false,
+                    ],
+                    ['name' => 'user_id', 'type' => 'INT'],
+                    ['name' => 'title', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'content', 'type' => 'TEXT'],
+                    ['name' => 'published_at', 'type' => 'TEXT'],
                 ],
-            ]);
+                [
+                    'constraints' => [
+                        'foreign' => [[
+                            'name' => 'fk_posts_users',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
+                        ]],
+                    ],
+                ],
+            );
 
             self::$orm->schemaCreate('roles', [
                 ['name' => 'id', 'type' => 'INTEGER', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
                 ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
             ]);
 
-            self::$orm->schemaCreate('role_user', [
-                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
-                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
-            ], [
-                'primary_key' => ['user_id', 'role_id'],
-                'constraints' => [
-                    'foreign' => [
-                        [
-                            'name' => 'fk_role_user_user',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
-                        ],
-                        [
-                            'name' => 'fk_role_user_role',
-                            'columns' => ['role_id'],
-                            'refTable' => 'roles',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
+            self::$orm->schemaCreate(
+                'role_user',
+                [
+                    ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                    ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
+                ],
+                [
+                    'primary_key' => ['user_id', 'role_id'],
+                    'constraints' => [
+                        'foreign' => [
+                            [
+                                'name' => 'fk_role_user_user',
+                                'columns' => ['user_id'],
+                                'refTable' => 'users',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ],
+                            [
+                                'name' => 'fk_role_user_role',
+                                'columns' => ['role_id'],
+                                'refTable' => 'roles',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ],
                         ],
                     ],
                 ],
-            ]);
+            );
 
             self::$orm->schemaCreate('products', [
                 ['name' => 'sku', 'type' => 'VARCHAR(50)', 'nullable' => false, 'primary' => true],
@@ -386,7 +474,9 @@ class TestCase extends BaseTestCase
         // Seed users (omitir ID, dejar que SQLite asigne automáticamente)
         self::$orm->table('users')->insert(['name' => 'Alice', 'email' => 'alice@example.com', 'status' => 'active']);
         self::$orm->table('users')->insert(['name' => 'Bob', 'email' => 'bob@example.com', 'status' => 'inactive']);
-        self::$orm->table('users')->insert(['name' => 'Charlie', 'email' => 'charlie@example.com', 'status' => 'active']);
+        self::$orm
+            ->table('users')
+            ->insert(['name' => 'Charlie', 'email' => 'charlie@example.com', 'status' => 'active']);
 
         // Seed posts (usar IDs 1, 2, 3 como user_id)
         self::$orm->table('posts')->insert(['user_id' => 1, 'title' => 'Alice Post 1', 'content' => 'Content 1']);
@@ -410,30 +500,36 @@ class TestCase extends BaseTestCase
         self::$orm->table('role_user')->insert(['user_id' => 2, 'role_id' => 2]);
 
         // Seed data para test de consulta booleana
-        self::$orm->table('versa_menu')->insert([
-            'nombre' => 'Dashboard',
-            'icono' => 'dashboard-icon',
-            'fill' => 'dashboard-fill',
-            'seccion' => 'principal',
-            'posicion' => 1,
-            'estado' => true,
-        ]);
-        self::$orm->table('versa_menu')->insert([
-            'nombre' => 'Usuarios',
-            'icono' => 'users-icon',
-            'fill' => 'users-fill',
-            'seccion' => 'administracion',
-            'posicion' => 2,
-            'estado' => true,
-        ]);
-        self::$orm->table('versa_menu')->insert([
-            'nombre' => 'Reportes',
-            'icono' => 'reports-icon',
-            'fill' => 'reports-fill',
-            'seccion' => 'analisis',
-            'posicion' => 3,
-            'estado' => true,
-        ]);
+        self::$orm
+            ->table('versa_menu')
+            ->insert([
+                'nombre' => 'Dashboard',
+                'icono' => 'dashboard-icon',
+                'fill' => 'dashboard-fill',
+                'seccion' => 'principal',
+                'posicion' => 1,
+                'estado' => true,
+            ]);
+        self::$orm
+            ->table('versa_menu')
+            ->insert([
+                'nombre' => 'Usuarios',
+                'icono' => 'users-icon',
+                'fill' => 'users-fill',
+                'seccion' => 'administracion',
+                'posicion' => 2,
+                'estado' => true,
+            ]);
+        self::$orm
+            ->table('versa_menu')
+            ->insert([
+                'nombre' => 'Reportes',
+                'icono' => 'reports-icon',
+                'fill' => 'reports-fill',
+                'seccion' => 'analisis',
+                'posicion' => 3,
+                'estado' => true,
+            ]);
 
         // Solo asociar el módulo 1 (Dashboard) a la empresa 1
         self::$orm->table('empresa_modulo')->insert(['id_empresa' => 1, 'id_modulo' => 1]);

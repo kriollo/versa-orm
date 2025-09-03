@@ -39,7 +39,7 @@ class VersaORMTest extends TestCase
         $result = self::$orm->exec($query);
 
         self::assertTrue(
-            $result === null || (is_array($result) && count($result) === 0),
+            $result === null || is_array($result) && count($result) === 0,
             'exec() should return null or empty array for non-select statements',
         );
     }

@@ -20,6 +20,10 @@ class MetricsTest extends TestCase
         $m1 = $orm->metrics();
         self::assertIsArray($m1);
         $after = (int) ($m1['queries'] ?? 0);
-        self::assertGreaterThanOrEqual($initial + 2, $after, 'El contador de queries debe incrementarse al menos por 2');
+        self::assertGreaterThanOrEqual(
+            $initial + 2,
+            $after,
+            'El contador de queries debe incrementarse al menos por 2',
+        );
     }
 }

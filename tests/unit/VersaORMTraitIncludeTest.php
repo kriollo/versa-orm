@@ -35,10 +35,10 @@ class VersaORMTraitIncludeTest extends TestCase
             ],
         ];
 
-        $obj = new class () {
+        $obj = new class() {
             use VersaORMTrait;
 
-            public function callGetORM(): ?VersaORM
+            public function callGetORM(): null|VersaORM
             {
                 return $this->getORM();
             }

@@ -18,10 +18,7 @@ final class QueryBuilderBasicTest extends TestCase
 
         $qb = new QueryBuilder($orm, 'users');
 
-        $qb->select(['id', 'name'])
-            ->where('active', '=', 1)
-            ->limit(10)
-            ->offset(5);
+        $qb->select(['id', 'name'])->where('active', '=', 1)->limit(10)->offset(5);
 
         // Acceder al método privado buildSelectSQL mediante reflexión
         $ref = new ReflectionClass($qb);

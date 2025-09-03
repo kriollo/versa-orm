@@ -71,7 +71,13 @@ final class SchemaAllMysqlTest extends TestCase
         // add foreign
         $orm->schemaAlter('test_schema_all', [
             'addForeign' => [
-                ['name' => 'fk_test_other', 'columns' => ['age'], 'refTable' => 'other', 'refColumns' => ['id'], 'onDelete' => 'cascade'],
+                [
+                    'name' => 'fk_test_other',
+                    'columns' => ['age'],
+                    'refTable' => 'other',
+                    'refColumns' => ['id'],
+                    'onDelete' => 'cascade',
+                ],
             ],
         ]);
 
@@ -156,7 +162,7 @@ final class SchemaAllMysqlTest extends TestCase
 
     private function makeOrmCollector(): object
     {
-        return new class () extends VersaORM {
+        return new class() extends VersaORM {
             public array $captured = [];
 
             public function __construct()

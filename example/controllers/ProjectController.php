@@ -37,7 +37,7 @@ class ProjectController
                 $memberIds[] = $project->owner_id;
                 $availableUsers = array_filter(
                     $allUsers,
-                    static fn ($user): bool => !in_array($user->id, $memberIds, true),
+                    static fn($user): bool => !in_array($user->id, $memberIds, true),
                 );
 
                 render('projects/show', [

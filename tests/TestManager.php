@@ -125,12 +125,13 @@ class TestManager implements TestManagerInterface
             return $this->mergeTestResults($results, 'unit');
         }
 
-        if (! in_array($engine, $this->supportedEngines, true)) {
+        if (!in_array($engine, $this->supportedEngines, true)) {
             throw new InvalidArgumentException("Unsupported engine: {$engine}");
         }
 
         // Ejecutar PHPUnit para el motor específico
-        $testDir = 'test' . ucfirst($engine === 'mysql' ? 'Mysql' : ($engine === 'postgresql' ? 'PostgreSQL' : 'SQLite'));
+        $testDir =
+            'test' . ucfirst($engine === 'mysql' ? 'Mysql' : ($engine === 'postgresql' ? 'PostgreSQL' : 'SQLite'));
         $phpunitPath = PHP_OS_FAMILY === 'Windows' ? 'vendor\bin\phpunit.bat' : 'vendor/bin/phpunit';
         $command = "{$phpunitPath} {$testDir} --testdox --no-coverage";
 
@@ -409,11 +410,11 @@ class TestManager implements TestManagerInterface
 
     private function mergeTestResults(array $results, string $type): TestResult
     {
-        $totalTests = array_sum(array_map(static fn ($r) => $r->total_tests, $results));
-        $passedTests = array_sum(array_map(static fn ($r) => $r->passed_tests, $results));
-        $failedTests = array_sum(array_map(static fn ($r) => $r->failed_tests, $results));
-        $skippedTests = array_sum(array_map(static fn ($r) => $r->skipped_tests, $results));
-        $executionTime = array_sum(array_map(static fn ($r) => $r->execution_time, $results));
+        $totalTests = array_sum(array_map(static fn($r) => $r->total_tests, $results));
+        $passedTests = array_sum(array_map(static fn($r) => $r->passed_tests, $results));
+        $failedTests = array_sum(array_map(static fn($r) => $r->failed_tests, $results));
+        $skippedTests = array_sum(array_map(static fn($r) => $r->skipped_tests, $results));
+        $executionTime = array_sum(array_map(static fn($r) => $r->execution_time, $results));
 
         return new TestResult([
             'test_type' => $type,
@@ -423,7 +424,10 @@ class TestManager implements TestManagerInterface
             'failed_tests' => $failedTests,
             'skipped_tests' => $skippedTests,
             'execution_time' => $executionTime,
-            'failures' => call_user_func_array('array_merge', array_values(array_map(static fn ($r) => $r->failures, $results))),
+            'failures' => call_user_func_array(
+                'array_merge',
+                array_values(array_map(static fn($r) => $r->failures, $results)),
+            ),
             'metrics' => ['merged_results' => $results],
             'timestamp' => new DateTime(),
         ]);
@@ -478,7 +482,7 @@ class TestManager implements TestManagerInterface
             return 0;
         }
 
-        $totalScore = array_sum(array_map(static fn ($r) => $r['score'], $results));
+        $totalScore = array_sum(array_map(static fn($r) => $r['score'], $results));
 
         return (int) ($totalScore / count($results));
     }
@@ -556,6 +560,7 @@ class TestManager implements TestManagerInterface
     {
         // Lógica para determinar estado general
         return 'success';
+
         // Placeholder
     }
 

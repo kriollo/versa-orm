@@ -54,7 +54,7 @@ class PHPStanCLI
         echo 'Analysis completed in ' . number_format($result['execution_time'], 2) . "s\n";
         echo 'Status: ' . ($result['passed'] ? 'PASSED' : 'FAILED') . "\n";
 
-        if (! empty($result['errors'])) {
+        if (!empty($result['errors'])) {
             echo "\nErrors found:\n";
 
             foreach ($result['errors'] as $error) {
@@ -62,7 +62,7 @@ class PHPStanCLI
             }
         }
 
-        if (! empty($result['warnings'])) {
+        if (!empty($result['warnings'])) {
             echo "\nWarnings:\n";
 
             foreach ($result['warnings'] as $warning) {

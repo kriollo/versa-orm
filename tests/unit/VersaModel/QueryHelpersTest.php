@@ -14,7 +14,7 @@ final class QueryHelpersTest extends TestCase
     protected function setUp(): void
     {
         // Fake ORM con exec() y table() mínimo para pruebas
-        $fakeOrm = new class () extends \VersaORM\VersaORM {
+        $fakeOrm = new class() extends \VersaORM\VersaORM {
             public array $lastExecParams = [];
 
             public function exec(string $sql, array $bindings = [])
@@ -35,7 +35,10 @@ final class QueryHelpersTest extends TestCase
                             return [['name' => 'one', '_table' => 'tests', 'id' => 1]];
                         }
 
-                        return [['name' => 'one', '_table' => 'tests', 'id' => 1], ['name' => 'two', '_table' => 'tests', 'id' => 2]];
+                        return [
+                            ['name' => 'one', '_table' => 'tests', 'id' => 1],
+                            ['name' => 'two', '_table' => 'tests', 'id' => 2],
+                        ];
                     }
 
                     // Por defecto, devolver filas con _table primero
@@ -46,13 +49,16 @@ final class QueryHelpersTest extends TestCase
                         return [['_table' => 'tests', 'id' => 1, 'name' => 'one']];
                     }
 
-                    return [['_table' => 'tests', 'id' => 1, 'name' => 'one'], ['_table' => 'tests', 'id' => 2, 'name' => 'two']];
+                    return [
+                        ['_table' => 'tests', 'id' => 1, 'name' => 'one'],
+                        ['_table' => 'tests', 'id' => 2, 'name' => 'two'],
+                    ];
                 }
 
                 return [];
             }
 
-            public function table(string $table, ?string $modelClass = null): QueryBuilder
+            public function table(string $table, null|string $modelClass = null): QueryBuilder
             {
                 // Retornar un QueryBuilder real con este ORM minimal (usaremos constructor sencillo)
                 return new \VersaORM\QueryBuilder($this, $table, $modelClass);
@@ -68,7 +74,7 @@ final class QueryHelpersTest extends TestCase
                 return [];
             }
 
-            public function metrics(): ?array
+            public function metrics(): null|array
             {
                 return null;
             }
@@ -81,7 +87,7 @@ final class QueryHelpersTest extends TestCase
             {
             }
 
-            public function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
+            public function addTypeConverter(string $name, callable $phpHandler, null|callable $dbHandler = null): void
             {
             }
 
@@ -135,7 +141,7 @@ final class QueryHelpersTest extends TestCase
 
     public function test_query_instance_and_queryTable_static(): void
     {
-        $instanceModel = new class ('tests', VersaModel::getGlobalORM() ?? null) extends VersaModel {};
+        $instanceModel = new class('tests', VersaModel::getGlobalORM() ?? null) extends VersaModel {};
 
         $qb = $instanceModel->query();
         $this->assertInstanceOf(QueryBuilder::class, $qb);

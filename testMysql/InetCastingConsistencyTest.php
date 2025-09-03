@@ -27,7 +27,7 @@ class InetCastingConsistencyTest extends TestCase
 
     public function test_inet_casting_consistency(): void
     {
-        $model = new class ('access_logs_inet_cast', self::$orm) extends VersaModel {
+        $model = new class('access_logs_inet_cast', self::$orm) extends VersaModel {
             protected static function definePropertyTypes(): array
             {
                 return [

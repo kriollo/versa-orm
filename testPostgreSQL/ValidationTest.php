@@ -18,18 +18,22 @@ class ValidationTest extends TestCase
         parent::setUp();
 
         // Crear tabla de prueba para ValidationTest (PostgreSQL compatible)
-        self::$orm->schemaCreate('test_users', [
-            ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
-            ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ['name' => 'email', 'type' => 'VARCHAR(255)', 'nullable' => false],
-            ['name' => 'age', 'type' => 'INT'],
-            ['name' => 'created_at', 'type' => 'TIMESTAMP'],
-        ], ['if_not_exists' => true]);
+        self::$orm->schemaCreate(
+            'test_users',
+            [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'name', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'email', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'age', 'type' => 'INT'],
+                ['name' => 'created_at', 'type' => 'TIMESTAMP'],
+            ],
+            ['if_not_exists' => true],
+        );
     }
 
     public function test_fillable_attributes_allow_mass_assignment(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -41,7 +45,7 @@ class ValidationTest extends TestCase
 
     public function test_fillable_attributes_block_unallowed_fields(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name'];
         };
 
@@ -53,7 +57,7 @@ class ValidationTest extends TestCase
 
     public function test_guarded_attributes_block_mass_assignment(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['id', 'created_at'];
@@ -67,7 +71,7 @@ class ValidationTest extends TestCase
 
     public function test_wildcard_guard_blocks_all_fields(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = [];
 
             protected array $guarded = ['*'];
@@ -81,7 +85,7 @@ class ValidationTest extends TestCase
 
     public function test_custom_validation_rules(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
@@ -101,7 +105,7 @@ class ValidationTest extends TestCase
 
     public function test_valid_model_passes_validation(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
@@ -119,7 +123,7 @@ class ValidationTest extends TestCase
 
     public function test_store_with_validation_failure_throws_exception(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
@@ -138,7 +142,7 @@ class ValidationTest extends TestCase
 
     public function test_is_fillable_method(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -149,7 +153,7 @@ class ValidationTest extends TestCase
 
     public function test_is_guarded_method(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -160,7 +164,7 @@ class ValidationTest extends TestCase
 
     public function test_update_method_with_mass_assignment(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
         };
 
@@ -176,7 +180,7 @@ class ValidationTest extends TestCase
 
     public function test_create_static_method_with_validation(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name', 'email'];
 
             protected array $rules = [
@@ -193,7 +197,7 @@ class ValidationTest extends TestCase
 
     public function test_max_length_validation_rule(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['name'];
 
             protected array $rules = [
@@ -211,7 +215,7 @@ class ValidationTest extends TestCase
 
     public function test_numeric_validation_rule(): void
     {
-        $model = new class ('test_users', self::$orm) extends VersaModel {
+        $model = new class('test_users', self::$orm) extends VersaModel {
             protected array $fillable = ['age'];
 
             protected array $rules = [

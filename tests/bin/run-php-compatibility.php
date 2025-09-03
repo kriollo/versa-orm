@@ -33,7 +33,7 @@ foreach ($autoloadPaths as $autoloadPath) {
     }
 }
 
-if (! $autoloaded) {
+if (!$autoloaded) {
     // Fallback: cargar clases manualmente
     require_once __DIR__ . '/../Compatibility/PHPVersionDetector.php';
     require_once __DIR__ . '/../Compatibility/PHPVersionTestExecutor.php';
@@ -129,8 +129,8 @@ class PHPCompatibilityCLI
 
         if ($version !== $currentVersion) {
             throw new InvalidArgumentException(
-                "Cannot run tests for PHP {$version} on PHP {$currentVersion}. " .
-                'Tests can only be run on the current PHP version.',
+                "Cannot run tests for PHP {$version} on PHP {$currentVersion}. "
+                . 'Tests can only be run on the current PHP version.',
             );
         }
 
@@ -170,7 +170,7 @@ class PHPCompatibilityCLI
         $outputDir = $this->options['output'] ?? 'tests/reports/php-compatibility';
         $format = $this->options['format'] ?? 'both';
 
-        if (! is_dir($outputDir)) {
+        if (!is_dir($outputDir)) {
             mkdir($outputDir, 0755, true);
         }
 
@@ -233,7 +233,7 @@ class PHPCompatibilityCLI
             } elseif (str_starts_with($arg, '--format=')) {
                 $format = substr($arg, 9);
 
-                if (! in_array($format, ['json', 'html', 'both'], true)) {
+                if (!in_array($format, ['json', 'html', 'both'], true)) {
                     throw new InvalidArgumentException("Invalid format: {$format}. Use json, html, or both.");
                 }
                 $this->options['format'] = $format;

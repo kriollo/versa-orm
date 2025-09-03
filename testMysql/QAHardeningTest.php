@@ -14,7 +14,7 @@ use VersaORM\VersaORM;
  */
 class QAHardeningTest extends TestCase
 {
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
     protected function setUp(): void
     {
@@ -48,16 +48,20 @@ class QAHardeningTest extends TestCase
             meta JSON,
             FULLTEXT(title, body)
         ) ENGINE=InnoDB;');
-        $this->orm->table('qa_docs')->insert([
-            'title' => 'Foo',
-            'body' => 'lorem ipsum foo bar',
-            'meta' => '{"tags":["a","b"]}',
-        ]);
-        $this->orm->table('qa_docs')->insert([
-            'title' => 'Bar',
-            'body' => 'foo boolean -bar +baz',
-            'meta' => '{"tags":["b"]}',
-        ]);
+        $this->orm
+            ->table('qa_docs')
+            ->insert([
+                'title' => 'Foo',
+                'body' => 'lorem ipsum foo bar',
+                'meta' => '{"tags":["a","b"]}',
+            ]);
+        $this->orm
+            ->table('qa_docs')
+            ->insert([
+                'title' => 'Bar',
+                'body' => 'foo boolean -bar +baz',
+                'meta' => '{"tags":["b"]}',
+            ]);
     }
 
     protected function tearDown(): void
@@ -79,7 +83,14 @@ class QAHardeningTest extends TestCase
         $this->orm->table('order')->insert(['select' => 's2', 'group' => 'g1', 'name' => 'n2']);
         $this->orm->table('order')->insert(['select' => 's3', 'group' => 'g1', 'name' => 'n3']);
         $qb = new QueryBuilder($this->orm, 'order');
-        $rows = $qb->windowFunction('row_number', '*', [], ['group'], [['column' => 'name', 'direction' => 'ASC']], 'rn');
+        $rows = $qb->windowFunction(
+            'row_number',
+            '*',
+            [],
+            ['group'],
+            [['column' => 'name', 'direction' => 'ASC']],
+            'rn',
+        );
         self::assertNotEmpty($rows);
         self::assertArrayHasKey('rn', $rows[0]);
     }
@@ -97,12 +108,16 @@ class QAHardeningTest extends TestCase
     public function test_cte_with_bindings(): void
     {
         $qb = new QueryBuilder($this->orm, 'qa_docs');
-        $rows = $qb->withCte([
-            'docs' => [
-                'query' => 'SELECT id, title FROM qa_docs WHERE id > ?',
-                'bindings' => [0],
+        $rows = $qb->withCte(
+            [
+                'docs' => [
+                    'query' => 'SELECT id, title FROM qa_docs WHERE id > ?',
+                    'bindings' => [0],
+                ],
             ],
-        ], 'SELECT * FROM docs WHERE title LIKE ?', ['%o%']);
+            'SELECT * FROM docs WHERE title LIKE ?',
+            ['%o%'],
+        );
         self::assertNotEmpty($rows);
     }
 

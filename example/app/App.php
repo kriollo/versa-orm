@@ -16,8 +16,7 @@ class App
     public function __construct(
         private Request $request,
         private array $config,
-    ) {
-    }
+    ) {}
 
     public function request(): Request
     {

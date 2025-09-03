@@ -12,7 +12,7 @@ final class ValidateAndCreateColumnTest extends TestCase
 {
     public function testValidateFieldAgainstSchemaReturnsEmptyWhenNoRules(): void
     {
-        $m = new class ('users', null) extends VersaModel {
+        $m = new class('users', null) extends VersaModel {
             public function validate(): array
             {
                 return [];
@@ -34,7 +34,7 @@ final class ValidateAndCreateColumnTest extends TestCase
         // ensure no ORM
         VersaModel::setORM(null);
 
-        $m = new class ('users', null) extends VersaModel {};
+        $m = new class('users', null) extends VersaModel {};
 
         $r = new ReflectionClass($m);
         $method = $r->getMethod('ensureColumnsExist');

@@ -18,8 +18,7 @@ class Request
         public array $cookies,
         public array $files,
         public array $headers,
-    ) {
-    }
+    ) {}
 
     public static function fromGlobals(): self
     {

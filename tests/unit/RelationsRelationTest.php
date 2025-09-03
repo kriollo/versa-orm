@@ -18,7 +18,7 @@ final class RelationsRelationTest extends TestCase
         $qb = $this->createMock(QueryBuilder::class);
         $parent = $this->createMock(VersaModel::class);
 
-        $concrete = new class ($qb, $parent) extends Relation {
+        $concrete = new class($qb, $parent) extends Relation {
             protected function addConstraints(): void
             {
                 // no-op para la prueba

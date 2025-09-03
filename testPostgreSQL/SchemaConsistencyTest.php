@@ -113,25 +113,25 @@ class SchemaConsistencyTest extends TestCase
 
         // Test compatible types
         $compatiblePairs = [
-            ['int', 'int'],
-            ['int', 'tinyint'],
-            ['int', 'bigint'],
-            ['float', 'float'],
-            ['float', 'double'],
-            ['float', 'decimal'],
-            ['string', 'varchar'],
-            ['string', 'text'],
-            ['bool', 'tinyint'],
+            ['int',      'int'],
+            ['int',      'tinyint'],
+            ['int',      'bigint'],
+            ['float',    'float'],
+            ['float',    'double'],
+            ['float',    'decimal'],
+            ['string',   'varchar'],
+            ['string',   'text'],
+            ['bool',     'tinyint'],
             ['datetime', 'datetime'],
             ['datetime', 'timestamp'],
-            ['json', 'json'],
-            ['json', 'text'],
-            ['uuid', 'char'],
-            ['uuid', 'varchar'],
-            ['enum', 'enum'],
-            ['set', 'set'],
-            ['blob', 'blob'],
-            ['inet', 'varchar'],
+            ['json',     'json'],
+            ['json',     'text'],
+            ['uuid',     'char'],
+            ['uuid',     'varchar'],
+            ['enum',     'enum'],
+            ['set',      'set'],
+            ['blob',     'blob'],
+            ['inet',     'varchar'],
         ];
 
         foreach ($compatiblePairs as [$modelType, $dbType]) {
@@ -142,7 +142,7 @@ class SchemaConsistencyTest extends TestCase
 
             // Filter out any unrelated errors, only check for type mismatch
             $typeMismatchErrors = array_filter($errors, static function ($error) {
-                return str_contains($error, 'Type mismatch') ;
+                return str_contains($error, 'Type mismatch');
             });
 
             self::assertEmpty(
@@ -166,7 +166,7 @@ class SchemaConsistencyTest extends TestCase
 
         $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
         $typeMismatchErrors = array_filter($errors, static function ($error) {
-            return str_contains($error, 'Type mismatch') ;
+            return str_contains($error, 'Type mismatch');
         });
 
         self::assertNotEmpty($typeMismatchErrors);

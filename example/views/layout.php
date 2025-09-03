@@ -101,7 +101,7 @@
                 $flash['type'] === 'success'
                     ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300'
                     : 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'
-        ; ?>">
+            ; ?>">
                 <i class="fas fa-<?php echo $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle'; ?> mr-2"></i>
                 <?php echo htmlspecialchars($flash['message']); ?>
             </div>

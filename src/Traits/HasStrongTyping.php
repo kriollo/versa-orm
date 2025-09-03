@@ -169,7 +169,7 @@ trait HasStrongTyping
         /** @var PropertyTypeDef $def */
         $def = $types[$property];
         $type = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
-        $handler = self::getPhpCastHandlers()[$type] ?? static fn ($s, $p, $v, $t = []): mixed => $v;
+        $handler = self::getPhpCastHandlers()[$type] ?? static fn($s, $p, $v, $t = []): mixed => $v;
 
         try {
             return $handler($this, $property, $value, $def);
@@ -216,7 +216,7 @@ trait HasStrongTyping
         /** @var PropertyTypeDef $def */
         $def = $types[$property];
         $type = isset($def['type']) && is_string($def['type']) ? $def['type'] : 'string';
-        $handler = self::getDbCastHandlers()[$type] ?? static fn ($s, $p, $v, $t = []): mixed => $v;
+        $handler = self::getDbCastHandlers()[$type] ?? static fn($s, $p, $v, $t = []): mixed => $v;
 
         try {
             return $handler($this, $property, $value, $def);
@@ -436,9 +436,9 @@ trait HasStrongTyping
         if (self::$phpCastHandlers !== []) {
             return self::$phpCastHandlers;
         }
-        $int = static fn ($s, $p, $v, $_ = []): int => (int) (is_numeric($v) ? $v : 0);
-        $float = static fn ($s, $p, $v, $_ = []): float => (float) (is_numeric($v) ? $v : 0.0);
-        $string = static fn ($s, $p, $v, $_ = []): string => is_scalar($v)
+        $int = static fn($s, $p, $v, $_ = []): int => (int) (is_numeric($v) ? $v : 0);
+        $float = static fn($s, $p, $v, $_ = []): float => (float) (is_numeric($v) ? $v : 0.0);
+        $string = static fn($s, $p, $v, $_ = []): string => is_scalar($v)
             ? (string) $v
             : (json_encode($v, JSON_UNESCAPED_UNICODE) ?: '');
         $bool = static function ($s, $p, $v, $_ = []): bool {
@@ -596,7 +596,7 @@ trait HasStrongTyping
 
             return $out;
         };
-        $blob = static fn ($s, $p, $v, $_ = []): mixed => $v;
+        $blob = static fn($s, $p, $v, $_ = []): mixed => $v;
         $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string) $v;
 
@@ -650,8 +650,8 @@ trait HasStrongTyping
         if (self::$dbCastHandlers !== []) {
             return self::$dbCastHandlers;
         }
-        $int = static fn ($s, $p, $v, $_ = []): int => (int) $v;
-        $float = static fn ($s, $p, $v, $_ = []): float => (float) $v;
+        $int = static fn($s, $p, $v, $_ = []): int => (int) $v;
+        $float = static fn($s, $p, $v, $_ = []): float => (float) $v;
         $string = static function ($s, $p, $v, $t = []): string {
             $sv = (string) $v;
             $max = $t['max_length'] ?? null;
@@ -662,7 +662,7 @@ trait HasStrongTyping
 
             return $sv;
         };
-        $bool = static fn ($s, $p, $v, $_ = []): int => (
+        $bool = static fn($s, $p, $v, $_ = []): int => (
             is_bool($v)
                 ? $v
                 : (
@@ -779,7 +779,7 @@ trait HasStrongTyping
 
             return implode(',', $out);
         };
-        $blob = static fn ($s, $p, $v, $_ = []): mixed => $v;
+        $blob = static fn($s, $p, $v, $_ = []): mixed => $v;
         $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string) $v;
 

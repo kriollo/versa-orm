@@ -96,7 +96,7 @@ class LifecycleEventsTest extends TestCase
     public function test_magic_method_is_called()
     {
         $called = false;
-        $model = new class (self::$table, TestCase::$orm) extends VersaModel {
+        $model = new class(self::$table, TestCase::$orm) extends VersaModel {
             public function beforeCreate()
             {
                 global $called;

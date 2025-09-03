@@ -12,7 +12,7 @@ final class CreateIndexPgTest extends TestCase
 {
     public function test_schema_create_generates_using_in_postgres(): void
     {
-        $orm = new class () extends VersaORM {
+        $orm = new class() extends VersaORM {
             public array $captured = [];
 
             public function __construct()

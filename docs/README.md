@@ -115,9 +115,48 @@ Ver [configuración detallada](setup/README.md) para más opciones.
 - **Tipos de retorno**: Se especifica qué devuelve cada método
 - **Progresión lógica**: Cada sección construye sobre la anterior
 
+## 🔧 Herramientas de Desarrollo
+
+### Formateo de Código Coordinado
+
+Este proyecto utiliza un sistema coordinado de formateo que combina:
+
+- **PHP-CS-Fixer** - Cumplimiento de PSR-12 y estilo base
+- **Mago** - Optimizaciones adicionales de formato
+
+#### Comandos Rápidos
+
+```bash
+# Verificar formato sin cambios
+composer format-check
+
+# Aplicar formato completo
+composer format
+
+# Scripts directos multiplataforma
+.\format-code.ps1      # Windows PowerShell
+./format-code.sh       # Linux/macOS Bash
+```
+
+#### Documentación Técnica
+
+- **[Guía de Formateo](dev/formatting-guide.md)** - Coordinación completa de Mago y PHP-CS-Fixer
+
+### Calidad de Código
+
+- **PHPStan** - Análisis estático de tipos
+- **PHPUnit** - Testing unitario y de integración
+- **Composer Scripts** - Automatización de QA
+
 ## 🤝 Contribuir
 
 Esta documentación está en constante mejora. Si encuentras errores o tienes sugerencias, por favor contribuye al proyecto.
+
+### Para Contribuidores
+
+1. Usa `composer format` antes de cada commit
+2. Ejecuta `composer test` para validar cambios
+3. Consulta la [Guía de Formateo](dev/formatting-guide.md) para mantener consistencia
 
 ---
 

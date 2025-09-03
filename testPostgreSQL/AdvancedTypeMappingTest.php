@@ -196,7 +196,7 @@ class AdvancedTypeMappingTest extends TestCase
         self::assertSame('America/Mexico_City', $orm->getTimezone());
 
         // Definir un modelo con propertyTypes para forzar cast a datetime
-        $modelClass = new class ('tz_table', $orm) extends VersaModel {
+        $modelClass = new class('tz_table', $orm) extends VersaModel {
             public static function propertyTypes(): array
             {
                 return ['any' => ['type' => 'datetime']];

@@ -40,7 +40,8 @@ class JoinSubDiagnosticTest extends TestCase
 
     public function test_basic_join_works(): void
     {
-        $results = self::$orm->table('posts')
+        $results = self::$orm
+            ->table('posts')
             ->select(['posts.title', 'users.name as author'])
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->getAll();
@@ -59,12 +60,11 @@ class JoinSubDiagnosticTest extends TestCase
     public function test_join_sub_minimal_execution(): void
     {
         // Subconsulta lo más simple posible
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id'])
-            ->where('id', '=', 1); // Solo un post específico
+        $subquery = self::$orm->table('posts')->select(['user_id'])->where('id', '=', 1); // Solo un post específico
 
         try {
-            $results = self::$orm->table('users')
+            $results = self::$orm
+                ->table('users')
                 ->select(['users.name'])
                 ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id')
                 ->getAll();
@@ -83,13 +83,15 @@ class JoinSubDiagnosticTest extends TestCase
     public function test_join_sub_with_count(): void
     {
         // Esta es la versión que falló originalmente
-        $subquery = self::$orm->table('posts')
+        $subquery = self::$orm
+            ->table('posts')
             ->select(['user_id', 'COUNT(*) as post_count'])
             ->groupBy('user_id')
             ->having('COUNT(*)', '>', 1);
 
         try {
-            $results = self::$orm->table('users')
+            $results = self::$orm
+                ->table('users')
                 ->select(['users.name', 'active_users.post_count'])
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
                 ->getAll();
@@ -118,11 +120,10 @@ class JoinSubDiagnosticTest extends TestCase
 
     public function test_join_sub_sql_generation(): void
     {
-        $subquery = self::$orm->table('posts')
-            ->select(['user_id', 'COUNT(*) as post_count'])
-            ->groupBy('user_id');
+        $subquery = self::$orm->table('posts')->select(['user_id', 'COUNT(*) as post_count'])->groupBy('user_id');
 
-        $query = self::$orm->table('users')
+        $query = self::$orm
+            ->table('users')
             ->select(['users.name', 'active_users.post_count'])
             ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
 
@@ -139,7 +140,7 @@ class JoinSubDiagnosticTest extends TestCase
     public function test_direct_postgre_sql_execution(): void
     {
         // Verificar si el driver PostgreSQL está disponible
-        if (! in_array('pgsql', PDO::getAvailableDrivers(), true)) {
+        if (!in_array('pgsql', PDO::getAvailableDrivers(), true)) {
             self::markTestSkipped('PostgreSQL PDO driver not available');
         }
 
@@ -186,7 +187,7 @@ class JoinSubDiagnosticTest extends TestCase
             self::assertIsArray($results);
 
             // Verificar estructura de datos
-            if (! empty($results)) {
+            if (!empty($results)) {
                 foreach ($results as $result) {
                     self::assertArrayHasKey('name', $result);
                     self::assertArrayHasKey('post_count', $result);

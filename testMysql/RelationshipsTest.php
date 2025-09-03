@@ -169,7 +169,7 @@ class RelationshipsTest extends TestCase
 
         // Recargar y verificar
         $user = $user->fresh();
-        $roleIds = array_map(fn ($role) => $role->id, $user->roles);
+        $roleIds = array_map(fn($role) => $role->id, $user->roles);
         self::assertCount(2, $user->roles);
         self::assertContains($idViewer, $roleIds);
         self::assertContains($idExterno, $roleIds);
@@ -197,7 +197,6 @@ class RelationshipsTest extends TestCase
     //     parent::$orm->beginTransaction();
     //     parent::$orm->table('users')->insert(['name' => 'Test Rollback', 'email' => 'test@rollback.com']);
     //     parent::$orm->rollBack();
-
     //     $user = parent::$orm->table('users')->where('name', '=', 'Test Rollback')->findOne();
     //     $this->assertNull($user);
     // }

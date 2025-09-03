@@ -11,12 +11,10 @@ use VersaORM\Relations\HasOne;
 use VersaORM\VersaModel;
 
 // Test doubles: concrete subclasses to allow reflection to access methods like execute
-if (! class_exists('TestQueryBuilder')) {
+if (!class_exists('TestQueryBuilder')) {
     class TestQueryBuilder extends QueryBuilder
     {
-        public function __construct()
-        {
-        }
+        public function __construct() {}
 
         public function where(string $column, string $operator, mixed $value): self
         {
@@ -38,7 +36,7 @@ if (! class_exists('TestQueryBuilder')) {
             // no-op for tests
         }
 
-        public function findOne(): ?VersaModel
+        public function findOne(): null|VersaModel
         {
             return null;
         }
@@ -59,7 +57,7 @@ if (! class_exists('TestQueryBuilder')) {
         }
 
         // make execute public so reflection can invoke it
-        public function execute(string $method, ?array $data = null)
+        public function execute(string $method, null|array $data = null)
         {
             return true;
         }
@@ -71,7 +69,7 @@ if (! class_exists('TestQueryBuilder')) {
     }
 }
 
-if (! class_exists('TestModel')) {
+if (!class_exists('TestModel')) {
     class TestModel extends VersaModel
     {
         private array $attrs;

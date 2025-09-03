@@ -19,9 +19,15 @@ use function sprintf;
  */
 class QualityResult
 {
-    public function __construct(public string $tool, public int $score, public array $issues, public array $metrics, public bool $passed, public string $output, public DateTime $timestamp)
-    {
-    }
+    public function __construct(
+        public string $tool,
+        public int $score,
+        public array $issues,
+        public array $metrics,
+        public bool $passed,
+        public string $output,
+        public DateTime $timestamp,
+    ) {}
 
     /**
      * Obtiene el nivel de calidad basado en la puntuación.

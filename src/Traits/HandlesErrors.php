@@ -106,7 +106,7 @@ trait HandlesErrors
      */
     public function safeUpdate(array $data): mixed
     {
-        return $this->withErrorHandling(fn () => $this->update($data), ['operation' => 'update', 'data' => $data]);
+        return $this->withErrorHandling(fn() => $this->update($data), ['operation' => 'update', 'data' => $data]);
     }
 
     /**
@@ -123,7 +123,7 @@ trait HandlesErrors
     public function safeUpsert(array $uniqueKeys, array $updateColumns = []): mixed
     {
         return $this->withErrorHandling(
-            fn () => $this->upsert($uniqueKeys, $updateColumns),
+            fn() => $this->upsert($uniqueKeys, $updateColumns),
             ['operation' => 'upsert', 'unique_keys' => $uniqueKeys],
         );
     }
@@ -133,7 +133,7 @@ trait HandlesErrors
      */
     public static function safeFind(mixed $id): mixed
     {
-        return static::withStaticErrorHandling(static fn () => static::find($id), ['operation' => 'find', 'id' => $id]);
+        return static::withStaticErrorHandling(static fn() => static::find($id), ['operation' => 'find', 'id' => $id]);
     }
 
     /**
@@ -142,7 +142,7 @@ trait HandlesErrors
     public static function safeFindAll(array $conditions = []): mixed
     {
         return static::withStaticErrorHandling(
-            static fn () => static::findAll($conditions),
+            static fn() => static::findAll($conditions),
             ['operation' => 'findAll', 'conditions' => $conditions],
         );
     }
@@ -155,7 +155,7 @@ trait HandlesErrors
         $allErrors = ErrorHandler::getErrorLog();
         $modelErrors = array_filter(
             $allErrors,
-            static fn ($error): bool => ($error['context']['model_class'] ?? '') === static::class,
+            static fn($error): bool => ($error['context']['model_class'] ?? '') === static::class,
         );
 
         $stats = [

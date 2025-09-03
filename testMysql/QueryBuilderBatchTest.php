@@ -132,13 +132,16 @@ class QueryBuilderBatchTest extends TestCase
     {
         // Insertar datos de prueba con marcadores únicos
         $uniqueMarker = 'update_test_' . time() . '_' . mt_rand(1000, 9999);
-        self::$orm->table('users')->insertMany([
-            ['name' => 'Update Test 1', 'email' => 'update1@example.com', 'status' => $uniqueMarker . '_inactive'],
-            ['name' => 'Update Test 2', 'email' => 'update2@example.com', 'status' => $uniqueMarker . '_inactive'],
-            ['name' => 'Update Test 3', 'email' => 'update3@example.com', 'status' => $uniqueMarker . '_active'],
-        ]);
+        self::$orm
+            ->table('users')
+            ->insertMany([
+                ['name' => 'Update Test 1', 'email' => 'update1@example.com', 'status' => $uniqueMarker . '_inactive'],
+                ['name' => 'Update Test 2', 'email' => 'update2@example.com', 'status' => $uniqueMarker . '_inactive'],
+                ['name' => 'Update Test 3', 'email' => 'update3@example.com', 'status' => $uniqueMarker . '_active'],
+            ]);
 
-        $result = self::$orm->table('users')
+        $result = self::$orm
+            ->table('users')
             ->where('status', '=', $uniqueMarker . '_inactive')
             ->updateMany(['status' => $uniqueMarker . '_updated'], 1000);
 
@@ -170,7 +173,8 @@ class QueryBuilderBatchTest extends TestCase
         $this->expectException(Exception::class);
         $this->expectExceptionMessageMatches('/exceeds the maximum limit/');
 
-        self::$orm->table('users')
+        self::$orm
+            ->table('users')
             ->where('status', '=', $uniqueMarker . '_pending')
             ->updateMany(['status' => 'active'], 2); // Límite de 2, pero hay 5 registros
     }
@@ -196,14 +200,13 @@ class QueryBuilderBatchTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid or malicious column name detected');
 
-        self::$orm->table('users')
-            ->where('id', '>', 0)
-            ->updateMany(['name; DROP TABLE users; --' => 'malicious']);
+        self::$orm->table('users')->where('id', '>', 0)->updateMany(['name; DROP TABLE users; --' => 'malicious']);
     }
 
     public function test_update_many_no_matching_records(): void
     {
-        $result = self::$orm->table('users')
+        $result = self::$orm
+            ->table('users')
             ->where('email', '=', 'nonexistent@example.com')
             ->updateMany(['status' => 'updated']);
 
@@ -219,15 +222,15 @@ class QueryBuilderBatchTest extends TestCase
     public function test_delete_many_basic(): void
     {
         // Insertar datos de prueba
-        self::$orm->table('users')->insertMany([
-            ['name' => 'Delete Test 1', 'email' => 'delete1@example.com', 'status' => 'to_delete'],
-            ['name' => 'Delete Test 2', 'email' => 'delete2@example.com', 'status' => 'to_delete'],
-            ['name' => 'Delete Test 3', 'email' => 'delete3@example.com', 'status' => 'keep'],
-        ]);
+        self::$orm
+            ->table('users')
+            ->insertMany([
+                ['name' => 'Delete Test 1', 'email' => 'delete1@example.com', 'status' => 'to_delete'],
+                ['name' => 'Delete Test 2', 'email' => 'delete2@example.com', 'status' => 'to_delete'],
+                ['name' => 'Delete Test 3', 'email' => 'delete3@example.com', 'status' => 'keep'],
+            ]);
 
-        $result = self::$orm->table('users')
-            ->where('status', '=', 'to_delete')
-            ->deleteMany(1000);
+        $result = self::$orm->table('users')->where('status', '=', 'to_delete')->deleteMany(1000);
 
         self::assertIsArray($result);
         self::assertSame(2, $result['rows_affected']);
@@ -259,9 +262,7 @@ class QueryBuilderBatchTest extends TestCase
         $this->expectException(Exception::class);
         $this->expectExceptionMessageMatches('/exceeds the maximum limit/');
 
-        self::$orm->table('users')
-            ->where('status', '=', 'bulk_delete')
-            ->deleteMany(2); // Límite de 2, pero hay 5 registros
+        self::$orm->table('users')->where('status', '=', 'bulk_delete')->deleteMany(2); // Límite de 2, pero hay 5 registros
     }
 
     public function test_delete_many_no_where_condition(): void
@@ -274,9 +275,7 @@ class QueryBuilderBatchTest extends TestCase
 
     public function test_delete_many_no_matching_records(): void
     {
-        $result = self::$orm->table('users')
-            ->where('email', '=', 'nonexistent_delete@example.com')
-            ->deleteMany();
+        $result = self::$orm->table('users')->where('email', '=', 'nonexistent_delete@example.com')->deleteMany();
 
         self::assertSame(0, $result['rows_affected']);
         self::assertSame('success', $result['status']);
@@ -290,10 +289,12 @@ class QueryBuilderBatchTest extends TestCase
     public function test_upsert_many_basic(): void
     {
         // Primero insertar algunos registros base
-        $insertResult = self::$orm->table('products')->insertMany([
-            ['sku' => 'UPSERT001', 'name' => 'Original Product 1', 'price' => 100.0],
-            ['sku' => 'UPSERT002', 'name' => 'Original Product 2', 'price' => 200.0],
-        ]);
+        $insertResult = self::$orm
+            ->table('products')
+            ->insertMany([
+                ['sku' => 'UPSERT001', 'name' => 'Original Product 1', 'price' => 100.0],
+                ['sku' => 'UPSERT002', 'name' => 'Original Product 2', 'price' => 200.0],
+            ]);
 
         // Verificar que se insertaron correctamente
         $originalProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
@@ -302,11 +303,10 @@ class QueryBuilderBatchTest extends TestCase
         $records = [
             ['sku' => 'UPSERT001', 'name' => 'Updated Product 1', 'price' => 150.0], // Actualizar
             ['sku' => 'UPSERT002', 'name' => 'Updated Product 2', 'price' => 250.0], // Actualizar
-            ['sku' => 'UPSERT003', 'name' => 'New Product 3', 'price' => 300.0],      // Crear
+            ['sku' => 'UPSERT003', 'name' => 'New Product 3', 'price' => 300.0], // Crear
         ];
 
-        $result = self::$orm->table('products')
-            ->upsertMany($records, ['sku'], ['name', 'price']);
+        $result = self::$orm->table('products')->upsertMany($records, ['sku'], ['name', 'price']);
 
         self::assertIsArray($result);
         self::assertSame(3, $result['total_processed']);
@@ -379,11 +379,7 @@ class QueryBuilderBatchTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid update column name detected');
 
-        self::$orm->table('products')->upsertMany(
-            $records,
-            ['sku'],
-            ['name; DROP TABLE products; --'],
-        );
+        self::$orm->table('products')->upsertMany($records, ['sku'], ['name; DROP TABLE products; --']);
     }
 
     // ======================================================================
@@ -416,11 +412,13 @@ class QueryBuilderBatchTest extends TestCase
     public function test_upsert_individual_update(): void
     {
         // Insertar registro inicial
-        self::$orm->table('products')->insert([
-            'sku' => 'INDIVIDUAL_UPDATE001',
-            'name' => 'Original Individual Product',
-            'price' => 100.0,
-        ]);
+        self::$orm
+            ->table('products')
+            ->insert([
+                'sku' => 'INDIVIDUAL_UPDATE001',
+                'name' => 'Original Individual Product',
+                'price' => 100.0,
+            ]);
 
         // Hacer upsert para actualizar
         $updateData = [
@@ -444,11 +442,13 @@ class QueryBuilderBatchTest extends TestCase
     public function test_upsert_individual_without_update_columns(): void
     {
         // Test upsert sin especificar columnas de actualización (debería actualizar todas)
-        self::$orm->table('products')->insert([
-            'sku' => 'NO_UPDATE_COLS001',
-            'name' => 'Original Product',
-            'price' => 100.0,
-        ]);
+        self::$orm
+            ->table('products')
+            ->insert([
+                'sku' => 'NO_UPDATE_COLS001',
+                'name' => 'Original Product',
+                'price' => 100.0,
+            ]);
 
         $updateData = [
             'sku' => 'NO_UPDATE_COLS001',
@@ -562,7 +562,8 @@ class QueryBuilderBatchTest extends TestCase
         self::assertSame(2, $result['total_inserted']);
 
         // Ahora intentar actualización con condiciones que no matchean
-        $updateResult = self::$orm->table('users')
+        $updateResult = self::$orm
+            ->table('users')
             ->where('status', '=', 'nonexistent_status')
             ->updateMany(['name' => 'Updated']);
 

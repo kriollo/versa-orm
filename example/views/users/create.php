@@ -93,7 +93,7 @@
                             '#16a085',
                         ];
 
-foreach ($predefinedColors as $color) { ?>
+                        foreach ($predefinedColors as $color) { ?>
                             <button type="button"
                                 class="color-option w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                                 style="background-color: <?php echo $color; ?>"

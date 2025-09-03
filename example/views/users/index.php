@@ -28,7 +28,7 @@
                 <div>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors duration-200"><?php echo
                         count($users)
-; ?></p>
+                    ; ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200">Total Usuarios</p>
                 </div>
             </div>
@@ -41,8 +41,8 @@
                 </div>
                 <div>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors duration-200"><?php echo
-    count($users)
-; ?></p>
+                        count($users)
+                    ; ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200">Usuarios Activos</p>
                 </div>
             </div>
@@ -55,11 +55,11 @@
                 </div>
                 <div>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors duration-200"><?php echo
-    count(array_filter(
-        $users,
-        static fn ($u): bool => safe_strtotime($u->created_at) > strtotime('-30 days'),
-    ))
-; ?></p>
+                        count(array_filter(
+                            $users,
+                            static fn($u): bool => safe_strtotime($u->created_at) > strtotime('-30 days'),
+                        ))
+                    ; ?></p>
                     <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200">Nuevos (30 días)</p>
                 </div>
             </div>
@@ -72,8 +72,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 <?php foreach ($users as $user) { ?>
                     <?php
-// Obtener estadísticas reales del usuario usando el método optimizado
-$stats = $user->getStats();
+                    // Obtener estadísticas reales del usuario usando el método optimizado
+                    $stats = $user->getStats();
 
                     // Extraer datos para facilitar el uso en la vista
                     $userProjects = [];
@@ -93,22 +93,22 @@ $stats = $user->getStats();
                         <div class="flex items-center mb-4">
                             <div class="avatar-lg mr-4" style="background-color: <?php echo
                                 htmlspecialchars($user->avatar_color ?? '#6c5ce7')
-                    ; ?>">
+                            ; ?>">
                                 <?php echo strtoupper(substr($user->name ?? 'NN', 0, 2)); ?>
                             </div>
                             <div class="flex-1">
                                 <h3 class="font-semibold text-lg text-gray-900 dark:text-white transition-colors duration-200"><?php echo
-                            htmlspecialchars($user->name ?? 'Sin nombre')
-                    ; ?></h3>
+                                    htmlspecialchars($user->name ?? 'Sin nombre')
+                                ; ?></h3>
                                 <p class="text-gray-600 dark:text-gray-300 text-sm transition-colors duration-200"><?php echo
-                        htmlspecialchars($user->email ?? 'Sin email')
-                    ; ?></p>
+                                    htmlspecialchars($user->email ?? 'Sin email')
+                                ; ?></p>
                                 <p class="text-gray-500 dark:text-gray-400 text-xs mt-1 transition-colors duration-200">
                                     Miembro desde <?php echo
-                            isset($user->created_at)
-                                ? safe_date('M Y', $user->created_at)
-                                : 'Fecha desconocida'
-                    ; ?>
+                                        isset($user->created_at)
+                                            ? safe_date('M Y', $user->created_at)
+                                            : 'Fecha desconocida'
+                                    ; ?>
                                 </p>
                             </div>
                         </div>
@@ -138,8 +138,8 @@ $stats = $user->getStats();
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 transition-colors duration-200">
                                     <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo
-                        count($userTasks) > 0 ? (count($completedTasks) / count($userTasks)) * 100 : 0
-                            ; ?>%"></div>
+                                        count($userTasks) > 0 ? (count($completedTasks) / count($userTasks)) * 100 : 0
+                                    ; ?>%"></div>
                                 </div>
                             </div>
                         <?php } ?>
@@ -152,8 +152,8 @@ $stats = $user->getStats();
                                     <?php foreach (array_slice($userProjects, 0, 3) as $project) { ?>
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium dark:ring-1 dark:ring-white/10 transition-colors"
                                             style="background-color: <?php echo htmlspecialchars($project['color']); ?>20; color: <?php echo
-                                        htmlspecialchars($project['color'])
-                                        ; ?>">
+                                                htmlspecialchars($project['color'])
+                                            ; ?>">
                                             <?php echo htmlspecialchars($project['name']); ?>
                                         </span>
                                     <?php } ?>
@@ -173,7 +173,7 @@ $stats = $user->getStats();
                                     <i class="fas fa-clock mr-1"></i>
                                     <?php echo
                                         isset($user->updated_at) ? safe_date('d/m/Y', $user->updated_at) : 'Sin fecha'
-                    ; ?>
+                                    ; ?>
                                 </span>
                             </div>
                             <div class="flex items-center space-x-2">

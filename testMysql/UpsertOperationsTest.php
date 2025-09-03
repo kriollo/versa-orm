@@ -31,11 +31,7 @@ class UpsertOperationsTest extends TestCase
             'stock' => 15,
         ];
 
-        $result = self::$orm->table('products')->upsert(
-            $productData,
-            ['sku'], // Clave única
-            ['name', 'price', 'stock'], // Campos a actualizar si existe
-        );
+        $result = self::$orm->table('products')->upsert($productData, ['sku'], ['name', 'price', 'stock']); // Clave única // Campos a actualizar si existe
 
         self::assertIsArray($result);
         self::assertSame('success', $result['status']);
@@ -59,11 +55,7 @@ class UpsertOperationsTest extends TestCase
             'stock' => 25,
         ];
 
-        $result = self::$orm->table('products')->upsert(
-            $existingProduct,
-            ['sku'], // Clave única
-            ['name', 'price', 'stock'], // Solo actualizar estos campos
-        );
+        $result = self::$orm->table('products')->upsert($existingProduct, ['sku'], ['name', 'price', 'stock']); // Clave única // Solo actualizar estos campos
 
         self::assertIsArray($result);
         self::assertSame('success', $result['status']);
@@ -87,11 +79,7 @@ class UpsertOperationsTest extends TestCase
             'status' => 'super_active',
         ];
 
-        $result = self::$orm->table('users')->upsert(
-            $userData,
-            ['email'], // Clave única
-            ['name', 'status'], // Campos a actualizar
-        );
+        $result = self::$orm->table('users')->upsert($userData, ['email'], ['name', 'status']); // Clave única // Campos a actualizar
 
         self::assertSame('success', $result['status']);
         self::assertSame('updated', $result['operation']);
@@ -108,11 +96,7 @@ class UpsertOperationsTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('upsert requires unique keys');
 
-        self::$orm->table('products')->upsert(
-            ['sku' => 'TEST', 'name' => 'Test'],
-            [], // Sin claves únicas - debe fallar
-            ['name'],
-        );
+        self::$orm->table('products')->upsert(['sku' => 'TEST', 'name' => 'Test'], [], ['name']); // Sin claves únicas - debe fallar
     }
 
     public function test_upsert_with_invalid_column_names(): void
@@ -120,11 +104,7 @@ class UpsertOperationsTest extends TestCase
         // Test: Upsert debe validar nombres de columnas
         $this->expectException(VersaORMException::class);
 
-        self::$orm->table('products')->upsert(
-            ['sku' => 'TEST', 'name' => 'Test'],
-            ['invalid--column'], // Nombre de columna inválido
-            ['name'],
-        );
+        self::$orm->table('products')->upsert(['sku' => 'TEST', 'name' => 'Test'], ['invalid--column'], ['name']); // Nombre de columna inválido
     }
 
     // ======================================================================
@@ -140,10 +120,7 @@ class UpsertOperationsTest extends TestCase
             'status' => 'active',
         ];
 
-        $result = self::$orm->table('users')->insertOrUpdate(
-            $userData,
-            ['email'],
-        );
+        $result = self::$orm->table('users')->insertOrUpdate($userData, ['email']);
 
         self::assertSame('success', $result['status']);
         self::assertSame('inserted', $result['operation']);
@@ -163,10 +140,7 @@ class UpsertOperationsTest extends TestCase
             'status' => 'updated',
         ];
 
-        $result = self::$orm->table('users')->insertOrUpdate(
-            $updatedData,
-            ['email'],
-        );
+        $result = self::$orm->table('users')->insertOrUpdate($updatedData, ['email']);
 
         self::assertSame('success', $result['status']);
         self::assertSame('updated', $result['operation']);
@@ -248,11 +222,9 @@ class UpsertOperationsTest extends TestCase
             'status' => 'active',
         ];
 
-        $result = self::$orm->table('users')->createOrUpdate(
-            $userData,
-            ['email' => 'createorupdate@example.com'], // Condiciones como clave => valor
-            ['name', 'status'],
-        );
+        $result = self::$orm
+            ->table('users')
+            ->createOrUpdate($userData, ['email' => 'createorupdate@example.com'], ['name', 'status']); // Condiciones como clave => valor
 
         self::assertSame('success', $result['status']);
         self::assertSame('created', $result['operation']); // createOrUpdate devuelve 'created' no 'inserted'
@@ -273,11 +245,9 @@ class UpsertOperationsTest extends TestCase
             'stock' => 30,
         ];
 
-        $result = self::$orm->table('products')->createOrUpdate(
-            $updateData,
-            ['sku' => 'P002'], // Condiciones como clave => valor
-            ['name', 'price', 'stock'],
-        );
+        $result = self::$orm
+            ->table('products')
+            ->createOrUpdate($updateData, ['sku' => 'P002'], ['name', 'price', 'stock']); // Condiciones como clave => valor
 
         self::assertSame('success', $result['status']);
         self::assertSame('updated', $result['operation']);
@@ -303,11 +273,9 @@ class UpsertOperationsTest extends TestCase
             'stock' => 5,
         ];
 
-        $result = self::$orm->table('products')->upsert(
-            $dataWithNulls,
-            ['sku'],
-            ['name', 'price', 'description', 'stock'],
-        );
+        $result = self::$orm
+            ->table('products')
+            ->upsert($dataWithNulls, ['sku'], ['name', 'price', 'description', 'stock']);
 
         self::assertSame('success', $result['status']);
         self::assertSame('inserted', $result['operation']);
@@ -328,11 +296,9 @@ class UpsertOperationsTest extends TestCase
             'stock' => 8,
         ];
 
-        $result = self::$orm->table('products')->upsert(
-            $dataWithSpecialChars,
-            ['sku'],
-            ['name', 'price', 'description', 'stock'],
-        );
+        $result = self::$orm
+            ->table('products')
+            ->upsert($dataWithSpecialChars, ['sku'], ['name', 'price', 'description', 'stock']);
 
         self::assertSame('success', $result['status']);
 
@@ -387,11 +353,7 @@ class UpsertOperationsTest extends TestCase
                 'stock' => $i * 5,
             ];
 
-            $result = self::$orm->table('products')->upsert(
-                $data,
-                ['sku'],
-                ['name', 'price', 'stock'],
-            );
+            $result = self::$orm->table('products')->upsert($data, ['sku'], ['name', 'price', 'stock']);
 
             self::assertSame('success', $result['status']);
         }
@@ -400,17 +362,11 @@ class UpsertOperationsTest extends TestCase
         $executionTime = $endTime - $startTime;
 
         // Verificar que todas las operaciones fueron exitosas
-        $count = self::$orm->table('products')
-            ->where('sku', 'LIKE', 'PERF-TEST-%')
-            ->count();
+        $count = self::$orm->table('products')->where('sku', 'LIKE', 'PERF-TEST-%')->count();
 
         self::assertSame(10, $count);
 
         // El tiempo debe ser razonable (menos de 2 segundos para 10 operaciones)
-        self::assertLessThan(
-            2.0,
-            $executionTime,
-            "10 operaciones upsert tomaron demasiado tiempo: {$executionTime}s",
-        );
+        self::assertLessThan(2.0, $executionTime, "10 operaciones upsert tomaron demasiado tiempo: {$executionTime}s");
     }
 }

@@ -73,13 +73,13 @@ function runFullAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Test
     outputResults($result, $options);
 
     // Generate additional reports
-    if (! isset($options['no-gaps'])) {
+    if (!isset($options['no-gaps'])) {
         $logger->info('Generating feature coverage gaps report');
         $gapsReport = $analyzer->generateFeatureCoverageGapsReport();
         echo "\nFeature coverage gaps report generated: tests/reports/coverage/feature-gaps-report.json\n";
     }
 
-    if (! isset($options['no-alerts'])) {
+    if (!isset($options['no-alerts'])) {
         $logger->info('Generating feature coverage alerts');
         $alerts = $analyzer->generateFeatureCoverageAlerts();
 
@@ -153,7 +153,7 @@ function runGapsAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Test
     echo "Worst Gap: {$gapsReport['summary']['worst_gap']}%\n";
     echo 'Average Gap: ' . round($gapsReport['summary']['average_gap'], 2) . "%\n\n";
 
-    if (! empty($gapsReport['gaps'])) {
+    if (!empty($gapsReport['gaps'])) {
         echo "Features with Coverage Gaps:\n";
 
         foreach ($gapsReport['gaps'] as $gap) {
@@ -164,7 +164,7 @@ function runGapsAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Test
         echo "\n";
     }
 
-    if (! empty($gapsReport['recommendations'])) {
+    if (!empty($gapsReport['recommendations'])) {
         echo "Recommendations:\n";
 
         foreach ($gapsReport['recommendations'] as $rec) {
@@ -278,7 +278,7 @@ function generateTextOutput(mixed $result): string
     $output .= "Features Analyzed: {$result->metrics['features_analyzed']}\n";
     $output .= "Features Meeting Threshold: {$result->metrics['features_meeting_threshold']}\n\n";
 
-    if (! empty($result->issues)) {
+    if (!empty($result->issues)) {
         $output .= "Issues:\n";
 
         foreach ($result->issues as $issue) {

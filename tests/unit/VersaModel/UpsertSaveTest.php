@@ -13,7 +13,7 @@ final class UpsertSaveTest extends TestCase
 {
     public function testUpsertThrowsNoData(): void
     {
-        $m = new class ('users', null) extends VersaModel {
+        $m = new class('users', null) extends VersaModel {
             protected array $fillable = ['email'];
         };
 
@@ -24,7 +24,7 @@ final class UpsertSaveTest extends TestCase
 
     public function testUpsertThrowsNoUniqueKeys(): void
     {
-        $m = new class ('users', null) extends VersaModel {
+        $m = new class('users', null) extends VersaModel {
             protected array $fillable = ['email'];
         };
         $m->fill(['email' => 'a@b.com']);
@@ -36,7 +36,7 @@ final class UpsertSaveTest extends TestCase
 
     public function testUpsertThrowsWhenNoOrm(): void
     {
-        $m = new class ('users', null) extends VersaModel {
+        $m = new class('users', null) extends VersaModel {
             protected array $fillable = ['email'];
         };
         $m->fill(['email' => 'a@b.com']);

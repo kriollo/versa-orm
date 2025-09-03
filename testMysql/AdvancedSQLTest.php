@@ -24,9 +24,9 @@ use VersaORM\VersaORMException;
  */
 class AdvancedSQLTest extends TestCase
 {
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
-    private ?QueryBuilder $queryBuilder = null;
+    private null|QueryBuilder $queryBuilder = null;
 
     protected function setUp(): void
     {
@@ -63,10 +63,10 @@ class AdvancedSQLTest extends TestCase
             'row_number',
             '*',
             [],
-            ['department'], // PARTITION BY department
-            [['column' => 'salary', 'direction' => 'DESC']], // ORDER BY salary DESC
+            ['department'],
+            [['column' => 'salary', 'direction' => 'DESC']],
             'row_num',
-        );
+        ); // PARTITION BY department // ORDER BY salary DESC
 
         self::assertIsArray($result);
         self::assertNotEmpty($result);
@@ -128,11 +128,7 @@ class AdvancedSQLTest extends TestCase
             ],
         ];
 
-        $result = $qb->withCte(
-            $ctes,
-            'SELECT department, COUNT(*) as count FROM high_earners GROUP BY department',
-            [],
-        );
+        $result = $qb->withCte($ctes, 'SELECT department, COUNT(*) as count FROM high_earners GROUP BY department', []);
 
         self::assertIsArray($result);
     }
@@ -164,11 +160,7 @@ class AdvancedSQLTest extends TestCase
             ],
         ];
 
-        $result = $qb->withCte(
-            $ctes,
-            'SELECT * FROM employee_hierarchy ORDER BY level, name',
-            [],
-        );
+        $result = $qb->withCte($ctes, 'SELECT * FROM employee_hierarchy ORDER BY level, name', []);
 
         self::assertIsArray($result);
     }
@@ -250,13 +242,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
-        $result = $qb->advancedAggregation(
-            'percentile',
-            'salary',
-            ['percentile' => 0.5], // Mediana
-            [],
-            'median_salary',
-        );
+        $result = $qb->advancedAggregation('percentile', 'salary', ['percentile' => 0.5], [], 'median_salary'); // Mediana
 
         self::assertIsArray($result);
     }
@@ -265,13 +251,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
-        $result = $qb->advancedAggregation(
-            'median',
-            'salary',
-            [],
-            ['department'],
-            'median_dept_salary',
-        );
+        $result = $qb->advancedAggregation('median', 'salary', [], ['department'], 'median_dept_salary');
 
         self::assertIsArray($result);
     }
@@ -280,13 +260,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
 
-        $result = $qb->advancedAggregation(
-            'variance',
-            'salary',
-            [],
-            [],
-            'salary_variance',
-        );
+        $result = $qb->advancedAggregation('variance', 'salary', [], [], 'salary_variance');
 
         self::assertIsArray($result);
     }
@@ -313,11 +287,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
-        $result = $qb->jsonOperation(
-            'extract',
-            'profile',
-            '$.name',
-        );
+        $result = $qb->jsonOperation('extract', 'profile', '$.name');
 
         self::assertIsArray($result);
     }
@@ -326,11 +296,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
-        $result = $qb->jsonOperation(
-            'array_length',
-            'profile',
-            '$.skills',
-        );
+        $result = $qb->jsonOperation('array_length', 'profile', '$.skills');
 
         self::assertIsArray($result);
     }
@@ -339,12 +305,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
-        $result = $qb->jsonOperation(
-            'contains',
-            'profile',
-            '$.skills',
-            'PHP',
-        );
+        $result = $qb->jsonOperation('contains', 'profile', '$.skills', 'PHP');
 
         self::assertIsArray($result);
     }
@@ -353,12 +314,7 @@ class AdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'json_test');
 
-        $result = $qb->jsonOperation(
-            'search',
-            'settings',
-            '$.theme',
-            'dark',
-        );
+        $result = $qb->jsonOperation('search', 'settings', '$.theme', 'dark');
 
         self::assertIsArray($result);
     }
@@ -366,7 +322,9 @@ class AdvancedSQLTest extends TestCase
     public function test_json_operation_invalid(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('Invalid JSON operation: invalid_op. Valid operations: extract, contains, search, array_length, type, keys');
+        $this->expectExceptionMessage(
+            'Invalid JSON operation: invalid_op. Valid operations: extract, contains, search, array_length, type, keys',
+        );
 
         $qb = new QueryBuilder($this->orm, 'json_test');
         $qb->jsonOperation('invalid_op', 'profile');
@@ -452,15 +410,14 @@ class AdvancedSQLTest extends TestCase
         $qb = new QueryBuilder($this->orm, 'test_table');
 
         // Usar window function con WHERE conditions
-        $result = $qb->where('salary', '>', 70000)
-            ->windowFunction(
-                'row_number',
-                '*',
-                [],
-                ['department'],
-                [['column' => 'salary', 'direction' => 'DESC']],
-                'rank_in_dept',
-            );
+        $result = $qb->where('salary', '>', 70000)->windowFunction(
+            'row_number',
+            '*',
+            [],
+            ['department'],
+            [['column' => 'salary', 'direction' => 'DESC']],
+            'rank_in_dept',
+        );
 
         self::assertIsArray($result);
     }
@@ -577,9 +534,21 @@ class AdvancedSQLTest extends TestCase
 
         // Datos para artículos
         $articles = [
-            ['title' => 'Advanced SQL Techniques', 'content' => 'This article covers window functions and CTEs', 'category' => 'database'],
-            ['title' => 'PHP Best Practices', 'content' => 'Learn about modern PHP development patterns', 'category' => 'programming'],
-            ['title' => 'Database Optimization', 'content' => 'Tips for optimizing database queries and indexes', 'category' => 'database'],
+            [
+                'title' => 'Advanced SQL Techniques',
+                'content' => 'This article covers window functions and CTEs',
+                'category' => 'database',
+            ],
+            [
+                'title' => 'PHP Best Practices',
+                'content' => 'Learn about modern PHP development patterns',
+                'category' => 'programming',
+            ],
+            [
+                'title' => 'Database Optimization',
+                'content' => 'Tips for optimizing database queries and indexes',
+                'category' => 'database',
+            ],
         ];
 
         foreach ($articles as $article) {

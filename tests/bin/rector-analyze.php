@@ -172,7 +172,7 @@ function buildRectorCommand(array $options, bool $dryRun): string
         $path = $options['path'];
         $validPaths = ['src', 'tests', 'example'];
 
-        if (! in_array($path, $validPaths, true)) {
+        if (!in_array($path, $validPaths, true)) {
             throw new Exception('Invalid path. Valid paths: ' . implode(', ', $validPaths));
         }
 
@@ -261,7 +261,7 @@ function displayChangeSummary(array $changes): void
         }
     }
 
-    if (! empty($changes['rules_applied'])) {
+    if (!empty($changes['rules_applied'])) {
         echo "\n🔧 Applied rules:\n";
 
         foreach (array_slice($changes['rules_applied'], 0, 10) as $rule) {
@@ -289,7 +289,7 @@ function clearRectorCache(): void
         );
 
         foreach ($files as $fileinfo) {
-            $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+            $todo = $fileinfo->isDir() ? 'rmdir' : 'unlink';
             $todo($fileinfo->getRealPath());
         }
 

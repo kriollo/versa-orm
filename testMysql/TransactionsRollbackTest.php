@@ -13,7 +13,7 @@ use VersaORM\VersaORM;
  */
 class TransactionsRollbackTest extends TestCase
 {
-    private ?VersaORM $orm = null;
+    private null|VersaORM $orm = null;
 
     protected function setUp(): void
     {
@@ -48,7 +48,10 @@ class TransactionsRollbackTest extends TestCase
         $this->orm->table('tx_users')->insert(['name' => 'Tx Commit', 'email' => 'tx.commit@example.com']);
         $this->orm->commit();
 
-        $found = $this->orm->table('tx_users')->where('email', '=', 'tx.commit@example.com')->findOne();
+        $found = $this->orm
+            ->table('tx_users')
+            ->where('email', '=', 'tx.commit@example.com')
+            ->findOne();
         self::assertNotNull($found);
         self::assertSame('Tx Commit', $found->name);
     }
@@ -56,7 +59,10 @@ class TransactionsRollbackTest extends TestCase
     public function test_rollback_reverts_changes(): void
     {
         // Estado inicial vacío
-        $pre = $this->orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
+        $pre = $this->orm
+            ->table('tx_users')
+            ->where('email', '=', 'tx.rollback@example.com')
+            ->findOne();
         self::assertNull($pre);
 
         // Iniciar transacción y generar un cambio
@@ -64,14 +70,20 @@ class TransactionsRollbackTest extends TestCase
         $this->orm->table('tx_users')->insert(['name' => 'Tx Rollback', 'email' => 'tx.rollback@example.com']);
 
         // Verificar que el cambio se ve dentro de la transacción (si el aislamiento lo permite)
-        $mid = $this->orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
+        $mid = $this->orm
+            ->table('tx_users')
+            ->where('email', '=', 'tx.rollback@example.com')
+            ->findOne();
         self::assertNotNull($mid);
 
         // Revertir
         $this->orm->rollBack();
 
         // Debe no existir al final
-        $post = $this->orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
+        $post = $this->orm
+            ->table('tx_users')
+            ->where('email', '=', 'tx.rollback@example.com')
+            ->findOne();
         self::assertNull($post);
     }
 }

@@ -79,7 +79,8 @@ class FeatureCoverageAnalyzer
         $gapsReport = $this->generateFeatureCoverageGapsReport();
 
         // Determine if analysis passed
-        $passed = $alerts === [] && $overallResults['features_meeting_threshold'] >= count($this->featureDefinitions) * 0.8;
+        $passed =
+            $alerts === [] && $overallResults['features_meeting_threshold'] >= (count($this->featureDefinitions) * 0.8);
 
         $result = new QualityResult(
             tool: 'feature-coverage',
@@ -108,7 +109,7 @@ class FeatureCoverageAnalyzer
      */
     public function trackFeatureCoverage(string $featureName): array
     {
-        if (! isset($this->featureDefinitions[$featureName])) {
+        if (!isset($this->featureDefinitions[$featureName])) {
             throw new Exception("Feature '{$featureName}' not defined in configuration");
         }
 
@@ -161,7 +162,7 @@ class FeatureCoverageAnalyzer
         }
 
         // Sort gaps by severity (largest gap first)
-        usort($gaps, static fn ($a, $b): int => $b['gap_percentage'] <=> $a['gap_percentage']);
+        usort($gaps, static fn($a, $b): int => $b['gap_percentage'] <=> $a['gap_percentage']);
 
         $report = [
             'timestamp' => date('Y-m-d H:i:s'),
@@ -196,7 +197,10 @@ class FeatureCoverageAnalyzer
 
                 // Check overall feature coverage
                 if ($featureResult['average_coverage'] < $featureConfig['minimum_coverage']) {
-                    $severity = $this->determineSeverity($featureResult['average_coverage'], $featureConfig['minimum_coverage']);
+                    $severity = $this->determineSeverity(
+                        $featureResult['average_coverage'],
+                        $featureConfig['minimum_coverage'],
+                    );
 
                     $alerts[] = [
                         'type' => 'feature_coverage_below_threshold',
@@ -212,7 +216,7 @@ class FeatureCoverageAnalyzer
 
                 // Check engine-specific coverage
                 foreach ($featureResult['engine_results'] as $engine => $engineResult) {
-                    if ($engineResult['coverage'] < $featureConfig['minimum_coverage'] * 0.8) { // 80% of minimum
+                    if ($engineResult['coverage'] < ($featureConfig['minimum_coverage'] * 0.8)) { // 80% of minimum
                         $alerts[] = [
                             'type' => 'engine_feature_coverage_critical',
                             'severity' => 'high',
@@ -234,7 +238,8 @@ class FeatureCoverageAnalyzer
                         'severity' => 'medium',
                         'feature' => $featureName,
                         'missing_files' => $missingTestFiles,
-                        'message' => "Feature '{$featureName}' has missing test files: " . implode(', ', $missingTestFiles),
+                        'message' =>
+                            "Feature '{$featureName}' has missing test files: " . implode(', ', $missingTestFiles),
                     ];
                 }
             } catch (Exception $e) {
@@ -270,7 +275,9 @@ class FeatureCoverageAnalyzer
                     $validEngines++;
                 }
             } catch (Exception $e) {
-                $this->logger->warning("Failed to analyze feature '{$featureName}' for engine '{$engine}': " . $e->getMessage());
+                $this->logger->warning(
+                    "Failed to analyze feature '{$featureName}' for engine '{$engine}': " . $e->getMessage(),
+                );
                 $engineResults[$engine] = [
                     'coverage' => 0,
                     'error' => $e->getMessage(),
@@ -291,7 +298,10 @@ class FeatureCoverageAnalyzer
             'engine_results' => $engineResults,
             'status' => $averageCoverage >= $featureConfig['minimum_coverage'] ? 'PASS' : 'FAIL',
             'engines_analyzed' => count($engines),
-            'engines_passed' => count(array_filter($engineResults, static fn ($result): bool => $result['coverage'] >= $featureConfig['minimum_coverage'])),
+            'engines_passed' => count(array_filter(
+                $engineResults,
+                static fn($result): bool => $result['coverage'] >= $featureConfig['minimum_coverage'],
+            )),
         ];
     }
 
@@ -337,7 +347,11 @@ class FeatureCoverageAnalyzer
 
         foreach ($testFiles as $testFile) {
             // Check if test file exists for this engine
-            $engineSpecificFile = str_replace(['testMysql/', 'testPostgreSQL/', 'testSQLite/'], 'test' . ucfirst($engine) . '/', $testFile);
+            $engineSpecificFile = str_replace(
+                ['testMysql/', 'testPostgreSQL/', 'testSQLite/'],
+                'test' . ucfirst($engine) . '/',
+                $testFile,
+            );
 
             // Handle PostgreSQL naming
             if ($engine === 'postgresql') {
@@ -361,12 +375,12 @@ class FeatureCoverageAnalyzer
     {
         $cloverFile = "{$this->projectRoot}/tests/reports/coverage/{$engine}/clover.xml";
 
-        if (! file_exists($cloverFile)) {
+        if (!file_exists($cloverFile)) {
             // Try to generate coverage if it doesn't exist
             $this->generateCoverageForEngine($engine);
         }
 
-        if (! file_exists($cloverFile)) {
+        if (!file_exists($cloverFile)) {
             throw new Exception("Coverage data not available for {$engine}");
         }
 
@@ -392,7 +406,7 @@ class FeatureCoverageAnalyzer
             'sqlite' => 'phpunit-sqlite.xml',
         ];
 
-        if (! isset($configFiles[$engine])) {
+        if (!isset($configFiles[$engine])) {
             throw new Exception("Unknown engine: {$engine}");
         }
 
@@ -613,7 +627,7 @@ class FeatureCoverageAnalyzer
         foreach ($testFiles as $testFile) {
             $fullPath = "{$this->projectRoot}/{$testFile}";
 
-            if (! file_exists($fullPath)) {
+            if (!file_exists($fullPath)) {
                 $missing[] = $testFile;
             }
         }
@@ -633,7 +647,7 @@ class FeatureCoverageAnalyzer
         ];
 
         foreach ($possiblePaths as $path) {
-            if (file_exists($path) || (is_string($path) && $path === 'phpunit')) {
+            if (file_exists($path) || is_string($path) && $path === 'phpunit') {
                 return $path;
             }
         }

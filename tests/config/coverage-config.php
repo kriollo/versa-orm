@@ -17,7 +17,6 @@ return [
         'warning_threshold' => 85.0,
         'target_coverage' => 100.0,
     ],
-
     // Engine-specific coverage settings
     'engines' => [
         'mysql' => [
@@ -69,7 +68,6 @@ return [
             ],
         ],
     ],
-
     // File-specific coverage requirements
     'file_requirements' => [
         'src/VersaORM.php' => [
@@ -98,7 +96,6 @@ return [
             'description' => 'Exception class - basic coverage required',
         ],
     ],
-
     // Feature-based coverage tracking
     'feature_coverage' => [
         'crud_operations' => [
@@ -163,7 +160,6 @@ return [
             ],
         ],
     ],
-
     // Reporting configuration
     'reporting' => [
         'formats' => ['html', 'xml', 'clover', 'text', 'cobertura'],
@@ -178,7 +174,6 @@ return [
         'gaps_report' => 'tests/reports/coverage/gaps-report.json',
         'alerts_report' => 'tests/reports/coverage/alerts-report.json',
     ],
-
     // Exclusion patterns
     'exclusions' => [
         'directories' => [
@@ -200,7 +195,6 @@ return [
             '*/.git/*',
         ],
     ],
-
     // Alert configuration
     'alerts' => [
         'coverage_below_threshold' => [
@@ -224,7 +218,6 @@ return [
             'message_template' => 'Coverage regression detected: {current}% vs {previous}%',
         ],
     ],
-
     // Integration settings
     'integration' => [
         'ci_cd' => [
@@ -240,7 +233,6 @@ return [
             'discord_webhook' => null,
         ],
     ],
-
     // Performance settings
     'performance' => [
         'parallel_execution' => true,
@@ -250,7 +242,6 @@ return [
         'cache_coverage_data' => true,
         'cache_duration' => 3600, // 1 hour
     ],
-
     // Historical tracking
     'history' => [
         'track_trends' => true,
