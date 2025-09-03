@@ -97,10 +97,10 @@ final class CreateIndexPostgresTest extends TestCase
 
         foreach ($captured as $sql) {
             $upper = strtoupper($sql);
-            if (strpos($upper, 'DROP COLUMN') !== false || strpos($upper, 'DROP "ID_EMPRESA"') !== false) {
+            if (str_contains($upper, 'DROP COLUMN') || str_contains($upper, 'DROP "ID_EMPRESA"')) {
                 $dropColumnFound = true;
             }
-            if (strpos($upper, 'DROP INDEX') !== false || strpos($upper, 'DROP CONSTRAINT') !== false) {
+            if (str_contains($upper, 'DROP INDEX') || str_contains($upper, 'DROP CONSTRAINT')) {
                 $dropIndexFound = true;
             }
         }

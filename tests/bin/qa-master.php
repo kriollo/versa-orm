@@ -392,8 +392,8 @@ function parseArguments(array $argv): array
     for ($i = 1; $i < count($argv); $i++) {
         $arg = $argv[$i];
 
-        if (strpos($arg, '--') === 0) {
-            if (strpos($arg, '=') !== false) {
+        if (str_starts_with($arg, '--')) {
+            if (str_contains($arg, '=')) {
                 [$key, $value] = explode('=', substr($arg, 2), 2);
                 $options[$key] = $value;
             } else {

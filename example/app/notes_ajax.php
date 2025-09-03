@@ -17,7 +17,8 @@ switch ($action) {
         if ($taskId) {
             // Obtener ORM perezosamente y consultar notas como arrays
             $orm = app()->orm();
-            $notes = $orm->table('task_notes')
+            $notes = $orm
+                ->table('task_notes')
                 ->where('task_id', '=', (int) $taskId)
                 ->orderBy('created_at', 'DESC')
                 ->get(); // array<int,array>
@@ -58,7 +59,7 @@ switch ($action) {
                 $userId = $task instanceof Task ? $task->getUserIdByTaskId((int) $taskId) : 1; // Asignar usuario por defecto si no se encuentra
 
                 // Crear nota usando el ORM directamente
-                $note = (new Note(Note::tableName(), $orm));
+                $note = new Note(Note::tableName(), $orm);
                 $note->fill([
                     'task_id' => (int) $taskId,
                     'content' => $content,

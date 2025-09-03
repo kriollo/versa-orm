@@ -10,7 +10,7 @@ use Exception;
 
 class ProjectController
 {
-    public static function handle(string $action, ?int $id): void
+    public static function handle(string $action, null|int $id): void
     {
         switch ($action) {
             case 'projects':
@@ -23,7 +23,7 @@ class ProjectController
                     redirect('?action=projects');
                 }
                 $project = models()->project()->find($id);
-                if (! $project instanceof Project) {
+                if (!$project instanceof Project) {
                     flash('error', 'Proyecto no encontrado');
                     redirect('?action=projects');
                 }
@@ -35,9 +35,18 @@ class ProjectController
                 $allUsers = models()->user()->all();
                 $memberIds = array_column($members, 'id');
                 $memberIds[] = $project->owner_id;
-                $availableUsers = array_filter($allUsers, static fn ($user): bool => ! in_array($user->id, $memberIds, true));
+                $availableUsers = array_filter(
+                    $allUsers,
+                    static fn ($user): bool => !in_array($user->id, $memberIds, true),
+                );
 
-                render('projects/show', ['project' => $project, 'tasks' => $tasks, 'members' => $members, 'owner' => $owner, 'availableUsers' => $availableUsers]);
+                render('projects/show', [
+                    'project' => $project,
+                    'tasks' => $tasks,
+                    'members' => $members,
+                    'owner' => $owner,
+                    'availableUsers' => $availableUsers,
+                ]);
                 break;
             case 'project_create':
                 if ($_POST !== []) {
@@ -58,7 +67,7 @@ class ProjectController
                     redirect('?action=projects');
                 }
                 $project = models()->project()->find($id);
-                if (! $project instanceof Project) {
+                if (!$project instanceof Project) {
                     flash('error', 'Proyecto no encontrado');
                     redirect('?action=projects');
                 }
@@ -79,18 +88,20 @@ class ProjectController
                 if ($_POST && isset($_POST['project_id'], $_POST['user_id'])) {
                     try {
                         $project = models()->project()->find((int) $_POST['project_id']);
-                        if (! $project instanceof Project) {
+                        if (!$project instanceof Project) {
                             flash('error', 'Proyecto no encontrado');
                             redirect('?action=projects');
                             break;
                         }
                         $user = models()->user()->find((int) $_POST['user_id']);
-                        if (! $user instanceof User) {
+                        if (!$user instanceof User) {
                             flash('error', 'Usuario no encontrado');
                             redirect('?action=project_show&id=' . $_POST['project_id']);
                             break;
                         }
-                        $exists = app()->orm()->table('project_users')
+                        $exists = app()
+                            ->orm()
+                            ->table('project_users')
                             ->where('project_id', '=', (int) $_POST['project_id'])
                             ->where('user_id', '=', (int) $_POST['user_id'])
                             ->exists();
@@ -117,19 +128,21 @@ class ProjectController
                 if ($_POST && isset($_POST['project_id'], $_POST['user_id'])) {
                     try {
                         $project = models()->project()->find((int) $_POST['project_id']);
-                        if (! $project instanceof Project) {
+                        if (!$project instanceof Project) {
                             flash('error', 'Proyecto no encontrado');
                             redirect('?action=projects');
                             break;
                         }
                         $orm = app()->orm();
-                        $rows = app()->orm()->table('project_users')
+                        $rows = app()
+                            ->orm()
+                            ->table('project_users')
                             ->select(['id'])
                             ->where('project_id', '=', (int) $_POST['project_id'])
                             ->where('user_id', '=', (int) $_POST['user_id'])
                             ->get();
                         foreach ($rows as $row) {
-                            if (! isset($row['id'])) {
+                            if (!isset($row['id'])) {
                                 continue;
                             }
                             $pivot = $project->load('project_users', (int) $row['id']);

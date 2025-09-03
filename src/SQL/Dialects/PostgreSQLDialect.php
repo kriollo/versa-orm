@@ -34,7 +34,7 @@ class PostgreSQLDialect implements SqlDialectInterface
         return '?';
     }
 
-    public function compileLimitOffset(?int $limit, ?int $offset): string
+    public function compileLimitOffset(null|int $limit, null|int $offset): string
     {
         $sql = '';
 

@@ -17,7 +17,7 @@ class ModelEvent
     public bool $cancel = false;
 
     /** @var string|null Mensaje de error opcional */
-    public ?string $error = null;
+    public null|string $error = null;
 
     /**
      * @param object $model
@@ -34,7 +34,7 @@ class ModelEvent
     /**
      * Cancela la operación y opcionalmente define un mensaje de error.
      */
-    public function cancel(?string $error = null): void
+    public function cancel(null|string $error = null): void
     {
         $this->cancel = true;
         $this->error = $error;

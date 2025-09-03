@@ -43,16 +43,4 @@ class VersaORMPrivateHelpersExtraTest extends TestCase
         $state = $m->invoke($orm, $pdoEx);
         $this->assertSame('HY000', $state);
     }
-
-    public function testCleanRustDebugOutputStripsNoise(): void
-    {
-        $orm = new VersaORM();
-        $r = new \ReflectionClass($orm);
-        $m = $r->getMethod('cleanRustDebugOutput');
-        $m->setAccessible(true);
-
-        $raw = "DEBUG LINE\nSome log\n{\"status\":\"ok\",\"data\":123}\nTAIL";
-        $clean = $m->invoke($orm, $raw);
-        $this->assertStringContainsString('{"status":"ok"', $clean);
-    }
 }

@@ -44,7 +44,9 @@
                         name="description"
                         rows="4"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Describe los detalles de la tarea"><?php echo htmlspecialchars($task->description ?? ''); ?></textarea>
+                        placeholder="Describe los detalles de la tarea"><?php echo
+                            htmlspecialchars($task->description ?? '')
+; ?></textarea>
                 </div>
 
                 <!-- Asignación y configuración -->
@@ -62,7 +64,9 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Selecciona un proyecto</option>
                         <?php foreach ($projects as $project) { ?>
-                            <option value="<?php echo $project['id']; ?>" <?php echo $task->project_id === $project['id'] ? 'selected' : ''; ?>>
+                            <option value="<?php echo $project['id']; ?>" <?php echo
+        $task->project_id === $project['id'] ? 'selected' : ''
+                            ; ?>>
                                 <?php echo htmlspecialchars($project['name']); ?>
                             </option>
                         <?php } ?>
@@ -76,8 +80,12 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Sin asignar</option>
                         <?php foreach ($users as $user) { ?>
-                            <option value="<?php echo $user['id']; ?>" <?php echo $task->user_id === $user['id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo htmlspecialchars($user['email']); ?>)
+                            <option value="<?php echo $user['id']; ?>" <?php echo
+                                $task->user_id === $user['id'] ? 'selected' : ''
+                            ; ?>>
+                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo
+                                    htmlspecialchars($user['email'])
+                            ; ?>)
                             </option>
                         <?php } ?>
                     </select>
@@ -129,8 +137,12 @@
                                     <?php echo in_array($label['id'], $taskLabels ?? [], true) ? 'checked' : ''; ?>
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
-                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($label['color']); ?>"></div>
-                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo htmlspecialchars($label['name']); ?></span>
+                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo
+                                    htmlspecialchars($label['color'])
+                            ; ?>"></div>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo
+                                htmlspecialchars($label['name'])
+                            ; ?></span>
                                 </div>
                             </label>
                         <?php } ?>
@@ -142,10 +154,14 @@
             <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <div>
-                        <strong>Creada:</strong> <?php echo isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : ''; ?>
+                        <strong>Creada:</strong> <?php echo
+                            isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : ''
+; ?>
                     </div>
                     <div>
-                        <strong>Actualizada:</strong> <?php echo isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''; ?>
+                        <strong>Actualizada:</strong> <?php echo
+    isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''
+; ?>
                     </div>
                 </div>
             </div>

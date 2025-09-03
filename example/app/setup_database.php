@@ -23,7 +23,7 @@ try {
     // Obtener instancia de VersaORM
     $orm = VersaModel::getGlobalORM();
 
-    if (! $orm instanceof VersaORM) {
+    if (!$orm instanceof VersaORM) {
         throw new Exception('No se pudo obtener la instancia de VersaORM');
     }
 
@@ -39,7 +39,6 @@ try {
         'DROP TABLE IF EXISTS labels',
         'DROP TABLE IF EXISTS projects',
         'DROP TABLE IF EXISTS users',
-
         // Tabla usuarios
         "CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,7 +48,6 @@ try {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
-
         // Tabla proyectos
         "CREATE TABLE IF NOT EXISTS projects (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -61,7 +59,6 @@ try {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
-
         // Tabla relación usuarios-proyectos
         'CREATE TABLE IF NOT EXISTS project_users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,7 +69,6 @@ try {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             UNIQUE KEY unique_project_user (project_id, user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
-
         // Tabla etiquetas
         "CREATE TABLE IF NOT EXISTS labels (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -82,7 +78,6 @@ try {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
-
         // Tabla tareas
         "CREATE TABLE IF NOT EXISTS tasks (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -98,7 +93,6 @@ try {
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
-
         // Tabla relación tareas-etiquetas
         'CREATE TABLE IF NOT EXISTS task_labels (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -109,7 +103,6 @@ try {
             FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE,
             UNIQUE KEY unique_task_label (task_id, label_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
-
         // Tabla de notas de tareas
         'CREATE TABLE IF NOT EXISTS task_notes (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -191,9 +184,24 @@ try {
 
         // Crear proyectos de ejemplo
         $projects = [
-            ['name' => 'VersaORM Demo', 'description' => 'Proyecto de demostración de VersaORM', 'color' => '#3498db', 'owner_id' => 1],
-            ['name' => 'Sistema de Inventario', 'description' => 'Gestión de inventarios y productos', 'color' => '#e74c3c', 'owner_id' => 2],
-            ['name' => 'App Móvil', 'description' => 'Desarrollo de aplicación móvil', 'color' => '#2ecc71', 'owner_id' => 1],
+            [
+                'name' => 'VersaORM Demo',
+                'description' => 'Proyecto de demostración de VersaORM',
+                'color' => '#3498db',
+                'owner_id' => 1,
+            ],
+            [
+                'name' => 'Sistema de Inventario',
+                'description' => 'Gestión de inventarios y productos',
+                'color' => '#e74c3c',
+                'owner_id' => 2,
+            ],
+            [
+                'name' => 'App Móvil',
+                'description' => 'Desarrollo de aplicación móvil',
+                'color' => '#2ecc71',
+                'owner_id' => 1,
+            ],
         ];
 
         foreach ($projects as $projectData) {
@@ -212,11 +220,51 @@ try {
 
         // Crear tareas de ejemplo
         $tasks = [
-            ['title' => 'Configurar base de datos', 'description' => 'Crear tablas y configurar conexiones', 'status' => 'done', 'priority' => 'high', 'project_id' => 1, 'user_id' => 1, 'due_date' => '2025-08-01'],
-            ['title' => 'Implementar modelos', 'description' => 'Crear modelos con VersaORM', 'status' => 'in_progress', 'priority' => 'high', 'project_id' => 1, 'user_id' => 2, 'due_date' => '2025-08-05'],
-            ['title' => 'Diseñar interfaz', 'description' => 'Crear mockups y diseños', 'status' => 'todo', 'priority' => 'medium', 'project_id' => 1, 'user_id' => 3, 'due_date' => '2025-08-10'],
-            ['title' => 'Gestión de productos', 'description' => 'CRUD de productos', 'status' => 'todo', 'priority' => 'high', 'project_id' => 2, 'user_id' => 2, 'due_date' => '2025-08-15'],
-            ['title' => 'Login y autenticación', 'description' => 'Sistema de usuarios', 'status' => 'in_progress', 'priority' => 'urgent', 'project_id' => 3, 'user_id' => 1, 'due_date' => '2025-08-08'],
+            [
+                'title' => 'Configurar base de datos',
+                'description' => 'Crear tablas y configurar conexiones',
+                'status' => 'done',
+                'priority' => 'high',
+                'project_id' => 1,
+                'user_id' => 1,
+                'due_date' => '2025-08-01',
+            ],
+            [
+                'title' => 'Implementar modelos',
+                'description' => 'Crear modelos con VersaORM',
+                'status' => 'in_progress',
+                'priority' => 'high',
+                'project_id' => 1,
+                'user_id' => 2,
+                'due_date' => '2025-08-05',
+            ],
+            [
+                'title' => 'Diseñar interfaz',
+                'description' => 'Crear mockups y diseños',
+                'status' => 'todo',
+                'priority' => 'medium',
+                'project_id' => 1,
+                'user_id' => 3,
+                'due_date' => '2025-08-10',
+            ],
+            [
+                'title' => 'Gestión de productos',
+                'description' => 'CRUD de productos',
+                'status' => 'todo',
+                'priority' => 'high',
+                'project_id' => 2,
+                'user_id' => 2,
+                'due_date' => '2025-08-15',
+            ],
+            [
+                'title' => 'Login y autenticación',
+                'description' => 'Sistema de usuarios',
+                'status' => 'in_progress',
+                'priority' => 'urgent',
+                'project_id' => 3,
+                'user_id' => 1,
+                'due_date' => '2025-08-08',
+            ],
         ];
 
         foreach ($tasks as $taskData) {
@@ -245,10 +293,10 @@ try {
             [1, 3], // Tarea 1 con etiquetas 1 y 3
             [2, 2],
             [2, 5], // Tarea 2 con etiquetas 2 y 5
-            [3, 4],         // Tarea 3 con etiqueta 4
-            [4, 2],         // Tarea 4 con etiqueta 2
+            [3, 4], // Tarea 3 con etiqueta 4
+            [4, 2], // Tarea 4 con etiqueta 2
             [5, 2],
-            [5, 3],  // Tarea 5 con etiquetas 2 y 3
+            [5, 3], // Tarea 5 con etiquetas 2 y 3
         ];
 
         foreach ($taskLabelRelations as $relation) {
@@ -266,10 +314,10 @@ try {
             [1, 2],
             [1, 3], // Proyecto 1 con usuarios 1, 2, 3
             [2, 2],
-            [2, 4],         // Proyecto 2 con usuarios 2, 4
+            [2, 4], // Proyecto 2 con usuarios 2, 4
             [3, 1],
             [3, 3],
-            [3, 4],  // Proyecto 3 con usuarios 1, 3, 4
+            [3, 4], // Proyecto 3 con usuarios 1, 3, 4
         ];
 
         foreach ($projectUserRelations as $relation) {
@@ -284,7 +332,11 @@ try {
         // Notas de ejemplo
         $notes = [
             ['content' => 'Revisar la configuración del servidor de base de datos.', 'task_id' => 1, 'user_id' => 1],
-            ['content' => 'Asegurarse de que los modelos sean compatibles con la última versión de VersaORM.', 'task_id' => 2, 'user_id' => 2],
+            [
+                'content' => 'Asegurarse de que los modelos sean compatibles con la última versión de VersaORM.',
+                'task_id' => 2,
+                'user_id' => 2,
+            ],
             ['content' => 'El cliente quiere un diseño más minimalista.', 'task_id' => 3, 'user_id' => 3],
             ['content' => 'La autenticación debe ser compatible con OAuth2.', 'task_id' => 5, 'user_id' => 1],
         ];

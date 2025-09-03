@@ -77,9 +77,9 @@ class PdoEngine
      * }
      */
     private static array $metrics = [
-        'queries' => 0,    // Consultas realmente ejecutadas contra la BD
-        'writes' => 0,    // INSERT/UPDATE/DELETE
-        'transactions' => 0,    // BEGIN
+        'queries' => 0, // Consultas realmente ejecutadas contra la BD
+        'writes' => 0, // INSERT/UPDATE/DELETE
+        'transactions' => 0, // BEGIN
         'cache_hits' => 0,
         'cache_misses' => 0,
         'last_query_ms' => 0.0,
@@ -106,8 +106,10 @@ class PdoEngine
     /**
      * @param array<string, mixed> $config
      */
-    public function __construct(private array $config, ?callable $logger = null)
-    {
+    public function __construct(
+        private array $config,
+        null|callable $logger = null,
+    ) {
         $this->connector = new PdoConnection($this->config);
         $this->dialect = $this->detectDialect();
         // Configurar límite de caché si se provee
@@ -334,7 +336,10 @@ class PdoEngine
                             return 'cache invalidation skipped (no criteria)';
                         }
 
-                        throw new VersaORMException('Cache invalidation requires a table or pattern parameter.', 'INVALID_CACHE_INVALIDATE');
+                        throw new VersaORMException(
+                            'Cache invalidation requires a table or pattern parameter.',
+                            'INVALID_CACHE_INVALIDATE',
+                        );
                     }
 
                     if ($table !== '') {
@@ -347,7 +352,10 @@ class PdoEngine
 
                     return 'cache invalidated';
                 })(),
-                default => throw new VersaORMException('PDO engine does not support this cache action: ' . $cacheAction, 'UNSUPPORTED_CACHE_ACTION'),
+                default => throw new VersaORMException(
+                    'PDO engine does not support this cache action: ' . $cacheAction,
+                    'UNSUPPORTED_CACHE_ACTION',
+                ),
             };
         }
 
@@ -367,26 +375,29 @@ class PdoEngine
                             throw new VersaORMException('set_operation requires at least 2 queries');
                         }
                         $valid = ['UNION', 'UNION ALL', 'INTERSECT', 'INTERSECT ALL', 'EXCEPT', 'EXCEPT ALL'];
-                        if (! in_array($setType, $valid, true)) {
+                        if (!in_array($setType, $valid, true)) {
                             throw new VersaORMException('Invalid set operation type: ' . $setType);
                         }
                         // Soporte según driver: MySQL y SQLite no manejan INTERSECT/EXCEPT ALL nativamente en versiones antiguas
                         // Simplificación: si no soporta, lanzar excepción explícita.
                         $supportsIntersectExcept = str_contains($driver, 'postgres');
-                        if (! $supportsIntersectExcept && (str_starts_with($setType, 'INTERSECT') || str_starts_with($setType, 'EXCEPT'))) {
+                        if (
+                            !$supportsIntersectExcept
+                            && (str_starts_with($setType, 'INTERSECT') || str_starts_with($setType, 'EXCEPT'))
+                        ) {
                             throw new VersaORMException('Driver does not support ' . $setType . ' in PDO mode');
                         }
                         // Construir SQL concatenando queries con operador
                         $parts = [];
                         $bindings = [];
                         foreach ($queries as $q) {
-                            if (! is_array($q) || ! isset($q['sql']) || ! is_string($q['sql'])) {
+                            if (!is_array($q) || !isset($q['sql']) || !is_string($q['sql'])) {
                                 throw new VersaORMException('Each set_operation query must have sql');
                             }
                             // Nota: SQLite puede fallar con paréntesis envolviendo selects simples en UNION.
                             // Estrategia: no envolver cuando es UNION / UNION ALL y la consulta no contiene palabras clave que requieran aislamiento.
                             $sqlPart = $q['sql'];
-                            $needsWrap = ! str_starts_with($setType, 'UNION');
+                            $needsWrap = !str_starts_with($setType, 'UNION');
                             if ($needsWrap) {
                                 $sqlPart = '(' . $sqlPart . ')';
                             }
@@ -468,19 +479,25 @@ class PdoEngine
                             'first_value' => 'FIRST_VALUE(' . $column . ')',
                             'last_value' => 'LAST_VALUE(' . $column . ')',
                             'ntile' => 'NTILE(' . (int) ($params['args']['buckets'] ?? 2) . ')',
-                            default => 'ROW_NUMBER()'
+                            default => 'ROW_NUMBER()',
                         };
                         // Detectar alias de tabla si viene como "table AS alias" o "table alias"
                         $tableRef = trim($table);
                         $baseQualifier = $tableRef;
 
-                        if (preg_match('/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i', $tableRef, $m) === 1) {
+                        if (
+                            preg_match(
+                                '/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i',
+                                $tableRef,
+                                $m,
+                            ) === 1
+                        ) {
                             $baseQualifier = $m[2]; // usar alias si existe
                         }
                         $baseQualifierQuoted = $this->dialect->quoteIdentifier($baseQualifier);
                         $over = [];
 
-                        if (! empty($partition)) {
+                        if (!empty($partition)) {
                             // Calificar columnas de PARTITION BY con alias/tabla base si no vienen calificadas
                             $parts = array_map(function ($p) use ($baseQualifierQuoted): string {
                                 if ($p === '*' || str_contains($p, '(')) {
@@ -496,14 +513,19 @@ class PdoEngine
                             $over[] = 'PARTITION BY ' . implode(', ', $parts);
                         }
 
-                        if (! empty($orderBy)) {
+                        if (!empty($orderBy)) {
                             $ob = [];
 
                             foreach ($orderBy as $o) {
                                 $dir = strtoupper((string) ($o['direction'] ?? 'ASC'));
                                 $col = (string) ($o['column'] ?? '');
 
-                                if ($col !== '' && $col !== '*' && ! str_contains($col, '.') && ! str_contains($col, '(')) {
+                                if (
+                                    $col !== ''
+                                    && $col !== '*'
+                                    && !str_contains($col, '.')
+                                    && !str_contains($col, '(')
+                                ) {
                                     $col = $baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($col);
                                 }
                                 $ob[] = $col . ' ' . (in_array($dir, ['ASC', 'DESC'], true) ? $dir : 'ASC');
@@ -515,31 +537,46 @@ class PdoEngine
                         }
                         $overSql = 'OVER (' . implode(' ', $over) . ')';
                         // Construir SELECT básico de la tabla
-                        [$baseSql, $baseBindings] = SqlGenerator::generate('query', [
-                            'method' => 'get',
-                            'table' => $table,
-                            'select' => ['*'],
-                            'where' => $wheres,
-                        ], $this->dialect);
+                        [$baseSql, $baseBindings] = SqlGenerator::generate(
+                            'query',
+                            [
+                                'method' => 'get',
+                                'table' => $table,
+                                'select' => ['*'],
+                                'where' => $wheres,
+                            ],
+                            $this->dialect,
+                        );
                         // Calificar columna si aplica
                         $tmp = preg_replace('/\((\s*\*\s*)\)/', '(1)', $funcSql);
                         $qualifiedFuncSql = is_string($tmp) ? $tmp : $funcSql;
 
                         if ($column !== '*') {
                             // Solo reemplazar ocurrencias de nombre de columna aislado (evitar tocar funciones)
-                            $qualified = (
-                                str_contains($column, '(') || str_contains($column, '.')
+                            $qualified = str_contains($column, '(')
+                            || str_contains($column, '.')
                                 ? $column
-                                : ($baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($column))
-                            );
+                                : $baseQualifierQuoted
+                                . '.'
+                                . $this->dialect->quoteIdentifier($column);
                             // Reemplazo conservador: si la función es LAG/LEAD/FIRST_VALUE/LAST_VALUE con el nombre simple
-                            $tmp2 = preg_replace('/\b' . preg_quote($column, '/') . '\b/', $qualified, $qualifiedFuncSql);
+                            $tmp2 = preg_replace(
+                                '/\b' . preg_quote($column, '/') . '\b/',
+                                $qualified,
+                                $qualifiedFuncSql,
+                            );
                             $qualifiedFuncSql = is_string($tmp2) ? $tmp2 : $qualifiedFuncSql;
                         }
                         // Insertar la expresión window directamente en el SELECT base
                         $sql = (string) preg_replace(
                             '/^SELECT\s+\*\s+FROM\s+/i',
-                            'SELECT *, ' . $qualifiedFuncSql . ' ' . $overSql . ' AS ' . $this->dialect->quoteIdentifier($alias) . ' FROM ',
+                            'SELECT *, '
+                            . $qualifiedFuncSql
+                            . ' '
+                            . $overSql
+                            . ' AS '
+                            . $this->dialect->quoteIdentifier($alias)
+                            . ' FROM ',
                             $baseSql,
                             1,
                         );
@@ -554,7 +591,16 @@ class PdoEngine
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
                         } catch (Throwable $e) {
                             // Incluir el SQL generado para facilitar el diagnóstico de columnas/alias
-                            throw new Exception('advanced_sql window_function failed. SQL: ' . $sql . ' | Bindings: ' . json_encode($baseBindings) . ' | Error: ' . $e->getMessage(), 0, $e);
+                            throw new Exception(
+                                'advanced_sql window_function failed. SQL: '
+                                . $sql
+                                . ' | Bindings: '
+                                . json_encode($baseBindings)
+                                . ' | Error: '
+                                . $e->getMessage(),
+                                0,
+                                $e,
+                            );
                         }
                     })(),
                     'cte' => (function () use ($params, $pdo) {
@@ -578,15 +624,23 @@ class PdoEngine
                             $querySql = (string) ($c['query'] ?? '');
                             $colsDef = '';
 
-                            if (! empty($c['columns']) && is_array($c['columns'])) {
-                                $quotedCols = array_map(fn ($col): string => $this->dialect->quoteIdentifier((string) $col), $c['columns']);
+                            if (!empty($c['columns']) && is_array($c['columns'])) {
+                                $quotedCols = array_map(
+                                    fn ($col): string => $this->dialect->quoteIdentifier((string) $col),
+                                    $c['columns'],
+                                );
                                 $colsDef = ' (' . implode(', ', $quotedCols) . ')';
                             }
 
-                            if (! empty($c['recursive'])) {
+                            if (!empty($c['recursive'])) {
                                 $isRecursive = true;
                             }
-                            $withParts[] = $this->dialect->quoteIdentifier($name) . $colsDef . ' AS (' . $querySql . ')';
+                            $withParts[] =
+                                $this->dialect->quoteIdentifier($name)
+                                . $colsDef
+                                . ' AS ('
+                                . $querySql
+                                . ')';
 
                             if (isset($c['bindings']) && is_array($c['bindings'])) {
                                 $bindings = array_merge($bindings, $c['bindings']);
@@ -681,11 +735,14 @@ class PdoEngine
                             if ($arrowStyle) {
                                 // Convertir col->a->b->>c en JSON_EXTRACT(col,'$.a.b.c') y opcional JSON_UNQUOTE
                                 $segments = preg_split('/->>?/', $path);
-                                if (! is_array($segments)) {
+                                if (!is_array($segments)) {
                                     $segments = [];
                                 }
                                 // Filtrar segmentos vacíos o que repitan el nombre de la columna
-                                $segments = array_values(array_filter($segments, static fn ($s): bool => $s !== '' && $s !== $col));
+                                $segments = array_values(array_filter(
+                                    $segments,
+                                    static fn ($s): bool => $s !== '' && $s !== $col,
+                                ));
 
                                 // Si el path original incluía col al inicio, removerlo
                                 if ($segments !== [] && $segments[0] === $col) {
@@ -694,7 +751,12 @@ class PdoEngine
                                 $jsonPath = '$';
 
                                 if ($segments !== []) {
-                                    $jsonPath .= '.' . implode('.', array_map(static fn ($s): string => trim($s, "'\"` "), $segments));
+                                    $jsonPath .=
+                                        '.'
+                                        . implode('.', array_map(
+                                            static fn ($s): string => trim($s, "'\"` "),
+                                            $segments,
+                                        ));
                                 }
                                 $core = "JSON_EXTRACT({$col}, ?)";
                                 $jsonExpr = ($unquote ? 'JSON_UNQUOTE(' . $core . ')' : $core) . ' AS value';
@@ -708,10 +770,7 @@ class PdoEngine
                                 $bind = [$path];
                             }
                         } elseif ($driver === 'postgres') {
-                            $segments = array_filter(
-                                explode('.', trim($path, '$.')),
-                                static fn ($s): bool => $s !== '',
-                            );
+                            $segments = array_filter(explode('.', trim($path, '$.')), static fn ($s): bool => $s !== '');
                             $expr = $col;
 
                             foreach ($segments as $idx => $s) {
@@ -726,13 +785,22 @@ class PdoEngine
                             $bind = [$path];
                         }
 
-                        [$baseSql, $baseBindings] = SqlGenerator::generate('query', [
-                            'method' => 'get',
-                            'table' => $table,
-                            'select' => ['*'],
-                            'where' => $wheres,
-                        ], $this->dialect);
-                        $tmpSql = preg_replace('/^SELECT\s+\*\s+FROM/i', 'SELECT *, ' . $jsonExpr . ' FROM', (string) $baseSql, 1);
+                        [$baseSql, $baseBindings] = SqlGenerator::generate(
+                            'query',
+                            [
+                                'method' => 'get',
+                                'table' => $table,
+                                'select' => ['*'],
+                                'where' => $wheres,
+                            ],
+                            $this->dialect,
+                        );
+                        $tmpSql = preg_replace(
+                            '/^SELECT\s+\*\s+FROM/i',
+                            'SELECT *, ' . $jsonExpr . ' FROM',
+                            (string) $baseSql,
+                            1,
+                        );
                         $sql = is_string($tmpSql) ? $tmpSql : (string) $baseSql;
                         $stmt = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, array_merge($bind, $baseBindings));
@@ -763,10 +831,16 @@ class PdoEngine
                             $match = 'MATCH(' . implode(', ', $cols) . ') AGAINST (?' . $modeSql . ')';
                             $select = '*';
 
-                            if (! empty($options['with_score'])) {
+                            if (!empty($options['with_score'])) {
                                 $select = '*, ' . $match . ' AS score';
                             }
-                            $sql = 'SELECT ' . $select . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $match;
+                            $sql =
+                                'SELECT '
+                                . $select
+                                . ' FROM '
+                                . $this->dialect->quoteIdentifier($table)
+                                . ' WHERE '
+                                . $match;
                             $stmt = $this->prepareCached($pdo, $sql);
                             // Si with_score agrega el MATCH también en SELECT, enlazar el término dos veces
                             $bindings = empty($options['with_score']) ? [$term] : [$term, $term];
@@ -779,15 +853,27 @@ class PdoEngine
                             // Usar to_tsvector/tsquery; si la columna ya es tsvector, comparar directamente
                             $language = (string) ($options['language'] ?? 'english');
                             $operator = (string) ($options['operator'] ?? '@@');
-                            $rank = ! empty($options['rank']);
-                            $colExpr = implode(' || \" \" || ', array_map(static fn ($c): string => "to_tsvector('" . $language . "', " . $c . ')', $cols));
+                            $rank = !empty($options['rank']);
+                            $colExpr = implode(' || \" \" || ', array_map(
+                                static fn ($c): string => "to_tsvector('" . $language . "', " . $c . ')',
+                                $cols,
+                            ));
 
                             // Si solo una columna y parece tsvector, usarla directa
                             if (count($cols) === 1 && preg_match('/vector$/i', $cols[0]) === 1) {
                                 $colExpr = $cols[0];
                             }
                             $rankExpr = $rank ? ', ts_rank(' . $colExpr . ', plainto_tsquery(?)) AS rank' : '';
-                            $sql = 'SELECT *' . $rankExpr . ' FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . $colExpr . ' ' . $operator . ' plainto_tsquery(?)';
+                            $sql =
+                                'SELECT *'
+                                . $rankExpr
+                                . ' FROM '
+                                . $this->dialect->quoteIdentifier($table)
+                                . ' WHERE '
+                                . $colExpr
+                                . ' '
+                                . $operator
+                                . ' plainto_tsquery(?)';
                             $stmt = $this->prepareCached($pdo, $sql);
                             $this->bindAndExecute($stmt, $rank ? [$term, $term] : [$term]);
 
@@ -799,7 +885,11 @@ class PdoEngine
                         foreach ($cols as $c) {
                             $likeParts[] = "{$c} LIKE ?";
                         }
-                        $sql = 'SELECT * FROM ' . $this->dialect->quoteIdentifier($table) . ' WHERE ' . implode(' OR ', $likeParts);
+                        $sql =
+                            'SELECT * FROM '
+                            . $this->dialect->quoteIdentifier($table)
+                            . ' WHERE '
+                            . implode(' OR ', $likeParts);
                         $stmt = $this->prepareCached($pdo, $sql);
                         $this->bindAndExecute($stmt, array_fill(0, count($likeParts), '%' . $term . '%'));
 
@@ -808,7 +898,9 @@ class PdoEngine
                     'array_operations' => (function () use ($params, $pdo, $driver) {
                         // Soporte mínimo para arrays en Postgres
                         if ($driver !== 'postgres') {
-                            throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: array_operations');
+                            throw new VersaORMException(
+                                'Unsupported advanced_sql operation in PDO engine: array_operations',
+                            );
                         }
                         $table = (string) ($params['table'] ?? '');
                         $col = (string) ($params['column'] ?? '');
@@ -864,17 +956,36 @@ class PdoEngine
                             $sepValue = str_replace("'", "''", $sep);
 
                             if ($driver === 'mysql') {
-                                $expr = 'GROUP_CONCAT(' . $column . ($order !== '' && $order !== '0' ? ' ORDER BY ' . $order : '') . " SEPARATOR '" . $sepValue . "') AS agg";
+                                $expr =
+                                    'GROUP_CONCAT('
+                                    . $column
+                                    . ($order !== '' && $order !== '0' ? ' ORDER BY ' . $order : '')
+                                    . " SEPARATOR '"
+                                    . $sepValue
+                                    . "') AS agg";
                             } elseif ($driver === 'postgres') {
                                 // string_agg(col::text, sep) [ORDER BY col]
-                                $expr = 'string_agg(' . $column . '::text, ' . "'" . $sepValue . "'" . ')' . ($order !== '' && $order !== '0' ? ' ORDER BY ' . $order : '') . ' AS agg';
+                                $expr =
+                                    'string_agg('
+                                    . $column
+                                    . '::text, '
+                                    . "'"
+                                    . $sepValue
+                                    . "'"
+                                    . ')'
+                                    . ($order !== '' && $order !== '0' ? ' ORDER BY ' . $order : '')
+                                    . ' AS agg';
                             } else { // sqlite
                                 // group_concat(col, sep)
                                 $expr = 'group_concat(' . $column . ", '" . $sepValue . "') AS agg";
                             }
-                            $sql = 'SELECT ' . (empty($groupBy) ? $expr : implode(', ', $groupBy) . ', ' . $expr) . ' FROM ' . $this->dialect->quoteIdentifier($table);
+                            $sql =
+                                'SELECT '
+                                . (empty($groupBy) ? $expr : implode(', ', $groupBy) . ', ' . $expr)
+                                . ' FROM '
+                                . $this->dialect->quoteIdentifier($table);
 
-                            if (! empty($groupBy)) {
+                            if (!empty($groupBy)) {
                                 $sql .= ' GROUP BY ' . implode(', ', $groupBy);
                             }
                             $stmt = $this->prepareCached($pdo, $sql);
@@ -884,10 +995,16 @@ class PdoEngine
                         }
                         $map = ['median' => 'AVG', 'variance' => 'VARIANCE', 'stddev' => 'STDDEV'];
                         $func = $map[$type] ?? 'COUNT';
-                        $sql = 'SELECT ' . $func . '(' . ($column !== '' && $column !== '0' ? $column : '*') . ') AS agg FROM ' . $this->dialect->quoteIdentifier($table);
+                        $sql =
+                            'SELECT '
+                            . $func
+                            . '('
+                            . ($column !== '' && $column !== '0' ? $column : '*')
+                            . ') AS agg FROM '
+                            . $this->dialect->quoteIdentifier($table);
                         $stmt = $pdo->query($sql);
 
-                        return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?? []) : [];
+                        return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [] : [];
                     })(),
                     'get_driver_capabilities' => (static function () use ($pdo, $driver): array {
                         $features = [
@@ -902,17 +1019,20 @@ class PdoEngine
                             'features' => $features,
                         ];
                     })(),
-                    'get_driver_limits' => (static fn (): array => // Valores aproximados comunes o seguros
-                    [
-                        'max_columns' => 2000,
-                        'max_sql_length' => 1000000,
-                        'max_page_size' => 4096,
-                    ])(),
+                    'get_driver_limits' => (static fn (): array => (
+                        // Valores aproximados comunes o seguros
+                        [
+                            'max_columns' => 2000,
+                            'max_sql_length' => 1000000,
+                            'max_page_size' => 4096,
+                        ]
+                    ))(),
                     'optimize_query' => [
                         'optimization_suggestions' => [],
                         'generated_sql' => (string) ($params['query'] ?? ''),
                     ],
-                    default => throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: ' . $opType),
+                    default => throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: '
+                    . $opType),
                 };
             } catch (Throwable $e) {
                 throw new VersaORMException('PDO advanced_sql failed: ' . $e->getMessage(), 'PDO_ADVANCED_SQL_FAILED');
@@ -958,7 +1078,15 @@ class PdoEngine
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
-                    throw new VersaORMException('SQL failed (count): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                    throw new VersaORMException(
+                        'SQL failed (count): '
+                        . $sql
+                        . ' | Bindings: '
+                        . json_encode($bindings)
+                        . ' | '
+                        . $e->getMessage(),
+                        'PDO_EXEC_FAILED',
+                    );
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
@@ -979,7 +1107,15 @@ class PdoEngine
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
-                    throw new VersaORMException('SQL failed (exists): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                    throw new VersaORMException(
+                        'SQL failed (exists): '
+                        . $sql
+                        . ' | Bindings: '
+                        . json_encode($bindings)
+                        . ' | '
+                        . $e->getMessage(),
+                        'PDO_EXEC_FAILED',
+                    );
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
@@ -1001,7 +1137,15 @@ class PdoEngine
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
-                    throw new VersaORMException('SQL failed (first): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                    throw new VersaORMException(
+                        'SQL failed (first): '
+                        . $sql
+                        . ' | Bindings: '
+                        . json_encode($bindings)
+                        . ' | '
+                        . $e->getMessage(),
+                        'PDO_EXEC_FAILED',
+                    );
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
@@ -1027,7 +1171,10 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException('SQL failed (get): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                throw new VersaORMException(
+                    'SQL failed (get): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(),
+                    'PDO_EXEC_FAILED',
+                );
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(false, $elapsed);
@@ -1080,7 +1227,9 @@ class PdoEngine
             }
 
             // Detectar si es una sentencia de escritura antes de intentar fetchAll
-            $isWrite = preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql) === 1;
+            $isWrite =
+                preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql)
+                === 1;
             $isDDL = preg_match('/^\s*(CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql) === 1;
 
             if ($isDDL) {
@@ -1094,7 +1243,10 @@ class PdoEngine
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
                 // Normalizar excepciones a VersaORMException para la API
-                throw new VersaORMException('SQL failed (raw): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                throw new VersaORMException(
+                    'SQL failed (raw): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(),
+                    'PDO_EXEC_FAILED',
+                );
             }
 
             $elapsed = (microtime(true) - $start) * 1000;
@@ -1142,7 +1294,15 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException('SQL failed (insert): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                throw new VersaORMException(
+                    'SQL failed (insert): '
+                    . $sql
+                    . ' | Bindings: '
+                    . json_encode($bindings)
+                    . ' | '
+                    . $e->getMessage(),
+                    'PDO_EXEC_FAILED',
+                );
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(true, $elapsed);
@@ -1160,7 +1320,15 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException('SQL failed (insertGetId): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                throw new VersaORMException(
+                    'SQL failed (insertGetId): '
+                    . $sql
+                    . ' | Bindings: '
+                    . json_encode($bindings)
+                    . ' | '
+                    . $e->getMessage(),
+                    'PDO_EXEC_FAILED',
+                );
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(true, $elapsed);
@@ -1185,7 +1353,17 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException('SQL failed (' . $action . '): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(), 'PDO_EXEC_FAILED');
+                throw new VersaORMException(
+                    'SQL failed ('
+                    . $action
+                    . '): '
+                    . $sql
+                    . ' | Bindings: '
+                    . json_encode($bindings)
+                    . ' | '
+                    . $e->getMessage(),
+                    'PDO_EXEC_FAILED',
+                );
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(true, $elapsed);
@@ -1337,7 +1515,7 @@ class PdoEngine
         $records = $params['records'] ?? [];
         $batchSize = (int) ($params['batch_size'] ?? 1000);
 
-        if (! is_array($records) || $records === []) {
+        if (!is_array($records) || $records === []) {
             return [
                 'status' => 'success',
                 'total_inserted' => 0,
@@ -1364,17 +1542,21 @@ class PdoEngine
         $startedTransaction = false;
 
         try {
-            if (! $pdo->inTransaction()) {
+            if (!$pdo->inTransaction()) {
                 $startedTransaction = $pdo->beginTransaction();
             }
 
             for ($i = 0; $i < $total; $i += $batchSize) {
                 $chunk = array_slice($records, $i, $batchSize);
-                [$chunkSql, $chunkBindings] = SqlGenerator::generate('query', [
-                    'method' => 'insertMany',
-                    'table' => $params['table'] ?? '',
-                    'records' => $chunk,
-                ], $this->dialect);
+                [$chunkSql, $chunkBindings] = SqlGenerator::generate(
+                    'query',
+                    [
+                        'method' => 'insertMany',
+                        'table' => $params['table'] ?? '',
+                        'records' => $chunk,
+                    ],
+                    $this->dialect,
+                );
                 $st = $this->prepareCached($pdo, $chunkSql);
                 $st->execute($chunkBindings);
 
@@ -1390,7 +1572,7 @@ class PdoEngine
                     }
                 }
 
-                if (! $explicitIdPresent) {
+                if (!$explicitIdPresent) {
                     // Para Postgres intentamos leer filas devueltas por RETURNING id
                     if ($driverName === 'pgsql' || $driverName === 'postgres' || $driverName === 'postgresql') {
                         try {
@@ -1506,29 +1688,40 @@ class PdoEngine
     private function handleUpdateMany(array $params, PDO $pdo): array
     {
         $max = (int) ($params['max_records'] ?? 10000);
-        [$countSql, $countBindings] = SqlGenerator::generate('query', [
-            'method' => 'count',
-            'table' => $params['table'] ?? '',
-            'where' => $params['where'] ?? [],
-        ], $this->dialect);
+        [$countSql, $countBindings] = SqlGenerator::generate(
+            'query',
+            [
+                'method' => 'count',
+                'table' => $params['table'] ?? '',
+                'where' => $params['where'] ?? [],
+            ],
+            $this->dialect,
+        );
         $stc = $this->prepareCached($pdo, $countSql);
         $stc->execute($countBindings);
         $row = $stc->fetch(PDO::FETCH_ASSOC) ?? [];
         $toAffect = (int) ($row['count'] ?? 0);
 
         if ($toAffect > $max) {
-            throw new VersaORMException(sprintf(
-                'The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.',
-                $toAffect,
-                $max,
-            ), 'BATCH_LIMIT_EXCEEDED');
+            throw new VersaORMException(
+                sprintf(
+                    'The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.',
+                    $toAffect,
+                    $max,
+                ),
+                'BATCH_LIMIT_EXCEEDED',
+            );
         }
-        [$sqlU, $bindU] = SqlGenerator::generate('query', [
-            'method' => 'updateMany',
-            'table' => $params['table'] ?? '',
-            'where' => $params['where'] ?? [],
-            'data' => $params['data'] ?? [],
-        ], $this->dialect);
+        [$sqlU, $bindU] = SqlGenerator::generate(
+            'query',
+            [
+                'method' => 'updateMany',
+                'table' => $params['table'] ?? '',
+                'where' => $params['where'] ?? [],
+                'data' => $params['data'] ?? [],
+            ],
+            $this->dialect,
+        );
         $stmt = $this->prepareCached($pdo, $sqlU);
         $this->bindAndExecute($stmt, $bindU);
         $affected = $stmt->rowCount();
@@ -1556,28 +1749,39 @@ class PdoEngine
     private function handleDeleteMany(array $params, PDO $pdo): array
     {
         $max = (int) ($params['max_records'] ?? 10000);
-        [$countSql, $countBindings] = SqlGenerator::generate('query', [
-            'method' => 'count',
-            'table' => $params['table'] ?? '',
-            'where' => $params['where'] ?? [],
-        ], $this->dialect);
+        [$countSql, $countBindings] = SqlGenerator::generate(
+            'query',
+            [
+                'method' => 'count',
+                'table' => $params['table'] ?? '',
+                'where' => $params['where'] ?? [],
+            ],
+            $this->dialect,
+        );
         $stc = $this->prepareCached($pdo, $countSql);
         $stc->execute($countBindings);
         $row = $stc->fetch(PDO::FETCH_ASSOC) ?? [];
         $toAffect = (int) ($row['count'] ?? 0);
 
         if ($toAffect > $max) {
-            throw new VersaORMException(sprintf(
-                'The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.',
-                $toAffect,
-                $max,
-            ), 'BATCH_LIMIT_EXCEEDED');
+            throw new VersaORMException(
+                sprintf(
+                    'The operation would affect %d records, which exceeds the maximum limit of %d. Use a more restrictive WHERE clause or increase max_records.',
+                    $toAffect,
+                    $max,
+                ),
+                'BATCH_LIMIT_EXCEEDED',
+            );
         }
-        [$sqlD, $bindD] = SqlGenerator::generate('query', [
-            'method' => 'deleteMany',
-            'table' => $params['table'] ?? '',
-            'where' => $params['where'] ?? [],
-        ], $this->dialect);
+        [$sqlD, $bindD] = SqlGenerator::generate(
+            'query',
+            [
+                'method' => 'deleteMany',
+                'table' => $params['table'] ?? '',
+                'where' => $params['where'] ?? [],
+            ],
+            $this->dialect,
+        );
         $stmt = $this->prepareCached($pdo, $sqlD);
         $this->bindAndExecute($stmt, $bindD);
         $affected = $stmt->rowCount();
@@ -1604,13 +1808,17 @@ class PdoEngine
      */
     private function handleUpsertMany(array $params, PDO $pdo): array
     {
-        [$sqlUp, $bindUp] = SqlGenerator::generate('query', [
-            'method' => 'upsertMany',
-            'table' => $params['table'] ?? '',
-            'records' => $params['records'] ?? [],
-            'unique_keys' => $params['unique_keys'] ?? [],
-            'update_columns' => $params['update_columns'] ?? [],
-        ], $this->dialect);
+        [$sqlUp, $bindUp] = SqlGenerator::generate(
+            'query',
+            [
+                'method' => 'upsertMany',
+                'table' => $params['table'] ?? '',
+                'records' => $params['records'] ?? [],
+                'unique_keys' => $params['unique_keys'] ?? [],
+                'update_columns' => $params['update_columns'] ?? [],
+            ],
+            $this->dialect,
+        );
         $stmt = $this->prepareCached($pdo, $sqlUp);
         $this->bindAndExecute($stmt, $bindUp);
         $affected = $stmt->rowCount();
@@ -1740,10 +1948,10 @@ class PdoEngine
                     'column_name' => $name,
                     'name' => $name,
                     'data_type' => strtolower((string) ($col['type'] ?? '')),
-                    'is_nullable' => ((int) ($col['notnull'] ?? 0)) === 0 ? 'YES' : 'NO',
+                    'is_nullable' => (int) ($col['notnull'] ?? 0) === 0 ? 'YES' : 'NO',
                     'column_default' => $col['dflt_value'] ?? null,
                     'character_maximum_length' => null,
-                    'extra' => ((int) ($col['pk'] ?? 0)) === 1 ? 'primary_key' : '',
+                    'extra' => (int) ($col['pk'] ?? 0) === 1 ? 'primary_key' : '',
                 ];
             }
 
@@ -1751,8 +1959,9 @@ class PdoEngine
         }
 
         if ($driver === 'postgres') {
-            $sql = 'SELECT column_name, data_type, is_nullable, column_default, character_maximum_length ' .
-                'FROM information_schema.columns WHERE table_name = ?';
+            $sql =
+                'SELECT column_name, data_type, is_nullable, column_default, character_maximum_length '
+                . 'FROM information_schema.columns WHERE table_name = ?';
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
@@ -1899,10 +2108,12 @@ class PdoEngine
         ];
 
         /** @var array<int,array{join_type?:string,table?:string,local_column?:string,operator?:string,foreign_column?:string}> $joinConditions */
-        $joinConditions = isset($op['join_conditions']) && is_array($op['join_conditions']) ? array_values($op['join_conditions']) : [];
+        $joinConditions = isset($op['join_conditions']) && is_array($op['join_conditions'])
+            ? array_values($op['join_conditions'])
+            : [];
 
         foreach ($joinConditions as $j) {
-            if (! is_array($j)) {
+            if (!is_array($j)) {
                 continue;
             }
             $params['joins'][] = [
@@ -1915,10 +2126,12 @@ class PdoEngine
         }
 
         /** @var array<int,array{column?:string,operator?:string,value?:mixed,connector?:string}> $whereConditions */
-        $whereConditions = isset($op['conditions']) && is_array($op['conditions']) ? array_values($op['conditions']) : [];
+        $whereConditions = isset($op['conditions']) && is_array($op['conditions'])
+            ? array_values($op['conditions'])
+            : [];
 
         foreach ($whereConditions as $w) {
-            if (! is_array($w)) {
+            if (!is_array($w)) {
                 continue;
             }
             $params['where'][] = [
@@ -2000,7 +2213,7 @@ class PdoEngine
             self::$tableKeyIndex[$table] ??= [];
 
             // Evitar inflar con duplicados
-            if (! in_array($key, self::$tableKeyIndex[$table], true)) {
+            if (!in_array($key, self::$tableKeyIndex[$table], true)) {
                 self::$tableKeyIndex[$table][] = $key;
             }
         }
@@ -2010,7 +2223,7 @@ class PdoEngine
     {
         $t = strtolower($table);
 
-        if (! isset(self::$tableKeyIndex[$t])) {
+        if (!isset(self::$tableKeyIndex[$t])) {
             return;
         }
 

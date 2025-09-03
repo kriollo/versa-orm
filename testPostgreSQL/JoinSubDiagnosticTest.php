@@ -196,9 +196,9 @@ class JoinSubDiagnosticTest extends TestCase
         } catch (Exception $e) {
             // Si es un error de conexión, marcar como skipped en lugar de fallar
             if (
-                strpos($e->getMessage(), 'could not find driver') !== false
-                || strpos($e->getMessage(), 'Connection refused') !== false
-                || strpos($e->getMessage(), 'could not connect') !== false
+                str_contains($e->getMessage(), 'could not find driver')
+                || str_contains($e->getMessage(), 'Connection refused')
+                || str_contains($e->getMessage(), 'could not connect')
             ) {
                 self::markTestSkipped('PostgreSQL connection not available: ' . $e->getMessage());
             }

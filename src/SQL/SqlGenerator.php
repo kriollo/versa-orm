@@ -89,11 +89,17 @@ class SqlGenerator
          */
         $fromSub = null;
 
-        if (isset($params['from_sub']) && is_array($params['from_sub']) && isset($params['from_sub']['sql'], $params['from_sub']['alias'])) {
+        if (
+            isset($params['from_sub'])
+            && is_array($params['from_sub'])
+            && isset($params['from_sub']['sql'], $params['from_sub']['alias'])
+        ) {
             $fromSub = [
                 'sql' => (string) $params['from_sub']['sql'],
                 'alias' => (string) $params['from_sub']['alias'],
-                'bindings' => is_array($params['from_sub']['bindings'] ?? null) ? array_values($params['from_sub']['bindings']) : [],
+                'bindings' => is_array($params['from_sub']['bindings'] ?? null)
+                    ? array_values($params['from_sub']['bindings'])
+                    : [],
             ];
         }
 
@@ -121,7 +127,9 @@ class SqlGenerator
                 if (is_array($s) && isset($s['type']) && is_string($s['type'])) {
                     $select[] = [
                         'type' => $s['type'],
-                        'expression' => isset($s['expression']) && is_string($s['expression']) ? $s['expression'] : null,
+                        'expression' => isset($s['expression']) && is_string($s['expression'])
+                            ? $s['expression']
+                            : null,
                         'subquery' => isset($s['subquery']) && is_string($s['subquery']) ? $s['subquery'] : null,
                     ];
                 }
@@ -157,9 +165,16 @@ class SqlGenerator
         // FROM base o derivado
         if ($fromSub !== null) {
             // Envolver todo el UNION en un único paréntesis
-            $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM (' . $fromSub['sql'] . ') AS ' . $dialect->quoteIdentifier($fromSub['alias']);
+            $sql =
+                'SELECT '
+                . implode(', ', $selectSqlParts)
+                . ' FROM ('
+                . $fromSub['sql']
+                . ') AS '
+                . $dialect->quoteIdentifier($fromSub['alias']);
         } else {
-            $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
+            $sql =
+                'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
         }
         /** @var array<int,mixed> $bindings */
         $bindings = [];
@@ -173,10 +188,14 @@ class SqlGenerator
         if ($fromSub !== null && getenv('VERSA_DEBUG_SQL') === '1') {
             try {
                 $logDir = __DIR__ . '/../../logs';
-                if (! is_dir($logDir)) {
+                if (!is_dir($logDir)) {
                     @mkdir($logDir, 0777, true);
                 }
-                @file_put_contents($logDir . '/sql_debug.log', '[' . date('H:i:s') . '] ' . $sql . ' | bindings=' . json_encode($bindings) . "\n", FILE_APPEND);
+                @file_put_contents(
+                    $logDir . '/sql_debug.log',
+                    '[' . date('H:i:s') . '] ' . $sql . ' | bindings=' . json_encode($bindings) . "\n",
+                    FILE_APPEND,
+                );
             } catch (\Throwable $e) {
                 // Ignorar errores de logging
             }
@@ -190,39 +209,63 @@ class SqlGenerator
             $joinsRaw = array_values($params['joins']);
 
             foreach ($joinsRaw as $j) {
-                if (! is_array($j)) {
+                if (!is_array($j)) {
                     continue;
                 }
                 $joins[] = $j; // shape se describe en docblock
             }
         }
         // Manejo especial para FULL OUTER JOIN cuando es un único join simple
-        $hasFullOuter = count($joins) === 1 && (strtolower((string) ($joins[0]['type'] ?? '')) === 'full_outer');
+        $hasFullOuter = count($joins) === 1 && strtolower((string) ($joins[0]['type'] ?? '')) === 'full_outer';
 
         if ($hasFullOuter) {
             // Emulación FULL OUTER JOIN: LEFT JOIN + RIGHT JOIN (o LEFT JOIN invertido en SQLite)
             $j = $joins[0];
             $baseFrom = ' FROM ' . self::compileTableReference($table, $dialect);
-            $onClause = self::compileJoinColumn((string) $j['first_col'], $dialect)
-                . ' ' . ($j['operator'] ?? '=') . ' '
+            $onClause =
+                self::compileJoinColumn((string) $j['first_col'], $dialect)
+                . ' '
+                . ($j['operator'] ?? '=')
+                . ' '
                 . self::compileJoinColumn((string) $j['second_col'], $dialect);
             $sel = implode(', ', $selectSqlParts);
-            $leftSql = 'SELECT ' . $sel . $baseFrom . ' LEFT JOIN ' . self::compileTableReference((string) $j['table'], $dialect)
-                . ' ON ' . $onClause;
+            $leftSql =
+                'SELECT '
+                . $sel
+                . $baseFrom
+                . ' LEFT JOIN '
+                . self::compileTableReference((string) $j['table'], $dialect)
+                . ' ON '
+                . $onClause;
 
             // Detectar SQLite por nombre de dialecto
             $isSQLite = method_exists($dialect, 'getName') && stripos($dialect->getName(), 'sqlite') !== false;
             if ($isSQLite) {
                 // RIGHT JOIN no soportado: invertir tablas y columnas para simular RIGHT JOIN
                 $invBaseFrom = ' FROM ' . self::compileTableReference((string) $j['table'], $dialect);
-                $invOnClause = self::compileJoinColumn((string) $j['second_col'], $dialect)
-                    . ' ' . ($j['operator'] ?? '=') . ' '
+                $invOnClause =
+                    self::compileJoinColumn((string) $j['second_col'], $dialect)
+                    . ' '
+                    . ($j['operator'] ?? '=')
+                    . ' '
                     . self::compileJoinColumn((string) $j['first_col'], $dialect);
-                $rightSql = 'SELECT ' . $sel . $invBaseFrom . ' LEFT JOIN ' . self::compileTableReference($table, $dialect)
-                    . ' ON ' . $invOnClause;
+                $rightSql =
+                    'SELECT '
+                    . $sel
+                    . $invBaseFrom
+                    . ' LEFT JOIN '
+                    . self::compileTableReference($table, $dialect)
+                    . ' ON '
+                    . $invOnClause;
             } else {
-                $rightSql = 'SELECT ' . $sel . $baseFrom . ' RIGHT JOIN ' . self::compileTableReference((string) $j['table'], $dialect)
-                    . ' ON ' . $onClause;
+                $rightSql =
+                    'SELECT '
+                    . $sel
+                    . $baseFrom
+                    . ' RIGHT JOIN '
+                    . self::compileTableReference((string) $j['table'], $dialect)
+                    . ' ON '
+                    . $onClause;
             }
             $sql = $leftSql . ' UNION ' . $rightSql;
 
@@ -241,7 +284,7 @@ class SqlGenerator
                 $conditions = [];
                 if (isset($join['conditions']) && is_array($join['conditions'])) {
                     foreach ($join['conditions'] as $idx => $c) {
-                        if (! is_array($c)) {
+                        if (!is_array($c)) {
                             continue;
                         }
                         $loc = (string) ($c['foreign'] ?? '');
@@ -250,7 +293,12 @@ class SqlGenerator
                         if ($loc === '' || $for === '') {
                             continue;
                         }
-                        $fragment = self::compileJoinColumn($loc, $dialect) . ' ' . $opr . ' ' . self::compileJoinColumn($for, $dialect);
+                        $fragment =
+                            self::compileJoinColumn($loc, $dialect)
+                            . ' '
+                            . $opr
+                            . ' '
+                            . self::compileJoinColumn($for, $dialect);
                         if ($idx > 0) {
                             $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
                             $fragment = $bool . ' ' . $fragment;
@@ -265,10 +313,23 @@ class SqlGenerator
                     if ($first === '' || $second === '') {
                         throw new VersaORMException('Invalid JOIN columns');
                     }
-                    $conditions[] = self::compileJoinColumn($first, $dialect) . ' ' . $op . ' ' . self::compileJoinColumn($second, $dialect);
+                    $conditions[] =
+                        self::compileJoinColumn($first, $dialect)
+                        . ' '
+                        . $op
+                        . ' '
+                        . self::compileJoinColumn($second, $dialect);
                 }
                 // Reconstruir el SELECT y FROM
-                $sql = 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . $tableRef . ' LEFT JOIN ' . $leftJoinRef . ' ON ' . implode(' ', $conditions);
+                $sql =
+                    'SELECT '
+                    . implode(', ', $selectSqlParts)
+                    . ' FROM '
+                    . $tableRef
+                    . ' LEFT JOIN '
+                    . $leftJoinRef
+                    . ' ON '
+                    . implode(' ', $conditions);
 
                 continue;
             }
@@ -279,7 +340,7 @@ class SqlGenerator
                 continue;
             }
 
-            if (! in_array($type, ['inner', 'left', 'right'], true)) {
+            if (!in_array($type, ['inner', 'left', 'right'], true)) {
                 throw new VersaORMException('Join type not supported in PDO engine: ' . $type);
             }
             // joinSub support: if subquery is provided, wrap as (subquery) AS alias
@@ -303,7 +364,7 @@ class SqlGenerator
 
             if (isset($join['conditions']) && is_array($join['conditions'])) {
                 foreach ($join['conditions'] as $idx => $c) {
-                    if (! is_array($c)) {
+                    if (!is_array($c)) {
                         continue;
                     }
                     // Condición RAW soporta 'type' => 'raw', 'sql' y 'bindings'
@@ -332,7 +393,12 @@ class SqlGenerator
                     if ($loc === '' || $for === '') {
                         continue;
                     }
-                    $fragment = self::compileJoinColumn($loc, $dialect) . ' ' . $opr . ' ' . self::compileJoinColumn($for, $dialect);
+                    $fragment =
+                        self::compileJoinColumn($loc, $dialect)
+                        . ' '
+                        . $opr
+                        . ' '
+                        . self::compileJoinColumn($for, $dialect);
                     if ($idx > 0) {
                         $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
                         $fragment = $bool . ' ' . $fragment;
@@ -350,7 +416,12 @@ class SqlGenerator
                 if ($first === '' || $second === '') {
                     throw new VersaORMException('Invalid JOIN columns');
                 }
-                $conditions[] = self::compileJoinColumn($first, $dialect) . ' ' . $op . ' ' . self::compileJoinColumn($second, $dialect);
+                $conditions[] =
+                    self::compileJoinColumn($first, $dialect)
+                    . ' '
+                    . $op
+                    . ' '
+                    . self::compileJoinColumn($second, $dialect);
             }
             $sql .= ' ' . $jt . ' ON ' . implode(' ', $conditions);
         }
@@ -456,7 +527,7 @@ class SqlGenerator
             } elseif (isset($ob['column'])) {
                 $dir = strtoupper((string) ($ob['direction'] ?? 'ASC'));
 
-                if (! in_array($dir, ['ASC', 'DESC'], true)) {
+                if (!in_array($dir, ['ASC', 'DESC'], true)) {
                     $dir = 'ASC';
                 }
                 $sql .= ' ORDER BY ' . self::compileSelectPart((string) $ob['column'], $dialect) . ' ' . $dir;
@@ -503,14 +574,20 @@ class SqlGenerator
         $table = (string) ($params['table'] ?? '');
         $data = $params['data'] ?? [];
 
-        if ($table === '' || ! is_array($data) || $data === []) {
+        if ($table === '' || !is_array($data) || $data === []) {
             throw new VersaORMException('Invalid INSERT parameters');
         }
         $cols = array_keys($data);
         $placeholders = array_fill(0, count($cols), '?');
-        $sql = 'INSERT INTO ' . $dialect->quoteIdentifier($table)
-            . ' (' . implode(', ', array_map([$dialect, 'quoteIdentifier'], $cols)) . ')'
-            . ' VALUES (' . implode(', ', $placeholders) . ')';
+        $sql =
+            'INSERT INTO '
+            . $dialect->quoteIdentifier($table)
+            . ' ('
+            . implode(', ', array_map([$dialect, 'quoteIdentifier'], $cols))
+            . ')'
+            . ' VALUES ('
+            . implode(', ', $placeholders)
+            . ')';
         $bindings = array_values($data);
 
         return [$sql, $bindings];
@@ -526,7 +603,7 @@ class SqlGenerator
         $table = (string) ($params['table'] ?? '');
         $data = $params['data'] ?? [];
 
-        if ($table === '' || ! is_array($data) || $data === []) {
+        if ($table === '' || !is_array($data) || $data === []) {
             throw new VersaORMException('Invalid UPDATE parameters');
         }
         $setParts = [];
@@ -613,7 +690,15 @@ class SqlGenerator
             $value = $w['value'] ?? null;
 
             match ($operator) {
-                'IN', 'NOT IN' => (static function () use ($operator, $value, $type, $column, $dialect, &$parts, &$bindings): void {
+                'IN', 'NOT IN' => (static function () use (
+                    $operator,
+                    $value,
+                    $type,
+                    $column,
+                    $dialect,
+                    &$parts,
+                    &$bindings,
+                ): void {
                     $vals = is_array($value) ? array_values($value) : [];
 
                     if ($vals === []) {
@@ -628,7 +713,13 @@ class SqlGenerator
                         $bindings[] = $v;
                     }
                 })(),
-                'IS NULL', 'IS NOT NULL' => (static function () use ($operator, $type, $column, $dialect, &$parts): void {
+                'IS NULL', 'IS NOT NULL' => (static function () use (
+                    $operator,
+                    $type,
+                    $column,
+                    $dialect,
+                    &$parts,
+                ): void {
                     $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $operator];
                 })(),
                 'BETWEEN' => (static function () use ($value, $type, $column, $dialect, &$parts, &$bindings): void {
@@ -645,7 +736,9 @@ class SqlGenerator
                         $bindings[] = $value[1];
                     }
                 })(),
-                'EXISTS', 'NOT EXISTS' => throw new VersaORMException('EXISTS subqueries not supported yet in PDO engine'),
+                'EXISTS', 'NOT EXISTS' => throw new VersaORMException(
+                    'EXISTS subqueries not supported yet in PDO engine',
+                ),
                 default => (static function () use ($w, $type, $column, $dialect, $value, &$parts, &$bindings): void {
                     $op = $w['operator'] ?? '=';
                     $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $op . ' ?'];
@@ -739,13 +832,17 @@ class SqlGenerator
                 /** @var list<array<string,mixed>> $records */
                 $records = is_array($params['records'] ?? null) ? $params['records'] : [];
 
-                if (! is_array($records) || $records === []) {
+                if (!is_array($records) || $records === []) {
                     throw new VersaORMException('insertMany requires records');
                 }
                 $columns = array_keys($records[0]);
                 $rowPh = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
-                $sql = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
-                    . ' (' . implode(', ', array_map(static fn ($name): string => $dialect->quoteIdentifier($name), $columns)) . ') VALUES ';
+                $sql =
+                    'INSERT INTO '
+                    . self::compileTableReference($table, $dialect)
+                    . ' ('
+                    . implode(', ', array_map($dialect->quoteIdentifier(...), $columns))
+                    . ') VALUES ';
                 /** @var list<mixed> $bindings */
                 $bindings = [];
                 $valuesSql = [];
@@ -762,7 +859,12 @@ class SqlGenerator
 
                 // Añadir RETURNING id para Postgres solo si la columna 'id' está presente
                 try {
-                    if (is_array($columns) && in_array('id', $columns, true) && is_object($dialect) && method_exists($dialect, 'getName')) {
+                    if (
+                        is_array($columns)
+                        && in_array('id', $columns, true)
+                        && is_object($dialect)
+                        && method_exists($dialect, 'getName')
+                    ) {
                         $driverHint = $dialect->getName();
                         if (stripos((string) $driverHint, 'postgres') !== false) {
                             $sql .= ' RETURNING id';
@@ -791,15 +893,19 @@ class SqlGenerator
                 /** @var list<string> $updateColumns */
                 $updateColumns = is_array($params['update_columns'] ?? null) ? $params['update_columns'] : [];
 
-                if (! is_array($records) || $records === []) {
+                if (!is_array($records) || $records === []) {
                     throw new VersaORMException('upsertMany requires records');
                 }
                 $columns = array_keys($records[0]);
                 /** @var list<string> $setCols */
                 $setCols = empty($updateColumns) ? array_values(array_diff($columns, $unique)) : $updateColumns;
                 $rowPh = '(' . implode(', ', array_fill(0, count($columns), '?')) . ')';
-                $sql = 'INSERT INTO ' . self::compileTableReference($table, $dialect)
-                    . ' (' . implode(', ', array_map(static fn ($name): string => $dialect->quoteIdentifier($name), $columns)) . ') VALUES ';
+                $sql =
+                    'INSERT INTO '
+                    . self::compileTableReference($table, $dialect)
+                    . ' ('
+                    . implode(', ', array_map($dialect->quoteIdentifier(...), $columns))
+                    . ') VALUES ';
                 /** @var list<mixed> $bindings */
                 $bindings = [];
                 $valuesSql = [];
@@ -818,7 +924,7 @@ class SqlGenerator
                     if (empty($unique)) {
                         throw new VersaORMException('PostgreSQL upsert requires unique_keys');
                     }
-                    $conflict = '(' . implode(', ', array_map(static fn ($name): string => $dialect->quoteIdentifier($name), $unique)) . ')';
+                    $conflict = '(' . implode(', ', array_map($dialect->quoteIdentifier(...), $unique)) . ')';
                     $sets = [];
 
                     foreach ($setCols as $c) {

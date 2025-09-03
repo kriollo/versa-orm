@@ -6,7 +6,7 @@ namespace Controllers;
 
 class TaskController
 {
-    public static function handle(string $action, ?int $id): void
+    public static function handle(string $action, null|int $id): void
     {
         switch ($action) {
             case 'tasks':
@@ -19,9 +19,16 @@ class TaskController
                 $projectFilter = $_GET['project_id'] ?? '';
                 $userFilter = $_GET['user_id'] ?? '';
                 $orm = app()->orm();
-                $queryBuilder = $orm->table('tasks as t')
+                $queryBuilder = $orm
+                    ->table('tasks as t')
                     ->lazy()
-                    ->select(['t.*', 'u.name as user_name', 'u.avatar_color', 'p.name as project_name', 'p.color as project_color'])
+                    ->select([
+                        't.*',
+                        'u.name as user_name',
+                        'u.avatar_color',
+                        'p.name as project_name',
+                        'p.color as project_color',
+                    ])
                     ->leftJoin('users as u', 't.user_id', '=', 'u.id')
                     ->leftJoin('projects as p', 't.project_id', '=', 'p.id');
                 if ($statusFilter) {
@@ -51,15 +58,12 @@ class TaskController
                 }
                 $totalTasks = $countQueryBuilder->count();
                 $totalPages = $perPage > 0 ? ceil($totalTasks / $perPage) : 1;
-                $tasks = $queryBuilder
-                    ->orderBy('t.created_at', 'desc')
-                    ->limit($perPage)
-                    ->offset($offset)
-                    ->collect();
+                $tasks = $queryBuilder->orderBy('t.created_at', 'desc')->limit($perPage)->offset($offset)->collect();
                 $taskIds = array_column($tasks, 'id');
                 $noteCounts = [];
                 if ($taskIds !== []) {
-                    $noteCountsData = $orm->table('task_notes')
+                    $noteCountsData = $orm
+                        ->table('task_notes')
                         ->select(['task_id', 'COUNT(*) as count'])
                         ->whereIn('task_id', $taskIds)
                         ->groupBy('task_id')
@@ -117,6 +121,7 @@ class TaskController
                     'filterQueryString' => $filterQueryString,
                 ]);
                 break;
+
                 // ...otros casos: task_create, task_edit, task_delete, task_change_status
         }
     }

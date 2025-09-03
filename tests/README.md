@@ -64,7 +64,7 @@ php tests/bin/qa-runner.php benchmarks --compare=eloquent,doctrine
 - **PHPStan**: Análisis estático nivel 8
 - **Psalm**: Análisis de tipos y seguridad
 - **PHP-CS-Fixer**: Formato de código PSR-12
-- **Cargo Clippy**: Análisis del código Rust
+- **PHP Compatibility**: Verificación de compatibilidad entre versiones PHP
 
 ### 3. Benchmarks Comparativos
 - Operaciones CRUD con datasets de 1K a 1M registros

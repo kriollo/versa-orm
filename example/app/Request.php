@@ -11,8 +11,14 @@ use function function_exists;
  */
 class Request
 {
-    private function __construct(public array $get, public array $post, public array $server, public array $cookies, public array $files, public array $headers)
-    {
+    private function __construct(
+        public array $get,
+        public array $post,
+        public array $server,
+        public array $cookies,
+        public array $files,
+        public array $headers,
+    ) {
     }
 
     public static function fromGlobals(): self
@@ -23,7 +29,7 @@ class Request
             $_SERVER,
             $_COOKIE,
             $_FILES,
-            function_exists('getallheaders') ? (getallheaders()) : [],
+            function_exists('getallheaders') ? getallheaders() : [],
         );
     }
 

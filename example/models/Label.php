@@ -43,14 +43,7 @@ class Label extends BaseModel
     /** Relación N:M: tareas con esta etiqueta (BelongsToMany). */
     public function tasksRelation(): \VersaORM\Relations\BelongsToMany
     {
-        return $this->belongsToMany(
-            Task::class,
-            'task_labels',
-            'label_id',
-            'task_id',
-            'id',
-            'id',
-        );
+        return $this->belongsToMany(Task::class, 'task_labels', 'label_id', 'task_id', 'id', 'id');
     }
 
     /** Adjuntar tarea a la etiqueta. */
@@ -80,7 +73,7 @@ class Label extends BaseModel
     /** Crear etiqueta (instancia) usando strong typing y mass-assignment seguro. */
     public function createOne(array $attributes): self
     {
-        if (! isset($attributes['color'])) {
+        if (!isset($attributes['color'])) {
             $attributes['color'] = $this->generateRandomColor();
         }
         $this->fill($attributes);

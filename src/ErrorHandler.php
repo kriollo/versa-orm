@@ -28,7 +28,7 @@ class ErrorHandler
 
     private static array $config = [];
 
-    private static ?string $logPath = null;
+    private static null|string $logPath = null;
 
     /**
      * Configura el modo debug.
@@ -64,7 +64,7 @@ class ErrorHandler
         }
 
         // Crear directorio de logs si no existe
-        if (self::$logPath && ! is_dir(self::$logPath)) {
+        if (self::$logPath && !is_dir(self::$logPath)) {
             mkdir(self::$logPath, 0755, true);
         }
     }
@@ -72,7 +72,7 @@ class ErrorHandler
     /**
      * Obtiene el path de logs configurado.
      */
-    public static function getLogPath(): ?string
+    public static function getLogPath(): null|string
     {
         return self::$logPath;
     }
@@ -162,7 +162,7 @@ class ErrorHandler
         }
 
         // Sugerencias
-        if (! empty($errorData['suggestions'])) {
+        if (!empty($errorData['suggestions'])) {
             $output .= "\n💡 Suggestions:\n";
 
             foreach ($errorData['suggestions'] as $suggestion) {
@@ -171,7 +171,7 @@ class ErrorHandler
         }
 
         // Stack trace simplificado
-        if (! empty($errorData['stack_trace'])) {
+        if (!empty($errorData['stack_trace'])) {
             $output .= "\n📍 Stack Trace:\n";
 
             foreach (array_slice($errorData['stack_trace'], 0, 5) as $frame) {
@@ -272,7 +272,7 @@ class ErrorHandler
             $function = $frame['function'] ?? '';
 
             // Buscar el primer frame que no sea de VersaORM interno
-            if (! str_contains($file, 'VersaORM') && ! str_contains($file, 'vendor')) {
+            if (!str_contains($file, 'VersaORM') && !str_contains($file, 'vendor')) {
                 $origin['location'] = 'application';
                 $origin['file'] = $file;
                 $origin['line'] = $frame['line'] ?? null;
@@ -317,7 +317,7 @@ class ErrorHandler
     /**
      * Formatea una query SQL con sus bindings para debugging.
      */
-    private static function formatQuery(?string $sql, array $bindings = []): ?string
+    private static function formatQuery(null|string $sql, array $bindings = []): null|string
     {
         if ($sql === null || $sql === '' || $sql === '0') {
             return null;
@@ -487,6 +487,10 @@ class ErrorHandler
             $detailPayload['exception_log'] = $errorData['exception_log'];
         }
         $detailPayload['full_trace'] = $errorData['trace'] ?? [];
-        file_put_contents($detailFile, json_encode($detailPayload, JSON_UNESCAPED_UNICODE) . PHP_EOL, FILE_APPEND | LOCK_EX);
+        file_put_contents(
+            $detailFile,
+            json_encode($detailPayload, JSON_UNESCAPED_UNICODE) . PHP_EOL,
+            FILE_APPEND | LOCK_EX,
+        );
     }
 }

@@ -14,7 +14,7 @@ use function is_array;
  */
 trait VersaORMTrait
 {
-    protected ?VersaORM $db = null;
+    protected null|VersaORM $db = null;
 
     protected static array $DEFAULT_CONFIG = [
         'driver' => 'mysql',
@@ -33,7 +33,7 @@ trait VersaORMTrait
         global $config;
 
         // Verificar que la configuración global existe
-        if (! isset($config) || ! is_array($config) || ! isset($config['DB'])) {
+        if (!isset($config) || !is_array($config) || !isset($config['DB'])) {
             throw new Exception('Database configuration not found. Please define global $config with DB settings.');
         }
 
@@ -43,25 +43,20 @@ trait VersaORMTrait
         $required_fields = ['DB_DRIVER', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'];
 
         foreach ($required_fields as $field) {
-            if (! isset($db_config[$field])) {
+            if (!isset($db_config[$field])) {
                 throw new Exception("Database configuration field '{$field}' is missing.");
             }
         }
 
-        $this->db = new VersaORM(
-            array_merge(
-                static::$DEFAULT_CONFIG,
-                [
-                    'driver' => $db_config['DB_DRIVER'],
-                    'host' => $db_config['DB_HOST'],
-                    'port' => $db_config['DB_PORT'],
-                    'database' => $db_config['DB_NAME'],
-                    'username' => $db_config['DB_USER'],
-                    'password' => $db_config['DB_PASS'],
-                    'debug' => $db_config['debug'] ?? false,
-                ],
-            ),
-        );
+        $this->db = new VersaORM(array_merge(static::$DEFAULT_CONFIG, [
+            'driver' => $db_config['DB_DRIVER'],
+            'host' => $db_config['DB_HOST'],
+            'port' => $db_config['DB_PORT'],
+            'database' => $db_config['DB_NAME'],
+            'username' => $db_config['DB_USER'],
+            'password' => $db_config['DB_PASS'],
+            'debug' => $db_config['debug'] ?? false,
+        ]));
     }
 
     /**
@@ -78,7 +73,7 @@ trait VersaORMTrait
     /**
      * Obtiene la instancia actual de VersaORM.
      */
-    public function getORM(): ?VersaORM
+    public function getORM(): null|VersaORM
     {
         return $this->db;
     }

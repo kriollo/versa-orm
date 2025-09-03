@@ -8,14 +8,16 @@ use App\Models\Label;
 
 class LabelController
 {
-    public static function handle(string $action, ?int $id): void
+    public static function handle(string $action, null|int $id): void
     {
         switch ($action) {
             case 'labels':
                 $labels = models()->label()->all();
                 if ($labels !== []) {
                     $labelIds = array_map(static fn ($l) => $l->id, $labels);
-                    $countsRows = app()->orm()->table('task_labels')
+                    $countsRows = app()
+                        ->orm()
+                        ->table('task_labels')
                         ->select(['label_id', 'COUNT(*) as c'])
                         ->whereIn('label_id', $labelIds)
                         ->groupBy('label_id')
@@ -34,9 +36,9 @@ class LabelController
             case 'label_tasks':
                 $labelId = $_GET['label_id'] ?? null;
 
-                if (! $labelId) {
+                if (!$labelId) {
                     echo json_encode(['error' => 'ID de etiqueta requerido']);
-                    exit;
+                    exit();
                 }
 
                 // 🚀 ANTES (SQL manual complejo):
@@ -52,19 +54,20 @@ class LabelController
 
                 // ✅ DESPUÉS (Modo Lazy optimizado automáticamente):
                 $orm = app()->orm();
-                $tasks = $orm->table('tasks as t')
-                    ->lazy()                                                    // 🚀 Activa optimización automática
+                $tasks = $orm
+                    ->table('tasks as t')
+                    ->lazy()
                     ->select(['t.*', 'u.name as user_name', 'p.name as project_name'])
-                    ->join('task_labels as tl', 't.id', '=', 'tl.task_id')    // INNER JOIN optimizado
-                    ->leftJoin('users as u', 't.user_id', '=', 'u.id')        // LEFT JOIN optimizado
-                    ->leftJoin('projects as p', 't.project_id', '=', 'p.id')  // LEFT JOIN optimizado
-                    ->where('tl.label_id', '=', $labelId)                     // WHERE optimizado
-                    ->orderBy('t.created_at', 'desc')                         // ORDER BY optimizado
-                    ->collect();                                               // ✅ Ejecuta UNA consulta optimizada
+                    ->join('task_labels as tl', 't.id', '=', 'tl.task_id')
+                    ->leftJoin('users as u', 't.user_id', '=', 'u.id')
+                    ->leftJoin('projects as p', 't.project_id', '=', 'p.id')
+                    ->where('tl.label_id', '=', $labelId)
+                    ->orderBy('t.created_at', 'desc')
+                    ->collect(); // 🚀 Activa optimización automática // INNER JOIN optimizado // LEFT JOIN optimizado // LEFT JOIN optimizado // WHERE optimizado // ORDER BY optimizado // ✅ Ejecuta UNA consulta optimizada
 
                 header('Content-Type: application/json');
                 echo json_encode($tasks);
-                exit;
+                exit();
 
             case 'label_create':
                 if ($_POST !== []) {
@@ -89,13 +92,15 @@ class LabelController
 
                 $label = (new Label(Label::tableName(), app()->orm()))->find($id);
 
-                if (! $label instanceof Label) {
+                if (!$label instanceof Label) {
                     flash('error', 'Etiqueta no encontrada');
                     redirect('?action=labels');
                 }
 
                 // Añadir conteo de tareas
-                $countRow = app()->orm()->table('task_labels')
+                $countRow = app()
+                    ->orm()
+                    ->table('task_labels')
                     ->select(['COUNT(*) as c'])
                     ->where('label_id', '=', $label->id)
                     ->firstArray();

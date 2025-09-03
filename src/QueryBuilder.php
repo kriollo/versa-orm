@@ -85,18 +85,18 @@ class QueryBuilder
     /**
      * @var array<string, array<mixed|string>|string>|null
      */
-    private ?array $orderBy = null;
+    private null|array $orderBy = null;
 
-    private ?int $limit = null;
+    private null|int $limit = null;
 
-    private ?int $offset = null;
+    private null|int $offset = null;
 
     /**
      * Subconsulta derivada establecida vía fromUnion (estructura: {sql, bindings, alias}).
      *
      * @var array{sql:string,bindings:array<int,mixed>,alias:string}|null
      */
-    private ?array $fromSub = null;
+    private null|array $fromSub = null;
 
     /** @var list<array{sql:string,bindings:array<int,mixed>}> */
     private array $unionParts = [];
@@ -145,7 +145,7 @@ class QueryBuilder
      *
      * @var class-string<VersaModel>|null
      */
-    private ?string $modelClass = null;
+    private null|string $modelClass = null;
 
     /** @var list<array<string,mixed>> */
     private array $lazyOperations = [];
@@ -155,15 +155,23 @@ class QueryBuilder
     /**
      * @param array<string,mixed>|VersaORM|null $orm
      */
-    public function __construct(private $orm, string $table, ?string $modelClass = null)
-    {
+    public function __construct(
+        private $orm,
+        string $table,
+        null|string $modelClass = null,
+    ) {
         // Validar identificador/alias de tabla inmediatamente para prevenir casos maliciosos
-        if (! $this->isSafeIdentifier($table)) {
+        if (!$this->isSafeIdentifier($table)) {
             throw new VersaORMException(sprintf('Invalid or malicious table name detected (error): %s', $table));
         }
         $this->table = $table;
 
-        if (is_string($modelClass) && $modelClass !== '' && class_exists($modelClass) && is_a($modelClass, VersaModel::class, true)) {
+        if (
+            is_string($modelClass)
+            && $modelClass !== ''
+            && class_exists($modelClass)
+            && is_a($modelClass, VersaModel::class, true)
+        ) {
             // @var class-string<VersaModel> $modelClass
             $this->modelClass = $modelClass;
         } else {
@@ -176,7 +184,7 @@ class QueryBuilder
      */
     public function from(string $table): self
     {
-        if (! $this->isSafeIdentifier($table)) {
+        if (!$this->isSafeIdentifier($table)) {
             throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
         }
         $this->table = $table;
@@ -196,7 +204,7 @@ class QueryBuilder
         }
 
         foreach ($columns as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
@@ -218,7 +226,7 @@ class QueryBuilder
         }
 
         // Validación básica de seguridad
-        if (! $this->isSafeRawExpression($expression)) {
+        if (!$this->isSafeRawExpression($expression)) {
             throw new VersaORMException('Potentially unsafe SQL expression detected in selectRaw');
         }
 
@@ -238,7 +246,7 @@ class QueryBuilder
      */
     public function selectSubQuery($callback, string $alias): self
     {
-        if (! $this->isSafeIdentifier($alias)) {
+        if (!$this->isSafeIdentifier($alias)) {
             throw new VersaORMException(sprintf('Invalid alias name in selectSubQuery: %s', $alias));
         }
 
@@ -344,7 +352,7 @@ class QueryBuilder
      */
     public function whereRaw(string $sql, array $bindings = []): self
     {
-        if (! $this->isSafeRawExpression($sql)) {
+        if (!$this->isSafeRawExpression($sql)) {
             throw new VersaORMException('Potentially unsafe SQL expression detected in whereRaw');
         }
         $this->addWhereEntry('', 'RAW', ['sql' => $sql, 'bindings' => $bindings], 'and');
@@ -359,13 +367,13 @@ class QueryBuilder
      */
     public function whereSubQuery(string $column, string $operator, $callback): self
     {
-        if (! $this->isSafeIdentifier($column)) {
+        if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name in whereSubQuery: %s', $column));
         }
 
         $validOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS'];
 
-        if (! in_array(strtoupper($operator), $validOperators, true)) {
+        if (!in_array(strtoupper($operator), $validOperators, true)) {
             throw new VersaORMException(sprintf('Invalid operator in whereSubQuery: %s', $operator));
         }
 
@@ -500,8 +508,12 @@ class QueryBuilder
     /**
      * Añade un RIGHT JOIN.
      */
-    public function rightJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
-    {
+    public function rightJoin(
+        string $table,
+        string $firstCol = '',
+        string $operator = '=',
+        string $secondCol = '',
+    ): self {
         $entry = [
             'type' => 'right',
             'table' => $table,
@@ -530,8 +542,12 @@ class QueryBuilder
     /**
      * Añade un FULL OUTER JOIN.
      */
-    public function fullOuterJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
-    {
+    public function fullOuterJoin(
+        string $table,
+        string $firstCol = '',
+        string $operator = '=',
+        string $secondCol = '',
+    ): self {
         $entry = [
             'type' => 'full_outer',
             'table' => $table,
@@ -599,11 +615,11 @@ class QueryBuilder
      */
     public function joinSub($subquery, string $alias, string $firstCol, string $operator, string $secondCol): self
     {
-        if (! $this->isSafeIdentifier($alias)) {
+        if (!$this->isSafeIdentifier($alias)) {
             throw new VersaORMException(sprintf('Invalid alias name in joinSub: %s', $alias));
         }
 
-        if (! $this->isSafeIdentifier($firstCol) || ! $this->isSafeIdentifier($secondCol)) {
+        if (!$this->isSafeIdentifier($firstCol) || !$this->isSafeIdentifier($secondCol)) {
             throw new VersaORMException('Invalid column names in joinSub');
         }
 
@@ -644,7 +660,7 @@ class QueryBuilder
         }
         $idx = $count - 1;
 
-        if (! isset($this->joins[$idx]['conditions']) || ! is_array($this->joins[$idx]['conditions'])) {
+        if (!isset($this->joins[$idx]['conditions']) || !is_array($this->joins[$idx]['conditions'])) {
             $this->joins[$idx]['conditions'] = [];
         }
         $this->joins[$idx]['conditions'][] = [
@@ -678,10 +694,10 @@ class QueryBuilder
         }
         $idx = $count - 1;
         $expr = trim($expression);
-        if (! $this->isSafeJoinRaw($expr)) {
+        if (!$this->isSafeJoinRaw($expr)) {
             throw new VersaORMException('Potentially unsafe raw ON expression detected.');
         }
-        if (! isset($this->joins[$idx]['conditions']) || ! is_array($this->joins[$idx]['conditions'])) {
+        if (!isset($this->joins[$idx]['conditions']) || !is_array($this->joins[$idx]['conditions'])) {
             $this->joins[$idx]['conditions'] = [];
         }
         $this->joins[$idx]['conditions'][] = [
@@ -706,7 +722,7 @@ class QueryBuilder
         }
 
         foreach ($columns as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name in GROUP BY: %s', $column));
             }
         }
@@ -729,7 +745,7 @@ class QueryBuilder
         }
 
         // Validación básica de seguridad
-        if (! $this->isSafeRawExpression($expression)) {
+        if (!$this->isSafeRawExpression($expression)) {
             throw new VersaORMException('Potentially unsafe SQL expression detected in groupByRaw');
         }
 
@@ -748,15 +764,18 @@ class QueryBuilder
     public function orderBy(string $column, string $direction = 'asc'): self
     {
         // Validate column name for security
-        if (! $this->isSafeIdentifier($column)) {
+        if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid or malicious column name in ORDER BY: %s', $column));
         }
 
         // Validate direction to prevent injection
         $direction = strtoupper($direction);
 
-        if (! in_array($direction, ['ASC', 'DESC'], true)) {
-            throw new VersaORMException(sprintf('Invalid ORDER BY direction. Only ASC and DESC are allowed: %s', $direction));
+        if (!in_array($direction, ['ASC', 'DESC'], true)) {
+            throw new VersaORMException(sprintf(
+                'Invalid ORDER BY direction. Only ASC and DESC are allowed: %s',
+                $direction,
+            ));
         }
 
         $this->orderBy = ['column' => $column, 'direction' => $direction];
@@ -777,7 +796,7 @@ class QueryBuilder
         }
 
         // Validación básica de seguridad
-        if (! $this->isSafeRawExpression($expression)) {
+        if (!$this->isSafeRawExpression($expression)) {
             throw new VersaORMException('Potentially unsafe SQL expression detected in orderByRaw');
         }
 
@@ -823,15 +842,24 @@ class QueryBuilder
             $relations = [$relations];
         }
 
-        if ($this->modelClass === null || $this->modelClass === '' || $this->modelClass === '0' || ! class_exists($this->modelClass)) {
+        if (
+            $this->modelClass === null
+            || $this->modelClass === ''
+            || $this->modelClass === '0'
+            || !class_exists($this->modelClass)
+        ) {
             throw new Exception('Cannot eager load relations without a valid model class.');
         }
 
         $resolvedRelations = [];
 
         foreach ($relations as $relationName) {
-            if (! method_exists($this->modelClass, $relationName)) {
-                throw new Exception(sprintf("Relation method '%s' not found in model '%s'.", $relationName, $this->modelClass));
+            if (!method_exists($this->modelClass, $relationName)) {
+                throw new Exception(sprintf(
+                    "Relation method '%s' not found in model '%s'.",
+                    $relationName,
+                    $this->modelClass,
+                ));
             }
 
             // Crear una instancia temporal del modelo para llamar al método de relación
@@ -840,8 +868,12 @@ class QueryBuilder
 
             $relationInstance = $tempModel->{$relationName}();
 
-            if (! $relationInstance instanceof Relation) {
-                throw new Exception(sprintf("Method '%s' in model '%s' does not return a valid Relation instance.", $relationName, $this->modelClass));
+            if (!$relationInstance instanceof Relation) {
+                throw new Exception(sprintf(
+                    "Method '%s' in model '%s' does not return a valid Relation instance.",
+                    $relationName,
+                    $this->modelClass,
+                ));
             }
 
             $relationType = (new ReflectionClass($relationInstance))->getShortName();
@@ -875,10 +907,16 @@ class QueryBuilder
                     if (property_exists($relationInstance, 'pivotTable') || isset($relationInstance->pivotTable)) {
                         $relationData['pivot_table'] = $relationInstance->pivotTable;
                     }
-                    if (property_exists($relationInstance, 'foreignPivotKey') || isset($relationInstance->foreignPivotKey)) {
+                    if (
+                        property_exists($relationInstance, 'foreignPivotKey')
+                        || isset($relationInstance->foreignPivotKey)
+                    ) {
                         $relationData['foreign_pivot_key'] = $relationInstance->foreignPivotKey;
                     }
-                    if (property_exists($relationInstance, 'relatedPivotKey') || isset($relationInstance->relatedPivotKey)) {
+                    if (
+                        property_exists($relationInstance, 'relatedPivotKey')
+                        || isset($relationInstance->relatedPivotKey)
+                    ) {
                         $relationData['related_pivot_key'] = $relationInstance->relatedPivotKey;
                     }
                     if (property_exists($relationInstance, 'parentKey') || isset($relationInstance->parentKey)) {
@@ -910,18 +948,21 @@ class QueryBuilder
         $models = [];
         $hydrationStart = microtime(true);
 
-        if (! is_array($raw)) {
+        if (!is_array($raw)) {
             return $models;
         }
-        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+        $modelClass = is_string($this->modelClass)
+        && $this->modelClass !== ''
+        && is_a($this->modelClass, VersaModel::class, true)
             ? $this->modelClass
             : VersaModel::class;
         /** @var class-string<VersaModel> $modelClass */
 
         // FAST-PATH: sin relaciones, modelo base (VersaModel exactamente), sin select personalizado (usa '*'), sin having ni window ni unions.
-        $canFastPath = $this->with === []
+        $canFastPath =
+            $this->with === []
             && $modelClass === VersaModel::class
-            && ($this->selects === [] || (count($this->selects) === 1 && $this->selects[0] === '*'))
+            && ($this->selects === [] || count($this->selects) === 1 && $this->selects[0] === '*')
             && $this->groupBy === []
             && $this->having === [];
 
@@ -930,7 +971,7 @@ class QueryBuilder
                 $fpStart = microtime(true);
 
                 foreach ($raw as $row) {
-                    if (! is_array($row)) {
+                    if (!is_array($row)) {
                         continue;
                     }
                     $m = new VersaModel($this->table, $this->orm);
@@ -944,7 +985,9 @@ class QueryBuilder
                 }
 
                 if ($this->orm instanceof VersaORM) {
-                    $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                    $cfgEngine = strtolower(
+                        (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                    );
 
                     if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                         $elapsedFp = (microtime(true) - $fpStart) * 1000;
@@ -959,7 +1002,7 @@ class QueryBuilder
         }
 
         foreach ($raw as $row) {
-            if (! is_array($row)) {
+            if (!is_array($row)) {
                 continue;
             }
             $model = new $modelClass($this->table, $this->orm);
@@ -978,7 +1021,9 @@ class QueryBuilder
         // Registrar métricas de hidratación si el motor PDO está activo
         try {
             if ($this->orm instanceof VersaORM) {
-                $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                $cfgEngine = strtolower(
+                    (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                );
 
                 if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                     $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
@@ -1003,12 +1048,14 @@ class QueryBuilder
     {
         $raw = $this->execute('get');
 
-        if (! is_array($raw)) {
+        if (!is_array($raw)) {
             return [];
         }
         $rows = array_values(array_filter($raw, 'is_array'));
         // Construir modelo (base o personalizado) para aplicar casting/accessors consistente
-        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+        $modelClass = is_string($this->modelClass)
+        && $this->modelClass !== ''
+        && is_a($this->modelClass, VersaModel::class, true)
             ? $this->modelClass
             : VersaModel::class;
         /** @var class-string<VersaModel> $modelClass */
@@ -1071,14 +1118,16 @@ class QueryBuilder
      *
      * @return array<string, mixed>|null
      */
-    public function firstArray(): ?array
+    public function firstArray(): null|array
     {
         $row = $this->execute('first');
 
-        if (! is_array($row)) {
+        if (!is_array($row)) {
             return null;
         }
-        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+        $modelClass = is_string($this->modelClass)
+        && $this->modelClass !== ''
+        && is_a($this->modelClass, VersaModel::class, true)
             ? $this->modelClass
             : VersaModel::class;
 
@@ -1095,15 +1144,17 @@ class QueryBuilder
     /**
      * Ejecuta la consulta y devuelve el primer objeto resultado como VersaModel, o null.
      */
-    public function findOne(): ?VersaModel
+    public function findOne(): null|VersaModel
     {
         $hydrationStart = microtime(true);
         $row = $this->execute('first');
 
-        if (! is_array($row) || $row === []) {
+        if (!is_array($row) || $row === []) {
             return null;
         }
-        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+        $modelClass = is_string($this->modelClass)
+        && $this->modelClass !== ''
+        && is_a($this->modelClass, VersaModel::class, true)
             ? $this->modelClass
             : VersaModel::class;
 
@@ -1116,7 +1167,9 @@ class QueryBuilder
                 $m->loadInstance($row); // simple; mapping directo interno
 
                 if ($this->orm instanceof VersaORM) {
-                    $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                    $cfgEngine = strtolower(
+                        (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                    );
 
                     if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                         $elapsedFp = (microtime(true) - $fpStart) * 1000;
@@ -1142,7 +1195,9 @@ class QueryBuilder
 
         try {
             if ($this->orm instanceof VersaORM) {
-                $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                $cfgEngine = strtolower(
+                    (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                );
 
                 if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                     $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
@@ -1158,7 +1213,7 @@ class QueryBuilder
     /**
      * Busca un registro por su clave primaria.
      */
-    public function find(mixed $id, string $pk = 'id'): ?VersaModel
+    public function find(mixed $id, string $pk = 'id'): null|VersaModel
     {
         return $this->where($pk, '=', $id)->first();
     }
@@ -1172,15 +1227,17 @@ class QueryBuilder
      *
      * @return VersaModel|null the first result as a VersaModel instance, or null if no result is found
      */
-    public function first(): ?VersaModel
+    public function first(): null|VersaModel
     {
         $hydrationStart = microtime(true);
         $row = $this->execute('first');
 
-        if (! is_array($row) || $row === []) {
+        if (!is_array($row) || $row === []) {
             return null;
         }
-        $modelClass = (is_string($this->modelClass) && $this->modelClass !== '' && is_a($this->modelClass, VersaModel::class, true))
+        $modelClass = is_string($this->modelClass)
+        && $this->modelClass !== ''
+        && is_a($this->modelClass, VersaModel::class, true)
             ? $this->modelClass
             : VersaModel::class;
 
@@ -1192,7 +1249,9 @@ class QueryBuilder
                 $m->loadInstance($row);
 
                 if ($this->orm instanceof VersaORM) {
-                    $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                    $cfgEngine = strtolower(
+                        (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                    );
 
                     if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                         $elapsedFp = (microtime(true) - $fpStart) * 1000;
@@ -1209,7 +1268,9 @@ class QueryBuilder
 
         try {
             if ($this->orm instanceof VersaORM) {
-                $cfgEngine = strtolower((string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
+                $cfgEngine = strtolower(
+                    (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                );
 
                 if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
                     $elapsed = (microtime(true) - $hydrationStart) * 1000; // ms
@@ -1263,7 +1324,7 @@ class QueryBuilder
      *
      * @return int|null El ID del registro insertado (como entero), o null si no se pudo obtener el ID
      */
-    public function insertGetId(array $data): ?int
+    public function insertGetId(array $data): null|int
     {
         $result = $this->execute('insertGetId', $data);
 
@@ -1337,7 +1398,10 @@ class QueryBuilder
      */
     public function getModelInstance(): VersaModel
     {
-        $modelClass = $this->modelClass !== null && $this->modelClass !== '' && $this->modelClass !== '0' ? $this->modelClass : VersaModel::class;
+        $modelClass =
+            $this->modelClass !== null && $this->modelClass !== '' && $this->modelClass !== '0'
+                ? $this->modelClass
+                : VersaModel::class;
         /**
          * @var VersaModel $model
          */
@@ -1373,26 +1437,24 @@ class QueryBuilder
         $firstKeys = array_keys($records[0]);
 
         foreach ($records as $index => $record) {
-            if (! is_array($record) || $record === []) {
+            if (!is_array($record) || $record === []) {
                 throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
             }
 
             $currentKeys = array_keys($record);
 
             if ($currentKeys !== $firstKeys) {
-                throw new VersaORMException(
-                    sprintf(
-                        'Record at index %d has different columns. Expected: [%s], Got: [%s]',
-                        $index,
-                        implode(', ', $firstKeys),
-                        implode(', ', $currentKeys),
-                    ),
-                );
+                throw new VersaORMException(sprintf(
+                    'Record at index %d has different columns. Expected: [%s], Got: [%s]',
+                    $index,
+                    implode(', ', $firstKeys),
+                    implode(', ', $currentKeys),
+                ));
             }
 
             // Validar nombres de columnas por seguridad
             foreach ($currentKeys as $column) {
-                if (! $this->isSafeIdentifier($column)) {
+                if (!$this->isSafeIdentifier($column)) {
                     throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
                 }
             }
@@ -1414,7 +1476,10 @@ class QueryBuilder
                 if ($this->orm->isDebugMode()) {
                     try {
                         if ($this->orm instanceof VersaORMClass) {
-                            $this->orm->logDebug('[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null), ['records' => $records]);
+                            $this->orm->logDebug(
+                                '[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null),
+                                ['records' => $records],
+                            );
                         }
                     } catch (Throwable) {
                         // ignore logging errors
@@ -1455,7 +1520,7 @@ class QueryBuilder
 
         // Validar nombres de columnas por seguridad
         foreach (array_keys($data) as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
@@ -1519,11 +1584,8 @@ class QueryBuilder
      *
      * @return array<string, mixed> Información sobre la operación
      */
-    public function upsert(
-        array $data,
-        array $uniqueKeys,
-        array $updateColumns = [],
-    ): array {
+    public function upsert(array $data, array $uniqueKeys, array $updateColumns = []): array
+    {
         if ($data === []) {
             throw new VersaORMException('upsert requires data to insert/update');
         }
@@ -1534,30 +1596,28 @@ class QueryBuilder
 
         // Validar identificadores por seguridad PRIMERO
         foreach ($uniqueKeys as $key) {
-            if (! $this->isSafeIdentifier($key)) {
+            if (!$this->isSafeIdentifier($key)) {
                 throw new VersaORMException('Invalid unique key name detected');
             }
         }
 
         foreach ($updateColumns as $col) {
-            if (! $this->isSafeIdentifier($col)) {
+            if (!$this->isSafeIdentifier($col)) {
                 throw new VersaORMException('Invalid update column name detected');
             }
         }
 
         // Validar nombres de columnas de data por seguridad
         foreach (array_keys($data) as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
 
         // Validar que las claves únicas existen en los datos
         foreach ($uniqueKeys as $key) {
-            if (! array_key_exists($key, $data)) {
-                throw new VersaORMException(
-                    sprintf('Record is missing unique key: %s', $key),
-                );
+            if (!array_key_exists($key, $data)) {
+                throw new VersaORMException(sprintf('Record is missing unique key: %s', $key));
             }
         }
 
@@ -1576,11 +1636,8 @@ class QueryBuilder
      *
      * @return array<string, mixed> Información sobre la operación
      */
-    public function insertOrUpdate(
-        array $data,
-        array $uniqueKeys,
-        array $updateColumns = [],
-    ): array {
+    public function insertOrUpdate(array $data, array $uniqueKeys, array $updateColumns = []): array
+    {
         if ($data === []) {
             throw new VersaORMException('insertOrUpdate requires data');
         }
@@ -1591,23 +1648,21 @@ class QueryBuilder
 
         // Validar identificadores por seguridad
         foreach ($uniqueKeys as $key) {
-            if (! $this->isSafeIdentifier($key)) {
+            if (!$this->isSafeIdentifier($key)) {
                 throw new VersaORMException('Invalid unique key name detected');
             }
         }
 
         foreach ($updateColumns as $col) {
-            if (! $this->isSafeIdentifier($col)) {
+            if (!$this->isSafeIdentifier($col)) {
                 throw new VersaORMException('Invalid update column name detected');
             }
         }
 
         // Validar que las claves únicas existen en los datos
         foreach ($uniqueKeys as $key) {
-            if (! array_key_exists($key, $data)) {
-                throw new VersaORMException(
-                    sprintf('Data is missing unique key: %s', $key),
-                );
+            if (!array_key_exists($key, $data)) {
+                throw new VersaORMException(sprintf('Data is missing unique key: %s', $key));
             }
         }
 
@@ -1624,8 +1679,8 @@ class QueryBuilder
         if ($exists) {
             // Actualizar registro existente
             $updateData = $updateColumns === []
-                ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
-                : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
+                ? array_diff_key($data, array_flip($uniqueKeys))
+                : array_intersect_key($data, array_flip($updateColumns)); // Excluir claves únicas // Solo columnas especificadas
 
             if ($updateData === []) {
                 return [
@@ -1680,12 +1735,12 @@ class QueryBuilder
             throw new VersaORMException('save requires data');
         }
 
-        if (! $this->isSafeIdentifier($primaryKey)) {
+        if (!$this->isSafeIdentifier($primaryKey)) {
             throw new VersaORMException('Invalid primary key name detected');
         }
 
         // Si tiene ID, es actualización; si no, es inserción
-        if (isset($data[$primaryKey]) && ! empty($data[$primaryKey])) {
+        if (isset($data[$primaryKey]) && !empty($data[$primaryKey])) {
             // Actualización - separar ID de los datos
             $id = $data[$primaryKey];
             $updateData = $data;
@@ -1734,11 +1789,8 @@ class QueryBuilder
      *
      * @return array<string, mixed> Información sobre la operación
      */
-    public function createOrUpdate(
-        array $data,
-        array $conditions,
-        array $updateColumns = [],
-    ): array {
+    public function createOrUpdate(array $data, array $conditions, array $updateColumns = []): array
+    {
         if ($data === []) {
             throw new VersaORMException('createOrUpdate requires data');
         }
@@ -1749,13 +1801,13 @@ class QueryBuilder
 
         // Validar nombres de columnas en condiciones
         foreach (array_keys($conditions) as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid column name in conditions: %s', $column));
             }
         }
 
         foreach ($updateColumns as $col) {
-            if (! $this->isSafeIdentifier($col)) {
+            if (!$this->isSafeIdentifier($col)) {
                 throw new VersaORMException('Invalid update column name detected');
             }
         }
@@ -1772,9 +1824,7 @@ class QueryBuilder
 
         if ($exists) {
             // Actualizar registro existente
-            $updateData = $updateColumns === []
-                ? $data // Actualizar todas las columnas
-                : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
+            $updateData = $updateColumns === [] ? $data : array_intersect_key($data, array_flip($updateColumns)); // Actualizar todas las columnas // Solo columnas especificadas
 
             if ($updateData === []) {
                 return [
@@ -1845,13 +1895,13 @@ class QueryBuilder
 
         // Validar identificadores por seguridad PRIMERO
         foreach ($uniqueKeys as $key) {
-            if (! $this->isSafeIdentifier($key)) {
+            if (!$this->isSafeIdentifier($key)) {
                 throw new VersaORMException('Invalid unique key name detected');
             }
         }
 
         foreach ($updateColumns as $col) {
-            if (! $this->isSafeIdentifier($col)) {
+            if (!$this->isSafeIdentifier($col)) {
                 throw new VersaORMException('Invalid update column name detected');
             }
         }
@@ -1859,10 +1909,8 @@ class QueryBuilder
         // Validar que las claves únicas existen en todos los registros
         foreach ($records as $index => $record) {
             foreach ($uniqueKeys as $key) {
-                if (! array_key_exists($key, $record)) {
-                    throw new VersaORMException(
-                        sprintf('Record at index %d is missing unique key: %s', $index, $key),
-                    );
+                if (!array_key_exists($key, $record)) {
+                    throw new VersaORMException(sprintf('Record at index %d is missing unique key: %s', $index, $key));
                 }
             }
         }
@@ -1900,7 +1948,7 @@ class QueryBuilder
 
         // Validar nombres de columnas por seguridad
         foreach (array_keys($data) as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
@@ -1936,26 +1984,24 @@ class QueryBuilder
         $firstKeys = array_keys($records[0]);
 
         foreach ($records as $index => $record) {
-            if (! is_array($record) || $record === []) {
+            if (!is_array($record) || $record === []) {
                 throw new VersaORMException(sprintf('Record at index %d is invalid or empty', $index));
             }
 
             $currentKeys = array_keys($record);
 
             if ($currentKeys !== $firstKeys) {
-                throw new VersaORMException(
-                    sprintf(
-                        'Record at index %d has different columns. Expected: [%s], Got: [%s]',
-                        $index,
-                        implode(', ', $firstKeys),
-                        implode(', ', $currentKeys),
-                    ),
-                );
+                throw new VersaORMException(sprintf(
+                    'Record at index %d has different columns. Expected: [%s], Got: [%s]',
+                    $index,
+                    implode(', ', $firstKeys),
+                    implode(', ', $currentKeys),
+                ));
             }
 
             // Validar nombres de columnas por seguridad
             foreach ($currentKeys as $column) {
-                if (! $this->isSafeIdentifier($column)) {
+                if (!$this->isSafeIdentifier($column)) {
                     throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
                 }
             }
@@ -1981,7 +2027,7 @@ class QueryBuilder
      */
     public function collect(): array
     {
-        if (! $this->isLazy) {
+        if (!$this->isLazy) {
             // Si no es lazy, ejecutar normalmente
             return $this->get();
         }
@@ -2003,7 +2049,7 @@ class QueryBuilder
      */
     public function chain(self $otherQuery): self
     {
-        if (! $this->isLazy) {
+        if (!$this->isLazy) {
             $this->lazy();
         }
 
@@ -2024,7 +2070,7 @@ class QueryBuilder
      */
     public function explain(): array
     {
-        if (! $this->isLazy || $this->lazyOperations === []) {
+        if (!$this->isLazy || $this->lazyOperations === []) {
             $this->addCurrentOperationToLazy();
         }
 
@@ -2040,7 +2086,7 @@ class QueryBuilder
         ];
 
         // Validar que tenemos una instancia válida de VersaORM
-        if (! $this->orm instanceof VersaORM) {
+        if (!$this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for explain.');
         }
 
@@ -2081,15 +2127,15 @@ class QueryBuilder
     ): array {
         $validFunctions = ['row_number', 'rank', 'dense_rank', 'lag', 'lead', 'first_value', 'last_value', 'ntile'];
 
-        if (! in_array(strtolower($function), $validFunctions, true)) {
+        if (!in_array(strtolower($function), $validFunctions, true)) {
             throw new VersaORMException(sprintf('Unsupported window function: %s', $function));
         }
 
-        if (! $this->isSafeIdentifier($column) && $column !== '*') {
+        if (!$this->isSafeIdentifier($column) && $column !== '*') {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
         }
 
-        if (! $this->isSafeIdentifier($alias)) {
+        if (!$this->isSafeIdentifier($alias)) {
             throw new VersaORMException(sprintf('Invalid alias name: %s', $alias));
         }
 
@@ -2135,7 +2181,7 @@ class QueryBuilder
         $cteDefinitions = [];
 
         foreach ($ctes as $name => $definition) {
-            if (! $this->isSafeIdentifier($name)) {
+            if (!$this->isSafeIdentifier($name)) {
                 throw new VersaORMException(sprintf('Invalid CTE name: %s', $name));
             }
             $rawQuery = $definition['query'] ?? null;
@@ -2145,17 +2191,19 @@ class QueryBuilder
                 throw new VersaORMException(sprintf('CTE %s must have a query', $name));
             }
 
-            if (! $this->isSafeRawExpression($queryStr)) {
+            if (!$this->isSafeRawExpression($queryStr)) {
                 throw new VersaORMException(sprintf('Potentially unsafe query in CTE %s', $name));
             }
             $cteDefinitions[] = [
                 'name' => $name,
                 'query' => $queryStr,
-                'bindings' => isset($definition['bindings']) && is_array($definition['bindings']) ? array_values($definition['bindings']) : [],
+                'bindings' => isset($definition['bindings']) && is_array($definition['bindings'])
+                    ? array_values($definition['bindings'])
+                    : [],
             ];
         }
 
-        if (! $this->isSafeRawExpression($mainQuery)) {
+        if (!$this->isSafeRawExpression($mainQuery)) {
             throw new VersaORMException('Potentially unsafe main query');
         }
 
@@ -2191,19 +2239,19 @@ class QueryBuilder
         if (is_array($queries)) {
             foreach ($queries as $query) {
                 // Requerir explícitamente ambas claves (sql y bindings) para cumplir con la expectativa del test
-                if (! is_array($query) || ! isset($query['sql'], $query['bindings'])) {
+                if (!is_array($query) || !isset($query['sql'], $query['bindings'])) {
                     throw new VersaORMException('Each UNION query must have sql and bindings keys');
                 }
 
-                if (! is_string($query['sql'])) {
+                if (!is_string($query['sql'])) {
                     throw new VersaORMException('Each UNION query must have sql and bindings keys');
                 }
 
-                if (! is_array($query['bindings'])) {
+                if (!is_array($query['bindings'])) {
                     throw new VersaORMException('Each UNION query must have sql and bindings keys');
                 }
 
-                if (! $this->isSafeRawExpression($query['sql'])) {
+                if (!$this->isSafeRawExpression($query['sql'])) {
                     throw new VersaORMException('Potentially unsafe SQL in UNION query');
                 }
                 $queryDefinitions[] = [
@@ -2272,7 +2320,7 @@ class QueryBuilder
      */
     public function fromUnion(array $queries, string $alias, bool $all = false): self
     {
-        if (! $this->isSafeIdentifier($alias)) {
+        if (!$this->isSafeIdentifier($alias)) {
             throw new VersaORMException(sprintf('Invalid alias name for union derived table: %s', $alias));
         }
         if ($queries === []) {
@@ -2319,7 +2367,7 @@ class QueryBuilder
      */
     public function intersect($query, bool $all = false): array
     {
-        if (! $query instanceof self && ! is_callable($query)) {
+        if (!$query instanceof self && !is_callable($query)) {
             throw new VersaORMException('INTERSECT query must be a QueryBuilder instance or callable');
         }
 
@@ -2359,7 +2407,7 @@ class QueryBuilder
      */
     public function except($query, bool $all = false): array
     {
-        if (! $query instanceof self && ! is_callable($query)) {
+        if (!$query instanceof self && !is_callable($query)) {
             throw new VersaORMException('EXCEPT query must be a QueryBuilder instance or callable');
         }
 
@@ -2401,13 +2449,13 @@ class QueryBuilder
      */
     public function jsonOperation(string $operation, string $column, string $path = '', mixed $value = null): array
     {
-        if (! $this->isSafeIdentifier($column)) {
+        if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
         }
 
         $validOperations = ['extract', 'contains', 'search', 'array_length', 'type', 'keys'];
 
-        if (! in_array($operation, $validOperations, true)) {
+        if (!in_array($operation, $validOperations, true)) {
             throw new VersaORMException(sprintf(
                 'Invalid JSON operation: %s. Valid operations: %s',
                 $operation,
@@ -2449,13 +2497,13 @@ class QueryBuilder
      */
     public function arrayOperations(string $operation, string $column, mixed $value = null): array
     {
-        if (! $this->isSafeIdentifier($column)) {
+        if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
         }
 
         $validOperations = ['contains', 'overlap', 'length', 'append', 'prepend', 'remove', 'any', 'all'];
 
-        if (! in_array($operation, $validOperations, true)) {
+        if (!in_array($operation, $validOperations, true)) {
             throw new VersaORMException(sprintf(
                 'Invalid array operation: %s. Valid operations: %s',
                 $operation,
@@ -2464,7 +2512,10 @@ class QueryBuilder
         }
 
         // Para operaciones que requieren value
-        if (in_array($operation, ['contains', 'overlap', 'append', 'prepend', 'remove', 'any', 'all'], true) && $value === null) {
+        if (
+            in_array($operation, ['contains', 'overlap', 'append', 'prepend', 'remove', 'any', 'all'], true)
+            && $value === null
+        ) {
             throw new VersaORMException(sprintf('Array operation %s requires a value', $operation));
         }
 
@@ -2497,13 +2548,13 @@ class QueryBuilder
 
         foreach (array_keys($hints) as $hint) {
             // Validar que el hint no contenga SQL malicioso
-            if (! $this->isSafeIdentifier($hint) && ! $this->isSafeRawExpression($hint)) {
+            if (!$this->isSafeIdentifier($hint) && !$this->isSafeRawExpression($hint)) {
                 throw new VersaORMException(sprintf('Potentially unsafe query hint: %s', $hint));
             }
         }
 
         // Guardar hints para usar en la construcción de la query
-        if (! isset($this->lazyOperations)) {
+        if (!isset($this->lazyOperations)) {
             $this->lazyOperations = [];
         }
 
@@ -2538,7 +2589,7 @@ class QueryBuilder
 
         // Validar columnas
         foreach ($columns as $column) {
-            if (! $this->isSafeIdentifier($column)) {
+            if (!$this->isSafeIdentifier($column)) {
                 throw new VersaORMException(sprintf('Invalid column name: %s', $column));
             }
         }
@@ -2569,15 +2620,20 @@ class QueryBuilder
      *
      * @return array<string, mixed> Resultados de la agregación
      */
-    public function advancedAggregation(string $type, string $column, array $options = [], array $groupBy = [], string $alias = ''): array
-    {
-        if (! $this->isSafeIdentifier($column)) {
+    public function advancedAggregation(
+        string $type,
+        string $column,
+        array $options = [],
+        array $groupBy = [],
+        string $alias = '',
+    ): array {
+        if (!$this->isSafeIdentifier($column)) {
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
         }
 
         $validTypes = ['percentile', 'median', 'variance', 'stddev', 'group_concat'];
 
-        if (! in_array($type, $validTypes, true)) {
+        if (!in_array($type, $validTypes, true)) {
             throw new VersaORMException(sprintf(
                 'Invalid aggregation type: %s. Valid types: %s',
                 $type,
@@ -2586,7 +2642,10 @@ class QueryBuilder
         }
 
         // Validar opciones específicas
-        if ($type === 'percentile' && (! isset($options['percentile']) || $options['percentile'] < 0 || $options['percentile'] > 1)) {
+        if (
+            $type === 'percentile'
+            && (!isset($options['percentile']) || $options['percentile'] < 0 || $options['percentile'] > 1)
+        ) {
             throw new VersaORMException('Percentile must be between 0 and 1');
         }
 
@@ -2720,7 +2779,7 @@ class QueryBuilder
         $mainIdentifier = $parts[0];
         $alias = $parts[1] ?? null;
 
-        if ($alias !== null && ! $this->isValidDatabaseIdentifier($alias)) {
+        if ($alias !== null && !$this->isValidDatabaseIdentifier($alias)) {
             return false; // Alias inválido
         }
 
@@ -2758,7 +2817,7 @@ class QueryBuilder
         }
 
         // Comprobar la existencia de patrones maliciosos
-        return ! (str_contains($identifier, '--') || str_contains($identifier, '/*') || str_contains($identifier, ';'));
+        return !(str_contains($identifier, '--') || str_contains($identifier, '/*') || str_contains($identifier, ';'));
     }
 
     /**
@@ -2809,7 +2868,7 @@ class QueryBuilder
             $functionArgs = $matches[2];
 
             // Verificar si la función está en la lista permitida
-            if (! in_array($functionName, $allowedFunctions, true)) {
+            if (!in_array($functionName, $allowedFunctions, true)) {
                 return false;
             }
 
@@ -2821,9 +2880,13 @@ class QueryBuilder
             // Permitir argumentos simples como column names, números, strings
             // Verificar que no contenga patrones maliciosos
             $argsSimple = preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) === 1;
-            if ($argsSimple && (! str_contains($functionArgs, '--')
-                && ! str_contains($functionArgs, '/*')
-                && ! str_contains($functionArgs, ';'))) {
+            if (
+                $argsSimple && (
+                    !str_contains($functionArgs, '--')
+                    && !str_contains($functionArgs, '/*')
+                    && !str_contains($functionArgs, ';')
+                )
+            ) {
                 return true;
             }
         }
@@ -2839,18 +2902,18 @@ class QueryBuilder
     {
         // Lista de patrones peligrosos comunes
         $dangerousPatterns = [
-            '/--/',                  // Comentarios SQL
-            '/\/\*/',               // Comentarios de bloque
+            '/--/', // Comentarios SQL
+            '/\/\*/', // Comentarios de bloque
             '/;\s*(?:drop|delete|insert|update|create|alter|truncate)/i', // Comandos peligrosos después de ;
-            '/union\s+select/i',     // UNION attacks
-            '/\bexec\s*\(/i',       // Ejecución de funciones
-            '/\bsp_/i',            // Stored procedures
-            '/xp_/i',              // Extended stored procedures
-            '/into\s+outfile/i',   // Escritura de archivos
-            '/load_file/i',        // Lectura de archivos
-            '/benchmark/i',        // Ataques de timing
-            '/sleep/i',            // Ataques de timing
-            '/waitfor/i',          // Ataques de timing
+            '/union\s+select/i', // UNION attacks
+            '/\bexec\s*\(/i', // Ejecución de funciones
+            '/\bsp_/i', // Stored procedures
+            '/xp_/i', // Extended stored procedures
+            '/into\s+outfile/i', // Escritura de archivos
+            '/load_file/i', // Lectura de archivos
+            '/benchmark/i', // Ataques de timing
+            '/sleep/i', // Ataques de timing
+            '/waitfor/i', // Ataques de timing
         ];
 
         foreach ($dangerousPatterns as $pattern) {
@@ -2909,7 +2972,10 @@ class QueryBuilder
                 'select' => $subQueryBuilder->selects !== [] ? $subQueryBuilder->selects : ['*'],
                 'where' => $subQueryBuilder->processWheres(),
                 'joins' => $subQueryBuilder->joins,
-                'orderBy' => $subQueryBuilder->orderBy !== null && $subQueryBuilder->orderBy !== [] ? [$subQueryBuilder->orderBy] : [],
+                'orderBy' =>
+                    $subQueryBuilder->orderBy !== null && $subQueryBuilder->orderBy !== []
+                        ? [$subQueryBuilder->orderBy]
+                        : [],
                 'groupBy' => $subQueryBuilder->groupBy,
                 'having' => $subQueryBuilder->having,
                 'limit' => $subQueryBuilder->limit,
@@ -3030,9 +3096,11 @@ class QueryBuilder
 
         // ORDER BY
         if (
-            $builder->orderBy && is_array($builder->orderBy)
+            $builder->orderBy
+            && is_array($builder->orderBy)
             && isset($builder->orderBy['column'], $builder->orderBy['direction'])
-            && is_string($builder->orderBy['column']) && is_string($builder->orderBy['direction'])
+            && is_string($builder->orderBy['column'])
+            && is_string($builder->orderBy['direction'])
         ) {
             $sql .= ' ORDER BY ' . $builder->orderBy['column'] . ' ' . $builder->orderBy['direction'];
         }
@@ -3077,9 +3145,9 @@ class QueryBuilder
      *
      * @return mixed
      */
-    private function execute(string $method, ?array $data = null)
+    private function execute(string $method, null|array $data = null)
     {
-        if (! $this->orm instanceof VersaORM) {
+        if (!$this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for QueryBuilder execution.');
         }
 
@@ -3093,6 +3161,7 @@ class QueryBuilder
         if (in_array($method, $batchMethods, true)) {
             // Ahora enviamos operaciones batch como acciones dedicadas (insertMany, updateMany, etc.)
             $action = $method;
+
             // El motor PDO ignora 'method' para acciones directas; mantenerlo no afecta.
         } elseif (in_array($method, $writeMethods, true)) {
             // Las operaciones de escritura normales van como su propio método
@@ -3112,7 +3181,7 @@ class QueryBuilder
      *
      * @return array<string, mixed>
      */
-    private function buildPayload(string $method, ?array $data = null): array
+    private function buildPayload(string $method, null|array $data = null): array
     {
         // Asegurar que selects nunca esté vacío - usar ['*'] por defecto
         $selects = $this->selects === [] ? ['*'] : $this->selects;
@@ -3160,7 +3229,13 @@ class QueryBuilder
                         if ($this->orm->isDebugMode()) {
                             try {
                                 if ($this->orm instanceof VersaORMClass) {
-                                    $this->orm->logDebug('[DEBUG] buildPayload - Final merged params for ' . $method . ': ' . json_encode($params), ['params' => $params]);
+                                    $this->orm->logDebug(
+                                        '[DEBUG] buildPayload - Final merged params for '
+                                        . $method
+                                        . ': '
+                                        . json_encode($params),
+                                        ['params' => $params],
+                                    );
                                 }
                             } catch (Throwable) {
                                 // ignore
@@ -3188,11 +3263,8 @@ class QueryBuilder
      *
      * @return array<string, mixed> Información sobre la operación
      */
-    private function upsertFallback(
-        array $data,
-        array $uniqueKeys,
-        array $updateColumns = [],
-    ): array {
+    private function upsertFallback(array $data, array $uniqueKeys, array $updateColumns = []): array
+    {
         // Construir condiciones WHERE para verificar existencia
         $existsQuery = new self($this->orm, $this->table);
 
@@ -3206,8 +3278,8 @@ class QueryBuilder
         if ($exists) {
             // Actualizar registro existente
             $updateData = $updateColumns === []
-                ? array_diff_key($data, array_flip($uniqueKeys)) // Excluir claves únicas
-                : array_intersect_key($data, array_flip($updateColumns)); // Solo columnas especificadas
+                ? array_diff_key($data, array_flip($uniqueKeys))
+                : array_intersect_key($data, array_flip($updateColumns)); // Excluir claves únicas // Solo columnas especificadas
 
             if ($updateData === []) {
                 return [
@@ -3259,7 +3331,7 @@ class QueryBuilder
     private function replaceIntoFallback(array $data): array
     {
         // Ejecutar usando raw SQL
-        if (! $this->orm instanceof VersaORM) {
+        if (!$this->orm instanceof VersaORM) {
             throw new VersaORMException('VersaORM instance is required for replaceInto');
         }
 
@@ -3304,14 +3376,16 @@ class QueryBuilder
             // Ejecutar a través del mismo mecanismo que insert() usa internamente
             $result = $this->execute('insert', $data);
 
-            return is_array($result) ? $result : ['status' => 'success', 'operation' => 'inserted', 'rows_affected' => 1, 'table' => $this->table];
+            return is_array($result)
+                ? $result
+                : ['status' => 'success', 'operation' => 'inserted', 'rows_affected' => 1, 'table' => $this->table];
         }
 
         // 3) Delegar a upsert con updateColumns = todas menos las claves
         $result = $this->upsert($data, $uniqueKeys, $updateColumns);
 
         // Normalizar respuesta para compatibilidad con tests de "replace"
-        if (! is_array($result)) {
+        if (!is_array($result)) {
             $result = [];
         }
         $result['table'] = $this->table;
@@ -3332,7 +3406,7 @@ class QueryBuilder
      */
     private function replaceIntoManyFallback(array $records, int $batchSize): array
     {
-        if (! $this->orm instanceof VersaORM) {
+        if (!$this->orm instanceof VersaORM) {
             throw new VersaORMException('VersaORM instance is required for replaceIntoMany');
         }
 
@@ -3430,7 +3504,7 @@ class QueryBuilder
     private function detectUpsertKeysForReplace(array $data): array
     {
         $keysInData = array_keys($data);
-        $keysInData = array_values(array_filter($keysInData, fn ($k): bool => $this->isSafeIdentifier($k)));
+        $keysInData = array_values(array_filter($keysInData, $this->isSafeIdentifier(...)));
 
         $pk = [];
 
@@ -3464,9 +3538,9 @@ class QueryBuilder
 
                 foreach ($idx as $ix) {
                     $unique = (bool) ($ix['unique'] ?? false);
-                    $cols = (array) ($ix['columns'] ?? ($ix['column'] ?? []));
+                    $cols = (array) ($ix['columns'] ?? $ix['column'] ?? []);
 
-                    if (! is_array($cols)) {
+                    if (!is_array($cols)) {
                         $cols = [$cols];
                     }
                     $cols = array_values(array_filter(array_map('strval', $cols)));
@@ -3631,7 +3705,7 @@ class QueryBuilder
      */
     private function executeOptimizedPlan(): array
     {
-        if (! $this->orm instanceof VersaORM) {
+        if (!$this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for lazy execution.');
         }
 
@@ -3697,7 +3771,13 @@ class QueryBuilder
                         continue;
                     }
 
-                    if (($type === 'sub' || $type === 'subquery') && isset($select['query'], $select['alias']) && is_string($select['query']) && is_string($select['alias']) && $select['alias'] !== '') {
+                    if (
+                        ($type === 'sub' || $type === 'subquery')
+                        && isset($select['query'], $select['alias'])
+                        && is_string($select['query'])
+                        && is_string($select['alias'])
+                        && $select['alias'] !== ''
+                    ) {
                         $selectParts[] = sprintf('(%s) AS %s', $select['query'], $select['alias']);
 
                         continue;
@@ -3710,7 +3790,9 @@ class QueryBuilder
             }
 
             if ($selectParts === []) {
-                $selectParts[] = $this->fromSub !== null && isset($this->fromSub['alias']) ? $this->fromSub['alias'] . '.*' : '*';
+                $selectParts[] = $this->fromSub !== null && isset($this->fromSub['alias'])
+                    ? $this->fromSub['alias'] . '.*'
+                    : '*';
             }
             $sql .= implode(', ', $selectParts);
         }
@@ -3724,7 +3806,7 @@ class QueryBuilder
 
         // JOINs (materialización directa para modo PDO). Cada JOIN puede tener condiciones normales o raw.
         foreach ($this->joins as $join) {
-            if (! is_array($join) || ! isset($join['type'], $join['table'])) {
+            if (!is_array($join) || !isset($join['type'], $join['table'])) {
                 continue;
             }
             $joinType = strtoupper((string) $join['type']);
@@ -3735,7 +3817,7 @@ class QueryBuilder
             $condParts = [];
             if (isset($join['conditions']) && is_array($join['conditions'])) {
                 foreach ($join['conditions'] as $c) {
-                    if (! is_array($c)) {
+                    if (!is_array($c)) {
                         continue;
                     }
                     // Condición raw
@@ -3747,7 +3829,7 @@ class QueryBuilder
                         continue;
                     }
                     // Condición normal
-                    $local = $c['local'] ?? ($c['column'] ?? '');
+                    $local = $c['local'] ?? $c['column'] ?? '';
                     $op = $c['operator'] ?? '=';
                     $foreign = $c['foreign'] ?? '';
                     if ($local !== '' && $foreign !== '') {
@@ -3784,7 +3866,11 @@ class QueryBuilder
             $whereParts = [];
 
             foreach ($this->wheres as $where) {
-                if (isset($where['sql'], $where['bindings']) && is_string($where['sql']) && is_array($where['bindings'])) {
+                if (
+                    isset($where['sql'], $where['bindings'])
+                    && is_string($where['sql'])
+                    && is_array($where['bindings'])
+                ) {
                     $whereParts[] = $where['sql'];
                     /** @var list<mixed> $wb */
                     $wb = array_values($where['bindings']);
@@ -3821,7 +3907,9 @@ class QueryBuilder
             try {
                 if ($this->orm->isDebugMode()) {
                     try {
-                        $this->orm->logDebug('[DEBUG] Executing advanced SQL operation from QueryBuilder...', ['params' => $params]);
+                        $this->orm->logDebug('[DEBUG] Executing advanced SQL operation from QueryBuilder...', [
+                            'params' => $params,
+                        ]);
                     } catch (Throwable) {
                         if (function_exists('error_log')) {
                             error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
@@ -3833,7 +3921,7 @@ class QueryBuilder
             }
         }
 
-        if (! $this->orm instanceof VersaORM) {
+        if (!$this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for advanced SQL execution.');
         }
 

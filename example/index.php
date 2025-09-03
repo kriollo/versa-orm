@@ -28,38 +28,54 @@ app()->orm();
 try {
     if ($action === 'dashboard') {
         Controllers\DashboardController::handle();
-    } elseif (in_array($action, [
-        'projects',
-        'project_show',
-        'project_create',
-        'project_edit',
-        'project_add_member',
-        'project_remove_member',
-        'project_delete',
-    ], true)) {
+    } elseif (in_array(
+        $action,
+        [
+            'projects',
+            'project_show',
+            'project_create',
+            'project_edit',
+            'project_add_member',
+            'project_remove_member',
+            'project_delete',
+        ],
+        true,
+    )) {
         Controllers\ProjectController::handle($action, $id);
-    } elseif (in_array($action, [
-        'tasks',
-        'task_create',
-        'task_edit',
-        'task_delete',
-        'task_change_status',
-    ], true)) {
+    } elseif (in_array(
+        $action,
+        [
+            'tasks',
+            'task_create',
+            'task_edit',
+            'task_delete',
+            'task_change_status',
+        ],
+        true,
+    )) {
         Controllers\TaskController::handle($action, $id);
-    } elseif (in_array($action, [
-        'users',
-        'user_create',
-        'user_edit',
-        'user_delete',
-    ], true)) {
+    } elseif (in_array(
+        $action,
+        [
+            'users',
+            'user_create',
+            'user_edit',
+            'user_delete',
+        ],
+        true,
+    )) {
         Controllers\UserController::handle($action, $id);
-    } elseif (in_array($action, [
-        'labels',
-        'label_tasks',
-        'label_create',
-        'label_edit',
-        'label_delete',
-    ], true)) {
+    } elseif (in_array(
+        $action,
+        [
+            'labels',
+            'label_tasks',
+            'label_create',
+            'label_edit',
+            'label_delete',
+        ],
+        true,
+    )) {
         Controllers\LabelController::handle($action, $id);
     } else {
         flash('error', 'Acción no encontrada');

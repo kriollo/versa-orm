@@ -57,31 +57,6 @@ final class VersaORMReflectionTest extends TestCase
         $mAssert->invoke($orm, 'bad name', 'column');
     }
 
-    public function test_safeParamsForLog_truncation_and_cleanRustDebugOutput()
-    {
-        $orm = new VersaORM(['driver' => 'sqlite']);
-        $r = new ReflectionClass($orm);
-
-        $mSafe = $r->getMethod('safeParamsForLog');
-        $mSafe->setAccessible(true);
-
-        $long = str_repeat('a', 600);
-        $params = ['big' => $long, 'arr' => array_fill(0, 60, 'x'), 'num' => 1];
-
-        $safe = $mSafe->invoke($orm, $params);
-
-        $this->assertStringContainsString('…', $safe['big']);
-        $this->assertArrayHasKey('_truncated', $safe['arr']);
-
-        $mClean = $r->getMethod('cleanRustDebugOutput');
-        $mClean->setAccessible(true);
-
-        $raw = "DEBUG: something\n{" . '\"status\":\"ok\",\"data\":42}';
-        $clean = $mClean->invoke($orm, $raw);
-
-        $this->assertStringContainsString('"status"', $clean);
-    }
-
     public function test_freeze_and_validateFreezeOperation_behaviour()
     {
         $orm = new VersaORM(['driver' => 'sqlite']);

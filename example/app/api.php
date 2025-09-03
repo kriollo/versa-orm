@@ -31,7 +31,7 @@ try {
             http_response_code(400);
             $data = ['error' => 'Invalid resource requested. Available resources: projects, tasks, notes, users.'];
             echo json_encode($data, JSON_PRETTY_PRINT);
-            exit;
+            exit();
     }
 
     // Usar el QueryBuilder para obtener todos los registros como arrays

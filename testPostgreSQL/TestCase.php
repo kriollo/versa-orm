@@ -67,6 +67,9 @@ class TestCase extends BaseTestCase
         self::$orm->schemaDrop('users');
         self::$orm->schemaDrop('products');
         self::$orm->schemaDrop('test_users');
+        self::$orm->schemaDrop('test_save');
+        self::$orm->schemaDrop('empresa_modulo');
+        self::$orm->schemaDrop('versa_menu');
 
         if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
@@ -142,6 +145,21 @@ class TestCase extends BaseTestCase
             // Reactivar checks una vez creado todo
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         } elseif ($driver === 'postgresql' || $driver === 'pgsql') {
+            self::$orm->schemaCreate('test_save', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'data', 'type' => 'TEXT'],
+                [
+                    'name' => 'created_at',
+                    'type' => 'TIMESTAMP',
+                    'nullable' => true,
+                ],
+                [
+                    'name' => 'updated_at',
+                    'type' => 'TIMESTAMP',
+                    'nullable' => true,
+                ],
+            ]);
+
             // PostgreSQL DDL (sin ENGINE, con identity columns y tipos compatibles)
             self::$orm->schemaCreate('users', [
                 ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
@@ -226,6 +244,24 @@ class TestCase extends BaseTestCase
                 ['name' => 'stock', 'type' => 'INT'],
                 ['name' => 'description', 'type' => 'TEXT'],
                 ['name' => 'category', 'type' => 'VARCHAR(100)'],
+            ]);
+
+            // Tablas para test de consulta booleana
+            self::$orm->schemaCreate('versa_menu', [
+                ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
+                ['name' => 'nombre', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                ['name' => 'icono', 'type' => 'VARCHAR(255)'],
+                ['name' => 'fill', 'type' => 'VARCHAR(255)'],
+                ['name' => 'seccion', 'type' => 'VARCHAR(100)', 'nullable' => false],
+                ['name' => 'posicion', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'estado', 'type' => 'BOOLEAN', 'default' => true, 'nullable' => false],
+            ]);
+
+            self::$orm->schemaCreate('empresa_modulo', [
+                ['name' => 'id_empresa', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'id_modulo', 'type' => 'INT', 'nullable' => false],
+            ], [
+                'primary_key' => ['id_empresa', 'id_modulo'],
             ]);
         } else {
             // Driver genérico (SQLite u otros) - sintaxis portable con constraints
@@ -336,6 +372,9 @@ class TestCase extends BaseTestCase
         self::$orm->schemaDrop('users');
         self::$orm->schemaDrop('products');
         self::$orm->schemaDrop('test_users');
+        self::$orm->schemaDrop('test_save');
+        self::$orm->schemaDrop('empresa_modulo');
+        self::$orm->schemaDrop('versa_menu');
 
         if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
@@ -369,5 +408,34 @@ class TestCase extends BaseTestCase
         self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 1]);
         self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 2]);
         self::$orm->table('role_user')->insert(['user_id' => 2, 'role_id' => 2]);
+
+        // Seed data para test de consulta booleana
+        self::$orm->table('versa_menu')->insert([
+            'nombre' => 'Dashboard',
+            'icono' => 'dashboard-icon',
+            'fill' => 'dashboard-fill',
+            'seccion' => 'principal',
+            'posicion' => 1,
+            'estado' => true,
+        ]);
+        self::$orm->table('versa_menu')->insert([
+            'nombre' => 'Usuarios',
+            'icono' => 'users-icon',
+            'fill' => 'users-fill',
+            'seccion' => 'administracion',
+            'posicion' => 2,
+            'estado' => true,
+        ]);
+        self::$orm->table('versa_menu')->insert([
+            'nombre' => 'Reportes',
+            'icono' => 'reports-icon',
+            'fill' => 'reports-fill',
+            'seccion' => 'analisis',
+            'posicion' => 3,
+            'estado' => true,
+        ]);
+
+        // Solo asociar el módulo 1 (Dashboard) a la empresa 1
+        self::$orm->table('empresa_modulo')->insert(['id_empresa' => 1, 'id_modulo' => 1]);
     }
 }

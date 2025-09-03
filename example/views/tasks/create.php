@@ -61,7 +61,9 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="">Selecciona un proyecto</option>
                         <?php foreach ($projects as $project) { ?>
-                            <option value="<?php echo $project['id']; ?>" <?php echo (isset($_GET['project_id']) && $_GET['project_id'] === $project['id']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo $project['id']; ?>" <?php echo
+                                isset($_GET['project_id']) && $_GET['project_id'] === $project['id'] ? 'selected' : ''
+                            ; ?>>
                                 <?php echo htmlspecialchars($project['name']); ?>
                             </option>
                         <?php } ?>
@@ -76,7 +78,9 @@
                         <option value="">Sin asignar</option>
                         <?php foreach ($users as $user) { ?>
                             <option value="<?php echo $user['id']; ?>">
-                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo htmlspecialchars($user['email']); ?>)
+                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo
+                                    htmlspecialchars($user['email'])
+                            ; ?>)
                             </option>
                         <?php } ?>
                     </select>
@@ -126,8 +130,12 @@
                                     value="<?php echo $label['id']; ?>"
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
-                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($label['color']); ?>"></div>
-                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo htmlspecialchars($label['name']); ?></span>
+                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo
+                                    htmlspecialchars($label['color'])
+                            ; ?>"></div>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo
+                                htmlspecialchars($label['name'])
+                            ; ?></span>
                                 </div>
                             </label>
                         <?php } ?>

@@ -136,7 +136,7 @@ try {
                     assert(false, "Query '{$query}' debería haber sido bloqueada");
                 } catch (VersaORMException $e) {
                     // Verificar que fue bloqueada por freeze, no por otro error
-                    if (strpos($e->getMessage(), 'blocked by global freeze mode') !== false) {
+                    if (str_contains($e->getMessage(), 'blocked by global freeze mode')) {
                         echo "   - '{$query}': BLOCKED ✓\n";
                     } else {
                         // Si no fue bloqueada por freeze, es un error real del test
@@ -167,7 +167,7 @@ try {
                 echo "   - createTable: ALLOWED ✓\n";
             } catch (Exception $e) {
                 // Si falla por otro motivo (tabla ya existe, etc.), está bien
-                if (strpos($e->getMessage(), 'already exists') !== false) {
+                if (str_contains($e->getMessage(), 'already exists')) {
                     echo "   - createTable: ALLOWED (tabla ya existe) ✓\n";
                 } else {
                     echo '   - createTable: ERROR - ' . $e->getMessage() . "\n";

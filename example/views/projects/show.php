@@ -8,7 +8,9 @@
 <div class="max-w-6xl mx-auto">
     <!-- Header del proyecto -->
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 transition-colors">
-        <div class="h-32" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($project->color); ?>, <?php echo htmlspecialchars($project->color); ?>80);">
+        <div class="h-32" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($project->color); ?>, <?php echo
+            htmlspecialchars($project->color)
+; ?>80);">
             <div class="p-6 h-full flex items-end">
                 <div class="flex-1">
                     <h1 class="text-white text-3xl font-bold mb-2"><?php echo htmlspecialchars($project->name); ?></h1>
@@ -41,10 +43,14 @@
                         <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Propietario</label>
                         <div class="flex items-center mt-1">
                             <?php if ($owner) { ?>
-                                <div class="avatar mr-2" style="background-color: <?php echo htmlspecialchars($owner->avatar_color); ?>">
+                                <div class="avatar mr-2" style="background-color: <?php echo
+                            htmlspecialchars($owner->avatar_color)
+                                ; ?>">
                                     <?php echo strtoupper(substr($owner->name, 0, 2)); ?>
                                 </div>
-                                <span class="text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($owner->name); ?></span>
+                                <span class="text-gray-900 dark:text-white transition-colors"><?php echo
+                                    htmlspecialchars($owner->name)
+                                ; ?></span>
                             <?php } else { ?>
                                 <span class="text-gray-400">Sin propietario</span>
                             <?php } ?>
@@ -53,12 +59,16 @@
 
                     <div>
                         <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Fecha de creación</label>
-                        <p class="mt-1 text-gray-900 dark:text-gray-200 transition-colors"><?php echo isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''; ?></p>
+                        <p class="mt-1 text-gray-900 dark:text-gray-200 transition-colors"><?php echo
+                            isset($project->created_at) ? safe_date('M Y', $project->created_at) : ''
+; ?></p>
                     </div>
 
                     <div>
                         <label class="text-sm font-medium text-gray-500 dark:text-gray-300 transition-colors">Última actualización</label>
-                        <p class="mt-1 text-gray-900 dark:text-gray-200 transition-colors"><?php echo isset($project->updated_at) ? safe_date('M Y', $project->updated_at) : ''; ?></p>
+                        <p class="mt-1 text-gray-900 dark:text-gray-200 transition-colors"><?php echo
+    isset($project->updated_at) ? safe_date('M Y', $project->updated_at) : ''
+; ?></p>
                     </div>
                 </div>
             </div>
@@ -66,24 +76,32 @@
             <!-- Miembros del proyecto -->
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Miembros (<?php echo count($members); ?>)</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Miembros (<?php echo
+count($members)
+; ?>)</h3>
                     <button id="addMemberBtn" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors">
                         <i class="fas fa-plus mr-1"></i>
                         Agregar
                     </button>
                 </div>
 
-                <?php if (! empty($members)) { ?>
+                <?php if (!empty($members)) { ?>
                     <div class="space-y-2">
                         <?php foreach ($members as $member) { ?>
                             <div class="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group transition-colors">
                                 <div class="flex items-center">
-                                    <div class="avatar mr-3" style="background-color: <?php echo htmlspecialchars($member->avatar_color); ?>">
+                                    <div class="avatar mr-3" style="background-color: <?php echo
+                    htmlspecialchars($member->avatar_color)
+                            ; ?>">
                                         <?php echo strtoupper(substr($member->name, 0, 2)); ?>
                                     </div>
                                     <div>
-                                        <p class="font-medium text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($member->name); ?></p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?php echo htmlspecialchars($member->email); ?></p>
+                                        <p class="font-medium text-gray-900 dark:text-white transition-colors"><?php echo
+                                    htmlspecialchars($member->name)
+                            ; ?></p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-300 transition-colors"><?php echo
+                                htmlspecialchars($member->email)
+                            ; ?></p>
                                     </div>
                                 </div>
                                 <form method="POST" action="?action=project_remove_member" class="inline">
@@ -109,7 +127,9 @@
         <div class="lg:col-span-2">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Tareas (<?php echo count($tasks); ?>)</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white transition-colors">Tareas (<?php echo
+                        count($tasks)
+; ?>)</h3>
                     <a href="?action=task_create&project_id=<?php echo $project->id; ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors dark:bg-blue-600 dark:hover:bg-blue-500">
                         <i class="fas fa-plus mr-2"></i>
                         Nueva Tarea
@@ -119,7 +139,7 @@
                 <!-- Progreso general -->
                 <?php if (count($tasks) > 0) { ?>
                     <?php
-                    $completedTasks = array_filter($tasks, static fn ($t): bool => $t->status === 'done');
+$completedTasks = array_filter($tasks, static fn ($t): bool => $t->status === 'done');
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
                     <div class="mb-6">
@@ -128,7 +148,9 @@
                             <span><?php echo count($completedTasks); ?>/<?php echo count($tasks); ?> tareas completadas</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 transition-colors">
-                            <div class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: <?php echo $progressPercent; ?>%"></div>
+                            <div class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: <?php echo
+                                $progressPercent
+                    ; ?>%"></div>
                         </div>
                     </div>
                 <?php } ?>
@@ -166,19 +188,27 @@ $statusColors = [
                                         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 transition-colors">
                                             <div class="grid ">
                                                 <div class="flex-1">
-                                                    <h5 class="font-medium text-sm mb-1 text-gray-900 dark:text-white transition-colors"><?php echo htmlspecialchars($task->title); ?></h5>
+                                                    <h5 class="font-medium text-sm mb-1 text-gray-900 dark:text-white transition-colors"><?php echo
+                                        htmlspecialchars($task->title)
+                                        ; ?></h5>
                                                     <?php if ($task->description) { ?>
-                                                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2 transition-colors"><?php echo htmlspecialchars(substr($task->description, 0, 80)); ?><?php echo strlen($task->description) > 80 ? '...' : ''; ?></p>
+                                                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2 transition-colors"><?php echo
+                                                htmlspecialchars(substr($task->description, 0, 80))
+                                                        ; ?><?php echo strlen($task->description) > 80 ? '...' : ''; ?></p>
                                                     <?php } ?>
 
                                                     <div class="flex items-center justify-between">
-                                                        <span class="text-xs px-2 py-1 rounded <?php echo getPriorityClass($task->priority); ?>">
+                                                        <span class="text-xs px-2 py-1 rounded <?php echo
+                                                            getPriorityClass($task->priority)
+                                        ; ?>">
                                                             <?php echo ucfirst($task->priority); ?>
                                                         </span>
                                                         <?php if ($task->due_date) { ?>
                                                             <?php $dueRaw = $task->due_date;
 
-                                                            $fmt = $dueRaw instanceof DateTimeInterface ? $dueRaw->format('d/m') : safe_date_format($dueRaw, 'd/m');
+                                                            $fmt = $dueRaw instanceof DateTimeInterface
+                                                                ? $dueRaw->format('d/m')
+                                                                : safe_date_format($dueRaw, 'd/m');
                                                             ?>
                                                             <span class="text-xs text-gray-500 dark:text-gray-400 transition-colors">
                                                                 <?php echo htmlspecialchars($fmt); ?>
@@ -190,12 +220,18 @@ $statusColors = [
                                                     <a href="?action=task_edit&id=<?php echo $task->id; ?>" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors">
                                                         <i class="fas fa-edit text-xs"></i>
                                                     </a>
-                                                    <button class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors open-status-modal" data-task-id="<?php echo $task->id; ?>" data-task-status="<?php echo $task->status; ?>">
+                                                    <button class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors open-status-modal" data-task-id="<?php echo
+                                                        $task->id
+                                        ; ?>" data-task-status="<?php echo $task->status; ?>">
                                                         <i class="fas fa-exchange-alt text-xs"></i>
                                                     </button>
-                                                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal has-notes" data-task-id="<?php echo $task->id; ?>" data-task-title="<?php echo $task->title; ?>">
+                                                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 open-notes-modal has-notes" data-task-id="<?php echo
+                                            $task->id
+                                        ; ?>" data-task-title="<?php echo $task->title; ?>">
                                                         <i class="fas fa-sticky-note"></i>
-                                                        <span class="note-count-badge"><?php echo $task->notes()->count(); ?></span>
+                                                        <span class="note-count-badge"><?php echo
+                                                $task->notes()->count()
+                                        ; ?></span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -225,6 +261,7 @@ function getPriorityClass($priority): string
         default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
     };
 }
+
 ?>
 
 <!-- Modal para agregar miembros -->
@@ -250,7 +287,9 @@ function getPriorityClass($priority): string
                         <?php if (isset($availableUsers) && is_array($availableUsers)) { ?>
                             <?php foreach ($availableUsers as $user) { ?>
                                 <option value="<?php echo $user->id; ?>" class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                                    <?php echo htmlspecialchars($user->name); ?> (<?php echo htmlspecialchars($user->email); ?>)
+                                    <?php echo htmlspecialchars($user->name); ?> (<?php echo
+                                        htmlspecialchars($user->email)
+                                ; ?>)
                                 </option>
                             <?php } ?>
                         <?php } else { ?>
@@ -262,7 +301,9 @@ function getPriorityClass($priority): string
                     <?php if (isset($_GET['debug'])) { ?>
                         <div class="mt-2 text-xs text-gray-500">
                             <p>Debug info:</p>
-                            <p>Available users count: <?php echo isset($availableUsers) ? count($availableUsers) : 'undefined'; ?></p>
+                            <p>Available users count: <?php echo
+                                isset($availableUsers) ? count($availableUsers) : 'undefined'
+                        ; ?></p>
                             <p>Members count: <?php echo count($members); ?></p>
                             <p>Owner ID: <?php echo $project->owner_id; ?></p>
                         </div>

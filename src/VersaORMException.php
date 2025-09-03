@@ -15,10 +15,10 @@ class VersaORMException extends Exception
     private float $raisedAt;
 
     /** @var string|null Nombre del método público/QueryBuilder que originó el error */
-    private ?string $originMethod = null;
+    private null|string $originMethod = null;
 
     /** @var string|null Driver de base de datos activo */
-    private ?string $driver = null;
+    private null|string $driver = null;
 
     /**
      * @param array<int, mixed> $bindings
@@ -27,12 +27,12 @@ class VersaORMException extends Exception
     public function __construct(
         string $message,
         private string $errorCode = 'UNKNOWN_ERROR',
-        private ?string $query = null,
+        private null|string $query = null,
         private array $bindings = [],
         private array $errorDetails = [],
-        private ?string $sqlState = null,
+        private null|string $sqlState = null,
         int $code = 0,
-        ?Exception $previous = null,
+        null|Exception $previous = null,
     ) {
         $this->raisedAt = microtime(true);
         parent::__construct($message, $code, $previous);
@@ -48,7 +48,7 @@ class VersaORMException extends Exception
             $this->getMessage(),
             $this->driver ?? 'n/a',
             $this->originMethod ?? 'n/a',
-            ($this->query !== null && $this->query !== '') ? substr($this->query, 0, 200) : 'n/a',
+            $this->query !== null && $this->query !== '' ? substr($this->query, 0, 200) : 'n/a',
             json_encode($this->bindings),
         );
     }
@@ -56,7 +56,7 @@ class VersaORMException extends Exception
     /**
      * Obtiene la consulta SQL que causó el error.
      */
-    public function getQuery(): ?string
+    public function getQuery(): null|string
     {
         return $this->query;
     }
@@ -92,13 +92,13 @@ class VersaORMException extends Exception
     /**
      * Obtiene el estado SQL si está disponible.
      */
-    public function getSqlState(): ?string
+    public function getSqlState(): null|string
     {
         return $this->sqlState;
     }
 
     /** Define el método origen (fluente). */
-    public function withOrigin(?string $method): self
+    public function withOrigin(null|string $method): self
     {
         $this->originMethod = $method;
 
@@ -106,7 +106,7 @@ class VersaORMException extends Exception
     }
 
     /** Define el driver DB que estaba activo. */
-    public function withDriver(?string $driver): self
+    public function withDriver(null|string $driver): self
     {
         $this->driver = $driver;
 
@@ -125,13 +125,13 @@ class VersaORMException extends Exception
     }
 
     /** Devuelve el método origen si se estableció. */
-    public function getOriginMethod(): ?string
+    public function getOriginMethod(): null|string
     {
         return $this->originMethod;
     }
 
     /** Devuelve driver DB. */
-    public function getDriver(): ?string
+    public function getDriver(): null|string
     {
         return $this->driver;
     }
@@ -163,11 +163,12 @@ class VersaORMException extends Exception
             'query' => $this->query,
             'bindings' => $this->bindings,
             'details' => $this->errorDetails,
-            'previous' => $prev instanceof Exception ? [
-                'class' => get_class($prev),
-                'message' => $prev->getMessage(),
-                'code' => $prev->getCode(),
-            ] : null,
+            'previous' => $prev instanceof Exception
+                ? [
+                    'class' => get_class($prev),
+                    'message' => $prev->getMessage(),
+                    'code' => $prev->getCode(),
+                ] : null,
             'trace' => $this->simplifiedTrace(),
         ];
     }

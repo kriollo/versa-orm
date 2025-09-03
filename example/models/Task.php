@@ -190,7 +190,7 @@ class Task extends BaseModel
 
         // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
-            if (! empty($labelId)) {
+            if (!empty($labelId)) {
                 $taskLabel = $this->dispenseInstance('task_labels');
                 $taskLabel->task_id = $this->id;
                 $taskLabel->label_id = $labelId;
@@ -206,7 +206,7 @@ class Task extends BaseModel
     {
         $validStatuses = [self::STATUS_TODO, self::STATUS_IN_PROGRESS, self::STATUS_DONE];
 
-        if (! in_array($status, $validStatuses, true)) {
+        if (!in_array($status, $validStatuses, true)) {
             throw new Exception('Estado inválido');
         }
 
@@ -237,16 +237,19 @@ class Task extends BaseModel
      */
     public function isOverdue(): bool
     {
-        if (! $this->due_date) {
+        if (!$this->due_date) {
             return false;
         }
 
         return safe_strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
     }
 
-    public function getUserIdByTaskId(int $taskId): ?int
+    public function getUserIdByTaskId(int $taskId): null|int
     {
-        $task = $this->getOrm()->table('tasks', self::class)->where('id', '=', $taskId)->findOne();
+        $task = $this->getOrm()
+            ->table('tasks', self::class)
+            ->where('id', '=', $taskId)
+            ->findOne();
 
         return $task ? $task->user_id : null;
     }

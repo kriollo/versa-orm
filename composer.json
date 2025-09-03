@@ -1,6 +1,6 @@
 {
   "name": "versaorm/versaorm-php",
-  "description": "ORM ligero y seguro para PHP (modo PDO por defecto) - Query Builder fluido, Active Record simple, preparado para núcleo nativo opcional",
+  "description": "ORM ligero y seguro para PHP con motor PDO nativo - Query Builder fluido, Active Record simple, alto rendimiento",
   "type": "library",
   "keywords": [
     "orm",
@@ -8,14 +8,13 @@
     "mysql",
     "postgresql",
     "sqlite",
-    "rust",
+    "pdo",
     "performance",
     "query-builder",
     "redbean",
     "eloquent",
     "versaorm",
     "versaWYS",
-    "versaORM",
     "kriollo"
   ],
   "homepage": "https://github.com/kriollo/versa-orm",

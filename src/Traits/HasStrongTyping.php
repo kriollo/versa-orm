@@ -46,7 +46,7 @@ trait HasStrongTyping
     protected array $accessors = [];
 
     /** @var array<string,mixed>|null */
-    private ?array $databaseSchemaCache = null;
+    private null|array $databaseSchemaCache = null;
 
     /** @var array<string,string> */
     private static array $supportedCasts = [
@@ -144,7 +144,7 @@ trait HasStrongTyping
         /** @var PropertyTypeMap $types */
         $types = static::getPropertyTypes();
 
-        if (! isset($types[$property])) { // fallback heurístico
+        if (!isset($types[$property])) { // fallback heurístico
             if (is_string($value)) {
                 $trim = trim($value);
 
@@ -178,7 +178,10 @@ trait HasStrongTyping
                 throw $e;
             }
 
-            throw new VersaORMException("Error casting property {$property} to PHP type {$type}: " . $e->getMessage(), 'TYPE_CASTING_ERROR');
+            throw new VersaORMException(
+                "Error casting property {$property} to PHP type {$type}: " . $e->getMessage(),
+                'TYPE_CASTING_ERROR',
+            );
         }
     }
 
@@ -195,7 +198,7 @@ trait HasStrongTyping
         /** @var PropertyTypeMap $types */
         $types = static::getPropertyTypes();
 
-        if (! isset($types[$property])) {
+        if (!isset($types[$property])) {
             if ($value instanceof DateTimeInterface) {
                 return $value->format('Y-m-d H:i:s');
             }
@@ -222,7 +225,10 @@ trait HasStrongTyping
                 throw $e;
             }
 
-            throw new VersaORMException("Error casting property {$property} to database type {$type}: " . $e->getMessage(), 'DATABASE_CASTING_ERROR');
+            throw new VersaORMException(
+                "Error casting property {$property} to database type {$type}: " . $e->getMessage(),
+                'DATABASE_CASTING_ERROR',
+            );
         }
     }
 
@@ -237,13 +243,13 @@ trait HasStrongTyping
         }
 
         try {
-            if (! $this->orm instanceof VersaORM) {
+            if (!$this->orm instanceof VersaORM) {
                 return ['Se requiere una instancia válida de VersaORM para validar el esquema'];
             }
             /** @var false|list<array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $schema */
             $schema = $this->orm->schema('columns', $this->table);
 
-            if (! $schema) {
+            if (!$schema) {
                 return ["No se pudo obtener información de esquema para la tabla '{$this->table}'"];
             }
             /** @var array<string,array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $db */
@@ -252,12 +258,41 @@ trait HasStrongTyping
             foreach ($schema as $c) {
                 $db[strtolower($c['column_name'])] = $c;
             }
-            $map = ['varchar' => 'string', 'char' => 'string', 'text' => 'string', 'longtext' => 'text', 'int' => 'int', 'integer' => 'int', 'bigint' => 'int', 'smallint' => 'int', 'tinyint' => 'boolean', 'decimal' => 'decimal', 'numeric' => 'decimal', 'float' => 'float', 'double' => 'float', 'real' => 'float', 'date' => 'date', 'datetime' => 'datetime', 'timestamp' => 'datetime', 'time' => 'time', 'json' => 'json', 'jsonb' => 'json', 'blob' => 'blob', 'longblob' => 'blob', 'binary' => 'binary', 'varbinary' => 'binary', 'enum' => 'enum', 'set' => 'set', 'uuid' => 'uuid', 'inet' => 'inet'];
+            $map = [
+                'varchar' => 'string',
+                'char' => 'string',
+                'text' => 'string',
+                'longtext' => 'text',
+                'int' => 'int',
+                'integer' => 'int',
+                'bigint' => 'int',
+                'smallint' => 'int',
+                'tinyint' => 'boolean',
+                'decimal' => 'decimal',
+                'numeric' => 'decimal',
+                'float' => 'float',
+                'double' => 'float',
+                'real' => 'float',
+                'date' => 'date',
+                'datetime' => 'datetime',
+                'timestamp' => 'datetime',
+                'time' => 'time',
+                'json' => 'json',
+                'jsonb' => 'json',
+                'blob' => 'blob',
+                'longblob' => 'blob',
+                'binary' => 'binary',
+                'varbinary' => 'binary',
+                'enum' => 'enum',
+                'set' => 'set',
+                'uuid' => 'uuid',
+                'inet' => 'inet',
+            ];
 
             foreach ($types as $prop => $def) {
                 $c = strtolower($prop);
 
-                if (! isset($db[$c])) {
+                if (!isset($db[$c])) {
                     $errs[] = "⚠️  ADVERTENCIA: La propiedad '{$prop}' no existe en la base de datos";
 
                     continue;
@@ -267,19 +302,23 @@ trait HasStrongTyping
                 $modelType = strtolower((string) ($def['type'] ?? ''));
                 $expected = $map[$dbType] ?? $dbType;
 
-                if ($expected !== $modelType && ! $this->isCompatibleType($expected, $modelType)) {
+                if ($expected !== $modelType && !$this->isCompatibleType($expected, $modelType)) {
                     $errs[] = "⚠️  INCONSISTENCIA: '{$prop}' - DB: {$dbType} ({$expected}) vs Modelo: {$modelType}";
                 }
                 $nullable = strtolower($dbCol['is_nullable'] ?? 'no') === 'yes';
                 $modelNull = (bool) ($def['nullable'] ?? false);
 
                 if ($nullable !== $modelNull) {
-                    $errs[] = "⚠️  NULLABILIDAD: '{$prop}' - DB permite NULL: " . ($nullable ? 'Sí' : 'No') . ' vs Modelo: ' . ($modelNull ? 'Sí' : 'No');
+                    $errs[] =
+                        "⚠️  NULLABILIDAD: '{$prop}' - DB permite NULL: "
+                        . ($nullable ? 'Sí' : 'No')
+                        . ' vs Modelo: '
+                        . ($modelNull ? 'Sí' : 'No');
                 }
             }
 
             foreach ($db as $cn => $cinfo) {
-                if (! isset($types[$cn])) {
+                if (!isset($types[$cn])) {
                     $errs[] = "💡 INFO: Columna '{$cn}' existe en DB pero no está definida en el modelo";
                 }
             }
@@ -319,7 +358,7 @@ trait HasStrongTyping
      * $phpHandler: callable(object,string,mixed,array): mixed para convertir a PHP
      * $dbHandler: callable(object,string,mixed,array): mixed para convertir a DB (opcional).
      */
-    public static function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
+    public static function addTypeConverter(string $name, callable $phpHandler, null|callable $dbHandler = null): void
     {
         $lname = strtolower($name);
 
@@ -367,12 +406,12 @@ trait HasStrongTyping
 
     protected function applyMutator(string $k, $v)
     {
-        return isset($this->mutators[$k]) ? ($this->mutators[$k])($v) : $this->castToDatabaseType($k, $v);
+        return isset($this->mutators[$k]) ? $this->mutators[$k]($v) : $this->castToDatabaseType($k, $v);
     }
 
     protected function applyAccessor(string $k, $v)
     {
-        return isset($this->accessors[$k]) ? ($this->accessors[$k])($v) : $this->castToPhpType($k, $v);
+        return isset($this->accessors[$k]) ? $this->accessors[$k]($v) : $this->castToPhpType($k, $v);
     }
 
     /**
@@ -484,7 +523,8 @@ trait HasStrongTyping
             }
 
             if (is_int($v) || ctype_digit((string) $v)) {
-                return (new DateTimeImmutable('@' . (int) $v))->setTimezone(new DateTimeZone(date_default_timezone_get()));
+                return (new DateTimeImmutable('@'
+                . (int) $v))->setTimezone(new DateTimeZone(date_default_timezone_get()));
             }
 
             throw new VersaORMException("Invalid datetime value for property {$p}");
@@ -502,8 +542,10 @@ trait HasStrongTyping
                 }
             }
 
-            if ($allowed !== [] && ! in_array($val, $allowed, true)) {
-                throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed));
+            if ($allowed !== [] && !in_array($val, $allowed, true)) {
+                throw new VersaORMException(
+                    "Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed),
+                );
             }
 
             return $val;
@@ -539,8 +581,10 @@ trait HasStrongTyping
 
             if ($allowed !== []) {
                 foreach ($vals as $vv) {
-                    if (! in_array((string) $vv, $allowed, true)) {
-                        throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed));
+                    if (!in_array((string) $vv, $allowed, true)) {
+                        throw new VersaORMException(
+                            "Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed),
+                        );
                     }
                 }
             }
@@ -556,7 +600,7 @@ trait HasStrongTyping
         $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string) $v;
 
-            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
             }
             // Normaliza (comprime) IPv6 y asegura forma canónica usando inet_pton/inet_ntop
@@ -572,7 +616,28 @@ trait HasStrongTyping
 
             return $ip;
         };
-        self::$phpCastHandlers = ['int' => $int, 'integer' => $int, 'float' => $float, 'real' => $float, 'double' => $float, 'decimal' => $float, 'string' => $string, 'bool' => $bool, 'boolean' => $bool, 'array' => $array, 'collection' => $array, 'json' => $json, 'uuid' => $uuid, 'datetime' => $dt, 'date' => $dt, 'timestamp' => $dt, 'enum' => $enum, 'set' => $set, 'blob' => $blob, 'inet' => $inet];
+        self::$phpCastHandlers = [
+            'int' => $int,
+            'integer' => $int,
+            'float' => $float,
+            'real' => $float,
+            'double' => $float,
+            'decimal' => $float,
+            'string' => $string,
+            'bool' => $bool,
+            'boolean' => $bool,
+            'array' => $array,
+            'collection' => $array,
+            'json' => $json,
+            'uuid' => $uuid,
+            'datetime' => $dt,
+            'date' => $dt,
+            'timestamp' => $dt,
+            'enum' => $enum,
+            'set' => $set,
+            'blob' => $blob,
+            'inet' => $inet,
+        ];
 
         return self::$phpCastHandlers;
     }
@@ -597,7 +662,17 @@ trait HasStrongTyping
 
             return $sv;
         };
-        $bool = static fn ($s, $p, $v, $_ = []): int => (is_bool($v) ? $v : (is_numeric($v) ? (float) $v != 0 : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true))) ? 1 : 0;
+        $bool = static fn ($s, $p, $v, $_ = []): int => (
+            is_bool($v)
+                ? $v
+                : (
+                    is_numeric($v)
+                        ? (float) $v != 0
+                        : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true)
+                )
+        )
+            ? 1
+            : 0;
         $jsonLike = static function ($s, $p, $v, $_ = []): string {
             if (is_string($v)) {
                 $trim = ltrim($v);
@@ -650,8 +725,10 @@ trait HasStrongTyping
                 }
             }
 
-            if ($allowed !== [] && ! in_array($val, $allowed, true)) {
-                throw new VersaORMException("Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed));
+            if ($allowed !== [] && !in_array($val, $allowed, true)) {
+                throw new VersaORMException(
+                    "Invalid enum value for property {$p}. Allowed: " . implode(', ', $allowed),
+                );
             }
 
             return $val;
@@ -687,8 +764,10 @@ trait HasStrongTyping
 
             if ($allowed !== []) {
                 foreach ($vals as $vv) {
-                    if (! in_array((string) $vv, $allowed, true)) {
-                        throw new VersaORMException("Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed));
+                    if (!in_array((string) $vv, $allowed, true)) {
+                        throw new VersaORMException(
+                            "Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed),
+                        );
                     }
                 }
             }
@@ -704,7 +783,7 @@ trait HasStrongTyping
         $inet = static function ($s, $p, $v, $_ = []): string {
             $ip = (string) $v;
 
-            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new VersaORMException("Invalid IP address for property {$p}: {$ip}");
             }
             $packed = @inet_pton($ip);
@@ -719,14 +798,45 @@ trait HasStrongTyping
 
             return $ip;
         };
-        self::$dbCastHandlers = ['int' => $int, 'integer' => $int, 'float' => $float, 'real' => $float, 'double' => $float, 'decimal' => $float, 'string' => $string, 'bool' => $bool, 'boolean' => $bool, 'array' => $jsonLike, 'collection' => $jsonLike, 'json' => $jsonLike, 'uuid' => $uuid, 'datetime' => $dt, 'date' => $dt, 'timestamp' => $dt, 'enum' => $enum, 'set' => $set, 'blob' => $blob, 'inet' => $inet];
+        self::$dbCastHandlers = [
+            'int' => $int,
+            'integer' => $int,
+            'float' => $float,
+            'real' => $float,
+            'double' => $float,
+            'decimal' => $float,
+            'string' => $string,
+            'bool' => $bool,
+            'boolean' => $bool,
+            'array' => $jsonLike,
+            'collection' => $jsonLike,
+            'json' => $jsonLike,
+            'uuid' => $uuid,
+            'datetime' => $dt,
+            'date' => $dt,
+            'timestamp' => $dt,
+            'enum' => $enum,
+            'set' => $set,
+            'blob' => $blob,
+            'inet' => $inet,
+        ];
 
         return self::$dbCastHandlers;
     }
 
     private function isCompatibleType(string $dbType, string $modelType): bool
     {
-        $compat = ['string' => ['text', 'varchar', 'char'], 'text' => ['string', 'varchar', 'char'], 'int' => ['integer', 'bigint', 'smallint'], 'integer' => ['int', 'bigint', 'smallint'], 'float' => ['double', 'real', 'decimal'], 'decimal' => ['float', 'double', 'numeric'], 'boolean' => ['tinyint', 'bit'], 'datetime' => ['timestamp', 'date'], 'timestamp' => ['datetime']];
+        $compat = [
+            'string' => ['text', 'varchar', 'char'],
+            'text' => ['string', 'varchar', 'char'],
+            'int' => ['integer', 'bigint', 'smallint'],
+            'integer' => ['int', 'bigint', 'smallint'],
+            'float' => ['double', 'real', 'decimal'],
+            'decimal' => ['float', 'double', 'numeric'],
+            'boolean' => ['tinyint', 'bit'],
+            'datetime' => ['timestamp', 'date'],
+            'timestamp' => ['datetime'],
+        ];
 
         return in_array($modelType, $compat[$dbType] ?? [], true);
     }
@@ -758,10 +868,24 @@ trait HasStrongTyping
         $errs = [];
         $modelType = strtolower((string) ($def['type'] ?? ''));
         $dbType = strtolower((string) ($col['data_type'] ?? ''));
-        $compat = ['int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'], 'float' => ['float', 'double', 'real', 'decimal', 'numeric'], 'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'], 'bool' => ['tinyint', 'boolean', 'bit'], 'boolean' => ['tinyint', 'boolean', 'bit'], 'datetime' => ['datetime', 'timestamp', 'date'], 'date' => ['date', 'datetime', 'timestamp'], 'json' => ['json', 'jsonb', 'text'], 'uuid' => ['uuid', 'char', 'varchar'], 'enum' => ['enum'], 'set' => ['set'], 'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'], 'inet' => ['inet', 'varchar', 'char']];
+        $compat = [
+            'int' => ['int', 'integer', 'tinyint', 'smallint', 'bigint'],
+            'float' => ['float', 'double', 'real', 'decimal', 'numeric'],
+            'string' => ['varchar', 'char', 'text', 'mediumtext', 'longtext'],
+            'bool' => ['tinyint', 'boolean', 'bit'],
+            'boolean' => ['tinyint', 'boolean', 'bit'],
+            'datetime' => ['datetime', 'timestamp', 'date'],
+            'date' => ['date', 'datetime', 'timestamp'],
+            'json' => ['json', 'jsonb', 'text'],
+            'uuid' => ['uuid', 'char', 'varchar'],
+            'enum' => ['enum'],
+            'set' => ['set'],
+            'blob' => ['blob', 'longblob', 'mediumblob', 'tinyblob'],
+            'inet' => ['inet', 'varchar', 'char'],
+        ];
         $ok = in_array($dbType, $compat[$modelType] ?? [], true) || $dbType === $modelType;
 
-        if (! $ok) {
+        if (!$ok) {
             $errs[] = "Type mismatch for property '{$p}': model={$modelType} db={$dbType}";
         }
 
@@ -770,7 +894,11 @@ trait HasStrongTyping
             $dNull = strtoupper((string) ($col['is_nullable'] ?? 'NO')) === 'YES';
 
             if ($mNull !== $dNull) {
-                $errs[] = "Nullability mismatch for property '{$p}': model=" . ($mNull ? 'YES' : 'NO') . ' db=' . ($dNull ? 'YES' : 'NO');
+                $errs[] =
+                    "Nullability mismatch for property '{$p}': model="
+                    . ($mNull ? 'YES' : 'NO')
+                    . ' db='
+                    . ($dNull ? 'YES' : 'NO');
             }
         }
 

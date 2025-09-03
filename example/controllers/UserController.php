@@ -9,7 +9,7 @@ use Exception;
 
 class UserController
 {
-    public static function handle(string $action, ?int $id): void
+    public static function handle(string $action, null|int $id): void
     {
         switch ($action) {
             case 'users':
@@ -34,7 +34,7 @@ class UserController
                     redirect('?action=users');
                 }
                 $user = models()->user()->find($id);
-                if (! $user instanceof User) {
+                if (!$user instanceof User) {
                     flash('error', 'Usuario no encontrado');
                     redirect('?action=users');
                 }

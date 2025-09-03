@@ -84,8 +84,7 @@ class BelongsToMany extends Relation
     {
         $parentKey = $this->parent->getAttribute($this->parent->getKeyName());
 
-        $currentQuery = $this->query->from($this->pivotTable)
-            ->where($this->foreignPivotKey, '=', $parentKey);
+        $currentQuery = $this->query->from($this->pivotTable)->where($this->foreignPivotKey, '=', $parentKey);
 
         $current = $currentQuery->get();
         $currentIds = array_column($current, $this->relatedPivotKey);
@@ -126,8 +125,7 @@ class BelongsToMany extends Relation
     {
         $parentKey = $this->parent->getAttribute($this->parent->getKeyName());
 
-        $deleteQuery = $this->query->from($this->pivotTable)
-            ->where($this->foreignPivotKey, '=', $parentKey);
+        $deleteQuery = $this->query->from($this->pivotTable)->where($this->foreignPivotKey, '=', $parentKey);
 
         if ($ids !== null) {
             $ids = is_array($ids) ? $ids : [$ids];
@@ -139,7 +137,16 @@ class BelongsToMany extends Relation
 
     protected function addConstraints(): void
     {
-        $this->query->join($this->pivotTable, $this->query->getTable() . '.' . $this->relatedKey, '=', $this->pivotTable . '.' . $this->relatedPivotKey);
-        $this->query->where($this->pivotTable . '.' . $this->foreignPivotKey, '=', $this->parent->getAttribute($this->parentKey));
+        $this->query->join(
+            $this->pivotTable,
+            $this->query->getTable() . '.' . $this->relatedKey,
+            '=',
+            $this->pivotTable . '.' . $this->relatedPivotKey,
+        );
+        $this->query->where(
+            $this->pivotTable . '.' . $this->foreignPivotKey,
+            '=',
+            $this->parent->getAttribute($this->parentKey),
+        );
     }
 }

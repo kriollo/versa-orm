@@ -41,14 +41,7 @@ class User extends BaseModel
     /** Relación N:M: proyectos donde el usuario es miembro (BelongsToMany). */
     public function projectsRelation(): \VersaORM\Relations\BelongsToMany
     {
-        return $this->belongsToMany(
-            Project::class,
-            'project_users',
-            'user_id',
-            'project_id',
-            'id',
-            'id',
-        );
+        return $this->belongsToMany(Project::class, 'project_users', 'user_id', 'project_id', 'id', 'id');
     }
 
     /** Adjuntar usuario a un proyecto (como miembro). */
@@ -79,7 +72,7 @@ class User extends BaseModel
     /** Crear usuario con defaults y casting consistente (instancia). */
     public function createOne(array $attributes): self
     {
-        if (! isset($attributes['avatar_color'])) {
+        if (!isset($attributes['avatar_color'])) {
             $attributes['avatar_color'] = $this->generateRandomColor();
         }
         $this->fill($attributes);
@@ -97,7 +90,8 @@ class User extends BaseModel
             $allProjects = [];
 
             // Proyectos donde es propietario
-            $ownedProjects = $this->getOrm()->table('projects', Project::class)
+            $ownedProjects = $this->getOrm()
+                ->table('projects', Project::class)
                 ->where('owner_id', '=', $this->id)
                 ->get();
 
@@ -106,7 +100,8 @@ class User extends BaseModel
             }
 
             // Proyectos donde es miembro
-            $memberProjects = $this->getOrm()->table('projects', Project::class)
+            $memberProjects = $this->getOrm()
+                ->table('projects', Project::class)
                 ->join('project_users', 'projects.id', '=', 'project_users.project_id')
                 ->where('project_users.user_id', '=', $this->id)
                 ->select(['projects.*'])
@@ -123,7 +118,7 @@ class User extends BaseModel
             foreach ($allProjects as $project) {
                 $projectId = $project['id'] ?? null;
 
-                if ($projectId && ! in_array($projectId, $seenIds, true)) {
+                if ($projectId && !in_array($projectId, $seenIds, true)) {
                     $uniqueProjects[] = $project;
                     $seenIds[] = $projectId;
                 }
@@ -133,7 +128,8 @@ class User extends BaseModel
         } catch (Exception) {
             // Si falla el join, intentar solo los proyectos propios
             try {
-                $projects = $this->getOrm()->table('projects', Project::class)
+                $projects = $this->getOrm()
+                    ->table('projects', Project::class)
                     ->where('owner_id', '=', $this->id)
                     ->get();
 
@@ -150,7 +146,8 @@ class User extends BaseModel
     public function tasks(): array
     {
         try {
-            $tasks = $this->getOrm()->table('tasks', Task::class)
+            $tasks = $this->getOrm()
+                ->table('tasks', Task::class)
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -169,7 +166,10 @@ class User extends BaseModel
         try {
             $projects = $this->projects();
             $tasks = $this->tasks();
-            $completedTasks = array_filter($tasks, static fn ($task): bool => isset($task['status']) && $task['status'] === 'done');
+            $completedTasks = array_filter(
+                $tasks,
+                static fn ($task): bool => isset($task['status']) && $task['status'] === 'done',
+            );
 
             return [
                 'projects_count' => count($projects),

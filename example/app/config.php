@@ -19,14 +19,12 @@ return [
         'charset' => 'utf8mb4',
         'collation' => 'utf8mb4_unicode_ci',
     ],
-
     'app' => [
         'name' => 'VersaORM Trello Demo',
         'version' => '1.0.0',
         'debug' => true,
         'timezone' => 'America/Santiago',
     ],
-
     'versaorm' => [
         'debug' => true,
         'cache' => false,

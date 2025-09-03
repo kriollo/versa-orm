@@ -29,7 +29,7 @@ class PdoConnection
      */
     private array $config;
 
-    private ?PDO $pdo = null;
+    private null|PDO $pdo = null;
 
     /**
      * Pool de conexiones compartidas por DSN+credenciales.
@@ -66,7 +66,13 @@ class PdoConnection
                     $database = (string) ($this->config['database'] ?? '');
                     $charset = (string) ($this->config['charset'] ?? 'utf8mb4');
                     $dsn = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
-                    $poolKey = 'mysql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
+                    $poolKey =
+                        'mysql|'
+                        . $dsn
+                        . '|'
+                        . ($this->config['username'] ?? '')
+                        . '|'
+                        . ($this->config['password'] ?? '');
 
                     return [$dsn, $poolKey];
                 })(),
@@ -75,7 +81,13 @@ class PdoConnection
                     $port = (string) ($this->config['port'] ?? '5432');
                     $database = (string) ($this->config['database'] ?? '');
                     $dsn = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
-                    $poolKey = 'pgsql|' . $dsn . '|' . ($this->config['username'] ?? '') . '|' . ($this->config['password'] ?? '');
+                    $poolKey =
+                        'pgsql|'
+                        . $dsn
+                        . '|'
+                        . ($this->config['username'] ?? '')
+                        . '|'
+                        . ($this->config['password'] ?? '');
 
                     return [$dsn, $poolKey];
                 })(),
@@ -84,7 +96,7 @@ class PdoConnection
                     $dsn = sprintf('sqlite:%s', $path);
                     // Para ':memory:' NO usar pool para que cada instancia tenga su propio
                     // PDO (los tests unitarios esperan que ':memory:' no reutilice la conexión)
-                    $poolKey = ($path === ':memory:') ? '' : ('sqlite|' . $dsn);
+                    $poolKey = $path === ':memory:' ? '' : 'sqlite|' . $dsn;
 
                     return [$dsn, $poolKey];
                 })(),
@@ -113,7 +125,10 @@ class PdoConnection
                     $this->pdo = new PDO($dsn, $username, $password, $options);
                 } catch (PDOException $ex) {
                     // Fallback para entornos de test MySQL: intentar con usuario local/local si root falla
-                    if (str_contains(strtolower($ex->getMessage()), 'access denied') && ($driver === 'mysql' || $driver === 'mariadb')) {
+                    if (
+                        str_contains(strtolower($ex->getMessage()), 'access denied')
+                        && ($driver === 'mysql' || $driver === 'mariadb')
+                    ) {
                         $fallbackUser = $this->config['username'] ?? '';
                         $fallbackPass = $this->config['password'] ?? '';
 

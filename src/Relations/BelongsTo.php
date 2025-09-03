@@ -9,8 +9,13 @@ use VersaORM\VersaModel;
 
 class BelongsTo extends Relation
 {
-    public function __construct(QueryBuilder $query, VersaModel $parent, public string $foreignKey, public string $ownerKey, public string $relationName)
-    {
+    public function __construct(
+        QueryBuilder $query,
+        VersaModel $parent,
+        public string $foreignKey,
+        public string $ownerKey,
+        public string $relationName,
+    ) {
         parent::__construct($query, $parent);
     }
 
@@ -34,7 +39,7 @@ class BelongsTo extends Relation
         return $this->query;
     }
 
-    public function getResults(): ?VersaModel
+    public function getResults(): null|VersaModel
     {
         $this->addConstraints();
 

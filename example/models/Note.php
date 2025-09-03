@@ -58,9 +58,12 @@ class Note extends BaseModel
     /**
      * Obtener tarea de la nota.
      */
-    public function task(): ?array
+    public function task(): null|array
     {
-        $task = $this->getOrm()->table('tasks', Task::class)->where('id', '=', (int) $this->task_id)->findOne();
+        $task = $this->getOrm()
+            ->table('tasks', Task::class)
+            ->where('id', '=', (int) $this->task_id)
+            ->findOne();
 
         return $task ? $task->export() : null;
     }
@@ -68,9 +71,12 @@ class Note extends BaseModel
     /**
      * Obtener usuario que creó la nota.
      */
-    public function user(): ?array
+    public function user(): null|array
     {
-        $user = $this->getOrm()->table('users', User::class)->where('id', '=', (int) $this->user_id)->findOne();
+        $user = $this->getOrm()
+            ->table('users', User::class)
+            ->where('id', '=', (int) $this->user_id)
+            ->findOne();
 
         return $user ? $user->export() : null;
     }

@@ -244,7 +244,7 @@ class SecurityTest extends TestCase
             $user = self::$orm->table('users')->find($id);
 
             // Comparación laxa: para entradas con bytes nulos, confirmamos que la longitud coincide
-            if (strpos($input, "\x00") !== false) {
+            if (str_contains($input, "\x00")) {
                 $stored = (string) $user->status;
                 self::assertNotSame('', $stored);
                 // Debe mantener el resto de caracteres visibles

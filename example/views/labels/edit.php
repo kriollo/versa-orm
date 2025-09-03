@@ -60,8 +60,12 @@
                             <span
                                 id="color-preview"
                                 class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                                style="background-color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>20; color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>">
-                                <div class="w-2 h-2 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>"></div>
+                                style="background-color: <?php echo htmlspecialchars($label->color ?? '#3498db'); ?>20; color: <?php echo
+                                    htmlspecialchars($label->color ?? '#3498db')
+; ?>">
+                                <div class="w-2 h-2 rounded-full mr-2" style="background-color: <?php echo
+    htmlspecialchars($label->color ?? '#3498db')
+; ?>"></div>
                                 <span id="preview-text"><?php echo htmlspecialchars($label->name ?? 'Vista previa'); ?></span>
                             </span>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">Vista previa de cómo se verá la etiqueta</p>
@@ -90,8 +94,7 @@
                         '#FF5722',
                     ];
 
-foreach ($suggestedColors as $suggestedColor) {
-    ?>
+foreach ($suggestedColors as $suggestedColor) { ?>
                         <button
                             type="button"
                             class="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
@@ -112,7 +115,9 @@ foreach ($suggestedColors as $suggestedColor) {
                     name="description"
                     rows="3"
                     class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="Descripción opcional de la etiqueta..."><?php echo htmlspecialchars($label->description ?? ''); ?></textarea>
+                    placeholder="Descripción opcional de la etiqueta..."><?php echo
+    htmlspecialchars($label->description ?? '')
+; ?></textarea>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">Opcional: describe el propósito de esta etiqueta</p>
             </div>
 

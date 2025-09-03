@@ -10,7 +10,7 @@ interface SqlDialectInterface
 
     public function placeholder(int $index): string;
 
-    public function compileLimitOffset(?int $limit, ?int $offset): string;
+    public function compileLimitOffset(null|int $limit, null|int $offset): string;
 
     /**
      * Nombre simple del dialecto/driver para decisiones condicionales.

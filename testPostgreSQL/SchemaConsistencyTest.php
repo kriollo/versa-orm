@@ -142,7 +142,7 @@ class SchemaConsistencyTest extends TestCase
 
             // Filter out any unrelated errors, only check for type mismatch
             $typeMismatchErrors = array_filter($errors, static function ($error) {
-                return strpos($error, 'Type mismatch') !== false;
+                return str_contains($error, 'Type mismatch') ;
             });
 
             self::assertEmpty(
@@ -166,7 +166,7 @@ class SchemaConsistencyTest extends TestCase
 
         $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
         $typeMismatchErrors = array_filter($errors, static function ($error) {
-            return strpos($error, 'Type mismatch') !== false;
+            return str_contains($error, 'Type mismatch') ;
         });
 
         self::assertNotEmpty($typeMismatchErrors);

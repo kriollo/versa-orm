@@ -1,4 +1,3 @@
-
 # 🚀 VersaORM-PHP
 
 **ORM sencillo y seguro para PHP – minimiza SQL manual y acelera tu desarrollo.**
@@ -16,7 +15,7 @@
 
 # <p align="center"><img src="art/versaORMLogo.png" alt="VersaORM Logo" width="480" /></p>
 
-> VersaORM-PHP está construido sobre **PDO** para máxima compatibilidad y simplicidad. No requiere compilar nada: solo PHP + tu base de datos.
+> VersaORM-PHP está construido sobre **PDO nativo** para máxima compatibilidad, simplicidad y rendimiento. No requiere compilación externa: solo PHP + tu base de datos.
 
 ## 📚 Documentación Completa
 

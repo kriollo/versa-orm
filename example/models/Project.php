@@ -39,14 +39,7 @@ class Project extends BaseModel
     /** Relación N:M: miembros del proyecto (BelongsToMany). */
     public function membersRelation(): BelongsToMany
     {
-        return $this->belongsToMany(
-            User::class,
-            'project_users',
-            'project_id',
-            'user_id',
-            'id',
-            'id',
-        );
+        return $this->belongsToMany(User::class, 'project_users', 'project_id', 'user_id', 'id', 'id');
     }
 
     /** Adjuntar miembro al proyecto. */
@@ -111,7 +104,8 @@ class Project extends BaseModel
     /** Añadir miembro (inserta en project_users si no existe ya). */
     public function addMember(int $userId): void
     {
-        $exists = $this->getOrm()->table('project_users')
+        $exists = $this->getOrm()
+            ->table('project_users')
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
             ->exists();
@@ -128,14 +122,15 @@ class Project extends BaseModel
     /** Remover miembro del proyecto eliminando fila pivot. */
     public function removeMember(int $userId): void
     {
-        $rows = $this->getOrm()->table('project_users')
+        $rows = $this->getOrm()
+            ->table('project_users')
             ->select(['id'])
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
             ->get();
 
         foreach ($rows as $row) {
-            if (! isset($row['id'])) {
+            if (!isset($row['id'])) {
                 continue;
             }
             $pivot = $this->load('project_users', (int) $row['id']);
@@ -163,7 +158,7 @@ class Project extends BaseModel
     /** Genera color aleatorio si no viene definido. */
     private function ensureColor(array &$attributes): void
     {
-        if (! isset($attributes['color'])) {
+        if (!isset($attributes['color'])) {
             $attributes['color'] = $this->generateRandomColor();
         }
     }

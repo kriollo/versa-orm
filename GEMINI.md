@@ -4,49 +4,56 @@
 
 Este documento proporciona el contexto completo y actualizado del proyecto VersaORM-PHP para orientar tanto a desarrolladores humanos como a sistemas de IA en el desarrollo continuo del proyecto.
 
-**FECHA DE ÚLTIMA ACTUALIZACIÓN:** 5 de agosto de 2025
-**ESTADO DEL PROYECTO:** 85% completo para v1.0 - Funcionalidades core implementadas, falta pulir herramientas de desarrollo
+**FECHA DE ÚLTIMA ACTUALIZACIÓN:** 25 de diciembre de 2024
+**ESTADO DEL PROYECTO:** 90% completo para v2.0 - Arquitectura PDO pura implementada, optimizaciones en progreso
 
 ---
 
 ## 🏗️ VISIÓN GENERAL Y ARQUITECTURA
 
-VersaORM-PHP es un ORM (Object-Relational Mapper) híbrido de alto rendimiento que combina la familiaridad de PHP con la velocidad extrema de Rust. El proyecto ha demostrado ser exitoso en su arquitectura innovadora y ahora se encuentra en fase de refinamiento para alcanzar la versión 1.0.
+VersaORM-PHP es un ORM (Object-Relational Mapper) de alto rendimiento construido completamente en PHP puro utilizando PDO nativo. El proyecto ofrece un rendimiento excelente manteniendo una API familiar y fácil de usar, con compatibilidad total con MySQL, PostgreSQL y SQLite.
 
 ### 🎯 **Objetivo Principal**
-Crear el ORM más rápido y seguro para PHP, ofreciendo hasta 10x mejor rendimiento que ORMs tradicionales como Eloquent o Doctrine, manteniendo una API familiar y fácil de usar.
+Crear el ORM más rápido y seguro para PHP puro, ofreciendo rendimiento comparable a ORMs tradicionales como Eloquent o Doctrine, con una arquitectura más simple y mantenible sin dependencias externas.
 
-### 🏗️ **Arquitectura Híbrida Comprobada**
+### 🏗️ **Arquitectura PDO Pura Optimizada**
 
 ```
-┌─────────────── CAPA PHP ───────────────┐    JSON     ┌─────────────── NÚCLEO RUST ──────────────┐
-│                                        │ Payload     │                                         │
-│ 🔥 VersaORM.php (Fachada & Config)     │◄───────────►│ 🦀 main.rs (Entry Point - 2570 líneas) │
-│ 🔥 QueryBuilder.php (DSL - 1800+ LOC)  │   over      │ 🦀 connection.rs (Pool Management)      │
-│ 🔥 VersaModel.php (ActiveRecord - 1200+│   Binary    │ 🦀 query.rs (SQL Builder)              │
-│ 🔥 Relations/* (HasOne,HasMany,Belongs) │   IPC       │ 🦀 schema.rs (DB Introspection)        │
-│ 🔥 Traits/* (Relationships,Typing)     │             │ 🦀 cache.rs (Advanced Caching)         │
-│                                        │             │ 🦀 query_planner.rs (Optimization)     │
-└────────────────────────────────────────┘             └─────────────────────────────────────────┘
-                         ▲                                               ▲
-                         │              🔄 COMUNICACIÓN VALIDADA         │
-                         │                                               │
-                    ✅ TESTED & STABLE                            ✅ TESTED & STABLE
+┌─────────────── CAPA PHP ───────────────┐
+│                                        │
+│ 🔥 VersaORM.php (Fachada & Config)     │
+│ 🔥 QueryBuilder.php (DSL Fluido)       │
+│ 🔥 VersaModel.php (ActiveRecord)       │
+│ 🔥 PdoEngine.php (Motor PDO Optimizado)│
+│ 🔥 PdoConnection.php (Pool de Conexiones)│
+│ 🔥 Relations/* (HasOne,HasMany,Belongs) │
+│ 🔥 Traits/* (Relationships,Typing)     │
+│ 🔥 SQL/* (Prepared Statements, Cache)  │
+└────────────────────────────────────────┘
+                    │
+                    ▼
+         ┌─────────────────────┐
+         │   BASES DE DATOS    │
+         │  MySQL/PostgreSQL/ │
+         │      SQLite        │
+         └─────────────────────┘
 ```
 
 **PUNTOS CLAVE DE LA ARQUITECTURA:**
-- ✅ **Comunicación bidireccional probada** via JSON over process execution
-- ✅ **Seguridad por diseño** con prepared statements nativos en Rust
-- ✅ **Escalabilidad comprobada** con connection pooling asíncrono
-- ✅ **Tipado fuerte** bidireccional PHP ↔ Rust ↔ Database
+- ✅ **Ejecución directa PDO** sin intermediarios externos
+- ✅ **Seguridad por diseño** con prepared statements nativos PDO
+- ✅ **Escalabilidad comprobada** con connection pooling inteligente
+- ✅ **Tipado fuerte** bidireccional PHP ↔ Database
+- ✅ **Caché inteligente** de prepared statements y resultados
+- ✅ **Sin dependencias externas** - solo PHP y PDO nativos
 
 **INFORMACIÓN DEL PROYECTO:**
 - **Nombre**: `versaorm/versaorm-php`
 - **Licencia**: MIT
 - **PHP**: 8.1+ (Tested hasta 8.4)
 - **Bases de Datos**: MySQL 5.7+, PostgreSQL 10+, SQLite 3.6+
-- **Estado**: 85% completo para v1.0 - Core estable, herramientas en desarrollo
--   **Fácil Integración:** Diseñado para integrarse sin problemas en proyectos PHP existentes.
+- **Estado**: 90% completo para v2.0 - Arquitectura PDO pura estable
+- **Fácil Integración:** Diseñado para integrarse sin problemas en proyectos PHP existentes.
 
 **Información del `composer.json`:**
 -   **Nombre:** `versaorm/versaorm-php`
@@ -400,13 +407,6 @@ versaORM-PHP/
 ├── versaorm_cli/         # Código fuente del núcleo Rust
 │   ├── src/              # Archivos fuente de Rust
 │   │   ├── cache.rs      # Módulo de caché
-│   │   ├── connection.rs # Gestión de conexiones a DB
-│   │   ├── main.rs       # Punto de entrada del binario Rust
-│   │   ├── model.rs      # Lógica de modelos en Rust
-│   │   ├── query.rs      # Construcción de consultas SQL en Rust
-│   │   ├── schema.rs     # Inspección de esquema de DB
-│   │   └── utils.rs      # Utilidades varias (sanitización, casting)
-│   └── Cargo.toml        # Configuración de dependencias y build de Rust
 ├── composer.json         # Configuración de Composer para el proyecto PHP
 ├── phpunit.xml           # Configuración de PHPUnit
 └── README.md             # README principal del proyecto

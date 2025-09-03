@@ -31,7 +31,7 @@ trait HandlesErrors
     /**
      * Último error capturado.
      */
-    protected ?array $lastError = null;
+    protected null|array $lastError = null;
 
     /**
      * Configura el manejo de errores para este modelo.
@@ -44,7 +44,7 @@ trait HandlesErrors
     /**
      * Obtiene el último error ocurrido.
      */
-    public function getLastError(): ?array
+    public function getLastError(): null|array
     {
         return $this->lastError;
     }
@@ -60,7 +60,7 @@ trait HandlesErrors
     /**
      * Obtiene el mensaje del último error.
      */
-    public function getLastErrorMessage(): ?string
+    public function getLastErrorMessage(): null|string
     {
         return $this->lastError['error']['message'] ?? null;
     }
@@ -68,7 +68,7 @@ trait HandlesErrors
     /**
      * Obtiene el código del último error.
      */
-    public function getLastErrorCode(): ?string
+    public function getLastErrorCode(): null|string
     {
         return $this->lastError['error']['error_code'] ?? null;
     }
@@ -90,7 +90,7 @@ trait HandlesErrors
      */
     public function safeSave(): mixed
     {
-        return $this->withErrorHandling(fn () => $this->save(), ['operation' => 'save']);
+        return $this->withErrorHandling($this->save(...), ['operation' => 'save']);
     }
 
     /**
@@ -98,7 +98,7 @@ trait HandlesErrors
      */
     public function safeStore(): mixed
     {
-        return $this->withErrorHandling(fn () => $this->store(), ['operation' => 'store']);
+        return $this->withErrorHandling($this->store(...), ['operation' => 'store']);
     }
 
     /**
@@ -114,7 +114,7 @@ trait HandlesErrors
      */
     public function safeDelete(): mixed
     {
-        return $this->withErrorHandling(fn () => $this->delete(), ['operation' => 'delete']);
+        return $this->withErrorHandling($this->delete(...), ['operation' => 'delete']);
     }
 
     /**
@@ -122,7 +122,10 @@ trait HandlesErrors
      */
     public function safeUpsert(array $uniqueKeys, array $updateColumns = []): mixed
     {
-        return $this->withErrorHandling(fn () => $this->upsert($uniqueKeys, $updateColumns), ['operation' => 'upsert', 'unique_keys' => $uniqueKeys]);
+        return $this->withErrorHandling(
+            fn () => $this->upsert($uniqueKeys, $updateColumns),
+            ['operation' => 'upsert', 'unique_keys' => $uniqueKeys],
+        );
     }
 
     /**
@@ -138,7 +141,10 @@ trait HandlesErrors
      */
     public static function safeFindAll(array $conditions = []): mixed
     {
-        return static::withStaticErrorHandling(static fn () => static::findAll($conditions), ['operation' => 'findAll', 'conditions' => $conditions]);
+        return static::withStaticErrorHandling(
+            static fn () => static::findAll($conditions),
+            ['operation' => 'findAll', 'conditions' => $conditions],
+        );
     }
 
     /**
@@ -147,7 +153,10 @@ trait HandlesErrors
     public static function getErrorStats(): array
     {
         $allErrors = ErrorHandler::getErrorLog();
-        $modelErrors = array_filter($allErrors, static fn ($error): bool => ($error['context']['model_class'] ?? '') === static::class);
+        $modelErrors = array_filter(
+            $allErrors,
+            static fn ($error): bool => ($error['context']['model_class'] ?? '') === static::class,
+        );
 
         $stats = [
             'total_errors' => count($modelErrors),
@@ -276,15 +285,12 @@ trait HandlesErrors
                 case 'save':
                 case 'store':
                     if (empty($this->attributes)) {
-                        throw new VersaORMException(
-                            'Cannot save model with empty attributes',
-                            'EMPTY_ATTRIBUTES',
-                        );
+                        throw new VersaORMException('Cannot save model with empty attributes', 'EMPTY_ATTRIBUTES');
                     }
                     break;
 
                 case 'update':
-                    if (! $this->exists()) {
+                    if (!$this->exists()) {
                         throw new VersaORMException(
                             'Cannot update model that does not exist in database',
                             'MODEL_NOT_EXISTS',
@@ -293,7 +299,7 @@ trait HandlesErrors
                     break;
 
                 case 'delete':
-                    if (! $this->exists()) {
+                    if (!$this->exists()) {
                         throw new VersaORMException(
                             'Cannot delete model that does not exist in database',
                             'MODEL_NOT_EXISTS',
@@ -315,7 +321,7 @@ trait HandlesErrors
      */
     protected function exists(): bool
     {
-        if (! isset($this->attributes['id'])) {
+        if (!isset($this->attributes['id'])) {
             return false;
         }
 

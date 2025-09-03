@@ -38,10 +38,10 @@ final class SchemaAllMysqlTest extends TestCase
         $foundIndex = false;
         foreach ($captured as $sql) {
             $u = strtoupper($sql);
-            if (strpos($u, 'CREATE TABLE') !== false) {
+            if (str_contains($u, 'CREATE TABLE')) {
                 $foundCreate = true;
             }
-            if (strpos($u, 'CREATE INDEX') !== false || strpos($u, 'CREATE UNIQUE INDEX') !== false) {
+            if (str_contains($u, 'CREATE INDEX') || str_contains($u, 'CREATE UNIQUE INDEX')) {
                 $foundIndex = true;
             }
         }
@@ -102,20 +102,20 @@ final class SchemaAllMysqlTest extends TestCase
 
         foreach ($captured as $sql) {
             $u = strtoupper($sql);
-            if (strpos($u, 'ADD COLUMN') !== false) {
+            if (str_contains($u, 'ADD COLUMN')) {
                 $hasAddColumn = true;
             }
-            if (strpos($u, 'ADD CONSTRAINT') !== false || strpos($u, 'ADD INDEX') !== false) {
+            if (str_contains($u, 'ADD CONSTRAINT') || str_contains($u, 'ADD INDEX')) {
                 $hasAddForeign = true;
                 $hasAddIndex = true;
             }
-            if (strpos($u, 'DROP FOREIGN KEY') !== false || strpos($u, 'DROP CONSTRAINT') !== false) {
+            if (str_contains($u, 'DROP FOREIGN KEY') || str_contains($u, 'DROP CONSTRAINT')) {
                 $hasDropForeign = true;
             }
-            if (strpos($u, 'DROP INDEX') !== false || strpos($u, 'DROP KEY') !== false) {
+            if (str_contains($u, 'DROP INDEX') || str_contains($u, 'DROP KEY')) {
                 $hasDropIndex = true;
             }
-            if (strpos($u, 'DROP COLUMN') !== false) {
+            if (str_contains($u, 'DROP COLUMN')) {
                 $hasDropColumn = true;
             }
         }
@@ -142,10 +142,10 @@ final class SchemaAllMysqlTest extends TestCase
         $hasDrop = false;
         foreach ($captured as $sql) {
             $u = strtoupper($sql);
-            if (strpos($u, 'RENAME TABLE') !== false || strpos($u, 'ALTER TABLE') !== false) {
+            if (str_contains($u, 'RENAME TABLE') || str_contains($u, 'ALTER TABLE')) {
                 $hasRename = true;
             }
-            if (strpos($u, 'DROP TABLE') !== false) {
+            if (str_contains($u, 'DROP TABLE')) {
                 $hasDrop = true;
             }
         }
