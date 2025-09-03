@@ -22,9 +22,9 @@ class VersaORMExecFormatTest extends TestCase
         $orm->exec('INSERT INTO t1 (name) VALUES (?)', ['Alice']);
 
         $rows = $orm->exec('SELECT id, name FROM t1');
-        $this->assertIsArray($rows);
-        $this->assertCount(1, $rows);
-        $this->assertSame('Alice', $rows[0]['name']);
+        static::assertIsArray($rows);
+        static::assertCount(1, $rows);
+        static::assertSame('Alice', $rows[0]['name']);
     }
 
     public function testIsRawQueryDDLDetection(): void
@@ -34,7 +34,7 @@ class VersaORMExecFormatTest extends TestCase
 
         // Using exec with DDL should be detected and follow freeze rules; but here no freeze => ok
         $res = $orm->exec('CREATE TABLE if not exists tmp (id INTEGER)');
-        $this->assertNull($res);
+        static::assertNull($res);
     }
 
     public function testValidateInputRejectsInvalidAction(): void

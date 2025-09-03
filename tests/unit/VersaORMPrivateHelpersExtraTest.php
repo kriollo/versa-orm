@@ -23,10 +23,10 @@ class VersaORMPrivateHelpersExtraTest extends TestCase
         $params = ['a' => $long, 'b' => array_fill(0, 60, 'v')];
         $out = $m->invoke($orm, $params);
 
-        $this->assertArrayHasKey('a', $out);
-        $this->assertStringContainsString('…', $out['a']);
-        $this->assertArrayHasKey('b', $out);
-        $this->assertArrayHasKey('_truncated', $out['b']);
+        static::assertArrayHasKey('a', $out);
+        static::assertStringContainsString('…', $out['a']);
+        static::assertArrayHasKey('b', $out);
+        static::assertArrayHasKey('_truncated', $out['b']);
     }
 
     public function testExtractSqlStateWithPdoException(): void
@@ -41,6 +41,6 @@ class VersaORMPrivateHelpersExtraTest extends TestCase
         $pdoEx->errorInfo = ['HY000', '1', 'msg'];
 
         $state = $m->invoke($orm, $pdoEx);
-        $this->assertSame('HY000', $state);
+        static::assertSame('HY000', $state);
     }
 }

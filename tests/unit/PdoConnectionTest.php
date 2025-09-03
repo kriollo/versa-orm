@@ -27,12 +27,12 @@ final class PdoConnectionTest extends TestCase
         $pdo2 = $c2->getPdo();
 
         // File-backed sqlite should reuse same PDO instance from the pool
-        $this->assertSame($pdo1, $pdo2);
+        static::assertSame($pdo1, $pdo2);
 
         // foreign_keys pragma should be enabled
         $stmt = $pdo1->query('PRAGMA foreign_keys');
         $val = $stmt !== false ? $stmt->fetchColumn() : null;
-        $this->assertEquals('1', (string) $val);
+        static::assertSame('1', (string) $val);
 
         // cleanup
         $c1->close();
@@ -56,7 +56,7 @@ final class PdoConnectionTest extends TestCase
         $pdo2 = $c2->getPdo();
 
         // In-memory sqlite should not reuse pooled connection
-        $this->assertNotSame($pdo1, $pdo2);
+        static::assertNotSame($pdo1, $pdo2);
 
         $c1->close();
         $c2->close();

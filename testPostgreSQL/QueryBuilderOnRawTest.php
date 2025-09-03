@@ -20,7 +20,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->onRaw('p.user_id = u.id AND u.status = ?', ['active'])
             ->getAll();
 
-        self::assertIsArray($rows);
+        static::assertIsArray($rows);
     }
 
     public function test_on_raw_with_additional_on(): void
@@ -34,7 +34,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->where('u.status', '=', 'active')
             ->getAll();
 
-        self::assertIsArray($rows);
+        static::assertIsArray($rows);
     }
 
     public function test_multiple_on_raw(): void
@@ -47,7 +47,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->onRaw('u.status = ?', ['active'])
             ->getAll();
 
-        self::assertIsArray($rows);
+        static::assertIsArray($rows);
     }
 
     public function test_on_raw_bindings_applied(): void
@@ -60,7 +60,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->where('u.status', '=', 'active')
             ->getAll();
 
-        self::assertIsArray($rows);
+        static::assertIsArray($rows);
     }
 
     public function test_on_raw_security_rejects_semicolon(): void

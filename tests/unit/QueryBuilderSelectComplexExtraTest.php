@@ -37,17 +37,17 @@ final class QueryBuilderSelectComplexExtraTest extends TestCase
         $m->setAccessible(true);
 
         $res = $m->invoke($qb);
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('sql', $res);
-        $this->assertArrayHasKey('bindings', $res);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('sql', $res);
+        static::assertArrayHasKey('bindings', $res);
 
         $sql = $res['sql'];
-        $this->assertStringContainsString('SELECT', $sql);
-        $this->assertStringContainsString('FROM', $sql);
-        $this->assertStringContainsString('JOIN', $sql);
+        static::assertStringContainsString('SELECT', $sql);
+        static::assertStringContainsString('FROM', $sql);
+        static::assertStringContainsString('JOIN', $sql);
         // GROUP BY/HAVING/LIMIT may be generated depending on internals; assert at least SELECT/FROM/JOIN present
-        $this->assertMatchesRegularExpression('/SELECT\s+/i', $sql);
-        $this->assertMatchesRegularExpression('/FROM\s+/i', $sql);
-        $this->assertMatchesRegularExpression('/JOIN\s+/i', $sql);
+        static::assertMatchesRegularExpression('/SELECT\s+/i', $sql);
+        static::assertMatchesRegularExpression('/FROM\s+/i', $sql);
+        static::assertMatchesRegularExpression('/JOIN\s+/i', $sql);
     }
 }

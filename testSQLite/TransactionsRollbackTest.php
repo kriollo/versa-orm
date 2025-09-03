@@ -50,24 +50,24 @@ class TransactionsRollbackTest extends TestCase
         self::$orm->commit();
 
         $found = self::$orm->table('tx_users')->where('email', '=', 'tx.commit@example.com')->firstArray();
-        self::assertNotNull($found);
-        self::assertSame('Tx Commit', $found['name'] ?? null);
+        static::assertNotNull($found);
+        static::assertSame('Tx Commit', $found['name'] ?? null);
     }
 
     public function test_rollback_reverts_changes(): void
     {
         $pre = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->firstArray();
-        self::assertNull($pre);
+        static::assertNull($pre);
 
         self::$orm->beginTransaction();
         self::$orm->table('tx_users')->insert(['name' => 'Tx Rollback', 'email' => 'tx.rollback@example.com']);
 
         $mid = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->firstArray();
-        self::assertNotNull($mid);
+        static::assertNotNull($mid);
 
         self::$orm->rollBack();
 
         $post = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->firstArray();
-        self::assertNull($post);
+        static::assertNull($post);
     }
 }

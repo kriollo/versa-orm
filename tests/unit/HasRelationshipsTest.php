@@ -39,13 +39,13 @@ final class HasRelationshipsTest extends TestCase
     {
         $m = new DummyRelationModel();
 
-        $this->assertFalse($m->relationLoaded('fakeRelation'));
+        static::assertFalse($m->relationLoaded('fakeRelation'));
 
         $m->setRelation('fakeRelation', ['x']);
 
-        $this->assertTrue($m->relationLoaded('fakeRelation'));
-        $this->assertEquals(['x'], $m->getRelationValue('fakeRelation'));
-        $this->assertArrayHasKey('fakeRelation', $m->getRelations());
+        static::assertTrue($m->relationLoaded('fakeRelation'));
+        static::assertSame(['x'], $m->getRelationValue('fakeRelation'));
+        static::assertArrayHasKey('fakeRelation', $m->getRelations());
     }
 
     public function testCallMissingMethodThrows(): void

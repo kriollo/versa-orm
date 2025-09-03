@@ -17,28 +17,28 @@ final class VersaORMReflectionTest extends TestCase
         $mFormat = $r->getMethod('formatDefault');
         $mFormat->setAccessible(true);
 
-        $this->assertSame('NULL', $mFormat->invoke($orm, null, 'mysql'));
-        $this->assertSame('1', $mFormat->invoke($orm, true, 'mysql'));
-        $this->assertSame('TRUE', $mFormat->invoke($orm, true, 'sqlite'));
-        $this->assertSame("'O''Reilly'", $mFormat->invoke($orm, "O'Reilly", 'sqlite'));
+        static::assertSame('NULL', $mFormat->invoke($orm, null, 'mysql'));
+        static::assertSame('1', $mFormat->invoke($orm, true, 'mysql'));
+        static::assertSame('TRUE', $mFormat->invoke($orm, true, 'sqlite'));
+        static::assertSame("'O''Reilly'", $mFormat->invoke($orm, "O'Reilly", 'sqlite'));
 
         $mQuote = $r->getMethod('quoteIdent');
         $mQuote->setAccessible(true);
 
-        $this->assertSame('`col`', $mQuote->invoke($orm, 'col', 'mysql'));
-        $this->assertSame('"col"', $mQuote->invoke($orm, 'col', 'sqlite'));
+        static::assertSame('`col`', $mQuote->invoke($orm, 'col', 'mysql'));
+        static::assertSame('"col"', $mQuote->invoke($orm, 'col', 'sqlite'));
 
         $mIsDdl = $r->getMethod('isDdlOperation');
         $mIsDdl->setAccessible(true);
 
-        $this->assertTrue($mIsDdl->invoke($orm, 'createTable'));
-        $this->assertFalse($mIsDdl->invoke($orm, 'query'));
+        static::assertTrue($mIsDdl->invoke($orm, 'createTable'));
+        static::assertFalse($mIsDdl->invoke($orm, 'query'));
 
         $mIsRaw = $r->getMethod('isRawQueryDDL');
         $mIsRaw->setAccessible(true);
 
-        $this->assertTrue($mIsRaw->invoke($orm, 'CREATE TABLE test (id INT)'));
-        $this->assertFalse($mIsRaw->invoke($orm, 'SELECT * FROM t'));
+        static::assertTrue($mIsRaw->invoke($orm, 'CREATE TABLE test (id INT)'));
+        static::assertFalse($mIsRaw->invoke($orm, 'SELECT * FROM t'));
     }
 
     public function test_assertSafeIdentifier_and_errors()
@@ -64,7 +64,7 @@ final class VersaORMReflectionTest extends TestCase
 
         // Freeze global
         $orm->freeze(true);
-        $this->assertTrue($orm->isFrozen());
+        static::assertTrue($orm->isFrozen());
 
         // validateFreezeOperation should throw for DDL when frozen
         $mValidate = $r->getMethod('validateFreezeOperation');

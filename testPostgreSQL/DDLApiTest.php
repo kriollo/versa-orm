@@ -34,8 +34,8 @@ class DDLApiTest extends TestCase
 
         // Validar existencia por columns
         $cols = $orm->schema('columns', 'ddl_mvp_users');
-        self::assertIsArray($cols);
-        self::assertNotEmpty($cols);
+        static::assertIsArray($cols);
+        static::assertNotEmpty($cols);
 
         // 2) Alter (add column)
         $orm->schemaAlter('ddl_mvp_users', [
@@ -48,13 +48,13 @@ class DDLApiTest extends TestCase
             static fn($c) => strtolower($c['name'] ?? $c['column_name'] ?? $c['Field'] ?? ''),
             $cols2,
         );
-        self::assertContains('email', $colNames2);
+        static::assertContains('email', $colNames2);
 
         // 3) Rename
         $orm->schemaRename('ddl_mvp_users', 'ddl_mvp_people');
         $tables = $orm->schema('tables');
-        self::assertIsArray($tables);
-        self::assertTrue(in_array(
+        static::assertIsArray($tables);
+        static::assertTrue(in_array(
             'ddl_mvp_people',
             array_map('strtolower', array_map(
                 static fn($t) => is_array($t) ? $t['table_name'] ?? $t['name'] ?? (string) $t : (string) $t,
@@ -66,7 +66,7 @@ class DDLApiTest extends TestCase
         // 4) Drop
         $orm->schemaDrop('ddl_mvp_people');
         $tablesAfter = $orm->schema('tables');
-        self::assertFalse(in_array(
+        static::assertFalse(in_array(
             'ddl_mvp_people',
             array_map('strtolower', array_map(
                 static fn($t) => is_array($t) ? $t['table_name'] ?? $t['name'] ?? (string) $t : (string) $t,

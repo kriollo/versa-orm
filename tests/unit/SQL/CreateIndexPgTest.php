@@ -45,18 +45,18 @@ final class CreateIndexPgTest extends TestCase
         $orm->schemaCreate('versa_users', $columns, $options);
 
         $captured = $orm->captured;
-        $this->assertNotEmpty($captured);
+        static::assertNotEmpty($captured);
 
         $found = false;
         foreach ($captured as $sql) {
             if (stripos($sql, 'CREATE INDEX') !== false) {
                 $found = true;
-                $this->assertStringContainsStringIgnoringCase('USING', $sql);
+                static::assertStringContainsStringIgnoringCase('USING', $sql);
                 // Ensure USING is present before '('
-                $this->assertMatchesRegularExpression('/USING\s+\w+\s*\(/i', $sql);
+                static::assertMatchesRegularExpression('/USING\s+\w+\s*\(/i', $sql);
             }
         }
 
-        $this->assertTrue($found, 'No CREATE INDEX captured');
+        static::assertTrue($found, 'No CREATE INDEX captured');
     }
 }

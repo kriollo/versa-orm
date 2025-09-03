@@ -10,7 +10,7 @@ class MetricsTest extends TestCase
     {
         $orm = self::$orm; // instancia compartida
         $m0 = $orm->metrics();
-        self::assertIsArray($m0);
+        static::assertIsArray($m0);
         $initial = (int) ($m0['queries'] ?? 0);
 
         // Ejecutar dos lecturas simples
@@ -18,9 +18,9 @@ class MetricsTest extends TestCase
         $orm->table('users')->first();
 
         $m1 = $orm->metrics();
-        self::assertIsArray($m1);
+        static::assertIsArray($m1);
         $after = (int) ($m1['queries'] ?? 0);
-        self::assertGreaterThanOrEqual(
+        static::assertGreaterThanOrEqual(
             $initial + 2,
             $after,
             'El contador de queries debe incrementarse al menos por 2',

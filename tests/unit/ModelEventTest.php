@@ -15,13 +15,13 @@ final class ModelEventTest extends TestCase
         $model = new stdClass();
         $ev = new ModelEvent($model, ['a' => 1], ['b' => 2]);
 
-        $this->assertSame($model, $ev->model);
-        $this->assertEquals(['a' => 1], $ev->original);
-        $this->assertEquals(['b' => 2], $ev->changes);
-        $this->assertFalse($ev->cancel);
+        static::assertSame($model, $ev->model);
+        static::assertSame(['a' => 1], $ev->original);
+        static::assertSame(['b' => 2], $ev->changes);
+        static::assertFalse($ev->cancel);
 
         $ev->cancel('not allowed');
-        $this->assertTrue($ev->cancel);
-        $this->assertEquals('not allowed', $ev->error);
+        static::assertTrue($ev->cancel);
+        static::assertSame('not allowed', $ev->error);
     }
 }

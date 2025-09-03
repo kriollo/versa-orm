@@ -57,18 +57,18 @@ class LoggingErrorTest extends TestCase
                 ->table('non_existing_table')
                 ->select(['id'])
                 ->getAll();
-            $this->fail('Se esperaba VersaORMException por tabla inexistente.');
+            static::fail('Se esperaba VersaORMException por tabla inexistente.');
         } catch (VersaORMException $e) {
-            $this->assertStringContainsString('non_existing_table', strtolower($e->getMessage()));
+            static::assertStringContainsString('non_existing_table', strtolower($e->getMessage()));
         }
 
         // 2do error: forzar error de sintaxis SQL manual
         try {
             $this->orm->exec('SELECT * FROM users WHERE'); // incompleto
-            $this->fail('Se esperaba VersaORMException por SQL inválido.');
+            static::fail('Se esperaba VersaORMException por SQL inválido.');
         } catch (VersaORMException $e) {
             $msg = strtolower($e->getMessage());
-            $this->assertTrue(
+            static::assertTrue(
                 str_contains($msg, 'syntax') || str_contains($msg, 'incomplete'),
                 'Mensaje inesperado: ' . $msg,
             );
@@ -78,23 +78,23 @@ class LoggingErrorTest extends TestCase
         $summary = $this->logDir . DIRECTORY_SEPARATOR . 'versaorm_errors_' . $date . '.log';
         $detail = $this->logDir . DIRECTORY_SEPARATOR . 'versaorm_errors_detail_' . $date . '.log';
 
-        $this->assertFileExists($summary, 'Archivo de log de resumen no creado');
-        $this->assertFileExists($detail, 'Archivo de log detallado no creado');
+        static::assertFileExists($summary, 'Archivo de log de resumen no creado');
+        static::assertFileExists($detail, 'Archivo de log detallado no creado');
 
         $lines = file($summary, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $this->assertGreaterThanOrEqual(2, count($lines), 'Se esperaban al menos 2 líneas en el log de resumen');
+        static::assertGreaterThanOrEqual(2, count($lines), 'Se esperaban al menos 2 líneas en el log de resumen');
 
         // Validar estructura JSON básica de la primera línea
         $first = json_decode($lines[0], true, 512, JSON_THROW_ON_ERROR);
         foreach (['timestamp', 'error_code', 'message', 'origin', 'query', 'context'] as $key) {
-            $this->assertArrayHasKey($key, $first, 'Falta clave ' . $key . ' en la entrada de log');
+            static::assertArrayHasKey($key, $first, 'Falta clave ' . $key . ' en la entrada de log');
         }
 
         // Validar detalle (última línea del archivo detail contiene full_trace)
         $detailLines = file($detail, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $lastDetail = json_decode(end($detailLines), true, 512, JSON_THROW_ON_ERROR);
-        $this->assertArrayHasKey('full_trace', $lastDetail, 'No se encontró full_trace en log detallado');
-        $this->assertIsArray($lastDetail['full_trace']);
+        static::assertArrayHasKey('full_trace', $lastDetail, 'No se encontró full_trace en log detallado');
+        static::assertIsArray($lastDetail['full_trace']);
     }
 
     private function cleanupLogs(): void

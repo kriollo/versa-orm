@@ -12,6 +12,6 @@ class VersaModelMinimalTest extends TestCase
 {
     public function testModelClassExists(): void
     {
-        self::assertTrue(class_exists('\\VersaORM\\VersaModel'));
+        static::assertTrue(class_exists('\\VersaORM\\VersaModel'));
     }
 }

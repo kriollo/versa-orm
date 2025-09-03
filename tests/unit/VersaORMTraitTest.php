@@ -63,11 +63,11 @@ class VersaORMTraitTest extends TestCase
             $obj->connectORM();
 
             $orm = $obj->getOrmPublic();
-            $this->assertInstanceOf(VersaORM::class, $orm);
+            static::assertInstanceOf(VersaORM::class, $orm);
 
             // disconnect should clean the instance
             $obj->disconnectORM();
-            $this->assertNull($obj->getOrmPublic());
+            static::assertNull($obj->getOrmPublic());
         } finally {
             // restore previous global config
             if ($prev === null) {

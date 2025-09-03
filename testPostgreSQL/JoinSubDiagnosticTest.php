@@ -30,8 +30,8 @@ class JoinSubDiagnosticTest extends TestCase
         $users = self::$orm->table('users')->getAll();
         $posts = self::$orm->table('posts')->getAll();
 
-        self::assertGreaterThan(0, count($users));
-        self::assertGreaterThan(0, count($posts));
+        static::assertGreaterThan(0, count($users));
+        static::assertGreaterThan(0, count($posts));
     }
 
     // ======================================================================
@@ -46,7 +46,7 @@ class JoinSubDiagnosticTest extends TestCase
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->getAll();
 
-        self::assertGreaterThan(0, count($results));
+        static::assertGreaterThan(0, count($results));
     }
 
     // ======================================================================
@@ -70,7 +70,7 @@ class JoinSubDiagnosticTest extends TestCase
                 ->getAll();
 
             // Agregar debug para ver el SQL generado
-            self::assertIsArray($results);
+            static::assertIsArray($results);
         } catch (Exception $e) {
             throw $e;
         }
@@ -96,12 +96,12 @@ class JoinSubDiagnosticTest extends TestCase
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
                 ->getAll();
 
-            self::assertIsArray($results);
+            static::assertIsArray($results);
 
             foreach ($results as $result) {
-                self::assertArrayHasKey('name', $result);
-                self::assertArrayHasKey('post_count', $result);
-                self::assertGreaterThan(1, $result['post_count']);
+                static::assertArrayHasKey('name', $result);
+                static::assertArrayHasKey('post_count', $result);
+                static::assertGreaterThan(1, $result['post_count']);
             }
         } catch (Exception $e) {
             // Agregar información adicional del error MySQL
@@ -127,7 +127,7 @@ class JoinSubDiagnosticTest extends TestCase
             ->select(['users.name', 'active_users.post_count'])
             ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
 
-        self::assertInstanceOf(QueryBuilder::class, $query);
+        static::assertInstanceOf(QueryBuilder::class, $query);
     }
 
     // ======================================================================
@@ -141,7 +141,7 @@ class JoinSubDiagnosticTest extends TestCase
     {
         // Verificar si el driver PostgreSQL está disponible
         if (!in_array('pgsql', PDO::getAvailableDrivers(), true)) {
-            self::markTestSkipped('PostgreSQL PDO driver not available');
+            static::markTestSkipped('PostgreSQL PDO driver not available');
         }
 
         // Este test ejecuta SQL directo en PostgreSQL para verificar la funcionalidad
@@ -150,7 +150,7 @@ class JoinSubDiagnosticTest extends TestCase
 
         // Verificar que tenemos configuración PostgreSQL
         if ($config['DB']['DB_DRIVER'] !== 'pgsql') {
-            self::markTestSkipped('Test requires PostgreSQL configuration');
+            static::markTestSkipped('Test requires PostgreSQL configuration');
         }
 
         // Crear conexión PDO directa para PostgreSQL
@@ -184,14 +184,14 @@ class JoinSubDiagnosticTest extends TestCase
             $stmt->execute([1]);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            self::assertIsArray($results);
+            static::assertIsArray($results);
 
             // Verificar estructura de datos
             if (!empty($results)) {
                 foreach ($results as $result) {
-                    self::assertArrayHasKey('name', $result);
-                    self::assertArrayHasKey('post_count', $result);
-                    self::assertGreaterThan(1, (int) $result['post_count']);
+                    static::assertArrayHasKey('name', $result);
+                    static::assertArrayHasKey('post_count', $result);
+                    static::assertGreaterThan(1, (int) $result['post_count']);
                 }
             }
         } catch (Exception $e) {
@@ -201,7 +201,7 @@ class JoinSubDiagnosticTest extends TestCase
                 || str_contains($e->getMessage(), 'Connection refused')
                 || str_contains($e->getMessage(), 'could not connect')
             ) {
-                self::markTestSkipped('PostgreSQL connection not available: ' . $e->getMessage());
+                static::markTestSkipped('PostgreSQL connection not available: ' . $e->getMessage());
             }
 
             throw $e;
@@ -215,7 +215,7 @@ class JoinSubDiagnosticTest extends TestCase
             $simpleQuery = self::$orm->table('users')->limit(1);
             $result = $simpleQuery->getAll();
 
-            self::assertIsArray($result);
+            static::assertIsArray($result);
         } catch (Exception $e) {
             throw $e;
         }

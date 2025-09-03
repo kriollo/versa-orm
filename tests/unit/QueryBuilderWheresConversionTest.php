@@ -39,16 +39,16 @@ final class QueryBuilderWheresConversionTest extends TestCase
         $processMethod->setAccessible(true);
         $processed = $processMethod->invoke($qb);
 
-        $this->assertCount(2, $processed);
-        $this->assertEquals('id', $processed[0]['column']);
+        static::assertCount(2, $processed);
+        static::assertSame('id', $processed[0]['column']);
 
         $convertMethod = $ref->getMethod('convertWheresToConditions');
         $convertMethod->setAccessible(true);
         $conds = $convertMethod->invoke($qb);
 
-        $this->assertCount(2, $conds);
-        $this->assertEquals('AND', $conds[0]['connector']);
-        $this->assertEquals('OR', $conds[1]['connector']);
-        $this->assertEquals('%php%', $conds[1]['value']);
+        static::assertCount(2, $conds);
+        static::assertSame('AND', $conds[0]['connector']);
+        static::assertSame('OR', $conds[1]['connector']);
+        static::assertSame('%php%', $conds[1]['value']);
     }
 }

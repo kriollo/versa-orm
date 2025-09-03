@@ -61,12 +61,12 @@ final class RelationsHasOneTest extends TestCase
         $rel = new HasOne($qb, $parent, 'owner_id', 'id');
 
         $q = $rel->query();
-        $this->assertSame($qb, $q);
-        $this->assertEquals(['where', 'owner_id', '=', 99], $qb->called[0]);
+        static::assertSame($qb, $q);
+        static::assertSame(['where', 'owner_id', '=', 99], $qb->called[0]);
 
         $qb->called = [];
         $res = $rel->getResults();
-        $this->assertNull($res);
-        $this->assertEquals('findOne', $qb->called[1][0]);
+        static::assertNull($res);
+        static::assertSame('findOne', $qb->called[1][0]);
     }
 }

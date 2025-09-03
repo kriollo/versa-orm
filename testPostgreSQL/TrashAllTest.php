@@ -28,19 +28,19 @@ class TrashAllTest extends TestCase
         }
         foreach ($users as $user) {
             $dbUser = VersaModel::load('users', $user->id);
-            self::assertNotNull($dbUser);
+            static::assertNotNull($dbUser);
         }
         VersaModel::trashAll($users);
         foreach ($users as $user) {
             $deletedUser = VersaModel::load('users', $user->id);
-            self::assertNull($deletedUser);
+            static::assertNull($deletedUser);
         }
     }
 
     public function test_trash_all_with_empty_array_does_nothing(): void
     {
         VersaModel::trashAll([]);
-        self::assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function test_trash_all_throws_on_invalid_input(): void

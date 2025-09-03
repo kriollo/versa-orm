@@ -46,22 +46,22 @@ class SchemaValidationTest extends TestCase
             $schema = $method->invoke($model);
 
             // Si obtenemos un esquema, debe ser un array
-            self::assertIsArray($schema);
+            static::assertIsArray($schema);
 
             // Si el CLI Rust está disponible y funciona, debería tener datos
-            self::assertArrayHasKey('id', $schema);
-            self::assertArrayHasKey('name', $schema);
-            self::assertArrayHasKey('email', $schema);
+            static::assertArrayHasKey('id', $schema);
+            static::assertArrayHasKey('name', $schema);
+            static::assertArrayHasKey('email', $schema);
 
             // Verificar estructura de columna
             $idColumn = $schema['id'];
-            self::assertArrayHasKey('is_required', $idColumn);
-            self::assertArrayHasKey('is_nullable', $idColumn);
-            self::assertArrayHasKey('is_auto_increment', $idColumn);
-            self::assertArrayHasKey('data_type', $idColumn);
-            self::assertArrayHasKey('validation_rules', $idColumn);
+            static::assertArrayHasKey('is_required', $idColumn);
+            static::assertArrayHasKey('is_nullable', $idColumn);
+            static::assertArrayHasKey('is_auto_increment', $idColumn);
+            static::assertArrayHasKey('data_type', $idColumn);
+            static::assertArrayHasKey('validation_rules', $idColumn);
         } catch (Exception $e) {
-            self::assertTrue(true); // Test pasa porque el error es manejado graciosamente
+            static::assertTrue(true); // Test pasa porque el error es manejado graciosamente
         }
     }
 
@@ -124,39 +124,39 @@ class SchemaValidationTest extends TestCase
         $validationSchema = $method->invoke($model, $mockSchemaColumns);
 
         // Verificar que se procesó correctamente
-        self::assertIsArray($validationSchema);
-        self::assertCount(5, $validationSchema);
+        static::assertIsArray($validationSchema);
+        static::assertCount(5, $validationSchema);
 
         // Verificar columna ID (auto-increment)
         $idRules = $validationSchema['id'];
-        self::assertFalse($idRules['is_required']); // Auto-increment no es requerido para insert
-        self::assertTrue($idRules['is_auto_increment']);
-        self::assertContains('numeric', $idRules['validation_rules']);
+        static::assertFalse($idRules['is_required']); // Auto-increment no es requerido para insert
+        static::assertTrue($idRules['is_auto_increment']);
+        static::assertContains('numeric', $idRules['validation_rules']);
 
         // Verificar columna NAME (requerido, varchar)
         $nameRules = $validationSchema['name'];
-        self::assertTrue($nameRules['is_required'], 'Name should be required');
-        self::assertFalse($nameRules['is_nullable'], 'Name should not be nullable');
-        self::assertSame(255, $nameRules['max_length'], 'Name max length should be 255');
-        self::assertContains('required', $nameRules['validation_rules'], 'Name rules should contain required');
-        self::assertContains('max:255', $nameRules['validation_rules'], 'Name rules should contain max:255');
+        static::assertTrue($nameRules['is_required'], 'Name should be required');
+        static::assertFalse($nameRules['is_nullable'], 'Name should not be nullable');
+        static::assertSame(255, $nameRules['max_length'], 'Name max length should be 255');
+        static::assertContains('required', $nameRules['validation_rules'], 'Name rules should contain required');
+        static::assertContains('max:255', $nameRules['validation_rules'], 'Name rules should contain max:255');
 
         // Verificar columna EMAIL (opcional, pero con validación email automática)
         $emailRules = $validationSchema['email'];
-        self::assertFalse($emailRules['is_required']);
-        self::assertTrue($emailRules['is_nullable']);
-        self::assertContains('email', $emailRules['validation_rules']);
-        self::assertContains('max:100', $emailRules['validation_rules']);
+        static::assertFalse($emailRules['is_required']);
+        static::assertTrue($emailRules['is_nullable']);
+        static::assertContains('email', $emailRules['validation_rules']);
+        static::assertContains('max:100', $emailRules['validation_rules']);
 
         // Verificar columna AGE (opcional con default)
         $ageRules = $validationSchema['age'];
-        self::assertFalse($ageRules['is_required']); // Tiene default
-        self::assertContains('numeric', $ageRules['validation_rules']);
+        static::assertFalse($ageRules['is_required']); // Tiene default
+        static::assertContains('numeric', $ageRules['validation_rules']);
 
         // Verificar columna SCORE (decimal requerido)
         $scoreRules = $validationSchema['score'];
-        self::assertFalse($scoreRules['is_required']); // Tiene default
-        self::assertContains('numeric', $scoreRules['validation_rules']);
+        static::assertFalse($scoreRules['is_required']); // Tiene default
+        static::assertContains('numeric', $scoreRules['validation_rules']);
     }
 
     /**
@@ -169,29 +169,29 @@ class SchemaValidationTest extends TestCase
         // Test 1: Datos válidos
         $model->fill(['name' => 'Juan Pérez', 'email' => 'juan@example.com', 'age' => 25]);
         $errors = $model->validate();
-        self::assertEmpty($errors, 'Datos válidos no deberían generar errores');
+        static::assertEmpty($errors, 'Datos válidos no deberían generar errores');
 
         // Test 2: Campo requerido faltante
         $model2 = new TestUserModelWithMockSchema('users', self::$orm);
         $model2->fill(['email' => 'test@example.com']); // Falta 'name'
         $errors2 = $model2->validate();
-        self::assertNotEmpty($errors2);
-        self::assertContains('The name field is required.', $errors2);
+        static::assertNotEmpty($errors2);
+        static::assertContains('The name field is required.', $errors2);
 
         // Test 3: Email inválido
         $model3 = new TestUserModelWithMockSchema('users', self::$orm);
         $model3->fill(['name' => 'Test', 'email' => 'invalid-email']);
         $errors3 = $model3->validate();
-        self::assertNotEmpty($errors3);
-        self::assertContains('The email must be a valid email address.', $errors3);
+        static::assertNotEmpty($errors3);
+        static::assertContains('The email must be a valid email address.', $errors3);
 
         // Test 4: Longitud máxima excedida
         $model4 = new TestUserModelWithMockSchema('users', self::$orm);
         $longName = str_repeat('a', 256); // Excede max:255
         $model4->fill(['name' => $longName, 'email' => 'test@example.com']);
         $errors4 = $model4->validate();
-        self::assertNotEmpty($errors4);
-        self::assertTrue(
+        static::assertNotEmpty($errors4);
+        static::assertTrue(
             in_array('The name may not be greater than 255 characters.', $errors4, true)
             || in_array('The name must be at least 255 characters.', $errors4, true),
         );
@@ -200,8 +200,8 @@ class SchemaValidationTest extends TestCase
         $model5 = new TestUserModelWithMockSchema('users', self::$orm);
         $model5->fill(['name' => 'Test', 'email' => 'test@example.com', 'age' => 'not-a-number']);
         $errors5 = $model5->validate();
-        self::assertNotEmpty($errors5);
-        self::assertContains('The age must be an integer.', $errors5);
+        static::assertNotEmpty($errors5);
+        static::assertContains('The age must be an integer.', $errors5);
     }
 
     /**
@@ -218,10 +218,10 @@ class SchemaValidationTest extends TestCase
         try {
             $errors = $model->validate();
             // No debería lanzar excepciones, debe manejar el error graciosamente
-            self::assertIsArray($errors);
+            static::assertIsArray($errors);
         } catch (Exception $e) {
             // Si lanza excepción, verificar que es la simulada y no un error del sistema
-            self::assertStringContainsString('CLI Rust not available', $e->getMessage());
+            static::assertStringContainsString('CLI Rust not available', $e->getMessage());
         }
     }
 
@@ -247,20 +247,20 @@ class SchemaValidationTest extends TestCase
         ];
 
         $errors = $method->invoke($model, 'name', '', $columnSchema);
-        self::assertNotEmpty($errors);
-        self::assertContains('The name field is required.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name field is required.', $errors);
 
         // Test campo opcional null
         $columnSchema['is_required'] = false;
         $columnSchema['is_nullable'] = true;
         $errors2 = $method->invoke($model, 'description', null, $columnSchema);
-        self::assertEmpty($errors2); // null es válido para campos opcionales
+        static::assertEmpty($errors2); // null es válido para campos opcionales
 
         // Test longitud máxima
         $longValue = str_repeat('a', 101);
         $errors3 = $method->invoke($model, 'name', $longValue, $columnSchema);
-        self::assertNotEmpty($errors3);
-        self::assertContains('The name may not be greater than 100 characters.', $errors3);
+        static::assertNotEmpty($errors3);
+        static::assertContains('The name may not be greater than 100 characters.', $errors3);
     }
 
     /**
@@ -281,9 +281,9 @@ class SchemaValidationTest extends TestCase
             // Esto debería lanzar una excepción de validación
             $user->store();
 
-            self::fail('Se esperaba una excepción de validación');
+            static::fail('Se esperaba una excepción de validación');
         } catch (VersaORMException $e) {
-            self::assertStringContainsString('Validation failed', $e->getMessage());
+            static::assertStringContainsString('Validation failed', $e->getMessage());
         }
     }
 }

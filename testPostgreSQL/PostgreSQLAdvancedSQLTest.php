@@ -50,8 +50,8 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // Operación de array específica de PostgreSQL
         $result = $qb->arrayOperations('contains', 'skills', 'PHP');
 
-        self::assertIsArray($result);
-        self::assertNotEmpty($result);
+        static::assertIsArray($result);
+        static::assertNotEmpty($result);
     }
 
     public function test_postgre_sql_array_overlap(): void
@@ -61,7 +61,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // Array overlap operation
         $result = $qb->arrayOperations('overlap', 'skills', ['PHP', 'Python']);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sqljsonb_operations(): void
@@ -71,7 +71,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // JSONB operations específicas de PostgreSQL
         $result = $qb->jsonOperation('contains', 'profile', '{"level": "senior"}');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sqljsonb_path_queries(): void
@@ -81,7 +81,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         // JSONB path queries
         $result = $qb->jsonOperation('extract', 'profile', '$.certifications[0]');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sql_full_text_search_with_ts_vector(): void
@@ -95,7 +95,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             'rank' => true,
         ]);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sql_window_functions_advanced(): void
@@ -112,7 +112,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             'prev_salary_2',
         );
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sql_recursive_cte(): void
@@ -139,7 +139,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             [],
         );
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sql_advanced_aggregations(): void
@@ -152,7 +152,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             'method' => 'cont', // percentile_cont
         ]);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_union(): void
@@ -169,7 +169,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             ],
         ];
         $result = $qb->union($queries, false);
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_union_all(): void
@@ -186,28 +186,28 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             ],
         ];
         $result = $qb->union($queries, true);
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_get_driver_capabilities(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->getDriverCapabilities();
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_optimize_query(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->optimizeQuery(['query' => 'SELECT * FROM employees WHERE salary > 50000']);
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_get_driver_limits(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         $result = $qb->getDriverLimits();
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_advanced_aggregation_group_concat(): void
@@ -220,7 +220,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             ['department'],
             'employee_names',
         );
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_postgre_sql_intersect_and_except(): void
@@ -233,11 +233,11 @@ class PostgreSQLAdvancedSQLTest extends TestCase
 
         // INTERSECT operation
         $result = $qb1->intersect($qb2);
-        self::assertIsArray($result);
+        static::assertIsArray($result);
 
         // EXCEPT operation
         $result = $qb1->except($qb2);
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     private function createPostgreSQLTestTables(): void

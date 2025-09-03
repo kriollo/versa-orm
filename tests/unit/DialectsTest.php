@@ -16,25 +16,25 @@ final class DialectsTest extends TestCase
     {
         $d = new SQLiteDialect();
 
-        $this->assertEquals('"col"', $d->quoteIdentifier('col'));
-        $this->assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, 0));
-        $this->assertStringContainsString('OFFSET 5', $d->compileLimitOffset(10, 5));
+        static::assertSame('"col"', $d->quoteIdentifier('col'));
+        static::assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, 0));
+        static::assertStringContainsString('OFFSET 5', $d->compileLimitOffset(10, 5));
     }
 
     public function test_mysql_quote_and_limit_offset(): void
     {
         $d = new MySQLDialect();
 
-        $this->assertEquals('`col`', $d->quoteIdentifier('col'));
-        $this->assertStringContainsString('LIMIT 5', $d->compileLimitOffset(5, 0));
+        static::assertSame('`col`', $d->quoteIdentifier('col'));
+        static::assertStringContainsString('LIMIT 5', $d->compileLimitOffset(5, 0));
     }
 
     public function test_pg_quote_and_limit_offset(): void
     {
         $d = new PostgreSQLDialect();
 
-        $this->assertEquals('"col"', $d->quoteIdentifier('col'));
+        static::assertSame('"col"', $d->quoteIdentifier('col'));
         // Postgres may compile LIMIT/OFFSET differently but should include LIMIT
-        $this->assertStringContainsString('LIMIT', $d->compileLimitOffset(3, 1));
+        static::assertStringContainsString('LIMIT', $d->compileLimitOffset(3, 1));
     }
 }

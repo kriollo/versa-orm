@@ -20,9 +20,9 @@ class QueryBuilderOnRawTest extends TestCase
             ->onRaw('p.user_id = u.id AND u.status = ?', ['active'])
             ->getAll();
 
-        self::assertNotEmpty($rows);
+        static::assertNotEmpty($rows);
         foreach ($rows as $r) {
-            self::assertArrayHasKey('title', $r);
+            static::assertArrayHasKey('title', $r);
         }
     }
 
@@ -37,7 +37,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->where('u.status', '=', 'active')
             ->getAll();
 
-        self::assertNotEmpty($rows);
+        static::assertNotEmpty($rows);
     }
 
     public function test_multiple_on_raw(): void
@@ -50,7 +50,7 @@ class QueryBuilderOnRawTest extends TestCase
             ->onRaw('u.status = ?', ['active'])
             ->getAll();
 
-        self::assertNotEmpty($rows);
+        static::assertNotEmpty($rows);
     }
 
     public function test_on_raw_bindings_applied(): void
@@ -63,9 +63,9 @@ class QueryBuilderOnRawTest extends TestCase
             ->where('u.status', '=', 'active')
             ->getAll();
 
-        self::assertNotEmpty($rows);
+        static::assertNotEmpty($rows);
         foreach ($rows as $r) {
-            self::assertStringContainsString('Post', $r['title']);
+            static::assertStringContainsString('Post', $r['title']);
         }
     }
 

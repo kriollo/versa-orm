@@ -35,8 +35,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         // Verificar que se insertó
         $original = self::$orm->table('products')->where('sku', '=', 'REPLACE001')->firstArray();
-        self::assertSame('Original Product', $original['name']);
-        self::assertSame(100.0, (float) $original['price']);
+        static::assertSame('Original Product', $original['name']);
+        static::assertSame(100.0, (float) $original['price']);
 
         // Ahora usar replaceInto para reemplazar completamente el registro
         $replaceData = [
@@ -48,17 +48,17 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($replaceData);
 
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertSame('replaced', $result['operation']);
-        self::assertSame(1, $result['rows_affected']);
-        self::assertSame('products', $result['table']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertSame('replaced', $result['operation']);
+        static::assertSame(1, $result['rows_affected']);
+        static::assertSame('products', $result['table']);
 
         // Verificar que el registro fue "reemplazado" (en PG emulación conserva no especificados)
         $replaced = self::$orm->table('products')->where('sku', '=', 'REPLACE001')->firstArray();
-        self::assertSame('Replaced Product', $replaced['name']);
-        self::assertSame(200.0, (float) $replaced['price']);
-        self::assertSame('New description', $replaced['description']);
+        static::assertSame('Replaced Product', $replaced['name']);
+        static::assertSame(200.0, (float) $replaced['price']);
+        static::assertSame('New description', $replaced['description']);
     }
 
     public function test_replace_into_new_record(): void
@@ -72,14 +72,14 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($newData);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('replaced', $result['operation']);
-        self::assertSame(1, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('replaced', $result['operation']);
+        static::assertSame(1, $result['rows_affected']);
 
         // Verificar que se creó el nuevo registro
         $new = self::$orm->table('products')->where('sku', '=', 'REPLACE_NEW001')->firstArray();
-        self::assertSame('New Product via Replace', $new['name']);
-        self::assertSame(150.0, (float) $new['price']);
+        static::assertSame('New Product via Replace', $new['name']);
+        static::assertSame(150.0, (float) $new['price']);
     }
 
     public function test_replace_into_empty_data(): void
@@ -107,9 +107,9 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
     {
         // En PostgreSQL ahora emulamos REPLACE como UPSERT, no debe lanzar excepción
         $result = self::$orm->table('products')->replaceInto(['sku' => 'TEST', 'name' => 'Test']);
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status'] ?? 'success');
-        self::assertSame('products', $result['table']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status'] ?? 'success');
+        static::assertSame('products', $result['table']);
     }
 
     // ======================================================================
@@ -134,20 +134,20 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->replaceIntoMany($replaceRecords);
 
-        self::assertIsArray($result);
-        self::assertSame(3, $result['total_replaced']);
-        self::assertSame(1, $result['batches_processed']);
-        self::assertSame('success', $result['status']);
-        self::assertSame(3, $result['total_records']);
+        static::assertIsArray($result);
+        static::assertSame(3, $result['total_replaced']);
+        static::assertSame(1, $result['batches_processed']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(3, $result['total_records']);
 
         // Verificar que los registros fueron reemplazados correctamente
         $replaced1 = self::$orm->table('products')->where('sku', '=', 'REPLACE_MANY001')->firstArray();
-        self::assertSame('Replaced 1', $replaced1['name']);
-        self::assertSame('Updated 1', $replaced1['description']);
+        static::assertSame('Replaced 1', $replaced1['name']);
+        static::assertSame('Updated 1', $replaced1['description']);
 
         $newProduct = self::$orm->table('products')->where('sku', '=', 'REPLACE_MANY003')->firstArray();
-        self::assertSame('New Product 3', $newProduct['name']);
-        self::assertSame('New 3', $newProduct['description']);
+        static::assertSame('New Product 3', $newProduct['name']);
+        static::assertSame('New 3', $newProduct['description']);
     }
 
     public function test_replace_into_many_with_batch_size(): void
@@ -165,14 +165,14 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         // Usar un batch size de 2
         $result = self::$orm->table('products')->replaceIntoMany($records, 2);
 
-        self::assertSame(5, $result['total_replaced']);
-        self::assertSame(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
-        self::assertSame(2, $result['batch_size']);
-        self::assertSame('success', $result['status']);
+        static::assertSame(5, $result['total_replaced']);
+        static::assertSame(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
+        static::assertSame(2, $result['batch_size']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que todos los registros se crearon
         $count = self::$orm->table('products')->where('sku', 'LIKE', 'BATCH_REPLACE%')->count();
-        self::assertSame(5, $count);
+        static::assertSame(5, $count);
     }
 
     public function test_replace_into_many_empty_records(): void
@@ -223,17 +223,17 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($data, ['sku']);
 
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertContains($result['operation'], ['inserted', 'updated']);
-        self::assertSame(1, $result['rows_affected']);
-        self::assertSame(['sku'], $result['unique_keys']);
-        self::assertSame('products', $result['table']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertContains($result['operation'], ['inserted', 'updated']);
+        static::assertSame(1, $result['rows_affected']);
+        static::assertSame(['sku'], $result['unique_keys']);
+        static::assertSame('products', $result['table']);
 
         // Verificar que el registro se creó
         $created = self::$orm->table('products')->where('sku', '=', 'UPSERT_NEW001')->firstArray();
-        self::assertSame('New Upsert Product', $created['name']);
-        self::assertSame(199.99, (float) $created['price']);
+        static::assertSame('New Upsert Product', $created['name']);
+        static::assertSame(199.99, (float) $created['price']);
     }
 
     public function test_upsert_update_existing_record(): void
@@ -255,15 +255,15 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['name', 'price']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame(1, $result['rows_affected']);
-        self::assertSame(['sku'], $result['unique_keys']);
-        self::assertSame(['name', 'price'], $result['update_columns']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(1, $result['rows_affected']);
+        static::assertSame(['sku'], $result['unique_keys']);
+        static::assertSame(['name', 'price'], $result['update_columns']);
 
         // Verificar que el registro se actualizó
         $updated = self::$orm->table('products')->where('sku', '=', 'UPSERT_UPDATE001')->firstArray();
-        self::assertSame('Updated Upsert Product', $updated['name']);
-        self::assertSame(150.0, (float) $updated['price']);
+        static::assertSame('Updated Upsert Product', $updated['name']);
+        static::assertSame(150.0, (float) $updated['price']);
     }
 
     public function test_upsert_with_multiple_unique_keys(): void
@@ -278,8 +278,8 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($data, ['sku', 'category']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame(['sku', 'category'], $result['unique_keys']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(['sku', 'category'], $result['unique_keys']);
 
         // Verificar que el registro se creó
         $created = self::$orm
@@ -287,7 +287,7 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
             ->where('sku', '=', 'MULTI_KEY001')
             ->where('category', '=', 'electronics')
             ->firstArray();
-        self::assertSame('Multi Key Product', $created['name']);
+        static::assertSame('Multi Key Product', $created['name']);
     }
 
     public function test_upsert_empty_data(): void
@@ -359,14 +359,14 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['price']); // Solo actualizar el precio
 
-        self::assertSame('success', $result['status']);
-        self::assertSame(['price'], $result['update_columns']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(['price'], $result['update_columns']);
 
         // Verificar que solo se actualizó el precio
         $updated = self::$orm->table('products')->where('sku', '=', 'SPECIFIC_UPDATE001')->firstArray();
-        self::assertSame('Original Name', $updated['name']); // No debería cambiar
-        self::assertSame(200.0, (float) $updated['price']); // Debería cambiar
-        self::assertSame('Original Description', $updated['description']); // No debería cambiar
+        static::assertSame('Original Name', $updated['name']); // No debería cambiar
+        static::assertSame(200.0, (float) $updated['price']); // Debería cambiar
+        static::assertSame('Original Description', $updated['description']); // No debería cambiar
     }
 
     // ======================================================================
@@ -384,15 +384,15 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($data, ['sku']);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los caracteres especiales se guardaron correctamente
         $saved = self::$orm->table('products')->where('sku', '=', 'SPECIAL_CHARS001')->firstArray();
-        self::assertStringContainsString("'quotes'", $saved['name']);
-        self::assertStringContainsString('"double quotes"', $saved['name']);
-        self::assertStringContainsString('áéíóú', $saved['description']);
-        self::assertStringContainsString('测试', $saved['description']);
-        self::assertStringContainsString('🚀', $saved['description']);
+        static::assertStringContainsString("'quotes'", $saved['name']);
+        static::assertStringContainsString('"double quotes"', $saved['name']);
+        static::assertStringContainsString('áéíóú', $saved['description']);
+        static::assertStringContainsString('测试', $saved['description']);
+        static::assertStringContainsString('🚀', $saved['description']);
     }
 
     public function test_replace_into_vs_upsert_behavior_difference(): void
@@ -418,11 +418,11 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->replaceInto($replaceData);
 
         $afterReplace = self::$orm->table('products')->where('sku', '=', 'BEHAVIOR_TEST001')->firstArray();
-        self::assertSame('Replaced Product', $afterReplace['name']);
-        self::assertSame(200.0, (float) $afterReplace['price']);
+        static::assertSame('Replaced Product', $afterReplace['name']);
+        static::assertSame(200.0, (float) $afterReplace['price']);
         // En PostgreSQL (emulación) REPLACE preserva campos no especificados
-        self::assertSame('Original Description', $afterReplace['description']);
-        self::assertSame('original_category', $afterReplace['category']);
+        static::assertSame('Original Description', $afterReplace['description']);
+        static::assertSame('original_category', $afterReplace['category']);
 
         // Reinsertar registro inicial para test de upsert
         self::$orm->table('products')->delete(['sku' => 'BEHAVIOR_TEST001']);
@@ -439,11 +439,11 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         self::$orm->table('products')->upsert($upsertData, ['sku'], ['name', 'price']);
 
         $afterUpsert = self::$orm->table('products')->where('sku', '=', 'BEHAVIOR_TEST001')->firstArray();
-        self::assertSame('Upserted Product', $afterUpsert['name']);
-        self::assertSame(300.0, (float) $afterUpsert['price']);
+        static::assertSame('Upserted Product', $afterUpsert['name']);
+        static::assertSame(300.0, (float) $afterUpsert['price']);
         // UPSERT debería haber preservado los campos no especificados
-        self::assertSame('Original Description', $afterUpsert['description']);
-        self::assertSame('original_category', $afterUpsert['category']);
+        static::assertSame('Original Description', $afterUpsert['description']);
+        static::assertSame('original_category', $afterUpsert['category']);
     }
 
     public function test_large_dataset_performance(): void
@@ -464,17 +464,17 @@ class QueryBuilderReplaceAndUpsertTest extends TestCase
         $result = self::$orm->table('products')->replaceIntoMany($records, 10);
         $endTime = microtime(true);
 
-        self::assertSame(50, $result['total_replaced']);
-        self::assertSame(5, $result['batches_processed']); // 50/10 = 5 lotes
-        self::assertSame('success', $result['status']);
+        static::assertSame(50, $result['total_replaced']);
+        static::assertSame(5, $result['batches_processed']); // 50/10 = 5 lotes
+        static::assertSame('success', $result['status']);
 
         // Verificar que la operación fue razonablemente rápida (menos de 3 segundos)
         $executionTime = $endTime - $startTime;
-        self::assertLessThan(3.0, $executionTime, 'ReplaceIntoMany should complete in reasonable time');
+        static::assertLessThan(3.0, $executionTime, 'ReplaceIntoMany should complete in reasonable time');
 
         // Verificar que todos los registros se crearon
         $count = self::$orm->table('products')->where('sku', 'LIKE', 'PERF_REPLACE%')->count();
-        self::assertSame(50, $count);
+        static::assertSame(50, $count);
 
         // Limpiar
         self::$orm->table('products')->where('sku', 'LIKE', 'PERF_REPLACE%')->deleteMany(100);

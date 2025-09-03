@@ -45,7 +45,7 @@ final class CreateIndexSqliteTest extends TestCase
         $orm->schemaCreate('versa_users', $columns, $options);
 
         $captured = $orm->captured;
-        $this->assertNotEmpty($captured, 'No SQL captured');
+        static::assertNotEmpty($captured, 'No SQL captured');
 
         $indexSqlFound = false;
 
@@ -53,11 +53,11 @@ final class CreateIndexSqliteTest extends TestCase
             if (stripos($sql, 'CREATE INDEX') !== false) {
                 $indexSqlFound = true;
                 // En sqlite no debería incluir USING BTREE
-                $this->assertStringNotContainsString('USING BTREE', strtoupper($sql));
+                static::assertStringNotContainsString('USING BTREE', strtoupper($sql));
             }
         }
 
-        $this->assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');
+        static::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');
     }
 
     public function test_schema_alter_drop_column_and_index_generates_valid_sql_for_sqlite(): void
@@ -88,7 +88,7 @@ final class CreateIndexSqliteTest extends TestCase
         ]);
 
         $captured = $orm->captured;
-        $this->assertNotEmpty($captured, 'No SQL captured from schemaAlter');
+        static::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
 
         $dropColumnFound = false;
         $dropIndexFound = false;
@@ -103,7 +103,7 @@ final class CreateIndexSqliteTest extends TestCase
             }
         }
 
-        $this->assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
-        $this->assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
+        static::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
+        static::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
     }
 }

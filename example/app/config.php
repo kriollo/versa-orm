@@ -29,7 +29,5 @@ return [
         'debug' => true,
         'cache' => false,
         'logging' => true,
-        'binary_path' => __DIR__ . '/../src/binary/versaorm_cli.exe',
-        'log_path' => __DIR__ . '/../logs/',
     ],
 ];

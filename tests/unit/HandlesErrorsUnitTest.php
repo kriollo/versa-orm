@@ -61,9 +61,9 @@ class HandlesErrorsUnitTest extends TestCase
         // call safeSave which will use withErrorHandling and capture the exception
         $result = $m->safeSave();
 
-        $this->assertNull($result, 'safeSave should return null when throw_on_error is false');
-        $this->assertTrue($m->hasError(), 'Model should have lastError set');
-        $this->assertSame('Simulated save error', $m->getLastErrorMessage());
+        static::assertNull($result, 'safeSave should return null when throw_on_error is false');
+        static::assertTrue($m->hasError(), 'Model should have lastError set');
+        static::assertSame('Simulated save error', $m->getLastErrorMessage());
     }
 
     public function testFormatErrorForApiIncludesDebugWhenDebugMode(): void
@@ -76,7 +76,7 @@ class HandlesErrorsUnitTest extends TestCase
         $m->safeSave();
 
         $error = $m->getLastError();
-        $this->assertIsArray($error);
+        static::assertIsArray($error);
 
         // format for api should include debug block when debug mode is on
         // use a subclass exposing protected methods for testing
@@ -90,9 +90,9 @@ class HandlesErrorsUnitTest extends TestCase
         MinimalModelForHandleErrors::configureErrorHandling(['format_for_api' => true]);
         $formatted = $tester->publicFormatErrorForApi($error);
 
-        $this->assertArrayHasKey('debug', $formatted);
-        $this->assertArrayHasKey('error', $formatted);
-        $this->assertArrayHasKey('suggestions', $formatted['error']);
+        static::assertArrayHasKey('debug', $formatted);
+        static::assertArrayHasKey('error', $formatted);
+        static::assertArrayHasKey('suggestions', $formatted['error']);
     }
 
     public function testGetErrorStatsCountsErrorsForModel(): void
@@ -102,8 +102,8 @@ class HandlesErrorsUnitTest extends TestCase
         $m->safeSave();
 
         $stats = MinimalModelForHandleErrors::getErrorStats();
-        $this->assertIsArray($stats);
-        $this->assertArrayHasKey('total_errors', $stats);
-        $this->assertGreaterThanOrEqual(1, $stats['total_errors']);
+        static::assertIsArray($stats);
+        static::assertArrayHasKey('total_errors', $stats);
+        static::assertGreaterThanOrEqual(1, $stats['total_errors']);
     }
 }

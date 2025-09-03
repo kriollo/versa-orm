@@ -52,22 +52,22 @@ class LoadCastingTest extends TestCase
         // Usar el método load() que tenía el bug
         $loaded = $model::load('load_cast_test', 1);
 
-        self::assertNotNull($loaded, 'load() should return an instance');
-        self::assertInstanceOf(get_class($model), $loaded, 'load() should return instance of correct class');
+        static::assertNotNull($loaded, 'load() should return an instance');
+        static::assertInstanceOf(get_class($model), $loaded, 'load() should return instance of correct class');
 
         // Verificar que export() aplica casting correctamente
         $data = $loaded->export();
 
-        self::assertIsInt($data['id'], 'id should be cast to integer');
-        self::assertIsString($data['name'], 'name should be cast to string');
-        self::assertIsBool($data['active'], 'active should be cast to boolean');
-        self::assertTrue($data['active'], 'active should be true when value is 1');
-        self::assertInstanceOf(DateTime::class, $data['created_at'], 'created_at should be cast to DateTime');
+        static::assertIsInt($data['id'], 'id should be cast to integer');
+        static::assertIsString($data['name'], 'name should be cast to string');
+        static::assertIsBool($data['active'], 'active should be cast to boolean');
+        static::assertTrue($data['active'], 'active should be true when value is 1');
+        static::assertInstanceOf(DateTime::class, $data['created_at'], 'created_at should be cast to DateTime');
 
         // Verificar valores específicos
-        self::assertSame(1, $data['id']);
-        self::assertSame('Test User', $data['name']);
-        self::assertSame('2025-08-12 10:30:00', $data['created_at']->format('Y-m-d H:i:s'));
+        static::assertSame(1, $data['id']);
+        static::assertSame('Test User', $data['name']);
+        static::assertSame('2025-08-12 10:30:00', $data['created_at']->format('Y-m-d H:i:s'));
     }
 
     public function test_load_method_with_update(): void
@@ -87,23 +87,23 @@ class LoadCastingTest extends TestCase
 
         // Cargar, modificar y guardar
         $loaded = $model::load('load_cast_test', 1);
-        self::assertNotNull($loaded);
+        static::assertNotNull($loaded);
 
         // Verificar que active se carga correctamente como boolean true
         $loadedData = $loaded->export();
-        self::assertTrue($loadedData['active']);
+        static::assertTrue($loadedData['active']);
 
         $loaded->name = 'Updated User';
         $loaded->store(); // Esto debe manejar DateTime correctamente y preservar otros campos
 
         // Recargar y verificar que el valor active se preservó
         $reloaded = $model::load('load_cast_test', 1);
-        self::assertNotNull($reloaded);
+        static::assertNotNull($reloaded);
 
         $data = $reloaded->export();
-        self::assertSame('Updated User', $data['name']);
-        self::assertIsBool($data['active']);
-        self::assertTrue($data['active'], 'El campo active debe preservarse cuando solo se modifica otro campo');
+        static::assertSame('Updated User', $data['name']);
+        static::assertIsBool($data['active']);
+        static::assertTrue($data['active'], 'El campo active debe preservarse cuando solo se modifica otro campo');
     }
 
     public function test_load_method_with_update_boolean(): void
@@ -127,11 +127,11 @@ class LoadCastingTest extends TestCase
 
         // Cargar, modificar y guardar
         $loaded = $model::load('load_cast_test', 1);
-        self::assertNotNull($loaded);
+        static::assertNotNull($loaded);
 
         // Verificar que active se carga correctamente como boolean true
         $loadedData = $loaded->export();
-        self::assertTrue($loadedData['active']);
+        static::assertTrue($loadedData['active']);
 
         // Negar el valor de active (toggle)
         $originalActive = $loaded->active;
@@ -140,12 +140,12 @@ class LoadCastingTest extends TestCase
 
         // Recargar y verificar que el valor active se actualizó correctamente
         $reloaded = $model::load('load_cast_test', 1);
-        self::assertNotNull($reloaded);
+        static::assertNotNull($reloaded);
 
         $data = $reloaded->export();
-        self::assertIsBool($data['active']);
-        self::assertFalse($data['active'], 'El campo active debe haberse cambiado de true a false');
-        self::assertNotSame($originalActive, $data['active'], 'El valor debe haber cambiado');
+        static::assertIsBool($data['active']);
+        static::assertFalse($data['active'], 'El campo active debe haberse cambiado de true a false');
+        static::assertNotSame($originalActive, $data['active'], 'El valor debe haber cambiado');
     }
 
     public function test_load_method_with_boolean_validation_edge_cases(): void
@@ -169,20 +169,20 @@ class LoadCastingTest extends TestCase
 
         // Test 1: Cambiar de true a false debe funcionar
         $loaded = $model::load('load_cast_test', 1);
-        self::assertNotNull($loaded);
+        static::assertNotNull($loaded);
 
         $loaded->active = false;
         $loaded->store(); // No debe fallar la validación
 
         $reloaded = $model::load('load_cast_test', 1);
-        self::assertFalse($reloaded->active);
+        static::assertFalse($reloaded->active);
 
         // Test 2: Cambiar de false a true debe funcionar
         $loaded->active = true;
         $loaded->store(); // No debe fallar la validación
 
         $reloaded = $model::load('load_cast_test', 1);
-        self::assertTrue($reloaded->active);
+        static::assertTrue($reloaded->active);
 
         // Test 3: Asignar null debe fallar la validación (puede ser por tipo o required)
         $loaded->active = null;

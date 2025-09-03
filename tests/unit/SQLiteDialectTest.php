@@ -14,16 +14,16 @@ final class SQLiteDialectTest extends TestCase
     {
         $d = new SQLiteDialect();
 
-        $this->assertEquals('*', $d->quoteIdentifier('*'));
-        $this->assertEquals('"col"', $d->quoteIdentifier('col'));
-        $this->assertEquals('"t".*', $d->quoteIdentifier('t.*'));
+        static::assertSame('*', $d->quoteIdentifier('*'));
+        static::assertSame('"col"', $d->quoteIdentifier('col'));
+        static::assertSame('"t".*', $d->quoteIdentifier('t.*'));
 
-        $this->assertEquals('?', $d->placeholder(1));
+        static::assertSame('?', $d->placeholder(1));
 
-        $this->assertEquals('', $d->compileLimitOffset(null, null));
-        $this->assertEquals(' LIMIT 10', $d->compileLimitOffset(10, null));
-        $this->assertEquals(' LIMIT 10 OFFSET 5', $d->compileLimitOffset(10, 5));
+        static::assertSame('', $d->compileLimitOffset(null, null));
+        static::assertSame(' LIMIT 10', $d->compileLimitOffset(10, null));
+        static::assertSame(' LIMIT 10 OFFSET 5', $d->compileLimitOffset(10, 5));
 
-        $this->assertEquals('sqlite', $d->getName());
+        static::assertSame('sqlite', $d->getName());
     }
 }

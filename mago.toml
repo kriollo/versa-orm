@@ -3,9 +3,9 @@
 php-version = "8.1.0"
 
 [source]
-paths = ["example/", "src/"]
+paths = ["example/", "src/", "testPostgreSQL/", "testSQLite/", "tests/"]
 includes = []
-excludes = ["vendor", "testPostgreSQL/", "testSQLite/", "tests/"]
+excludes = ["vendor"]
 
 [formatter]
 print-width = 120

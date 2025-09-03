@@ -21,7 +21,7 @@ class SchemaConsistencyTest extends TestCase
     {
         $model = new EmptySchemaModel('empty_table', null);
         $errors = $model->validateSchemaConsistency();
-        self::assertCount(1, $errors);
+        static::assertCount(1, $errors);
     }
 
     public function test_property_consistency_validation_type_mismatch(): void
@@ -33,7 +33,7 @@ class SchemaConsistencyTest extends TestCase
         $propertyDef = ['type' => 'string', 'nullable' => false];
         $dbColumn = ['data_type' => 'int', 'is_nullable' => 'NO'];
         $errors = $m->invokeArgs($model, ['id', $propertyDef, $dbColumn]);
-        self::assertNotEmpty($errors);
+        static::assertNotEmpty($errors);
     }
 }
 

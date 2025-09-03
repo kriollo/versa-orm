@@ -26,7 +26,7 @@ final class VersaORMHelpersTest extends TestCase
                 ->onlyMethods(['exec'])
                 ->getMock();
 
-            $mock->expects($this->once())->method('exec')->with($this->equalTo($expectedSql));
+            $mock->expects($this->once())->method('exec')->with(static::equalTo($expectedSql));
 
             // Invocar método privado
             $this->invokePrivate($mock, 'dropIndexPortable', ['users', 'idx_name', $driver]);
@@ -47,21 +47,21 @@ final class VersaORMHelpersTest extends TestCase
             [1, 2],
         ]);
 
-        $this->assertStringContainsString('VersaORM Error [E_CODE]: Connection refused', $detailed);
-        $this->assertStringContainsString('Query: SELECT 1', $detailed);
-        $this->assertStringContainsString('Bindings:', $detailed);
-        $this->assertStringContainsString('SQL State: 08001', $detailed);
-        $this->assertStringContainsString('Suggestions:', $detailed);
+        static::assertStringContainsString('VersaORM Error [E_CODE]: Connection refused', $detailed);
+        static::assertStringContainsString('Query: SELECT 1', $detailed);
+        static::assertStringContainsString('Bindings:', $detailed);
+        static::assertStringContainsString('SQL State: 08001', $detailed);
+        static::assertStringContainsString('Suggestions:', $detailed);
 
         $simple = $this->invokePrivate($orm, 'buildSimpleErrorMessage', ['E2', 'Bad things']);
-        $this->assertSame('Database Error [E2]: Bad things', $simple);
+        static::assertSame('Database Error [E2]: Bad things', $simple);
     }
 
     public function testLogErrorWritesFileAndCleanOldLogsRemovesOld(): void
     {
         $tmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'versaorm_logs_' . uniqid();
         if (!mkdir($tmp) && !is_dir($tmp)) {
-            $this->markTestSkipped('Could not create temp dir for logs');
+            static::markTestSkipped('Could not create temp dir for logs');
         }
 
         $config = ['debug' => true, 'log_path' => $tmp];
@@ -76,21 +76,21 @@ final class VersaORMHelpersTest extends TestCase
         // Invoke logError (private)
         $this->invokePrivate($orm, 'logError', ['E100', 'Test error', 'SELECT 1', ['a' => 'b'], 'Full message']);
 
-        $this->assertFileExists($todayFile);
+        static::assertFileExists($todayFile);
         $content = file_get_contents($todayFile);
-        $this->assertStringContainsString('[ERROR] [E100] Test error', $content);
-        $this->assertStringContainsString('SELECT 1', $content);
+        static::assertStringContainsString('[ERROR] [E100] Test error', $content);
+        static::assertStringContainsString('SELECT 1', $content);
 
         // Create an old log file and assert cleanOldLogs removes it
         $oldDate = date('Y-m-d', strtotime('-10 days'));
         $oldFile = $tmp . DIRECTORY_SEPARATOR . $oldDate . '.log';
         file_put_contents($oldFile, "old\n");
-        $this->assertFileExists($oldFile);
+        static::assertFileExists($oldFile);
 
         $this->invokePrivate($orm, 'cleanOldLogs', [$tmp]);
 
         // old file should be removed
-        $this->assertFileDoesNotExist($oldFile);
+        static::assertFileDoesNotExist($oldFile);
 
         // Cleanup
         @unlink($todayFile);
@@ -102,11 +102,11 @@ final class VersaORMHelpersTest extends TestCase
         $orm = new VersaORM([]);
 
         $sug1 = $this->invokePrivate($orm, 'getErrorSuggestions', ['Connection failed: timeout']);
-        $this->assertIsArray($sug1);
-        $this->assertContains('Check database server is running', $sug1);
+        static::assertIsArray($sug1);
+        static::assertContains('Check database server is running', $sug1);
 
         $sug2 = $this->invokePrivate($orm, 'getErrorSuggestions', ['Table users not found']);
-        $this->assertContains('Check if the table name is spelled correctly', $sug2);
+        static::assertContains('Check if the table name is spelled correctly', $sug2);
     }
 
     private function invokePrivate(object $obj, string $method, array $args = [])

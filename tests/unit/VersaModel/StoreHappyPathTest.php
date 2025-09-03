@@ -93,8 +93,8 @@ final class StoreHappyPathTest extends TestCase
         $id = $m->store();
 
         // Asegurarse de que insertGetId fue invocado
-        $this->assertTrue($fakeQb::${'called'});
-        $this->assertSame(123, $id);
-        $this->assertSame(123, $m->getAttribute('id'));
+        static::assertTrue($fakeQb::${'called'});
+        static::assertSame(123, $id);
+        static::assertSame(123, $m->getAttribute('id'));
     }
 }

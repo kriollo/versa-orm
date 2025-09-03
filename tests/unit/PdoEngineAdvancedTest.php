@@ -19,8 +19,8 @@ class PdoEngineAdvancedTest extends TestCase
 
         $ops = [['method' => 'get', 'table' => 'users', 'select' => ['*']]];
         $res = $e->execute('explain_plan', ['operations' => $ops]);
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('generated_sql', $res);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('generated_sql', $res);
     }
 
     public function testQueryPlanExecutes(): void
@@ -30,7 +30,7 @@ class PdoEngineAdvancedTest extends TestCase
 
         $ops = [['method' => 'get', 'table' => 'users', 'select' => ['*']]];
         $res = $e->execute('query_plan', ['operations' => $ops]);
-        $this->assertIsArray($res);
+        static::assertIsArray($res);
     }
 
     public function testAdvancedSqlUnionRequiresTwoQueries(): void

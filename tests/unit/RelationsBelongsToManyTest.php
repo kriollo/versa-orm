@@ -92,9 +92,9 @@ final class RelationsBelongsToManyTest extends TestCase
         // attach should call from(...) then call execute via reflection
         $relation->attach(42, ['extra' => 'x']);
 
-        $this->assertNotEmpty($query->called);
+        static::assertNotEmpty($query->called);
         // Expect at least a 'from' and an 'execute' recorded
-        $this->assertEquals('from', $query->called[0][0]);
+        static::assertSame('from', $query->called[0][0]);
         $foundExecute = false;
         foreach ($query->called as $c) {
             if ($c[0] === 'execute') {
@@ -102,7 +102,7 @@ final class RelationsBelongsToManyTest extends TestCase
                 break;
             }
         }
-        $this->assertTrue($foundExecute);
+        static::assertTrue($foundExecute);
     }
 }
 
@@ -114,16 +114,16 @@ final class RelationsBelongsToManyReflectionTest extends TestCase
     /** @group sqlite */
     public function test_belongstomany_class_exists_and_methods(): void
     {
-        $this->assertTrue(class_exists('\VersaORM\Relations\BelongsToMany'));
+        static::assertTrue(class_exists('\VersaORM\Relations\BelongsToMany'));
 
         $r = new ReflectionClass('\VersaORM\Relations\BelongsToMany');
 
-        $this->assertTrue($r->hasMethod('__call'));
-        $this->assertTrue($r->hasMethod('query'));
-        $this->assertTrue($r->hasMethod('getResults'));
-        $this->assertTrue($r->hasMethod('attach'));
-        $this->assertTrue($r->hasMethod('sync'));
-        $this->assertTrue($r->hasMethod('detach'));
-        $this->assertTrue($r->hasMethod('addConstraints'));
+        static::assertTrue($r->hasMethod('__call'));
+        static::assertTrue($r->hasMethod('query'));
+        static::assertTrue($r->hasMethod('getResults'));
+        static::assertTrue($r->hasMethod('attach'));
+        static::assertTrue($r->hasMethod('sync'));
+        static::assertTrue($r->hasMethod('detach'));
+        static::assertTrue($r->hasMethod('addConstraints'));
     }
 }

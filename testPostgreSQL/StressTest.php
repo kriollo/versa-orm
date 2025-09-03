@@ -22,6 +22,6 @@ class StressTest extends TestCase
         // - Concurrent connection handling
         // - Memory usage under load
         // - Query performance with large datasets
-        self::assertTrue(true, 'Stress tests not yet implemented');
+        static::assertTrue(true, 'Stress tests not yet implemented');
     }
 }

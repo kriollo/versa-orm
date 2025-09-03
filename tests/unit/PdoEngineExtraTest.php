@@ -18,22 +18,22 @@ if (!class_exists(PdoEngineExtraTest::class)) {
 
             // status initially int (entries count)
             $status = $engine->execute('cache', ['action' => 'status']);
-            $this->assertIsInt($status);
+            static::assertIsInt($status);
 
             $res = $engine->execute('cache', ['action' => 'enable']);
-            $this->assertSame('cache enabled', $res);
+            static::assertSame('cache enabled', $res);
 
             $stats = $engine->execute('cache', ['action' => 'stats']);
-            $this->assertIsArray($stats);
-            $this->assertArrayHasKey('enabled', $stats);
+            static::assertIsArray($stats);
+            static::assertArrayHasKey('enabled', $stats);
 
             // invalidate with no criteria on sqlite should skip
             $inv = $engine->execute('cache', ['action' => 'invalidate']);
-            $this->assertSame('cache invalidation skipped (no criteria)', $inv);
+            static::assertSame('cache invalidation skipped (no criteria)', $inv);
 
             // clear should work
             $clear = $engine->execute('cache', ['action' => 'clear']);
-            $this->assertSame('cache cleared', $clear);
+            static::assertSame('cache cleared', $clear);
 
             // unsupported action throws
             $this->expectException(VersaORMException::class);
@@ -44,19 +44,19 @@ if (!class_exists(PdoEngineExtraTest::class)) {
         {
             PdoEngine::resetMetrics();
             $m = PdoEngine::getMetrics();
-            $this->assertIsArray($m);
-            $this->assertSame(0, $m['objects_hydrated']);
+            static::assertIsArray($m);
+            static::assertSame(0, $m['objects_hydrated']);
 
             PdoEngine::recordHydration(3, 12.34);
             $m2 = PdoEngine::getMetrics();
-            $this->assertSame(3, $m2['objects_hydrated']);
-            $this->assertEqualsWithDelta(12.34, $m2['hydration_ms'], 0.001);
+            static::assertSame(3, $m2['objects_hydrated']);
+            static::assertEqualsWithDelta(12.34, $m2['hydration_ms'], 0.001);
 
             PdoEngine::recordHydrationFast(2, 5.5);
             $m3 = PdoEngine::getMetrics();
-            $this->assertSame(5, $m3['objects_hydrated']);
-            $this->assertSame(1, $m3['hydration_fastpath_uses']);
-            $this->assertSame(2, $m3['hydration_fastpath_rows']);
+            static::assertSame(5, $m3['objects_hydrated']);
+            static::assertSame(1, $m3['hydration_fastpath_uses']);
+            static::assertSame(2, $m3['hydration_fastpath_rows']);
         }
 
         public function testForceDisconnectAndSetLogger(): void
@@ -71,7 +71,7 @@ if (!class_exists(PdoEngineExtraTest::class)) {
             // forceDisconnect should not throw
             $engine->forceDisconnect();
 
-            $this->assertIsArray($called);
+            static::assertIsArray($called);
         }
     }
 }

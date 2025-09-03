@@ -56,7 +56,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_my_sql_specific_types(): void
     {
         if ($this->databaseType !== 'mysql') {
-            self::assertTrue(true); // Excluido por grupo en suite PostgreSQL
+            static::assertTrue(true); // Excluido por grupo en suite PostgreSQL
 
             return;
         }
@@ -68,30 +68,30 @@ class DatabaseSpecificTypesTest extends TestCase
         // Test ENUM
         $model->status = 'active';
         $model->store();
-        self::assertSame('active', $model->status);
+        static::assertSame('active', $model->status);
 
         // Test SET
         $model->tags = ['tag1', 'tag2', 'tag3'];
         $model->store();
-        self::assertIsArray($model->tags);
-        self::assertContains('tag1', $model->tags);
+        static::assertIsArray($model->tags);
+        static::assertContains('tag1', $model->tags);
 
         // Test JSON (MySQL 5.7+)
         $jsonData = ['key' => 'value', 'number' => 42];
         $model->metadata = $jsonData;
         $model->store();
-        self::assertSame($jsonData, $model->metadata);
+        static::assertSame($jsonData, $model->metadata);
 
         // Test DECIMAL con precisión
         $model->price = 123.456789;
         $model->store();
-        self::assertIsFloat($model->price);
+        static::assertIsFloat($model->price);
 
         // Test TIMESTAMP vs DATETIME
         $now = new DateTime();
         $model->created_at = $now;
         $model->store();
-        self::assertInstanceOf(DateTime::class, $model->created_at);
+        static::assertInstanceOf(DateTime::class, $model->created_at);
     }
 
     /**
@@ -100,7 +100,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_postgre_sql_specific_types(): void
     {
         if ($this->databaseType !== 'postgresql') {
-            self::assertTrue(true);
+            static::assertTrue(true);
 
             return;
         }
@@ -124,38 +124,38 @@ class DatabaseSpecificTypesTest extends TestCase
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $model->uuid = $uuid;
         $model->store();
-        self::assertSame($uuid, $model->uuid);
+        static::assertSame($uuid, $model->uuid);
 
         // Test JSONB
         $jsonData = ['key' => 'value', 'nested' => ['array' => [1, 2, 3]]];
         $model->data = $jsonData;
         $model->store();
-        self::assertSame($jsonData, $model->data);
+        static::assertSame($jsonData, $model->data);
 
         // Test INET
         $ip = '192.168.1.1';
         $model->ip_address = $ip;
         $model->store();
-        self::assertSame($ip, $model->ip_address);
+        static::assertSame($ip, $model->ip_address);
 
         // Test PostgreSQL Arrays
         $textArray = ['item1', 'item2', 'item3'];
         // Para Postgres ARRAY, usar literal {..}
         $model->text_array = '{' . implode(',', $textArray) . '}';
         $model->store();
-        self::assertIsString($model->text_array);
+        static::assertIsString($model->text_array);
 
         // Test CIDR
         $cidr = '192.168.1.0/24';
         $model->network = $cidr;
         $model->store();
-        self::assertSame($cidr, $model->network);
+        static::assertSame($cidr, $model->network);
 
         // Test MACADDR
         $mac = '08:00:2b:01:02:03';
         $model->mac_address = $mac;
         $model->store();
-        self::assertSame($mac, $model->mac_address);
+        static::assertSame($mac, $model->mac_address);
     }
 
     /**
@@ -164,7 +164,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_sq_lite_specific_types(): void
     {
         if ($this->databaseType !== 'sqlite') {
-            self::assertTrue(true);
+            static::assertTrue(true);
 
             return;
         }
@@ -175,19 +175,19 @@ class DatabaseSpecificTypesTest extends TestCase
         $jsonData = ['key' => 'value', 'number' => 42];
         $model->json_data = $jsonData;
         $model->store();
-        self::assertSame($jsonData, $model->json_data);
+        static::assertSame($jsonData, $model->json_data);
 
         // SQLite BLOB
         $binaryData = base64_encode('binary data test');
         $model->blob_data = $binaryData;
         $model->store();
-        self::assertSame($binaryData, $model->blob_data);
+        static::assertSame($binaryData, $model->blob_data);
 
         // SQLite maneja fechas como strings
         $dateString = '2024-01-15 12:30:45';
         $model->datetime_field = $dateString;
         $model->store();
-        self::assertIsString($model->datetime_field);
+        static::assertIsString($model->datetime_field);
     }
 
     public function test_type_casting_consistency(): void
@@ -197,21 +197,21 @@ class DatabaseSpecificTypesTest extends TestCase
         // Test casting de string a JSON
         $model->metadata = '{"key": "value"}';
         $casted = $model->castToPhpType('metadata', $model->metadata);
-        self::assertIsArray($casted);
-        self::assertSame(['key' => 'value'], $casted);
+        static::assertIsArray($casted);
+        static::assertSame(['key' => 'value'], $casted);
 
         // Test casting de array a JSON string para DB
         $array = ['key' => 'value', 'number' => 42];
         $casted = $model->castToDatabaseType('metadata', $array);
-        self::assertIsString($casted);
-        self::assertSame('{"key":"value","number":42}', $casted);
+        static::assertIsString($casted);
+        static::assertSame('{"key":"value","number":42}', $casted);
 
         // Test UUID validation
         $validUuid = '550e8400-e29b-41d4-a716-446655440000';
-        self::assertTrue($this->isValidUuid($validUuid));
+        static::assertTrue($this->isValidUuid($validUuid));
 
         $invalidUuid = 'not-a-uuid';
-        self::assertFalse($this->isValidUuid($invalidUuid));
+        static::assertFalse($this->isValidUuid($invalidUuid));
     }
 
     public function test_binary_data_handling(): void
@@ -235,7 +235,7 @@ class DatabaseSpecificTypesTest extends TestCase
         $model->store();
 
         $decoded = base64_decode($model->binary_field, true);
-        self::assertSame($originalData, $decoded);
+        static::assertSame($originalData, $decoded);
     }
 
     public function test_complex_type_mapping(): void
@@ -268,9 +268,9 @@ class DatabaseSpecificTypesTest extends TestCase
         $model->complex_data = $complexData;
         $model->store();
 
-        self::assertIsArray($model->complex_data);
-        self::assertSame('dark', $model->complex_data['user_preferences']['theme']);
-        self::assertContains('admin', $model->complex_data['permissions']);
+        static::assertIsArray($model->complex_data);
+        static::assertSame('dark', $model->complex_data['user_preferences']['theme']);
+        static::assertContains('admin', $model->complex_data['permissions']);
     }
 
     public function test_type_validation_errors(): void
@@ -314,8 +314,8 @@ class DatabaseSpecificTypesTest extends TestCase
         $endTime = microtime(true);
         $executionTime = $endTime - $startTime;
 
-        self::assertLessThan(1.0, $executionTime, 'El casting debe ser rápido (<1s)');
-        self::assertSame($largeArray, $backToArray);
+        static::assertLessThan(1.0, $executionTime, 'El casting debe ser rápido (<1s)');
+        static::assertSame($largeArray, $backToArray);
     }
 
     private function getConfigForDatabase(string $type): array

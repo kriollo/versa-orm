@@ -59,7 +59,7 @@ class SetOperationsTest extends TestCase
         sort($values);
         $unique = array_values(array_unique($values));
         sort($unique);
-        self::assertSame($unique, $values, 'UNION debe eliminar duplicados');
+        static::assertSame($unique, $values, 'UNION debe eliminar duplicados');
     }
 
     public function test_union_all_basic(): void
@@ -70,7 +70,7 @@ class SetOperationsTest extends TestCase
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], true);
         $values = array_map(static fn($r) => (int) $r['value'], $rows);
-        self::assertGreaterThan(count(array_unique($values)), count($values), 'UNION ALL debe conservar duplicados');
+        static::assertGreaterThan(count(array_unique($values)), count($values), 'UNION ALL debe conservar duplicados');
     }
 
     public function test_intersect_unsupported(): void

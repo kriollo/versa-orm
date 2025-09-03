@@ -29,18 +29,18 @@ final class QueryBuilderSelectComplexTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('sql', $res);
-        $this->assertArrayHasKey('bindings', $res);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('sql', $res);
+        static::assertArrayHasKey('bindings', $res);
 
         $sql = $res['sql'];
         $bindings = $res['bindings'];
 
-        $this->assertIsString($sql);
-        $this->assertIsArray($bindings);
+        static::assertIsString($sql);
+        static::assertIsArray($bindings);
         $upper = strtoupper($sql);
-        $this->assertStringContainsString('SELECT', $upper);
-        $this->assertStringContainsString('FROM', $upper);
-        $this->assertStringContainsString('JOIN', $upper);
+        static::assertStringContainsString('SELECT', $upper);
+        static::assertStringContainsString('FROM', $upper);
+        static::assertStringContainsString('JOIN', $upper);
     }
 }

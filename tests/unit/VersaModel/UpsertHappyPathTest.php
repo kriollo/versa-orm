@@ -73,9 +73,9 @@ final class UpsertHappyPathTest extends TestCase
         $m->fill(['email' => 'x@example.test']);
         $res = $m->upsert(['email']);
 
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('operation', $res);
-        $this->assertSame('inserted_or_updated', $res['operation']);
-        $this->assertSame(555, $m->getAttribute('id'));
+        static::assertIsArray($res);
+        static::assertArrayHasKey('operation', $res);
+        static::assertSame('inserted_or_updated', $res['operation']);
+        static::assertSame(555, $m->getAttribute('id'));
     }
 }

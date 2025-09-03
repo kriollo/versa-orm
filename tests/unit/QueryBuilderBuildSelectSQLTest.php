@@ -38,11 +38,11 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('sql', $res);
-        $this->assertArrayHasKey('bindings', $res);
-        $this->assertStringContainsString('FROM users', $res['sql']);
-        $this->assertEquals([], $res['bindings']);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('sql', $res);
+        static::assertArrayHasKey('bindings', $res);
+        static::assertStringContainsString('FROM users', $res['sql']);
+        static::assertSame([], $res['bindings']);
     }
 
     public function testBuildSelectSqlWithFromSubAndSelects(): void
@@ -65,9 +65,9 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        $this->assertStringContainsString('FROM (SELECT id FROM users_inner) u', $res['sql']);
-        $this->assertStringContainsString('u.id, u.name', $res['sql']);
-        $this->assertEquals([123], $res['bindings']);
+        static::assertStringContainsString('FROM (SELECT id FROM users_inner) u', $res['sql']);
+        static::assertStringContainsString('u.id, u.name', $res['sql']);
+        static::assertSame([123], $res['bindings']);
     }
 
     public function testBuildSelectSqlWithJoinsAndWheresBindings(): void
@@ -107,10 +107,10 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        $this->assertStringContainsString('INNER JOIN profiles', $res['sql']);
-        $this->assertStringContainsString('ON (profiles.user_id = users.id AND profiles.active = ?)', $res['sql']);
-        $this->assertStringContainsString('WHERE users.id = ?', $res['sql']);
+        static::assertStringContainsString('INNER JOIN profiles', $res['sql']);
+        static::assertStringContainsString('ON (profiles.user_id = users.id AND profiles.active = ?)', $res['sql']);
+        static::assertStringContainsString('WHERE users.id = ?', $res['sql']);
         // Note: buildSelectSQL merges only fromSub and where bindings; join raw bindings are not merged here
-        $this->assertEquals([42], $res['bindings']);
+        static::assertSame([42], $res['bindings']);
     }
 }

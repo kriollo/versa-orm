@@ -17,12 +17,12 @@ final class TimestampsCreateTest extends TestCase
 
         $id = $model->store();
 
-        $this->assertNotNull($id);
+        static::assertNotNull($id);
         $row = self::$orm->exec('SELECT * FROM test_timestamps WHERE id = ?', [$id]);
-        $this->assertIsArray($row);
-        $this->assertNotEmpty($row);
+        static::assertIsArray($row);
+        static::assertNotEmpty($row);
         $record = $row[0];
-        $this->assertArrayHasKey('created_at', $record);
-        $this->assertArrayHasKey('updated_at', $record);
+        static::assertArrayHasKey('created_at', $record);
+        static::assertArrayHasKey('updated_at', $record);
     }
 }

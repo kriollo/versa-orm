@@ -21,23 +21,23 @@ class VersaModelTest extends TestCase
         $user->status = 'active';
         $user->store();
 
-        self::assertNotNull($user->id, 'ID should be set after storing.');
+        static::assertNotNull($user->id, 'ID should be set after storing.');
 
         $dbUser = VersaModel::load('users', $user->id);
-        self::assertSame('Heidi', $dbUser->name);
+        static::assertSame('Heidi', $dbUser->name);
     }
 
     public function test_load(): void
     {
         $user = VersaModel::load('users', 1);
-        self::assertInstanceOf(VersaModel::class, $user);
-        self::assertSame('Alice', $user->name);
+        static::assertInstanceOf(VersaModel::class, $user);
+        static::assertSame('Alice', $user->name);
     }
 
     public function test_load_returns_null_for_non_existent(): void
     {
         $user = VersaModel::load('users', 999);
-        self::assertNull($user);
+        static::assertNull($user);
     }
 
     public function test_update(): void
@@ -48,32 +48,32 @@ class VersaModelTest extends TestCase
         $user->store();
 
         $updatedUser = VersaModel::load('users', 1);
-        self::assertSame('Alicia', $updatedUser->name);
-        self::assertSame('away', $updatedUser->status);
+        static::assertSame('Alicia', $updatedUser->name);
+        static::assertSame('away', $updatedUser->status);
     }
 
     public function test_trash(): void
     {
         $user = VersaModel::load('users', 2);
-        self::assertNotNull($user);
+        static::assertNotNull($user);
 
         $user->trash();
 
         $deletedUser = VersaModel::load('users', 2);
-        self::assertNull($deletedUser);
+        static::assertNull($deletedUser);
     }
 
     public function test_magic_methods(): void
     {
         $user = VersaModel::dispense('users');
         $user->name = 'Test';
-        self::assertSame('Test', $user->name);
+        static::assertSame('Test', $user->name);
 
-        self::assertTrue(isset($user->name));
-        self::assertFalse(isset($user->non_existent_prop));
+        static::assertTrue(isset($user->name));
+        static::assertFalse(isset($user->non_existent_prop));
 
         $user->name = null;
-        self::assertFalse(isset($user->name));
+        static::assertFalse(isset($user->name));
     }
 
     public function test_export(): void
@@ -81,9 +81,9 @@ class VersaModelTest extends TestCase
         $user = VersaModel::load('users', 1);
         $data = $user->export();
 
-        self::assertIsArray($data);
-        self::assertSame(1, $data['id']);
-        self::assertSame('Alice', $data['name']);
+        static::assertIsArray($data);
+        static::assertSame(1, $data['id']);
+        static::assertSame('Alice', $data['name']);
     }
 
     public function test_export_all(): void
@@ -91,28 +91,28 @@ class VersaModelTest extends TestCase
         $users = VersaModel::findAll('users', 'status = ?', ['active']);
         $data = VersaModel::exportAll($users);
 
-        self::assertCount(2, $data);
-        self::assertIsArray($data[0]);
-        self::assertSame('Alice', $data[0]['name']);
+        static::assertCount(2, $data);
+        static::assertIsArray($data[0]);
+        static::assertSame('Alice', $data[0]['name']);
     }
 
     public function test_find_all_static(): void
     {
         $users = VersaModel::findAll('users', 'id > ?', [1]);
-        self::assertCount(2, $users);
-        self::assertInstanceOf(VersaModel::class, $users[0]);
+        static::assertCount(2, $users);
+        static::assertInstanceOf(VersaModel::class, $users[0]);
     }
 
     public function test_find_one_static(): void
     {
         $user = VersaModel::findOne('users', 1);
-        self::assertInstanceOf(VersaModel::class, $user);
-        self::assertSame(1, $user->id);
+        static::assertInstanceOf(VersaModel::class, $user);
+        static::assertSame(1, $user->id);
     }
 
     public function test_count_static(): void
     {
         $count = VersaModel::count('users', 'status = ?', ['active']);
-        self::assertSame(2, $count);
+        static::assertSame(2, $count);
     }
 }

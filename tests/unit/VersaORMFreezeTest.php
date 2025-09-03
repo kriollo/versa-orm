@@ -39,7 +39,7 @@ class VersaORMFreezeTest extends TestCase
         $orm = new VersaORM();
         $orm->setConfig(['driver' => 'sqlite', 'database' => ':memory:']);
         $orm->freezeModel('User', true);
-        $this->assertTrue($orm->isModelFrozen('User'));
+        static::assertTrue($orm->isModelFrozen('User'));
 
         $this->expectException(\InvalidArgumentException::class);
         $orm->isModelFrozen('');

@@ -22,17 +22,17 @@ class CacheTest extends TestCase
     public function test_cache_enable(): void
     {
         $result = self::$orm->cache('enable');
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertStringContainsString('enabled', $result['data']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertStringContainsString('enabled', $result['data']);
     }
 
     public function test_cache_disable(): void
     {
         $result = self::$orm->cache('disable');
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertStringContainsString('disabled', $result['data']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertStringContainsString('disabled', $result['data']);
     }
 
     public function test_cache_clear(): void
@@ -42,18 +42,18 @@ class CacheTest extends TestCase
 
         // Limpiar caché
         $result = self::$orm->cache('clear');
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertStringContainsString('cleared', $result['data']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertStringContainsString('cleared', $result['data']);
     }
 
     public function test_cache_status(): void
     {
         $result = self::$orm->cache('status');
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertIsInt($result['data']);
-        self::assertGreaterThanOrEqual(0, $result['data']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertIsInt($result['data']);
+        static::assertGreaterThanOrEqual(0, $result['data']);
     }
 
     public function test_cache_stats(): void
@@ -62,10 +62,10 @@ class CacheTest extends TestCase
         self::$orm->cache('enable');
 
         $result = self::$orm->cache('status');
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertIsInt($result['data']);
-        self::assertGreaterThanOrEqual(0, $result['data']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertIsInt($result['data']);
+        static::assertGreaterThanOrEqual(0, $result['data']);
     }
 
     // Comentadas temporalmente - acciones no implementadas en backend
@@ -87,11 +87,11 @@ class CacheTest extends TestCase
         $users2 = self::$orm->table('users')->where('status', '=', 'active')->get();
 
         // Los resultados deberían ser equivalentes (no necesariamente el mismo objeto)
-        self::assertEquals($users1, $users2);
+        static::assertSame($users1, $users2);
 
         // Verificar que el caché está activo
         $status = self::$orm->cache('status');
-        self::assertSame('success', $status['status']);
+        static::assertSame('success', $status['status']);
     }
 
     public function test_cache_invalidation_after_insert(): void
@@ -118,7 +118,7 @@ class CacheTest extends TestCase
         $updatedCount = count($updatedUsers);
 
         // Debería haber un usuario más
-        self::assertSame($initialCount + 1, $updatedCount);
+        static::assertSame($initialCount + 1, $updatedCount);
 
         // Limpiar el usuario de prueba
         self::$orm->table('users')->where('email', '=', 'cache.test@example.com')->delete();
@@ -140,7 +140,7 @@ class CacheTest extends TestCase
         // Consultar de nuevo (debería ir a la base de datos)
         $updatedUser = self::$orm->table('users')->where('email', '=', 'alice@example.com')->first();
 
-        self::assertSame('updated_test', $updatedUser->status);
+        static::assertSame('updated_test', $updatedUser->status);
 
         // Restaurar el estado original
         self::$orm->table('users')->where('email', '=', 'alice@example.com')->update(['status' => $originalStatus]);
@@ -163,7 +163,7 @@ class CacheTest extends TestCase
 
         // Hacer una consulta para poblar caché
         $user = self::$orm->table('users')->where('email', '=', 'delete.test@example.com')->first();
-        self::assertNotNull($user);
+        static::assertNotNull($user);
 
         // Eliminar el usuario (esto debería invalidar el caché)
         self::$orm->table('users')->where('email', '=', 'delete.test@example.com')->delete();
@@ -171,7 +171,7 @@ class CacheTest extends TestCase
         // Consultar de nuevo (debería ir a la base de datos)
         $deletedUser = self::$orm->table('users')->where('email', '=', 'delete.test@example.com')->first();
 
-        self::assertNull($deletedUser);
+        static::assertNull($deletedUser);
     }
 
     public function test_invalid_cache_action(): void

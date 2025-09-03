@@ -26,15 +26,15 @@ class StoreAllTest extends TestCase
         $u2->status = 'active';
 
         $ids = VersaModel::storeAll([$u1, $u2]);
-        self::assertCount(2, $ids);
-        self::assertNotNull($ids[0]);
-        self::assertNotNull($ids[1]);
-        self::assertSame($ids[0], $u1->id);
-        self::assertSame($ids[1], $u2->id);
+        static::assertCount(2, $ids);
+        static::assertNotNull($ids[0]);
+        static::assertNotNull($ids[1]);
+        static::assertSame($ids[0], $u1->id);
+        static::assertSame($ids[1], $u2->id);
     }
 
     public function test_store_all_with_empty_array_returns_empty(): void
     {
-        self::assertSame([], VersaModel::storeAll([]));
+        static::assertSame([], VersaModel::storeAll([]));
     }
 }

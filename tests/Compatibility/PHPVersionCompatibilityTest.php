@@ -68,7 +68,7 @@ class PHPVersionCompatibilityTest extends TestCase
     {
         $currentVersion = self::getCurrentPHPVersion();
 
-        $this->assertContains(
+        static::assertContains(
             $currentVersion,
             self::$supportedVersions,
             "PHP version {$currentVersion} is not in supported versions list",
@@ -101,14 +101,14 @@ class PHPVersionCompatibilityTest extends TestCase
         ];
 
         $orm = new VersaORM($config);
-        $this->assertInstanceOf(VersaORM::class, $orm);
+        static::assertInstanceOf(VersaORM::class, $orm);
 
         // Test basic functionality
         try {
             $orm->exec('SELECT 1');
-            $this->assertTrue(true, 'Database connection works');
+            static::assertTrue(true, 'Database connection works');
         } catch (Exception $e) {
-            self::fail('Database connection failed: ' . $e->getMessage());
+            static::fail('Database connection failed: ' . $e->getMessage());
         }
     }
 
@@ -125,7 +125,7 @@ class PHPVersionCompatibilityTest extends TestCase
 
         $orm = new VersaORM($config);
         $qb = $orm->table('test');
-        $this->assertInstanceOf(QueryBuilder::class, $qb);
+        static::assertInstanceOf(QueryBuilder::class, $qb);
     }
 
     /**
@@ -135,20 +135,20 @@ class PHPVersionCompatibilityTest extends TestCase
     public function test_ph_p74_specific_features(): void
     {
         if (!$this->isVersionAtLeast('7.4')) {
-            self::markTestSkipped('PHP 7.4+ required for this test');
+            static::markTestSkipped('PHP 7.4+ required for this test');
         }
 
         // Test typed properties (PHP 7.4+)
-        $this->assertTrue(self::$versionFeatures['typed_properties']);
+        static::assertTrue(self::$versionFeatures['typed_properties']);
 
         // Test arrow functions (PHP 7.4+)
-        $this->assertTrue(self::$versionFeatures['arrow_functions']);
+        static::assertTrue(self::$versionFeatures['arrow_functions']);
 
         // Test null coalescing assignment operator (PHP 7.4+)
-        $this->assertTrue(self::$versionFeatures['null_coalescing_assignment']);
+        static::assertTrue(self::$versionFeatures['null_coalescing_assignment']);
 
         // Test spread operator in array expressions (PHP 7.4+)
-        $this->assertTrue(self::$versionFeatures['array_spread']);
+        static::assertTrue(self::$versionFeatures['array_spread']);
     }
 
     /**
@@ -158,26 +158,26 @@ class PHPVersionCompatibilityTest extends TestCase
     public function test_ph_p80_specific_features(): void
     {
         if (!$this->isVersionAtLeast('8.0')) {
-            self::markTestSkipped('PHP 8.0+ required for this test');
+            static::markTestSkipped('PHP 8.0+ required for this test');
         }
 
         // Test named arguments (PHP 8.0+)
-        $this->assertTrue(self::$versionFeatures['named_arguments']);
+        static::assertTrue(self::$versionFeatures['named_arguments']);
 
         // Test attributes (PHP 8.0+)
-        $this->assertTrue(self::$versionFeatures['attributes']);
+        static::assertTrue(self::$versionFeatures['attributes']);
 
         // Test constructor property promotion (PHP 8.0+)
-        $this->assertTrue(self::$versionFeatures['constructor_promotion']);
+        static::assertTrue(self::$versionFeatures['constructor_promotion']);
 
         // Test union types (PHP 8.0+)
-        $this->assertTrue(self::$versionFeatures['union_types']);
+        static::assertTrue(self::$versionFeatures['union_types']);
 
         // Test match expression (PHP 8.0+)
-        $this->assertTrue(self::$versionFeatures['match_expression']);
+        static::assertTrue(self::$versionFeatures['match_expression']);
 
         // Test nullsafe operator (PHP 8.0+)
-        $this->assertTrue(self::$versionFeatures['nullsafe_operator']);
+        static::assertTrue(self::$versionFeatures['nullsafe_operator']);
     }
 
     /**
@@ -187,23 +187,23 @@ class PHPVersionCompatibilityTest extends TestCase
     public function test_ph_p81_specific_features(): void
     {
         if (!$this->isVersionAtLeast('8.1')) {
-            self::markTestSkipped('PHP 8.1+ required for this test');
+            static::markTestSkipped('PHP 8.1+ required for this test');
         }
 
         // Test enums (PHP 8.1+)
-        $this->assertTrue(self::$versionFeatures['enums']);
+        static::assertTrue(self::$versionFeatures['enums']);
 
         // Test readonly properties (PHP 8.1+)
-        $this->assertTrue(self::$versionFeatures['readonly_properties']);
+        static::assertTrue(self::$versionFeatures['readonly_properties']);
 
         // Test intersection types (PHP 8.1+)
-        $this->assertTrue(self::$versionFeatures['intersection_types']);
+        static::assertTrue(self::$versionFeatures['intersection_types']);
 
         // Test first-class callable syntax (PHP 8.1+)
-        $this->assertTrue(self::$versionFeatures['first_class_callables']);
+        static::assertTrue(self::$versionFeatures['first_class_callables']);
 
         // Test new in initializers (PHP 8.1+)
-        $this->assertTrue(self::$versionFeatures['new_in_initializers']);
+        static::assertTrue(self::$versionFeatures['new_in_initializers']);
     }
 
     /**
@@ -213,17 +213,17 @@ class PHPVersionCompatibilityTest extends TestCase
     public function test_ph_p82_specific_features(): void
     {
         if (!$this->isVersionAtLeast('8.2')) {
-            self::markTestSkipped('PHP 8.2+ required for this test');
+            static::markTestSkipped('PHP 8.2+ required for this test');
         }
 
         // Test readonly classes (PHP 8.2+)
-        $this->assertTrue(self::$versionFeatures['readonly_classes']);
+        static::assertTrue(self::$versionFeatures['readonly_classes']);
 
         // Test DNF types (PHP 8.2+)
-        $this->assertTrue(self::$versionFeatures['dnf_types']);
+        static::assertTrue(self::$versionFeatures['dnf_types']);
 
         // Test constants in traits (PHP 8.2+)
-        $this->assertTrue(self::$versionFeatures['constants_in_traits']);
+        static::assertTrue(self::$versionFeatures['constants_in_traits']);
     }
 
     /**
@@ -233,17 +233,17 @@ class PHPVersionCompatibilityTest extends TestCase
     public function test_ph_p83_specific_features(): void
     {
         if (!$this->isVersionAtLeast('8.3')) {
-            self::markTestSkipped('PHP 8.3+ required for this test');
+            static::markTestSkipped('PHP 8.3+ required for this test');
         }
 
         // Test typed class constants (PHP 8.3+)
-        $this->assertTrue(self::$versionFeatures['typed_class_constants']);
+        static::assertTrue(self::$versionFeatures['typed_class_constants']);
 
         // Test dynamic class constant fetch (PHP 8.3+)
-        $this->assertTrue(self::$versionFeatures['dynamic_class_constant_fetch']);
+        static::assertTrue(self::$versionFeatures['dynamic_class_constant_fetch']);
 
         // Test override attribute (PHP 8.3+)
-        $this->assertTrue(self::$versionFeatures['override_attribute']);
+        static::assertTrue(self::$versionFeatures['override_attribute']);
     }
 
     /**
@@ -269,7 +269,7 @@ class PHPVersionCompatibilityTest extends TestCase
         $memoryUsed = $finalMemory - $initialMemory;
 
         // Memory usage should be reasonable (less than 10MB for 10 instances)
-        $this->assertLessThan(
+        static::assertLessThan(
             10 * 1024 * 1024,
             $memoryUsed,
             'Memory usage too high: ' . number_format(($memoryUsed / 1024) / 1024, 2) . 'MB',
@@ -306,7 +306,7 @@ class PHPVersionCompatibilityTest extends TestCase
         $executionTime = $endTime - $startTime;
 
         // Performance should be reasonable (less than 5 seconds for 1000 iterations)
-        $this->assertLessThan(
+        static::assertLessThan(
             5.0,
             $executionTime,
             "Performance too slow: {$executionTime}s for {$iterations} iterations",
@@ -336,14 +336,14 @@ class PHPVersionCompatibilityTest extends TestCase
         ];
 
         $orm = new VersaORM($config);
-        $this->assertInstanceOf(VersaORM::class, $orm);
+        static::assertInstanceOf(VersaORM::class, $orm);
 
         // Test that we can handle basic operations without errors
         try {
             $orm->exec('SELECT 1');
-            $this->assertTrue(true, 'Basic operation succeeded');
+            static::assertTrue(true, 'Basic operation succeeded');
         } catch (Exception $e) {
-            self::fail('Unexpected exception: ' . $e->getMessage());
+            static::fail('Unexpected exception: ' . $e->getMessage());
         }
     }
 
@@ -363,11 +363,11 @@ class PHPVersionCompatibilityTest extends TestCase
 
         // Test return type declarations
         $version = $orm->version();
-        $this->assertIsString($version);
+        static::assertIsString($version);
 
         // Test parameter type declarations
         $qb = $orm->table('users');
-        $this->assertInstanceOf(QueryBuilder::class, $qb);
+        static::assertInstanceOf(QueryBuilder::class, $qb);
     }
 
     /**

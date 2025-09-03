@@ -41,15 +41,15 @@ final class QueryBuilderBuildSubquerySqlAndBindingsTest extends TestCase
 
         $res = $m->invoke($qb, $inner);
 
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('sql', $res);
-        $this->assertArrayHasKey('bindings', $res);
-        $this->assertStringContainsString('SELECT id, price FROM items', $res['sql']);
-        $this->assertStringContainsString('WHERE price > ?', $res['sql']);
-        $this->assertStringContainsString('GROUP BY category', $res['sql']);
-        $this->assertStringContainsString('HAVING price > ?', $res['sql']);
-        $this->assertStringContainsString('ORDER BY id DESC', $res['sql']);
-        $this->assertStringContainsString('LIMIT 10', $res['sql']);
-        $this->assertEquals([100, 1000], $res['bindings']);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('sql', $res);
+        static::assertArrayHasKey('bindings', $res);
+        static::assertStringContainsString('SELECT id, price FROM items', $res['sql']);
+        static::assertStringContainsString('WHERE price > ?', $res['sql']);
+        static::assertStringContainsString('GROUP BY category', $res['sql']);
+        static::assertStringContainsString('HAVING price > ?', $res['sql']);
+        static::assertStringContainsString('ORDER BY id DESC', $res['sql']);
+        static::assertStringContainsString('LIMIT 10', $res['sql']);
+        static::assertSame([100, 1000], $res['bindings']);
     }
 }

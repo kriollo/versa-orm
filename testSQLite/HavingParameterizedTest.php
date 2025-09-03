@@ -15,9 +15,9 @@ final class HavingParameterizedTest extends TestCase
             ->having('COUNT(*)', '>', 1)
             ->get();
 
-        self::assertCount(1, $results);
-        self::assertSame('active', $results[0]['status']);
-        self::assertSame(2, $results[0]['cnt']);
+        static::assertCount(1, $results);
+        static::assertSame('active', $results[0]['status']);
+        static::assertSame(2, $results[0]['cnt']);
     }
 
     public function test_having_count_between_parametrized(): void
@@ -31,8 +31,8 @@ final class HavingParameterizedTest extends TestCase
             ->orderBy('status', 'asc')
             ->get();
 
-        self::assertCount(2, $results);
-        self::assertSame('active', $results[0]['status']);
-        self::assertSame('inactive', $results[1]['status']);
+        static::assertCount(2, $results);
+        static::assertSame('active', $results[0]['status']);
+        static::assertSame('inactive', $results[1]['status']);
     }
 }

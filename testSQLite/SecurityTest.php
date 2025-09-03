@@ -17,14 +17,14 @@ class SecurityTest extends TestCase
     {
         $malicious = "' OR 1=1 --";
         $users = self::$orm->table('users')->where('email', '=', $malicious)->getAll();
-        self::assertCount(0, $users);
+        static::assertCount(0, $users);
     }
 
     public function test_sql_injection_boolean_attack(): void
     {
         foreach (["' OR 1=1--", "' OR 'a'='a"] as $attack) {
             $users = self::$orm->table('users')->where('email', '=', $attack)->getAll();
-            self::assertCount(0, $users, 'Boolean injection no bloqueada');
+            static::assertCount(0, $users, 'Boolean injection no bloqueada');
         }
     }
 
@@ -33,9 +33,9 @@ class SecurityTest extends TestCase
         foreach (['users; DROP TABLE posts;', 'table--comment', "users'name"] as $tbl) {
             try {
                 self::$orm->table($tbl)->count();
-                self::fail('Nombre de tabla malicioso aceptado: ' . $tbl);
+                static::fail('Nombre de tabla malicioso aceptado: ' . $tbl);
             } catch (VersaORMException $e) {
-                self::assertStringContainsString('error', strtolower($e->getMessage()));
+                static::assertStringContainsString('error', strtolower($e->getMessage()));
             }
         }
     }
@@ -45,9 +45,9 @@ class SecurityTest extends TestCase
         foreach (['id;DROP', 'col--x', "field'name"] as $col) {
             try {
                 self::$orm->table('users')->select([$col])->count();
-                self::fail('Nombre de columna malicioso aceptado: ' . $col);
+                static::fail('Nombre de columna malicioso aceptado: ' . $col);
             } catch (VersaORMException $e) {
-                self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+                static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
             }
         }
     }
@@ -56,24 +56,24 @@ class SecurityTest extends TestCase
     {
         try {
             self::$orm->table('users')->orderBy('id; DROP TABLE users;', 'asc')->count();
-            self::fail('ORDER BY malicioso aceptado');
+            static::fail('ORDER BY malicioso aceptado');
         } catch (VersaORMException $e) {
-            self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+            static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
         }
     }
 
     public function test_limit_casting(): void
     {
         $one = self::$orm->table('users')->limit('1')->getAll();
-        self::assertLessThanOrEqual(1, count($one));
+        static::assertLessThanOrEqual(1, count($one));
     }
 
     public function test_bind_parameter_injection(): void
     {
         foreach (["'; DROP TABLE users; --", "1' UNION SELECT"] as $bind) {
             $res = self::$orm->exec('SELECT * FROM users WHERE email = ?', [$bind]);
-            self::assertIsArray($res);
-            self::assertCount(0, $res);
+            static::assertIsArray($res);
+            static::assertCount(0, $res);
         }
     }
 
@@ -81,6 +81,6 @@ class SecurityTest extends TestCase
     {
         $attack = "admin\x00'; DROP TABLE users; --";
         $users = self::$orm->table('users')->where('name', '=', $attack)->getAll();
-        self::assertCount(0, $users);
+        static::assertCount(0, $users);
     }
 }

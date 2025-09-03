@@ -15,14 +15,14 @@ class VersaModelBehaviorTest extends TestCase
 {
     public function testTableNameFromStaticProperty(): void
     {
-        $this->assertSame('custom_table', TestModel::tableName());
+        static::assertSame('custom_table', TestModel::tableName());
     }
 
     public function testSetAndGetGlobalOrm(): void
     {
         $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
         VersaModel::setORM($orm);
-        $this->assertSame($orm, VersaModel::getGlobalORM());
+        static::assertSame($orm, VersaModel::getGlobalORM());
         VersaModel::setORM(null);
     }
 
@@ -40,7 +40,7 @@ class VersaModelBehaviorTest extends TestCase
         ];
 
         $m->loadInstance($data);
-        $this->assertSame('Bob', $m->name);
-        $this->assertTrue(isset($m->id));
+        static::assertSame('Bob', $m->name);
+        static::assertTrue(isset($m->id));
     }
 }

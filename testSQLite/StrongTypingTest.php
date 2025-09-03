@@ -26,13 +26,13 @@ class StrongTypingTest extends TestCase
 
     public function test_cast_int(): void
     {
-        self::assertSame(123, $this->model->castToPhpType('id', '123'));
+        static::assertSame(123, $this->model->castToPhpType('id', '123'));
     }
 
     public function test_cast_json(): void
     {
         $arr = $this->model->castToPhpType('settings', '{"a":1}');
-        self::assertSame(['a' => 1], $arr);
+        static::assertSame(['a' => 1], $arr);
     }
 
     public function test_invalid_json(): void
@@ -44,7 +44,7 @@ class StrongTypingTest extends TestCase
     public function test_uuid_validation(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
-        self::assertSame($uuid, $this->model->castToPhpType('uuid', $uuid));
+        static::assertSame($uuid, $this->model->castToPhpType('uuid', $uuid));
     }
 
     public function test_invalid_uuid(): void
@@ -55,7 +55,7 @@ class StrongTypingTest extends TestCase
 
     public function test_enum_valid(): void
     {
-        self::assertSame('active', $this->model->castToPhpType('status', 'active'));
+        static::assertSame('active', $this->model->castToPhpType('status', 'active'));
     }
 
     public function test_enum_invalid(): void
@@ -66,7 +66,7 @@ class StrongTypingTest extends TestCase
 
     public function test_set_valid(): void
     {
-        self::assertSame(['work', 'personal'], $this->model->castToPhpType('tags', 'work,personal'));
+        static::assertSame(['work', 'personal'], $this->model->castToPhpType('tags', 'work,personal'));
     }
 
     public function test_set_invalid(): void
@@ -81,7 +81,7 @@ class StrongTypingTest extends TestCase
 
         // Establecer timezone
         $orm->setTimezone('America/Mexico_City');
-        self::assertSame('America/Mexico_City', $orm->getTimezone());
+        static::assertSame('America/Mexico_City', $orm->getTimezone());
 
         // Definir un modelo con propertyTypes para forzar cast a datetime
         $modelClass = new class('tz_table', $orm) extends VersaModel {
@@ -95,8 +95,8 @@ class StrongTypingTest extends TestCase
         $timestamp = 1700000000; // unix timestamp fijo
 
         $phpDt = $model->castToPhpType('any', $timestamp);
-        self::assertInstanceOf(\DateTimeInterface::class, $phpDt);
-        self::assertSame('America/Mexico_City', $phpDt->getTimezone()->getName());
+        static::assertInstanceOf(\DateTimeInterface::class, $phpDt);
+        static::assertSame('America/Mexico_City', $phpDt->getTimezone()->getName());
     }
 }
 

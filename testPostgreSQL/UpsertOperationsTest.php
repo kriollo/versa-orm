@@ -30,16 +30,16 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($productData, ['sku'], ['name', 'price', 'stock']); // Clave única // Campos a actualizar si existe
 
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertSame('inserted', $result['operation']);
-        self::assertSame(1, $result['rows_affected']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertSame('inserted', $result['operation']);
+        static::assertSame(1, $result['rows_affected']);
 
         // Verificar que se insertó correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'UPSERT-NEW-001')->firstArray();
-        self::assertNotNull($inserted);
-        self::assertSame('Nuevo Producto Upsert', $inserted['name']);
-        self::assertEquals(299.99, (float) $inserted['price']);
+        static::assertNotNull($inserted);
+        static::assertSame('Nuevo Producto Upsert', $inserted['name']);
+        static::assertSame(299.99, (float) $inserted['price']);
     }
 
     public function test_upsert_existing_record(): void
@@ -54,17 +54,17 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($existingProduct, ['sku'], ['name', 'price', 'stock']); // Clave única // Solo actualizar estos campos
 
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertSame('updated', $result['operation']);
-        self::assertSame(1, $result['rows_affected']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertSame('updated', $result['operation']);
+        static::assertSame(1, $result['rows_affected']);
 
         // Verificar que se actualizó correctamente
         $updated = self::$orm->table('products')->where('sku', '=', 'P001')->firstArray();
-        self::assertNotNull($updated);
-        self::assertSame('Laptop Actualizada', $updated['name']);
-        self::assertEquals(1299.99, (float) $updated['price']);
-        self::assertSame(25, $updated['stock']);
+        static::assertNotNull($updated);
+        static::assertSame('Laptop Actualizada', $updated['name']);
+        static::assertSame(1299.99, (float) $updated['price']);
+        static::assertSame(25, $updated['stock']);
     }
 
     public function test_upsert_with_multiple_unique_keys(): void
@@ -78,13 +78,13 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('users')->upsert($userData, ['email'], ['name', 'status']); // Clave única // Campos a actualizar
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('updated', $result['operation']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('updated', $result['operation']);
 
         // Verificar actualización
         $updated = self::$orm->table('users')->where('email', '=', 'alice@example.com')->firstArray();
-        self::assertSame('Test Usuario', $updated['name']);
-        self::assertSame('super_active', $updated['status']);
+        static::assertSame('Test Usuario', $updated['name']);
+        static::assertSame('super_active', $updated['status']);
     }
 
     public function test_upsert_with_empty_unique_keys(): void
@@ -119,13 +119,13 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('users')->insertOrUpdate($userData, ['email']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('inserted', $result['operation']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('inserted', $result['operation']);
 
         // Verificar inserción
         $inserted = self::$orm->table('users')->where('email', '=', 'insertupdate@example.com')->firstArray();
-        self::assertNotNull($inserted);
-        self::assertSame('New InsertOrUpdate User', $inserted['name']);
+        static::assertNotNull($inserted);
+        static::assertSame('New InsertOrUpdate User', $inserted['name']);
     }
 
     public function test_insert_or_update_existing_record(): void
@@ -139,13 +139,13 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('users')->insertOrUpdate($updatedData, ['email']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('updated', $result['operation']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('updated', $result['operation']);
 
         // Verificar actualización
         $updated = self::$orm->table('users')->where('email', '=', 'alice@example.com')->firstArray();
-        self::assertSame('Alice Updated', $updated['name']);
-        self::assertSame('updated', $updated['status']);
+        static::assertSame('Alice Updated', $updated['name']);
+        static::assertSame('updated', $updated['status']);
     }
 
     // ======================================================================
@@ -163,14 +163,14 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('users')->save($newUser); // Sin ID = inserción
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('inserted', $result['operation']);
-        self::assertIsNumeric($result['id']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('inserted', $result['operation']);
+        static::assertIsNumeric($result['id']);
 
         // Verificar inserción
         $inserted = self::$orm->table('users')->where('email', '=', 'save@example.com')->firstArray();
-        self::assertNotNull($inserted);
-        self::assertSame('Usuario Save', $inserted['name']);
+        static::assertNotNull($inserted);
+        static::assertSame('Usuario Save', $inserted['name']);
     }
 
     public function test_save_existing_record(): void
@@ -188,13 +188,13 @@ class UpsertOperationsTest extends TestCase
 
         $result = self::$orm->table('users')->save($existingUserUpdate);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('updated', $result['operation']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('updated', $result['operation']);
 
         // Verificar actualización
         $updated = self::$orm->table('users')->where('email', '=', 'alice@example.com')->firstArray();
-        self::assertSame('Alice Actualizada', $updated['name']);
-        self::assertSame('super_active', $updated['status']);
+        static::assertSame('Alice Actualizada', $updated['name']);
+        static::assertSame('super_active', $updated['status']);
     }
 
     public function test_save_without_required_data(): void
@@ -223,13 +223,13 @@ class UpsertOperationsTest extends TestCase
             ->table('users')
             ->createOrUpdate($userData, ['email' => 'createorupdate@example.com'], ['name', 'status']); // Condiciones como clave => valor
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('created', $result['operation']); // createOrUpdate devuelve 'created' no 'inserted'
+        static::assertSame('success', $result['status']);
+        static::assertSame('created', $result['operation']); // createOrUpdate devuelve 'created' no 'inserted'
 
         // Verificar creación
         $created = self::$orm->table('users')->where('email', '=', 'createorupdate@example.com')->firstArray();
-        self::assertNotNull($created);
-        self::assertSame('Usuario CreateOrUpdate', $created['name']);
+        static::assertNotNull($created);
+        static::assertSame('Usuario CreateOrUpdate', $created['name']);
     }
 
     public function test_create_or_update_existing(): void
@@ -246,13 +246,13 @@ class UpsertOperationsTest extends TestCase
             ->table('products')
             ->createOrUpdate($updateData, ['sku' => 'P002'], ['name', 'price', 'stock']); // Condiciones como clave => valor
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('updated', $result['operation']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('updated', $result['operation']);
 
         // Verificar actualización
         $updated = self::$orm->table('products')->where('sku', '=', 'P002')->firstArray();
-        self::assertSame('Smartphone Actualizado', $updated['name']);
-        self::assertEquals(899.99, (float) $updated['price']);
+        static::assertSame('Smartphone Actualizado', $updated['name']);
+        static::assertSame(899.99, (float) $updated['price']);
     }
 
     // ======================================================================
@@ -274,12 +274,12 @@ class UpsertOperationsTest extends TestCase
             ->table('products')
             ->upsert($dataWithNulls, ['sku'], ['name', 'price', 'description', 'stock']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame('inserted', $result['operation']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('inserted', $result['operation']);
 
         // Verificar que se manejó correctamente el NULL
         $inserted = self::$orm->table('products')->where('sku', '=', 'NULL-TEST-001')->firstArray();
-        self::assertNull($inserted['description']);
+        static::assertNull($inserted['description']);
     }
 
     public function test_upsert_with_special_characters(): void
@@ -297,12 +297,12 @@ class UpsertOperationsTest extends TestCase
             ->table('products')
             ->upsert($dataWithSpecialChars, ['sku'], ['name', 'price', 'description', 'stock']);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los caracteres especiales se guardaron correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'SPECIAL-001')->firstArray();
-        self::assertStringContainsString("'comillas'", $inserted['name']);
-        self::assertStringContainsString('ñáéíóú', $inserted['description']);
+        static::assertStringContainsString("'comillas'", $inserted['name']);
+        static::assertStringContainsString('ñáéíóú', $inserted['description']);
     }
 
     public function test_save_with_auto_detection(): void
@@ -317,7 +317,7 @@ class UpsertOperationsTest extends TestCase
         ];
 
         $result1 = self::$orm->table('users')->save($newRecord);
-        self::assertSame('inserted', $result1['operation']);
+        static::assertSame('inserted', $result1['operation']);
         $insertedId = $result1['id'];
 
         // Luego, actualizar el mismo registro con save() (con ID)
@@ -329,12 +329,12 @@ class UpsertOperationsTest extends TestCase
         ];
 
         $result2 = self::$orm->table('users')->save($updateRecord);
-        self::assertSame('updated', $result2['operation']);
+        static::assertSame('updated', $result2['operation']);
 
         // Verificar que se actualizó correctamente
         $final = self::$orm->table('users')->where('email', '=', 'autodetect@example.com')->firstArray();
-        self::assertSame('Auto Detection Updated', $final['name']);
-        self::assertSame('updated', $final['status']);
+        static::assertSame('Auto Detection Updated', $final['name']);
+        static::assertSame('updated', $final['status']);
     }
 
     public function test_performance_with_multiple_upserts(): void
@@ -352,7 +352,7 @@ class UpsertOperationsTest extends TestCase
 
             $result = self::$orm->table('products')->upsert($data, ['sku'], ['name', 'price', 'stock']);
 
-            self::assertSame('success', $result['status']);
+            static::assertSame('success', $result['status']);
         }
 
         $endTime = microtime(true);
@@ -361,9 +361,13 @@ class UpsertOperationsTest extends TestCase
         // Verificar que todas las operaciones fueron exitosas
         $count = self::$orm->table('products')->where('sku', 'LIKE', 'PERF-TEST-%')->count();
 
-        self::assertSame(10, $count);
+        static::assertSame(10, $count);
 
         // El tiempo debe ser razonable (menos de 2 segundos para 10 operaciones)
-        self::assertLessThan(2.0, $executionTime, "10 operaciones upsert tomaron demasiado tiempo: {$executionTime}s");
+        static::assertLessThan(
+            2.0,
+            $executionTime,
+            "10 operaciones upsert tomaron demasiado tiempo: {$executionTime}s",
+        );
     }
 }

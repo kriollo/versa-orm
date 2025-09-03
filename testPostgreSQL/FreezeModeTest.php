@@ -13,15 +13,15 @@ class FreezeModeTest extends TestCase
         $orm = self::$orm;
 
         // Estado inicial
-        self::assertFalse($orm->isFrozen());
+        static::assertFalse($orm->isFrozen());
 
         // Activar y verificar
         $orm->freeze(true);
-        self::assertTrue($orm->isFrozen());
+        static::assertTrue($orm->isFrozen());
 
         // Desactivar y verificar
         $orm->freeze(false);
-        self::assertFalse($orm->isFrozen());
+        static::assertFalse($orm->isFrozen());
     }
 
     public function test_freeze_per_model(): void
@@ -39,15 +39,15 @@ class FreezeModeTest extends TestCase
 
         // Asegurar global off
         $orm->freeze(false);
-        self::assertFalse($orm->isFrozen());
+        static::assertFalse($orm->isFrozen());
 
         // Marcar el modelo como frozen
         $orm->freezeModel($modelClass, true);
-        self::assertTrue($orm->isModelFrozen($modelClass));
+        static::assertTrue($orm->isModelFrozen($modelClass));
 
         // Quitar freeze del modelo
         $orm->freezeModel($modelClass, false);
-        self::assertFalse($orm->isModelFrozen($modelClass));
+        static::assertFalse($orm->isModelFrozen($modelClass));
     }
 
     public function test_model_static_helpers(): void
@@ -67,10 +67,10 @@ class FreezeModeTest extends TestCase
 
         // Usar helpers estáticos
         $modelClass::freeze(true);
-        self::assertTrue($modelClass::isFrozen());
+        static::assertTrue($modelClass::isFrozen());
 
         $modelClass::freeze(false);
-        self::assertFalse($modelClass::isFrozen());
+        static::assertFalse($modelClass::isFrozen());
     }
 }
 

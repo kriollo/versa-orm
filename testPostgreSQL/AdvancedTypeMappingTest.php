@@ -19,8 +19,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('json_field', $jsonString, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['key' => 'value'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['key' => 'value'], $result);
     }
 
     public function test_json_type_conversion_with_already_decoded_data(): void
@@ -31,8 +31,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('json_field', $arrayData, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['key' => 'value'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['key' => 'value'], $result);
     }
 
     public function test_uuid_type_conversion(): void
@@ -43,8 +43,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('uuid_field', $uuid, $fieldSchema);
 
-        self::assertIsString($result);
-        self::assertSame($uuid, $result);
+        static::assertIsString($result);
+        static::assertSame($uuid, $result);
     }
 
     public function test_array_type_conversion_from_json_string(): void
@@ -55,8 +55,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('array_field', $arrayData, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['value1', 'value2'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['value1', 'value2'], $result);
     }
 
     public function test_array_type_conversion_from_array(): void
@@ -67,8 +67,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('array_field', $arrayData, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['value1', 'value2'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['value1', 'value2'], $result);
     }
 
     public function test_array_type_conversion_from_scalar_value(): void
@@ -79,8 +79,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('array_field', $scalarValue, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['single_value'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['single_value'], $result);
     }
 
     public function test_set_type_conversion_from_comma_separated(): void
@@ -91,8 +91,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('set_field', $setValue, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['option1', 'option2', 'option3'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['option1', 'option2', 'option3'], $result);
     }
 
     public function test_enum_type_conversion_from_comma_separated(): void
@@ -103,8 +103,8 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('enum_field', $enumValue, $fieldSchema);
 
-        self::assertIsArray($result);
-        self::assertSame(['active', 'pending'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['active', 'pending'], $result);
     }
 
     public function test_unknown_type_returns_original_value(): void
@@ -115,7 +115,7 @@ class AdvancedTypeMappingTest extends TestCase
 
         $result = $model->convertValueByTypeMapping('unknown_field', $value, $fieldSchema);
 
-        self::assertSame('some_value', $result);
+        static::assertSame('some_value', $result);
     }
 
     public function test_type_mapping_throws_exception_when_type_not_defined(): void
@@ -146,8 +146,8 @@ class AdvancedTypeMappingTest extends TestCase
             'total' => 2,
         ];
 
-        self::assertIsArray($result);
-        self::assertSame($expected, $result);
+        static::assertIsArray($result);
+        static::assertSame($expected, $result);
     }
 
     public function test_load_type_mapping_config(): void
@@ -155,13 +155,13 @@ class AdvancedTypeMappingTest extends TestCase
         $configPath = __DIR__ . '/type_mapping_config.json';
         $config = VersaModel::loadTypeMappingConfig($configPath);
 
-        self::assertIsArray($config);
-        self::assertArrayHasKey('json_field', $config);
-        self::assertArrayHasKey('uuid_field', $config);
-        self::assertArrayHasKey('array_field', $config);
-        self::assertSame('json', $config['json_field']['type']);
-        self::assertSame('uuid', $config['uuid_field']['type']);
-        self::assertSame('array', $config['array_field']['type']);
+        static::assertIsArray($config);
+        static::assertArrayHasKey('json_field', $config);
+        static::assertArrayHasKey('uuid_field', $config);
+        static::assertArrayHasKey('array_field', $config);
+        static::assertSame('json', $config['json_field']['type']);
+        static::assertSame('uuid', $config['uuid_field']['type']);
+        static::assertSame('array', $config['array_field']['type']);
     }
 
     public function test_load_type_mapping_config_file_not_found(): void
@@ -193,7 +193,7 @@ class AdvancedTypeMappingTest extends TestCase
 
         // Establecer timezone
         $orm->setTimezone('America/Mexico_City');
-        self::assertSame('America/Mexico_City', $orm->getTimezone());
+        static::assertSame('America/Mexico_City', $orm->getTimezone());
 
         // Definir un modelo con propertyTypes para forzar cast a datetime
         $modelClass = new class('tz_table', $orm) extends VersaModel {
@@ -207,7 +207,7 @@ class AdvancedTypeMappingTest extends TestCase
         $timestamp = 1700000000; // unix timestamp fijo
 
         $phpDt = $model->castToPhpType('any', $timestamp);
-        self::assertInstanceOf(\DateTimeInterface::class, $phpDt);
-        self::assertSame('America/Mexico_City', $phpDt->getTimezone()->getName());
+        static::assertInstanceOf(\DateTimeInterface::class, $phpDt);
+        static::assertSame('America/Mexico_City', $phpDt->getTimezone()->getName());
     }
 }

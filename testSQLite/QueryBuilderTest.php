@@ -16,17 +16,17 @@ class QueryBuilderTest extends TestCase
     public function test_get_all(): void
     {
         $users = self::$orm->table('users')->getAll();
-        self::assertCount(3, $users);
-        self::assertIsArray($users[0]);
-        self::assertArrayHasKey('email', $users[0]);
+        static::assertCount(3, $users);
+        static::assertIsArray($users[0]);
+        static::assertArrayHasKey('email', $users[0]);
     }
 
     public function test_find_all(): void
     {
         $users = self::$orm->table('users')->findAll();
-        self::assertCount(3, $users);
-        self::assertInstanceOf(VersaModel::class, $users[0]);
-        self::assertSame('alice@example.com', $users[0]->email);
+        static::assertCount(3, $users);
+        static::assertInstanceOf(VersaModel::class, $users[0]);
+        static::assertSame('alice@example.com', $users[0]->email);
     }
 
     public function test_select_specific_columns(): void
@@ -36,86 +36,86 @@ class QueryBuilderTest extends TestCase
             ->select(['id', 'name'])
             ->where('email', '=', 'alice@example.com')
             ->firstArray();
-        self::assertCount(2, $user);
-        self::assertArrayHasKey('id', $user);
-        self::assertArrayHasKey('name', $user);
-        self::assertArrayNotHasKey('email', $user);
+        static::assertCount(2, $user);
+        static::assertArrayHasKey('id', $user);
+        static::assertArrayHasKey('name', $user);
+        static::assertArrayNotHasKey('email', $user);
     }
 
     public function test_first_array(): void
     {
         $user = self::$orm->table('users')->where('status', '=', 'active')->orderBy('id', 'asc')->firstArray();
-        self::assertIsArray($user);
-        self::assertSame('Alice', $user['name']);
+        static::assertIsArray($user);
+        static::assertSame('Alice', $user['name']);
     }
 
     public function test_find_one(): void
     {
         $user = self::$orm->table('users')->where('status', '=', 'active')->orderBy('id', 'asc')->findOne();
-        self::assertInstanceOf(VersaModel::class, $user);
-        self::assertSame('Alice', $user->name);
+        static::assertInstanceOf(VersaModel::class, $user);
+        static::assertSame('Alice', $user->name);
     }
 
     public function test_find(): void
     {
         $user = self::$orm->table('users')->find(1);
-        self::assertInstanceOf(VersaModel::class, $user);
-        self::assertSame('Alice', $user->name);
+        static::assertInstanceOf(VersaModel::class, $user);
+        static::assertSame('Alice', $user->name);
     }
 
     public function test_find_with_custom_pk(): void
     {
         $product = self::$orm->table('products')->find('P001', 'sku');
-        self::assertInstanceOf(VersaModel::class, $product);
-        self::assertSame('Laptop', $product->name);
+        static::assertInstanceOf(VersaModel::class, $product);
+        static::assertSame('Laptop', $product->name);
     }
 
     public function test_count(): void
     {
         $count = self::$orm->table('users')->where('status', '=', 'active')->count();
-        self::assertSame(2, $count);
+        static::assertSame(2, $count);
     }
 
     public function test_exists(): void
     {
         $exists = self::$orm->table('users')->where('email', '=', 'bob@example.com')->exists();
-        self::assertTrue($exists);
+        static::assertTrue($exists);
 
         $doesNotExist = self::$orm->table('users')->where('email', '=', 'nobody@example.com')->exists();
-        self::assertFalse($doesNotExist);
+        static::assertFalse($doesNotExist);
     }
 
     public function test_where(): void
     {
         $users = self::$orm->table('users')->where('status', '=', 'inactive')->findAll();
-        self::assertCount(1, $users);
-        self::assertSame('Bob', $users[0]->name);
+        static::assertCount(1, $users);
+        static::assertSame('Bob', $users[0]->name);
     }
 
     public function test_where_greater_than(): void
     {
         $users = self::$orm->table('users')->where('id', '>', 1)->findAll();
-        self::assertCount(2, $users);
+        static::assertCount(2, $users);
     }
 
     public function test_or_where(): void
     {
         $users = self::$orm->table('users')->where('status', '=', 'inactive')->orWhere('id', '=', 3)->findAll();
-        self::assertCount(2, $users);
+        static::assertCount(2, $users);
     }
 
     public function test_where_in(): void
     {
         $query = self::$orm->table('users')->whereIn('id', [1, 3]);
         $users = $query->findAll();
-        self::assertCount(2, $users);
+        static::assertCount(2, $users);
     }
 
     public function test_where_not_in(): void
     {
         $users = self::$orm->table('users')->whereNotIn('id', [1, 3])->findAll();
-        self::assertCount(1, $users);
-        self::assertSame('Bob', $users[0]->name);
+        static::assertCount(1, $users);
+        static::assertSame('Bob', $users[0]->name);
     }
 
     public function test_where_null(): void
@@ -124,37 +124,37 @@ class QueryBuilderTest extends TestCase
             ->table('posts')
             ->insert(['user_id' => 1, 'title' => 'Draft Post', 'content' => '...', 'published_at' => null]);
         $posts = self::$orm->table('posts')->whereNull('published_at')->findAll();
-        self::assertCount(4, $posts);
+        static::assertCount(4, $posts);
     }
 
     public function test_where_not_null(): void
     {
         self::$orm->table('posts')->where('id', '=', 1)->update(['published_at' => date('Y-m-d H:i:s')]);
         $posts = self::$orm->table('posts')->whereNotNull('published_at')->findAll();
-        self::assertCount(1, $posts);
+        static::assertCount(1, $posts);
     }
 
     public function test_where_between(): void
     {
         $products = self::$orm->table('products')->whereBetween('price', 20, 30)->findAll();
-        self::assertCount(1, $products);
-        self::assertSame('Mouse', $products[0]->name);
+        static::assertCount(1, $products);
+        static::assertSame('Mouse', $products[0]->name);
     }
 
     public function test_where_not_between(): void
     {
         $products = self::$orm->table('products')->whereNotBetween('price', 20, 30)->findAll();
         $names = array_map(fn($p) => $p->name, $products);
-        self::assertContains('Keyboard', $names);
-        self::assertContains('Monitor', $names);
-        self::assertNotContains('Mouse', $names);
+        static::assertContains('Keyboard', $names);
+        static::assertContains('Monitor', $names);
+        static::assertNotContains('Mouse', $names);
     }
 
     public function test_where_raw(): void
     {
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
-        self::assertCount(1, $users);
-        self::assertSame('Alice', $users[0]->name);
+        static::assertCount(1, $users);
+        static::assertSame('Alice', $users[0]->name);
     }
 
     // JOIN Clauses
@@ -167,8 +167,8 @@ class QueryBuilderTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertCount(2, $posts);
-        self::assertSame('Alice', $posts[0]['author']);
+        static::assertCount(2, $posts);
+        static::assertSame('Alice', $posts[0]['author']);
     }
 
     public function test_left_join(): void
@@ -181,30 +181,30 @@ class QueryBuilderTest extends TestCase
             ->whereNull('posts.id')
             ->getAll();
 
-        self::assertCount(2, $users);
+        static::assertCount(2, $users);
     }
 
     // Order, Group, Limit, Offset
     public function test_order_by(): void
     {
         $users = self::$orm->table('users')->orderBy('name', 'desc')->findAll();
-        self::assertSame('Charlie', $users[0]->name);
-        self::assertSame('Bob', $users[1]->name);
-        self::assertSame('Alice', $users[2]->name);
+        static::assertSame('Charlie', $users[0]->name);
+        static::assertSame('Bob', $users[1]->name);
+        static::assertSame('Alice', $users[2]->name);
     }
 
     public function test_limit(): void
     {
         $users = self::$orm->table('users')->limit(2)->orderBy('id', 'asc')->findAll();
-        self::assertCount(2, $users);
-        self::assertSame('Alice', $users[0]->name);
+        static::assertCount(2, $users);
+        static::assertSame('Alice', $users[0]->name);
     }
 
     public function test_offset(): void
     {
         $users = self::$orm->table('users')->limit(1)->offset(1)->orderBy('id', 'asc')->findAll();
-        self::assertCount(1, $users);
-        self::assertSame('Bob', $users[0]->name);
+        static::assertCount(1, $users);
+        static::assertSame('Bob', $users[0]->name);
     }
 
     public function test_group_by(): void
@@ -216,11 +216,11 @@ class QueryBuilderTest extends TestCase
             ->orderBy('status', 'asc')
             ->get();
 
-        self::assertCount(2, $results);
-        self::assertSame('active', $results[0]['status']);
-        self::assertSame(2, $results[0]['count']);
-        self::assertSame('inactive', $results[1]['status']);
-        self::assertSame(1, $results[1]['count']);
+        static::assertCount(2, $results);
+        static::assertSame('active', $results[0]['status']);
+        static::assertSame(2, $results[0]['count']);
+        static::assertSame('inactive', $results[1]['status']);
+        static::assertSame(1, $results[1]['count']);
     }
 
     public function test_group_by_multiple_columns(): void
@@ -232,11 +232,11 @@ class QueryBuilderTest extends TestCase
             ->orderBy('user_id', 'asc')
             ->get();
 
-        self::assertCount(2, $results);
-        self::assertSame(1, $results[0]['user_id']);
-        self::assertSame(2, $results[0]['post_count']);
-        self::assertSame(2, $results[1]['user_id']);
-        self::assertSame(1, $results[1]['post_count']);
+        static::assertCount(2, $results);
+        static::assertSame(1, $results[0]['user_id']);
+        static::assertSame(2, $results[0]['post_count']);
+        static::assertSame(2, $results[1]['user_id']);
+        static::assertSame(1, $results[1]['post_count']);
     }
 
     public function test_having(): void
@@ -248,9 +248,9 @@ class QueryBuilderTest extends TestCase
             ->having('COUNT(*)', '>', 1)
             ->get();
 
-        self::assertCount(1, $results);
-        self::assertSame('active', $results[0]['status']);
-        self::assertSame(2, $results[0]['count']);
+        static::assertCount(1, $results);
+        static::assertSame('active', $results[0]['status']);
+        static::assertSame(2, $results[0]['count']);
     }
 
     public function test_having_multiple_conditions(): void
@@ -264,9 +264,9 @@ class QueryBuilderTest extends TestCase
             ->orderBy('status', 'asc')
             ->get();
 
-        self::assertCount(2, $results);
-        self::assertSame('active', $results[0]['status']);
-        self::assertSame('inactive', $results[1]['status']);
+        static::assertCount(2, $results);
+        static::assertSame('active', $results[0]['status']);
+        static::assertSame('inactive', $results[1]['status']);
     }
 
     // Write Operations
@@ -281,8 +281,8 @@ class QueryBuilderTest extends TestCase
             ]);
 
         $frank = self::$orm->table('users')->where('email', '=', 'frank@example.com')->findOne();
-        self::assertNotNull($frank);
-        self::assertSame('Frank', $frank->name);
+        static::assertNotNull($frank);
+        static::assertSame('Frank', $frank->name);
     }
 
     public function test_insert_get_id(): void
@@ -296,13 +296,13 @@ class QueryBuilderTest extends TestCase
             ]);
 
         // Verificar que el ID devuelto es un entero, no un string
-        self::assertIsInt($id, 'insertGetId() should return an integer');
-        self::assertGreaterThan(0, $id, 'insertGetId() should return a positive integer');
+        static::assertIsInt($id, 'insertGetId() should return an integer');
+        static::assertGreaterThan(0, $id, 'insertGetId() should return a positive integer');
 
         // Verificar que el registro se insertó correctamente
         $grace = self::$orm->table('users')->find($id);
-        self::assertNotNull($grace, 'Should be able to find the inserted record');
-        self::assertSame('Grace', $grace->name);
+        static::assertNotNull($grace, 'Should be able to find the inserted record');
+        static::assertSame('Grace', $grace->name);
     }
 
     public function test_update(): void
@@ -312,19 +312,19 @@ class QueryBuilderTest extends TestCase
             ->where('email', '=', 'alice@example.com')
             ->update(['status' => 'on_vacation']);
 
-        self::assertInstanceOf(QueryBuilder::class, $updated);
+        static::assertInstanceOf(QueryBuilder::class, $updated);
 
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-        self::assertSame('on_vacation', $alice->status);
+        static::assertSame('on_vacation', $alice->status);
     }
 
     public function test_delete(): void
     {
         $deleted = self::$orm->table('users')->where('email', '=', 'bob@example.com')->delete();
 
-        self::assertNull($deleted);
+        static::assertNull($deleted);
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
-        self::assertNull($bob);
+        static::assertNull($bob);
     }
 
     // ================================================================
@@ -348,10 +348,10 @@ class QueryBuilderTest extends TestCase
             ->orderBy('pu.id', 'asc')
             ->getAll();
 
-        self::assertCount(2, $rows);
-        self::assertSame(1, (int) $rows[0]['id']);
-        self::assertSame(2, (int) $rows[1]['id']);
-        self::assertSame('Alice', $rows[0]['author']);
+        static::assertCount(2, $rows);
+        static::assertSame(1, (int) $rows[0]['id']);
+        static::assertSame(2, (int) $rows[1]['id']);
+        static::assertSame('Alice', $rows[0]['author']);
     }
 
     public function test_from_union_all_duplicates(): void
@@ -374,8 +374,8 @@ class QueryBuilderTest extends TestCase
             ->orderBy('pu.id', 'asc')
             ->getAll();
 
-        self::assertCount(2, $rows);
-        self::assertSame((int) $rows[0]['id'], (int) $rows[1]['id']);
+        static::assertCount(2, $rows);
+        static::assertSame((int) $rows[0]['id'], (int) $rows[1]['id']);
     }
 
     public function test_from_union_invalid_empty(): void

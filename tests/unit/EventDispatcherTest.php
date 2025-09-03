@@ -51,7 +51,7 @@ final class EventDispatcherTest extends TestCase
 
         $result = $dispatcher->dispatch('creating', new ModelEvent((object) [], []));
 
-        $this->assertFalse($result);
-        $this->assertNotEmpty($called);
+        static::assertFalse($result);
+        static::assertNotEmpty($called);
     }
 }

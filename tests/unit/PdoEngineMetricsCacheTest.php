@@ -24,19 +24,19 @@ class PdoEngineMetricsCacheTest extends TestCase
         $engine = new PdoEngine($cfg);
 
         $metrics = PdoEngine::getMetrics();
-        $this->assertIsArray($metrics);
-        $this->assertArrayHasKey('queries', $metrics);
+        static::assertIsArray($metrics);
+        static::assertArrayHasKey('queries', $metrics);
 
         // Record hydration with positive and non-positive counts
         PdoEngine::recordHydration(3, 10.0);
         PdoEngine::recordHydration(0, 5.0); // no-op
 
         $m2 = PdoEngine::getMetrics();
-        $this->assertSame(3, $m2['objects_hydrated']);
+        static::assertSame(3, $m2['objects_hydrated']);
 
         PdoEngine::resetMetrics();
         $m3 = PdoEngine::getMetrics();
-        $this->assertSame(0, $m3['objects_hydrated']);
+        static::assertSame(0, $m3['objects_hydrated']);
     }
 
     public function testCacheEnableClearStatus(): void
@@ -45,12 +45,12 @@ class PdoEngineMetricsCacheTest extends TestCase
         $engine = new PdoEngine($cfg);
 
         $res = $engine->execute('cache', ['action' => 'enable']);
-        $this->assertSame('cache enabled', $res);
+        static::assertSame('cache enabled', $res);
 
         $status = $engine->execute('cache', ['action' => 'status']);
-        $this->assertIsInt($status);
+        static::assertIsInt($status);
 
         $cleared = $engine->execute('cache', ['action' => 'clear']);
-        $this->assertSame('cache cleared', $cleared);
+        static::assertSame('cache cleared', $cleared);
     }
 }

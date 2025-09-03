@@ -18,7 +18,7 @@ class VersaORMTraitIncludeTest extends TestCase
     {
         // Forzar la inclusión absoluta del archivo (la ruta relativa en CI puede variar)
         $traitPath = __DIR__ . '/../../src/Traits/VersaORMTrait.php';
-        self::assertFileExists($traitPath, 'VersaORMTrait.php debe existir en src/Traits');
+        static::assertFileExists($traitPath, 'VersaORMTrait.php debe existir en src/Traits');
 
         require_once $traitPath;
 
@@ -47,9 +47,9 @@ class VersaORMTraitIncludeTest extends TestCase
         try {
             $obj->connectORM();
             $orm = $obj->callGetORM();
-            $this->assertInstanceOf(VersaORM::class, $orm);
+            static::assertInstanceOf(VersaORM::class, $orm);
             $obj->disconnectORM();
-            $this->assertNull($obj->callGetORM());
+            static::assertNull($obj->callGetORM());
         } finally {
             if ($prev === null) {
                 unset($GLOBALS['config']);

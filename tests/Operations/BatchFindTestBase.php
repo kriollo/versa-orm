@@ -32,13 +32,13 @@ trait BatchFindTestBase
             2,
         );
 
-        self::assertSame(2, $invocations);
-        self::assertCount(2, $batches);
-        self::assertSame([1, 2], $batches[0]);
-        self::assertSame([3], $batches[1]);
+        static::assertSame(2, $invocations);
+        static::assertCount(2, $batches);
+        static::assertSame([1, 2], $batches[0]);
+        static::assertSame([3], $batches[1]);
         $all = array_merge(...$batches);
         sort($all);
-        self::assertSame([1, 2, 3], $all);
+        static::assertSame([1, 2, 3], $all);
     }
 
     public function testFindInBatchesWithCondition(): void
@@ -61,8 +61,8 @@ trait BatchFindTestBase
         ); // batchSize=1 -> 2 invocaciones
 
         sort($ids);
-        self::assertSame([1, 3], $ids);
-        self::assertSame(2, $invocations, 'Debe invocarse dos veces el callback con batchSize=1 y 2 registros.');
+        static::assertSame([1, 3], $ids);
+        static::assertSame(2, $invocations, 'Debe invocarse dos veces el callback con batchSize=1 y 2 registros.');
     }
 
     public function testFindInBatchesOnEmptyResult(): void
@@ -76,7 +76,7 @@ trait BatchFindTestBase
             10,
             'id < 0',
         ); // condición imposible => conjunto vacío
-        self::assertFalse($called);
+        static::assertFalse($called);
     }
 
     public function testFindInBatchesWithLargeBatchSize(): void
@@ -95,7 +95,7 @@ trait BatchFindTestBase
         ); // batchSize > total
 
         sort($ids);
-        self::assertSame([1, 2, 3], $ids);
-        self::assertSame(1, $count, 'Solo debe procesarse un lote cuando batchSize excede el total.');
+        static::assertSame([1, 2, 3], $ids);
+        static::assertSame(1, $count, 'Solo debe procesarse un lote cuando batchSize excede el total.');
     }
 }

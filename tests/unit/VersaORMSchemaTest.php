@@ -33,7 +33,7 @@ class VersaORMSchemaTest extends TestCase
             ],
         );
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testInvalidIndexNameThrows(): void

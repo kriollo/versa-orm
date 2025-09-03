@@ -65,8 +65,8 @@ class HandlesErrorsBehaviorTest extends TestCase
         $m = new MinimalModelForErrorHandling();
 
         // No hay errores inicialmente
-        self::assertFalse($m->hasError());
-        self::assertNull($m->getLastError());
+        static::assertFalse($m->hasError());
+        static::assertNull($m->getLastError());
 
         // Configurar para no lanzar excepciones al manejar errores
         MinimalModelForErrorHandling::configureErrorHandling(['throw_on_error' => false, 'format_for_api' => false]);
@@ -75,10 +75,10 @@ class HandlesErrorsBehaviorTest extends TestCase
         $res = $m->safeSave();
 
         // Como throw_on_error=false, safeSave debe retornar null y haber registrado lastError
-        self::assertNull($res);
-        self::assertTrue($m->hasError());
-        self::assertIsArray($m->getLastError());
-        self::assertArrayHasKey('error', $m->getLastError());
+        static::assertNull($res);
+        static::assertTrue($m->hasError());
+        static::assertIsArray($m->getLastError());
+        static::assertArrayHasKey('error', $m->getLastError());
     }
 
     public function testValidateBeforeOperationEmptyAttributes(): void
@@ -88,8 +88,8 @@ class HandlesErrorsBehaviorTest extends TestCase
         // Atributos vacíos => validateBeforeOperation('save') debe fallar y retornar false
         $valid = $m->_validateBeforeOperation('save');
 
-        self::assertFalse($valid);
-        self::assertTrue($m->hasError());
-        self::assertSame('EMPTY_ATTRIBUTES', $m->getLastErrorCode());
+        static::assertFalse($valid);
+        static::assertTrue($m->hasError());
+        static::assertSame('EMPTY_ATTRIBUTES', $m->getLastErrorCode());
     }
 }

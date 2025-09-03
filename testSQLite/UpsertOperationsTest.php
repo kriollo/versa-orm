@@ -15,13 +15,13 @@ class UpsertOperationsTest extends TestCase
         // Primero insertar
         $qb->upsert(['sku' => 'X001', 'name' => 'Widget', 'price' => 10.0, 'stock' => 5], ['sku']);
         $p = self::$orm->table('products')->find('X001', 'sku');
-        self::assertNotNull($p);
-        self::assertSame('Widget', $p->name);
+        static::assertNotNull($p);
+        static::assertSame('Widget', $p->name);
 
         // Luego actualizar
         $qb->upsert(['sku' => 'X001', 'name' => 'Widget+', 'price' => 12.5, 'stock' => 10], ['sku']);
         $p2 = self::$orm->table('products')->find('X001', 'sku');
-        self::assertSame('Widget+', $p2->name);
-        self::assertSame(10, (int) $p2->stock);
+        static::assertSame('Widget+', $p2->name);
+        static::assertSame(10, (int) $p2->stock);
     }
 }

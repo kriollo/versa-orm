@@ -19,7 +19,7 @@ class SaveNoDateDateTest extends TestCase
         $data->data = 'Test data';
         $result = $data->store();
 
-        self::assertSame(1, $result);
+        static::assertSame(1, $result);
     }
 
     public function test_boolean_case_query(): void
@@ -45,19 +45,19 @@ class SaveNoDateDateTest extends TestCase
         $results = self::$orm->exec($sql, [$idEmpresa]);
 
         // Verificar que se obtuvieron resultados
-        self::assertNotEmpty($results);
+        static::assertNotEmpty($results);
 
         // Verificar que cada resultado tiene el campo 'asociado' como booleano
         foreach ($results as $result) {
-            self::assertArrayHasKey('asociado', $result);
-            self::assertIsBool($result['asociado']);
+            static::assertArrayHasKey('asociado', $result);
+            static::assertIsBool($result['asociado']);
 
             // El primer módulo (id=1) debería estar asociado (true)
             if ($result['id'] === 1) {
-                self::assertTrue($result['asociado'], 'El módulo Dashboard debería estar asociado');
+                static::assertTrue($result['asociado'], 'El módulo Dashboard debería estar asociado');
             } else {
                 // Los otros módulos deberían no estar asociados (false)
-                self::assertFalse($result['asociado'], 'Los módulos no asociados deberían devolver false');
+                static::assertFalse($result['asociado'], 'Los módulos no asociados deberían devolver false');
             }
         }
     }
