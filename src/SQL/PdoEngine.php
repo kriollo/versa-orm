@@ -625,10 +625,9 @@ class PdoEngine
                             $colsDef = '';
 
                             if (!empty($c['columns']) && is_array($c['columns'])) {
-                                $quotedCols = array_map(
-                                    fn($col): string => $this->dialect->quoteIdentifier((string) $col),
-                                    $c['columns'],
-                                );
+                                $quotedCols = array_map(fn($col): string => $this->dialect->quoteIdentifier(
+                                    (string) $col,
+                                ), $c['columns']);
                                 $colsDef = ' (' . implode(', ', $quotedCols) . ')';
                             }
 
@@ -753,10 +752,10 @@ class PdoEngine
                                 if ($segments !== []) {
                                     $jsonPath .=
                                         '.'
-                                        . implode('.', array_map(
-                                            static fn($s): string => trim($s, "'\"` "),
-                                            $segments,
-                                        ));
+                                        . implode('.', array_map(static fn($s): string => trim(
+                                            $s,
+                                            "'\"` ",
+                                        ), $segments));
                                 }
                                 $core = "JSON_EXTRACT({$col}, ?)";
                                 $jsonExpr = ($unquote ? 'JSON_UNQUOTE(' . $core . ')' : $core) . ' AS value';

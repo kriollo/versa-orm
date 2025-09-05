@@ -141,9 +141,7 @@ class SchemaConsistencyTest extends TestCase
             $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
 
             // Filter out any unrelated errors, only check for type mismatch
-            $typeMismatchErrors = array_filter($errors, static function ($error) {
-                return str_contains($error, 'Type mismatch');
-            });
+            $typeMismatchErrors = array_filter($errors, static fn($error) => str_contains($error, 'Type mismatch'));
 
             static::assertEmpty(
                 $typeMismatchErrors,
@@ -165,9 +163,7 @@ class SchemaConsistencyTest extends TestCase
         $dbColumn = ['data_type' => 'text', 'is_nullable' => 'YES'];
 
         $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
-        $typeMismatchErrors = array_filter($errors, static function ($error) {
-            return str_contains($error, 'Type mismatch');
-        });
+        $typeMismatchErrors = array_filter($errors, static fn($error) => str_contains($error, 'Type mismatch'));
 
         static::assertNotEmpty($typeMismatchErrors);
     }

@@ -70,6 +70,7 @@ class TestCase extends BaseTestCase
         self::$orm->schemaDrop('test_save');
         self::$orm->schemaDrop('empresa_modulo');
         self::$orm->schemaDrop('versa_menu');
+        self::$orm->schemaDrop('chatbot_channels');
 
         if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
@@ -179,6 +180,47 @@ class TestCase extends BaseTestCase
             // Reactivar checks una vez creado todo
             self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         } elseif ($driver === 'postgresql' || $driver === 'pgsql') {
+            self::$orm->schemaCreate(
+                'chatbot_channels',
+                [
+                    [
+                        'name' => 'id',
+                        'type' => 'INT',
+                        'primary' => true,
+                        'autoIncrement' => true,
+                        'nullable' => false,
+                    ],
+                    ['name' => 'codigo_interno', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'nombre', 'type' => 'VARCHAR(255)', 'nullable' => false],
+                    ['name' => 'imagen', 'type' => 'VARCHAR(255)', 'nullable' => true],
+                    [
+                        'name' => 'required_register',
+                        'type' => 'BOOLEAN',
+                        'nullable' => false,
+                        'default' => false,
+                    ],
+                    [
+                        'name' => 'created_at',
+                        'type' => 'TIMESTAMP',
+                        'nullable' => false,
+                        'default' => 'CURRENT_TIMESTAMP',
+                    ],
+                    [
+                        'name' => 'updated_at',
+                        'type' => 'TIMESTAMP',
+                        'nullable' => false,
+                        'default' => 'CURRENT_TIMESTAMP',
+                        'onUpdate' => 'CURRENT_TIMESTAMP',
+                    ],
+                ],
+                [
+                    'if_not_exists' => true,
+                    'engine' => 'InnoDB',
+                    'charset' => 'utf8mb4',
+                    'collation' => 'utf8mb4_unicode_ci',
+                ],
+            );
+
             self::$orm->schemaCreate('test_save', [
                 ['name' => 'id', 'type' => 'INT', 'primary' => true, 'autoIncrement' => true, 'nullable' => false],
                 ['name' => 'data', 'type' => 'TEXT'],

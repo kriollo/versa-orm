@@ -390,10 +390,11 @@ class PHPVersionMatrixRunner
         }
 
         // Recomendaciones sobre versiones más nuevas
-        $newerVersions = array_filter(
-            $this->supportedVersions,
-            static fn($version): bool|int => version_compare($version, $currentVersion, '>'),
-        );
+        $newerVersions = array_filter($this->supportedVersions, static fn($version): bool|int => version_compare(
+            $version,
+            $currentVersion,
+            '>',
+        ));
 
         if ($newerVersions !== []) {
             $latestVersion = max($newerVersions);

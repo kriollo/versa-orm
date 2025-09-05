@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace VersaORM;
 
 use Closure;
+use DateTime;
+use DateTimeInterface;
 use Exception;
 use ReflectionClass;
 use Throwable;
@@ -1465,8 +1467,31 @@ class QueryBuilder
             throw new VersaORMException('Batch size must be between 1 and 10000');
         }
 
+        // Procesar los valores de los registros para la base de datos
+        $processedRecords = [];
+        $modelInstance = $this->getModelInstance();
+
+        foreach ($records as $record) {
+            $processedRecord = [];
+            foreach ($record as $key => $value) {
+                // Convertir valores boolean especialmente para PostgreSQL
+                if (is_bool($value)) {
+                    $processedRecord[$key] = $value ? 1 : 0;
+                } elseif ($value instanceof DateTime) {
+                    $processedRecord[$key] = $value->format('Y-m-d H:i:s.u');
+                } elseif ($value instanceof DateTimeInterface) {
+                    $processedRecord[$key] = $value->format('Y-m-d H:i:s.u');
+                } elseif (is_array($value) || is_object($value)) {
+                    $processedRecord[$key] = json_encode($value);
+                } else {
+                    $processedRecord[$key] = $value;
+                }
+            }
+            $processedRecords[] = $processedRecord;
+        }
+
         $params = [
-            'records' => $records,
+            'records' => $processedRecords,
             'batch_size' => $batchSize,
         ];
 
@@ -1477,8 +1502,8 @@ class QueryBuilder
                     try {
                         if ($this->orm instanceof VersaORMClass) {
                             $this->orm->logDebug(
-                                '[DEBUG] insertMany PHP - First record: ' . json_encode($records[0] ?? null),
-                                ['records' => $records],
+                                '[DEBUG] insertMany PHP - First record: ' . json_encode($processedRecords[0] ?? null),
+                                ['records' => $processedRecords],
                             );
                         }
                     } catch (Throwable) {

@@ -44,10 +44,9 @@ class DDLApiTest extends TestCase
             ],
         ]);
         $cols2 = $orm->schema('columns', 'ddl_mvp_users');
-        $colNames2 = array_map(
-            static fn($c) => strtolower($c['name'] ?? $c['column_name'] ?? $c['Field'] ?? ''),
-            $cols2,
-        );
+        $colNames2 = array_map(static fn($c) => strtolower(
+            $c['name'] ?? $c['column_name'] ?? $c['Field'] ?? '',
+        ), $cols2);
         static::assertContains('email', $colNames2);
 
         // 3) Rename
@@ -56,10 +55,9 @@ class DDLApiTest extends TestCase
         static::assertIsArray($tables);
         static::assertTrue(in_array(
             'ddl_mvp_people',
-            array_map('strtolower', array_map(
-                static fn($t) => is_array($t) ? $t['table_name'] ?? $t['name'] ?? (string) $t : (string) $t,
-                $tables,
-            )),
+            array_map('strtolower', array_map(static fn($t) => is_array($t)
+                ? $t['table_name'] ?? $t['name'] ?? (string) $t
+                : (string) $t, $tables)),
             true,
         ));
 
@@ -68,10 +66,9 @@ class DDLApiTest extends TestCase
         $tablesAfter = $orm->schema('tables');
         static::assertFalse(in_array(
             'ddl_mvp_people',
-            array_map('strtolower', array_map(
-                static fn($t) => is_array($t) ? $t['table_name'] ?? $t['name'] ?? (string) $t : (string) $t,
-                $tablesAfter,
-            )),
+            array_map('strtolower', array_map(static fn($t) => is_array($t)
+                ? $t['table_name'] ?? $t['name'] ?? (string) $t
+                : (string) $t, $tablesAfter)),
             true,
         ));
     }

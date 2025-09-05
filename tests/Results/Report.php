@@ -102,10 +102,9 @@ class Report
             'report_id' => $this->report_id,
             'test_type' => $this->test_type,
             'php_version' => $this->php_version,
-            'results' => array_map(
-                static fn($result) => $result instanceof TestResult ? $result->toArray() : $result,
-                $this->results,
-            ),
+            'results' => array_map(static fn($result) => $result instanceof TestResult
+                ? $result->toArray()
+                : $result, $this->results),
             'summary' => $this->summary,
             'execution_time' => $this->execution_time,
             'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),

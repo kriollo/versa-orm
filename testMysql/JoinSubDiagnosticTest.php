@@ -220,12 +220,9 @@ class JoinSubDiagnosticTest extends TestCase
         );
 
         try {
-            $connection = new PDO(
-                $dsn,
-                $config['DB']['DB_USER'],
-                $config['DB']['DB_PASS'],
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-            );
+            $connection = new PDO($dsn, $config['DB']['DB_USER'], $config['DB']['DB_PASS'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
 
             // SQL manual equivalente a lo que debería generar joinSub
             $sql = 'SELECT users.name, active_users.post_count

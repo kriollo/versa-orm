@@ -61,4 +61,46 @@ class SaveNoDateDateTest extends TestCase
             }
         }
     }
+
+    public function test_insertManyBooleanType(): void
+    {
+        $channels = [
+            [
+                'codigo_interno' => 'whatsapp',
+                'nombre' => 'WhatsApp',
+                'imagen' => '/public/dashboard/img/social/whatsapp.svg',
+                'required_register' => false,
+            ],
+            [
+                'codigo_interno' => 'telegram',
+                'nombre' => 'Telegram',
+                'imagen' => '/public/dashboard/img/social/telegram.svg',
+                'required_register' => true,
+            ],
+            [
+                'codigo_interno' => 'facebook_messenger',
+                'nombre' => 'Facebook Messenger',
+                'imagen' => '/public/dashboard/img/social/messengerf.svg',
+                'required_register' => false,
+            ],
+            [
+                'codigo_interno' => 'instagram',
+                'nombre' => 'Instagram',
+                'imagen' => '/public/dashboard/img/social/instagram.svg',
+                'required_register' => false,
+            ],
+        ];
+        $result = self::$orm->table('chatbot_channels')->insertMany($channels);
+
+        static::assertSame(
+            [
+                'status' => 'success',
+                'total_inserted' => 4,
+                'batches_processed' => 1,
+                'batch_size' => 1000,
+                'inserted_ids' => [1, 2, 3, 4], // Si la tabla tiene autoincrement
+            ],
+            $result,
+        );
+    }
 }

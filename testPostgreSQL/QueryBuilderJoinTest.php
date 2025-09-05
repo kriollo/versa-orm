@@ -227,7 +227,7 @@ class QueryBuilderJoinTest extends TestCase
             ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
             ->getAll();
 
-        // The test should work now with Rust engine support
+        // The test should work now with engine support
         static::assertIsArray($results);
 
         foreach ($results as $result) {

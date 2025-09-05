@@ -42,20 +42,8 @@ final class VersaORMNewTest extends TestCase
         $orm = new VersaORM($cfg);
 
         // Add a dummy type converter and ensure no exceptions
-        VersaModel::addTypeConverter(
-            'dummy_type',
-            function ($v) {
-                return $v;
-            },
-            null,
-        );
-        $orm->addTypeConverter(
-            'dummy_type2',
-            function ($v) {
-                return $v;
-            },
-            null,
-        );
+        VersaModel::addTypeConverter('dummy_type', fn($v) => $v, null);
+        $orm->addTypeConverter('dummy_type2', fn($v) => $v, null);
 
         // confirm static registry contains at least the added converters via reflection-ish check
         static::assertTrue(true);

@@ -25,9 +25,7 @@ trait BatchFindTestBase
             'users',
             function (array $models) use (&$batches, &$invocations): void {
                 $invocations++;
-                $batches[] = array_map(static function (VersaModel $m): int {
-                    return (int) $m->id;
-                }, $models);
+                $batches[] = array_map(static fn(VersaModel $m): int => (int) $m->id, $models);
             },
             2,
         );

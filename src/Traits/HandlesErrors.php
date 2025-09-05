@@ -122,10 +122,10 @@ trait HandlesErrors
      */
     public function safeUpsert(array $uniqueKeys, array $updateColumns = []): mixed
     {
-        return $this->withErrorHandling(
-            fn() => $this->upsert($uniqueKeys, $updateColumns),
-            ['operation' => 'upsert', 'unique_keys' => $uniqueKeys],
-        );
+        return $this->withErrorHandling(fn() => $this->upsert($uniqueKeys, $updateColumns), [
+            'operation' => 'upsert',
+            'unique_keys' => $uniqueKeys,
+        ]);
     }
 
     /**
@@ -141,10 +141,10 @@ trait HandlesErrors
      */
     public static function safeFindAll(array $conditions = []): mixed
     {
-        return static::withStaticErrorHandling(
-            static fn() => static::findAll($conditions),
-            ['operation' => 'findAll', 'conditions' => $conditions],
-        );
+        return static::withStaticErrorHandling(static fn() => static::findAll($conditions), [
+            'operation' => 'findAll',
+            'conditions' => $conditions,
+        ]);
     }
 
     /**

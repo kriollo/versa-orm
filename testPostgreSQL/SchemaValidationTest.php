@@ -15,7 +15,7 @@ use function in_array;
  * Tests para validación automática desde esquema de base de datos.
  *
  * Estos tests verifican que el sistema pueda:
- * 1. Obtener metadatos del esquema desde el CLI Rust
+ * 1. Obtener metadatos del esquema desde el
  * 2. Convertir esos metadatos en reglas de validación
  * 3. Aplicar validaciones automáticas basadas en el esquema real
  * 4. Manejar casos edge y errores graciosamente
@@ -31,7 +31,7 @@ class SchemaValidationTest extends TestCase
     }
 
     /**
-     * Test básico de obtención de esquema desde Rust CLI.
+     * Test básico de obtención de esquema desde  CLI.
      */
     public function test_get_table_validation_schema_basic(): void
     {
@@ -48,7 +48,7 @@ class SchemaValidationTest extends TestCase
             // Si obtenemos un esquema, debe ser un array
             static::assertIsArray($schema);
 
-            // Si el CLI Rust está disponible y funciona, debería tener datos
+            // Si el está disponible y funciona, debería tener datos
             static::assertArrayHasKey('id', $schema);
             static::assertArrayHasKey('name', $schema);
             static::assertArrayHasKey('email', $schema);
@@ -72,7 +72,7 @@ class SchemaValidationTest extends TestCase
     {
         $model = new TestUserModel('users', self::$orm);
 
-        // Simular metadatos de columnas que vendría del CLI Rust
+        // Simular metadatos de columnas que vendría del
         $mockSchemaColumns = [
             [
                 'column_name' => 'id',
@@ -205,7 +205,7 @@ class SchemaValidationTest extends TestCase
     }
 
     /**
-     * Test de manejo de errores cuando CLI Rust no está disponible.
+     * Test de manejo de errores cuando no está disponible.
      */
     public function test_schema_validation_fallback(): void
     {
@@ -221,7 +221,7 @@ class SchemaValidationTest extends TestCase
             static::assertIsArray($errors);
         } catch (Exception $e) {
             // Si lanza excepción, verificar que es la simulada y no un error del sistema
-            static::assertStringContainsString('CLI Rust not available', $e->getMessage());
+            static::assertStringContainsString('not available', $e->getMessage());
         }
     }
 
@@ -360,18 +360,18 @@ class TestUserModelWithMockSchema extends VersaModel
 }
 
 /**
- * Modelo de prueba que simula fallo de CLI Rust.
+ * Modelo de prueba que simula fallo.
  */
 class TestUserModelWithFailingSchema extends VersaModel
 {
     protected array $fillable = ['name', 'email'];
 
     /**
-     * Override que simula fallo del CLI Rust.
+     * Override que simula fallo.
      */
     protected function getTableValidationSchema(): array
     {
-        // Simular que el CLI Rust no está disponible
-        throw new Exception('CLI Rust not available');
+        // Simular que el no está disponible
+        throw new Exception(' not available');
     }
 }

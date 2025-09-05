@@ -163,12 +163,9 @@ class JoinSubDiagnosticTest extends TestCase
         );
 
         try {
-            $connection = new PDO(
-                $dsn,
-                $config['DB']['DB_USER'],
-                $config['DB']['DB_PASS'],
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-            );
+            $connection = new PDO($dsn, $config['DB']['DB_USER'], $config['DB']['DB_PASS'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
 
             // SQL manual equivalente a lo que debería generar joinSub para PostgreSQL
             $sql = 'SELECT users.name, active_users.post_count
@@ -204,19 +201,6 @@ class JoinSubDiagnosticTest extends TestCase
                 static::markTestSkipped('PostgreSQL connection not available: ' . $e->getMessage());
             }
 
-            throw $e;
-        }
-    }
-
-    public function test_rust_communication(): void
-    {
-        // Test simple para verificar que la comunicación con Rust funciona
-        try {
-            $simpleQuery = self::$orm->table('users')->limit(1);
-            $result = $simpleQuery->getAll();
-
-            static::assertIsArray($result);
-        } catch (Exception $e) {
             throw $e;
         }
     }

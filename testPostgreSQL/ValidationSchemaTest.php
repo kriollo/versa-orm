@@ -7,7 +7,7 @@ namespace VersaORM\Tests\PostgreSQL;
 use VersaORM\VersaModel;
 
 /**
- * Test para la validación automática desde esquema obtenido via CLI Rust.
+ * Test para la validación automática desde esquema obtenido.
  */
 class ValidationSchemaTest extends TestCase
 {
@@ -15,7 +15,7 @@ class ValidationSchemaTest extends TestCase
     {
         parent::setUp();
 
-        // Crear tabla de prueba simulando CLI Rust schema (PostgreSQL compatible)
+        // Crear tabla de prueba simulando esquema (PostgreSQL compatible)
         self::$orm->schemaCreate(
             'test_validation_schema',
             [
