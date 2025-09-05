@@ -32,11 +32,10 @@
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.85",
-    "laradumps/laradumps-core": "3.0.1",
     "laravel/pint": "^1.20",
     "phpstan/phpstan": "^2.1.22",
     "phpstan/phpstan-strict-rules": "^2.0.6",
-    "phpunit/phpunit": "^10.5.53",
+    "phpunit/phpunit": "^11.5.36",
     "psalm/plugin-phpunit": "^0.19.0",
     "rector/rector": "^2.1.4",
     "vimeo/psalm": "^6.13.1"
@@ -119,9 +118,7 @@
     "qa-unit": "php tests/bin/qa-runner.php unit",
     "qa-quality": "php tests/bin/qa-runner.php quality",
     "qa-benchmarks": "php tests/bin/qa-runner.php benchmarks",
-    "post-install-cmd": [
-      "@php -r \"if (file_exists('versaorm_cli/target/release/versaorm_cli') || file_exists('versaorm_cli/target/release/versaorm_cli.exe')) { echo 'VersaORM binary found.\\n'; } else { echo 'Warning: VersaORM binary not found. Please compile it with: cd versaorm_cli && cargo build --release\\n'; }\""
-    ]
+    "post-install-cmd": []
   },
   "config": {
     "optimize-autoloader": true,
