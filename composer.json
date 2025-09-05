@@ -35,7 +35,7 @@
     "laravel/pint": "^1.20",
     "phpstan/phpstan": "^2.1.22",
     "phpstan/phpstan-strict-rules": "^2.0.6",
-    "phpunit/phpunit": "^11.5.36",
+    "phpunit/phpunit": "^10.5.53",
     "psalm/plugin-phpunit": "^0.19.0",
     "rector/rector": "^2.1.4",
     "vimeo/psalm": "^6.13.1"
