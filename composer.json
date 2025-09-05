@@ -101,15 +101,17 @@
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "php-cs-fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
     "php-cs-check": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php --dry-run --diff",
-    "mago-fmt": "mago fmt",
-    "mago-check": "mago fmt --check",
+    "mago:fmt": "mago fmt src/ example/ testMysql/ testPostgreSQL/ testSQLite/ tests/",
+    "mago:fmt:check": "mago fmt --check",
+    "mago:lint": "mago lint src/",
+    "mago:lint:fix": "mago lint --fix --unsafe",
     "format": [
       "@php-cs-fix",
-      "@mago-fmt"
+      "@mago:fmt"
     ],
     "format-check": [
       "@php-cs-check",
-      "@mago-check"
+      "@mago:fmt:check"
     ],
     "qa": "php qa-integration.php",
     "qa-fix": "php qa-integration.php --fix",

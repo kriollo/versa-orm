@@ -1,4 +1,5 @@
 <?php
+
 $xml = simplexml_load_file(__DIR__ . '/../build/logs/clover.xml');
 $total = 0;
 $covered = 0;
