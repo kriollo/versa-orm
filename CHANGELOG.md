@@ -1,3 +1,40 @@
+## [1.3.0] - 2025-09-05
+
+### ✨ Nuevas Características
+
+- **Timestamps automáticos**: Soporte completo para `created_at` y `updated_at` automáticos en inserciones y actualizaciones
+  - Se asignan automáticamente durante operaciones de store() 
+  - Compatibles con todos los motores de base de datos (MySQL, PostgreSQL, SQLite)
+  - Formato UTC con microsegundos para evitar colisiones en tests
+
+- **Mejoras en QueryBuilder**: El parámetro `foreign` en método `on()` ahora acepta tanto cadenas como enteros para mayor flexibilidad
+
+- **Nuevas pruebas de esquema**: Agregadas pruebas comprehensivas para creación y alteración de esquemas en PostgreSQL y SQLite
+
+### 🐛 Correcciones
+
+- **Fix crítico para PostgreSQL**: Corregido manejo de valores boolean en `insertMany()` 
+  - PostgreSQL ahora recibe correctamente valores 1/0 en lugar de strings vacíos
+  - Se agregó procesamiento de tipos antes del envío a PDO
+  - Mantiene compatibilidad con MySQL y SQLite
+
+- **Eliminación de columnas e índices**: Nuevas pruebas para operaciones de eliminación en MySQL
+
+### 🔧 Mejoras y Refactoring
+
+- **Actualización de dependencias**: PHPUnit actualizado y comandos de scripts optimizados
+- **Consistencia de código**: Refactoring extensivo para mantener estilo consistente
+  - Assertions actualizadas a métodos estáticos (`static::assert*`)
+  - Espacios normalizados en closures
+  - Limpieza de tests y funciones no utilizadas
+
+- **Documentación**: Configuración de validación mejorada y actualizada
+
+### 🗃️ Base de Datos
+
+- **Nueva estructura**: Agregada estructura de base de datos para `versaorm_trello`
+- **Mejoras en motor PDO**: Optimizaciones en `PdoEngine` y `SqlGenerator`
+
 ## [1.2.0] - 2025-08-27
 
 ### Cambios en `src/` (resumen)
