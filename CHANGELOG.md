@@ -1,3 +1,47 @@
+## [1.4.0] - 2025-09-07
+
+### 🔧 Calidad de Código y Análisis Estático
+
+- **PHPStan Nivel 8 Completo**: Análisis estático completamente limpio sin errores ni warnings
+  - Reducción de 142 errores a 0 errores (100% de resolución)
+  - Documentación completa de tipos array (`@var array<int, string>`, `@var array<string, mixed>`)
+  - Implementación de tipos `list<T>` precisos y union types documentados
+  - Conversión completa de comparaciones loose a strict (`===`, `!==`, explicit null checks)
+
+- **Sistema de Tipos Robusto**: Mejoras comprehensivas en type safety
+  - Manejo explícito de valores null y boolean en todas las comparaciones
+  - Corrección de `preg_replace()` con manejo de `string|null`
+  - Arreglo de comparaciones float con `!== 0.0` para precisión estricta
+  - Implementación de `array_filter()` con parámetros strict
+
+- **Nuevas Clases de Definición**: Estructuras de datos especializadas para operaciones de esquema
+  - `ColumnDef`: Para definiciones de columnas de base de datos
+  - `IndexDef`: Para definiciones de índices con ArrayAccess
+  - `TableConstraintsDef`: Para constraints de tabla
+  - `AlterChanges`: Para cambios de ALTER con ArrayAccess
+
+### 🔒 Mejoras en Seguridad y Robustez
+
+- **Variable Method Calls**: Manejo seguro de métodos dinámicos
+  - Implementación de `@phpstan-ignore-next-line` para métodos dinámicos válidos
+  - Documentación apropiada de parámetros en métodos `__call()`
+  - Protección contra llamadas de método inseguras
+
+- **SQL y PDO**: Fortalecimiento del motor de base de datos
+  - Manejo correcto de tipos `PDO|null` en conexiones
+  - Eliminación de checks redundantes de `instanceof` y `method_exists()`
+  - Mejoras en la documentación de arrays en SQL generation
+  - Validación estricta de parámetros en PdoConnection y PdoEngine
+
+### 📊 Impacto en Desarrollo
+
+- **Maintainability**: Mejor documentación facilita el mantenimiento futuro
+- **Error Prevention**: Los tipos estrictos previenen errores en runtime
+- **Developer Experience**: IntelliSense mejorado y detección temprana de errores
+- **Code Quality**: Cumple con los estándares más altos de PHP (PHPStan nivel 8)
+
+---
+
 ## [1.3.0] - 2025-09-05
 
 ### ✨ Nuevas Características
