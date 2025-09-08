@@ -71,10 +71,10 @@ $schema->create('documentos', function ($table) {
     $table->id();
     $table->string('titulo');
     $table->unsignedBigInteger('carpeta_id')->nullable();
-    
+
     // ✨ Timestamps automáticos - sin configuración manual
     $table->timestamps(); // created_at y updated_at con valores por defecto
-    
+
     // ✅ Foreign key con sintaxis de array (validada)
     $table->foreign(['carpeta_id'])
           ->references('id')

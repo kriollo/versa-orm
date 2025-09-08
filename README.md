@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
 
-- Última versión estable: 1.4
+- Última versión estable: 1.4.1
 - Compatible con PHP 8.1+
 
 # <p align="center"><img src="art/versaORMLogo.png" alt="VersaORM Logo" width="480" /></p>
@@ -26,6 +26,11 @@
 - 🔍 **[Query Builder](docs/04-query-builder/)** - Consultas fluidas y seguras
 - 🔗 **[Relaciones](docs/05-relaciones/)** - hasMany, belongsTo, many-to-many
 - 📖 **[Referencia SQL](docs/08-referencia-sql/)** - Equivalencias SQL ↔ VersaORM
+
+### 🆕 Guías Especializadas (v1.4.1+)
+
+- 🔧 **[Migración SchemaBuilder](docs/MigrationGuide_SchemaBuilder.md)** - De schemaCreate() al nuevo SchemaBuilder
+- 🔗 **[Foreign Keys e Índices](docs/ForeignKeysAndIndexes_CompleteGuide.md)** - Guía completa con ejemplos prácticos
 
 ## 📋 ¿Qué es VersaORM?
 
@@ -80,6 +85,9 @@ $user->store(); // Actualización automática
 - 🔍 **Query Builder fluido** - `where`, `join`, `groupBy`, `having`, `orderBy`, `limit`
 - 🧠 **JOINs avanzados** - Condiciones encadenadas con `on()` y `onRaw()`
 - 🔗 **Relaciones** - hasMany, belongsTo, many-to-many
+- ⏰ **Timestamps automáticos** - `created_at` y `updated_at` con valores por defecto (Fix v1.4.1)
+- 🏗️ **SchemaBuilder moderno** - API fluida para DDL con migración desde arrays
+- 🔑 **Foreign Keys flexibles** - Sintaxis `foreign(['campo'])` y `foreign('campo')` validadas
 - 💾 **Conversión de tipos** - Fechas, booleanos, JSON automático
 - 🔀 **Operaciones de conjuntos** - UNION, INTERSECT, EXCEPT
 - 🚫 **Cero compilación** - Solo PHP puro
@@ -176,7 +184,7 @@ VersaModel::setORM($orm);
 $user = VersaModel::dispense('users');
 $user->name = 'Juan Pérez';
 $user->email = 'juan@example.com';
-$user->store(); // Se guarda automáticamente
+$user->store(); // Se guarda automáticamente con timestamps
 
 // Buscar usuarios activos
 $activeUsers = $orm->table('users')
@@ -187,6 +195,18 @@ $activeUsers = $orm->table('users')
 
 echo "Usuario creado con ID: " . $user->id;
 echo "Usuarios activos encontrados: " . count($activeUsers);
+
+// ✨ SchemaBuilder moderno (v1.4.1+)
+use VersaORM\Schema\VersaSchema;
+
+VersaSchema::create('documents', function ($table) {
+    $table->id();
+    $table->string('title');
+    $table->timestamps(); // ✅ Valores automáticos funcionando
+    
+    // Foreign key con sintaxis flexible
+    $table->foreign(['user_id'])->references('id')->on('users');
+});
 ```
 
 **¿Quieres más ejemplos?** → [Ver documentación completa](docs/README.md)
