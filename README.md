@@ -203,7 +203,7 @@ VersaSchema::create('documents', function ($table) {
     $table->id();
     $table->string('title');
     $table->timestamps(); // ✅ Valores automáticos funcionando
-    
+
     // Foreign key con sintaxis flexible
     $table->foreign(['user_id'])->references('id')->on('users');
 });
