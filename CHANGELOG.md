@@ -19,6 +19,50 @@
   - `IndexDef`: Para definiciones de índices con ArrayAccess
   - `TableConstraintsDef`: Para constraints de tabla
   - `AlterChanges`: Para cambios de ALTER con ArrayAccess
+  - `ColumnDefinition`: Para definición fluida de columnas con modificadores
+  - `Blueprint`: Para definición completa de tablas con API encadenable
+  - `TypeMapper`: Para mapeo inteligente de tipos entre PHP y SQL
+
+### 🏗️ Nuevo SchemaBuilder Moderno
+
+- **API Fluida Laravel-Style**: Sistema completo de manipulación de esquemas de base de datos
+  - Clase `SchemaBuilder` con API fluida para DDL (Data Definition Language)
+  - Facade estático `VersaSchema` para uso intuitivo y limpio
+  - Clase `Blueprint` para definición de tablas con métodos encadenables
+  - Clase `ColumnDefinition` para definición precisa de columnas con modificadores
+
+- **Compatibilidad Multi-Motor**: Transparencia completa entre MySQL, PostgreSQL y SQLite
+  - Generación automática de SQL específico para cada motor de base de datos
+  - Manejo inteligente de diferencias (AUTO_INCREMENT vs SERIAL, TINYINT vs BOOLEAN)
+  - Identificadores apropiados (backticks vs quotes) según el motor
+  - Soporte nativo para claves foráneas con limitaciones específicas por motor
+
+- **Operaciones Completas de Esquema**:
+  - **Creación**: `VersaSchema::create()`, `VersaSchema::createIfNotExists()`
+  - **Modificación**: `VersaSchema::table()` con Blueprint para alteraciones
+  - **Eliminación**: `VersaSchema::drop()`, `VersaSchema::dropIfExists()`
+  - **Inspección**: `hasTable()`, `hasColumn()`, `hasIndex()`, `getColumns()`, `getIndexes()`
+  - **Utilidades**: `rename()` para renombrado de tablas
+
+- **Tipos de Columna Completos**: Soporte exhaustivo para todos los tipos de datos
+  - Básicos: `string()`, `text()`, `integer()`, `bigInteger()`, `boolean()`
+  - Numéricos: `decimal()`, `float()`, `double()`, `unsignedInteger()`
+  - Fechas: `date()`, `dateTime()`, `timestamp()`, `timestamps()`
+  - Especiales: `json()`, `uuid()`, `ipAddress()`, `enum()`, `set()`
+  - Automáticos: `id()` (primary key auto-increment), `timestamps()` (created_at/updated_at)
+
+- **Modificadores de Columna**: Sistema flexible de características adicionales
+  - Nullabilidad: `nullable()`, `default($value)`
+  - Índices: `unique()`, `index()`, `primary()`
+  - Posicionamiento: `after($column)` (MySQL), `first()` (MySQL)
+  - Comentarios: `comment($text)` para documentación
+  - Auto-incremento: `autoIncrement()` para claves primarias
+
+- **Gestión de Índices y Constraints**:
+  - Índices simples y compuestos con `index()`, `unique()`
+  - Claves foráneas con `foreign()->references()->on()->onDelete()`
+  - Eliminación selectiva: `dropIndex()`, `dropUnique()`, `dropForeign()`
+  - Soporte para métodos de indexación específicos (BTREE, HASH)
 
 ### 🔒 Mejoras en Seguridad y Robustez
 
@@ -39,6 +83,56 @@
 - **Error Prevention**: Los tipos estrictos previenen errores en runtime
 - **Developer Experience**: IntelliSense mejorado y detección temprana de errores
 - **Code Quality**: Cumple con los estándares más altos de PHP (PHPStan nivel 8)
+- **Database Agnosticism**: Mismo código funciona en MySQL, PostgreSQL y SQLite
+- **Rapid Prototyping**: SchemaBuilder acelera el desarrollo y prototipado
+- **Test Infrastructure**: Tests automatizados para operaciones de esquema complejas
+
+### 🧪 Nuevas Pruebas y Validaciones
+
+- **Tests Específicos para SchemaBuilder**: Suite completa de pruebas para cada motor
+  - `BasicSchemaBuilderTest`: Pruebas fundamentales de creación y modificación
+  - `AdvancedSchemaBuilderTest`: Funcionalidades complejas con relaciones y constraints
+  - `SimpleSchemaTest`: Verificación de operaciones básicas
+  - `TypeMapperTest`: Validación del mapeo de tipos entre motores
+  - Tests separados para MySQL, PostgreSQL y SQLite en `testMysql/Schema/`, `testPostgreSQL/Schema/`, `testSQLite/Schema/`
+
+- **Cobertura Multi-Motor**: Validación exhaustiva de compatibilidad
+  - Generación correcta de SQL específico para cada motor
+  - Comportamiento consistente de tipos de datos entre motores
+  - Manejo apropiado de limitaciones específicas (ej. claves foráneas en SQLite)
+  - Tests de roundtrip para verificar integridad de datos
+
+### 💡 Ejemplo de Uso del SchemaBuilder
+
+```php
+use VersaORM\Schema\VersaSchema;
+
+// Crear tabla de usuarios con API moderna
+VersaSchema::create('users', function ($table) {
+    $table->id();                              // Primary key auto-increment
+    $table->string('name');                    // VARCHAR(255)
+    $table->string('email', 100)->unique();   // VARCHAR(100) UNIQUE
+    $table->timestamp('email_verified_at')->nullable();
+    $table->boolean('active')->default(true);
+    $table->json('preferences')->nullable();   // JSON/TEXT según motor
+    $table->timestamps();                      // created_at, updated_at
+});
+
+// Modificar tabla existente
+VersaSchema::table('users', function ($table) {
+    $table->string('phone', 20)->nullable();           // Agregar columna
+    $table->index(['email', 'active'], 'idx_email_active'); // Índice compuesto
+    $table->dropColumn('old_field');                   // Eliminar columna
+});
+
+// Verificación e inspección
+if (VersaSchema::hasTable('users')) {
+    $columns = $orm->schemaBuilder()->getColumns('users');
+    foreach ($columns as $column) {
+        echo "Columna: {$column['name']} ({$column['type']})\n";
+    }
+}
+```
 
 ---
 
