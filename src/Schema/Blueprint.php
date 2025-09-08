@@ -300,8 +300,11 @@ class Blueprint
      */
     public function timestamps(): void
     {
-        $this->timestamp('created_at')->nullable();
-        $this->timestamp('updated_at')->nullable();
+        $this->timestamp('created_at')->nullable()->useCurrent();
+        $this->timestamp('updated_at')
+            ->nullable()
+            ->useCurrent()
+            ->useCurrentOnUpdate();
     }
 
     /**
