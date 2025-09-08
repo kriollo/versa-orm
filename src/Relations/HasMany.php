@@ -10,11 +10,19 @@ class HasMany extends HasOne // Extends HasOne because the constraint logic is i
 {
     /**
      * Redirigir llamadas al QueryBuilder interno.
+     *
+     * @param string $method
+     * @param array<mixed> $arguments
+     *
+     * @return mixed
+     *
+     * @phpstan-ignore-next-line
      */
     public function __call($method, $arguments)
     {
         $this->addConstraints();
 
+        /** @phpstan-ignore-next-line */
         return $this->query->$method(...$arguments);
     }
 

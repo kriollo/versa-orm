@@ -27,7 +27,7 @@ final class PdoEngineBindAndInvalidateTest extends TestCase
         $stmt = $pdo->prepare('SELECT ? as v');
         $bind->invoke($engine, $stmt, [42]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        static::assertIsArray($row);
+        self::assertIsArray($row);
 
         // Test cache invalidation path: storeInCache then invalidateCacheForTable via reflection
         $store = $ref->getMethod('storeInCache');
@@ -37,7 +37,7 @@ final class PdoEngineBindAndInvalidateTest extends TestCase
         $idxProp = $ref->getProperty('tableKeyIndex');
         $idxProp->setAccessible(true);
         $idx = $idxProp->getValue();
-        static::assertArrayHasKey('users', $idx);
+        self::assertArrayHasKey('users', $idx);
 
         $invalidate = $ref->getMethod('invalidateCacheForTable');
         $invalidate->setAccessible(true);
@@ -46,6 +46,6 @@ final class PdoEngineBindAndInvalidateTest extends TestCase
         $qc = $ref->getProperty('queryCache');
         $qc->setAccessible(true);
         $cache = $qc->getValue();
-        static::assertEmpty($cache);
+        self::assertEmpty($cache);
     }
 }

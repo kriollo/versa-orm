@@ -113,30 +113,30 @@ final class QueryHelpersTest extends TestCase
     {
         $rows = VersaModel::getAll('SELECT * FROM tests');
 
-        static::assertIsArray($rows);
-        static::assertCount(2, $rows);
-        static::assertSame('one', $rows[0]['name']);
+        self::assertIsArray($rows);
+        self::assertCount(2, $rows);
+        self::assertSame('one', $rows[0]['name']);
     }
 
     public function test_getRow_returns_single_row_or_null(): void
     {
         $row = VersaModel::getRow('SELECT * FROM tests WHERE id = ?', [1]);
 
-        static::assertIsArray($row);
-        static::assertArrayHasKey('id', $row);
+        self::assertIsArray($row);
+        self::assertArrayHasKey('id', $row);
 
         $rowNull = VersaModel::getRow('SELECT * FROM tests WHERE id = -1', []);
-        static::assertNull($rowNull);
+        self::assertNull($rowNull);
     }
 
     public function test_getCell_returns_first_value_or_null(): void
     {
         $cell = VersaModel::getCell('SELECT name FROM tests WHERE id = ?', [1]);
 
-        static::assertSame('one', $cell);
+        self::assertSame('one', $cell);
 
         $noCell = VersaModel::getCell('SELECT missing FROM tests WHERE id = -1', []);
-        static::assertNull($noCell);
+        self::assertNull($noCell);
     }
 
     public function test_query_instance_and_queryTable_static(): void
@@ -144,9 +144,9 @@ final class QueryHelpersTest extends TestCase
         $instanceModel = new class('tests', VersaModel::getGlobalORM() ?? null) extends VersaModel {};
 
         $qb = $instanceModel->query();
-        static::assertInstanceOf(QueryBuilder::class, $qb);
+        self::assertInstanceOf(QueryBuilder::class, $qb);
 
         $qb2 = VersaModel::queryTable('tests');
-        static::assertInstanceOf(QueryBuilder::class, $qb2);
+        self::assertInstanceOf(QueryBuilder::class, $qb2);
     }
 }

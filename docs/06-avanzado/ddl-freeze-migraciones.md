@@ -114,10 +114,26 @@ ALTER TABLE users DROP COLUMN last_login;
 ```
 
 ## Comprobación de Esquema
-Usa introspección:
+Usa el SchemaBuilder moderno para introspección:
 ```php
-$cols = $orm->schema('columns','users');
-// Valida presencia de last_login
+use VersaORM\Schema\VersaSchema;
+
+// Verificar existencia de tabla
+if (VersaSchema::hasTable('users')) {
+    echo "Tabla users existe\n";
+}
+
+// Verificar existencia de columna
+if (VersaSchema::hasColumn('users', 'last_login')) {
+    echo "Columna last_login existe\n";
+}
+
+// Obtener información detallada de columnas
+$schema = $orm->schemaBuilder();
+$cols = $schema->getColumns('users');
+foreach ($cols as $col) {
+    echo "{$col['name']} ({$col['type']})\n";
+}
 ```
 **SQL subyacente (driver MySQL):**
 ```sql

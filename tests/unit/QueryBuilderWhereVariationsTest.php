@@ -29,17 +29,17 @@ final class QueryBuilderWhereVariationsTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        static::assertIsArray($res);
-        static::assertArrayHasKey('sql', $res);
-        static::assertArrayHasKey('bindings', $res);
+        self::assertIsArray($res);
+        self::assertArrayHasKey('sql', $res);
+        self::assertArrayHasKey('bindings', $res);
 
         $sql = strtoupper($res['sql']);
         $bindings = $res['bindings'];
 
-        static::assertStringContainsString('WHERE', $sql);
-        static::assertStringContainsString('IN', $sql);
-        static::assertStringContainsString('BETWEEN', $sql);
-        static::assertIsArray($bindings);
-        static::assertNotEmpty($bindings);
+        self::assertStringContainsString('WHERE', $sql);
+        self::assertStringContainsString('IN', $sql);
+        self::assertStringContainsString('BETWEEN', $sql);
+        self::assertIsArray($bindings);
+        self::assertNotEmpty($bindings);
     }
 }

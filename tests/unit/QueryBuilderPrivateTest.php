@@ -18,14 +18,14 @@ final class QueryBuilderPrivateTest extends TestCase
         $isSafe = $ref->getMethod('isSafeIdentifier');
         $isSafe->setAccessible(true);
 
-        static::assertTrue($isSafe->invoke($qb, 'users'));
-        static::assertFalse($isSafe->invoke($qb, 'users; DROP TABLE'));
+        self::assertTrue($isSafe->invoke($qb, 'users'));
+        self::assertFalse($isSafe->invoke($qb, 'users; DROP TABLE'));
 
         $isRaw = $ref->getMethod('isSafeRawExpression');
         $isRaw->setAccessible(true);
 
-        static::assertTrue($isRaw->invoke($qb, 'COUNT(*)'));
-        static::assertFalse($isRaw->invoke($qb, '1=1; DROP TABLE'));
+        self::assertTrue($isRaw->invoke($qb, 'COUNT(*)'));
+        self::assertFalse($isRaw->invoke($qb, '1=1; DROP TABLE'));
     }
 
     public function test_build_subquery_sql_and_bindings(): void
@@ -40,16 +40,16 @@ final class QueryBuilderPrivateTest extends TestCase
         // Build subquery from the same builder
         $res = $method->invoke($qb, $qb);
 
-        static::assertIsArray($res);
-        static::assertArrayHasKey('sql', $res);
-        static::assertArrayHasKey('bindings', $res);
+        self::assertIsArray($res);
+        self::assertArrayHasKey('sql', $res);
+        self::assertArrayHasKey('bindings', $res);
         $sql = $res['sql'];
         $bindings = $res['bindings'];
 
-        static::assertIsString($sql);
-        static::assertIsArray($bindings);
-        static::assertStringContainsString('FROM', $sql);
-        static::assertContains(5, $bindings);
+        self::assertIsString($sql);
+        self::assertIsArray($bindings);
+        self::assertStringContainsString('FROM', $sql);
+        self::assertContains(5, $bindings);
     }
 
     public function test_build_select_sql_returns_sql_and_bindings(): void
@@ -61,12 +61,12 @@ final class QueryBuilderPrivateTest extends TestCase
         $m->setAccessible(true);
 
         $res2 = $m->invoke($qb);
-        static::assertIsArray($res2);
-        static::assertArrayHasKey('sql', $res2);
-        static::assertArrayHasKey('bindings', $res2);
+        self::assertIsArray($res2);
+        self::assertArrayHasKey('sql', $res2);
+        self::assertArrayHasKey('bindings', $res2);
         $sql = $res2['sql'];
         $bindings = $res2['bindings'];
-        static::assertIsString($sql);
-        static::assertIsArray($bindings);
+        self::assertIsString($sql);
+        self::assertIsArray($bindings);
     }
 }

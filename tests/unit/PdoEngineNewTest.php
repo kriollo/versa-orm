@@ -19,9 +19,9 @@ final class PdoEngineNewTest extends TestCase
         PdoEngine::resetMetrics();
         $metrics = PdoEngine::getMetrics();
 
-        static::assertIsArray($metrics);
-        static::assertArrayHasKey('queries', $metrics);
-        static::assertSame(0, $metrics['queries']);
+        self::assertIsArray($metrics);
+        self::assertArrayHasKey('queries', $metrics);
+        self::assertSame(0, $metrics['queries']);
     }
 
     public function testCacheEnableDisableClearStatus(): void
@@ -31,19 +31,19 @@ final class PdoEngineNewTest extends TestCase
 
         // enable
         $res = $engine->execute('cache', ['action' => 'enable']);
-        static::assertSame('cache enabled', $res);
+        self::assertSame('cache enabled', $res);
 
         // status returns numeric count
         $status = $engine->execute('cache', ['action' => 'status']);
-        static::assertIsInt($status);
+        self::assertIsInt($status);
 
         // clear
         $cleared = $engine->execute('cache', ['action' => 'clear']);
-        static::assertSame('cache cleared', $cleared);
+        self::assertSame('cache cleared', $cleared);
 
         // disable
         $disabled = $engine->execute('cache', ['action' => 'disable']);
-        static::assertSame('cache disabled', $disabled);
+        self::assertSame('cache disabled', $disabled);
     }
 
     public function testFetchTablesSqliteInMemory(): void
@@ -56,7 +56,7 @@ final class PdoEngineNewTest extends TestCase
 
         $tables = $engine->execute('schema', ['subject' => 'tables']);
 
-        static::assertIsArray($tables);
+        self::assertIsArray($tables);
         $found = false;
 
         foreach ($tables as $t) {
@@ -71,7 +71,7 @@ final class PdoEngineNewTest extends TestCase
             }
         }
 
-        static::assertTrue($found, 'test_x table should be reported by fetchTables');
+        self::assertTrue($found, 'test_x table should be reported by fetchTables');
     }
 
     public function testPrepareCachedLruLimit(): void
@@ -85,6 +85,6 @@ final class PdoEngineNewTest extends TestCase
         $engine->execute('raw', ['sql' => 'CREATE TABLE a3 (id INTEGER)']);
 
         // If no exception thrown, assume eviction worked and cache handled limits
-        static::assertTrue(true);
+        self::assertTrue(true);
     }
 }

@@ -11,8 +11,8 @@ final class VersaORMExceptionTest extends TestCase
     {
         $ex = new VersaORMException('boom', 'CODE_X');
 
-        static::assertInstanceOf(VersaORMException::class, $ex);
-        static::assertStringContainsString('boom', $ex->getMessage());
-        static::assertSame('CODE_X', $ex->getErrorCode());
+        self::assertInstanceOf(VersaORMException::class, $ex);
+        self::assertStringContainsString('boom', $ex->getMessage());
+        self::assertSame('CODE_X', $ex->getErrorCode());
     }
 }

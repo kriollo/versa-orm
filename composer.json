@@ -52,6 +52,7 @@
     "psr-4": {
       "VersaORM\\Tests\\": "tests/",
       "VersaORM\\Tests\\Unit\\": "tests/unit/",
+      "VersaORM\\Tests\\Mysql\\": "testMysql/",
       "VersaORM\\Tests\\PostgreSQL\\": "testPostgreSQL/",
       "VersaORM\\Tests\\SQLite\\": "testSQLite/",
       "App\\Models\\": "example/models/"

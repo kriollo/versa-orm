@@ -15,6 +15,8 @@ use function count;
  *
  * Este trait proporciona métodos para capturar y manejar errores de VersaORM
  * de manera consistente en todos los modelos.
+ *
+ * @phpstan-ignore-next-line
  */
 trait HandlesErrors
 {

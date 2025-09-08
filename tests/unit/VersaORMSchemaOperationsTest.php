@@ -21,20 +21,20 @@ final class VersaORMSchemaOperationsTest extends TestCase
         $orm->schemaCreate('test_table', $cols, $options);
 
         $tables = $orm->schema('tables');
-        static::assertContains('test_table', $tables);
+        self::assertContains('test_table', $tables);
 
         $columns = $orm->schema('columns', 'test_table');
         $names = array_map(fn($c) => $c['name'] ?? $c['column_name'] ?? null, $columns);
 
-        static::assertContains('id', $names);
-        static::assertContains('name', $names);
+        self::assertContains('id', $names);
+        self::assertContains('name', $names);
 
         // rename
         $orm->schemaRename('test_table', 'test_table_renamed');
-        static::assertContains('test_table_renamed', $orm->schema('tables'));
+        self::assertContains('test_table_renamed', $orm->schema('tables'));
 
         // drop
         $orm->schemaDrop('test_table_renamed');
-        static::assertNotContains('test_table_renamed', $orm->schema('tables'));
+        self::assertNotContains('test_table_renamed', $orm->schema('tables'));
     }
 }

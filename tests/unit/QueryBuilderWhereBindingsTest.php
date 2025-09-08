@@ -20,12 +20,12 @@ final class QueryBuilderWhereBindingsTest extends TestCase
         $m->setAccessible(true);
 
         $res = $m->invoke($qb);
-        static::assertIsArray($res);
-        static::assertArrayHasKey('sql', $res);
-        static::assertArrayHasKey('bindings', $res);
+        self::assertIsArray($res);
+        self::assertArrayHasKey('sql', $res);
+        self::assertArrayHasKey('bindings', $res);
 
         // bindings for IN/BETWEEN may be nested arrays per implementation
-        static::assertIsArray($res['bindings']);
-        static::assertNotEmpty($res['bindings']);
+        self::assertIsArray($res['bindings']);
+        self::assertNotEmpty($res['bindings']);
     }
 }

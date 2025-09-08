@@ -239,7 +239,7 @@ class SqlGenerator
                 . $onClause;
 
             // Detectar SQLite por nombre de dialecto
-            $isSQLite = method_exists($dialect, 'getName') && stripos($dialect->getName(), 'sqlite') !== false;
+            $isSQLite = stripos($dialect->getName(), 'sqlite') !== false;
             if ($isSQLite) {
                 // RIGHT JOIN no soportado: invertir tablas y columnas para simular RIGHT JOIN
                 $invBaseFrom = ' FROM ' . self::compileTableReference((string) $j['table'], $dialect);
@@ -275,7 +275,7 @@ class SqlGenerator
 
         foreach ($joins as $joinIdx => $join) {
             $type = strtolower((string) ($join['type'] ?? 'inner'));
-            $isSQLite = method_exists($dialect, 'getName') && stripos($dialect->getName(), 'sqlite') !== false;
+            $isSQLite = stripos($dialect->getName(), 'sqlite') !== false;
             // Emulación RIGHT JOIN para SQLite (solo si es el primer JOIN, para evitar múltiples FROM)
             if ($type === 'right' && $isSQLite && $joinIdx === 0) {
                 // Reconstruir el SQL desde cero, invirtiendo tablas y columnas
@@ -435,6 +435,7 @@ class SqlGenerator
 
             foreach ($whereRaw as $w) {
                 if (is_array($w)) {
+                    /** @var array{type?:string,operator?:string,column?:string,value:mixed} $w */
                     $whereList[] = $w;
                 }
             }
@@ -859,14 +860,9 @@ class SqlGenerator
 
                 // Añadir RETURNING id para Postgres solo si la columna 'id' está presente
                 try {
-                    if (
-                        is_array($columns)
-                        && in_array('id', $columns, true)
-                        && is_object($dialect)
-                        && method_exists($dialect, 'getName')
-                    ) {
+                    if (in_array('id', $columns, true)) {
                         $driverHint = $dialect->getName();
-                        if (stripos((string) $driverHint, 'postgres') !== false) {
+                        if (stripos($driverHint, 'postgres') !== false) {
                             $sql .= ' RETURNING id';
                         }
                     }
@@ -918,7 +914,7 @@ class SqlGenerator
                     }
                 }
                 $sql .= implode(', ', $valuesSql);
-                $driverHint = method_exists($dialect, 'getName') ? $dialect->getName() : '';
+                $driverHint = $dialect->getName();
 
                 if (stripos($driverHint, 'postgres') !== false) {
                     if (empty($unique)) {

@@ -331,7 +331,8 @@ class ErrorHandler
 
         foreach ($bindings as $binding) {
             $value = is_string($binding) ? "'{$binding}'" : (string) $binding;
-            $formatted = preg_replace('/\?/', $value, $formatted, 1);
+            $result = preg_replace('/\?/', $value, $formatted, 1);
+            $formatted = $result !== null ? $result : $formatted;
         }
 
         return $formatted;

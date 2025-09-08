@@ -20,11 +20,11 @@ final class VersaModelTrashTest extends TestCase
         $m->name = 'T1';
         $id = $m->store();
 
-        static::assertIsInt($id);
+        self::assertIsInt($id);
 
         $m->trash();
 
         $loaded = VersaModel::load('trash_test', $id);
-        static::assertNull($loaded);
+        self::assertNull($loaded);
     }
 }

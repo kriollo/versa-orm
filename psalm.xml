@@ -26,7 +26,6 @@
         <directory name="example" />
         <ignoreFiles>
             <directory name="vendor" />
-            <directory name="src/binary" />
             <directory name="tests" />
             <directory name="test*" />
         </ignoreFiles>

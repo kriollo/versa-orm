@@ -27,6 +27,7 @@ excessive-parameter-list = { enabled = false }
 kan-defect = { enabled = false }
 no-literal-password = { enabled = false }
 no-boolean-flag-parameter = { enabled = false }
+no-else-clause = { enabled = false }
 
 [analyzer]
 find-unused-definitions = true

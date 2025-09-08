@@ -14,12 +14,12 @@ final class VersaORMMinimalTest extends TestCase
     public function testExecAndTable(): void
     {
         $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
-        static::assertNull($orm->exec('CREATE TABLE t_minimal (id INTEGER PRIMARY KEY, name TEXT)'));
-        static::assertNull($orm->exec('INSERT INTO t_minimal (name) VALUES (?)', ['Z']));
+        self::assertNull($orm->exec('CREATE TABLE t_minimal (id INTEGER PRIMARY KEY, name TEXT)'));
+        self::assertNull($orm->exec('INSERT INTO t_minimal (name) VALUES (?)', ['Z']));
         $rows = $orm->exec('SELECT name FROM t_minimal');
-        static::assertIsArray($rows);
+        self::assertIsArray($rows);
 
         $qb = $orm->table('t_minimal');
-        static::assertInstanceOf(QueryBuilder::class, $qb);
+        self::assertInstanceOf(QueryBuilder::class, $qb);
     }
 }

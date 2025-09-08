@@ -11,6 +11,8 @@ use function is_array;
 
 /**
  * Trait para manejar la conexión y desconexión de VersaORM.
+ *
+ * @phpstan-ignore-next-line
  */
 trait VersaORMTrait
 {

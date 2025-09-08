@@ -40,7 +40,7 @@ final class HandlesErrorsTest extends TestCase
     {
         $m = new DummyHandlesModel();
 
-        static::assertSame([], $m->getLastErrorSuggestions());
+        self::assertSame([], $m->getLastErrorSuggestions());
     }
 
     public function testSafeStoreCatchesAndSetsLastError(): void
@@ -53,7 +53,7 @@ final class HandlesErrorsTest extends TestCase
             // If configuration throws, ensure lastError is populated by trait
         }
 
-        static::assertTrue($m->hasError() || $m->getLastError() === null);
+        self::assertTrue($m->hasError() || $m->getLastError() === null);
     }
 
     public function testWithStaticErrorHandlingDoesNotCrash(): void
@@ -63,6 +63,6 @@ final class HandlesErrorsTest extends TestCase
 
         $res = DummyHandlesModel::safeFind(1);
 
-        static::assertNull($res);
+        self::assertNull($res);
     }
 }

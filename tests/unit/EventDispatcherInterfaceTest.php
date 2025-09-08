@@ -12,10 +12,10 @@ final class EventDispatcherInterfaceTest extends TestCase
 {
     public function test_interface_methods_exist(): void
     {
-        static::assertTrue(interface_exists('\VersaORM\EventDispatcher'));
+        self::assertTrue(interface_exists('\VersaORM\EventDispatcher'));
         $r = new ReflectionClass(EventDispatcher::class);
 
-        static::assertTrue($r->hasMethod('listen'));
-        static::assertTrue($r->hasMethod('dispatch'));
+        self::assertTrue($r->hasMethod('listen'));
+        self::assertTrue($r->hasMethod('dispatch'));
     }
 }

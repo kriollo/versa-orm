@@ -35,11 +35,11 @@ final class QueryBuilderSecurityTest extends TestCase
         $m = $ref->getMethod('isSafeIdentifier');
         $m->setAccessible(true);
 
-        static::assertTrue($m->invoke($this->qb, '*'));
-        static::assertTrue($m->invoke($this->qb, 'users'));
-        static::assertTrue($m->invoke($this->qb, 'users.name as author'));
-        static::assertFalse($m->invoke($this->qb, 'users; DROP TABLE users'));
-        static::assertFalse($m->invoke($this->qb, '1weird'));
+        self::assertTrue($m->invoke($this->qb, '*'));
+        self::assertTrue($m->invoke($this->qb, 'users'));
+        self::assertTrue($m->invoke($this->qb, 'users.name as author'));
+        self::assertFalse($m->invoke($this->qb, 'users; DROP TABLE users'));
+        self::assertFalse($m->invoke($this->qb, '1weird'));
     }
 
     public function testIsSQLFunctionDetectsAllowedFunctions(): void
@@ -48,10 +48,10 @@ final class QueryBuilderSecurityTest extends TestCase
         $m = $ref->getMethod('isSQLFunction');
         $m->setAccessible(true);
 
-        static::assertTrue($m->invoke($this->qb, 'COUNT(*)'));
-        static::assertTrue($m->invoke($this->qb, 'MAX(price)'));
-        static::assertFalse($m->invoke($this->qb, 'BADFUNC(1; DROP TABLE)'));
-        static::assertFalse($m->invoke($this->qb, 'SLEEP(10)'));
+        self::assertTrue($m->invoke($this->qb, 'COUNT(*)'));
+        self::assertTrue($m->invoke($this->qb, 'MAX(price)'));
+        self::assertFalse($m->invoke($this->qb, 'BADFUNC(1; DROP TABLE)'));
+        self::assertFalse($m->invoke($this->qb, 'SLEEP(10)'));
     }
 
     public function testIsSafeRawExpressionRejectsDangerousPatterns(): void
@@ -60,8 +60,8 @@ final class QueryBuilderSecurityTest extends TestCase
         $m = $ref->getMethod('isSafeRawExpression');
         $m->setAccessible(true);
 
-        static::assertTrue($m->invoke($this->qb, 'SELECT id FROM users'));
-        static::assertFalse($m->invoke($this->qb, 'SELECT * FROM users; DROP TABLE secret;'));
-        static::assertFalse($m->invoke($this->qb, str_repeat('(', 600)));
+        self::assertTrue($m->invoke($this->qb, 'SELECT id FROM users'));
+        self::assertFalse($m->invoke($this->qb, 'SELECT * FROM users; DROP TABLE secret;'));
+        self::assertFalse($m->invoke($this->qb, str_repeat('(', 600)));
     }
 }

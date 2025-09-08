@@ -37,25 +37,25 @@ final class PdoEngineStmtCacheTest extends TestCase
 
         // After 3 prepares, stmt_cache_misses should be 3
         $metrics = PdoEngine::getMetrics();
-        static::assertGreaterThanOrEqual(3, $metrics['stmt_cache_misses']);
+        self::assertGreaterThanOrEqual(3, $metrics['stmt_cache_misses']);
 
         // Access one of the earlier statements to create an LRU hit
         $prepare->invoke($engine, $dbh, 'SELECT 2');
 
         $metrics = PdoEngine::getMetrics();
-        static::assertGreaterThanOrEqual(1, $metrics['stmt_cache_hits']);
+        self::assertGreaterThanOrEqual(1, $metrics['stmt_cache_hits']);
 
         // Add a fourth distinct statement to trigger eviction
         $prepare->invoke($engine, $dbh, 'SELECT 4');
 
         // Ensure stmt cache misses increased (>=4)
         $metrics = PdoEngine::getMetrics();
-        static::assertGreaterThanOrEqual(4, $metrics['stmt_cache_misses']);
+        self::assertGreaterThanOrEqual(4, $metrics['stmt_cache_misses']);
 
         // Reset metrics and verify cleared
         PdoEngine::resetMetrics();
         $metrics = PdoEngine::getMetrics();
-        static::assertSame(0, $metrics['stmt_cache_hits']);
-        static::assertSame(0, $metrics['stmt_cache_misses']);
+        self::assertSame(0, $metrics['stmt_cache_hits']);
+        self::assertSame(0, $metrics['stmt_cache_misses']);
     }
 }

@@ -26,19 +26,19 @@ final class QueryBuilderWhereEdgeCasesTest extends TestCase
         $m->setAccessible(true);
 
         $res = $m->invoke($qb);
-        static::assertIsArray($res);
-        static::assertArrayHasKey('sql', $res);
-        static::assertArrayHasKey('bindings', $res);
+        self::assertIsArray($res);
+        self::assertArrayHasKey('sql', $res);
+        self::assertArrayHasKey('bindings', $res);
 
         $sql = $res['sql'];
         $bindings = $res['bindings'];
 
-        static::assertStringContainsString('WHERE', $sql);
-        static::assertStringContainsString('IN', $sql);
-        static::assertStringContainsString('BETWEEN', $sql);
-        static::assertIsArray($bindings);
+        self::assertStringContainsString('WHERE', $sql);
+        self::assertStringContainsString('IN', $sql);
+        self::assertStringContainsString('BETWEEN', $sql);
+        self::assertIsArray($bindings);
         // price > 10 should add 10 somewhere in bindings; category IN should include 1,2,3
-        static::assertContains(10, $bindings);
+        self::assertContains(10, $bindings);
 
         // category IN bindings may be nested as an array; ensure at least one binding array contains 1
         $found = false;
@@ -48,6 +48,6 @@ final class QueryBuilderWhereEdgeCasesTest extends TestCase
                 break;
             }
         }
-        static::assertTrue($found, 'Expected to find value 1 inside nested bindings (IN clause)');
+        self::assertTrue($found, 'Expected to find value 1 inside nested bindings (IN clause)');
     }
 }

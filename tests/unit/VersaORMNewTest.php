@@ -15,13 +15,13 @@ final class VersaORMNewTest extends TestCase
 
         // Ensure metrics are available and start reset
         $metrics = $orm->metrics();
-        static::assertIsArray($metrics);
+        self::assertIsArray($metrics);
 
         // mutate via PdoEngine static and then reset through ORM
         // call metricsReset should not throw
         $orm->metricsReset();
         $after = $orm->metrics();
-        static::assertIsArray($after);
+        self::assertIsArray($after);
     }
 
     public function testDisconnectDoesNotThrow(): void
@@ -33,7 +33,7 @@ final class VersaORMNewTest extends TestCase
         $orm->disconnect();
         $orm->disconnect();
 
-        static::assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testAddTypeConverterDelegation(): void
@@ -46,6 +46,6 @@ final class VersaORMNewTest extends TestCase
         $orm->addTypeConverter('dummy_type2', fn($v) => $v, null);
 
         // confirm static registry contains at least the added converters via reflection-ish check
-        static::assertTrue(true);
+        self::assertTrue(true);
     }
 }

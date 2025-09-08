@@ -98,8 +98,8 @@ final class RelationsBelongsToManySyncDetachTest extends TestCase
         // our TBMQuery::from() returns the same instance, so lastExecute will be set
         $rel->attach(9, ['meta' => 'x']);
 
-        static::assertIsArray($relatedQ->lastExecute);
-        static::assertSame('insert', $relatedQ->lastExecute['action']);
+        self::assertIsArray($relatedQ->lastExecute);
+        self::assertSame('insert', $relatedQ->lastExecute['action']);
     }
 
     public function testSyncAndDetachCallPivotDeleteWhenPresent(): void
@@ -113,11 +113,11 @@ final class RelationsBelongsToManySyncDetachTest extends TestCase
         // sync relies on $this->query->from()->where()->get() which our TBMQuery stubs
         // return empty arrays or $this, so should not throw and return attached/detached arrays
         $res = $rel->sync([1, 2]);
-        static::assertIsArray($res);
-        static::assertArrayHasKey('attached', $res);
-        static::assertArrayHasKey('detached', $res);
+        self::assertIsArray($res);
+        self::assertArrayHasKey('attached', $res);
+        self::assertArrayHasKey('detached', $res);
 
         // detach should not throw
-        static::assertNull($rel->detach([1]));
+        self::assertNull($rel->detach([1]));
     }
 }

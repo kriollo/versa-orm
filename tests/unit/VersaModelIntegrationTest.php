@@ -23,10 +23,10 @@ final class VersaModelIntegrationTest extends TestCase
         $m->name = 'Bob';
         $id = $m->store();
 
-        static::assertIsInt($id);
+        self::assertIsInt($id);
 
         $loaded = VersaModel::load('users', $id);
-        static::assertSame('Bob', $loaded->name);
+        self::assertSame('Bob', $loaded->name);
     }
 
     public function test_upsert_and_replace()
@@ -43,7 +43,7 @@ final class VersaModelIntegrationTest extends TestCase
         $m2->upsert(['sku']);
 
         $found = VersaModel::findOne('items', ['sku' => 'X1']);
-        static::assertNotNull($found);
-        static::assertSame(10, $found->qty);
+        self::assertNotNull($found);
+        self::assertSame(10, $found->qty);
     }
 }

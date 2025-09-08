@@ -59,10 +59,10 @@ class QueryBuilder
 
     private string $table;
 
-    /** @var list<SelectRaw|SelectSub|string> */
+    /** @var list<array{type: 'raw', expression: string, bindings: array<int, mixed>}|array{type: 'subquery', subquery: array<string, mixed>, alias: string}|string> */
     private array $selects = [];
 
-    /** @var list<WhereEntry> */
+    /** @var list<array{column: string, operator: string, value: mixed, type: 'and'|'or', subquery?: true}> */
     private array $wheres = [];
 
     /**
@@ -76,7 +76,7 @@ class QueryBuilder
      *   first_col?:string,
      *   operator:string,
      *   second?:string,
-     *   second_col?:string,
+     *   second_col?:int|string,
      *   alias?:string,
      *   subquery?:string,
      *   subquery_bindings?:array<int,mixed>
@@ -210,7 +210,7 @@ class QueryBuilder
                 throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
-        $this->selects = $columns;
+        $this->selects = array_values($columns);
 
         return $this;
     }
@@ -1083,14 +1083,16 @@ class QueryBuilder
 
                 // Incluir relaciones cargadas (si las hubiera) en el array exportado
                 try {
-                    if (method_exists($m, 'getRelations')) {
-                        $rels = $m->getRelations();
-                        if (is_array($rels) && $rels !== []) {
-                            foreach ($rels as $rk => $rv) {
-                                $rowExport[$rk] = $rv;
-                            }
+                    // PHPStan: method_exists siempre será true para VersaModel
+                    // if (method_exists($m, 'getRelations')) {
+                    $rels = $m->getRelations();
+                    if ($rels !== []) {
+                        foreach ($rels as $rk => $rv) {
+                            $rowExport[$rk] = $rv;
                         }
                     }
+
+                    // }
                 } catch (Throwable) {
                     // no bloquear la exportación si falla obtener relaciones
                 }
@@ -1372,9 +1374,7 @@ class QueryBuilder
             try {
                 if ($this->orm->isDebugMode()) {
                     try {
-                        if ($this->orm instanceof VersaORMClass) {
-                            $this->orm->logDebug('[DEBUG] Executing SQL with QueryBuilder');
-                        }
+                        $this->orm->logDebug('[DEBUG] Executing SQL with QueryBuilder');
                     } catch (Throwable) {
                         // ignore logging errors
                     }
@@ -1500,12 +1500,10 @@ class QueryBuilder
             try {
                 if ($this->orm->isDebugMode()) {
                     try {
-                        if ($this->orm instanceof VersaORMClass) {
-                            $this->orm->logDebug(
-                                '[DEBUG] insertMany PHP - First record: ' . json_encode($processedRecords[0] ?? null),
-                                ['records' => $processedRecords],
-                            );
-                        }
+                        $firstRecord = $processedRecords !== [] ? $processedRecords[0] : null;
+                        $this->orm->logDebug('[DEBUG] insertMany PHP - First record: ' . json_encode($firstRecord), [
+                            'records' => $processedRecords,
+                        ]);
                     } catch (Throwable) {
                         // ignore logging errors
                     }
@@ -3121,7 +3119,7 @@ class QueryBuilder
 
         // ORDER BY
         if (
-            $builder->orderBy
+            $builder->orderBy !== null
             && is_array($builder->orderBy)
             && isset($builder->orderBy['column'], $builder->orderBy['direction'])
             && is_string($builder->orderBy['column'])
@@ -3253,15 +3251,13 @@ class QueryBuilder
                     try {
                         if ($this->orm->isDebugMode()) {
                             try {
-                                if ($this->orm instanceof VersaORMClass) {
-                                    $this->orm->logDebug(
-                                        '[DEBUG] buildPayload - Final merged params for '
-                                        . $method
-                                        . ': '
-                                        . json_encode($params),
-                                        ['params' => $params],
-                                    );
-                                }
+                                $this->orm->logDebug(
+                                    '[DEBUG] buildPayload - Final merged params for '
+                                    . $method
+                                    . ': '
+                                    . json_encode($params),
+                                    ['params' => $params],
+                                );
                             } catch (Throwable) {
                                 // ignore
                             }
@@ -3563,12 +3559,12 @@ class QueryBuilder
 
                 foreach ($idx as $ix) {
                     $unique = (bool) ($ix['unique'] ?? false);
-                    $cols = (array) ($ix['columns'] ?? $ix['column'] ?? []);
+                    $cols = $ix['columns'] ?? $ix['column'] ?? [];
 
                     if (!is_array($cols)) {
                         $cols = [$cols];
                     }
-                    $cols = array_values(array_filter(array_map('strval', $cols)));
+                    $cols = array_values(array_filter(array_map('strval', $cols), fn($col) => $col !== ''));
 
                     if ($unique && $cols !== [] && array_diff($cols, $keysInData) === []) {
                         $pk = $cols;

@@ -25,8 +25,8 @@ final class ValidateAndCreateColumnTest extends TestCase
         $method->setAccessible(true);
 
         $res = $method->invokeArgs($m, ['email', null, []]);
-        static::assertIsArray($res);
-        static::assertEmpty($res);
+        self::assertIsArray($res);
+        self::assertEmpty($res);
     }
 
     public function testEnsureColumnsExistThrowsWhenNoOrm(): void

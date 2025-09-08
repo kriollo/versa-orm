@@ -54,7 +54,7 @@ final class CreateIndexMysqlTest extends TestCase
 
         // Obtener SQLs ejecutados
         $captured = $orm->captured;
-        static::assertNotEmpty($captured, 'No SQL captured');
+        self::assertNotEmpty($captured, 'No SQL captured');
 
         // Buscar SQL de creación de índice (debería ser algo como: CREATE INDEX `id_empresa` ON `versa_users` USING BTREE (`id_empresa`)
         $indexSqlFound = false;
@@ -63,15 +63,15 @@ final class CreateIndexMysqlTest extends TestCase
             if (stripos($sql, 'CREATE INDEX') !== false) {
                 $indexSqlFound = true;
                 // No debe contener 'USING BTREE (' seguido inmediatamente por '('
-                static::assertStringNotContainsString('USING BTREE (', strtoupper($sql));
+                self::assertStringNotContainsString('USING BTREE (', strtoupper($sql));
                 // Debe contener 'USING BTREE' y la lista de columnas entre paréntesis
-                static::assertStringContainsString('USING BTREE', strtoupper($sql));
-                static::assertStringContainsString('(', $sql);
-                static::assertStringContainsString(')', $sql);
+                self::assertStringContainsString('USING BTREE', strtoupper($sql));
+                self::assertStringContainsString('(', $sql);
+                self::assertStringContainsString(')', $sql);
             }
         }
 
-        static::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');
+        self::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');
     }
 
     public function test_schema_alter_drop_column_and_index_generates_valid_sql_for_mysql(): void
@@ -102,7 +102,7 @@ final class CreateIndexMysqlTest extends TestCase
         ]);
 
         $captured = $orm->captured;
-        static::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
+        self::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
 
         $dropColumnFound = false;
         $dropIndexFound = false;
@@ -117,7 +117,7 @@ final class CreateIndexMysqlTest extends TestCase
             }
         }
 
-        static::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
-        static::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
+        self::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
+        self::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
     }
 }

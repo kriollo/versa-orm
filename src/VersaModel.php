@@ -216,6 +216,7 @@ class VersaModel implements TypedModelInterface
      *
      * @return array<string,array<string,mixed>>
      */
+    #[\Override]
     public static function getPropertyTypes(): array
     {
         // Usar late static binding para que static::class dentro del trait
@@ -231,6 +232,7 @@ class VersaModel implements TypedModelInterface
      *
      * @return mixed
      */
+    #[\Override]
     public function castToPhpType(string $property, $value)
     {
         return $this->traitCastToPhpType($property, $value);
@@ -464,6 +466,7 @@ class VersaModel implements TypedModelInterface
             foreach ($relations as $relationName => $relationData) {
                 // Convertir los datos de la relación en instancias de modelo apropiadas
                 if (method_exists($this, $relationName)) {
+                    /** @phpstan-ignore-next-line */
                     $relationInstance = $this->{$relationName}();
 
                     if ($relationInstance instanceof HasMany || $relationInstance instanceof BelongsToMany) {
@@ -633,7 +636,7 @@ class VersaModel implements TypedModelInterface
 
         // Intentar obtener el ID en forma nativa usando el QueryBuilder
         try {
-            /** @var int|string|null $newId */
+            /** @var int|null $newId */
             $newId = $orm->table($this->table)->insertGetId($preparedAttributes);
             if ($newId !== null && $newId !== '') {
                 // Normalizar a int si es numérico
@@ -1787,6 +1790,22 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
+     * Limpia todos los registros estáticos para prevenir memory leaks.
+     * Útil para procesos de larga duración y tests.
+     */
+    public static function clearStaticRegistries(): void
+    {
+        self::$eventListeners = [];
+        self::$ormInstance = null;
+
+        // Si el trait HasStrongTyping está disponible, limpiar sus registros también
+        // @phpstan-ignore-next-line (method_exists is used for trait method check)
+        if (method_exists(static::class, 'clearTypeConverters')) {
+            static::clearTypeConverters();
+        }
+    }
+
+    /**
      * Disparar un evento y ejecutar listeners y métodos mágicos.
      *
      * @return bool true si la operación puede continuar, false si se cancela
@@ -1812,6 +1831,7 @@ class VersaModel implements TypedModelInterface
         // Métodos mágicos: beforeCreate, afterSave, etc.
         $magicMethod = static::eventToMagicMethod($event);
         if (method_exists($this, $magicMethod)) {
+            /** @phpstan-ignore-next-line */
             $this->$magicMethod();
             if ($modelEvent->cancel) {
                 return false;
@@ -2282,12 +2302,12 @@ class VersaModel implements TypedModelInterface
                 break;
 
             case 'email':
-                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
                     return "The {$field} must be a valid email address.";
                 }
                 break;
             case 'url':
-                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                if (filter_var($value, FILTER_VALIDATE_URL) === false) {
                     return "The {$field} must be a valid URL.";
                 }
                 break;
@@ -2298,13 +2318,13 @@ class VersaModel implements TypedModelInterface
                 break;
 
             case 'alpha':
-                if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $value)) {
+                if (preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $value) === 0) {
                     return "El {$field} solo puede contener letras.";
                 }
                 break;
 
             case 'alpha_num':
-                if (!preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+$/', $value)) {
+                if (preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+$/', $value) === 0) {
                     return "El {$field} solo puede contener letras y números.";
                 }
                 break;
@@ -2338,7 +2358,7 @@ class VersaModel implements TypedModelInterface
                 break;
 
             case 'ip':
-                if (!is_string($value) || !filter_var($value, FILTER_VALIDATE_IP)) {
+                if (!is_string($value) || filter_var($value, FILTER_VALIDATE_IP) === false) {
                     return "El {$field} debe ser una dirección IP válida.";
                 }
                 break;
@@ -2382,13 +2402,13 @@ class VersaModel implements TypedModelInterface
                             }
                             break;
                         case 'regex':
-                            if (!preg_match("/{$parameter}/", $value)) {
+                            if (preg_match("/{$parameter}/", $value) === 0) {
                                 return "El {$field} no tiene el formato correcto.";
                             }
                             break;
 
                         case 'digits':
-                            if (!is_string($value) || !preg_match('/^\d{' . $parameter . '}$/', $value)) {
+                            if (!is_string($value) || preg_match('/^\d{' . $parameter . '}$/', $value) === 0) {
                                 return "El {$field} debe tener exactamente {$parameter} dígitos.";
                             }
                             break;
@@ -2446,7 +2466,7 @@ class VersaModel implements TypedModelInterface
 
                     // Si no es boolean, convertir string/numeric a int
                     if (is_numeric($value)) {
-                        return (float) $value != 0 ? 1 : 0;
+                        return (float) $value !== 0.0 ? 1 : 0;
                     }
 
                     return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true) ? 1 : 0;
@@ -2696,12 +2716,10 @@ class VersaModel implements TypedModelInterface
                 try {
                     if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
                         try {
-                            if ($this->orm instanceof VersaORMClass) {
-                                $this->orm->logDebug(
-                                    "VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage(),
-                                    ['exception' => $e->getMessage()],
-                                );
-                            }
+                            $this->orm->logDebug(
+                                "VersaORM: Error verificando columnas para {$this->table}: " . $e->getMessage(),
+                                ['exception' => $e->getMessage()],
+                            );
                         } catch (Throwable) {
                             // ignore logging errors
                         }
@@ -2871,12 +2889,10 @@ class VersaModel implements TypedModelInterface
             try {
                 if ($this->orm instanceof VersaORMClass && $this->orm->isDebugMode()) {
                     try {
-                        if ($this->orm instanceof VersaORMClass) {
-                            $this->orm->logDebug(
-                                "VersaORM: Created column '{$columnName}' ({$mappedType}) in table '{$this->table}'",
-                                ['column' => $columnName, 'type' => $mappedType, 'sql' => $sql],
-                            );
-                        }
+                        $this->orm->logDebug(
+                            "VersaORM: Created column '{$columnName}' ({$mappedType}) in table '{$this->table}'",
+                            ['column' => $columnName, 'type' => $mappedType, 'sql' => $sql],
+                        );
                     } catch (Throwable) {
                         // ignore logging errors
                     }

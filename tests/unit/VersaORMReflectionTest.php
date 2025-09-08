@@ -17,28 +17,28 @@ final class VersaORMReflectionTest extends TestCase
         $mFormat = $r->getMethod('formatDefault');
         $mFormat->setAccessible(true);
 
-        static::assertSame('NULL', $mFormat->invoke($orm, null, 'mysql'));
-        static::assertSame('1', $mFormat->invoke($orm, true, 'mysql'));
-        static::assertSame('TRUE', $mFormat->invoke($orm, true, 'sqlite'));
-        static::assertSame("'O''Reilly'", $mFormat->invoke($orm, "O'Reilly", 'sqlite'));
+        self::assertSame('NULL', $mFormat->invoke($orm, null, 'mysql'));
+        self::assertSame('1', $mFormat->invoke($orm, true, 'mysql'));
+        self::assertSame('TRUE', $mFormat->invoke($orm, true, 'sqlite'));
+        self::assertSame("'O''Reilly'", $mFormat->invoke($orm, "O'Reilly", 'sqlite'));
 
         $mQuote = $r->getMethod('quoteIdent');
         $mQuote->setAccessible(true);
 
-        static::assertSame('`col`', $mQuote->invoke($orm, 'col', 'mysql'));
-        static::assertSame('"col"', $mQuote->invoke($orm, 'col', 'sqlite'));
+        self::assertSame('`col`', $mQuote->invoke($orm, 'col', 'mysql'));
+        self::assertSame('"col"', $mQuote->invoke($orm, 'col', 'sqlite'));
 
         $mIsDdl = $r->getMethod('isDdlOperation');
         $mIsDdl->setAccessible(true);
 
-        static::assertTrue($mIsDdl->invoke($orm, 'createTable'));
-        static::assertFalse($mIsDdl->invoke($orm, 'query'));
+        self::assertTrue($mIsDdl->invoke($orm, 'createTable'));
+        self::assertFalse($mIsDdl->invoke($orm, 'query'));
 
         $mIsRaw = $r->getMethod('isRawQueryDDL');
         $mIsRaw->setAccessible(true);
 
-        static::assertTrue($mIsRaw->invoke($orm, 'CREATE TABLE test (id INT)'));
-        static::assertFalse($mIsRaw->invoke($orm, 'SELECT * FROM t'));
+        self::assertTrue($mIsRaw->invoke($orm, 'CREATE TABLE test (id INT)'));
+        self::assertFalse($mIsRaw->invoke($orm, 'SELECT * FROM t'));
     }
 
     public function test_assertSafeIdentifier_and_errors()
@@ -64,7 +64,7 @@ final class VersaORMReflectionTest extends TestCase
 
         // Freeze global
         $orm->freeze(true);
-        static::assertTrue($orm->isFrozen());
+        self::assertTrue($orm->isFrozen());
 
         // validateFreezeOperation should throw for DDL when frozen
         $mValidate = $r->getMethod('validateFreezeOperation');

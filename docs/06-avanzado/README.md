@@ -117,9 +117,9 @@ Procedimientos seguros para evolucionar el esquema
 - Uso correcto de freeze mode
 
 ### [📐 API DDL Programática](ddl-api-metodos.md)
-Referencia de métodos para manipular esquema
-- schemaCreate / schemaAlter
-- schemaDrop / schemaRename
+Referencia de métodos para manipular esquema con SchemaBuilder
+- VersaSchema::create() / VersaSchema::table()
+- VersaSchema::drop() / Blueprint patterns
 - Auto-creación implícita de columnas
 
 ## ✅ Prerrequisitos

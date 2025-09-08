@@ -28,9 +28,9 @@ final class ErrorHandlerTest extends TestCase
         $sql = 'SELECT * FROM users WHERE id = ? AND name = ?';
         $formatted = $method->invoke(null, $sql, [123, 'Alice']);
 
-        static::assertIsString($formatted);
-        static::assertStringContainsString("'Alice'", $formatted);
-        static::assertStringContainsString('123', $formatted);
+        self::assertIsString($formatted);
+        self::assertStringContainsString("'Alice'", $formatted);
+        self::assertStringContainsString('123', $formatted);
     }
 
     public function test_format_for_development_and_production(): void
@@ -43,13 +43,13 @@ final class ErrorHandlerTest extends TestCase
         $err = $extract->invoke(null, $ex, ['user' => 'tester']);
 
         $dev = ErrorHandler::formatForDevelopment($err);
-        static::assertIsString($dev);
-        static::assertStringContainsString('VersaORM Error Details', $dev);
+        self::assertIsString($dev);
+        self::assertStringContainsString('VersaORM Error Details', $dev);
 
         $prod = ErrorHandler::formatForProduction($err);
-        static::assertIsArray($prod);
-        static::assertArrayHasKey('error', $prod);
-        static::assertArrayHasKey('reference', $prod);
+        self::assertIsArray($prod);
+        self::assertArrayHasKey('error', $prod);
+        self::assertArrayHasKey('reference', $prod);
     }
 
     public function test_configure_and_logpath_and_wrap_calls_handler(): void
@@ -60,9 +60,9 @@ final class ErrorHandlerTest extends TestCase
 
         ErrorHandler::configureFromVersaORM(['log_path' => $tmp, 'debug' => true]);
 
-        static::assertTrue(ErrorHandler::isConfigured());
-        static::assertTrue(ErrorHandler::isDebugMode());
-        static::assertStringContainsString('versa_err_test_', (string) ErrorHandler::getLogPath());
+        self::assertTrue(ErrorHandler::isConfigured());
+        self::assertTrue(ErrorHandler::isDebugMode());
+        self::assertStringContainsString('versa_err_test_', (string) ErrorHandler::getLogPath());
 
         $called = false;
         ErrorHandler::setCustomHandler(function (array $data) use (&$called) {
@@ -83,9 +83,9 @@ final class ErrorHandlerTest extends TestCase
             $out = (string) ob_get_clean();
             // If debug output exists, ensure it contains the error header for sanity
             if ($out !== '') {
-                static::assertStringContainsString('VersaORM Error Details', $out);
+                self::assertStringContainsString('VersaORM Error Details', $out);
             }
-            static::assertTrue($called, 'Custom handler should be invoked');
+            self::assertTrue($called, 'Custom handler should be invoked');
         }
     }
 
@@ -98,9 +98,9 @@ final class ErrorHandlerTest extends TestCase
 
         $data = ErrorHandler::handleException($ex, ['extra' => 'context']);
 
-        static::assertIsArray($data);
+        self::assertIsArray($data);
         $log = ErrorHandler::getErrorLog();
-        static::assertNotEmpty($log);
-        static::assertSame('TEST_CODE', $data['error']['error_code']);
+        self::assertNotEmpty($log);
+        self::assertSame('TEST_CODE', $data['error']['error_code']);
     }
 }

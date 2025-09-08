@@ -40,21 +40,22 @@ class PdoEngine
     private static bool $cacheEnabled = false;
 
     /**
-     * Caché de consultas.
+     * Caché de consultas con TTL y límites.
      * Clave: hash derivado de (sql, bindings, method).
-     * Valor: resultados normalizados por método:
-     *  - get/raw: list<array<string,mixed>>
-     *  - first: array<string,mixed>|null
-     *  - count: int
-     *  - exists: bool
-     *  - otros potenciales (futuros): scalar|null.
+     * Valor: array con resultado y metadata de tiempo.
      *
-     * @var array<string, array<string,mixed>|bool|int|list<array<string,mixed>>|null>
+     * @var array<string, array{data: array<string,mixed>|bool|int|list<array<string,mixed>>|null, created_at: int, last_access: int, ttl: int}>
      */
     private static array $queryCache = [];
 
     /** @var array<string, array<int, string>> Mapear tabla -> claves de caché */
     private static array $tableKeyIndex = [];
+
+    /** @var int TTL en segundos para query cache (default 30 minutos) */
+    private static int $queryCacheTtl = 1800;
+
+    /** @var int Límite máximo de entradas en query cache */
+    private static int $queryCacheLimit = 1000;
 
     // Métricas internas simples (estáticas para compartirse en tests)
     /**
@@ -97,11 +98,14 @@ class PdoEngine
         'hydration_fastpath_ms' => 0.0,
     ];
 
-    /** @var array<string,PDOStatement> LRU cache de sentencias preparadas */
+    /** @var array<string, array{stmt: PDOStatement, pdo_id: string, created_at: int}> */
     private static array $stmtCache = [];
 
     /** @var int límite de sentencias en caché */
     private static int $stmtCacheLimit = 100;
+
+    /** @var int TTL en segundos para statements cacheados (default 1 hora) */
+    private static int $stmtCacheTtl = 3600;
 
     /**
      * @param array<string, mixed> $config
@@ -391,6 +395,7 @@ class PdoEngine
                         $parts = [];
                         $bindings = [];
                         foreach ($queries as $q) {
+                            // @phpstan-ignore-next-line (type annotation may be imprecise)
                             if (!is_array($q) || !isset($q['sql']) || !is_string($q['sql'])) {
                                 throw new VersaORMException('Each set_operation query must have sql');
                             }
@@ -1063,9 +1068,19 @@ class PdoEngine
                 $cacheKey = $this->makeCacheKey($sql, $bindings, $method);
 
                 if (isset(self::$queryCache[$cacheKey])) {
-                    $this->recordCacheHit();
+                    $entry = self::$queryCache[$cacheKey];
+                    $currentTime = time();
 
-                    return self::$queryCache[$cacheKey];
+                    // Verificar si ha expirado
+                    if (($currentTime - $entry['created_at']) < self::$queryCacheTtl) {
+                        // Actualizar last_access para LRU
+                        self::$queryCache[$cacheKey]['last_access'] = $currentTime;
+                        $this->recordCacheHit();
+
+                        return $entry['data'];
+                    }
+                    // Eliminar entrada expirada
+                    unset(self::$queryCache[$cacheKey]);
                 }
                 $this->recordCacheMiss();
             }
@@ -1374,12 +1389,63 @@ class PdoEngine
         throw new VersaORMException('Unsupported PDO action: ' . $action);
     }
 
+    /**
+     * Limpia todos los caches y registros estáticos para prevenir memory leaks.
+     * Útil en procesos de larga duración y tests.
+     */
+    public static function clearAllStaticRegistries(): void
+    {
+        // Limpiar caches de PdoEngine
+        self::$queryCache = [];
+        self::$tableKeyIndex = [];
+        self::$stmtCache = [];
+
+        // Resetear métricas
+        self::$metrics = [
+            'queries' => 0,
+            'writes' => 0,
+            'transactions' => 0,
+            'cache_hits' => 0,
+            'cache_misses' => 0,
+            'last_query_ms' => 0.0,
+            'total_query_ms' => 0.0,
+            'stmt_cache_hits' => 0,
+            'stmt_cache_misses' => 0,
+            'total_prepare_ms' => 0.0,
+            'hydration_ms' => 0.0,
+            'objects_hydrated' => 0,
+            'hydration_fastpath_uses' => 0,
+            'hydration_fastpath_rows' => 0,
+            'hydration_fastpath_ms' => 0.0,
+        ];
+
+        // Limpiar pool de conexiones de PdoConnection
+        PdoConnection::clearPool();
+    }
+
+    /**
+     * Limpia solo los caches de consultas, manteniendo métricas y statements.
+     */
+    public static function clearQueryCache(): void
+    {
+        self::$queryCache = [];
+        self::$tableKeyIndex = [];
+    }
+
+    /**
+     * Limpia solo el cache de statements preparados.
+     */
+    public static function clearStatementCache(): void
+    {
+        self::$stmtCache = [];
+    }
+
     /** Limpia la caché de sentencias y cierra cursores para liberar locks (especialmente en SQLite) */
     private function clearStmtCache(): void
     {
-        foreach (self::$stmtCache as $k => $st) {
+        foreach (self::$stmtCache as $k => $entry) {
             try {
-                $st->closeCursor();
+                $entry['stmt']->closeCursor();
             } catch (Throwable) { // ignore
             }
             unset(self::$stmtCache[$k]);
@@ -1459,35 +1525,68 @@ class PdoEngine
 
     /**
      * Obtiene una sentencia preparada desde caché o la prepara y cachea.
+     * Ahora valida que la conexión PDO siga siendo válida.
      */
     private function prepareCached(PDO $pdo, string $sql): PDOStatement
     {
-        // Incluir el identificador del objeto PDO en la clave para evitar reusar
-        // PDOStatement preparados por otra instancia de conexión (p. ej. :memory: vs file)
         $pdoId = function_exists('spl_object_id') ? spl_object_id($pdo) : spl_object_hash($pdo);
         $key = md5($sql . '|' . (string) $pdoId);
+        $currentTime = time();
 
         if (isset(self::$stmtCache[$key])) {
-            self::$metrics['stmt_cache_hits']++;
-            // LRU: mover al final (reinsertar)
-            $stmt = self::$stmtCache[$key];
-            unset(self::$stmtCache[$key]);
-            self::$stmtCache[$key] = $stmt;
+            $entry = self::$stmtCache[$key];
 
-            return $stmt;
+            // Validar que la conexión PDO siga siendo la misma y no haya expirado
+            if ($entry['pdo_id'] === (string) $pdoId && ($currentTime - $entry['created_at']) < self::$stmtCacheTtl) {
+                self::$metrics['stmt_cache_hits']++;
+                // LRU: mover al final (reinsertar)
+                unset(self::$stmtCache[$key]);
+                self::$stmtCache[$key] = $entry;
+
+                return $entry['stmt'];
+            }
+            // Entry expirado o PDO diferente, eliminar
+            unset(self::$stmtCache[$key]);
         }
+
         self::$metrics['stmt_cache_misses']++;
         $start = microtime(true);
         $stmt = $pdo->prepare($sql);
         self::$metrics['total_prepare_ms'] += (microtime(true) - $start) * 1000;
-        self::$stmtCache[$key] = $stmt;
 
-        // Evict LRU (primer elemento)
+        // Cachear con metadata
+        self::$stmtCache[$key] = [
+            'stmt' => $stmt,
+            'pdo_id' => (string) $pdoId,
+            'created_at' => $currentTime,
+        ];
+
+        // Limpiar entries expirados y hacer evict LRU si es necesario
+        $this->pruneExpiredStatements($currentTime);
+
         if (count(self::$stmtCache) > self::$stmtCacheLimit) {
+            // Remover el primer elemento (más antiguo en uso)
             array_shift(self::$stmtCache);
         }
 
         return $stmt;
+    }
+
+    /**
+     * Limpia statements expirados del cache.
+     */
+    private function pruneExpiredStatements(int $currentTime): void
+    {
+        foreach (self::$stmtCache as $key => $entry) {
+            if (($currentTime - $entry['created_at']) >= self::$stmtCacheTtl) {
+                try {
+                    $entry['stmt']->closeCursor();
+                } catch (Throwable) {
+                    // ignore
+                }
+                unset(self::$stmtCache[$key]);
+            }
+        }
     }
 
     private function detectDialect(): SqlDialectInterface
@@ -2205,7 +2304,19 @@ class PdoEngine
     private function storeInCache(string $sql, array $bindings, string $method, null|array|bool|int $result): void
     {
         $key = $this->makeCacheKey($sql, $bindings, $method);
-        self::$queryCache[$key] = $result;
+        $now = time();
+
+        // Aplicar límite de tamaño del cache (LRU)
+        if (count(self::$queryCache) >= self::$queryCacheLimit) {
+            $this->evictLRUEntries();
+        }
+
+        self::$queryCache[$key] = [
+            'data' => $result,
+            'created_at' => $now,
+            'last_access' => $now,
+            'ttl' => self::$queryCacheTtl,
+        ];
 
         // Indexar por tabla para invalidación selectiva (best-effort)
         foreach ($this->extractTablesFromSql($sql) as $table) {
@@ -2214,6 +2325,42 @@ class PdoEngine
             // Evitar inflar con duplicados
             if (!in_array($key, self::$tableKeyIndex[$table], true)) {
                 self::$tableKeyIndex[$table][] = $key;
+            }
+        }
+    }
+
+    /**
+     * Elimina las entradas LRU del caché cuando se alcanza el límite.
+     * Elimina el 20% de las entradas más antiguas por acceso.
+     */
+    private function evictLRUEntries(): void
+    {
+        if (self::$queryCache === []) {
+            return;
+        }
+
+        // Ordenar por último acceso (más antiguo primero)
+        $entries = [];
+        foreach (self::$queryCache as $key => $entry) {
+            $entries[$key] = $entry['last_access'] ?? $entry['created_at'];
+        }
+
+        asort($entries);
+
+        // Eliminar el 20% de las entradas más antiguas
+        $toRemove = max(1, (int) (count($entries) * 0.2));
+        $keysToRemove = array_slice(array_keys($entries), 0, $toRemove);
+
+        foreach ($keysToRemove as $key) {
+            unset(self::$queryCache[$key]);
+
+            // También limpiar del índice de tablas
+            foreach (self::$tableKeyIndex as $table => $keys) {
+                $index = array_search($key, $keys, true);
+                if ($index !== false) {
+                    unset(self::$tableKeyIndex[$table][$index]);
+                    self::$tableKeyIndex[$table] = array_values(self::$tableKeyIndex[$table]);
+                }
             }
         }
     }

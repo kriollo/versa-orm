@@ -27,20 +27,20 @@ final class QueryBuilderBasicTest extends TestCase
 
         $result = $method->invoke($qb);
 
-        static::assertIsArray($result);
-        static::assertArrayHasKey('sql', $result);
-        static::assertArrayHasKey('bindings', $result);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('sql', $result);
+        self::assertArrayHasKey('bindings', $result);
 
         $sql = $result['sql'];
         $bindings = $result['bindings'];
 
         // Comprobaciones sencillas sobre la SQL generada
-        static::assertStringContainsString('SELECT id, name', $sql);
-        static::assertStringContainsString('FROM users', $sql);
-        static::assertStringContainsString('WHERE active = ?', $sql);
+        self::assertStringContainsString('SELECT id, name', $sql);
+        self::assertStringContainsString('FROM users', $sql);
+        self::assertStringContainsString('WHERE active = ?', $sql);
         // buildSelectSQL actualmente no añade LIMIT/OFFSET para la consulta principal;
         // comprobar que la cláusula WHERE y bindings estén presentes.
-        static::assertStringNotContainsString('LIMIT', $sql);
-        static::assertSame([1], $bindings);
+        self::assertStringNotContainsString('LIMIT', $sql);
+        self::assertSame([1], $bindings);
     }
 }

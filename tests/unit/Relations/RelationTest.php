@@ -41,6 +41,6 @@ final class RelationTest extends TestCase
         };
 
         $res = $relation->getResults();
-        static::assertSame(['item1', 'item2'], $res);
+        self::assertSame(['item1', 'item2'], $res);
     }
 }

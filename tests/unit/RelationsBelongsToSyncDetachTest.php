@@ -78,7 +78,7 @@ final class RelationsBelongsToSyncDetachTest extends TestCase
         // Should not throw and should call where on query (no exception means OK)
         $m->invoke($rel);
 
-        static::assertTrue(true);
+        self::assertTrue(true);
     }
 
     // BelongsTo does not implement sync/detach; ensure addConstraints is safe (see above)

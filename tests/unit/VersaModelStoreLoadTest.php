@@ -26,22 +26,22 @@ final class VersaModelStoreLoadTest extends TestCase
         $m->age = 30;
 
         $id = $m->store();
-        static::assertNotNull($id, 'store() should return an id or null');
+        self::assertNotNull($id, 'store() should return an id or null');
 
         // Cargar via static load
         $loaded = VersaModel::load('vm_test', $id);
-        static::assertInstanceOf(VersaModel::class, $loaded);
+        self::assertInstanceOf(VersaModel::class, $loaded);
 
         $data = $loaded->export();
-        static::assertIsArray($data);
-        static::assertSame('Alice', $data['name']);
-        static::assertSame(30, $data['age']);
+        self::assertIsArray($data);
+        self::assertSame('Alice', $data['name']);
+        self::assertSame(30, $data['age']);
 
         // Actualizar y guardar
         $loaded->age = 31;
         $loaded->store();
 
         $reloaded = VersaModel::load('vm_test', $id);
-        static::assertSame(31, $reloaded->getAttribute('age'));
+        self::assertSame(31, $reloaded->getAttribute('age'));
     }
 }

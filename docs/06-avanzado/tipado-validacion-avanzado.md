@@ -73,15 +73,27 @@ INSERT INTO users (name,email,active) VALUES (?,?,?);
 ```
 
 ## Sincronización con Esquema
-Script utilitario para comparar columnas esperadas vs reales (pseudo):
+Script utilitario para comparar columnas esperadas vs reales usando el SchemaBuilder:
 ```php
+use VersaORM\Schema\VersaSchema;
+
 function diffSchema($orm, $table, array $expectedCols) {
-  $cols = $orm->schema('columns', $table); // devuelve metadatos
-  $dbCols = array_column($cols,'name');
+  // Usar el SchemaBuilder moderno para obtener metadatos
+  $schema = $orm->schemaBuilder();
+  $cols = $schema->getColumns($table); // devuelve metadatos completos
+  $dbCols = array_column($cols, 'name');
+
   return [
     'missing' => array_diff($expectedCols, $dbCols),
     'extra' => array_diff($dbCols, $expectedCols),
   ];
+}
+
+// También puedes verificar directamente
+if (!VersaSchema::hasColumn('users', 'email')) {
+    VersaSchema::table('users', function ($table) {
+        $table->string('email', 100)->unique();
+    });
 }
 ```
 **SQL subyacente (ejemplo MySQL inspección columnas):**

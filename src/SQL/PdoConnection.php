@@ -35,9 +35,14 @@ class PdoConnection
      * Pool de conexiones compartidas por DSN+credenciales.
      * Esto permite que varias instancias reutilicen la misma conexión (útil para SQLite :memory:).
      *
-     * @var array<string, PDO>
+     * @var array<string, array{pdo: PDO, last_used: int}>
      */
     private static array $pool = [];
+
+    /**
+     * Límite máximo de conexiones en el pool para evitar crecimiento ilimitado.
+     */
+    private static int $maxPoolSize = 20;
 
     /**
      * @param array<string, mixed> $config
@@ -47,6 +52,24 @@ class PdoConnection
         /** @var array{driver?:string,host?:string,port?:int|string,database?:string,charset?:string,username?:string,password?:string,options?:array{enable_foreign_keys?:bool}} $normalized */
         $normalized = $config;
         $this->config = $normalized;
+    }
+
+    /**
+     * Configurar el tamaño máximo del pool de conexiones.
+     */
+    public static function setMaxPoolSize(int $size): void
+    {
+        if ($size > 0 && $size <= 100) {
+            self::$maxPoolSize = $size;
+        }
+    }
+
+    /**
+     * Limpiar completamente el pool de conexiones.
+     */
+    public static function clearPool(): void
+    {
+        self::$pool = [];
     }
 
     public function getPdo(): PDO
@@ -119,7 +142,9 @@ class PdoConnection
 
             // Reutilizar conexión desde el pool si existe
             if ($poolKey !== '' && isset(self::$pool[$poolKey])) {
-                $this->pdo = self::$pool[$poolKey];
+                $this->pdo = self::$pool[$poolKey]['pdo'];
+                // Actualizar timestamp de uso
+                self::$pool[$poolKey]['last_used'] = time();
             } else {
                 try {
                     $this->pdo = new PDO($dsn, $username, $password, $options);
@@ -175,11 +200,23 @@ class PdoConnection
                 }
 
                 if ($poolKey !== '') {
-                    self::$pool[$poolKey] = $this->pdo;
+                    // Limpiar pool si está lleno
+                    self::prunePool();
+
+                    if ($this->pdo !== null) {
+                        self::$pool[$poolKey] = [
+                            'pdo' => $this->pdo,
+                            'last_used' => time(),
+                        ];
+                    }
                 }
             }
         } catch (Throwable $e) {
             throw new VersaORMException('PDO connection failed: ' . $e->getMessage(), 'PDO_CONNECTION_FAILED');
+        }
+
+        if ($this->pdo === null) {
+            throw new VersaORMException('PDO connection is null', 'PDO_CONNECTION_NULL');
         }
 
         return $this->pdo;
@@ -191,5 +228,26 @@ class PdoConnection
     public function close(): void
     {
         $this->pdo = null;
+    }
+
+    /**
+     * Limpiar conexiones menos recientes del pool cuando se alcanza el límite.
+     */
+    private static function prunePool(): void
+    {
+        if (count(self::$pool) < self::$maxPoolSize) {
+            return;
+        }
+
+        // Ordenar por last_used y eliminar las más antiguas
+        $sortedKeys = array_keys(self::$pool);
+        usort($sortedKeys, fn($a, $b) => self::$pool[$a]['last_used'] <=> self::$pool[$b]['last_used']);
+
+        // Eliminar hasta llegar al 80% del límite
+        $targetSize = (int) (self::$maxPoolSize * 0.8);
+        while (count(self::$pool) > $targetSize && $sortedKeys !== []) {
+            $keyToRemove = array_shift($sortedKeys);
+            unset(self::$pool[$keyToRemove]);
+        }
     }
 }

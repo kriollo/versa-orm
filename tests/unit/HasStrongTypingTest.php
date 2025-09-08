@@ -14,10 +14,10 @@ final class HasStrongTypingTest extends TestCase
     {
         $types = TestStrongModel::getPropertyTypes();
 
-        static::assertArrayHasKey('age', $types);
-        static::assertSame('int', $types['age']['type']);
-        static::assertArrayHasKey('price', $types);
-        static::assertSame('decimal', $types['price']['type']);
+        self::assertArrayHasKey('age', $types);
+        self::assertSame('int', $types['age']['type']);
+        self::assertArrayHasKey('price', $types);
+        self::assertSame('decimal', $types['price']['type']);
     }
 
     public function testCastToPhpTypeHandlesVariousTypes(): void
@@ -25,20 +25,20 @@ final class HasStrongTypingTest extends TestCase
         $m = new TestStrongModel();
 
         $meta = $m->castToPhpType('meta', '{"a":1}');
-        static::assertIsArray($meta);
-        static::assertSame(1, $meta['a']);
+        self::assertIsArray($meta);
+        self::assertSame(1, $meta['a']);
 
         $dt = $m->castToPhpType('created', '2020-01-01 00:00:00');
-        static::assertInstanceOf(DateTimeInterface::class, $dt);
+        self::assertInstanceOf(DateTimeInterface::class, $dt);
 
         $age = $m->castToPhpType('age', '42');
-        static::assertSame(42, $age);
+        self::assertSame(42, $age);
 
         $flag = $m->castToPhpType('flag', 'true');
-        static::assertTrue($flag);
+        self::assertTrue($flag);
 
         $arr = $m->castToPhpType('list', 'a,b,c');
-        static::assertIsArray($arr);
+        self::assertIsArray($arr);
     }
 
     public function testCastToDatabaseTypeConvertsProperly(): void
@@ -46,17 +46,17 @@ final class HasStrongTypingTest extends TestCase
         $m = new TestStrongModel();
 
         $dtStr = $m->castToDatabaseType('created', new DateTime('2020-01-01 00:00:00'));
-        static::assertIsString($dtStr);
+        self::assertIsString($dtStr);
 
         $boolDb = $m->castToDatabaseType('flag', true);
-        static::assertSame(1, $boolDb);
+        self::assertSame(1, $boolDb);
 
         $jsonDb = $m->castToDatabaseType('meta', ['x' => 2]);
-        static::assertIsString($jsonDb);
+        self::assertIsString($jsonDb);
 
         $setDb = $m->castToDatabaseType('tags', ['a', 'b']);
-        static::assertIsString($setDb);
-        static::assertStringContainsString('a', $setDb);
+        self::assertIsString($setDb);
+        self::assertStringContainsString('a', $setDb);
     }
 
     public function testAddAndRemoveTypeConverter(): void
@@ -65,7 +65,7 @@ final class HasStrongTypingTest extends TestCase
 
         // Ensure salary property uses default behavior first
         $orig = $m->castToPhpType('salary', '100');
-        static::assertSame('100', $orig);
+        self::assertSame('100', $orig);
 
         // Register custom converter
         TestStrongModel::addTypeConverter(
@@ -76,16 +76,16 @@ final class HasStrongTypingTest extends TestCase
 
         // Now salary type 'money' should use converter
         $val = $m->castToPhpType('salary', '100');
-        static::assertSame(100, $val);
+        self::assertSame(100, $val);
 
         $db = $m->castToDatabaseType('salary', 100);
-        static::assertSame('DB:100', $db);
+        self::assertSame('DB:100', $db);
 
         // Remove converter
         TestStrongModel::removeTypeConverter('money');
 
         $after = $m->castToPhpType('salary', '100');
-        static::assertSame('100', $after);
+        self::assertSame('100', $after);
     }
 }
 

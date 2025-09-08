@@ -14,16 +14,16 @@ final class PostgreSQLDialectTest extends TestCase
     {
         $d = new PostgreSQLDialect();
 
-        static::assertSame('*', $d->quoteIdentifier('*'));
-        static::assertStringContainsString('"col"', $d->quoteIdentifier('col'));
-        static::assertStringContainsString('"t".*', $d->quoteIdentifier('t.*'));
+        self::assertSame('*', $d->quoteIdentifier('*'));
+        self::assertStringContainsString('"col"', $d->quoteIdentifier('col'));
+        self::assertStringContainsString('"t".*', $d->quoteIdentifier('t.*'));
 
-        static::assertSame('?', $d->placeholder(1));
+        self::assertSame('?', $d->placeholder(1));
 
-        static::assertSame('', $d->compileLimitOffset(null, null));
-        static::assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, null));
-        static::assertStringContainsString('LIMIT 10 OFFSET 5', $d->compileLimitOffset(10, 5));
+        self::assertSame('', $d->compileLimitOffset(null, null));
+        self::assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, null));
+        self::assertStringContainsString('LIMIT 10 OFFSET 5', $d->compileLimitOffset(10, 5));
 
-        static::assertSame('postgres', $d->getName());
+        self::assertSame('postgres', $d->getName());
     }
 }

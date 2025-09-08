@@ -14,16 +14,16 @@ final class MySQLDialectTest extends TestCase
     {
         $d = new MySQLDialect();
 
-        static::assertSame('*', $d->quoteIdentifier('*'));
-        static::assertSame('`col`', $d->quoteIdentifier('col'));
-        static::assertSame('`t`.*', $d->quoteIdentifier('t.*'));
+        self::assertSame('*', $d->quoteIdentifier('*'));
+        self::assertSame('`col`', $d->quoteIdentifier('col'));
+        self::assertSame('`t`.*', $d->quoteIdentifier('t.*'));
 
-        static::assertSame('?', $d->placeholder(1));
+        self::assertSame('?', $d->placeholder(1));
 
-        static::assertSame('', $d->compileLimitOffset(null, null));
-        static::assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, null));
-        static::assertStringContainsString('LIMIT 10 OFFSET 5', $d->compileLimitOffset(10, 5));
+        self::assertSame('', $d->compileLimitOffset(null, null));
+        self::assertStringContainsString('LIMIT 10', $d->compileLimitOffset(10, null));
+        self::assertStringContainsString('LIMIT 10 OFFSET 5', $d->compileLimitOffset(10, 5));
 
-        static::assertSame('mysql', $d->getName());
+        self::assertSame('mysql', $d->getName());
     }
 }

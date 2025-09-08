@@ -17,41 +17,41 @@ final class VersaORMTest extends TestCase
         $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
 
         $res = $orm->exec('CREATE TABLE t_versao_test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)');
-        static::assertNull($res);
+        self::assertNull($res);
 
         $ins = $orm->exec('INSERT INTO t_versao_test (name) VALUES (?)', ['Alice']);
-        static::assertNull($ins);
+        self::assertNull($ins);
 
         $rows = $orm->exec('SELECT id, name FROM t_versao_test');
-        static::assertIsArray($rows);
-        static::assertCount(1, $rows);
-        static::assertArrayHasKey('name', $rows[0]);
-        static::assertSame('Alice', $rows[0]['name']);
+        self::assertIsArray($rows);
+        self::assertCount(1, $rows);
+        self::assertArrayHasKey('name', $rows[0]);
+        self::assertSame('Alice', $rows[0]['name']);
     }
 
     public function testTableReturnsQueryBuilder(): void
     {
         $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
         $qb = $orm->table('any_table');
-        static::assertInstanceOf(QueryBuilder::class, $qb);
+        self::assertInstanceOf(QueryBuilder::class, $qb);
     }
 
     public function testSetAndGetTimezone(): void
     {
         $orm = new VersaORM();
         $orm->setTimezone('UTC');
-        static::assertSame('UTC', $orm->getTimezone());
+        self::assertSame('UTC', $orm->getTimezone());
 
         $orm->setTimezone('America/Mexico_City');
-        static::assertSame('America/Mexico_City', $orm->getTimezone());
+        self::assertSame('America/Mexico_City', $orm->getTimezone());
     }
 
     public function testRawAliasCallsExec(): void
     {
         $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
         $res = $orm->raw('SELECT 1 as v');
-        static::assertIsArray($res);
-        static::assertSame('1', (string) $res[0]['v']);
+        self::assertIsArray($res);
+        self::assertSame('1', (string) $res[0]['v']);
     }
 
     public function testSetAndGetConfig(): void
@@ -59,7 +59,7 @@ final class VersaORMTest extends TestCase
         $orm = new VersaORM();
         $cfg = ['driver' => 'sqlite', 'database' => ':memory:'];
         $orm->setConfig($cfg);
-        static::assertSame($cfg, $orm->getConfig());
+        self::assertSame($cfg, $orm->getConfig());
     }
 
     public function testMetricsAndResetAreCallable(): void
@@ -67,10 +67,10 @@ final class VersaORMTest extends TestCase
         $orm = new VersaORM(['engine' => 'pdo']);
 
         $metrics = $orm->metrics();
-        static::assertIsArray($metrics);
+        self::assertIsArray($metrics);
 
         $orm->metricsReset();
-        static::assertTrue(true);
+        self::assertTrue(true);
     }
 
     public function testAddTypeConverterDelegatesToVersaModel(): void
@@ -81,6 +81,6 @@ final class VersaORMTest extends TestCase
         VersaModel::addTypeConverter('test_conv', fn($s, $p, $v) => $v, null);
         $orm->addTypeConverter('test_conv2', fn($s, $p, $v) => $v, null);
 
-        static::assertTrue(true);
+        self::assertTrue(true);
     }
 }

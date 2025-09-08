@@ -20,10 +20,10 @@ final class QueryBuilderSubquerySelectTest extends TestCase
         $mSub->setAccessible(true);
         $subRes = $mSub->invoke($sub);
 
-        static::assertIsArray($subRes);
-        static::assertArrayHasKey('sql', $subRes);
-        static::assertArrayHasKey('bindings', $subRes);
-        static::assertStringContainsString('SELECT', $subRes['sql']);
-        static::assertIsArray($subRes['bindings']);
+        self::assertIsArray($subRes);
+        self::assertArrayHasKey('sql', $subRes);
+        self::assertArrayHasKey('bindings', $subRes);
+        self::assertStringContainsString('SELECT', $subRes['sql']);
+        self::assertIsArray($subRes['bindings']);
     }
 }

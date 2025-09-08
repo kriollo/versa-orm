@@ -18,7 +18,7 @@ final class PdoEngineCacheStoreInvalidateTest extends TestCase
 
         // Ensure cache enabled
         $res = $engine->execute('cache', ['action' => 'enable']);
-        static::assertSame('cache enabled', $res);
+        self::assertSame('cache enabled', $res);
 
         // Create a simple table and insert a row
         $engine->execute('raw', [
@@ -29,21 +29,21 @@ final class PdoEngineCacheStoreInvalidateTest extends TestCase
 
         // Perform a 'get' query via execute('query', ...) to cause storeInCache
         $rows = $engine->execute('query', ['method' => 'get', 'table' => 'test_cache']);
-        static::assertIsArray($rows);
+        self::assertIsArray($rows);
 
         // Check cache status via cache action 'status' (returns count of entries)
         $count = $engine->execute('cache', ['action' => 'status']);
-        static::assertIsInt($count);
-        static::assertGreaterThanOrEqual(1, $count);
+        self::assertIsInt($count);
+        self::assertGreaterThanOrEqual(1, $count);
 
         // Invalidate cache for the table
         $engine->execute('cache', ['action' => 'invalidate', 'table' => 'test_cache']);
         $countAfter = $engine->execute('cache', ['action' => 'status']);
-        static::assertLessThanOrEqual($count, $countAfter + 0); // ensure no more entries for that table (best-effort)
+        self::assertLessThanOrEqual($count, $countAfter + 0); // ensure no more entries for that table (best-effort)
 
         // Clear all
         $engine->execute('cache', ['action' => 'clear']);
         $countCleared = $engine->execute('cache', ['action' => 'status']);
-        static::assertSame(0, $countCleared);
+        self::assertSame(0, $countCleared);
     }
 }

@@ -65,8 +65,8 @@ final class RelationsHasManyTest extends TestCase
 
         $results = $relation->getResults();
 
-        static::assertIsArray($results);
-        static::assertNotEmpty($query->recordedWheres);
+        self::assertIsArray($results);
+        self::assertNotEmpty($query->recordedWheres);
     }
 }
 
@@ -78,12 +78,12 @@ final class RelationsHasManyReflectionTest extends TestCase
     /** @group sqlite */
     public function test_hasmany_class_exists_and_methods(): void
     {
-        static::assertTrue(class_exists('\VersaORM\Relations\HasMany'));
+        self::assertTrue(class_exists('\VersaORM\Relations\HasMany'));
 
         $r = new ReflectionClass('\VersaORM\Relations\HasMany');
 
-        static::assertTrue($r->hasMethod('__call'));
-        static::assertTrue($r->hasMethod('query'));
-        static::assertTrue($r->hasMethod('getResults'));
+        self::assertTrue($r->hasMethod('__call'));
+        self::assertTrue($r->hasMethod('query'));
+        self::assertTrue($r->hasMethod('getResults'));
     }
 }

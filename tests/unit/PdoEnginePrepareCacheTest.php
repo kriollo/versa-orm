@@ -36,11 +36,11 @@ final class PdoEnginePrepareCacheTest extends TestCase
         $prop = $ref->getProperty('stmtCache');
         $prop->setAccessible(true);
         $cache = $prop->getValue();
-        static::assertLessThanOrEqual(2, count($cache));
+        self::assertLessThanOrEqual(2, count($cache));
 
         // Metrics should have stmt_cache_misses incremented at least once
         $metrics = PdoEngine::getMetrics();
-        static::assertArrayHasKey('stmt_cache_misses', $metrics);
-        static::assertGreaterThanOrEqual(1, $metrics['stmt_cache_misses']);
+        self::assertArrayHasKey('stmt_cache_misses', $metrics);
+        self::assertGreaterThanOrEqual(1, $metrics['stmt_cache_misses']);
     }
 }

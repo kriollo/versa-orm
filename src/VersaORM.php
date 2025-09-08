@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
 use Traversable;
+use VersaORM\Schema\SchemaBuilder;
 use VersaORM\SQL\PdoEngine;
 
 use function in_array;
@@ -355,6 +356,35 @@ class VersaORM
     }
 
     /**
+     * Obtiene una instancia del nuevo SchemaBuilder para operaciones fluidas de esquema.
+     *
+     * Este método proporciona acceso al moderno SchemaBuilder que ofrece una API fluida
+     * similar a Laravel para manipular esquemas de base de datos de manera transparente
+     * entre diferentes motores (MySQL, PostgreSQL, SQLite).
+     *
+     * @return SchemaBuilder Nueva instancia del constructor de esquemas fluido
+     *
+     * @example
+     * // Crear una nueva tabla
+     * $orm->schemaBuilder()->create('users', function($table) {
+     *     $table->id();
+     *     $table->string('name');
+     *     $table->string('email')->unique();
+     *     $table->timestamps();
+     * });
+     *
+     * // Modificar una tabla existente
+     * $orm->schemaBuilder()->table('users', function($table) {
+     *     $table->string('phone')->nullable();
+     *     $table->dropColumn('old_column');
+     * });
+     */
+    public function schemaBuilder(): SchemaBuilder
+    {
+        return new SchemaBuilder($this);
+    }
+
+    /**
      * Crea una tabla usando definiciones portables de columnas.
      * columns: lista de arrays con claves: name, type, nullable?, default?, primary?, autoIncrement?
      * options:
@@ -382,7 +412,7 @@ class VersaORM
         $pkCols = [];
         $sqliteInlinePkUsed = false; // Para SQLite, usamos PK inline solo cuando es INTEGER PRIMARY KEY autoincremental
 
-        /** @var list<ColumnDef> $columns */
+        /** @var list<array<string, mixed>> $columns */
         foreach ($columns as $col) {
             $name = (string) ($col['name'] ?? '');
             $type = (string) ($col['type'] ?? 'VARCHAR(255)');
@@ -448,7 +478,7 @@ class VersaORM
         }
 
         // Table-level constraints: UNIQUE, FOREIGN KEYS (portables)
-        /** @var TableConstraintsDef $constraints */
+        /** @var array<string, mixed> $constraints */
         $constraints = (array) ($options['constraints'] ?? []);
         /** @var list<UniqueConstraintDef> $uniqueList */
         $uniqueList = (array) ($constraints['unique'] ?? []);
@@ -559,8 +589,7 @@ class VersaORM
         $q = fn(string $id): string => $this->quoteIdent($id, $driver);
 
         $tableIdent = $q($table);
-        /** @var AlterChanges $changes */
-        /** @var list<ColumnDef> $addCols */
+        /** @var list<array<string, mixed>> $addCols */
         $addCols = (array) ($changes['add'] ?? []);
 
         if (!empty($addCols)) {
@@ -1103,6 +1132,32 @@ class VersaORM
     }
 
     /**
+     * Limpia todos los registros estáticos del ORM para prevenir memory leaks.
+     * Útil para procesos de larga duración, workers y tests.
+     *
+     * IMPORTANTE: Usar solo en casos específicos como shutdown de aplicación
+     * o entre tests, ya que limpia todos los caches y registros.
+     */
+    public static function clearAllStaticRegistries(): void
+    {
+        // Limpiar caches y registros del motor PDO
+        PdoEngine::clearAllStaticRegistries();
+
+        // Limpiar registros de VersaModel
+        VersaModel::clearStaticRegistries();
+    }
+
+    /**
+     * Limpia solo los caches, manteniendo configuraciones y registros.
+     * Más seguro para uso en producción durante picos de memoria.
+     */
+    public static function clearCaches(): void
+    {
+        PdoEngine::clearQueryCache();
+        PdoEngine::clearStatementCache();
+    }
+
+    /**
      * Ejecuta un comando usando la configuración de instancia.
      *
      * @param array<string, mixed> $params
@@ -1212,9 +1267,8 @@ class VersaORM
     private function createIndexPortable(string $table, array $idx, string $driver): void
     {
         $q = fn(string $id): string => $this->quoteIdent($id, $driver);
-        /** @var IndexDef $idx */
         $name = (string) ($idx['name'] ?? '');
-        /** @var list<IndexColumn> $cols */
+        /** @var list<array<string, mixed>|string> $cols */
         $cols = (array) ($idx['columns'] ?? []);
 
         if ($name === '' || empty($cols)) {
@@ -1243,10 +1297,16 @@ class VersaORM
 
         foreach ($cols as $c) {
             if (is_array($c) && isset($c['raw'])) {
-                $colsSql[] = (string) $c['raw'];
-            } else {
-                $colName = (string) $c;
+                $rawValue = $c['raw'];
+                $colsSql[] = is_string($rawValue) ? $rawValue : (string) $rawValue;
+            } elseif (is_string($c)) {
                 // Validar nombres de columnas simples (no RAW)
+                $this->assertSafeIdentifier($c, 'column');
+                $colsSql[] = $q($c);
+            } else {
+                // Fallback para otros tipos
+                /** @phpstan-ignore-next-line */
+                $colName = (string) $c;
                 $this->assertSafeIdentifier($colName, 'column');
                 $colsSql[] = $q($colName);
             }
@@ -1583,6 +1643,8 @@ class VersaORM
     /**
      * @param array{status?:string,error?:array{code?:string,message?:string,details?:array<string,mixed>,sql_state?:string,query?:string,bindings?:array<int,mixed>}} $response
      * @param array<string,mixed> $params
+     *
+     * @phpstan-ignore-next-line
      */
     private function handleBinaryError(array $response, string $action, array $params): void
     {

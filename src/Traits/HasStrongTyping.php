@@ -249,7 +249,7 @@ trait HasStrongTyping
             /** @var false|list<array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $schema */
             $schema = $this->orm->schema('columns', $this->table);
 
-            if (!$schema) {
+            if ($schema === false) {
                 return ["No se pudo obtener información de esquema para la tabla '{$this->table}'"];
             }
             /** @var array<string,array{column_name:string,data_type:string,is_nullable?:string,character_maximum_length?:int}> $db */
@@ -401,6 +401,22 @@ trait HasStrongTyping
 
         if (isset(self::$dbCastHandlers[$lname])) {
             unset(self::$dbCastHandlers[$lname]);
+        }
+    }
+
+    /**
+     * Limpia todos los registros estáticos de convertidores de tipos.
+     * Útil para prevenir memory leaks en procesos de larga duración.
+     */
+    public static function clearTypeConverters(): void
+    {
+        self::$phpCastHandlers = [];
+        self::$dbCastHandlers = [];
+
+        // Limpiar también el registry de tipos de propiedades
+        $registry = &self::propertyTypeRegistry();
+        foreach (array_keys($registry) as $class) {
+            $registry[$class] = [];
         }
     }
 
@@ -667,7 +683,7 @@ trait HasStrongTyping
                 ? $v
                 : (
                     is_numeric($v)
-                        ? (float) $v != 0
+                        ? (float) $v !== 0.0
                         : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true)
                 )
         )
