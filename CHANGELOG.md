@@ -1,3 +1,102 @@
+## [1.4.1] - 2025-09-08
+
+### 🔥 Fix Crítico: Timestamps Automáticos
+
+- **Timestamps Automáticos Funcionando**: Corrección fundamental en el método `timestamps()` del SchemaBuilder
+  - El método `timestamps()` ahora genera automáticamente valores por defecto:
+    - `created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+    - `updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` (MySQL)
+    - `updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP` (PostgreSQL/SQLite)
+  - Fix implementado en `src/Schema/Blueprint.php` usando `useCurrent()` y `useCurrentOnUpdate()`
+  - Validado funcionando en todos los motores: MySQL, PostgreSQL y SQLite
+  - Los timestamps ahora se generan automáticamente sin configuración manual
+
+### 📋 Test Completo de Migración Schema
+
+- **Nuevo Test de Migración**: `testMigrateFromOldSchemaCreateToNewSchemaBuilder()`
+  - Demuestra la conversión completa de `schemaCreate()` (arrays) al nuevo SchemaBuilder (API fluida)
+  - Incluye ejemplos lado a lado del método anterior vs el nuevo
+  - Valida que los timestamps automáticos funcionan correctamente
+  - Prueba inserción de datos reales con timestamps automáticos
+  - Documentación exhaustiva de ventajas del nuevo método
+
+### 🔗 Foreign Keys y Constraints Completos
+
+- **Test Exhaustivo de Foreign Keys**: Nuevo `ForeignKeysAndConstraintsTest.php` con 10 tests
+  - ✅ Valida sintaxis con array: `$table->foreign(['campo'])->references('id')->on('tabla')`
+  - ✅ Valida sintaxis simple: `$table->foreign('campo')->references('id')->on('tabla')`
+  - ✅ Diferentes acciones: `onDelete('CASCADE')`, `onDelete('SET NULL')`, `onDelete('RESTRICT')`
+  - ✅ Índices completos: simples, únicos, compuestos, fulltext
+  - ✅ Relaciones many-to-many con tabla pivot
+  - ✅ Foreign keys auto-referenciales (estructura de árbol)
+  - ✅ Validación de constraints con datos reales
+  - ✅ Sistema complejo de órdenes con múltiples foreign keys
+
+### 📚 Documentación Completa
+
+- **Guía de Migración**: `docs/MigrationGuide_SchemaBuilder.md`
+  - Comparación detallada: método anterior (arrays) vs nuevo (API fluida)
+  - Ejemplos prácticos de conversión paso a paso
+  - Ventajas del nuevo SchemaBuilder con timestamps automáticos
+  - Instrucciones de migración gradual
+  - Compatibilidad y soporte multi-motor
+
+- **Guía de Foreign Keys**: `docs/ForeignKeysAndIndexes_CompleteGuide.md`
+  - Todas las sintaxis válidas para foreign keys con ejemplos
+  - Guía completa de índices: simples, únicos, compuestos, fulltext
+  - Casos de uso prácticos: relaciones N:M, auto-referenciales, sistemas complejos
+  - Mejores prácticas y optimización de rendimiento
+  - Ejemplos de validación de constraints
+
+### ✅ Validación Multi-Motor
+
+- **Tests Completos Pasando**:
+  - PostgreSQL: 447 tests ✅ (incluyendo nuevos tests de migración y foreign keys)
+  - MySQL: 477 tests ✅ (compatibilidad completa mantenida)
+  - SQLite: 398 tests ✅ (funcionalidad completa validada)
+
+### 🚀 Mejoras en Developer Experience
+
+- **API más Intuitiva**: El SchemaBuilder ahora es completamente usable sin configuración manual
+  - `$table->timestamps()` funciona automáticamente sin setup adicional
+  - Sintaxis de foreign keys más flexible (acepta arrays y strings)
+  - Timestamps automáticos en `insertMany()` y operaciones batch
+  - Compatibilidad perfecta entre todos los motores de base de datos
+
+### 💡 Ejemplos de Uso Actualizado
+
+```php
+// ✅ Timestamps automáticos funcionando
+$schema->create('documentos', function ($table) {
+    $table->id();
+    $table->string('titulo');
+    $table->unsignedBigInteger('carpeta_id')->nullable();
+    
+    // ✨ Timestamps automáticos - sin configuración manual
+    $table->timestamps(); // created_at y updated_at con valores por defecto
+    
+    // ✅ Foreign key con sintaxis de array (validada)
+    $table->foreign(['carpeta_id'])
+          ->references('id')
+          ->on('documentos_carpetas')
+          ->onDelete('CASCADE');
+});
+
+// ✅ Inserción con timestamps automáticos
+$result = $orm->table('documentos')->insertMany([
+    ['titulo' => 'Documento 1'],
+    ['titulo' => 'Documento 2']
+]); // created_at y updated_at se asignan automáticamente
+```
+
+### 🔧 Cambios Técnicos
+
+- **Blueprint.php**: Método `timestamps()` actualizado para usar `useCurrent()` automáticamente
+- **Tests actualizados**: Nuevos tests específicos para demostrar funcionalidad
+- **Documentación técnica**: Guías completas con ejemplos prácticos listos para usar
+
+---
+
 ## [1.4.0] - 2025-09-07
 
 ### 🔧 Calidad de Código y Análisis Estático
