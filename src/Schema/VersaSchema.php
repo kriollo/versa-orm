@@ -16,9 +16,9 @@ use VersaORM\VersaORM;
  */
 class VersaSchema
 {
-    protected static null|VersaORM $orm = null;
+    protected static ?VersaORM $orm = null;
 
-    protected static null|SchemaBuilder $schemaBuilder = null;
+    protected static ?SchemaBuilder $schemaBuilder = null;
 
     /**
      * Establece la instancia ORM a usar para las operaciones de esquema.
@@ -189,8 +189,10 @@ class VersaSchema
                         throw new \RuntimeException('No global ORM instance available');
                     }
                 } catch (\Exception) {
-                    throw new \RuntimeException('No VersaORM instance configured for VersaSchema. '
-                    . 'Call VersaSchema::setORM() or configure VersaModel::setORM() first.');
+                    throw new \RuntimeException(
+                        'No VersaORM instance configured for VersaSchema. '
+                        . 'Call VersaSchema::setORM() or configure VersaModel::setORM() first.',
+                    );
                 }
             }
             static::$schemaBuilder = new SchemaBuilder(static::$orm);

@@ -48,7 +48,7 @@ class BelongsTo extends Relation
         return $this->query;
     }
 
-    public function getResults(): null|VersaModel
+    public function getResults(): ?VersaModel
     {
         $this->addConstraints();
 

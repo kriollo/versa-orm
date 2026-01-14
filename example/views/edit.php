@@ -1,4 +1,5 @@
 <?php
+
 // Vista: Editar tarea estilo Trello
 ?>
 <div class="mb-6">
@@ -86,8 +87,7 @@
                         (
                             is_array($task)
                                 ? isset($task['completed']) && $task['completed']
-                                : isset($task->completed)
-                                && $task->completed
+                                : isset($task->completed) && $task->completed
                         )
                             ? 'checked'
                             : ''

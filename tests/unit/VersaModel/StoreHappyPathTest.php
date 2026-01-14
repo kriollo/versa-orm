@@ -17,13 +17,13 @@ final class StoreHappyPathTest extends TestCase
         $fakeQb = new class(null, 'users', null) extends \VersaORM\QueryBuilder {
             public static bool $called = false;
 
-            public function __construct($orm, string $table, null|string $modelClass = null)
+            public function __construct($orm, string $table, ?string $modelClass = null)
             {
                 // llamar al padre con valores mínimos
                 parent::__construct($orm, $table, $modelClass);
             }
 
-            public function insertGetId(array $data): null|int
+            public function insertGetId(array $data): ?int
             {
                 self::$called = true;
                 file_put_contents(sys_get_temp_dir() . '/versa_store_spy.txt', "called\n", FILE_APPEND);
@@ -57,7 +57,7 @@ final class StoreHappyPathTest extends TestCase
                 $this->qb = $qb;
             }
 
-            public function table(string $table, null|string $modelClass = null): \VersaORM\QueryBuilder
+            public function table(string $table, ?string $modelClass = null): \VersaORM\QueryBuilder
             {
                 return $this->qb;
             }

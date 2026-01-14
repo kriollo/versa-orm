@@ -87,18 +87,18 @@ class QueryBuilder
     /**
      * @var array<string, array<mixed|string>|string>|null
      */
-    private null|array $orderBy = null;
+    private ?array $orderBy = null;
 
-    private null|int $limit = null;
+    private ?int $limit = null;
 
-    private null|int $offset = null;
+    private ?int $offset = null;
 
     /**
      * Subconsulta derivada establecida vía fromUnion (estructura: {sql, bindings, alias}).
      *
      * @var array{sql:string,bindings:array<int,mixed>,alias:string}|null
      */
-    private null|array $fromSub = null;
+    private ?array $fromSub = null;
 
     /** @var list<array{sql:string,bindings:array<int,mixed>}> */
     private array $unionParts = [];
@@ -147,7 +147,7 @@ class QueryBuilder
      *
      * @var class-string<VersaModel>|null
      */
-    private null|string $modelClass = null;
+    private ?string $modelClass = null;
 
     /** @var list<array<string,mixed>> */
     private array $lazyOperations = [];
@@ -160,7 +160,7 @@ class QueryBuilder
     public function __construct(
         private $orm,
         string $table,
-        null|string $modelClass = null,
+        ?string $modelClass = null,
     ) {
         // Validar identificador/alias de tabla inmediatamente para prevenir casos maliciosos
         if (!$this->isSafeIdentifier($table)) {
@@ -608,6 +608,124 @@ class QueryBuilder
         ];
 
         return $this;
+    }
+
+    /**
+     * Añade un JOIN usando SQL crudo.
+     * Permite joins complejos con subconsultas, CTEs, o condiciones que no se pueden
+     * expresar fácilmente con los métodos join() normales.
+     *
+     * ADVERTENCIA: Use con precaución. Validaciones de seguridad básicas están habilitadas,
+     * pero siempre use bindings parametrizados para valores dinámicos.
+     *
+     * Ejemplos:
+     * ```php
+     * // JOIN con subconsulta
+     * ->joinRaw('INNER JOIN (SELECT id, COUNT(*) as total FROM orders GROUP BY id) as ord ON ord.id = users.id')
+     *
+     * // LEFT JOIN con condiciones complejas
+     * ->leftJoinRaw('posts ON posts.user_id = users.id AND posts.status = ?', ['published'])
+     *
+     * // Múltiples condiciones con bindings
+     * ->joinRaw('INNER JOIN products p ON p.category_id = c.id AND p.price > ? AND p.stock > ?', [100, 0])
+     * ```
+     *
+     * @param string $rawJoinClause SQL completo del JOIN (ej: "INNER JOIN tabla ON condicion")
+     * @param array<int, mixed> $bindings Parámetros para prepared statements
+     *
+     * @throws VersaORMException Si la expresión está vacía o contiene patrones peligrosos
+     *
+     * @return self
+     */
+    public function joinRaw(string $rawJoinClause, array $bindings = []): self
+    {
+        $clause = trim($rawJoinClause);
+
+        if ($clause === '' || $clause === '0') {
+            throw new \InvalidArgumentException('joinRaw clause cannot be empty');
+        }
+
+        // Validación de seguridad básica
+        if (!$this->isSafeJoinRaw($clause)) {
+            throw new VersaORMException('Potentially unsafe raw JOIN expression detected.');
+        }
+
+        $this->joins[] = [
+            'type' => 'raw',
+            'raw_sql' => $clause,
+            'bindings' => array_values($bindings),
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Añade un LEFT JOIN usando SQL crudo.
+     * Shortcut para joinRaw() con prefijo LEFT JOIN automático si no está presente.
+     *
+     * @param string $rawJoinClause Condición del JOIN (puede incluir o no el prefijo "LEFT JOIN")
+     * @param array<int, mixed> $bindings Parámetros para prepared statements
+     *
+     * @throws VersaORMException
+     *
+     * @return self
+     */
+    public function leftJoinRaw(string $rawJoinClause, array $bindings = []): self
+    {
+        $clause = trim($rawJoinClause);
+
+        // Si no empieza con LEFT JOIN, agregarlo automáticamente
+        if (!preg_match('/^\s*LEFT\s+JOIN\s+/i', $clause)) {
+            $clause = 'LEFT JOIN ' . $clause;
+        }
+
+        return $this->joinRaw($clause, $bindings);
+    }
+
+    /**
+     * Añade un RIGHT JOIN usando SQL crudo.
+     * Shortcut para joinRaw() con prefijo RIGHT JOIN automático si no está presente.
+     *
+     * @param string $rawJoinClause Condición del JOIN (puede incluir o no el prefijo "RIGHT JOIN")
+     * @param array<int, mixed> $bindings Parámetros para prepared statements
+     *
+     * @throws VersaORMException
+     *
+     * @return self
+     */
+    public function rightJoinRaw(string $rawJoinClause, array $bindings = []): self
+    {
+        $clause = trim($rawJoinClause);
+
+        // Si no empieza con RIGHT JOIN, agregarlo automáticamente
+        if (!preg_match('/^\s*RIGHT\s+JOIN\s+/i', $clause)) {
+            $clause = 'RIGHT JOIN ' . $clause;
+        }
+
+        return $this->joinRaw($clause, $bindings);
+    }
+
+    /**
+     * Añade un INNER JOIN usando SQL crudo.
+     * Shortcut para joinRaw() con prefijo INNER JOIN automático si no está presente.
+     *
+     * @param string $rawJoinClause Condición del JOIN (puede incluir o no el prefijo "INNER JOIN")
+     * @param array<int, mixed> $bindings Parámetros para prepared statements
+     *
+     * @throws VersaORMException
+     *
+     * @return self
+     */
+    public function innerJoinRaw(string $rawJoinClause, array $bindings = []): self
+    {
+        $clause = trim($rawJoinClause);
+
+        // Si no empieza con INNER JOIN, agregarlo automáticamente
+        if (!preg_match('/^\s*INNER\s+JOIN\s+/i', $clause)) {
+            $clause = 'INNER JOIN ' . $clause;
+        }
+
+        return $this->joinRaw($clause, $bindings);
     }
 
     /**
@@ -1122,7 +1240,7 @@ class QueryBuilder
      *
      * @return array<string, mixed>|null
      */
-    public function firstArray(): null|array
+    public function firstArray(): ?array
     {
         $row = $this->execute('first');
 
@@ -1148,7 +1266,7 @@ class QueryBuilder
     /**
      * Ejecuta la consulta y devuelve el primer objeto resultado como VersaModel, o null.
      */
-    public function findOne(): null|VersaModel
+    public function findOne(): ?VersaModel
     {
         $hydrationStart = microtime(true);
         $row = $this->execute('first');
@@ -1217,7 +1335,7 @@ class QueryBuilder
     /**
      * Busca un registro por su clave primaria.
      */
-    public function find(mixed $id, string $pk = 'id'): null|VersaModel
+    public function find(mixed $id, string $pk = 'id'): ?VersaModel
     {
         return $this->where($pk, '=', $id)->first();
     }
@@ -1231,7 +1349,7 @@ class QueryBuilder
      *
      * @return VersaModel|null the first result as a VersaModel instance, or null if no result is found
      */
-    public function first(): null|VersaModel
+    public function first(): ?VersaModel
     {
         $hydrationStart = microtime(true);
         $row = $this->execute('first');
@@ -1328,7 +1446,7 @@ class QueryBuilder
      *
      * @return int|null El ID del registro insertado (como entero), o null si no se pudo obtener el ID
      */
-    public function insertGetId(array $data): null|int
+    public function insertGetId(array $data): ?int
     {
         $result = $this->execute('insertGetId', $data);
 
@@ -3168,7 +3286,7 @@ class QueryBuilder
      *
      * @return mixed
      */
-    private function execute(string $method, null|array $data = null)
+    private function execute(string $method, ?array $data = null)
     {
         if (!$this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for QueryBuilder execution.');
@@ -3204,7 +3322,7 @@ class QueryBuilder
      *
      * @return array<string, mixed>
      */
-    private function buildPayload(string $method, null|array $data = null): array
+    private function buildPayload(string $method, ?array $data = null): array
     {
         // Asegurar que selects nunca esté vacío - usar ['*'] por defecto
         $selects = $this->selects === [] ? ['*'] : $this->selects;
@@ -3252,10 +3370,8 @@ class QueryBuilder
                         if ($this->orm->isDebugMode()) {
                             try {
                                 $this->orm->logDebug(
-                                    '[DEBUG] buildPayload - Final merged params for '
-                                    . $method
-                                    . ': '
-                                    . json_encode($params),
+                                    '[DEBUG] buildPayload - Final merged params for ' . $method . ': '
+                                        . json_encode($params),
                                     ['params' => $params],
                                 );
                             } catch (Throwable) {
@@ -3397,9 +3513,11 @@ class QueryBuilder
             // Ejecutar a través del mismo mecanismo que insert() usa internamente
             $result = $this->execute('insert', $data);
 
-            return is_array($result)
-                ? $result
-                : ['status' => 'success', 'operation' => 'inserted', 'rows_affected' => 1, 'table' => $this->table];
+            return (
+                is_array($result)
+                    ? $result
+                    : ['status' => 'success', 'operation' => 'inserted', 'rows_affected' => 1, 'table' => $this->table]
+            );
         }
 
         // 3) Delegar a upsert con updateColumns = todas menos las claves

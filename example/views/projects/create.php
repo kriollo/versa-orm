@@ -48,6 +48,7 @@
                 </label>
                 <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?php echo $_POST['color'] ?? '#3498db'; ?>' }">
                     <?php
+
                     $colors = [
                         '#e74c3c' => 'Rojo',
                         '#3498db' => 'Azul',

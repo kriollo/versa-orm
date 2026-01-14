@@ -28,7 +28,7 @@ use function in_array;
  */
 class SchemaValidationTest extends TestCase
 {
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
     protected function setUp(): void
     {

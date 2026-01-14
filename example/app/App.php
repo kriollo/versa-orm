@@ -9,9 +9,9 @@ use VersaORM\VersaORM;
 
 class App
 {
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
-    private null|ModelManager $models = null;
+    private ?ModelManager $models = null;
 
     public function __construct(
         private Request $request,

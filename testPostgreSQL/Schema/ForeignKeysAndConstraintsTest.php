@@ -23,6 +23,7 @@ use VersaORM\VersaORM;
 class ForeignKeysAndConstraintsTest extends TestCase
 {
     private SchemaBuilder $schema;
+
     private VersaORM $orm;
 
     protected function setUp(): void
@@ -33,8 +34,8 @@ class ForeignKeysAndConstraintsTest extends TestCase
             'driver' => 'postgresql',
             'host' => $_ENV['DB_HOST'] ?? 'localhost',
             'database' => $_ENV['DB_NAME'] ?? 'versaorm_test',
-            'username' => $_ENV['DB_USER'] ?? 'postgres',
-            'password' => $_ENV['DB_PASS'] ?? '',
+            'username' => $_ENV['DB_USER'] ?? 'local',
+            'password' => $_ENV['DB_PASS'] ?? 'local',
             'charset' => 'utf8',
             'port' => $_ENV['DB_PORT'] ?? 5432,
             'debug' => true,

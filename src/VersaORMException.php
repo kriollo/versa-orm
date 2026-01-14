@@ -15,10 +15,10 @@ class VersaORMException extends Exception
     private float $raisedAt;
 
     /** @var string|null Nombre del método público/QueryBuilder que originó el error */
-    private null|string $originMethod = null;
+    private ?string $originMethod = null;
 
     /** @var string|null Driver de base de datos activo */
-    private null|string $driver = null;
+    private ?string $driver = null;
 
     /**
      * @param array<int, mixed> $bindings
@@ -27,12 +27,12 @@ class VersaORMException extends Exception
     public function __construct(
         string $message,
         private string $errorCode = 'UNKNOWN_ERROR',
-        private null|string $query = null,
+        private ?string $query = null,
         private array $bindings = [],
         private array $errorDetails = [],
-        private null|string $sqlState = null,
+        private ?string $sqlState = null,
         int $code = 0,
-        null|Exception $previous = null,
+        ?Exception $previous = null,
     ) {
         $this->raisedAt = microtime(true);
         parent::__construct($message, $code, $previous);
@@ -56,7 +56,7 @@ class VersaORMException extends Exception
     /**
      * Obtiene la consulta SQL que causó el error.
      */
-    public function getQuery(): null|string
+    public function getQuery(): ?string
     {
         return $this->query;
     }
@@ -92,13 +92,13 @@ class VersaORMException extends Exception
     /**
      * Obtiene el estado SQL si está disponible.
      */
-    public function getSqlState(): null|string
+    public function getSqlState(): ?string
     {
         return $this->sqlState;
     }
 
     /** Define el método origen (fluente). */
-    public function withOrigin(null|string $method): self
+    public function withOrigin(?string $method): self
     {
         $this->originMethod = $method;
 
@@ -106,7 +106,7 @@ class VersaORMException extends Exception
     }
 
     /** Define el driver DB que estaba activo. */
-    public function withDriver(null|string $driver): self
+    public function withDriver(?string $driver): self
     {
         $this->driver = $driver;
 
@@ -125,13 +125,13 @@ class VersaORMException extends Exception
     }
 
     /** Devuelve el método origen si se estableció. */
-    public function getOriginMethod(): null|string
+    public function getOriginMethod(): ?string
     {
         return $this->originMethod;
     }
 
     /** Devuelve driver DB. */
-    public function getDriver(): null|string
+    public function getDriver(): ?string
     {
         return $this->driver;
     }

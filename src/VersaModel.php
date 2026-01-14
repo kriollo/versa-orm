@@ -95,7 +95,7 @@ class VersaModel implements TypedModelInterface
      */
     private array $attributes = [];
 
-    private static null|VersaORM $ormInstance = null;
+    private static ?VersaORM $ormInstance = null;
 
     /**
      * @param array<string, mixed>|VersaORM|null $orm
@@ -261,7 +261,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Configura la instancia global del ORM para métodos estáticos.
      */
-    public static function setORM(null|VersaORM $orm): void
+    public static function setORM(?VersaORM $orm): void
     {
         self::$ormInstance = $orm;
     }
@@ -269,7 +269,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Obtiene la instancia global del ORM.
      */
-    public static function getGlobalORM(): null|VersaORM
+    public static function getGlobalORM(): ?VersaORM
     {
         return self::$ormInstance;
     }
@@ -971,7 +971,7 @@ class VersaModel implements TypedModelInterface
      *
      * @return array<string, mixed> Información sobre la operación realizada
      */
-    public function smartUpsert(null|array $updateColumns = null): array
+    public function smartUpsert(?array $updateColumns = null): array
     {
         $uniqueKeys = $this->getUniqueKeys();
 
@@ -1179,7 +1179,7 @@ class VersaModel implements TypedModelInterface
      * Ejemplo: $this->query()->where('activo', true)->getAll();
      * Permite también sobrescribir tabla opcionalmente: $this->query('otra_tabla')->getAll();.
      */
-    public function query(null|string $table = null): QueryBuilder
+    public function query(?string $table = null): QueryBuilder
     {
         $orm = $this->orm instanceof VersaORM ? $this->orm : self::orm();
 
@@ -1193,7 +1193,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Variante estática para conveniencia cuando no se tiene instancia: UserModel::queryTable()->where(...).
      */
-    public static function queryTable(null|string $table = null): QueryBuilder
+    public static function queryTable(?string $table = null): QueryBuilder
     {
         return self::orm()->table($table ?? static::tableName(), static::class);
     }
@@ -1290,7 +1290,7 @@ class VersaModel implements TypedModelInterface
      *
      * @param int|string $id
      */
-    public static function load(string $table, $id, string $pk = 'id'): null|self
+    public static function load(string $table, $id, string $pk = 'id'): ?self
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call Model::setORM() first.');
@@ -1330,7 +1330,7 @@ class VersaModel implements TypedModelInterface
      *
      * @param array<int, mixed> $bindings
      */
-    public static function count(string $table, null|string $conditions = null, array $bindings = []): int
+    public static function count(string $table, ?string $conditions = null, array $bindings = []): int
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call VersaModel::setORM() first.');
@@ -1405,7 +1405,7 @@ class VersaModel implements TypedModelInterface
      *
      * @return array<string, mixed>|null
      */
-    public static function getRow(string $sql, array $bindings = []): null|array
+    public static function getRow(string $sql, array $bindings = []): ?array
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call VersaModel::setORM() first.');
@@ -1491,7 +1491,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Busca un registro por ID y lo devuelve como modelo.
      */
-    public static function findOne(string $table, mixed $id, string $pk = 'id'): null|self
+    public static function findOne(string $table, mixed $id, string $pk = 'id'): ?self
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call VersaModel::setORM() first.');
@@ -1540,7 +1540,7 @@ class VersaModel implements TypedModelInterface
      *
      * @return array<int, self>
      */
-    public static function findAll(string $table, null|string $conditions = null, array $bindings = []): array
+    public static function findAll(string $table, ?string $conditions = null, array $bindings = []): array
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call VersaModel::setORM() first.');
@@ -1580,7 +1580,7 @@ class VersaModel implements TypedModelInterface
         string $table,
         callable $callback,
         int $batchSize = 1000,
-        null|string $conditions = null,
+        ?string $conditions = null,
         array $bindings = [],
         string $orderBy = 'id',
     ): void {
@@ -2292,7 +2292,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Valida una sola regla contra un campo.
      */
-    protected function validateSingleRule(string $field, mixed $value, string $rule): null|string
+    protected function validateSingleRule(string $field, mixed $value, string $rule): ?string
     {
         switch ($rule) {
             case 'required':

@@ -88,7 +88,7 @@ class PHPVersionMatrixRunner
     /**
      * Exporta matriz de compatibilidad a JSON.
      */
-    public function exportMatrixToJson(null|string $filepath = null): string
+    public function exportMatrixToJson(?string $filepath = null): string
     {
         $report = $this->runCompatibilityMatrix();
         $json = $report->toJson();
@@ -108,7 +108,7 @@ class PHPVersionMatrixRunner
     /**
      * Exporta matriz de compatibilidad a HTML.
      */
-    public function exportMatrixToHtml(null|string $filepath = null): string
+    public function exportMatrixToHtml(?string $filepath = null): string
     {
         $report = $this->runCompatibilityMatrix();
         $html = $this->generateMatrixHtml($report);

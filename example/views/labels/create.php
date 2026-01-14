@@ -76,6 +76,7 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">Colores predefinidos</label>
                     <div class="grid grid-cols-8 gap-2">
                         <?php
+
                         $predefinedColors = [
                             '#e74c3c',
                             '#3498db',

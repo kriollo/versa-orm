@@ -153,7 +153,7 @@ class Report
     /**
      * Obtiene la puntuación de calidad si está disponible.
      */
-    public function getQualityScore(): null|int
+    public function getQualityScore(): ?int
     {
         if (
             isset($this->results['quality_analysis'])

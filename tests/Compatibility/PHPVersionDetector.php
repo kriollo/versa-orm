@@ -132,7 +132,7 @@ class PHPVersionDetector
     /**
      * Obtiene información de soporte para la versión actual.
      */
-    public static function getCurrentVersionSupport(): null|array
+    public static function getCurrentVersionSupport(): ?array
     {
         $currentVersion = self::getCurrentVersion()['short_version'];
 
@@ -275,7 +275,7 @@ class PHPVersionDetector
     /**
      * Obtiene información de OPcache si está disponible.
      */
-    public static function getOpcacheInfo(): null|array
+    public static function getOpcacheInfo(): ?array
     {
         if (!function_exists('opcache_get_status')) {
             return null;
@@ -398,7 +398,7 @@ class PHPVersionDetector
     /**
      * Genera recomendaciones basadas en la versión PHP.
      */
-    private static function generateRecommendations(array $version, null|array $support): array
+    private static function generateRecommendations(array $version, ?array $support): array
     {
         $recommendations = [];
 

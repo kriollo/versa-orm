@@ -20,9 +20,9 @@ use VersaORM\VersaORM;
  */
 class MySQLAdvancedSQLTest extends TestCase
 {
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
-    private null|QueryBuilder $queryBuilder = null;
+    private ?QueryBuilder $queryBuilder = null;
 
     protected function setUp(): void
     {

@@ -72,6 +72,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 <?php foreach ($users as $user) { ?>
                     <?php
+
                     // Obtener estadísticas reales del usuario usando el método optimizado
                     $stats = $user->getStats();
 

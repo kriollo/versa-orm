@@ -90,7 +90,8 @@ class User extends BaseModel
             $allProjects = [];
 
             // Proyectos donde es propietario
-            $ownedProjects = $this->getOrm()
+            $ownedProjects = $this
+                ->getOrm()
                 ->table('projects', Project::class)
                 ->where('owner_id', '=', $this->id)
                 ->get();
@@ -100,7 +101,8 @@ class User extends BaseModel
             }
 
             // Proyectos donde es miembro
-            $memberProjects = $this->getOrm()
+            $memberProjects = $this
+                ->getOrm()
                 ->table('projects', Project::class)
                 ->join('project_users', 'projects.id', '=', 'project_users.project_id')
                 ->where('project_users.user_id', '=', $this->id)
@@ -128,7 +130,8 @@ class User extends BaseModel
         } catch (Exception) {
             // Si falla el join, intentar solo los proyectos propios
             try {
-                $projects = $this->getOrm()
+                $projects = $this
+                    ->getOrm()
                     ->table('projects', Project::class)
                     ->where('owner_id', '=', $this->id)
                     ->get();
@@ -146,7 +149,8 @@ class User extends BaseModel
     public function tasks(): array
     {
         try {
-            $tasks = $this->getOrm()
+            $tasks = $this
+                ->getOrm()
                 ->table('tasks', Task::class)
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')

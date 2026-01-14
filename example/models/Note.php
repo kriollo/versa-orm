@@ -39,7 +39,8 @@ class Note extends BaseModel
     /** Listar notas por task_id como arrays exportados (instancia). */
     public function findByTask(int $taskId): array
     {
-        return $this->getOrm()
+        return $this
+            ->getOrm()
             ->table('task_notes', static::class)
             ->where('task_id', '=', $taskId)
             ->orderBy('created_at', 'DESC')
@@ -58,9 +59,10 @@ class Note extends BaseModel
     /**
      * Obtener tarea de la nota.
      */
-    public function task(): null|array
+    public function task(): ?array
     {
-        $task = $this->getOrm()
+        $task = $this
+            ->getOrm()
             ->table('tasks', Task::class)
             ->where('id', '=', (int) $this->task_id)
             ->findOne();
@@ -71,9 +73,10 @@ class Note extends BaseModel
     /**
      * Obtener usuario que creó la nota.
      */
-    public function user(): null|array
+    public function user(): ?array
     {
-        $user = $this->getOrm()
+        $user = $this
+            ->getOrm()
             ->table('users', User::class)
             ->where('id', '=', (int) $this->user_id)
             ->findOne();

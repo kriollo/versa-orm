@@ -46,7 +46,7 @@ trait HasStrongTyping
     protected array $accessors = [];
 
     /** @var array<string,mixed>|null */
-    private null|array $databaseSchemaCache = null;
+    private ?array $databaseSchemaCache = null;
 
     /** @var array<string,string> */
     private static array $supportedCasts = [
@@ -358,7 +358,7 @@ trait HasStrongTyping
      * $phpHandler: callable(object,string,mixed,array): mixed para convertir a PHP
      * $dbHandler: callable(object,string,mixed,array): mixed para convertir a DB (opcional).
      */
-    public static function addTypeConverter(string $name, callable $phpHandler, null|callable $dbHandler = null): void
+    public static function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
     {
         $lname = strtolower($name);
 
@@ -454,9 +454,9 @@ trait HasStrongTyping
         }
         $int = static fn($s, $p, $v, $_ = []): int => (int) (is_numeric($v) ? $v : 0);
         $float = static fn($s, $p, $v, $_ = []): float => (float) (is_numeric($v) ? $v : 0.0);
-        $string = static fn($s, $p, $v, $_ = []): string => is_scalar($v)
-            ? (string) $v
-            : (json_encode($v, JSON_UNESCAPED_UNICODE) ?: '');
+        $string = static fn($s, $p, $v, $_ = []): string => (
+            is_scalar($v) ? (string) $v : (json_encode($v, JSON_UNESCAPED_UNICODE) ?: '')
+        );
         $bool = static function ($s, $p, $v, $_ = []): bool {
             if (is_bool($v)) {
                 return $v;

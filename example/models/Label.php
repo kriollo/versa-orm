@@ -87,7 +87,8 @@ class Label extends BaseModel
      */
     public function tasks(): array
     {
-        return $this->getOrm()
+        return $this
+            ->getOrm()
             ->table('tasks', Task::class)
             ->join('task_labels', 'tasks.id', '=', 'task_labels.task_id')
             ->where('task_labels.label_id', '=', $this->id)
@@ -101,7 +102,8 @@ class Label extends BaseModel
      */
     public function tasksCount(): int
     {
-        $rows = $this->getOrm()
+        $rows = $this
+            ->getOrm()
             ->table('task_labels')
             ->select(['COUNT(*) AS count'])
             ->where('label_id', '=', $this->id)

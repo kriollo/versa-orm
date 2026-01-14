@@ -91,7 +91,7 @@ class BenchmarkResult
     /**
      * Compara el rendimiento con otro ORM.
      */
-    public function getComparisonWith(string $orm): null|array
+    public function getComparisonWith(string $orm): ?array
     {
         return $this->comparisons[$orm] ?? null;
     }
@@ -99,7 +99,7 @@ class BenchmarkResult
     /**
      * Calcula el factor de mejora respecto a otro ORM.
      */
-    public function getImprovementFactor(string $orm): null|float
+    public function getImprovementFactor(string $orm): ?float
     {
         $comparison = $this->getComparisonWith($orm);
 

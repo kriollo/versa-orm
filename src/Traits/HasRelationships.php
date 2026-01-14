@@ -60,7 +60,7 @@ trait HasRelationships
     /**
      * @param class-string<VersaModel> $related
      */
-    public function hasOne(string $related, null|string $foreignKey = null, null|string $localKey = null): HasOne
+    public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
     {
         $foreignKey ??= $this->getForeignKey();
         $localKey ??= $this->getKeyName();
@@ -79,7 +79,7 @@ trait HasRelationships
     /**
      * @param class-string<VersaModel> $related
      */
-    public function hasMany(string $related, null|string $foreignKey = null, null|string $localKey = null): HasMany
+    public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): HasMany
     {
         $foreignKey ??= $this->getForeignKey();
         $localKey ??= $this->getKeyName();
@@ -100,9 +100,9 @@ trait HasRelationships
      */
     public function belongsTo(
         string $related,
-        null|string $foreignKey = null,
-        null|string $ownerKey = null,
-        null|string $relation = null,
+        ?string $foreignKey = null,
+        ?string $ownerKey = null,
+        ?string $relation = null,
     ): BelongsTo {
         $relation ??= $this->getRelationName();
         $foreignKey ??= $relation . '_id';
@@ -125,10 +125,10 @@ trait HasRelationships
     public function belongsToMany(
         string $related,
         string $pivotTable,
-        null|string $foreignPivotKey = null,
-        null|string $relatedPivotKey = null,
-        null|string $parentKey = null,
-        null|string $relatedKey = null,
+        ?string $foreignPivotKey = null,
+        ?string $relatedPivotKey = null,
+        ?string $parentKey = null,
+        ?string $relatedKey = null,
     ): BelongsToMany {
         $foreignPivotKey ??= $this->getForeignKey();
         $relatedPivotKey ??= (new $related('dummy', $this->getOrm()))->getForeignKey();

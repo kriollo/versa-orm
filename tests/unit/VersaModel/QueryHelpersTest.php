@@ -58,7 +58,7 @@ final class QueryHelpersTest extends TestCase
                 return [];
             }
 
-            public function table(string $table, null|string $modelClass = null): QueryBuilder
+            public function table(string $table, ?string $modelClass = null): QueryBuilder
             {
                 // Retornar un QueryBuilder real con este ORM minimal (usaremos constructor sencillo)
                 return new \VersaORM\QueryBuilder($this, $table, $modelClass);
@@ -74,7 +74,7 @@ final class QueryHelpersTest extends TestCase
                 return [];
             }
 
-            public function metrics(): null|array
+            public function metrics(): ?array
             {
                 return null;
             }
@@ -87,7 +87,7 @@ final class QueryHelpersTest extends TestCase
             {
             }
 
-            public function addTypeConverter(string $name, callable $phpHandler, null|callable $dbHandler = null): void
+            public function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
             {
             }
 

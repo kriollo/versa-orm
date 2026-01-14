@@ -15,9 +15,9 @@ use VersaORM\VersaORMException;
  */
 class QueryBuilderSubqueriesTest extends TestCase
 {
-    private null|QueryBuilder $queryBuilder = null;
+    private ?QueryBuilder $queryBuilder = null;
 
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
     protected function setUp(): void
     {

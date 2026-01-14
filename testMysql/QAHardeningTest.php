@@ -14,7 +14,7 @@ use VersaORM\VersaORM;
  */
 class QAHardeningTest extends TestCase
 {
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
     protected function setUp(): void
     {

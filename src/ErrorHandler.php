@@ -28,7 +28,7 @@ class ErrorHandler
 
     private static array $config = [];
 
-    private static null|string $logPath = null;
+    private static ?string $logPath = null;
 
     /**
      * Configura el modo debug.
@@ -72,7 +72,7 @@ class ErrorHandler
     /**
      * Obtiene el path de logs configurado.
      */
-    public static function getLogPath(): null|string
+    public static function getLogPath(): ?string
     {
         return self::$logPath;
     }
@@ -317,7 +317,7 @@ class ErrorHandler
     /**
      * Formatea una query SQL con sus bindings para debugging.
      */
-    private static function formatQuery(null|string $sql, array $bindings = []): null|string
+    private static function formatQuery(?string $sql, array $bindings = []): ?string
     {
         if ($sql === null || $sql === '' || $sql === '0') {
             return null;

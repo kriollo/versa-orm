@@ -24,7 +24,7 @@ if (!class_exists('TestQueryBuilder')) {
         }
 
         // Firma compatible con QueryBuilder::findOne(): ?\VersaORM\VersaModel
-        public function findOne(): null|\VersaORM\VersaModel
+        public function findOne(): ?\VersaORM\VersaModel
         {
             return new TestVersaModel();
         }

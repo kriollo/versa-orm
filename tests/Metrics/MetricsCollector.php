@@ -146,7 +146,7 @@ class MetricsCollector
     /**
      * Obtiene métricas por tipo y rango de fechas.
      */
-    public function getMetrics(null|string $type = null, null|DateTime $from = null, null|DateTime $to = null): array
+    public function getMetrics(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): array
     {
         if (!$this->enabled) {
             return [];
@@ -310,7 +310,7 @@ class MetricsCollector
     /**
      * Exporta métricas a formato CSV.
      */
-    public function exportToCsv(null|string $type = null, null|DateTime $from = null, null|DateTime $to = null): string
+    public function exportToCsv(?string $type = null, ?DateTime $from = null, ?DateTime $to = null): string
     {
         $metrics = $this->getMetrics($type, $from, $to);
 

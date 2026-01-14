@@ -12,7 +12,7 @@ require_once __DIR__ . '/bootstrap.php';
 
 class TestCase extends BaseTestCase
 {
-    public static null|VersaORM $orm = null;
+    public static ?VersaORM $orm = null;
 
     private static bool $schemaCreated = false;
 

@@ -183,6 +183,7 @@ $pendingTasks ??= 0; ?>
                         <div class="flex items-center space-x-3">
                             <div class="flex-shrink-0">
                                 <?php
+
                                 $statusColors = [
                                     'todo' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
                                     'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
@@ -209,6 +210,7 @@ $pendingTasks ??= 0; ?>
                         </div>
                         <div class="flex items-center space-x-2">
                             <?php
+
                             $priorityColors = [
                                 'low' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                                 'medium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
@@ -245,6 +247,7 @@ $pendingTasks ??= 0; ?>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                     VersaORM está validando automáticamente los tipos de datos en todos los modelos.
                     <?php
+
                     $typedModels = [
                         'User' => User::definePropertyTypes(),
                         'Project' => Project::definePropertyTypes(),

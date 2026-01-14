@@ -79,6 +79,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 transition-colors">Colores Sugeridos</label>
                 <div class="grid grid-cols-8 gap-2">
                     <?php
+
                     $suggestedColors = [
                         '#E74C3C',
                         '#E67E22',

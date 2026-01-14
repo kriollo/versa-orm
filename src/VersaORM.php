@@ -129,7 +129,7 @@ class VersaORM
      * Instancia persistente del motor PDO para esta instancia de ORM.
      * Permite reutilizar la misma conexión (crítico para SQLite :memory:).
      */
-    private null|PdoEngine $pdoEngine = null;
+    private ?PdoEngine $pdoEngine = null;
 
     /**
      * Constructor de la clase VersaORM.
@@ -189,7 +189,7 @@ class VersaORM
      *
      * @return array<string,float|int>|null
      */
-    public function metrics(): null|array
+    public function metrics(): ?array
     {
         $engine = strtolower((string) ($this->config['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')));
 
@@ -246,7 +246,7 @@ class VersaORM
     /**
      * Crea un QueryBuilder para la tabla especificada.
      */
-    public function table(string $table, null|string $modelClass = null): QueryBuilder
+    public function table(string $table, ?string $modelClass = null): QueryBuilder
     {
         return new QueryBuilder($this, $table, $modelClass);
     }
@@ -256,7 +256,7 @@ class VersaORM
      * Delegará a HasStrongTyping::addTypeConverter para actualizar los registries.
      * Ejemplo: $orm->addTypeConverter('money', $phpHandler, $dbHandler);.
      */
-    public function addTypeConverter(string $name, callable $phpHandler, null|callable $dbHandler = null): void
+    public function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
     {
         // Usar VersaModel como punto único para registries del trait
         // Llamada estática segura: la clase VersaModel usa HasStrongTyping
@@ -344,7 +344,7 @@ class VersaORM
      *
      * @return mixed
      */
-    public function schema(string $subject, null|string $tableName = null)
+    public function schema(string $subject, ?string $tableName = null)
     {
         $params = ['subject' => $subject];
 
@@ -1032,11 +1032,8 @@ class VersaORM
      *
      * @throws VersaORMException
      */
-    public function validateFreezeOperation(
-        string $operation,
-        null|string $modelClass = null,
-        array $context = [],
-    ): void {
+    public function validateFreezeOperation(string $operation, ?string $modelClass = null, array $context = []): void
+    {
         $isDdlOperation = $this->isDdlOperation($operation);
         $isGloballyFrozen = $this->isFrozen();
         $isModelFrozen = $modelClass !== null && $this->isModelFrozen($modelClass);
@@ -1250,7 +1247,7 @@ class VersaORM
     }
 
     /** Extrae SQLSTATE si se puede (PDOException) */
-    private function extractSqlState(Throwable $t): null|string
+    private function extractSqlState(Throwable $t): ?string
     {
         if ($t instanceof \PDOException && isset($t->errorInfo[0]) && is_string($t->errorInfo[0])) {
             return $t->errorInfo[0];
@@ -1771,9 +1768,9 @@ class VersaORM
         string $errorCode,
         string $errorMessage,
         array $errorDetails,
-        null|string $sqlState,
+        ?string $sqlState,
         string $action,
-        null|string $query,
+        ?string $query,
         array $bindings = [],
     ): string {
         $message = sprintf('VersaORM Error [%s]: %s', $errorCode, $errorMessage);
@@ -1863,7 +1860,7 @@ class VersaORM
     private function logError(
         string $errorCode,
         string $errorMessage,
-        null|string $query,
+        ?string $query,
         array $bindings,
         string $fullMessage,
     ): void {

@@ -19,7 +19,7 @@ class PHPStanAnalyzer
     private string $phpstanPath;
 
     public function __construct(
-        null|string $phpstanPath = null,
+        ?string $phpstanPath = null,
         private string $configPath = 'phpstan.neon',
         private string $reportsDir = 'tests/reports/phpstan',
     ) {

@@ -104,7 +104,8 @@ class Project extends BaseModel
     /** Añadir miembro (inserta en project_users si no existe ya). */
     public function addMember(int $userId): void
     {
-        $exists = $this->getOrm()
+        $exists = $this
+            ->getOrm()
             ->table('project_users')
             ->where('project_id', '=', $this->id)
             ->where('user_id', '=', $userId)
@@ -122,7 +123,8 @@ class Project extends BaseModel
     /** Remover miembro del proyecto eliminando fila pivot. */
     public function removeMember(int $userId): void
     {
-        $rows = $this->getOrm()
+        $rows = $this
+            ->getOrm()
             ->table('project_users')
             ->select(['id'])
             ->where('project_id', '=', $this->id)

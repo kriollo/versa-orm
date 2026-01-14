@@ -15,7 +15,7 @@ use VersaORM\VersaORM;
  */
 class DatabaseSpecificTypesTest extends TestCase
 {
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
     private string $databaseType;
 

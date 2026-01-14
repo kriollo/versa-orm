@@ -139,6 +139,7 @@
                 <!-- Progreso general -->
                 <?php if (count($tasks) > 0) { ?>
                     <?php
+
                     $completedTasks = array_filter($tasks, static fn($t): bool => $t->status === 'done');
                     $progressPercent = (count($completedTasks) / count($tasks)) * 100;
                     ?>
@@ -157,6 +158,7 @@
 
                 <!-- Lista de tareas por estado -->
                 <?php
+
                 $tasksByStatus = [
                     'todo' => array_filter($tasks, static fn($t): bool => $t->status === 'todo'),
                     'in_progress' => array_filter($tasks, static fn($t): bool => $t->status === 'in_progress'),
@@ -251,6 +253,7 @@
 </div>
 
 <?php
+
 function getPriorityClass($priority): string
 {
     return match ($priority) {

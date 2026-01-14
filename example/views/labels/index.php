@@ -157,6 +157,7 @@
             <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white transition-colors">Paleta de Colores</h3>
             <div class="flex flex-wrap gap-2">
                 <?php
+
                 $colors = array_unique(array_column($labels, 'color'));
 
                 foreach ($colors as $color) { ?>

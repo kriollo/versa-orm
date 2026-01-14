@@ -73,7 +73,7 @@ class DummyModel
 
     public array $attributes = [];
 
-    public function getTable(): null|string
+    public function getTable(): ?string
     {
         return 'dummy';
     }

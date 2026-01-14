@@ -315,9 +315,9 @@ class PHPVersionCompatibilityTest extends TestCase
         // Log performance for version-specific analysis
         echo
             "\nPerformance for PHP "
-            . PHP_VERSION
-            . ': '
-            . number_format($executionTime, 4)
+                . PHP_VERSION
+                . ': '
+                . number_format($executionTime, 4)
                 . "s for {$iterations} iterations\n"
         ;
     }

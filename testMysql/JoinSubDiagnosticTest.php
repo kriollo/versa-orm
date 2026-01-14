@@ -186,13 +186,10 @@ class JoinSubDiagnosticTest extends TestCase
         try {
             // Esto debería mostrar el SQL generado
 
-            $query = $debugOrm->table('users')->select(['users.name', 'active_users.post_count'])->joinSub(
-                $subquery,
-                'active_users',
-                'users.id',
-                '=',
-                'active_users.user_id',
-            );
+            $query = $debugOrm
+                ->table('users')
+                ->select(['users.name', 'active_users.post_count'])
+                ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
 
             // Intentar capturar el SQL sin ejecutar
             self::assertInstanceOf(QueryBuilder::class, $query);

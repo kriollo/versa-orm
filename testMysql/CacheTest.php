@@ -14,7 +14,7 @@ use function count;
  */
 class CacheTest extends TestCase
 {
-    public static null|VersaORM $orm = null;
+    public static ?VersaORM $orm = null;
 
     public static function setUpBeforeClass(): void
     {

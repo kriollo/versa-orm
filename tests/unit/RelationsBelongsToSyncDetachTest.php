@@ -35,7 +35,7 @@ if (!class_exists('TestQueryBuilder')) {
             return $this;
         }
 
-        public function findOne(): null|VersaModel
+        public function findOne(): ?VersaModel
         {
             return null;
         }

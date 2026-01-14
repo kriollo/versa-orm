@@ -275,6 +275,23 @@ class SqlGenerator
 
         foreach ($joins as $joinIdx => $join) {
             $type = strtolower((string) ($join['type'] ?? 'inner'));
+
+            // Procesar JOINs RAW: SQL crudo con bindings opcionales
+            if ($type === 'raw') {
+                if (isset($join['raw_sql']) && is_string($join['raw_sql'])) {
+                    $rawSql = trim($join['raw_sql']);
+                    if ($rawSql !== '') {
+                        $sql .= ' ' . $rawSql;
+
+                        // Merge bindings del JOIN raw
+                        if (isset($join['bindings']) && is_array($join['bindings'])) {
+                            $bindings = array_merge($bindings, array_values($join['bindings']));
+                        }
+                    }
+                }
+                continue;
+            }
+
             $isSQLite = stripos($dialect->getName(), 'sqlite') !== false;
             // Emulación RIGHT JOIN para SQLite (solo si es el primer JOIN, para evitar múltiples FROM)
             if ($type === 'right' && $isSQLite && $joinIdx === 0) {

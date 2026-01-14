@@ -68,6 +68,7 @@ if (!isset($project) || !is_object($project)) {
                             <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?php echo $project->color; ?>' }">
 
                                 <?php
+
                                 $colors = [
                                     '#3498db',
                                     '#e74c3c',
@@ -142,6 +143,7 @@ if (!isset($project) || !is_object($project)) {
                                     <p><i class="fas fa-user mr-2"></i>Propietario:
 
                                         <?php
+
                                         $owner = array_filter(
                                             $users,
                                             static fn($u): bool => $u->id === $project->owner_id,

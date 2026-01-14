@@ -98,7 +98,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /** Proxy estático alternativo: buscar por ID como modelo tipado. */
-    public static function findModel(int $id, string $pk = 'id'): null|static
+    public static function findModel(int $id, string $pk = 'id'): ?static
     {
         return static::make()->find($id, $pk);
     }
@@ -108,7 +108,7 @@ abstract class BaseModel extends VersaModel
      *
      * @return array<string, mixed>|null
      */
-    public static function findRow(int $id, string $pk = 'id'): null|array
+    public static function findRow(int $id, string $pk = 'id'): ?array
     {
         return static::make()->findArray($id, $pk);
     }
@@ -124,7 +124,7 @@ abstract class BaseModel extends VersaModel
     /**
      * Buscar por ID (instancia) devolviendo el modelo tipado concreto.
      */
-    public function find(int $id, string $pk = 'id'): null|static
+    public function find(int $id, string $pk = 'id'): ?static
     {
         /** @var static|null $result */
         $result = $this->querySelf()->where($pk, '=', $id)->findOne();
@@ -139,7 +139,7 @@ abstract class BaseModel extends VersaModel
     }
 
     /** Buscar fila por ID como array (instancia). */
-    public function findArray(int $id, string $pk = 'id'): null|array
+    public function findArray(int $id, string $pk = 'id'): ?array
     {
         $row = $this->querySelf()->where($pk, '=', $id)->firstArray();
 
@@ -152,7 +152,8 @@ abstract class BaseModel extends VersaModel
         $page = max(1, $page);
         $perPage = max(1, $perPage);
         $offset = ($page - 1) * $perPage;
-        $items = $this->querySelf()
+        $items = $this
+            ->querySelf()
             ->limit($perPage)
             ->offset($offset)
             ->getAll();
@@ -180,7 +181,7 @@ abstract class BaseModel extends VersaModel
     }
 
     // ===================== Query shortcuts =====================
-    protected static function qb(null|string $table = null): QueryBuilder
+    protected static function qb(?string $table = null): QueryBuilder
     {
         return self::orm()->table($table ?? static::tableName(), static::class);
     }

@@ -460,6 +460,157 @@ $orm->table('users')->join('posts', 'users.id', '=', 'posts.user_id');
 ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
 ```
 
+## JOINs RAW - SQL Personalizado
+
+Para casos complejos donde necesitas control total sobre la cláusula JOIN, puedes usar los métodos `*JoinRaw()`.
+
+### ¿Cuándo usar JOINs RAW?
+
+- Subconsultas complejas en el JOIN
+- Múltiples condiciones con lógica compleja
+- Funciones SQL específicas del motor
+- Optimizaciones avanzadas
+
+⚠️ **ADVERTENCIA**: Los JOINs RAW permiten SQL arbitrario. Siempre usa **bindings parametrizados** para valores dinámicos y evita concatenar datos del usuario directamente en el SQL.
+
+### joinRaw() - JOIN genérico con SQL crudo
+
+```php
+// JOIN con subconsulta y condiciones complejas
+$campanasConConteo = $orm->table('campanas')
+    ->select([
+        'campanas.id',
+        'campanas.nombre',
+        'video_counts.video_count'
+    ])
+    ->joinRaw(
+        'INNER JOIN (SELECT campana_id, COUNT(*) as video_count FROM videos GROUP BY campana_id) as video_counts ON video_counts.campana_id = campanas.id'
+    )
+    ->getAll();
+```
+
+### leftJoinRaw() - LEFT JOIN con SQL crudo
+
+```php
+// Ejemplo real: campañas con imágenes y conteo de videos
+$qb = $orm->table('anima_campanas')->lazy();
+
+$qb->select([
+    'anima_campanas.id',
+    'anima_campanas.nombre',
+    'versa_users.name as nombre_usuario',
+    'anima_campana_images.image_path as imagen_default',
+    'video_counts.video_count'
+])->selectRaw('COUNT(*) OVER() AS total_count');
+
+// JOIN normal
+$qb->join('versa_users', 'versa_users.id', '=', 'anima_campanas.id_user');
+
+// LEFT JOIN con condición RAW
+$qb->leftJoin('anima_campana_images', 'anima_campana_images.id_campana', '=', 'anima_campanas.id')
+   ->onRaw('anima_campana_images.is_default = TRUE');
+
+// LEFT JOIN RAW con subconsulta
+$qb->leftJoinRaw(
+    '(SELECT id_campana, COUNT(*) as video_count FROM anima_videos GROUP BY id_campana) as video_counts ON video_counts.id_campana = anima_campanas.id'
+);
+
+$result = $qb->collect();
+```
+
+### rightJoinRaw() - RIGHT JOIN con SQL crudo
+
+```php
+// RIGHT JOIN con tabla derivada
+$result = $orm->table('productos')
+    ->select(['productos.nombre', 'categorias.categoria', 'stats.total_vendido'])
+    ->rightJoinRaw(
+        '(SELECT categoria_id, SUM(cantidad) as total_vendido FROM ventas GROUP BY categoria_id) as stats ON stats.categoria_id = productos.categoria_id'
+    )
+    ->getAll();
+```
+
+### innerJoinRaw() - INNER JOIN con SQL crudo
+
+```php
+// INNER JOIN con condiciones complejas
+$productosActivos = $orm->table('productos')
+    ->select(['productos.*', 'stock.cantidad'])
+    ->innerJoinRaw(
+        'inventario stock ON stock.producto_id = productos.id AND stock.cantidad > 0 AND stock.activo = TRUE'
+    )
+    ->getAll();
+```
+
+### Usando bindings parametrizados (IMPORTANTE)
+
+Siempre usa bindings para valores dinámicos:
+
+```php
+$minVideos = 2;
+$estado = 'activo';
+
+$result = $orm->table('campanas')
+    ->select(['campanas.nombre', 'video_counts.video_count'])
+    ->joinRaw(
+        'INNER JOIN (SELECT campana_id, COUNT(*) as video_count FROM videos GROUP BY campana_id HAVING COUNT(*) >= ?) as video_counts ON video_counts.campana_id = campanas.id',
+        [$minVideos]  // ← Bindings seguros
+    )
+    ->where('campanas.estado', '=', $estado)
+    ->getAll();
+```
+
+### Combinando JOINs normales y RAW
+
+Puedes mezclar JOINs estándar con JOINs RAW en la misma consulta:
+
+```php
+$resultado = $orm->table('users')
+    ->select([
+        'users.name',
+        'posts.title',
+        'stats.comment_count'
+    ])
+    ->join('posts', 'posts.user_id', '=', 'users.id')  // JOIN normal
+    ->leftJoinRaw(                                       // JOIN RAW
+        '(SELECT post_id, COUNT(*) as comment_count FROM comments GROUP BY post_id) as stats ON stats.post_id = posts.id'
+    )
+    ->where('users.active', '=', true)
+    ->getAll();
+```
+
+### Características importantes
+
+1. **Prefijos automáticos**: `leftJoinRaw()`, `rightJoinRaw()` e `innerJoinRaw()` agregan automáticamente el prefijo si no está presente:
+
+```php
+// Estas dos formas son equivalentes:
+->leftJoinRaw('tabla ON condicion')
+->leftJoinRaw('LEFT JOIN tabla ON condicion')
+```
+
+2. **Validación de seguridad**: VersaORM valida automáticamente expresiones RAW para prevenir patrones peligrosos (DDL, múltiples sentencias, etc.)
+
+3. **Bindings seguros**: Los bindings se procesan mediante prepared statements de PDO, protegiéndote contra inyección SQL
+
+### Errores comunes
+
+```php
+// ❌ NUNCA concatenes valores directamente
+$valor = $_POST['status'];  // Peligroso!
+->joinRaw("tabla ON campo = '$valor'")
+
+// ✅ SIEMPRE usa bindings
+$valor = $_POST['status'];
+->joinRaw('tabla ON campo = ?', [$valor])
+
+// ❌ No olvides la cláusula ON
+->joinRaw('(SELECT ...) as alias')  // Error: falta ON
+
+// ✅ Incluye siempre la condición ON
+->joinRaw('(SELECT ...) as alias ON alias.id = tabla.id')
+```
+
 ## Siguiente paso
 
 Ahora que dominas los JOINs, aprende sobre [Ordenamiento y Paginación](ordenamiento-paginacion.md) para organizar y limitar tus resultados.

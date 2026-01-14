@@ -8,7 +8,7 @@ use App\Models\Label;
 
 class LabelController
 {
-    public static function handle(string $action, null|int $id): void
+    public static function handle(string $action, ?int $id): void
     {
         switch ($action) {
             case 'labels':

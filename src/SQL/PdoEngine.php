@@ -112,7 +112,7 @@ class PdoEngine
      */
     public function __construct(
         private array $config,
-        null|callable $logger = null,
+        ?callable $logger = null,
     ) {
         $this->connector = new PdoConnection($this->config);
         $this->dialect = $this->detectDialect();
@@ -558,8 +558,7 @@ class PdoEngine
 
                         if ($column !== '*') {
                             // Solo reemplazar ocurrencias de nombre de columna aislado (evitar tocar funciones)
-                            $qualified = str_contains($column, '(')
-                            || str_contains($column, '.')
+                            $qualified = str_contains($column, '(') || str_contains($column, '.')
                                 ? $column
                                 : $baseQualifierQuoted
                                 . '.'
@@ -602,7 +601,7 @@ class PdoEngine
                                 . ' | Bindings: '
                                 . json_encode($baseBindings)
                                 . ' | Error: '
-                                . $e->getMessage(),
+                                    . $e->getMessage(),
                                 0,
                                 $e,
                             );
@@ -1093,12 +1092,8 @@ class PdoEngine
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
                     throw new VersaORMException(
-                        'SQL failed (count): '
-                        . $sql
-                        . ' | Bindings: '
-                        . json_encode($bindings)
-                        . ' | '
-                        . $e->getMessage(),
+                        'SQL failed (count): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
+                            . $e->getMessage(),
                         'PDO_EXEC_FAILED',
                     );
                 }
@@ -1122,12 +1117,8 @@ class PdoEngine
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
                     throw new VersaORMException(
-                        'SQL failed (exists): '
-                        . $sql
-                        . ' | Bindings: '
-                        . json_encode($bindings)
-                        . ' | '
-                        . $e->getMessage(),
+                        'SQL failed (exists): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
+                            . $e->getMessage(),
                         'PDO_EXEC_FAILED',
                     );
                 }
@@ -1152,12 +1143,8 @@ class PdoEngine
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
                     throw new VersaORMException(
-                        'SQL failed (first): '
-                        . $sql
-                        . ' | Bindings: '
-                        . json_encode($bindings)
-                        . ' | '
-                        . $e->getMessage(),
+                        'SQL failed (first): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
+                            . $e->getMessage(),
                         'PDO_EXEC_FAILED',
                     );
                 }
@@ -1309,12 +1296,8 @@ class PdoEngine
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
                 throw new VersaORMException(
-                    'SQL failed (insert): '
-                    . $sql
-                    . ' | Bindings: '
-                    . json_encode($bindings)
-                    . ' | '
-                    . $e->getMessage(),
+                    'SQL failed (insert): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
+                        . $e->getMessage(),
                     'PDO_EXEC_FAILED',
                 );
             }
@@ -1335,12 +1318,8 @@ class PdoEngine
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
                 throw new VersaORMException(
-                    'SQL failed (insertGetId): '
-                    . $sql
-                    . ' | Bindings: '
-                    . json_encode($bindings)
-                    . ' | '
-                    . $e->getMessage(),
+                    'SQL failed (insertGetId): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
+                        . $e->getMessage(),
                     'PDO_EXEC_FAILED',
                 );
             }
@@ -1368,14 +1347,8 @@ class PdoEngine
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
                 throw new VersaORMException(
-                    'SQL failed ('
-                    . $action
-                    . '): '
-                    . $sql
-                    . ' | Bindings: '
-                    . json_encode($bindings)
-                    . ' | '
-                    . $e->getMessage(),
+                    'SQL failed (' . $action . '): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
+                        . $e->getMessage(),
                     'PDO_EXEC_FAILED',
                 );
             }

@@ -19,10 +19,7 @@ final class BatchOperationsTypedBindTest extends TestCase
         self::assertSame(2, $res['total_inserted'] ?? 0);
 
         // updateMany con where por entero (PARAM_INT)
-        $resU = self::$orm
-            ->table('users')
-            ->where('id', '>=', 1)
-            ->updateMany(['status' => 'checked'], maxRecords: 1000);
+        $resU = self::$orm->table('users')->where('id', '>=', 1)->updateMany(['status' => 'checked'], maxRecords: 1000);
         self::assertSame('success', $resU['status'] ?? null);
         self::assertGreaterThanOrEqual(2, $resU['rows_affected'] ?? 0);
 

@@ -32,7 +32,7 @@ final class UpsertHappyPathTest extends TestCase
                 return true;
             }
 
-            public function table(string $table, null|string $modelClass = null): \VersaORM\QueryBuilder
+            public function table(string $table, ?string $modelClass = null): \VersaORM\QueryBuilder
             {
                 return new class($this, $table, $modelClass) extends \VersaORM\QueryBuilder {
                     public function upsert(array $attributes, array $uniqueKeys, array $updateColumns = []): array
@@ -40,7 +40,7 @@ final class UpsertHappyPathTest extends TestCase
                         return ['operation' => 'inserted_or_updated'];
                     }
 
-                    public function firstArray(): null|array
+                    public function firstArray(): ?array
                     {
                         return ['id' => 555];
                     }

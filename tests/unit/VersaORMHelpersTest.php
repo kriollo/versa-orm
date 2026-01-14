@@ -21,7 +21,8 @@ final class VersaORMHelpersTest extends TestCase
         foreach ($drivers as $driver => $expectedSql) {
             $config = ['driver' => $driver, 'debug' => false];
 
-            $mock = $this->getMockBuilder(VersaORM::class)
+            $mock = $this
+                ->getMockBuilder(VersaORM::class)
                 ->setConstructorArgs([$config])
                 ->onlyMethods(['exec'])
                 ->getMock();

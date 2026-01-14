@@ -20,7 +20,7 @@ class PHPCSFixerAnalyzer
     private string $phpcsFixerPath;
 
     public function __construct(
-        null|string $phpcsFixerPath = null,
+        ?string $phpcsFixerPath = null,
         private string $configPath = '.php-cs-fixer.dist.php',
         private string $reportsDir = 'tests/reports/php-cs-fixer',
     ) {

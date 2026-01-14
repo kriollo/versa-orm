@@ -158,7 +158,8 @@ class Task extends BaseModel
      */
     public function getLabelIds(): array
     {
-        $rows = $this->getOrm()
+        $rows = $this
+            ->getOrm()
             ->table('task_labels')
             ->select(['label_id'])
             ->where('task_id', '=', $this->id)
@@ -173,7 +174,8 @@ class Task extends BaseModel
     public function setLabels(array $labelIds): void
     {
         // Eliminar etiquetas actuales usando VersaModel
-        $existingLabels = $this->getOrm()
+        $existingLabels = $this
+            ->getOrm()
             ->table('task_labels')
             ->where('task_id', '=', $this->id)
             ->get();
@@ -244,9 +246,10 @@ class Task extends BaseModel
         return safe_strtotime($this->due_date) < time() && $this->status !== self::STATUS_DONE;
     }
 
-    public function getUserIdByTaskId(int $taskId): null|int
+    public function getUserIdByTaskId(int $taskId): ?int
     {
-        $task = $this->getOrm()
+        $task = $this
+            ->getOrm()
             ->table('tasks', self::class)
             ->where('id', '=', $taskId)
             ->findOne();

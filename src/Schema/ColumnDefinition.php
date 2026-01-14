@@ -22,7 +22,7 @@ class ColumnDefinition
     /** @var array<int, string> */
     protected array $modifiers = [];
 
-    protected null|Blueprint $blueprint = null;
+    protected ?Blueprint $blueprint = null;
 
     public function __construct(string $name, string $type, Blueprint $blueprint = null)
     {

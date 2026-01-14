@@ -129,12 +129,8 @@ set_error_handler(static function ($severity, $message, $file, $line): bool {
 // Configurar handler de excepciones no capturadas
 set_exception_handler(static function ($exception): void {
     logCompatibilityTest(
-        'Uncaught Exception: '
-        . $exception->getMessage()
-        . ' in '
-        . $exception->getFile()
-        . ':'
-        . $exception->getLine(),
+        'Uncaught Exception: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':'
+            . $exception->getLine(),
         'ERROR',
     );
     logCompatibilityTest('Stack trace: ' . $exception->getTraceAsString(), 'ERROR');

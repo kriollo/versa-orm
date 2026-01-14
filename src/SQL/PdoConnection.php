@@ -29,7 +29,7 @@ class PdoConnection
      */
     private array $config;
 
-    private null|PDO $pdo = null;
+    private ?PDO $pdo = null;
 
     /**
      * Pool de conexiones compartidas por DSN+credenciales.

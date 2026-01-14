@@ -46,6 +46,7 @@
 
                     <!-- Estadísticas del proyecto -->
                     <?php
+
                     // Usar directamente el modelo de proyecto ya provisto (instancia), evitando llamadas estáticas
                     $tasks = $project->tasks()->findAll();
                     $members = $project->members()->findAll();

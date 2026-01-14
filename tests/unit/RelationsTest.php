@@ -36,7 +36,7 @@ if (!class_exists('TestQueryBuilder')) {
             // no-op for tests
         }
 
-        public function findOne(): null|VersaModel
+        public function findOne(): ?VersaModel
         {
             return null;
         }
@@ -57,7 +57,7 @@ if (!class_exists('TestQueryBuilder')) {
         }
 
         // make execute public so reflection can invoke it
-        public function execute(string $method, null|array $data = null)
+        public function execute(string $method, ?array $data = null)
         {
             return true;
         }

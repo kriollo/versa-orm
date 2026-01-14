@@ -53,7 +53,7 @@ class VersaORMTraitTest extends TestCase
             use VersaORMTrait;
 
             // helper to expose internal ORM for assertions
-            public function getOrmPublic(): null|VersaORM
+            public function getOrmPublic(): ?VersaORM
             {
                 return $this->getORM();
             }

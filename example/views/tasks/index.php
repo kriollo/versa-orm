@@ -160,6 +160,7 @@
     <!-- Estadísticas rápidas -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <?php
+
         // Calcular estadísticas basadas en el total filtrado (antes de paginación)
         $totalFiltered = $pagination['total'] ?? 0;
         $todoTasks = count(array_filter($tasks, static fn($t): bool => $t['status'] === 'todo'));
@@ -292,6 +293,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
+
                                 $statusClasses = [
                                     'todo' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
                                     'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
@@ -311,6 +313,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php
+
                                 $priorityClasses = [
                                     'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
                                     'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
@@ -333,6 +336,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white transition-colors">
                                 <?php if ($task['due_date']) { ?>
                                     <?php
+
                                     $rawDue = $task['due_date'];
 
                                     if ($rawDue instanceof DateTimeInterface) {
@@ -466,6 +470,7 @@
 
                     <!-- Números de página -->
                     <?php
+
                     $start_page = max(1, $pagination['current_page'] - 2);
                     $end_page = min($pagination['total_pages'], $pagination['current_page'] + 2);
 

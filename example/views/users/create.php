@@ -78,6 +78,7 @@
                     <div class="grid grid-cols-8 gap-2">
 
                         <?php
+
                         $predefinedColors = [
                             '#3498db',
                             '#e74c3c',

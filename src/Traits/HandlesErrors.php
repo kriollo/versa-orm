@@ -33,7 +33,7 @@ trait HandlesErrors
     /**
      * Último error capturado.
      */
-    protected null|array $lastError = null;
+    protected ?array $lastError = null;
 
     /**
      * Configura el manejo de errores para este modelo.
@@ -46,7 +46,7 @@ trait HandlesErrors
     /**
      * Obtiene el último error ocurrido.
      */
-    public function getLastError(): null|array
+    public function getLastError(): ?array
     {
         return $this->lastError;
     }
@@ -62,7 +62,7 @@ trait HandlesErrors
     /**
      * Obtiene el mensaje del último error.
      */
-    public function getLastErrorMessage(): null|string
+    public function getLastErrorMessage(): ?string
     {
         return $this->lastError['error']['message'] ?? null;
     }
@@ -70,7 +70,7 @@ trait HandlesErrors
     /**
      * Obtiene el código del último error.
      */
-    public function getLastErrorCode(): null|string
+    public function getLastErrorCode(): ?string
     {
         return $this->lastError['error']['error_code'] ?? null;
     }

@@ -16,7 +16,7 @@ use function is_array;
  */
 trait VersaORMTrait
 {
-    protected null|VersaORM $db = null;
+    protected ?VersaORM $db = null;
 
     protected static array $DEFAULT_CONFIG = [
         'driver' => 'mysql',
@@ -75,7 +75,7 @@ trait VersaORMTrait
     /**
      * Obtiene la instancia actual de VersaORM.
      */
-    public function getORM(): null|VersaORM
+    public function getORM(): ?VersaORM
     {
         return $this->db;
     }

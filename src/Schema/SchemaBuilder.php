@@ -335,18 +335,12 @@ class SchemaBuilder
 
             switch ($type) {
                 case 'primary':
-                    $indexes[] =
-                        'PRIMARY KEY ('
-                        . implode(', ', array_map([$this, 'wrapColumn'], $columns))
-                        . ')';
+                    $indexes[] = 'PRIMARY KEY (' . implode(', ', array_map([$this, 'wrapColumn'], $columns)) . ')';
                     break;
                 case 'unique':
                     $constraintName = $name !== null && $name !== '' ? "CONSTRAINT {$this->wrapColumn($name)} " : '';
                     $indexes[] =
-                        $constraintName
-                        . 'UNIQUE ('
-                        . implode(', ', array_map([$this, 'wrapColumn'], $columns))
-                        . ')';
+                        $constraintName . 'UNIQUE (' . implode(', ', array_map([$this, 'wrapColumn'], $columns)) . ')';
                     break;
 
                 // Los índices regulares se crean por separado
@@ -466,8 +460,8 @@ class SchemaBuilder
                 . implode(', ', array_map([$this, 'wrapColumn'], $columns))
                 . ')',
             'postgresql' => "CREATE INDEX {$this->wrapColumn($name)} ON {$this->wrapTable(
-                    $table,
-                )} USING gin(to_tsvector('english', "
+     $table,
+ )} USING gin(to_tsvector('english', "
                 . implode(" || ' ' || ", array_map([$this, 'wrapColumn'], $columns))
                 . '))',
             default => throw new VersaORMException("Full-text indexes are not supported for {$this->driver}"),
@@ -611,11 +605,11 @@ class SchemaBuilder
     {
         $sql = match ($this->driver) {
             'mysql' => "ALTER TABLE {$this->wrapTable($table)} RENAME COLUMN {$this->wrapColumn(
-                $from,
-            )} TO {$this->wrapColumn($to)}",
+     $from,
+ )} TO {$this->wrapColumn($to)}",
             'postgresql' => "ALTER TABLE {$this->wrapTable($table)} RENAME COLUMN {$this->wrapColumn(
-                $from,
-            )} TO {$this->wrapColumn($to)}",
+     $from,
+ )} TO {$this->wrapColumn($to)}",
             'sqlite' => throw new VersaORMException('SQLite does not support renaming columns'),
             default => throw new VersaORMException("Unsupported driver: {$this->driver}"),
         };
@@ -650,7 +644,7 @@ class SchemaBuilder
         $sql = match ($this->driver) {
             'mysql' => "ALTER TABLE {$this->wrapTable($table)} DROP PRIMARY KEY",
             'postgresql' => "ALTER TABLE {$this->wrapTable($table)} DROP CONSTRAINT {$this->wrapColumn($table
-            . '_pkey')}",
+ . '_pkey')}",
             'sqlite' => throw new VersaORMException('SQLite does not support dropping primary keys'),
             default => throw new VersaORMException("Unsupported driver: {$this->driver}"),
         };
@@ -678,8 +672,8 @@ class SchemaBuilder
     {
         $sql = match ($this->driver) {
             'mysql' => "ALTER TABLE {$this->wrapTable($table)} RENAME INDEX {$this->wrapColumn(
-                $from,
-            )} TO {$this->wrapColumn($to)}",
+     $from,
+ )} TO {$this->wrapColumn($to)}",
             'postgresql' => "ALTER INDEX {$this->wrapColumn($from)} RENAME TO {$this->wrapColumn($to)}",
             'sqlite' => throw new VersaORMException('SQLite does not support renaming indexes'),
             default => throw new VersaORMException("Unsupported driver: {$this->driver}"),

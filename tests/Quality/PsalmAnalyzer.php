@@ -20,7 +20,7 @@ class PsalmAnalyzer
     private string $psalmPath;
 
     public function __construct(
-        null|string $psalmPath = null,
+        ?string $psalmPath = null,
         private string $configPath = 'psalm.xml',
         private string $reportsDir = 'tests/reports/psalm',
     ) {

@@ -13,7 +13,7 @@ use VersaORM\VersaORM;
  */
 class TransactionsRollbackTest extends TestCase
 {
-    private null|VersaORM $orm = null;
+    private ?VersaORM $orm = null;
 
     protected function setUp(): void
     {
