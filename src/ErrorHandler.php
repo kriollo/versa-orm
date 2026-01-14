@@ -65,7 +65,7 @@ class ErrorHandler
 
         // Crear directorio de logs si no existe
         if (self::$logPath && !is_dir(self::$logPath)) {
-            mkdir(self::$logPath, 0755, true);
+            mkdir(self::$logPath, 0o755, true);
         }
     }
 
@@ -175,9 +175,11 @@ class ErrorHandler
             $output .= "\n📍 Stack Trace:\n";
 
             foreach (array_slice($errorData['stack_trace'], 0, 5) as $frame) {
-                if (isset($frame['location'])) {
-                    $output .= "  {$frame['location']} -> {$frame['call']}\n";
+                if (!isset($frame['location'])) {
+                    continue;
                 }
+
+                $output .= "  {$frame['location']} -> {$frame['call']}\n";
             }
         }
 

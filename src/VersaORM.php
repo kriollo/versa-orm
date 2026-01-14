@@ -1105,7 +1105,7 @@ class VersaORM
         try {
             $logDir = $this->getLogDirectory();
 
-            if (!is_dir($logDir) && (!mkdir($logDir, 0755, true) && !is_dir($logDir))) {
+            if (!is_dir($logDir) && (!mkdir($logDir, 0o755, true) && !is_dir($logDir))) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
             }
 
@@ -1387,9 +1387,11 @@ class VersaORM
         $bad = ['`', '"', "'", '(', ')', ';', '.', ' ', "\t", "\n", "\r", '--', '/*', '*/'];
 
         foreach ($bad as $frag) {
-            if (str_contains($ident, $frag)) {
-                throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
+            if (!str_contains($ident, $frag)) {
+                continue;
             }
+
+            throw new VersaORMException("Unsafe {$context} name: '{$ident}'", 'INVALID_IDENTIFIER');
         }
 
         // Solo permitir [A-Za-z_][A-Za-z0-9_]*
@@ -1491,9 +1493,11 @@ class VersaORM
         ];
 
         foreach ($ddlPatterns as $pattern) {
-            if (preg_match($pattern, $normalizedQuery)) {
-                return true;
+            if (!preg_match($pattern, $normalizedQuery)) {
+                continue;
             }
+
+            return true;
         }
 
         return false;
@@ -1523,7 +1527,7 @@ class VersaORM
         try {
             $logDir = $this->getLogDirectory();
 
-            if (!is_dir($logDir) && (!mkdir($logDir, 0755, true) && !is_dir($logDir))) {
+            if (!is_dir($logDir) && (!mkdir($logDir, 0o755, true) && !is_dir($logDir))) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
             }
 
@@ -1839,14 +1843,16 @@ class VersaORM
         $traceStr = '';
 
         foreach ($trace as $i => $frame) {
-            if (isset($frame['file'], $frame['line'])) {
-                $file = basename($frame['file']);
-                $line = $frame['line'];
-                $function = $frame['function'];
-                $class = isset($frame['class']) ? $frame['class'] . '::' : '';
-
-                $traceStr .= sprintf("#%d %s%s() at %s:%d\n", $i, $class, $function, $file, $line);
+            if (!isset($frame['file'], $frame['line'])) {
+                continue;
             }
+
+            $file = basename($frame['file']);
+            $line = $frame['line'];
+            $function = $frame['function'];
+            $class = isset($frame['class']) ? $frame['class'] . '::' : '';
+
+            $traceStr .= sprintf("#%d %s%s() at %s:%d\n", $i, $class, $function, $file, $line);
         }
 
         return $traceStr;
@@ -1871,7 +1877,7 @@ class VersaORM
         try {
             $logDir = $this->getLogDirectory();
 
-            if (!is_dir($logDir) && (!mkdir($logDir, 0755, true) && !is_dir($logDir))) {
+            if (!is_dir($logDir) && (!mkdir($logDir, 0o755, true) && !is_dir($logDir))) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
             }
 
@@ -2028,9 +2034,11 @@ class VersaORM
         } elseif (is_array($data)) {
             // Para arrays, solo verificar si tienen referencias reales de objetos
             foreach ($data as $value) {
-                if (is_object($value) || is_array($value) && $value !== []) {
-                    $this->checkCircularReferences($value, $visited);
+                if (!(is_object($value) || is_array($value) && $value !== [])) {
+                    continue;
                 }
+
+                $this->checkCircularReferences($value, $visited);
             }
         }
     }

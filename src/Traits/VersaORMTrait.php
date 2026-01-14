@@ -45,9 +45,11 @@ trait VersaORMTrait
         $required_fields = ['DB_DRIVER', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'];
 
         foreach ($required_fields as $field) {
-            if (!isset($db_config[$field])) {
-                throw new Exception("Database configuration field '{$field}' is missing.");
+            if (isset($db_config[$field])) {
+                continue;
             }
+
+            throw new Exception("Database configuration field '{$field}' is missing.");
         }
 
         $this->db = new VersaORM(array_merge(static::$DEFAULT_CONFIG, [

@@ -122,9 +122,11 @@ trait HasStrongTyping
 
         // 3. Normalización
         foreach ($types as &$def) {
-            if (isset($def['type']) && is_string($def['type'])) {
-                $def['type'] = strtolower($def['type']);
+            if (!(isset($def['type']) && is_string($def['type']))) {
+                continue;
             }
+
+            $def['type'] = strtolower($def['type']);
         }
         unset($def);
 
@@ -318,9 +320,11 @@ trait HasStrongTyping
             }
 
             foreach ($db as $cn => $cinfo) {
-                if (!isset($types[$cn])) {
-                    $errs[] = "💡 INFO: Columna '{$cn}' existe en DB pero no está definida en el modelo";
+                if (isset($types[$cn])) {
+                    continue;
                 }
+
+                $errs[] = "💡 INFO: Columna '{$cn}' existe en DB pero no está definida en el modelo";
             }
         } catch (Exception $e) {
             $errs[] = 'Error al validar esquema: ' . $e->getMessage();
@@ -552,9 +556,11 @@ trait HasStrongTyping
 
             if (is_array($rawValues)) {
                 foreach ($rawValues as $rv) {
-                    if (is_scalar($rv) || $rv === null) {
-                        $allowed[] = (string) $rv;
+                    if (!(is_scalar($rv) || $rv === null)) {
+                        continue;
                     }
+
+                    $allowed[] = (string) $rv;
                 }
             }
 
@@ -589,19 +595,23 @@ trait HasStrongTyping
                 $candidateValues = $t['values'];
 
                 foreach ($candidateValues as $rv) {
-                    if (is_scalar($rv) || $rv === null) {
-                        $allowed[] = (string) $rv;
+                    if (!(is_scalar($rv) || $rv === null)) {
+                        continue;
                     }
+
+                    $allowed[] = (string) $rv;
                 }
             }
 
             if ($allowed !== []) {
                 foreach ($vals as $vv) {
-                    if (!in_array((string) $vv, $allowed, true)) {
-                        throw new VersaORMException(
-                            "Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed),
-                        );
+                    if (in_array((string) $vv, $allowed, true)) {
+                        continue;
                     }
+
+                    throw new VersaORMException(
+                        "Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed),
+                    );
                 }
             }
             $out = [];
@@ -735,9 +745,11 @@ trait HasStrongTyping
 
             if (is_array($rawValues)) {
                 foreach ($rawValues as $rv) {
-                    if (is_scalar($rv) || $rv === null) {
-                        $allowed[] = (string) $rv;
+                    if (!(is_scalar($rv) || $rv === null)) {
+                        continue;
                     }
+
+                    $allowed[] = (string) $rv;
                 }
             }
 
@@ -772,19 +784,23 @@ trait HasStrongTyping
                 $candidateValues = $t['values'];
 
                 foreach ($candidateValues as $rv) {
-                    if (is_scalar($rv) || $rv === null) {
-                        $allowed[] = (string) $rv;
+                    if (!(is_scalar($rv) || $rv === null)) {
+                        continue;
                     }
+
+                    $allowed[] = (string) $rv;
                 }
             }
 
             if ($allowed !== []) {
                 foreach ($vals as $vv) {
-                    if (!in_array((string) $vv, $allowed, true)) {
-                        throw new VersaORMException(
-                            "Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed),
-                        );
+                    if (in_array((string) $vv, $allowed, true)) {
+                        continue;
                     }
+
+                    throw new VersaORMException(
+                        "Invalid set value '{$vv}' for property {$p}. Allowed: " . implode(', ', $allowed),
+                    );
                 }
             }
             $out = [];

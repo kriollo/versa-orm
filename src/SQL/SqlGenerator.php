@@ -189,7 +189,7 @@ class SqlGenerator
             try {
                 $logDir = __DIR__ . '/../../logs';
                 if (!is_dir($logDir)) {
-                    @mkdir($logDir, 0777, true);
+                    @mkdir($logDir, 0o777, true);
                 }
                 @file_put_contents(
                     $logDir . '/sql_debug.log',
@@ -451,10 +451,11 @@ class SqlGenerator
             $whereRaw = array_values($params['where']);
 
             foreach ($whereRaw as $w) {
-                if (is_array($w)) {
-                    /** @var array{type?:string,operator?:string,column?:string,value:mixed} $w */
-                    $whereList[] = $w;
+                if (!is_array($w)) {
+                    continue;
                 }
+
+                $whereList[] = $w;
             }
         }
         [$whereSql, $whereBindings] = self::compileWhere($whereList, $dialect);
@@ -485,9 +486,11 @@ class SqlGenerator
                 $gb = [];
 
                 foreach ($groupBy as $col) {
-                    if (is_string($col) && $col !== '') {
-                        $gb[] = self::compileSelectPart($col, $dialect);
+                    if (!(is_string($col) && $col !== '')) {
+                        continue;
                     }
+
+                    $gb[] = self::compileSelectPart($col, $dialect);
                 }
 
                 if ($gb !== []) {
@@ -504,9 +507,11 @@ class SqlGenerator
             $havingRaw = array_values($params['having']);
 
             foreach ($havingRaw as $h) {
-                if (is_array($h) && isset($h['column']) && is_string($h['column'])) {
-                    $having[] = $h;
+                if (!(is_array($h) && isset($h['column']) && is_string($h['column']))) {
+                    continue;
                 }
+
+                $having[] = $h;
             }
         }
 
@@ -531,9 +536,11 @@ class SqlGenerator
             $orderRaw = array_values($params['orderBy']);
 
             foreach ($orderRaw as $o) {
-                if (is_array($o)) {
-                    $orderBy[] = $o;
+                if (!is_array($o)) {
+                    continue;
                 }
+
+                $orderBy[] = $o;
             }
         }
 

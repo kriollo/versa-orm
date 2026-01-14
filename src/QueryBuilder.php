@@ -206,9 +206,11 @@ class QueryBuilder
         }
 
         foreach ($columns as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
         }
         $this->selects = array_values($columns);
 
@@ -842,9 +844,11 @@ class QueryBuilder
         }
 
         foreach ($columns as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid or malicious column name in GROUP BY: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid or malicious column name in GROUP BY: %s', $column));
         }
 
         $this->groupBy = $columns;
@@ -1574,9 +1578,11 @@ class QueryBuilder
 
             // Validar nombres de columnas por seguridad
             foreach ($currentKeys as $column) {
-                if (!$this->isSafeIdentifier($column)) {
-                    throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+                if ($this->isSafeIdentifier($column)) {
+                    continue;
                 }
+
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
 
@@ -1661,9 +1667,11 @@ class QueryBuilder
 
         // Validar nombres de columnas por seguridad
         foreach (array_keys($data) as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
         }
 
         // Validar límite máximo por seguridad
@@ -1737,29 +1745,37 @@ class QueryBuilder
 
         // Validar identificadores por seguridad PRIMERO
         foreach ($uniqueKeys as $key) {
-            if (!$this->isSafeIdentifier($key)) {
-                throw new VersaORMException('Invalid unique key name detected');
+            if ($this->isSafeIdentifier($key)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid unique key name detected');
         }
 
         foreach ($updateColumns as $col) {
-            if (!$this->isSafeIdentifier($col)) {
-                throw new VersaORMException('Invalid update column name detected');
+            if ($this->isSafeIdentifier($col)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid update column name detected');
         }
 
         // Validar nombres de columnas de data por seguridad
         foreach (array_keys($data) as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
         }
 
         // Validar que las claves únicas existen en los datos
         foreach ($uniqueKeys as $key) {
-            if (!array_key_exists($key, $data)) {
-                throw new VersaORMException(sprintf('Record is missing unique key: %s', $key));
+            if (array_key_exists($key, $data)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Record is missing unique key: %s', $key));
         }
 
         // FALLBACK: Usar insertOrUpdate() si el binario no soporta upsert nativo
@@ -1789,22 +1805,28 @@ class QueryBuilder
 
         // Validar identificadores por seguridad
         foreach ($uniqueKeys as $key) {
-            if (!$this->isSafeIdentifier($key)) {
-                throw new VersaORMException('Invalid unique key name detected');
+            if ($this->isSafeIdentifier($key)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid unique key name detected');
         }
 
         foreach ($updateColumns as $col) {
-            if (!$this->isSafeIdentifier($col)) {
-                throw new VersaORMException('Invalid update column name detected');
+            if ($this->isSafeIdentifier($col)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid update column name detected');
         }
 
         // Validar que las claves únicas existen en los datos
         foreach ($uniqueKeys as $key) {
-            if (!array_key_exists($key, $data)) {
-                throw new VersaORMException(sprintf('Data is missing unique key: %s', $key));
+            if (array_key_exists($key, $data)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Data is missing unique key: %s', $key));
         }
 
         // Construir condiciones WHERE para verificar existencia
@@ -1942,15 +1964,19 @@ class QueryBuilder
 
         // Validar nombres de columnas en condiciones
         foreach (array_keys($conditions) as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid column name in conditions: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid column name in conditions: %s', $column));
         }
 
         foreach ($updateColumns as $col) {
-            if (!$this->isSafeIdentifier($col)) {
-                throw new VersaORMException('Invalid update column name detected');
+            if ($this->isSafeIdentifier($col)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid update column name detected');
         }
 
         // Construir consulta para verificar existencia
@@ -2036,23 +2062,29 @@ class QueryBuilder
 
         // Validar identificadores por seguridad PRIMERO
         foreach ($uniqueKeys as $key) {
-            if (!$this->isSafeIdentifier($key)) {
-                throw new VersaORMException('Invalid unique key name detected');
+            if ($this->isSafeIdentifier($key)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid unique key name detected');
         }
 
         foreach ($updateColumns as $col) {
-            if (!$this->isSafeIdentifier($col)) {
-                throw new VersaORMException('Invalid update column name detected');
+            if ($this->isSafeIdentifier($col)) {
+                continue;
             }
+
+            throw new VersaORMException('Invalid update column name detected');
         }
 
         // Validar que las claves únicas existen en todos los registros
         foreach ($records as $index => $record) {
             foreach ($uniqueKeys as $key) {
-                if (!array_key_exists($key, $record)) {
-                    throw new VersaORMException(sprintf('Record at index %d is missing unique key: %s', $index, $key));
+                if (array_key_exists($key, $record)) {
+                    continue;
                 }
+
+                throw new VersaORMException(sprintf('Record at index %d is missing unique key: %s', $index, $key));
             }
         }
 
@@ -2089,9 +2121,11 @@ class QueryBuilder
 
         // Validar nombres de columnas por seguridad
         foreach (array_keys($data) as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
         }
 
         // Fallback / emulación por driver
@@ -2142,9 +2176,11 @@ class QueryBuilder
 
             // Validar nombres de columnas por seguridad
             foreach ($currentKeys as $column) {
-                if (!$this->isSafeIdentifier($column)) {
-                    throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+                if ($this->isSafeIdentifier($column)) {
+                    continue;
                 }
+
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
             }
         }
 
@@ -2689,9 +2725,11 @@ class QueryBuilder
 
         foreach (array_keys($hints) as $hint) {
             // Validar que el hint no contenga SQL malicioso
-            if (!$this->isSafeIdentifier($hint) && !$this->isSafeRawExpression($hint)) {
-                throw new VersaORMException(sprintf('Potentially unsafe query hint: %s', $hint));
+            if (!(!$this->isSafeIdentifier($hint) && !$this->isSafeRawExpression($hint))) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Potentially unsafe query hint: %s', $hint));
         }
 
         // Guardar hints para usar en la construcción de la query
@@ -2730,9 +2768,11 @@ class QueryBuilder
 
         // Validar columnas
         foreach ($columns as $column) {
-            if (!$this->isSafeIdentifier($column)) {
-                throw new VersaORMException(sprintf('Invalid column name: %s', $column));
+            if ($this->isSafeIdentifier($column)) {
+                continue;
             }
+
+            throw new VersaORMException(sprintf('Invalid column name: %s', $column));
         }
 
         $params = [
@@ -3203,10 +3243,12 @@ class QueryBuilder
             $wheresParts = [];
 
             foreach ($builder->wheres as $where) {
-                if (is_array($where) && isset($where['column'], $where['operator'], $where['value'])) {
-                    $wheresParts[] = $where['column'] . ' ' . $where['operator'] . ' ?';
-                    $bindings[] = $where['value'];
+                if (!(is_array($where) && isset($where['column'], $where['operator'], $where['value']))) {
+                    continue;
                 }
+
+                $wheresParts[] = $where['column'] . ' ' . $where['operator'] . ' ?';
+                $bindings[] = $where['value'];
             }
 
             if ($wheresParts !== []) {
@@ -3224,10 +3266,12 @@ class QueryBuilder
             $havingParts = [];
 
             foreach ($builder->having as $having) {
-                if (is_array($having) && isset($having['column'], $having['operator'], $having['value'])) {
-                    $havingParts[] = $having['column'] . ' ' . $having['operator'] . ' ?';
-                    $bindings[] = $having['value'];
+                if (!(is_array($having) && isset($having['column'], $having['operator'], $having['value']))) {
+                    continue;
                 }
+
+                $havingParts[] = $having['column'] . ' ' . $having['operator'] . ' ?';
+                $bindings[] = $having['value'];
             }
 
             if ($havingParts !== []) {
@@ -3271,9 +3315,11 @@ class QueryBuilder
         $result = [];
 
         foreach ($this->wheres as $where) {
-            if (is_array($where)) {
-                $result[] = $where;
+            if (!is_array($where)) {
+                continue;
             }
+
+            $result[] = $where;
         }
 
         return $result;
@@ -3682,7 +3728,7 @@ class QueryBuilder
                     if (!is_array($cols)) {
                         $cols = [$cols];
                     }
-                    $cols = array_values(array_filter(array_map('strval', $cols), fn($col) => $col !== ''));
+                    $cols = array_values(array_filter(array_map('strval', $cols), static fn($col) => $col !== ''));
 
                     if ($unique && $cols !== [] && array_diff($cols, $keysInData) === []) {
                         $pk = $cols;

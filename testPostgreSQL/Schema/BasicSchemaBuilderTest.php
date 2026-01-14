@@ -135,14 +135,14 @@ class BasicSchemaBuilderTest extends TestCase
 
         // Verificar que se guardó y el ID se asignó
         static::assertIsInt($id1);
-        static::assertEquals(1, $id1);
+        static::assertSame(1, $id1);
 
         // Recargar el registro desde la base de datos
         $savedChannel1 = VersaModel::load('channels', $id1);
         static::assertNotNull($savedChannel1);
-        static::assertEquals('CH001', $savedChannel1->codigo_interno);
-        static::assertEquals('Canal Principal', $savedChannel1->nombre);
-        static::assertEquals('https://example.com/image1.jpg', $savedChannel1->imagen);
+        static::assertSame('CH001', $savedChannel1->codigo_interno);
+        static::assertSame('Canal Principal', $savedChannel1->nombre);
+        static::assertSame('https://example.com/image1.jpg', $savedChannel1->imagen);
         static::assertEquals(false, $savedChannel1->required_register); // valor por defecto
         // Verificar settings JSON
         $expectedSettings = ['theme' => 'dark', 'language' => 'es'];
@@ -176,13 +176,13 @@ class BasicSchemaBuilderTest extends TestCase
 
         // Verificar ID autoincremental
         static::assertIsInt($id2);
-        static::assertEquals(2, $id2);
+        static::assertSame(2, $id2);
 
         // Recargar y verificar valores por defecto
         $savedChannel2 = VersaModel::load('channels', $id2);
         static::assertNotNull($savedChannel2);
-        static::assertEquals('CH002', $savedChannel2->codigo_interno);
-        static::assertEquals('Canal Secundario', $savedChannel2->nombre);
+        static::assertSame('CH002', $savedChannel2->codigo_interno);
+        static::assertSame('Canal Secundario', $savedChannel2->nombre);
         static::assertNull($savedChannel2->imagen); // nullable
         static::assertEquals(false, $savedChannel2->required_register); // valor por defecto
         static::assertNull($savedChannel2->settings); // nullable
@@ -233,7 +233,7 @@ class BasicSchemaBuilderTest extends TestCase
 
         // Verificar que la tabla está vacía
         $initialCount = $this->orm->table('channels')->count();
-        static::assertEquals(0, $initialCount, 'La tabla debe estar vacía antes de la prueba');
+        static::assertSame(0, $initialCount, 'La tabla debe estar vacía antes de la prueba');
 
         // Datos para inserción masiva SIN timestamps manuales (timestamps automáticos)
         $channelsData = [
@@ -269,7 +269,7 @@ class BasicSchemaBuilderTest extends TestCase
 
         // Verificar que los registros se insertaron contando en la base de datos
         $totalAfterInsert = $this->orm->table('channels')->count();
-        static::assertEquals(3, $totalAfterInsert, 'Debe haber exactamente 3 registros después de insertMany');
+        static::assertSame(3, $totalAfterInsert, 'Debe haber exactamente 3 registros después de insertMany');
 
         // Cargar todos los registros insertados y verificar timestamps
         $insertedChannels = $this->orm
@@ -355,7 +355,7 @@ class BasicSchemaBuilderTest extends TestCase
 
         // Verificar conteo total después de insertMany
         $totalChannels = $this->orm->table('channels')->count();
-        static::assertEquals(3, $totalChannels);
+        static::assertSame(3, $totalChannels);
     }
 
     public function testMigrateFromOldSchemaCreateToNewSchemaBuilder(): void
@@ -431,9 +431,9 @@ class BasicSchemaBuilderTest extends TestCase
         // Verificar que se insertó con timestamps automáticos
         $migration = $this->orm->table('versa_migrations')->firstArray();
         static::assertNotNull($migration);
-        static::assertEquals('create_users_table', $migration['name']);
-        static::assertEquals('Migración para crear tabla de usuarios', $migration['description']);
-        static::assertEquals(1, $migration['batch']);
+        static::assertSame('create_users_table', $migration['name']);
+        static::assertSame('Migración para crear tabla de usuarios', $migration['description']);
+        static::assertSame(1, $migration['batch']);
 
         // Verificar timestamps automáticos
         static::assertNotNull($migration['created_at']);

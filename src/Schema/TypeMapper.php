@@ -220,9 +220,11 @@ class TypeMapper
         $compatibility = [];
 
         foreach (self::TYPE_MAPPINGS as $driver => $types) {
-            if (isset($types[$abstractType])) {
-                $compatibility[$driver] = $types[$abstractType];
+            if (!isset($types[$abstractType])) {
+                continue;
             }
+
+            $compatibility[$driver] = $types[$abstractType];
         }
 
         return $compatibility;
@@ -283,7 +285,7 @@ class TypeMapper
         // Aplicar valores para ENUM
         if ($abstractType === 'enum' && isset($options['values'])) {
             if ($driver === 'mysql') {
-                $values = array_map(fn($v) => "'{$v}'", $options['values']);
+                $values = array_map(static fn($v) => "'{$v}'", $options['values']);
                 $result = 'ENUM(' . implode(',', $values) . ')';
             } elseif ($driver === 'postgresql') {
                 // Para PostgreSQL, usamos VARCHAR con CHECK constraint
@@ -297,7 +299,7 @@ class TypeMapper
         // Aplicar valores para SET
         if ($abstractType === 'set' && isset($options['values'])) {
             if ($driver === 'mysql') {
-                $values = array_map(fn($v) => "'{$v}'", $options['values']);
+                $values = array_map(static fn($v) => "'{$v}'", $options['values']);
                 $result = 'SET(' . implode(',', $values) . ')';
             } else {
                 // PostgreSQL y SQLite usan TEXT

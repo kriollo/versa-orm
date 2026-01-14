@@ -147,10 +147,12 @@ class SchemaBuilder
             $columnList = is_array($columns) ? $columns : [$columns];
 
             foreach ($indexes as $index) {
-                if (isset($index['columns']) && $index['columns'] === $columnList) {
-                    if ($type === 'index' || isset($index['type']) && $index['type'] === $type) {
-                        return true;
-                    }
+                if (!(isset($index['columns']) && $index['columns'] === $columnList)) {
+                    continue;
+                }
+
+                if ($type === 'index' || isset($index['type']) && $index['type'] === $type) {
+                    return true;
                 }
             }
 

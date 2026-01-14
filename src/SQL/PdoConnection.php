@@ -241,7 +241,7 @@ class PdoConnection
 
         // Ordenar por last_used y eliminar las más antiguas
         $sortedKeys = array_keys(self::$pool);
-        usort($sortedKeys, fn($a, $b) => self::$pool[$a]['last_used'] <=> self::$pool[$b]['last_used']);
+        usort($sortedKeys, static fn($a, $b) => self::$pool[$a]['last_used'] <=> self::$pool[$b]['last_used']);
 
         // Eliminar hasta llegar al 80% del límite
         $targetSize = (int) (self::$maxPoolSize * 0.8);

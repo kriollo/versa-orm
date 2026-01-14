@@ -181,7 +181,7 @@ class VersaModel implements TypedModelInterface
         if (isset($vars['table']) && is_string($vars['table']) && $vars['table'] !== '') {
             return $vars['table'];
         }
-        $class = (new \ReflectionClass($cls))->getShortName();
+        $class = (new ReflectionClass($cls))->getShortName();
         $table = strtolower($class);
         if (str_ends_with($table, 'y')) {
             $table = substr($table, 0, -1) . 'ies';
@@ -478,11 +478,13 @@ class VersaModel implements TypedModelInterface
                             $relatedTable = $relationInstance->query->getTable();
 
                             foreach ($relationData as $relatedRecord) {
-                                if (is_array($relatedRecord)) {
-                                    $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
-                                    $relatedModel->loadInstance($relatedRecord);
-                                    $modelInstances[] = $relatedModel;
+                                if (!is_array($relatedRecord)) {
+                                    continue;
                                 }
+
+                                $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
+                                $relatedModel->loadInstance($relatedRecord);
+                                $modelInstances[] = $relatedModel;
                             }
                         }
                         $this->relations[$relationName] = $modelInstances;
@@ -602,10 +604,12 @@ class VersaModel implements TypedModelInterface
             $fields = [];
             $params = [];
             foreach ($this->attributes as $key => $value) {
-                if ($key !== 'id') {
-                    $fields[] = "{$key} = ?";
-                    $params[] = $this->prepareValueForDatabase($key, $value);
+                if ($key === 'id') {
+                    continue;
                 }
+
+                $fields[] = "{$key} = ?";
+                $params[] = $this->prepareValueForDatabase($key, $value);
             }
             $params[] = $this->attributes['id'];
             if ($fields !== []) { // Sólo ejecutar si hay algo que actualizar
@@ -664,11 +668,13 @@ class VersaModel implements TypedModelInterface
         } else {
             // Si no hay un campo único obvio, usar el primer campo escalar
             foreach ($preparedAttributes as $key => $value) {
-                if (is_string($value) || is_numeric($value)) {
-                    $whereConditions[] = "{$key} = ?";
-                    $whereParams[] = $value;
-                    break; // Solo usar el primer campo válido
+                if (!(is_string($value) || is_numeric($value))) {
+                    continue;
                 }
+
+                $whereConditions[] = "{$key} = ?";
+                $whereParams[] = $value;
+                break;
             }
         }
         if ($whereConditions !== []) {
@@ -752,9 +758,11 @@ class VersaModel implements TypedModelInterface
             $whereConditions = [];
 
             foreach ($uniqueKeys as $key) {
-                if (isset($this->attributes[$key])) {
-                    $whereConditions[$key] = $this->attributes[$key];
+                if (!isset($this->attributes[$key])) {
+                    continue;
                 }
+
+                $whereConditions[$key] = $this->attributes[$key];
             }
 
             if ($whereConditions !== []) {
@@ -950,9 +958,11 @@ class VersaModel implements TypedModelInterface
             $detectedKeys = [];
 
             foreach ($commonUniqueColumns as $column) {
-                if (isset($this->attributes[$column])) {
-                    $detectedKeys[] = $column;
+                if (!isset($this->attributes[$column])) {
+                    continue;
                 }
+
+                $detectedKeys[] = $column;
             }
 
             return $detectedKeys;
@@ -1125,9 +1135,11 @@ class VersaModel implements TypedModelInterface
         $exported = [];
 
         foreach ($models as $model) {
-            if ($model instanceof self) {
-                $exported[] = $model->export();
+            if (!$model instanceof self) {
+                continue;
             }
+
+            $exported[] = $model->export();
         }
 
         return $exported;
@@ -1377,12 +1389,14 @@ class VersaModel implements TypedModelInterface
 
                         foreach ($rows as $index => $row) {
                             foreach ($row as $k => $v) {
-                                if (isset($types[$k])) {
-                                    try {
-                                        $rows[$index][$k] = $tmp->castToPhpType($k, $v);
-                                    } catch (Throwable) {
-                                        // fallback silencioso al valor original
-                                    }
+                                if (!isset($types[$k])) {
+                                    continue;
+                                }
+
+                                try {
+                                    $rows[$index][$k] = $tmp->castToPhpType($k, $v);
+                                } catch (Throwable) {
+                                    // fallback silencioso al valor original
                                 }
                             }
                         }
@@ -1425,12 +1439,14 @@ class VersaModel implements TypedModelInterface
                         $tmp = new static($row['_table'] ?? '', self::$ormInstance);
 
                         foreach ($row as $k => $v) {
-                            if (isset($types[$k])) {
-                                try {
-                                    $row[$k] = $tmp->castToPhpType($k, $v);
-                                } catch (Throwable) {
-                                    // fallback silencioso
-                                }
+                            if (!isset($types[$k])) {
+                                continue;
+                            }
+
+                            try {
+                                $row[$k] = $tmp->castToPhpType($k, $v);
+                            } catch (Throwable) {
+                                // fallback silencioso
                             }
                         }
                     }
@@ -1503,9 +1519,11 @@ class VersaModel implements TypedModelInterface
 
             foreach ($id as $col => $val) {
                 // Solo columnas no vacías
-                if (is_string($col) && $col !== '') {
-                    $qb->where($col, '=', $val);
+                if (!(is_string($col) && $col !== '')) {
+                    continue;
                 }
+
+                $qb->where($col, '=', $val);
             }
 
             $result = $qb->findOne();
@@ -1646,9 +1664,11 @@ class VersaModel implements TypedModelInterface
         }
 
         foreach ($models as $i => $m) {
-            if (!$m instanceof self) {
-                throw new VersaORMException('storeAll expects an array of VersaModel instances at index ' . $i);
+            if ($m instanceof self) {
+                continue;
             }
+
+            throw new VersaORMException('storeAll expects an array of VersaModel instances at index ' . $i);
         }
         // Detectar si todos son nuevos (sin PK) y de la misma tabla para intentar optimización insertMany
         /** @var self $first */
@@ -1973,12 +1993,16 @@ class VersaModel implements TypedModelInterface
             // Validar campos requeridos que no están presentes
             foreach ($validationSchema as $fieldName => $columnSchema) {
                 if (
-                    ($columnSchema['is_required'] ?? false)
-                    && !isset($this->attributes[$fieldName])
-                    && !($columnSchema['is_auto_increment'] ?? false)
+                    !(
+                        ($columnSchema['is_required'] ?? false)
+                        && !isset($this->attributes[$fieldName])
+                        && !($columnSchema['is_auto_increment'] ?? false)
+                    )
                 ) {
-                    $errors[] = "The {$fieldName} field is required.";
+                    continue;
                 }
+
+                $errors[] = "The {$fieldName} field is required.";
             }
         } catch (VersaORMException) {
             // En caso de error al obtener el esquema, usar validación básica
@@ -2201,9 +2225,11 @@ class VersaModel implements TypedModelInterface
             && $columnSchema['validation_rules'] !== []
         ) {
             foreach ($columnSchema['validation_rules'] as $rule) {
-                if ($rule === 'email' && is_string($value) && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                    $errors[] = "The {$field} must be a valid email address.";
+                if (!($rule === 'email' && is_string($value) && !filter_var($value, FILTER_VALIDATE_EMAIL))) {
+                    continue;
                 }
+
+                $errors[] = "The {$field} must be a valid email address.";
 
                 // Add more rules as needed
             }
@@ -2223,9 +2249,8 @@ class VersaModel implements TypedModelInterface
         foreach ($this->attributes as $field => $value) {
             // Validación básica de campos vacío vs NULL
             // Campos comunes que suelen ser auto-increment o tienen valores por defecto
-            if (($value === '' || $value === null) && !in_array($field, ['id', 'created_at', 'updated_at'], true)) {
-                // Esta es una validación muy básica
-                // En un proyecto real, esto se configuraría por modelo
+            if (!(($value === '' || $value === null) && !in_array($field, ['id', 'created_at', 'updated_at'], true))) {
+                continue;
             }
         }
 

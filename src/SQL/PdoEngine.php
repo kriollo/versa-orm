@@ -441,9 +441,11 @@ class PdoEngine
 
                         if (isset($params['partition_by']) && is_array($params['partition_by'])) {
                             foreach ($params['partition_by'] as $p) {
-                                if (is_string($p) && $p !== '') {
-                                    $partition[] = $p;
+                                if (!(is_string($p) && $p !== '')) {
+                                    continue;
                                 }
+
+                                $partition[] = $p;
                             }
                         }
                         /** @var list<array{column:string,direction?:string}> $orderBy */
@@ -451,14 +453,16 @@ class PdoEngine
 
                         if (isset($params['order_by']) && is_array($params['order_by'])) {
                             foreach ($params['order_by'] as $o) {
-                                if (is_array($o) && isset($o['column']) && is_string($o['column'])) {
-                                    $entry = ['column' => $o['column']];
-
-                                    if (isset($o['direction']) && is_string($o['direction'])) {
-                                        $entry['direction'] = $o['direction'];
-                                    }
-                                    $orderBy[] = $entry; // forma tipada
+                                if (!(is_array($o) && isset($o['column']) && is_string($o['column']))) {
+                                    continue;
                                 }
+
+                                $entry = ['column' => $o['column']];
+
+                                if (isset($o['direction']) && is_string($o['direction'])) {
+                                    $entry['direction'] = $o['direction'];
+                                }
+                                $orderBy[] = $entry;
                             }
                         }
                         /** @var list<array{type:string,field:string,operator:string,value:mixed,boolean?:string}> $wheres */
@@ -466,15 +470,17 @@ class PdoEngine
 
                         if (isset($params['wheres']) && is_array($params['wheres'])) {
                             foreach ($params['wheres'] as $w) {
-                                if (is_array($w) && isset($w['field'], $w['operator'])) {
-                                    $wheres[] = [
-                                        'type' => (string) ($w['type'] ?? 'basic'),
-                                        'field' => (string) $w['field'],
-                                        'operator' => (string) $w['operator'],
-                                        'value' => $w['value'] ?? null,
-                                        'boolean' => (string) ($w['boolean'] ?? 'and'),
-                                    ];
+                                if (!(is_array($w) && isset($w['field'], $w['operator']))) {
+                                    continue;
                                 }
+
+                                $wheres[] = [
+                                    'type' => (string) ($w['type'] ?? 'basic'),
+                                    'field' => (string) $w['field'],
+                                    'operator' => (string) $w['operator'],
+                                    'value' => $w['value'] ?? null,
+                                    'boolean' => (string) ($w['boolean'] ?? 'and'),
+                                ];
                             }
                         }
                         // Mapear función a SQL
@@ -613,9 +619,11 @@ class PdoEngine
 
                         if (isset($params['ctes']) && is_array($params['ctes'])) {
                             foreach ($params['ctes'] as $c) {
-                                if (is_array($c)) {
-                                    $ctes[] = $c; // normalizamos sólo a array
+                                if (!is_array($c)) {
+                                    continue;
                                 }
+
+                                $ctes[] = $c;
                             }
                         }
                         $withParts = [];
@@ -668,9 +676,11 @@ class PdoEngine
 
                         if (isset($params['queries']) && is_array($params['queries'])) {
                             foreach ($params['queries'] as $q) {
-                                if (is_array($q)) {
-                                    $queries[] = $q;
+                                if (!is_array($q)) {
+                                    continue;
                                 }
+
+                                $queries[] = $q;
                             }
                         }
                         $all = (bool) ($params['all'] ?? false);
@@ -709,15 +719,17 @@ class PdoEngine
 
                         if (isset($params['wheres']) && is_array($params['wheres'])) {
                             foreach ($params['wheres'] as $w) {
-                                if (is_array($w) && isset($w['field'], $w['operator'])) {
-                                    $wheres[] = [
-                                        'type' => (string) ($w['type'] ?? 'basic'),
-                                        'field' => (string) $w['field'],
-                                        'operator' => (string) $w['operator'],
-                                        'value' => $w['value'] ?? null,
-                                        'boolean' => (string) ($w['boolean'] ?? 'and'),
-                                    ];
+                                if (!(is_array($w) && isset($w['field'], $w['operator']))) {
+                                    continue;
                                 }
+
+                                $wheres[] = [
+                                    'type' => (string) ($w['type'] ?? 'basic'),
+                                    'field' => (string) $w['field'],
+                                    'operator' => (string) $w['operator'],
+                                    'value' => $w['value'] ?? null,
+                                    'boolean' => (string) ($w['boolean'] ?? 'and'),
+                                ];
                             }
                         }
                         $bind = [];
@@ -817,9 +829,11 @@ class PdoEngine
 
                         if (isset($params['columns']) && is_array($params['columns'])) {
                             foreach ($params['columns'] as $c) {
-                                if (is_string($c) && $c !== '') {
-                                    $cols[] = $c;
+                                if (!(is_string($c) && $c !== '')) {
+                                    continue;
                                 }
+
+                                $cols[] = $c;
                             }
                         }
                         $term = (string) ($params['search_term'] ?? '');
@@ -947,9 +961,11 @@ class PdoEngine
 
                         if (isset($params['groupBy']) && is_array($params['groupBy'])) {
                             foreach ($params['groupBy'] as $g) {
-                                if (is_string($g) && $g !== '') {
-                                    $groupBy[] = $g;
+                                if (!(is_string($g) && $g !== '')) {
+                                    continue;
                                 }
+
+                                $groupBy[] = $g;
                             }
                         }
 
@@ -1551,14 +1567,16 @@ class PdoEngine
     private function pruneExpiredStatements(int $currentTime): void
     {
         foreach (self::$stmtCache as $key => $entry) {
-            if (($currentTime - $entry['created_at']) >= self::$stmtCacheTtl) {
-                try {
-                    $entry['stmt']->closeCursor();
-                } catch (Throwable) {
-                    // ignore
-                }
-                unset(self::$stmtCache[$key]);
+            if (($currentTime - $entry['created_at']) < self::$stmtCacheTtl) {
+                continue;
             }
+
+            try {
+                $entry['stmt']->closeCursor();
+            } catch (Throwable) {
+                // ignore
+            }
+            unset(self::$stmtCache[$key]);
         }
     }
 
@@ -1637,10 +1655,12 @@ class PdoEngine
                 // Intentar inferir IDs autoincrement si no se proporcionaron explícitamente
                 $explicitIdPresent = false;
                 foreach ($chunk as $row) {
-                    if (is_array($row) && array_key_exists('id', $row)) {
-                        $explicitIdPresent = true;
-                        break;
+                    if (!(is_array($row) && array_key_exists('id', $row))) {
+                        continue;
                     }
+
+                    $explicitIdPresent = true;
+                    break;
                 }
 
                 if (!$explicitIdPresent) {
@@ -1933,9 +1953,11 @@ class PdoEngine
             $out = [];
 
             foreach ($rows as $r) {
-                if (is_array($r)) {
-                    $out[] = ['table_name' => isset($r['table_name']) ? (string) $r['table_name'] : null];
+                if (!is_array($r)) {
+                    continue;
                 }
+
+                $out[] = ['table_name' => isset($r['table_name']) ? (string) $r['table_name'] : null];
             }
 
             return $out;
@@ -1947,9 +1969,11 @@ class PdoEngine
             $out = [];
 
             foreach ($rows as $r) {
-                if (is_array($r)) {
-                    $out[] = ['table_name' => isset($r['table_name']) ? (string) $r['table_name'] : null];
+                if (!is_array($r)) {
+                    continue;
                 }
+
+                $out[] = ['table_name' => isset($r['table_name']) ? (string) $r['table_name'] : null];
             }
 
             return $out;
@@ -2361,9 +2385,11 @@ class PdoEngine
             // no puede mapear directamente; como aproximación, si el patrón
             // coincide con alguna tabla indexada, invalidar por esa tabla.
             foreach (array_keys(self::$tableKeyIndex) as $table) {
-                if (preg_match($regex, $table) === 1) {
-                    self::invalidateCacheForTable($table);
+                if (preg_match($regex, $table) !== 1) {
+                    continue;
                 }
+
+                self::invalidateCacheForTable($table);
             }
         }
     }

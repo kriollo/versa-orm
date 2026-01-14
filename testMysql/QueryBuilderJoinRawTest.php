@@ -77,15 +77,14 @@ class QueryBuilderJoinRawTest extends TestCase
 
         // Campaña 1 tiene 3 videos
         $this->assertEquals(1, $result[0]['id']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        $this->assertEquals(3, $result[0]['video_count']);
 
         // Campaña 2 tiene 1 video
         $this->assertEquals(2, $result[1]['id']);
-        $this->assertEquals('1', $result[1]['video_count']);
-
+        $this->assertEquals(1, $result[1]['video_count']);
         // Campaña 3 tiene 2 videos
         $this->assertEquals(3, $result[2]['id']);
-        $this->assertEquals('2', $result[2]['video_count']);
+        $this->assertEquals(2, $result[2]['video_count']);
 
         // Campaña 4 no tiene videos (NULL por LEFT JOIN)
         $this->assertEquals(4, $result[3]['id']);
@@ -267,7 +266,7 @@ class QueryBuilderJoinRawTest extends TestCase
 
         $this->assertCount(3, $result);
         $this->assertEquals('Juan Pérez', $result[0]['usuario']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        $this->assertEquals(3, $result[0]['video_count']);
     }
 
     /**
@@ -295,7 +294,7 @@ class QueryBuilderJoinRawTest extends TestCase
         // Solo campañas activas con 2 o más videos: Campaña 1 (3 videos)
         $this->assertCount(1, $result);
         $this->assertEquals('Campaña 1', $result[0]['nombre']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        $this->assertEquals(3, $result[0]['video_count']);
     }
 
     /**
