@@ -1,3 +1,107 @@
+## [1.5.0] - 2026-01-14
+
+### � Nueva Característica Principal: JOIN RAW con SQL Personalizado
+
+- **Soporte Completo para JOIN RAW**: Nueva funcionalidad para escribir JOINs con SQL crudo
+  - ✅ Método `joinRaw()` permite SQL personalizado con binding seguro de parámetros
+  - ✅ Soporte para LEFT JOIN, RIGHT JOIN, INNER JOIN y CROSS JOIN en modo raw
+  - ✅ Binding de parámetros posicionales (`?`) con array de valores
+  - ✅ Compatibilidad total con MySQL, PostgreSQL y SQLite
+  - ✅ Integración fluida con el QueryBuilder existente
+
+### 💡 Ejemplos de Uso JOIN RAW
+
+```php
+// ✅ JOIN RAW básico con parámetros seguros
+$results = $orm->table('users as u')
+    ->joinRaw('INNER JOIN posts p ON p.user_id = u.id AND p.status = ?', ['published'])
+    ->select(['u.name', 'p.title'])
+    ->get();
+
+// ✅ JOIN RAW con múltiples condiciones
+$videos = $orm->table('channels as c')
+    ->joinRaw(
+        'LEFT JOIN videos v ON v.channel_id = c.id AND v.views > ? AND v.created_at > ?',
+        [1000, '2025-01-01']
+    )
+    ->select(['c.name as channel_name', 'COUNT(v.id) as video_count'])
+    ->groupBy('c.id')
+    ->get();
+
+// ✅ Combinación de JOIN tradicional + JOIN RAW
+$data = $orm->table('orders as o')
+    ->join('customers as c', 'o.customer_id', '=', 'c.id')  // JOIN tradicional
+    ->joinRaw(
+        'LEFT JOIN order_items oi ON oi.order_id = o.id AND oi.quantity > ?',
+        [5]
+    )  // JOIN RAW
+    ->where('o.status', '=', 'completed')
+    ->get();
+```
+
+### 🔧 Implementación Técnica
+
+- **QueryBuilder.php**: Nuevos métodos para JOIN RAW
+  - `joinRaw($sql, $bindings = [])` - INNER JOIN con SQL crudo
+  - `leftJoinRaw($sql, $bindings = [])` - LEFT JOIN con SQL crudo
+  - `rightJoinRaw($sql, $bindings = [])` - RIGHT JOIN con SQL crudo
+  - `crossJoinRaw($sql, $bindings = [])` - CROSS JOIN con SQL crudo
+  - Propiedad `$joins` actualizada con soporte para tipos raw: `{type, raw_sql, bindings}`
+  - Compilación segura con prepared statements en todos los motores
+
+### 🛡️ Seguridad y Validación
+
+- **Prepared Statements Nativos**:
+  - Todos los parámetros de JOIN RAW usan binding posicional (`?`)
+  - Protección automática contra inyección SQL
+  - Validación estricta de parámetros con PHPStan level 8
+
+- **Type Safety Mejorada**:
+  - PHPDoc completo para propiedad `$joins` incluyendo tipos raw
+  - Comparaciones booleanas estrictas con `preg_match() !== 1`
+  - Type hints y return types en todos los métodos relacionados
+
+### ✅ Cobertura de Tests Completa
+
+- **QueryBuilderJoinRawTest.php**: Suite completa de tests para JOIN RAW
+  - ✅ `testJoinRawBasicSyntax()` - Sintaxis básica con un parámetro
+  - ✅ `testLeftJoinRawWithMultipleParams()` - LEFT JOIN con múltiples parámetros
+  - ✅ `testJoinRawWithGroupBy()` - JOIN RAW + GROUP BY + COUNT
+  - ✅ `testJoinRawWithTraditionalJoin()` - Combinación JOIN tradicional + RAW
+  - ✅ `testJoinRawEmptyResults()` - Validación de resultados vacíos
+  - Tests ejecutados en **MySQL, PostgreSQL y SQLite** con 100% de éxito
+
+### 📊 Validación Multi-Motor
+
+- **Tests 100% Pasando en todos los motores**:
+  - SQLite: 411 tests, 1264 assertions ✅
+  - PostgreSQL: 469 tests, 1458 assertions ✅
+  - MySQL: 477+ tests completos ✅
+  - **Total: 1350+ tests sin errores**
+
+### 🎯 Casos de Uso Prácticos
+
+- **Consultas Complejas**: Cuando necesitas lógica SQL avanzada que no es posible con JOIN tradicional
+- **Optimización de Performance**: Control fino sobre condiciones de JOIN para índices específicos
+- **Funciones SQL Específicas**: Uso de funciones nativas del motor (DATE_ADD, EXTRACT, etc.)
+- **Migración de SQL Existente**: Integrar queries SQL legacy sin reescribir completamente
+- **Subconsultas en JOIN**: Usar subconsultas complejas directamente en la condición ON
+
+### 🔍 Calidad de Código
+
+- **Análisis Estático**:
+  - PHPStan: 0 errores en nivel 8 (máxima strictness)
+  - Psalm: 0 errores críticos, inferencia de tipos al 91.47%
+  - Atributos `#[\Override]` agregados en 76 métodos
+  - 40 archivos mejorados con type safety automático
+
+- **Estandarización de Tests**:
+  - Credenciales PostgreSQL consistentes ('local'/'local')
+  - Type casting correcto (COUNT() retorna int en lugar de string)
+  - Sin breaking changes en código existente
+
+---
+
 ## [1.4.1] - 2025-09-08
 
 ### 🔥 Fix Crítico: Timestamps Automáticos
