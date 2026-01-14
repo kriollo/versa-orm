@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use VersaORM\VersaORMException;
 
 // Vista para editar un proyecto existente.

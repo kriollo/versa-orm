@@ -1,4 +1,8 @@
-<?php $title = 'Proyectos - VersaORM Trello Demo'; ?>
+<?php
+
+declare(strict_types=1);
+
+$title = 'Proyectos - VersaORM Trello Demo'; ?>
 
 <div class="flex justify-between items-center mb-8">
     <div>

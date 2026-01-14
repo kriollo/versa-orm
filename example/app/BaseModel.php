@@ -72,9 +72,7 @@ abstract class BaseModel extends VersaModel
     public static function make(): static
     {
         /** @var static $inst */
-        $inst = new static(static::tableName(), self::orm());
-
-        return $inst;
+        return new static(static::tableName(), self::orm());
     }
 
     /**
@@ -127,9 +125,7 @@ abstract class BaseModel extends VersaModel
     public function find(int $id, string $pk = 'id'): ?static
     {
         /** @var static|null $result */
-        $result = $this->querySelf()->where($pk, '=', $id)->findOne();
-
-        return $result;
+        return $this->querySelf()->where($pk, '=', $id)->findOne();
     }
 
     /** Obtener todos como arrays (instancia). */
@@ -193,9 +189,11 @@ abstract class BaseModel extends VersaModel
     protected function normalizeOptionalFields(array &$attributes, array $optionalFields): void
     {
         foreach ($optionalFields as $field) {
-            if (isset($attributes[$field]) && ($attributes[$field] === '' || $attributes[$field] === null)) {
-                $attributes[$field] = null;
+            if (!(isset($attributes[$field]) && ($attributes[$field] === '' || $attributes[$field] === null))) {
+                continue;
             }
+
+            $attributes[$field] = null;
         }
     }
 
@@ -205,9 +203,11 @@ abstract class BaseModel extends VersaModel
     protected function normalizeOptionalDateFields(array &$attributes, array $dateFields): void
     {
         foreach ($dateFields as $field) {
-            if (isset($attributes[$field]) && ($attributes[$field] === '' || $attributes[$field] === null)) {
-                $attributes[$field] = null;
+            if (!(isset($attributes[$field]) && ($attributes[$field] === '' || $attributes[$field] === null))) {
+                continue;
             }
+
+            $attributes[$field] = null;
         }
     }
 }

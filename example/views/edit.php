@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Vista: Editar tarea estilo Trello
 ?>
 <div class="mb-6">

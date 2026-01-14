@@ -181,23 +181,27 @@ class Task extends BaseModel
             ->get();
 
         foreach ($existingLabels as $existing) {
-            if (isset($existing['id'])) {
-                $taskLabel = $this->load('task_labels', (int) $existing['id']);
+            if (!isset($existing['id'])) {
+                continue;
+            }
 
-                if ($taskLabel instanceof VersaModel) {
-                    $taskLabel->trash();
-                }
+            $taskLabel = $this->load('task_labels', (int) $existing['id']);
+
+            if ($taskLabel instanceof VersaModel) {
+                $taskLabel->trash();
             }
         }
 
         // Asignar nuevas etiquetas usando VersaModel
         foreach ($labelIds as $labelId) {
-            if (!empty($labelId)) {
-                $taskLabel = $this->dispenseInstance('task_labels');
-                $taskLabel->task_id = $this->id;
-                $taskLabel->label_id = $labelId;
-                $taskLabel->store();
+            if (empty($labelId)) {
+                continue;
             }
+
+            $taskLabel = $this->dispenseInstance('task_labels');
+            $taskLabel->task_id = $this->id;
+            $taskLabel->label_id = $labelId;
+            $taskLabel->store();
         }
     }
 

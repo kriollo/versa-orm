@@ -1,4 +1,8 @@
-<?php $title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
+<?php
+
+declare(strict_types=1);
+
+$title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
 
 <div class="max-w-2xl mx-auto">
     <div class="mb-8">

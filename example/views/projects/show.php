@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Vista para mostrar detalles de un proyecto.
  */
