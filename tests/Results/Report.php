@@ -128,9 +128,13 @@ class Report
         $criticalAlerts = 0;
 
         foreach ($this->recommendations as $recommendation) {
-            if (is_array($recommendation) && isset($recommendation['level']) && $recommendation['level'] === 'error') {
-                $criticalAlerts++;
+            if (
+                !(is_array($recommendation) && isset($recommendation['level']) && $recommendation['level'] === 'error')
+            ) {
+                continue;
             }
+
+            $criticalAlerts++;
         }
 
         return [
@@ -211,7 +215,7 @@ class Report
         $directory = dirname($filepath);
 
         if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
+            mkdir($directory, 0o755, true);
         }
 
         return file_put_contents($filepath, $this->toJson()) !== false;
@@ -263,20 +267,22 @@ class Report
         $html .= "<h2>Test Results</h2>\n";
 
         foreach ($this->results as $testType => $result) {
-            if ($result instanceof TestResult) {
-                $html .= '<h3>' . ucfirst(str_replace('_', ' ', $testType)) . "</h3>\n";
-                $html .= "<p>Tests: {$result->total_tests}, ";
-                $html .= "Passed: <span class='pass'>{$result->passed_tests}</span>, ";
-                $html .= "Failed: <span class='fail'>{$result->failed_tests}</span></p>\n";
+            if (!$result instanceof TestResult) {
+                continue;
+            }
 
-                if ($result->failures !== []) {
-                    $html .= "<h4>Failures:</h4>\n<ul>\n";
+            $html .= '<h3>' . ucfirst(str_replace('_', ' ', $testType)) . "</h3>\n";
+            $html .= "<p>Tests: {$result->total_tests}, ";
+            $html .= "Passed: <span class='pass'>{$result->passed_tests}</span>, ";
+            $html .= "Failed: <span class='fail'>{$result->failed_tests}</span></p>\n";
 
-                    foreach ($result->failures as $failure) {
-                        $html .= "<li class='fail'>{$failure['message']}</li>\n";
-                    }
-                    $html .= "</ul>\n";
+            if ($result->failures !== []) {
+                $html .= "<h4>Failures:</h4>\n<ul>\n";
+
+                foreach ($result->failures as $failure) {
+                    $html .= "<li class='fail'>{$failure['message']}</li>\n";
                 }
+                $html .= "</ul>\n";
             }
         }
 

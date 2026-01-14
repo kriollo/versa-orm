@@ -203,10 +203,12 @@ function runAlertsAnalysis(CoverageAnalyzer $analyzer, array $options, TestLogge
     $hasHighSeverity = false;
 
     foreach ($alerts as $alert) {
-        if (in_array($alert['severity'], ['high', 'critical'], true)) {
-            $hasHighSeverity = true;
-            break;
+        if (!in_array($alert['severity'], ['high', 'critical'], true)) {
+            continue;
         }
+
+        $hasHighSeverity = true;
+        break;
     }
 
     exit($hasHighSeverity ? 1 : 0);

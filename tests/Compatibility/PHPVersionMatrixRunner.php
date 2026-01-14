@@ -97,7 +97,7 @@ class PHPVersionMatrixRunner
             $directory = dirname($filepath);
 
             if (!is_dir($directory)) {
-                mkdir($directory, 0755, true);
+                mkdir($directory, 0o755, true);
             }
             file_put_contents($filepath, $json);
         }
@@ -117,7 +117,7 @@ class PHPVersionMatrixRunner
             $directory = dirname($filepath);
 
             if (!is_dir($directory)) {
-                mkdir($directory, 0755, true);
+                mkdir($directory, 0o755, true);
             }
             file_put_contents($filepath, $html);
         }
@@ -327,21 +327,23 @@ class PHPVersionMatrixRunner
         $totalTime = 0;
 
         foreach ($results as $result) {
-            if ($result instanceof TestResult || $result instanceof Report) {
-                if ($result instanceof TestResult) {
-                    $totalTests += $result->total_tests;
-                    $totalPassed += $result->passed_tests;
-                    $totalFailed += $result->failed_tests;
-                    $totalSkipped += $result->skipped_tests;
-                    $totalTime += $result->execution_time;
-                } elseif ($result instanceof Report) {
-                    $summary = $result->summary;
-                    $totalTests += $summary['total_tests'] ?? 0;
-                    $totalPassed += $summary['passed_tests'] ?? 0;
-                    $totalFailed += $summary['failed_tests'] ?? 0;
-                    $totalSkipped += $summary['skipped_tests'] ?? 0;
-                    $totalTime += $result->execution_time;
-                }
+            if (!($result instanceof TestResult || $result instanceof Report)) {
+                continue;
+            }
+
+            if ($result instanceof TestResult) {
+                $totalTests += $result->total_tests;
+                $totalPassed += $result->passed_tests;
+                $totalFailed += $result->failed_tests;
+                $totalSkipped += $result->skipped_tests;
+                $totalTime += $result->execution_time;
+            } elseif ($result instanceof Report) {
+                $summary = $result->summary;
+                $totalTests += $summary['total_tests'] ?? 0;
+                $totalPassed += $summary['passed_tests'] ?? 0;
+                $totalFailed += $summary['failed_tests'] ?? 0;
+                $totalSkipped += $summary['skipped_tests'] ?? 0;
+                $totalTime += $result->execution_time;
             }
         }
 

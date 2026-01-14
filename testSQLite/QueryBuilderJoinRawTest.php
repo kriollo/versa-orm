@@ -48,11 +48,11 @@ class QueryBuilderJoinRawTest extends TestCase
             ->orderBy('anima_campanas.id')
             ->getAll();
 
-        $this->assertCount(4, $result);
-        $this->assertEquals('Campaña 1', $result[0]['nombre']);
-        $this->assertEquals('Juan Pérez', $result[0]['nombre_usuario']);
-        $this->assertEquals('Campaña 2', $result[1]['nombre']);
-        $this->assertEquals('María García', $result[1]['nombre_usuario']);
+        static::assertCount(4, $result);
+        static::assertEquals('Campaña 1', $result[0]['nombre']);
+        static::assertEquals('Juan Pérez', $result[0]['nombre_usuario']);
+        static::assertEquals('Campaña 2', $result[1]['nombre']);
+        static::assertEquals('María García', $result[1]['nombre_usuario']);
     }
 
     /**
@@ -73,23 +73,23 @@ class QueryBuilderJoinRawTest extends TestCase
             ->orderBy('anima_campanas.id')
             ->getAll();
 
-        $this->assertCount(4, $result);
+        static::assertCount(4, $result);
 
         // Campaña 1 tiene 3 videos
-        $this->assertEquals(1, $result[0]['id']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        static::assertEquals(1, $result[0]['id']);
+        static::assertEquals('3', $result[0]['video_count']);
 
         // Campaña 2 tiene 1 video
-        $this->assertEquals(2, $result[1]['id']);
-        $this->assertEquals('1', $result[1]['video_count']);
+        static::assertEquals(2, $result[1]['id']);
+        static::assertEquals('1', $result[1]['video_count']);
 
         // Campaña 3 tiene 2 videos
-        $this->assertEquals(3, $result[2]['id']);
-        $this->assertEquals('2', $result[2]['video_count']);
+        static::assertEquals(3, $result[2]['id']);
+        static::assertEquals('2', $result[2]['video_count']);
 
         // Campaña 4 no tiene videos (NULL por LEFT JOIN)
-        $this->assertEquals(4, $result[3]['id']);
-        $this->assertNull($result[3]['video_count']);
+        static::assertEquals(4, $result[3]['id']);
+        static::assertNull($result[3]['video_count']);
     }
 
     /**
@@ -139,25 +139,25 @@ class QueryBuilderJoinRawTest extends TestCase
         $result = $qb->collect();
 
         // Verificaciones
-        $this->assertCount(3, $result); // Solo campañas activas (1, 2, 4)
+        static::assertCount(3, $result); // Solo campañas activas (1, 2, 4)
 
         // Verificar primera campaña
-        $this->assertEquals(1, $result[0]['id']);
-        $this->assertEquals('TOKEN001', $result[0]['token']);
-        $this->assertEquals('Campaña 1', $result[0]['nombre']);
-        $this->assertEquals('Juan Pérez', $result[0]['nombre_usuario']);
-        $this->assertEquals('/images/campana1_default.jpg', $result[0]['imagen_default']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        static::assertEquals(1, $result[0]['id']);
+        static::assertEquals('TOKEN001', $result[0]['token']);
+        static::assertEquals('Campaña 1', $result[0]['nombre']);
+        static::assertEquals('Juan Pérez', $result[0]['nombre_usuario']);
+        static::assertEquals('/images/campana1_default.jpg', $result[0]['imagen_default']);
+        static::assertEquals('3', $result[0]['video_count']);
 
         // Verificar segunda campaña
-        $this->assertEquals(2, $result[1]['id']);
-        $this->assertEquals('/images/campana2_default.jpg', $result[1]['imagen_default']);
-        $this->assertEquals('1', $result[1]['video_count']);
+        static::assertEquals(2, $result[1]['id']);
+        static::assertEquals('/images/campana2_default.jpg', $result[1]['imagen_default']);
+        static::assertEquals('1', $result[1]['video_count']);
 
         // Verificar cuarta campaña (sin imagen default, sin videos)
-        $this->assertEquals(4, $result[2]['id']);
-        $this->assertNull($result[2]['imagen_default']);
-        $this->assertNull($result[2]['video_count']);
+        static::assertEquals(4, $result[2]['id']);
+        static::assertNull($result[2]['imagen_default']);
+        static::assertNull($result[2]['video_count']);
     }
 
     /**
@@ -176,7 +176,7 @@ class QueryBuilderJoinRawTest extends TestCase
 
         // Debe retornar todos los usuarios, incluso los que no tienen campañas
         // Usamos >= porque pueden existir usuarios de otros tests
-        $this->assertGreaterThanOrEqual(3, count($result));
+        static::assertGreaterThanOrEqual(3, count($result));
     }
 
     /**
@@ -191,7 +191,7 @@ class QueryBuilderJoinRawTest extends TestCase
             ->where('anima_campanas.estado', '=', 'activo')
             ->getAll();
 
-        $this->assertCount(3, $result);
+        static::assertCount(3, $result);
     }
 
     /**
@@ -209,11 +209,11 @@ class QueryBuilderJoinRawTest extends TestCase
             ])
             ->getAll();
 
-        $this->assertCount(3, $result);
+        static::assertCount(3, $result);
 
         // Verificar que todos son activos (ya filtrados por el JOIN)
         foreach ($result as $row) {
-            $this->assertEquals('activo', $row['estado'], 'Todas las campañas deben ser activas');
+            static::assertEquals('activo', $row['estado'], 'Todas las campañas deben ser activas');
         }
     }
 
@@ -240,11 +240,11 @@ class QueryBuilderJoinRawTest extends TestCase
             ->orderBy('anima_campanas.id')
             ->getAll();
 
-        $this->assertCount(4, $result);
+        static::assertCount(4, $result);
 
         // Verificar que los LEFT JOIN mantienen todos los registros
-        $this->assertEquals('Campaña 1', $result[0]['nombre']);
-        $this->assertEquals('Campaña 4', $result[3]['nombre']);
+        static::assertEquals('Campaña 1', $result[0]['nombre']);
+        static::assertEquals('Campaña 4', $result[3]['nombre']);
     }
 
     /**
@@ -267,9 +267,9 @@ class QueryBuilderJoinRawTest extends TestCase
             ->orderBy('anima_campanas.id')
             ->getAll();
 
-        $this->assertCount(3, $result);
-        $this->assertEquals('Juan Pérez', $result[0]['usuario']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        static::assertCount(3, $result);
+        static::assertEquals('Juan Pérez', $result[0]['usuario']);
+        static::assertEquals('3', $result[0]['video_count']);
     }
 
     /**
@@ -295,9 +295,9 @@ class QueryBuilderJoinRawTest extends TestCase
             ->getAll();
 
         // Solo campañas activas con 2 o más videos: Campaña 1 (3 videos)
-        $this->assertCount(1, $result);
-        $this->assertEquals('Campaña 1', $result[0]['nombre']);
-        $this->assertEquals('3', $result[0]['video_count']);
+        static::assertCount(1, $result);
+        static::assertEquals('Campaña 1', $result[0]['nombre']);
+        static::assertEquals('3', $result[0]['video_count']);
     }
 
     /**
@@ -323,9 +323,9 @@ class QueryBuilderJoinRawTest extends TestCase
             ->offset($offset)
             ->getAll();
 
-        $this->assertCount(2, $result);
-        $this->assertEquals(2, $result[0]['id']); // Offset 1 = segunda campaña
-        $this->assertEquals(3, $result[1]['id']); // Tercera campaña
+        static::assertCount(2, $result);
+        static::assertEquals(2, $result[0]['id']); // Offset 1 = segunda campaña
+        static::assertEquals(3, $result[1]['id']); // Tercera campaña
     }
 
     /**
@@ -343,7 +343,7 @@ class QueryBuilderJoinRawTest extends TestCase
      */
     public function testJoinRawInvalidBindingsThrowsException(): void
     {
-        $this->markTestSkipped('Type hints in PHP 8.1+ prevent invalid types from being passed');
+        static::markTestSkipped('Type hints in PHP 8.1+ prevent invalid types from being passed');
     }
 
     private static function createTestTables(): void

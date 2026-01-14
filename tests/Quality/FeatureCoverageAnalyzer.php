@@ -145,13 +145,15 @@ class FeatureCoverageAnalyzer
 
                 // Identify engines with gaps
                 foreach ($featureResult['engine_results'] as $engine => $engineResult) {
-                    if ($engineResult['coverage'] < $featureConfig['minimum_coverage']) {
-                        $gap['engines_with_gaps'][] = [
-                            'engine' => $engine,
-                            'coverage' => $engineResult['coverage'],
-                            'gap' => $featureConfig['minimum_coverage'] - $engineResult['coverage'],
-                        ];
+                    if ($engineResult['coverage'] >= $featureConfig['minimum_coverage']) {
+                        continue;
                     }
+
+                    $gap['engines_with_gaps'][] = [
+                        'engine' => $engine,
+                        'coverage' => $engineResult['coverage'],
+                        'gap' => $featureConfig['minimum_coverage'] - $engineResult['coverage'],
+                    ];
                 }
 
                 $gaps[] = $gap;
@@ -216,17 +218,19 @@ class FeatureCoverageAnalyzer
 
                 // Check engine-specific coverage
                 foreach ($featureResult['engine_results'] as $engine => $engineResult) {
-                    if ($engineResult['coverage'] < ($featureConfig['minimum_coverage'] * 0.8)) { // 80% of minimum
-                        $alerts[] = [
-                            'type' => 'engine_feature_coverage_critical',
-                            'severity' => 'high',
-                            'feature' => $featureName,
-                            'engine' => $engine,
-                            'current_coverage' => $engineResult['coverage'],
-                            'required_coverage' => $featureConfig['minimum_coverage'],
-                            'message' => "Feature '{$featureName}' has critically low coverage in {$engine}: {$engineResult['coverage']}%",
-                        ];
+                    if ($engineResult['coverage'] >= ($featureConfig['minimum_coverage'] * 0.8)) {
+                        continue;
                     }
+
+                    $alerts[] = [
+                        'type' => 'engine_feature_coverage_critical',
+                        'severity' => 'high',
+                        'feature' => $featureName,
+                        'engine' => $engine,
+                        'current_coverage' => $engineResult['coverage'],
+                        'required_coverage' => $featureConfig['minimum_coverage'],
+                        'message' => "Feature '{$featureName}' has critically low coverage in {$engine}: {$engineResult['coverage']}%",
+                    ];
                 }
 
                 // Check for missing test files
@@ -502,11 +506,13 @@ class FeatureCoverageAnalyzer
             $fullPath = "{$this->projectRoot}/{$sourceFile}";
 
             foreach ($coverageData as $coveredFile => $fileData) {
-                if (str_contains($coveredFile, $sourceFile) || str_contains($sourceFile, basename($coveredFile))) {
-                    $totalLines += $fileData['statements'];
-                    $coveredLines += $fileData['coveredstatements'];
-                    break;
+                if (!(str_contains($coveredFile, $sourceFile) || str_contains($sourceFile, basename($coveredFile)))) {
+                    continue;
                 }
+
+                $totalLines += $fileData['statements'];
+                $coveredLines += $fileData['coveredstatements'];
+                break;
             }
         }
 
@@ -647,9 +653,11 @@ class FeatureCoverageAnalyzer
         ];
 
         foreach ($possiblePaths as $path) {
-            if (file_exists($path) || is_string($path) && $path === 'phpunit') {
-                return $path;
+            if (!(file_exists($path) || is_string($path) && $path === 'phpunit')) {
+                continue;
             }
+
+            return $path;
         }
 
         throw new Exception('PHPUnit binary not found');

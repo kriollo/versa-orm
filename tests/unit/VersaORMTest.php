@@ -78,8 +78,8 @@ final class VersaORMTest extends TestCase
         $orm = new VersaORM();
 
         // Ensure delegation does not throw
-        VersaModel::addTypeConverter('test_conv', fn($s, $p, $v) => $v, null);
-        $orm->addTypeConverter('test_conv2', fn($s, $p, $v) => $v, null);
+        VersaModel::addTypeConverter('test_conv', static fn($s, $p, $v) => $v, null);
+        $orm->addTypeConverter('test_conv2', static fn($s, $p, $v) => $v, null);
 
         self::assertTrue(true);
     }

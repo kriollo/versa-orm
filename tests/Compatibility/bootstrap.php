@@ -27,11 +27,13 @@ $autoloadPaths = [
 $autoloaded = false;
 
 foreach ($autoloadPaths as $autoloadPath) {
-    if (file_exists($autoloadPath)) {
-        require_once $autoloadPath;
-        $autoloaded = true;
-        break;
+    if (!file_exists($autoloadPath)) {
+        continue;
     }
+
+    require_once $autoloadPath;
+    $autoloaded = true;
+    break;
 }
 
 // Si no hay autoloader, cargar clases manualmente
@@ -44,9 +46,11 @@ if (!$autoloaded) {
     ];
 
     foreach ($versaormPaths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
+        if (!file_exists($path)) {
+            continue;
         }
+
+        require_once $path;
     }
 
     // Cargar clases de test
@@ -61,7 +65,7 @@ if (!$autoloaded) {
 $reportsDir = __DIR__ . '/../reports/php-compatibility';
 
 if (!is_dir($reportsDir)) {
-    mkdir($reportsDir, 0755, true);
+    mkdir($reportsDir, 0o755, true);
 }
 
 // Configurar variables de entorno para tests
@@ -93,9 +97,11 @@ $requiredExtensions = ['pdo', 'json', 'mbstring'];
 $missingExtensions = [];
 
 foreach ($requiredExtensions as $extension) {
-    if (!extension_loaded($extension)) {
-        $missingExtensions[] = $extension;
+    if (extension_loaded($extension)) {
+        continue;
     }
+
+    $missingExtensions[] = $extension;
 }
 
 if ($missingExtensions !== []) {
@@ -107,9 +113,11 @@ $recommendedExtensions = ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite', 'openssl', 'cu
 $missingRecommended = [];
 
 foreach ($recommendedExtensions as $extension) {
-    if (!extension_loaded($extension)) {
-        $missingRecommended[] = $extension;
+    if (extension_loaded($extension)) {
+        continue;
     }
+
+    $missingRecommended[] = $extension;
 }
 
 if ($missingRecommended !== []) {

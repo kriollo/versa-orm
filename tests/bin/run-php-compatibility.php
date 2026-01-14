@@ -26,11 +26,13 @@ $autoloadPaths = [
 $autoloaded = false;
 
 foreach ($autoloadPaths as $autoloadPath) {
-    if (file_exists($autoloadPath)) {
-        require_once $autoloadPath;
-        $autoloaded = true;
-        break;
+    if (!file_exists($autoloadPath)) {
+        continue;
     }
+
+    require_once $autoloadPath;
+    $autoloaded = true;
+    break;
 }
 
 if (!$autoloaded) {
@@ -171,7 +173,7 @@ class PHPCompatibilityCLI
         $format = $this->options['format'] ?? 'both';
 
         if (!is_dir($outputDir)) {
-            mkdir($outputDir, 0755, true);
+            mkdir($outputDir, 0o755, true);
         }
 
         $timestamp = date('Y-m-d_H-i-s');

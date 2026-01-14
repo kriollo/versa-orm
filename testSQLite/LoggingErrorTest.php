@@ -24,7 +24,7 @@ class LoggingErrorTest extends TestCase
             $this->cleanupLogs();
         }
         if (!is_dir($this->logDir)) {
-            mkdir($this->logDir, 0775, true);
+            mkdir($this->logDir, 0o775, true);
         }
 
         $config = [

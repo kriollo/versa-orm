@@ -216,27 +216,28 @@ function parseRectorOutput(string $output): array
     $lines = explode("\n", $output);
 
     foreach ($lines as $line) {
-        if (str_contains($line, 'Applied') || str_contains($line, '✓')) {
-            // Try to categorize the rule
-            $rule = trim($line);
-            $changes['rules_applied'][] = $rule;
+        if (!(str_contains($line, 'Applied') || str_contains($line, '✓'))) {
+            continue;
+        }
 
-            // Categorize rules
-            if (str_contains($rule, 'Type') || str_contains($rule, 'Return')) {
-                $changes['categories']['type_declarations']++;
-            } elseif (str_contains($rule, 'Quality') || str_contains($rule, 'Simplify')) {
-                $changes['categories']['code_quality']++;
-            } elseif (str_contains($rule, 'Dead') || str_contains($rule, 'Unused')) {
-                $changes['categories']['dead_code']++;
-            } elseif (str_contains($rule, 'Early') || str_contains($rule, 'Return')) {
-                $changes['categories']['early_return']++;
-            } elseif (str_contains($rule, 'Style') || str_contains($rule, 'Format')) {
-                $changes['categories']['coding_style']++;
-            } elseif (str_contains($rule, 'Php') || str_contains($rule, 'PHP')) {
-                $changes['categories']['php_upgrades']++;
-            } else {
-                $changes['categories']['other']++;
-            }
+        $rule = trim($line);
+        $changes['rules_applied'][] = $rule;
+
+        // Categorize rules
+        if (str_contains($rule, 'Type') || str_contains($rule, 'Return')) {
+            $changes['categories']['type_declarations']++;
+        } elseif (str_contains($rule, 'Quality') || str_contains($rule, 'Simplify')) {
+            $changes['categories']['code_quality']++;
+        } elseif (str_contains($rule, 'Dead') || str_contains($rule, 'Unused')) {
+            $changes['categories']['dead_code']++;
+        } elseif (str_contains($rule, 'Early') || str_contains($rule, 'Return')) {
+            $changes['categories']['early_return']++;
+        } elseif (str_contains($rule, 'Style') || str_contains($rule, 'Format')) {
+            $changes['categories']['coding_style']++;
+        } elseif (str_contains($rule, 'Php') || str_contains($rule, 'PHP')) {
+            $changes['categories']['php_upgrades']++;
+        } else {
+            $changes['categories']['other']++;
         }
     }
 
@@ -255,10 +256,12 @@ function displayChangeSummary(array $changes): void
     echo "📋 Categories:\n";
 
     foreach ($changes['categories'] as $category => $count) {
-        if ($count > 0) {
-            $categoryName = ucwords(str_replace('_', ' ', $category));
-            echo "  {$categoryName}: {$count}\n";
+        if ($count <= 0) {
+            continue;
         }
+
+        $categoryName = ucwords(str_replace('_', ' ', $category));
+        echo "  {$categoryName}: {$count}\n";
     }
 
     if (!empty($changes['rules_applied'])) {

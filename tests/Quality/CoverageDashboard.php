@@ -343,10 +343,12 @@ class CoverageDashboard
         $coverages = [];
 
         foreach ($coverageData['engines'] as $engine => $data) {
-            if (!isset($data['error'])) {
-                $engines[] = "'" . ucfirst($engine) . "'";
-                $coverages[] = $data['coverage'];
+            if (isset($data['error'])) {
+                continue;
             }
+
+            $engines[] = "'" . ucfirst($engine) . "'";
+            $coverages[] = $data['coverage'];
         }
 
         return json_encode([

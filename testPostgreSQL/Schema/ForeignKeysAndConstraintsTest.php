@@ -79,7 +79,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
     public function testForeignKeyWithArraySyntax(): void
     {
         // Crear tabla padre
-        $this->schema->create('test_documentos_carpetas', function ($table) {
+        $this->schema->create('test_documentos_carpetas', static function ($table) {
             $table->id();
             $table->string('nombre', 255);
             $table->string('codigo', 50)->unique();
@@ -87,7 +87,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Crear tabla hija con foreign key usando array (como pregunta el usuario)
-        $this->schema->create('test_documentos', function ($table) {
+        $this->schema->create('test_documentos', static function ($table) {
             $table->id();
             $table->string('titulo', 255);
             $table->unsignedBigInteger('parent_id')->nullable();
@@ -99,8 +99,8 @@ class ForeignKeysAndConstraintsTest extends TestCase
 
         // Verificar que las tablas se crearon correctamente
         $tables = $this->orm->schema('tables');
-        $this->assertContains('test_documentos_carpetas', $tables);
-        $this->assertContains('test_documentos', $tables);
+        static::assertContains('test_documentos_carpetas', $tables);
+        static::assertContains('test_documentos', $tables);
 
         // Probar inserción de datos
         $carpeta = VersaModel::dispense('test_documentos_carpetas');
@@ -113,14 +113,14 @@ class ForeignKeysAndConstraintsTest extends TestCase
         $documento->parent_id = $carpetaId;
         $documentoId = $documento->store();
 
-        $this->assertNotNull($documentoId);
-        $this->assertTrue($documentoId > 0);
+        static::assertNotNull($documentoId);
+        static::assertTrue($documentoId > 0);
     }
 
     public function testForeignKeyWithSimpleSyntax(): void
     {
         // Crear tabla usuarios
-        $this->schema->create('test_usuarios', function ($table) {
+        $this->schema->create('test_usuarios', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->string('email', 100)->unique();
@@ -128,7 +128,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Crear tabla con foreign key simple (sin array)
-        $this->schema->create('test_documentos', function ($table) {
+        $this->schema->create('test_documentos', static function ($table) {
             $table->id();
             $table->string('titulo', 255);
             $table->unsignedBigInteger('usuario_id');
@@ -138,13 +138,13 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->foreign('usuario_id')->references('id')->on('test_usuarios')->onDelete('RESTRICT'); // No permitir borrar usuario si tiene documentos
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCompositeForeignKeys(): void
     {
         // Tabla con clave primaria compuesta
-        $this->schema->create('test_composite_example', function ($table) {
+        $this->schema->create('test_composite_example', static function ($table) {
             $table->string('codigo_pais', 2);
             $table->string('codigo_ciudad', 10);
             $table->string('nombre', 100);
@@ -155,7 +155,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Tabla que referencia la clave compuesta
-        $this->schema->create('test_composite_child', function ($table) {
+        $this->schema->create('test_composite_child', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->string('pais_ref', 2);
@@ -174,20 +174,20 @@ class ForeignKeysAndConstraintsTest extends TestCase
              */
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testDifferentOnDeleteActions(): void
     {
         // Crear tabla roles
-        $this->schema->create('test_roles', function ($table) {
+        $this->schema->create('test_roles', static function ($table) {
             $table->id();
             $table->string('nombre', 50)->unique();
             $table->timestamps();
         });
 
         // Tabla usuarios con diferentes acciones on delete
-        $this->schema->create('test_usuarios', function ($table) {
+        $this->schema->create('test_usuarios', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->string('email', 100)->unique();
@@ -202,12 +202,12 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->foreign('rol_secundario_id')->references('id')->on('test_roles')->onDelete('SET NULL');
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testComprehensiveIndexTypes(): void
     {
-        $this->schema->create('test_productos', function ($table) {
+        $this->schema->create('test_productos', static function ($table) {
             $table->id();
             $table->string('nombre', 255);
             $table->string('sku', 100);
@@ -258,13 +258,13 @@ class ForeignKeysAndConstraintsTest extends TestCase
             // $table->index('precio', 'idx_precio_alto')->where('precio > 1000');
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testManyToManyRelationship(): void
     {
         // Tabla documentos
-        $this->schema->create('test_documentos', function ($table) {
+        $this->schema->create('test_documentos', static function ($table) {
             $table->id();
             $table->string('titulo', 255);
             $table->text('contenido');
@@ -272,7 +272,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Tabla tags
-        $this->schema->create('test_tags', function ($table) {
+        $this->schema->create('test_tags', static function ($table) {
             $table->id();
             $table->string('nombre', 100)->unique();
             $table->string('color', 7)->default('#000000'); // Color hex
@@ -280,7 +280,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Tabla pivot (many-to-many)
-        $this->schema->create('test_tag_documento', function ($table) {
+        $this->schema->create('test_tag_documento', static function ($table) {
             $table->id();
             $table->unsignedBigInteger('documento_id');
             $table->unsignedBigInteger('tag_id');
@@ -302,13 +302,13 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->index(['documento_id', 'orden']);
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testComplexConstraintsExample(): void
     {
         // Primero crear tabla usuarios (requerida por foreign key)
-        $this->schema->create('test_usuarios', function ($table) {
+        $this->schema->create('test_usuarios', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->string('email', 100)->unique();
@@ -316,7 +316,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Crear tabla productos (requerida por foreign key)
-        $this->schema->create('test_productos', function ($table) {
+        $this->schema->create('test_productos', static function ($table) {
             $table->id();
             $table->string('nombre', 255);
             $table->string('sku', 100)->unique();
@@ -327,7 +327,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Tabla de órdenes con múltiples constraints
-        $this->schema->create('test_ordenes', function ($table) {
+        $this->schema->create('test_ordenes', static function ($table) {
             $table->id();
             $table->string('numero_orden', 50);
             $table->decimal('subtotal', 12, 2)->default(0.00);
@@ -355,7 +355,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         });
 
         // Tabla de items de orden con constraints más complejos
-        $this->schema->create('test_orden_items', function ($table) {
+        $this->schema->create('test_orden_items', static function ($table) {
             $table->id();
             $table->unsignedBigInteger('orden_id');
             $table->unsignedBigInteger('producto_id');
@@ -378,13 +378,13 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->index(['precio_total', 'cantidad']); // Para reportes
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testSelfReferencingForeignKey(): void
     {
         // Tabla con foreign key que se referencia a sí misma (estructura de árbol)
-        $this->schema->create('test_categorias', function ($table) {
+        $this->schema->create('test_categorias', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->string('slug', 100)->unique();
@@ -404,7 +404,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->index(['activa', 'nivel']);
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testInsertDataWithForeignKeys(): void
@@ -414,14 +414,14 @@ class ForeignKeysAndConstraintsTest extends TestCase
         $this->schema->dropIfExists('test_usuarios');
 
         // Crear estructura básica
-        $this->schema->create('test_usuarios', function ($table) {
+        $this->schema->create('test_usuarios', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->string('email', 100)->unique();
             $table->timestamps();
         });
 
-        $this->schema->create('test_documentos', function ($table) {
+        $this->schema->create('test_documentos', static function ($table) {
             $table->id();
             $table->string('titulo', 255);
             $table->unsignedBigInteger('usuario_id');
@@ -442,18 +442,18 @@ class ForeignKeysAndConstraintsTest extends TestCase
         $documentoId = $documento->store();
 
         // Verificar que se insertaron correctamente
-        $this->assertNotNull($usuarioId);
-        $this->assertNotNull($documentoId);
-        $this->assertTrue($usuarioId > 0);
-        $this->assertTrue($documentoId > 0);
+        static::assertNotNull($usuarioId);
+        static::assertNotNull($documentoId);
+        static::assertTrue($usuarioId > 0);
+        static::assertTrue($documentoId > 0);
 
         // Verificar que la relación funciona
         $documentoRecuperado = VersaModel::load('test_documentos', $documentoId);
-        $this->assertEquals($usuarioId, $documentoRecuperado->usuario_id);
+        static::assertEquals($usuarioId, $documentoRecuperado->usuario_id);
 
         // Verificar que timestamps automáticos funcionan
-        $this->assertNotNull($documentoRecuperado->created_at);
-        $this->assertNotNull($documentoRecuperado->updated_at);
+        static::assertNotNull($documentoRecuperado->created_at);
+        static::assertNotNull($documentoRecuperado->updated_at);
     }
 
     public function testForeignKeyConstraintValidation(): void
@@ -463,13 +463,13 @@ class ForeignKeysAndConstraintsTest extends TestCase
         $this->schema->dropIfExists('test_usuarios');
 
         // Crear tablas con foreign key
-        $this->schema->create('test_usuarios', function ($table) {
+        $this->schema->create('test_usuarios', static function ($table) {
             $table->id();
             $table->string('nombre', 100);
             $table->timestamps();
         });
 
-        $this->schema->create('test_documentos', function ($table) {
+        $this->schema->create('test_documentos', static function ($table) {
             $table->id();
             $table->string('titulo', 255);
             $table->unsignedBigInteger('usuario_id');
@@ -489,7 +489,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
         $documento->usuario_id = $usuarioId;
         $documentoId = $documento->store();
 
-        $this->assertTrue($documentoId > 0);
+        static::assertTrue($documentoId > 0);
 
         // Intentar insertar documento con foreign key inválida debe fallar
         $this->expectException(\Exception::class);

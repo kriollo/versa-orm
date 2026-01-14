@@ -32,7 +32,7 @@ class PHPCSFixerAnalyzer
         $this->phpcsFixerPath = $phpcsFixerPath;
 
         if (!is_dir($this->reportsDir)) {
-            mkdir($this->reportsDir, 0755, true);
+            mkdir($this->reportsDir, 0o755, true);
         }
     }
 
@@ -220,11 +220,11 @@ exit 0
             $hooksDir = dirname($hookPath);
 
             if (!is_dir($hooksDir)) {
-                mkdir($hooksDir, 0755, true);
+                mkdir($hooksDir, 0o755, true);
             }
 
             file_put_contents($hookPath, $hookContent);
-            chmod($hookPath, 0755);
+            chmod($hookPath, 0o755);
 
             return [
                 'success' => true,
@@ -369,9 +369,11 @@ exit 0
         }
 
         foreach ($paths as $path) {
-            if (file_exists($path) || $this->commandExists($path)) {
-                return $path;
+            if (!(file_exists($path) || $this->commandExists($path))) {
+                continue;
             }
+
+            return $path;
         }
 
         // Fallback to composer execution

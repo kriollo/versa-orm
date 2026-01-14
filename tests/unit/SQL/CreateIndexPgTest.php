@@ -49,12 +49,14 @@ final class CreateIndexPgTest extends TestCase
 
         $found = false;
         foreach ($captured as $sql) {
-            if (stripos($sql, 'CREATE INDEX') !== false) {
-                $found = true;
-                self::assertStringContainsStringIgnoringCase('USING', $sql);
-                // Ensure USING is present before '('
-                self::assertMatchesRegularExpression('/USING\s+\w+\s*\(/i', $sql);
+            if (stripos($sql, 'CREATE INDEX') === false) {
+                continue;
             }
+
+            $found = true;
+            self::assertStringContainsStringIgnoringCase('USING', $sql);
+            // Ensure USING is present before '('
+            self::assertMatchesRegularExpression('/USING\s+\w+\s*\(/i', $sql);
         }
 
         self::assertTrue($found, 'No CREATE INDEX captured');

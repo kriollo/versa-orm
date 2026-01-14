@@ -386,9 +386,11 @@ class TestManager implements TestManagerInterface
     private function parseSkippedTests(array $output): int
     {
         foreach ($output as $line) {
-            if (preg_match('/Skipped: (\d+)/', $line, $matches)) {
-                return (int) $matches[1];
+            if (!preg_match('/Skipped: (\d+)/', $line, $matches)) {
+                continue;
             }
+
+            return (int) $matches[1];
         }
 
         return 0;
@@ -544,13 +546,15 @@ class TestManager implements TestManagerInterface
 
         // Verificar fallos críticos
         foreach ($results['unit_tests'] ?? [] as $engine => $result) {
-            if ($result->failed_tests > 0) {
-                $alerts[] = [
-                    'level' => 'error',
-                    'message' => "Unit tests failed for {$engine}: {$result->failed_tests} failures",
-                    'engine' => $engine,
-                ];
+            if ($result->failed_tests <= 0) {
+                continue;
             }
+
+            $alerts[] = [
+                'level' => 'error',
+                'message' => "Unit tests failed for {$engine}: {$result->failed_tests} failures",
+                'engine' => $engine,
+            ];
         }
 
         return $alerts;
@@ -569,12 +573,16 @@ class TestManager implements TestManagerInterface
         $total = 0;
 
         foreach ($results as $categoryResults) {
-            if (is_array($categoryResults)) {
-                foreach ($categoryResults as $result) {
-                    if (isset($result->executionTime)) {
-                        $total += $result->executionTime;
-                    }
+            if (!is_array($categoryResults)) {
+                continue;
+            }
+
+            foreach ($categoryResults as $result) {
+                if (!isset($result->executionTime)) {
+                    continue;
                 }
+
+                $total += $result->executionTime;
             }
         }
 

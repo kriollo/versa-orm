@@ -97,10 +97,12 @@ final class RelationsBelongsToManyTest extends TestCase
         self::assertSame('from', $query->called[0][0]);
         $foundExecute = false;
         foreach ($query->called as $c) {
-            if ($c[0] === 'execute') {
-                $foundExecute = true;
-                break;
+            if ($c[0] !== 'execute') {
+                continue;
             }
+
+            $foundExecute = true;
+            break;
         }
         self::assertTrue($foundExecute);
     }

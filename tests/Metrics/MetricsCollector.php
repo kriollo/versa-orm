@@ -381,7 +381,7 @@ class MetricsCollector
     private function ensureMetricsDirectory(): void
     {
         if (!is_dir($this->outputDir)) {
-            mkdir($this->outputDir, 0755, true);
+            mkdir($this->outputDir, 0o755, true);
         }
     }
 

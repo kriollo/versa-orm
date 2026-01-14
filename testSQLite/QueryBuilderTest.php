@@ -144,7 +144,7 @@ class QueryBuilderTest extends TestCase
     public function test_where_not_between(): void
     {
         $products = self::$orm->table('products')->whereNotBetween('price', 20, 30)->findAll();
-        $names = array_map(fn($p) => $p->name, $products);
+        $names = array_map(static fn($p) => $p->name, $products);
         static::assertContains('Keyboard', $names);
         static::assertContains('Monitor', $names);
         static::assertNotContains('Mouse', $names);
@@ -336,10 +336,10 @@ class QueryBuilderTest extends TestCase
         $rows = self::$orm
             ->table('posts')
             ->fromUnion([
-                function (QueryBuilder $q): void {
+                static function (QueryBuilder $q): void {
                     $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
                 },
-                function (QueryBuilder $q): void {
+                static function (QueryBuilder $q): void {
                     $q->select(['id', 'user_id', 'title'])->where('id', '=', 2);
                 },
             ], 'pu')
@@ -360,10 +360,10 @@ class QueryBuilderTest extends TestCase
             ->table('posts')
             ->fromUnion(
                 [
-                    function (QueryBuilder $q): void {
+                    static function (QueryBuilder $q): void {
                         $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
                     },
-                    function (QueryBuilder $q): void {
+                    static function (QueryBuilder $q): void {
                         $q->select(['id', 'user_id', 'title'])->where('id', '=', 1);
                     },
                 ],

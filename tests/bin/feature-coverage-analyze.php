@@ -205,26 +205,28 @@ function runAlertsAnalysis(FeatureCoverageAnalyzer $analyzer, array $options, Te
     $severityOrder = ['critical', 'high', 'medium', 'low'];
 
     foreach ($severityOrder as $severity) {
-        if (isset($alertsBySeverity[$severity])) {
-            echo strtoupper($severity) . " ALERTS:\n";
+        if (!isset($alertsBySeverity[$severity])) {
+            continue;
+        }
 
-            foreach ($alertsBySeverity[$severity] as $alert) {
-                echo "  {$alert['type']}: {$alert['message']}\n";
+        echo strtoupper($severity) . " ALERTS:\n";
 
-                if (isset($alert['feature'])) {
-                    echo "    Feature: {$alert['feature']}\n";
-                }
+        foreach ($alertsBySeverity[$severity] as $alert) {
+            echo "  {$alert['type']}: {$alert['message']}\n";
 
-                if (isset($alert['engines_affected'])) {
-                    echo '    Engines: ' . implode(', ', $alert['engines_affected']) . "\n";
-                }
-
-                if (isset($alert['missing_files'])) {
-                    echo '    Missing files: ' . implode(', ', $alert['missing_files']) . "\n";
-                }
-
-                echo "\n";
+            if (isset($alert['feature'])) {
+                echo "    Feature: {$alert['feature']}\n";
             }
+
+            if (isset($alert['engines_affected'])) {
+                echo '    Engines: ' . implode(', ', $alert['engines_affected']) . "\n";
+            }
+
+            if (isset($alert['missing_files'])) {
+                echo '    Missing files: ' . implode(', ', $alert['missing_files']) . "\n";
+            }
+
+            echo "\n";
         }
     }
 

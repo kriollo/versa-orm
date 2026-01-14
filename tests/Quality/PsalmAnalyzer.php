@@ -32,7 +32,7 @@ class PsalmAnalyzer
         $this->psalmPath = $psalmPath;
 
         if (!is_dir($this->reportsDir)) {
-            mkdir($this->reportsDir, 0755, true);
+            mkdir($this->reportsDir, 0o755, true);
         }
     }
 
@@ -379,9 +379,11 @@ class PsalmAnalyzer
         }
 
         foreach ($paths as $path) {
-            if (file_exists($path) || $this->commandExists($path)) {
-                return $path;
+            if (!(file_exists($path) || $this->commandExists($path))) {
+                continue;
             }
+
+            return $path;
         }
 
         // Fallback to composer execution
@@ -486,9 +488,11 @@ class PsalmAnalyzer
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator('src'));
 
         foreach ($iterator as $file) {
-            if ($file->getExtension() === 'php') {
-                $totalLines += count(file($file->getPathname()));
+            if ($file->getExtension() !== 'php') {
+                continue;
             }
+
+            $totalLines += count(file($file->getPathname()));
         }
 
         return $totalLines;

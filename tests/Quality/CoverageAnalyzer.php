@@ -116,7 +116,7 @@ class CoverageAnalyzer
 
         // Ensure reports directory exists
         if (!is_dir($reportsDir)) {
-            mkdir($reportsDir, 0755, true);
+            mkdir($reportsDir, 0o755, true);
         }
 
         // Run PHPUnit with coverage
@@ -394,14 +394,16 @@ class CoverageAnalyzer
             $gaps = [];
 
             foreach ($coverageData['file_details'] as $file) {
-                if ($file['coverage_percentage'] < $this->minimumCoverage) {
-                    $gaps[] = [
-                        'file' => $file['name'],
-                        'current_coverage' => $file['coverage_percentage'],
-                        'gap' => $this->minimumCoverage - $file['coverage_percentage'],
-                        'uncovered_lines' => $file['uncovered_lines'],
-                    ];
+                if ($file['coverage_percentage'] >= $this->minimumCoverage) {
+                    continue;
                 }
+
+                $gaps[] = [
+                    'file' => $file['name'],
+                    'current_coverage' => $file['coverage_percentage'],
+                    'gap' => $this->minimumCoverage - $file['coverage_percentage'],
+                    'uncovered_lines' => $file['uncovered_lines'],
+                ];
             }
 
             return $gaps;
@@ -602,9 +604,11 @@ class CoverageAnalyzer
         ];
 
         foreach ($possiblePaths as $path) {
-            if (file_exists($path) || is_string($path) && $path === 'phpunit') {
-                return $path;
+            if (!(file_exists($path) || is_string($path) && $path === 'phpunit')) {
+                continue;
             }
+
+            return $path;
         }
 
         throw new Exception('PHPUnit binary not found');

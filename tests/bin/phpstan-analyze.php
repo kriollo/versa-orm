@@ -166,9 +166,11 @@ class PHPStanCLI
     private function getOption(array $argv, string $option, string $default = ''): string
     {
         foreach ($argv as $arg) {
-            if (str_starts_with($arg, $option . '=')) {
-                return substr($arg, strlen($option) + 1);
+            if (!str_starts_with($arg, $option . '=')) {
+                continue;
             }
+
+            return substr($arg, strlen($option) + 1);
         }
 
         return $default;

@@ -119,7 +119,7 @@ class RelationshipsTest extends TestCase
 
         // Recargar y verificar
         $user = $user->fresh();
-        $roleIds = array_map(fn($role) => $role->id, $user->roles);
+        $roleIds = array_map(static fn($role) => $role->id, $user->roles);
         static::assertCount(2, $user->roles);
         static::assertContains($idViewer, $roleIds);
         static::assertContains($idExterno, $roleIds);
@@ -134,7 +134,7 @@ class RelationshipsTest extends TestCase
         $user = UserTestModel::findOne('users', 2);
         $user->roles()->attach(3);
         $user = $user->fresh();
-        $roleIds = array_map(fn($role) => $role->id, $user->roles);
+        $roleIds = array_map(static fn($role) => $role->id, $user->roles);
         static::assertContains(3, $roleIds);
     }
 

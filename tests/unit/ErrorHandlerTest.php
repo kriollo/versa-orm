@@ -56,7 +56,7 @@ final class ErrorHandlerTest extends TestCase
     {
         $tmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'versa_err_test_' . uniqid();
         // Ensure directory removed after
-        @mkdir($tmp, 0755, true);
+        @mkdir($tmp, 0o755, true);
 
         ErrorHandler::configureFromVersaORM(['log_path' => $tmp, 'debug' => true]);
 
@@ -65,7 +65,7 @@ final class ErrorHandlerTest extends TestCase
         self::assertStringContainsString('versa_err_test_', (string) ErrorHandler::getLogPath());
 
         $called = false;
-        ErrorHandler::setCustomHandler(function (array $data) use (&$called) {
+        ErrorHandler::setCustomHandler(static function (array $data) use (&$called) {
             $called = true;
         });
 
@@ -76,7 +76,7 @@ final class ErrorHandlerTest extends TestCase
         ob_start();
 
         try {
-            ErrorHandler::wrap(function () use ($ex) {
+            ErrorHandler::wrap(static function () use ($ex) {
                 throw $ex;
             }, ['ctx' => 'x']);
         } finally {

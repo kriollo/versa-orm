@@ -24,7 +24,7 @@ final class VersaORMSchemaOperationsTest extends TestCase
         self::assertContains('test_table', $tables);
 
         $columns = $orm->schema('columns', 'test_table');
-        $names = array_map(fn($c) => $c['name'] ?? $c['column_name'] ?? null, $columns);
+        $names = array_map(static fn($c) => $c['name'] ?? $c['column_name'] ?? null, $columns);
 
         self::assertContains('id', $names);
         self::assertContains('name', $names);

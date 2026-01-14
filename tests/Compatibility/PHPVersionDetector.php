@@ -148,9 +148,11 @@ class PHPVersionDetector
         $availableFeatures = [];
 
         foreach (self::$supportedVersions as $info) {
-            if ($currentVersionId >= $info['min_version_id']) {
-                $availableFeatures = array_merge($availableFeatures, $info['features']);
+            if ($currentVersionId < $info['min_version_id']) {
+                continue;
             }
+
+            $availableFeatures = array_merge($availableFeatures, $info['features']);
         }
 
         return array_unique($availableFeatures);

@@ -35,7 +35,7 @@ final class ErrorHandlerFormatTest extends TestCase
         self::assertNotEmpty($log);
 
         // wrap should accept a callable and return its result
-        $result = ErrorHandler::wrap(fn() => 'ok', ['ctx' => 1]);
+        $result = ErrorHandler::wrap(static fn() => 'ok', ['ctx' => 1]);
         self::assertSame('ok', $result);
     }
 }

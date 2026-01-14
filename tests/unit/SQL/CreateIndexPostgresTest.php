@@ -50,13 +50,15 @@ final class CreateIndexPostgresTest extends TestCase
         $indexSqlFound = false;
 
         foreach ($captured as $sql) {
-            if (stripos($sql, 'CREATE INDEX') !== false) {
-                $indexSqlFound = true;
-                // En Postgres sí esperamos USING BTREE si fue pedido
-                self::assertStringContainsString('USING BTREE', strtoupper($sql));
-                self::assertStringContainsString('(', $sql);
-                self::assertStringContainsString(')', $sql);
+            if (stripos($sql, 'CREATE INDEX') === false) {
+                continue;
             }
+
+            $indexSqlFound = true;
+            // En Postgres sí esperamos USING BTREE si fue pedido
+            self::assertStringContainsString('USING BTREE', strtoupper($sql));
+            self::assertStringContainsString('(', $sql);
+            self::assertStringContainsString(')', $sql);
         }
 
         self::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');

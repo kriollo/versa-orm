@@ -30,7 +30,7 @@ class PHPStanAnalyzer
         $this->phpstanPath = $phpstanPath;
 
         if (!is_dir($this->reportsDir)) {
-            mkdir($this->reportsDir, 0755, true);
+            mkdir($this->reportsDir, 0o755, true);
         }
     }
 
@@ -283,9 +283,11 @@ class PHPStanAnalyzer
         }
 
         foreach ($paths as $path) {
-            if (file_exists($path) || $this->commandExists($path)) {
-                return $path;
+            if (!(file_exists($path) || $this->commandExists($path))) {
+                continue;
             }
+
+            return $path;
         }
 
         // Fallback to composer execution
@@ -322,12 +324,14 @@ class PHPStanAnalyzer
 
         // Add other options
         foreach ($options as $key => $value) {
-            if (!in_array($key, ['memory-limit', 'error-format'], true)) {
-                if (is_bool($value) && $value) {
-                    $command .= ' --' . $key;
-                } elseif (!is_bool($value)) {
-                    $command .= ' --' . $key . '=' . $value;
-                }
+            if (in_array($key, ['memory-limit', 'error-format'], true)) {
+                continue;
+            }
+
+            if (is_bool($value) && $value) {
+                $command .= ' --' . $key;
+            } elseif (!is_bool($value)) {
+                $command .= ' --' . $key . '=' . $value;
             }
         }
 

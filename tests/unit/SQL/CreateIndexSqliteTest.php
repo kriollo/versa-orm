@@ -50,11 +50,13 @@ final class CreateIndexSqliteTest extends TestCase
         $indexSqlFound = false;
 
         foreach ($captured as $sql) {
-            if (stripos($sql, 'CREATE INDEX') !== false) {
-                $indexSqlFound = true;
-                // En sqlite no debería incluir USING BTREE
-                self::assertStringNotContainsString('USING BTREE', strtoupper($sql));
+            if (stripos($sql, 'CREATE INDEX') === false) {
+                continue;
             }
+
+            $indexSqlFound = true;
+            // En sqlite no debería incluir USING BTREE
+            self::assertStringNotContainsString('USING BTREE', strtoupper($sql));
         }
 
         self::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');

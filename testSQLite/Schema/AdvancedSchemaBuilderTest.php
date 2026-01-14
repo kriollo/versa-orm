@@ -52,7 +52,7 @@ class AdvancedSchemaBuilderTest extends TestCase
 
     public function testCanCreateTableWithIndexes(): void
     {
-        $this->schema->create('test_products', function ($table) {
+        $this->schema->create('test_products', static function ($table) {
             $table->id();
             $table->string('name', 150);
             $table->string('sku', 50)->unique();
@@ -67,13 +67,13 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->index(['name', 'active'], 'name_active_idx');
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCanCreateTableWithForeignKeys(): void
     {
         // Tabla padre
-        $this->schema->create('test_categories', function ($table) {
+        $this->schema->create('test_categories', static function ($table) {
             $table->id();
             $table->string('name', 100);
             $table->string('slug', 100)->unique();
@@ -81,7 +81,7 @@ class AdvancedSchemaBuilderTest extends TestCase
         });
 
         // Tabla con foreign key
-        $this->schema->create('test_products', function ($table) {
+        $this->schema->create('test_products', static function ($table) {
             $table->id();
             $table->string('name', 150);
             $table->unsignedBigInteger('category_id');
@@ -91,12 +91,12 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->foreign('category_id')->references('id')->on('test_categories')->onDelete('cascade');
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCanUseStaticFacade(): void
     {
-        VersaSchema::create('test_users', function ($table) {
+        VersaSchema::create('test_users', static function ($table) {
             $table->id();
             $table->string('name', 100);
             $table->string('email', 100)->unique();
@@ -106,13 +106,13 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->timestamps();
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCanModifyExistingTable(): void
     {
         // Crear tabla inicial
-        $this->schema->create('test_orders', function ($table) {
+        $this->schema->create('test_orders', static function ($table) {
             $table->id();
             $table->string('order_number', 50)->unique();
             $table->decimal('total', 10, 2);
@@ -120,18 +120,18 @@ class AdvancedSchemaBuilderTest extends TestCase
         });
 
         // Modificar tabla
-        $this->schema->table('test_orders', function ($table) {
+        $this->schema->table('test_orders', static function ($table) {
             $table->string('status', 50)->default('pending');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->json('metadata')->nullable();
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCanCreateTableWithSpecialTypes(): void
     {
-        $this->schema->create('test_users', function ($table) {
+        $this->schema->create('test_users', static function ($table) {
             $table->id();
             $table->string('name', 100);
             $table->string('email', 100)->unique();
@@ -144,13 +144,13 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->timestamps();
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCanDropTables(): void
     {
         // Crear una tabla temporal
-        $this->schema->create('test_temp_table', function ($table) {
+        $this->schema->create('test_temp_table', static function ($table) {
             $table->id();
             $table->string('data');
         });
@@ -159,7 +159,7 @@ class AdvancedSchemaBuilderTest extends TestCase
         $this->schema->drop('test_temp_table');
 
         // Verificar que la operación se completó sin errores
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testTypeTransparencyAcrossEngines(): void
@@ -167,7 +167,7 @@ class AdvancedSchemaBuilderTest extends TestCase
         // Este test verifica que los tipos se mapean correctamente
         // sin importar el motor de base de datos configurado
 
-        $this->schema->create('test_cross_engine', function ($table) {
+        $this->schema->create('test_cross_engine', static function ($table) {
             $table->id(); // AUTO_INCREMENT en MySQL, SERIAL en PostgreSQL, INTEGER PRIMARY KEY en SQLite
             $table->string('text_field', 100); // VARCHAR en MySQL/PostgreSQL, TEXT en SQLite
             $table->integer('number_field'); // INT en MySQL, INTEGER en PostgreSQL/SQLite
@@ -177,7 +177,7 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->timestamp('time_field')->nullable(); // TIMESTAMP en todos
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
 
         // Limpiar
         $this->schema->dropIfExists('test_cross_engine');

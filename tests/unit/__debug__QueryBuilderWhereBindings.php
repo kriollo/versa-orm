@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use VersaORM\QueryBuilder;
 
 require_once __DIR__ . '/../../testSQLite/bootstrap.php';

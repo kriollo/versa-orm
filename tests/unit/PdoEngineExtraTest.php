@@ -64,7 +64,7 @@ if (!class_exists(PdoEngineExtraTest::class)) {
             $engine = new PdoEngine(['driver' => 'sqlite', 'database' => ':memory:']);
 
             $called = [];
-            $engine->setLogger(function (string $msg, array $ctx = []) use (&$called) {
+            $engine->setLogger(static function (string $msg, array $ctx = []) use (&$called) {
                 $called[] = $msg;
             });
 

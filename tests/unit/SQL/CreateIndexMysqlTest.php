@@ -60,15 +60,17 @@ final class CreateIndexMysqlTest extends TestCase
         $indexSqlFound = false;
 
         foreach ($captured as $sql) {
-            if (stripos($sql, 'CREATE INDEX') !== false) {
-                $indexSqlFound = true;
-                // No debe contener 'USING BTREE (' seguido inmediatamente por '('
-                self::assertStringNotContainsString('USING BTREE (', strtoupper($sql));
-                // Debe contener 'USING BTREE' y la lista de columnas entre paréntesis
-                self::assertStringContainsString('USING BTREE', strtoupper($sql));
-                self::assertStringContainsString('(', $sql);
-                self::assertStringContainsString(')', $sql);
+            if (stripos($sql, 'CREATE INDEX') === false) {
+                continue;
             }
+
+            $indexSqlFound = true;
+            // No debe contener 'USING BTREE (' seguido inmediatamente por '('
+            self::assertStringNotContainsString('USING BTREE (', strtoupper($sql));
+            // Debe contener 'USING BTREE' y la lista de columnas entre paréntesis
+            self::assertStringContainsString('USING BTREE', strtoupper($sql));
+            self::assertStringContainsString('(', $sql);
+            self::assertStringContainsString(')', $sql);
         }
 
         self::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');

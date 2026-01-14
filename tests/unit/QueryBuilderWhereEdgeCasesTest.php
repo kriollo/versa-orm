@@ -43,10 +43,12 @@ final class QueryBuilderWhereEdgeCasesTest extends TestCase
         // category IN bindings may be nested as an array; ensure at least one binding array contains 1
         $found = false;
         foreach ($bindings as $b) {
-            if (is_array($b) && in_array(1, $b, true)) {
-                $found = true;
-                break;
+            if (!(is_array($b) && in_array(1, $b, true))) {
+                continue;
             }
+
+            $found = true;
+            break;
         }
         self::assertTrue($found, 'Expected to find value 1 inside nested bindings (IN clause)');
     }

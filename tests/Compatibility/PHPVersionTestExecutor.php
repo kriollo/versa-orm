@@ -193,17 +193,19 @@ class PHPVersionTestExecutor
             ];
 
             foreach ($versionTests as $versionId => $expectedFeatures) {
-                if ($currentVersionId >= $versionId) {
-                    foreach ($expectedFeatures as $feature) {
-                        $hasFeature = in_array($feature, $features, true);
-                        $tests["feature_{$feature}"] = [
-                            'status' => $hasFeature ? 'pass' : 'fail',
-                            'message' => $hasFeature
-                                ? "Feature {$feature} is available"
-                                : "Feature {$feature} should be available but is not detected",
-                            'details' => ['required_version' => $versionId, 'current_version' => $currentVersionId],
-                        ];
-                    }
+                if ($currentVersionId < $versionId) {
+                    continue;
+                }
+
+                foreach ($expectedFeatures as $feature) {
+                    $hasFeature = in_array($feature, $features, true);
+                    $tests["feature_{$feature}"] = [
+                        'status' => $hasFeature ? 'pass' : 'fail',
+                        'message' => $hasFeature
+                            ? "Feature {$feature} is available"
+                            : "Feature {$feature} should be available but is not detected",
+                        'details' => ['required_version' => $versionId, 'current_version' => $currentVersionId],
+                    ];
                 }
             }
 
@@ -217,16 +219,18 @@ class PHPVersionTestExecutor
             ];
 
             foreach ($functionTests as $function => $requiredVersion) {
-                if ($currentVersionId >= $requiredVersion) {
-                    $exists = function_exists($function);
-                    $tests["function_{$function}"] = [
-                        'status' => $exists ? 'pass' : 'fail',
-                        'message' => $exists
-                            ? "Function {$function} is available"
-                            : "Function {$function} should be available but is not",
-                        'details' => ['required_version' => $requiredVersion],
-                    ];
+                if ($currentVersionId < $requiredVersion) {
+                    continue;
                 }
+
+                $exists = function_exists($function);
+                $tests["function_{$function}"] = [
+                    'status' => $exists ? 'pass' : 'fail',
+                    'message' => $exists
+                        ? "Function {$function} is available"
+                        : "Function {$function} should be available but is not",
+                    'details' => ['required_version' => $requiredVersion],
+                ];
             }
         } catch (Exception $e) {
             $tests['feature_compatibility_error'] = [
@@ -634,13 +638,15 @@ class PHPVersionTestExecutor
         $totalTime = 0;
 
         foreach ($results as $result) {
-            if ($result instanceof TestResult) {
-                $totalTests += $result->total_tests;
-                $totalPassed += $result->passed_tests;
-                $totalFailed += $result->failed_tests;
-                $totalSkipped += $result->skipped_tests;
-                $totalTime += $result->execution_time;
+            if (!$result instanceof TestResult) {
+                continue;
             }
+
+            $totalTests += $result->total_tests;
+            $totalPassed += $result->passed_tests;
+            $totalFailed += $result->failed_tests;
+            $totalSkipped += $result->skipped_tests;
+            $totalTime += $result->execution_time;
         }
 
         return [
@@ -668,12 +674,14 @@ class PHPVersionTestExecutor
 
         // Analizar resultados para recomendaciones adicionales
         foreach ($results as $testType => $result) {
-            if ($result instanceof TestResult && $result->failed_tests > 0) {
-                $recommendations[] = [
-                    'type' => 'error',
-                    'message' => "Failed tests in {$testType}: {$result->failed_tests} out of {$result->total_tests}",
-                ];
+            if (!($result instanceof TestResult && $result->failed_tests > 0)) {
+                continue;
             }
+
+            $recommendations[] = [
+                'type' => 'error',
+                'message' => "Failed tests in {$testType}: {$result->failed_tests} out of {$result->total_tests}",
+            ];
         }
 
         return $recommendations;

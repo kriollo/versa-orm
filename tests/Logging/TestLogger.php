@@ -149,16 +149,18 @@ class TestLogger
             $lines = file($file, FILE_IGNORE_NEW_LINES);
 
             foreach ($lines as $lineNumber => $line) {
-                if (stripos($line, $pattern) !== false) {
-                    $results[] = [
-                        'file' => basename($file),
-                        'line_number' => $lineNumber + 1,
-                        'content' => $line,
-                    ];
+                if (stripos($line, $pattern) === false) {
+                    continue;
+                }
 
-                    if (count($results) >= $maxResults) {
-                        break 2;
-                    }
+                $results[] = [
+                    'file' => basename($file),
+                    'line_number' => $lineNumber + 1,
+                    'content' => $line,
+                ];
+
+                if (count($results) >= $maxResults) {
+                    break 2;
                 }
             }
         }
@@ -228,7 +230,7 @@ class TestLogger
     private function ensureLogDirectory(): void
     {
         if (!is_dir($this->outputDir)) {
-            mkdir($this->outputDir, 0755, true);
+            mkdir($this->outputDir, 0o755, true);
         }
     }
 

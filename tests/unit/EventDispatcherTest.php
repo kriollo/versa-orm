@@ -42,8 +42,8 @@ final class EventDispatcherTest extends TestCase
             }
         };
 
-        $dispatcher->listen('creating', fn(ModelEvent $e) => true);
-        $dispatcher->listen('creating', fn(ModelEvent $e) => false);
+        $dispatcher->listen('creating', static fn(ModelEvent $e) => true);
+        $dispatcher->listen('creating', static fn(ModelEvent $e) => false);
 
         $result = $dispatcher->dispatch('creating', new ModelEvent((object) [], []));
 
