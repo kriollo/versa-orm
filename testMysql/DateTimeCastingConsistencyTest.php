@@ -42,18 +42,18 @@ class DateTimeCastingConsistencyTest extends TestCase
         };
 
         $rows = self::$orm->table('posts_dt_cast', get_class($model))->get();
-        self::assertCount(2, $rows);
+        static::assertCount(2, $rows);
 
         foreach ($rows as $r) {
             if ($r['published_at'] !== null) {
-                self::assertInstanceOf(DateTimeInterface::class, $r['published_at']);
+                static::assertInstanceOf(DateTimeInterface::class, $r['published_at']);
             }
         }
 
         $first = self::$orm->table('posts_dt_cast', get_class($model))->firstArray();
 
         if ($first && $first['published_at'] !== null) {
-            self::assertInstanceOf(DateTimeInterface::class, $first['published_at']);
+            static::assertInstanceOf(DateTimeInterface::class, $first['published_at']);
         }
 
         $objects = self::$orm->table('posts_dt_cast', get_class($model))->findAll();
@@ -62,12 +62,12 @@ class DateTimeCastingConsistencyTest extends TestCase
             $data = $o->export();
 
             if ($data['published_at'] !== null) {
-                self::assertInstanceOf(DateTimeInterface::class, $data['published_at']);
+                static::assertInstanceOf(DateTimeInterface::class, $data['published_at']);
             }
         }
 
         $one = self::$orm->table('posts_dt_cast', get_class($model))->where('title', '=', 'P1')->findOne();
-        self::assertNotNull($one);
-        self::assertInstanceOf(DateTimeInterface::class, $one->export()['published_at']);
+        static::assertNotNull($one);
+        static::assertInstanceOf(DateTimeInterface::class, $one->export()['published_at']);
     }
 }

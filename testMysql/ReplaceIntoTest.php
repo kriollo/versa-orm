@@ -38,16 +38,16 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($newProduct);
 
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertSame(1, $result['rows_affected']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertSame(1, $result['rows_affected']);
 
         // Verificar que se insertó correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-NEW-001')->firstArray();
-        self::assertNotNull($inserted);
-        self::assertSame('Producto Replace Nuevo', $inserted['name']);
-        self::assertEquals(199.99, (float) $inserted['price']);
-        self::assertSame('Producto creado con REPLACE INTO', $inserted['description']);
+        static::assertNotNull($inserted);
+        static::assertSame('Producto Replace Nuevo', $inserted['name']);
+        static::assertEquals(199.99, (float) $inserted['price']);
+        static::assertSame('Producto creado con REPLACE INTO', $inserted['description']);
     }
 
     public function test_replace_into_existing_record(): void
@@ -76,18 +76,18 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($replacementProduct);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame(1, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(1, $result['rows_affected']);
 
         // Verificar que se reemplazó completamente (description debe ser NULL)
         $replaced = self::$orm->table('products')->where('sku', '=', 'REPLACE-EXIST-001')->firstArray();
-        self::assertNotNull($replaced);
-        self::assertSame('Producto Reemplazado', $replaced['name']);
-        self::assertEquals(250.00, (float) $replaced['price']);
-        self::assertSame(25, $replaced['stock']);
+        static::assertNotNull($replaced);
+        static::assertSame('Producto Reemplazado', $replaced['name']);
+        static::assertEquals(250.00, (float) $replaced['price']);
+        static::assertSame(25, $replaced['stock']);
 
         // La descripción debe ser NULL porque no se incluyó en el reemplazo
-        self::assertNull($replaced['description']);
+        static::assertNull($replaced['description']);
     }
 
     public function test_replace_into_with_all_fields(): void
@@ -104,16 +104,16 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($completeProduct);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame(1, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(1, $result['rows_affected']);
 
         // Verificar que todos los campos se guardaron
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-COMPLETE-001')->firstArray();
-        self::assertSame('Producto Completo', $inserted['name']);
-        self::assertEquals(399.99, (float) $inserted['price']);
-        self::assertSame(50, $inserted['stock']);
-        self::assertSame('Descripción completa del producto', $inserted['description']);
-        self::assertSame('Electronics', $inserted['category']);
+        static::assertSame('Producto Completo', $inserted['name']);
+        static::assertEquals(399.99, (float) $inserted['price']);
+        static::assertSame(50, $inserted['stock']);
+        static::assertSame('Descripción completa del producto', $inserted['description']);
+        static::assertSame('Electronics', $inserted['category']);
     }
 
     public function test_replace_into_with_null_values(): void
@@ -130,14 +130,14 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($productWithNulls);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los NULLs se manejaron correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-NULL-001')->firstArray();
-        self::assertSame('Producto con NULLs', $inserted['name']);
-        self::assertEquals(150.00, (float) $inserted['price']);
-        self::assertNull($inserted['description']);
-        self::assertNull($inserted['category']);
+        static::assertSame('Producto con NULLs', $inserted['name']);
+        static::assertEquals(150.00, (float) $inserted['price']);
+        static::assertNull($inserted['description']);
+        static::assertNull($inserted['category']);
     }
 
     public function test_replace_into_with_empty_data(): void
@@ -163,15 +163,15 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($productWithSpecialChars);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los caracteres especiales se guardaron correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-SPECIAL-001')->firstArray();
-        self::assertStringContainsString("'con'", $inserted['name']);
-        self::assertStringContainsString('"comillas"', $inserted['name']);
-        self::assertStringContainsString('ñáéíóú', $inserted['description']);
-        self::assertStringContainsString('@#$%', $inserted['description']);
-        self::assertSame('Categoría/Especial', $inserted['category']);
+        static::assertStringContainsString("'con'", $inserted['name']);
+        static::assertStringContainsString('"comillas"', $inserted['name']);
+        static::assertStringContainsString('ñáéíóú', $inserted['description']);
+        static::assertStringContainsString('@#$%', $inserted['description']);
+        static::assertSame('Categoría/Especial', $inserted['category']);
     }
 
     // ======================================================================
@@ -205,11 +205,11 @@ class ReplaceIntoTest extends TestCase
 
         // Verificar que UPSERT preservó los otros campos
         $afterUpsert = self::$orm->table('products')->where('sku', '=', 'COMPARE-001')->firstArray();
-        self::assertSame('Producto Actualizado UPSERT', $afterUpsert['name']);
-        self::assertEquals(150.00, (float) $afterUpsert['price']);
-        self::assertSame(10, $afterUpsert['stock']); // Preservado
-        self::assertSame('Descripción inicial', $afterUpsert['description']); // Preservado
-        self::assertSame('Categoría inicial', $afterUpsert['category']); // Preservado
+        static::assertSame('Producto Actualizado UPSERT', $afterUpsert['name']);
+        static::assertEquals(150.00, (float) $afterUpsert['price']);
+        static::assertSame(10, $afterUpsert['stock']); // Preservado
+        static::assertSame('Descripción inicial', $afterUpsert['description']); // Preservado
+        static::assertSame('Categoría inicial', $afterUpsert['category']); // Preservado
 
         // 3. Usar REPLACE INTO con los mismos datos parciales
         $replaceData = [
@@ -222,11 +222,11 @@ class ReplaceIntoTest extends TestCase
 
         // Verificar que REPLACE INTO eliminó los campos no especificados
         $afterReplace = self::$orm->table('products')->where('sku', '=', 'COMPARE-001')->firstArray();
-        self::assertSame('Producto Reemplazado REPLACE', $afterReplace['name']);
-        self::assertEquals(200.00, (float) $afterReplace['price']);
-        self::assertSame(0, $afterReplace['stock']); // Se resetea al valor por defecto (0), no NULL
-        self::assertNull($afterReplace['description']); // Se perdió
-        self::assertNull($afterReplace['category']); // Se perdió
+        static::assertSame('Producto Reemplazado REPLACE', $afterReplace['name']);
+        static::assertEquals(200.00, (float) $afterReplace['price']);
+        static::assertSame(0, $afterReplace['stock']); // Se resetea al valor por defecto (0), no NULL
+        static::assertNull($afterReplace['description']); // Se perdió
+        static::assertNull($afterReplace['category']); // Se perdió
     }
 
     // ======================================================================
@@ -247,7 +247,7 @@ class ReplaceIntoTest extends TestCase
             ];
 
             $result = self::$orm->table('products')->replaceInto($data);
-            self::assertSame('success', $result['status']);
+            static::assertSame('success', $result['status']);
         }
 
         $endTime = microtime(true);
@@ -256,10 +256,10 @@ class ReplaceIntoTest extends TestCase
         // Verificar que todas las operaciones fueron exitosas
         $count = self::$orm->table('products')->where('sku', 'LIKE', 'REPLACE-PERF-%')->count();
 
-        self::assertSame(20, $count);
+        static::assertSame(20, $count);
 
         // El tiempo debe ser razonable (menos de 3 segundos para 20 operaciones)
-        self::assertLessThan(
+        static::assertLessThan(
             3.0,
             $executionTime,
             "20 operaciones replaceInto tomaron demasiado tiempo: {$executionTime}s",
@@ -281,13 +281,13 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($largeDataProduct);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los datos grandes se guardaron correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-LARGE-001')->firstArray();
-        self::assertSame('Producto con Datos Grandes', $inserted['name']);
-        self::assertSame($largeDescription, $inserted['description']);
-        self::assertGreaterThan(5000, strlen($inserted['description']));
+        static::assertSame('Producto con Datos Grandes', $inserted['name']);
+        static::assertSame($largeDescription, $inserted['description']);
+        static::assertGreaterThan(5000, strlen($inserted['description']));
     }
 
     public function test_replace_into_idempotency(): void
@@ -302,24 +302,24 @@ class ReplaceIntoTest extends TestCase
 
         // Primera operación
         $result1 = self::$orm->table('products')->replaceInto($productData);
-        self::assertSame('success', $result1['status']);
+        static::assertSame('success', $result1['status']);
 
         $first = self::$orm->table('products')->where('sku', '=', 'REPLACE-IDEM-001')->firstArray();
 
         // Segunda operación con los mismos datos
         $result2 = self::$orm->table('products')->replaceInto($productData);
-        self::assertSame('success', $result2['status']);
+        static::assertSame('success', $result2['status']);
 
         $second = self::$orm->table('products')->where('sku', '=', 'REPLACE-IDEM-001')->firstArray();
 
         // Los resultados deben ser idénticos
-        self::assertSame($first['name'], $second['name']);
-        self::assertEquals((float) $first['price'], (float) $second['price']);
-        self::assertSame($first['stock'], $second['stock']);
+        static::assertSame($first['name'], $second['name']);
+        static::assertEquals((float) $first['price'], (float) $second['price']);
+        static::assertSame($first['stock'], $second['stock']);
 
         // Debe seguir habiendo solo un registro
         $count = self::$orm->table('products')->where('sku', '=', 'REPLACE-IDEM-001')->count();
-        self::assertSame(1, $count);
+        static::assertSame(1, $count);
     }
 
     public function test_replace_into_with_invalid_column_name(): void
@@ -358,11 +358,11 @@ class ReplaceIntoTest extends TestCase
         ];
 
         $result = self::$orm->table('products')->replaceInto($data);
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que se guardó correctamente
         $saved = self::$orm->table('products')->where('sku', '=', 'REPLACE-MODEL-001')->firstArray();
-        self::assertSame('Producto desde VersaModel', $saved['name']);
-        self::assertEquals(450.00, (float) $saved['price']);
+        static::assertSame('Producto desde VersaModel', $saved['name']);
+        static::assertEquals(450.00, (float) $saved['price']);
     }
 }

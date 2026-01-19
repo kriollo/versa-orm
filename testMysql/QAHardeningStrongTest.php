@@ -24,7 +24,7 @@ final class QAHardeningStrongTest extends TestCase
         $orm = self::$orm;
         // whereRaw seguro: con bindings
         $res = $orm->table('users')->whereRaw('name = ?', ['Alice'])->get();
-        self::assertIsArray($res);
+        static::assertIsArray($res);
         // whereRaw inseguro: sin placeholders y con ; DROP
         $this->expectException(Throwable::class);
         $orm->table('users')->whereRaw("name = 'x'; DROP TABLE users;", [])->get();

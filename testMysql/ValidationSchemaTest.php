@@ -71,7 +71,7 @@ class ValidationSchemaTest extends TestCase
         // Test: Datos válidos
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com', 'age' => 30, 'balance' => 1000.50]);
         $errors = $model->validate();
-        self::assertEmpty($errors, 'Valid data should not produce validation errors');
+        static::assertEmpty($errors, 'Valid data should not produce validation errors');
     }
 
     public function test_schema_validation_fails_on_required_fields(): void
@@ -101,8 +101,8 @@ class ValidationSchemaTest extends TestCase
         // Test: Campo requerido vacío
         $model->fill(['name' => '', 'email' => 'john@example.com']);
         $errors = $model->validate();
-        self::assertNotEmpty($errors);
-        self::assertContains('The name field is required.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name field is required.', $errors);
     }
 
     public function test_schema_validation_max_length(): void
@@ -126,8 +126,8 @@ class ValidationSchemaTest extends TestCase
         // Test: Exceder longitud máxima
         $model->fill(['name' => 'This is a very long name that exceeds the limit']);
         $errors = $model->validate();
-        self::assertNotEmpty($errors);
-        self::assertContains('The name may not be greater than 10 characters.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name may not be greater than 10 characters.', $errors);
     }
 
     public function test_schema_validation_data_types(): void
@@ -163,14 +163,14 @@ class ValidationSchemaTest extends TestCase
         // Test: Tipo de datos incorrecto para entero
         $model->fill(['age' => 'not-a-number']);
         $errors = $model->validate();
-        self::assertNotEmpty($errors);
-        self::assertContains('The age must be an integer.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The age must be an integer.', $errors);
 
         // Test: Tipo de datos incorrecto para decimal
         $model->fill(['balance' => 'not-a-decimal']);
         $errors = $model->validate();
-        self::assertNotEmpty($errors);
-        self::assertContains('The balance must be a number.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The balance must be a number.', $errors);
     }
 
     public function test_schema_validation_with_nullable_fields(): void
@@ -204,7 +204,7 @@ class ValidationSchemaTest extends TestCase
         // Test: Campos nullable con valores null
         $model->fill(['name' => 'John Doe', 'age' => null, 'bio' => null]);
         $errors = $model->validate();
-        self::assertEmpty($errors, 'Nullable fields with null values should be valid');
+        static::assertEmpty($errors, 'Nullable fields with null values should be valid');
     }
 
     public function test_schema_validation_fallback_to_basic(): void
@@ -223,7 +223,7 @@ class ValidationSchemaTest extends TestCase
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com']);
         $errors = $model->validate();
         // La validación básica no debería generar errores para estos datos
-        self::assertEmpty($errors);
+        static::assertEmpty($errors);
     }
 
     public function test_schema_validation_with_custom_rules(): void
@@ -258,9 +258,9 @@ class ValidationSchemaTest extends TestCase
         // Test: Combinación de validación de esquema y reglas personalizadas
         $model->fill(['name' => 'Jo', 'email' => 'invalid-email']);
         $errors = $model->validate();
-        self::assertNotEmpty($errors);
-        self::assertContains('The name must be at least 5 characters.', $errors);
-        self::assertContains('The email must be a valid email address.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name must be at least 5 characters.', $errors);
+        static::assertContains('The email must be a valid email address.', $errors);
     }
 
     public function test_schema_validation_missing_required_fields(): void
@@ -292,7 +292,7 @@ class ValidationSchemaTest extends TestCase
         // Test: Campos requeridos no enviados
         $model->fill(['name' => 'John Doe']); // email falta
         $errors = $model->validate();
-        self::assertNotEmpty($errors);
-        self::assertContains('The email field is required.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The email field is required.', $errors);
     }
 }

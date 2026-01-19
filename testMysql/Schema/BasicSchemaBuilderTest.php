@@ -56,19 +56,19 @@ class BasicSchemaBuilderTest extends TestCase
 
     public function testCanCreateBasicTable(): void
     {
-        $this->schema->create('test_users', function ($table) {
+        $this->schema->create('test_users', static function ($table) {
             $table->id();
             $table->string('name');
             $table->string('email', 100)->unique();
             $table->timestamps();
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function testCanCreateTableWithDifferentTypes(): void
     {
-        $this->schema->create('test_posts', function ($table) {
+        $this->schema->create('test_posts', static function ($table) {
             $table->id();
             $table->string('title', 200);
             $table->text('content');
@@ -80,6 +80,6 @@ class BasicSchemaBuilderTest extends TestCase
             $table->timestamps();
         });
 
-        $this->assertTrue(true);
+        static::assertTrue(true);
     }
 }

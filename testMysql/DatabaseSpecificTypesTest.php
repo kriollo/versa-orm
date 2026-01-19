@@ -58,7 +58,7 @@ class DatabaseSpecificTypesTest extends TestCase
     public function test_my_sql_specific_types(): void
     {
         if ($this->databaseType !== 'mysql') {
-            self::markTestSkipped('Este test requiere MySQL');
+            static::markTestSkipped('Este test requiere MySQL');
         }
 
         $this->orm->freeze(false);
@@ -68,30 +68,30 @@ class DatabaseSpecificTypesTest extends TestCase
         // Test ENUM
         $model->status = 'active';
         $model->store();
-        self::assertSame('active', $model->status);
+        static::assertSame('active', $model->status);
 
         // Test SET
         $model->tags = ['tag1', 'tag2', 'tag3'];
         $model->store();
-        self::assertIsArray($model->tags);
-        self::assertContains('tag1', $model->tags);
+        static::assertIsArray($model->tags);
+        static::assertContains('tag1', $model->tags);
 
         // Test JSON (MySQL 5.7+)
         $jsonData = ['key' => 'value', 'number' => 42];
         $model->metadata = $jsonData;
         $model->store();
-        self::assertSame($jsonData, $model->metadata);
+        static::assertSame($jsonData, $model->metadata);
 
         // Test DECIMAL con precisión
         $model->price = 123.456789;
         $model->store();
-        self::assertIsFloat($model->price);
+        static::assertIsFloat($model->price);
 
         // Test TIMESTAMP vs DATETIME
         $now = new DateTime();
         $model->created_at = $now;
         $model->store();
-        self::assertInstanceOf(DateTime::class, $model->created_at);
+        static::assertInstanceOf(DateTime::class, $model->created_at);
     }
 
     public function test_type_casting_consistency(): void
@@ -101,21 +101,21 @@ class DatabaseSpecificTypesTest extends TestCase
         // Test casting de string a JSON
         $model->metadata = '{"key": "value"}';
         $casted = $model->castToPhpType('metadata', $model->metadata);
-        self::assertIsArray($casted);
-        self::assertSame(['key' => 'value'], $casted);
+        static::assertIsArray($casted);
+        static::assertSame(['key' => 'value'], $casted);
 
         // Test casting de array a JSON string para DB
         $array = ['key' => 'value', 'number' => 42];
         $casted = $model->castToDatabaseType('metadata', $array);
-        self::assertIsString($casted);
-        self::assertSame('{"key":"value","number":42}', $casted);
+        static::assertIsString($casted);
+        static::assertSame('{"key":"value","number":42}', $casted);
 
         // Test UUID validation
         $validUuid = '550e8400-e29b-41d4-a716-446655440000';
-        self::assertTrue($this->isValidUuid($validUuid));
+        static::assertTrue($this->isValidUuid($validUuid));
 
         $invalidUuid = 'not-a-uuid';
-        self::assertFalse($this->isValidUuid($invalidUuid));
+        static::assertFalse($this->isValidUuid($invalidUuid));
     }
 
     public function test_binary_data_handling(): void
@@ -130,7 +130,7 @@ class DatabaseSpecificTypesTest extends TestCase
         $model->store();
 
         $decoded = base64_decode($model->binary_field, true);
-        self::assertSame($originalData, $decoded);
+        static::assertSame($originalData, $decoded);
     }
 
     public function test_complex_type_mapping(): void
@@ -154,9 +154,9 @@ class DatabaseSpecificTypesTest extends TestCase
         $model->complex_data = $complexData;
         $model->store();
 
-        self::assertIsArray($model->complex_data);
-        self::assertSame('dark', $model->complex_data['user_preferences']['theme']);
-        self::assertContains('admin', $model->complex_data['permissions']);
+        static::assertIsArray($model->complex_data);
+        static::assertSame('dark', $model->complex_data['user_preferences']['theme']);
+        static::assertContains('admin', $model->complex_data['permissions']);
     }
 
     public function test_type_validation_errors(): void
@@ -200,8 +200,8 @@ class DatabaseSpecificTypesTest extends TestCase
         $endTime = microtime(true);
         $executionTime = $endTime - $startTime;
 
-        self::assertLessThan(1.0, $executionTime, 'El casting debe ser rápido (<1s)');
-        self::assertSame($largeArray, $backToArray);
+        static::assertLessThan(1.0, $executionTime, 'El casting debe ser rápido (<1s)');
+        static::assertSame($largeArray, $backToArray);
     }
 
     private function getConfigForDatabase(string $type): array

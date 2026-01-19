@@ -36,8 +36,8 @@ final class DDLAlterOperationsTest extends TestCase
             'addIndex' => [['name' => 'idx_emp_email', 'columns' => ['email']]],
         ]);
         $idx = $orm->schema('indexes', 'emp');
-        self::assertIsArray($idx);
-        self::assertNotEmpty($idx);
+        static::assertIsArray($idx);
+        static::assertNotEmpty($idx);
 
         // add foreign key
         $orm->schemaAlter('emp', [
@@ -56,7 +56,7 @@ final class DDLAlterOperationsTest extends TestCase
         $orm->schemaAlter('emp', ['dropIndex' => ['idx_emp_email']]);
         $orm->schemaAlter('emp', ['dropForeign' => ['fk_emp_dept']]);
         $idx2 = $orm->schema('indexes', 'emp');
-        self::assertIsArray($idx2);
+        static::assertIsArray($idx2);
 
         // cleanup
         $orm->schemaDrop('emp');
@@ -97,9 +97,9 @@ final class DDLAlterOperationsTest extends TestCase
 
         $cols = $orm->schema('columns', 'tddl');
         $names = array_map(static fn($c) => (string) ($c['name'] ?? $c['column_name'] ?? ''), $cols);
-        self::assertContains('a_id', $names);
-        self::assertNotContains('a', $names);
-        self::assertNotContains('b', $names);
+        static::assertContains('a_id', $names);
+        static::assertNotContains('a', $names);
+        static::assertNotContains('b', $names);
 
         $orm->schemaDrop('tddl');
     }

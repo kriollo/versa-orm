@@ -35,14 +35,14 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')->insertMany($records);
 
-        self::assertIsArray($result);
-        self::assertSame(3, $result['total_inserted']);
-        self::assertSame(1, $result['batches_processed']);
-        self::assertSame('success', $result['status']);
+        static::assertIsArray($result);
+        static::assertSame(3, $result['total_inserted']);
+        static::assertSame(1, $result['batches_processed']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los registros se insertaron
         $count = self::$orm->table('users')->where('name', 'LIKE', 'Test User%')->count();
-        self::assertSame(3, $count);
+        static::assertSame(3, $count);
     }
 
     public function test_insert_many_with_batch_size(): void
@@ -60,10 +60,10 @@ class QueryBuilderBatchTest extends TestCase
         // Usar un batch size de 2 para probar el procesamiento en lotes
         $result = self::$orm->table('users')->insertMany($records, 2);
 
-        self::assertSame(5, $result['total_inserted']);
-        self::assertSame(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
-        self::assertSame(2, $result['batch_size']);
-        self::assertSame('success', $result['status']);
+        static::assertSame(5, $result['total_inserted']);
+        static::assertSame(3, $result['batches_processed']); // 5 registros en lotes de 2 = 3 lotes
+        static::assertSame(2, $result['batch_size']);
+        static::assertSame('success', $result['status']);
     }
 
     public function test_insert_many_empty_records(): void
@@ -145,13 +145,13 @@ class QueryBuilderBatchTest extends TestCase
             ->where('status', '=', $uniqueMarker . '_inactive')
             ->updateMany(['status' => $uniqueMarker . '_updated'], 1000);
 
-        self::assertIsArray($result);
-        self::assertSame(2, $result['rows_affected']);
-        self::assertSame('success', $result['status']);
+        static::assertIsArray($result);
+        static::assertSame(2, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que se actualizaron los registros correctos
         $updatedCount = self::$orm->table('users')->where('status', '=', $uniqueMarker . '_updated')->count();
-        self::assertSame(2, $updatedCount);
+        static::assertSame(2, $updatedCount);
     }
 
     public function test_update_many_with_max_records_limit(): void
@@ -210,9 +210,9 @@ class QueryBuilderBatchTest extends TestCase
             ->where('email', '=', 'nonexistent@example.com')
             ->updateMany(['status' => 'updated']);
 
-        self::assertSame(0, $result['rows_affected']);
-        self::assertSame('success', $result['status']);
-        self::assertSame('No records matched the WHERE conditions', $result['message']);
+        static::assertSame(0, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('No records matched the WHERE conditions', $result['message']);
     }
 
     // ======================================================================
@@ -232,16 +232,16 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')->where('status', '=', 'to_delete')->deleteMany(1000);
 
-        self::assertIsArray($result);
-        self::assertSame(2, $result['rows_affected']);
-        self::assertSame('success', $result['status']);
+        static::assertIsArray($result);
+        static::assertSame(2, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que se eliminaron los registros correctos
         $deletedCount = self::$orm->table('users')->where('status', '=', 'to_delete')->count();
-        self::assertSame(0, $deletedCount);
+        static::assertSame(0, $deletedCount);
 
         $remainingCount = self::$orm->table('users')->where('status', '=', 'keep')->count();
-        self::assertSame(1, $remainingCount);
+        static::assertSame(1, $remainingCount);
     }
 
     public function test_delete_many_with_max_records_limit(): void
@@ -277,9 +277,9 @@ class QueryBuilderBatchTest extends TestCase
     {
         $result = self::$orm->table('users')->where('email', '=', 'nonexistent_delete@example.com')->deleteMany();
 
-        self::assertSame(0, $result['rows_affected']);
-        self::assertSame('success', $result['status']);
-        self::assertSame('No records matched the WHERE conditions', $result['message']);
+        static::assertSame(0, $result['rows_affected']);
+        static::assertSame('success', $result['status']);
+        static::assertSame('No records matched the WHERE conditions', $result['message']);
     }
 
     // ======================================================================
@@ -308,22 +308,22 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('products')->upsertMany($records, ['sku'], ['name', 'price']);
 
-        self::assertIsArray($result);
-        self::assertSame(3, $result['total_processed']);
-        self::assertSame('success', $result['status']);
-        self::assertSame(['sku'], $result['unique_keys']);
-        self::assertSame(['name', 'price'], $result['update_columns']);
+        static::assertIsArray($result);
+        static::assertSame(3, $result['total_processed']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(['sku'], $result['unique_keys']);
+        static::assertSame(['name', 'price'], $result['update_columns']);
 
         // Verificar que los registros se actualizaron/crearon correctamente
         $updatedProduct1 = self::$orm->table('products')->where('sku', '=', 'UPSERT001')->firstArray();
 
         // Debug: Imprimir el producto completo
 
-        self::assertSame('Updated Product 1', $updatedProduct1['name']);
-        self::assertEquals(150.0, (float) $updatedProduct1['price'], 'Updated price should be 150.0', 0.01);
+        static::assertSame('Updated Product 1', $updatedProduct1['name']);
+        static::assertEquals(150.0, (float) $updatedProduct1['price'], 'Updated price should be 150.0', 0.01);
 
         $newProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT003')->firstArray();
-        self::assertSame('New Product 3', $newProduct['name']);
+        static::assertSame('New Product 3', $newProduct['name']);
     }
 
     public function test_upsert_many_empty_records(): void
@@ -397,16 +397,16 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($data, ['sku']);
 
-        self::assertIsArray($result);
-        self::assertSame('success', $result['status']);
-        self::assertSame(1, $result['rows_affected']);
-        self::assertSame(['sku'], $result['unique_keys']);
-        self::assertSame('products', $result['table']);
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertSame(1, $result['rows_affected']);
+        static::assertSame(['sku'], $result['unique_keys']);
+        static::assertSame('products', $result['table']);
 
         // Verificar que el registro se creó
         $created = self::$orm->table('products')->where('sku', '=', 'INDIVIDUAL_UPSERT001')->firstArray();
-        self::assertSame('Individual Upsert Product', $created['name']);
-        self::assertSame(199.99, (float) $created['price']);
+        static::assertSame('Individual Upsert Product', $created['name']);
+        static::assertSame(199.99, (float) $created['price']);
     }
 
     public function test_upsert_individual_update(): void
@@ -429,14 +429,14 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku'], ['name', 'price']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame(1, $result['rows_affected']);
-        self::assertSame(['name', 'price'], $result['update_columns']);
+        static::assertSame('success', $result['status']);
+        static::assertSame(1, $result['rows_affected']);
+        static::assertSame(['name', 'price'], $result['update_columns']);
 
         // Verificar que se actualizó
         $updated = self::$orm->table('products')->where('sku', '=', 'INDIVIDUAL_UPDATE001')->firstArray();
-        self::assertSame('Updated Individual Product', $updated['name']);
-        self::assertSame(150.0, (float) $updated['price']);
+        static::assertSame('Updated Individual Product', $updated['name']);
+        static::assertSame(150.0, (float) $updated['price']);
     }
 
     public function test_upsert_individual_without_update_columns(): void
@@ -458,13 +458,13 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('products')->upsert($updateData, ['sku']);
 
-        self::assertSame('success', $result['status']);
-        self::assertSame([], $result['update_columns']); // Sin columnas específicas
+        static::assertSame('success', $result['status']);
+        static::assertSame([], $result['update_columns']); // Sin columnas específicas
 
         // Verificar que se actualizó
         $updated = self::$orm->table('products')->where('sku', '=', 'NO_UPDATE_COLS001')->firstArray();
-        self::assertSame('Updated Product', $updated['name']);
-        self::assertSame(200.0, (float) $updated['price']);
+        static::assertSame('Updated Product', $updated['name']);
+        static::assertSame(200.0, (float) $updated['price']);
     }
 
     // ======================================================================
@@ -488,13 +488,13 @@ class QueryBuilderBatchTest extends TestCase
         $result = self::$orm->table('users')->insertMany($records, 25); // Lotes de 25
         $endTime = microtime(true);
 
-        self::assertSame(100, $result['total_inserted']);
-        self::assertSame(4, $result['batches_processed']); // 100/25 = 4 lotes
-        self::assertSame('success', $result['status']);
+        static::assertSame(100, $result['total_inserted']);
+        static::assertSame(4, $result['batches_processed']); // 100/25 = 4 lotes
+        static::assertSame('success', $result['status']);
 
         // Verificar que la operación fue razonablemente rápida (menos de 5 segundos)
         $executionTime = $endTime - $startTime;
-        self::assertLessThan(5.0, $executionTime, 'Batch operation should complete in reasonable time');
+        static::assertLessThan(5.0, $executionTime, 'Batch operation should complete in reasonable time');
 
         // Limpiar después del test
         self::$orm->table('users')->where('status', '=', 'performance_test')->deleteMany(200);
@@ -515,11 +515,11 @@ class QueryBuilderBatchTest extends TestCase
             self::$orm->table('users')->insertMany($records, 3); // Un solo lote
             // Si no falla, verificar que todos se insertaron
             $count = self::$orm->table('users')->where('status', '=', 'test')->count();
-            self::assertSame(3, $count);
+            static::assertSame(3, $count);
         } catch (Exception $e) {
             // Si falla, verificar que ninguno se insertó
             $count = self::$orm->table('users')->where('status', '=', 'test')->count();
-            self::assertSame(0, $count, 'No records should be inserted if batch fails');
+            static::assertSame(0, $count, 'No records should be inserted if batch fails');
         }
     }
 
@@ -534,16 +534,16 @@ class QueryBuilderBatchTest extends TestCase
 
         $result = self::$orm->table('users')->insertMany($records);
 
-        self::assertSame(4, $result['total_inserted']);
-        self::assertSame('success', $result['status']);
+        static::assertSame(4, $result['total_inserted']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que los caracteres especiales se guardaron correctamente
         $unicodeUser = self::$orm->table('users')->where('email', '=', 'unicode@example.com')->firstArray();
-        self::assertStringContainsString('áéíóú', $unicodeUser['name']);
-        self::assertStringContainsString('测试', $unicodeUser['name']);
+        static::assertStringContainsString('áéíóú', $unicodeUser['name']);
+        static::assertStringContainsString('测试', $unicodeUser['name']);
 
         $emojiUser = self::$orm->table('users')->where('email', '=', 'emoji@example.com')->firstArray();
-        self::assertStringContainsString('🚀', $emojiUser['name']);
+        static::assertStringContainsString('🚀', $emojiUser['name']);
 
         // Limpiar
         self::$orm->table('users')->where('status', '=', 'special')->deleteMany(10);
@@ -559,7 +559,7 @@ class QueryBuilderBatchTest extends TestCase
 
         // Insertar registros válidos primero
         $result = self::$orm->table('users')->insertMany($validRecords);
-        self::assertSame(2, $result['total_inserted']);
+        static::assertSame(2, $result['total_inserted']);
 
         // Ahora intentar actualización con condiciones que no matchean
         $updateResult = self::$orm
@@ -567,12 +567,12 @@ class QueryBuilderBatchTest extends TestCase
             ->where('status', '=', 'nonexistent_status')
             ->updateMany(['name' => 'Updated']);
 
-        self::assertSame(0, $updateResult['rows_affected']);
-        self::assertSame('No records matched the WHERE conditions', $updateResult['message']);
+        static::assertSame(0, $updateResult['rows_affected']);
+        static::assertSame('No records matched the WHERE conditions', $updateResult['message']);
 
         // Verificar que los registros originales siguen intactos
         $count = self::$orm->table('users')->where('status', '=', 'recovery')->count();
-        self::assertSame(2, $count);
+        static::assertSame(2, $count);
 
         // Limpiar
         self::$orm->table('users')->where('status', '=', 'recovery')->deleteMany(5);

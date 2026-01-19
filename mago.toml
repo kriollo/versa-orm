@@ -3,9 +3,9 @@
 php-version = "8.1.0"
 
 [source]
-paths = ["example/", "src/", "testPostgreSQL/", "testSQLite/", "tests/"]
+paths = ["example/", "src/", "testMysql/", "testPostgreSQL/", "testSQLite/", "tests/"]
 includes = []
-excludes = ["vendor"]
+excludes = ["vendor", "var", "build", ".php-cs-fixer.cache"]
 
 [formatter]
 print-width = 120

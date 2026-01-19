@@ -33,12 +33,12 @@ class JoinSubDiagnosticTest extends TestCase
         $users = self::$orm->table('users')->getAll();
         $posts = self::$orm->table('posts')->getAll();
 
-        self::assertGreaterThan(0, count($users));
-        self::assertGreaterThan(0, count($posts));
+        static::assertGreaterThan(0, count($users));
+        static::assertGreaterThan(0, count($posts));
 
         // Verificar datos base: usuarios y posts encontrados
-        self::assertGreaterThan(2, count($users), 'Should have at least 3 users');
-        self::assertGreaterThan(2, count($posts), 'Should have at least 3 posts');
+        static::assertGreaterThan(2, count($users), 'Should have at least 3 users');
+        static::assertGreaterThan(2, count($posts), 'Should have at least 3 posts');
     }
 
     // ======================================================================
@@ -53,8 +53,8 @@ class JoinSubDiagnosticTest extends TestCase
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->getAll();
 
-        self::assertGreaterThan(0, count($results));
-        self::assertGreaterThanOrEqual(3, count($results), 'Join should return at least 3 results');
+        static::assertGreaterThan(0, count($results));
+        static::assertGreaterThanOrEqual(3, count($results), 'Join should return at least 3 results');
     }
 
     // ======================================================================
@@ -66,15 +66,15 @@ class JoinSubDiagnosticTest extends TestCase
         $subquery = self::$orm->table('posts')->select(['user_id', 'COUNT(*) as post_count'])->groupBy('user_id');
 
         // Verificar que podemos construir la subconsulta
-        self::assertInstanceOf(QueryBuilder::class, $subquery);
+        static::assertInstanceOf(QueryBuilder::class, $subquery);
 
         // Intentar ejecutar la subconsulta directamente
         try {
             $subResults = $subquery->getAll();
-            self::assertGreaterThan(0, count($subResults));
-            self::assertGreaterThanOrEqual(2, count($subResults), 'Subquery should return at least 2 results');
+            static::assertGreaterThan(0, count($subResults));
+            static::assertGreaterThanOrEqual(2, count($subResults), 'Subquery should return at least 2 results');
         } catch (Exception $e) {
-            self::fail('Subquery execution failed: ' . $e->getMessage());
+            static::fail('Subquery execution failed: ' . $e->getMessage());
         }
     }
 
@@ -85,7 +85,7 @@ class JoinSubDiagnosticTest extends TestCase
     public function test_join_sub_method_exists(): void
     {
         $query = self::$orm->table('users');
-        self::assertTrue(method_exists($query, 'joinSub'));
+        static::assertTrue(method_exists($query, 'joinSub'));
     }
 
     // ======================================================================
@@ -102,7 +102,7 @@ class JoinSubDiagnosticTest extends TestCase
                 ->select(['users.name'])
                 ->joinSub($subquery, 'sub', 'users.id', '=', 'sub.user_id');
 
-            self::assertInstanceOf(QueryBuilder::class, $query);
+            static::assertInstanceOf(QueryBuilder::class, $query);
         } catch (Exception $e) {
             throw $e;
         }
@@ -125,7 +125,7 @@ class JoinSubDiagnosticTest extends TestCase
                 ->getAll();
 
             // Agregar debug para ver el SQL generado
-            self::assertIsArray($results);
+            static::assertIsArray($results);
         } catch (Exception $e) {
             throw $e;
         }
@@ -151,12 +151,12 @@ class JoinSubDiagnosticTest extends TestCase
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id')
                 ->getAll();
 
-            self::assertIsArray($results);
+            static::assertIsArray($results);
 
             foreach ($results as $result) {
-                self::assertArrayHasKey('name', $result);
-                self::assertArrayHasKey('post_count', $result);
-                self::assertGreaterThan(1, $result['post_count']);
+                static::assertArrayHasKey('name', $result);
+                static::assertArrayHasKey('post_count', $result);
+                static::assertGreaterThan(1, $result['post_count']);
             }
         } catch (Exception $e) {
             throw $e;
@@ -192,7 +192,7 @@ class JoinSubDiagnosticTest extends TestCase
                 ->joinSub($subquery, 'active_users', 'users.id', '=', 'active_users.user_id');
 
             // Intentar capturar el SQL sin ejecutar
-            self::assertInstanceOf(QueryBuilder::class, $query);
+            static::assertInstanceOf(QueryBuilder::class, $query);
         } catch (Exception $e) {
             throw $e;
         }
@@ -235,14 +235,14 @@ class JoinSubDiagnosticTest extends TestCase
             $stmt->execute([1]);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            self::assertIsArray($results);
+            static::assertIsArray($results);
 
             // Verificar estructura de datos
             if (!empty($results)) {
                 foreach ($results as $result) {
-                    self::assertArrayHasKey('name', $result);
-                    self::assertArrayHasKey('post_count', $result);
-                    self::assertGreaterThan(1, $result['post_count']);
+                    static::assertArrayHasKey('name', $result);
+                    static::assertArrayHasKey('post_count', $result);
+                    static::assertGreaterThan(1, $result['post_count']);
                 }
             }
         } catch (Exception $e) {
@@ -257,7 +257,7 @@ class JoinSubDiagnosticTest extends TestCase
             $simpleQuery = self::$orm->table('users')->limit(1);
             $result = $simpleQuery->getAll();
 
-            self::assertIsArray($result);
+            static::assertIsArray($result);
         } catch (Exception $e) {
             throw $e;
         }

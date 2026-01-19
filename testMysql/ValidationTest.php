@@ -38,8 +38,8 @@ class ValidationTest extends TestCase
 
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com']);
 
-        self::assertSame('John Doe', $model->name);
-        self::assertSame('john@example.com', $model->email);
+        static::assertSame('John Doe', $model->name);
+        static::assertSame('john@example.com', $model->email);
     }
 
     public function test_fillable_attributes_block_unallowed_fields(): void
@@ -97,9 +97,9 @@ class ValidationTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The name must be at least 3 characters.', $errors);
-        self::assertContains('The email must be a valid email address.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name must be at least 3 characters.', $errors);
+        static::assertContains('The email must be a valid email address.', $errors);
     }
 
     public function test_valid_model_passes_validation(): void
@@ -117,7 +117,7 @@ class ValidationTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertEmpty($errors);
+        static::assertEmpty($errors);
     }
 
     public function test_store_with_validation_failure_throws_exception(): void
@@ -145,9 +145,9 @@ class ValidationTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        self::assertTrue($model->isFillable('name'));
-        self::assertTrue($model->isFillable('email'));
-        self::assertFalse($model->isFillable('id'));
+        static::assertTrue($model->isFillable('name'));
+        static::assertTrue($model->isFillable('email'));
+        static::assertFalse($model->isFillable('id'));
     }
 
     public function test_is_guarded_method(): void
@@ -156,9 +156,9 @@ class ValidationTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        self::assertFalse($model->isGuarded('name'));
-        self::assertFalse($model->isGuarded('email'));
-        self::assertTrue($model->isGuarded('id'));
+        static::assertFalse($model->isGuarded('name'));
+        static::assertFalse($model->isGuarded('email'));
+        static::assertTrue($model->isGuarded('id'));
     }
 
     public function test_update_method_with_mass_assignment(): void
@@ -173,8 +173,8 @@ class ValidationTest extends TestCase
         // Actualizar con mass assignment
         $model->update(['name' => 'Jane Doe']);
 
-        self::assertSame('Jane Doe', $model->name);
-        self::assertSame('john@example.com', $model->email); // Email no cambia
+        static::assertSame('Jane Doe', $model->name);
+        static::assertSame('john@example.com', $model->email); // Email no cambia
     }
 
     public function test_create_static_method_with_validation(): void
@@ -190,8 +190,8 @@ class ValidationTest extends TestCase
 
         $instance = $model::create(['name' => 'John Doe', 'email' => 'john@example.com']);
 
-        self::assertSame('John Doe', $instance->name);
-        self::assertSame('john@example.com', $instance->email);
+        static::assertSame('John Doe', $instance->name);
+        static::assertSame('john@example.com', $instance->email);
     }
 
     public function test_max_length_validation_rule(): void
@@ -208,8 +208,8 @@ class ValidationTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The name may not be greater than 10 characters.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name may not be greater than 10 characters.', $errors);
     }
 
     public function test_numeric_validation_rule(): void
@@ -226,7 +226,7 @@ class ValidationTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The age must be numeric.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The age must be numeric.', $errors);
     }
 }

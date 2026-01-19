@@ -33,7 +33,7 @@ class SecurityTest extends TestCase
         $users = self::$orm->table('users')->where('email', '=', $maliciousInput)->getAll();
 
         // La consulta debe estar parametrizada, así que no debe retornar usuarios.
-        self::assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
+        static::assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
     }
 
     public function test_sql_injection_union_attack(): void
@@ -42,7 +42,7 @@ class SecurityTest extends TestCase
         $users = self::$orm->table('users')->where('id', '=', $unionAttack)->getAll();
 
         // No debe retornar datos debido a parametrización (ID 999 no existe)
-        self::assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
+        static::assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
     }
 
     public function test_sql_injection_boolean_attack(): void
@@ -56,7 +56,7 @@ class SecurityTest extends TestCase
 
         foreach ($booleanAttacks as $attack) {
             $users = self::$orm->table('users')->where('email', '=', $attack)->getAll();
-            self::assertCount(0, $users, "Boolean SQL injection was not prevented for: {$attack}");
+            static::assertCount(0, $users, "Boolean SQL injection was not prevented for: {$attack}");
         }
     }
 
@@ -70,7 +70,7 @@ class SecurityTest extends TestCase
 
         foreach ($stackedAttacks as $attack) {
             $users = self::$orm->table('users')->where('name', '=', $attack)->getAll();
-            self::assertCount(0, $users, "Stacked query injection was not prevented for: {$attack}");
+            static::assertCount(0, $users, "Stacked query injection was not prevented for: {$attack}");
         }
     }
 
@@ -82,7 +82,7 @@ class SecurityTest extends TestCase
     {
         // Uso correcto de whereRaw con parámetros
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
-        self::assertCount(1, $users, 'Properly parameterized whereRaw should work.');
+        static::assertCount(1, $users, 'Properly parameterized whereRaw should work.');
     }
 
     public function test_where_raw_injection_prevention(): void
@@ -93,10 +93,10 @@ class SecurityTest extends TestCase
         try {
             // Este caso debería funcionar pero sin causar daño debido a la parametrización
             $users = self::$orm->table('users')->whereRaw('id = ?', [$maliciousInput])->getAll();
-            self::assertCount(0, $users, 'whereRaw injection was not prevented.');
+            static::assertCount(0, $users, 'whereRaw injection was not prevented.');
         } catch (VersaORMException $e) {
             // Es aceptable que lance excepción si detecta el problema
-            self::assertStringContainsString('error', strtolower($e->getMessage()));
+            static::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -119,10 +119,10 @@ class SecurityTest extends TestCase
         foreach ($maliciousTableNames as $tableName) {
             try {
                 self::$orm->table($tableName)->getAll();
-                self::fail("Malicious table name '{$tableName}' should have been rejected.");
+                static::fail("Malicious table name '{$tableName}' should have been rejected.");
             } catch (VersaORMException $e) {
                 // Se espera que lance excepción
-                self::assertStringContainsString('error', strtolower($e->getMessage()));
+                static::assertStringContainsString('error', strtolower($e->getMessage()));
             }
         }
     }
@@ -140,10 +140,10 @@ class SecurityTest extends TestCase
         foreach ($maliciousColumns as $column) {
             try {
                 self::$orm->table('users')->select([$column])->getAll();
-                self::fail("Malicious column name '{$column}' should have been rejected.");
+                static::fail("Malicious column name '{$column}' should have been rejected.");
             } catch (VersaORMException $e) {
                 // Se espera que lance excepción
-                self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+                static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
             }
         }
     }
@@ -167,7 +167,7 @@ class SecurityTest extends TestCase
                 self::$orm->table($identifier)->count();
             } catch (VersaORMException $e) {
                 // Solo acepta errores de tabla no existente, no de identificador inválido
-                self::assertStringContainsString('Table', $e->getMessage());
+                static::assertStringContainsString('Table', $e->getMessage());
             }
         }
     }
@@ -182,9 +182,9 @@ class SecurityTest extends TestCase
 
         try {
             self::$orm->table('users')->orderBy($maliciousOrderBy, 'asc')->getAll();
-            self::fail('Malicious ORDER BY should have been rejected.');
+            static::fail('Malicious ORDER BY should have been rejected.');
         } catch (VersaORMException $e) {
-            self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+            static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
         }
     }
 
@@ -192,11 +192,11 @@ class SecurityTest extends TestCase
     {
         // LIMIT debe aceptar solo números enteros
         $users = self::$orm->table('users')->limit(1)->getAll();
-        self::assertCount(1, $users);
+        static::assertCount(1, $users);
 
         // Test con string numérico (debería convertirse)
         $users = self::$orm->table('users')->limit('2')->getAll();
-        self::assertLessThanOrEqual(2, count($users));
+        static::assertLessThanOrEqual(2, count($users));
     }
 
     // ======================================================================
@@ -224,7 +224,7 @@ class SecurityTest extends TestCase
             $user = self::$orm->table('users')->find($id);
 
             // El ORM debe almacenar el input tal como viene - es responsabilidad del desarrollador escapar en salida
-            self::assertSame($payload, $user->status, "XSS input should be stored as-is for payload: {$payload}");
+            static::assertSame($payload, $user->status, "XSS input should be stored as-is for payload: {$payload}");
 
             // Limpiar después del test
             self::$orm->table('users')->where('id', '=', $id)->delete();
@@ -251,7 +251,7 @@ class SecurityTest extends TestCase
                 ]);
 
             $user = self::$orm->table('users')->find($id);
-            self::assertSame($input, $user->status, "Special characters should be preserved: {$input}");
+            static::assertSame($input, $user->status, "Special characters should be preserved: {$input}");
 
             // Limpiar
             self::$orm->table('users')->where('id', '=', $id)->delete();
@@ -273,7 +273,7 @@ class SecurityTest extends TestCase
 
         foreach ($numericAttacks as $attack) {
             $users = self::$orm->table('users')->where('id', '=', $attack)->getAll();
-            self::assertCount(0, $users, "Numeric injection was not prevented for: {$attack}");
+            static::assertCount(0, $users, "Numeric injection was not prevented for: {$attack}");
         }
     }
 
@@ -292,8 +292,8 @@ class SecurityTest extends TestCase
 
         foreach ($maliciousBinds as $bind) {
             $result = self::$orm->exec('SELECT * FROM users WHERE email = ?', [$bind]);
-            self::assertIsArray($result, "Bind parameter injection test failed for: {$bind}");
-            self::assertCount(0, $result, "Malicious bind should not return results: {$bind}");
+            static::assertIsArray($result, "Bind parameter injection test failed for: {$bind}");
+            static::assertCount(0, $result, "Malicious bind should not return results: {$bind}");
         }
     }
 
@@ -322,13 +322,13 @@ class SecurityTest extends TestCase
 
             // Si la inserción es exitosa, verificar que los datos están seguros
             $user = self::$orm->table('users')->where('email', '=', 'typecast@example.com')->firstArray();
-            self::assertNotNull($user);
+            static::assertNotNull($user);
 
             // Limpiar
             self::$orm->table('users')->where('email', '=', 'typecast@example.com')->delete();
         } catch (VersaORMException $e) {
             // Es aceptable que falle si detecta el problema
-            self::assertStringContainsString('error', strtolower($e->getMessage()));
+            static::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -345,12 +345,12 @@ class SecurityTest extends TestCase
             $maliciousInput = "'; COMMIT; DROP TABLE users; START TRANSACTION; --";
             $users = self::$orm->table('users')->where('name', '=', $maliciousInput)->getAll();
 
-            self::assertCount(0, $users, 'Transaction injection was not prevented.');
+            static::assertCount(0, $users, 'Transaction injection was not prevented.');
 
             self::$orm->exec('ROLLBACK');
         } catch (VersaORMException $e) {
             // Las transacciones pueden fallar en el entorno de pruebas, eso está bien
-            self::assertStringContainsString('error', strtolower($e->getMessage()));
+            static::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -374,14 +374,14 @@ class SecurityTest extends TestCase
 
             $user = self::$orm->table('users')->find($id);
             // El string puede ser cortado por límites de la base de datos, eso está bien
-            self::assertNotEmpty($user->status, 'Long string should be stored (even if truncated).');
-            self::assertStringStartsWith('AAA', $user->status, 'Long string should start correctly.');
+            static::assertNotEmpty($user->status, 'Long string should be stored (even if truncated).');
+            static::assertStringStartsWith('AAA', $user->status, 'Long string should start correctly.');
 
             // Limpiar
             self::$orm->table('users')->where('id', '=', $id)->delete();
         } catch (VersaORMException $e) {
             // Es aceptable que falle por límites de columna
-            self::assertStringContainsString('error', strtolower($e->getMessage()));
+            static::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -391,7 +391,7 @@ class SecurityTest extends TestCase
         $nullByteAttack = "admin\x00'; DROP TABLE users; --";
 
         $users = self::$orm->table('users')->where('name', '=', $nullByteAttack)->getAll();
-        self::assertCount(0, $users, 'Null byte injection was not prevented.');
+        static::assertCount(0, $users, 'Null byte injection was not prevented.');
     }
 
     public function test_concurrent_security_operations(): void
@@ -407,7 +407,7 @@ class SecurityTest extends TestCase
 
         // Todos los resultados deben ser 0 (sin inyección exitosa)
         foreach ($results as $result) {
-            self::assertSame(0, $result, 'Concurrent security test failed.');
+            static::assertSame(0, $result, 'Concurrent security test failed.');
         }
     }
 }

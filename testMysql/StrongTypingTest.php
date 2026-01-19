@@ -30,58 +30,58 @@ class StrongTypingTest extends TestCase
     {
         $propertyTypes = TestTypedModel::getPropertyTypes();
 
-        self::assertIsArray($propertyTypes);
-        self::assertArrayHasKey('id', $propertyTypes);
-        self::assertArrayHasKey('name', $propertyTypes);
-        self::assertArrayHasKey('email', $propertyTypes);
-        self::assertArrayHasKey('settings', $propertyTypes);
-        self::assertArrayHasKey('uuid', $propertyTypes);
-        self::assertArrayHasKey('status', $propertyTypes);
-        self::assertArrayHasKey('tags', $propertyTypes);
-        self::assertArrayHasKey('created_at', $propertyTypes);
+        static::assertIsArray($propertyTypes);
+        static::assertArrayHasKey('id', $propertyTypes);
+        static::assertArrayHasKey('name', $propertyTypes);
+        static::assertArrayHasKey('email', $propertyTypes);
+        static::assertArrayHasKey('settings', $propertyTypes);
+        static::assertArrayHasKey('uuid', $propertyTypes);
+        static::assertArrayHasKey('status', $propertyTypes);
+        static::assertArrayHasKey('tags', $propertyTypes);
+        static::assertArrayHasKey('created_at', $propertyTypes);
 
-        self::assertSame('int', $propertyTypes['id']['type']);
-        self::assertSame('string', $propertyTypes['name']['type']);
-        self::assertSame('json', $propertyTypes['settings']['type']);
-        self::assertSame('uuid', $propertyTypes['uuid']['type']);
-        self::assertSame('enum', $propertyTypes['status']['type']);
-        self::assertSame('set', $propertyTypes['tags']['type']);
-        self::assertSame('datetime', $propertyTypes['created_at']['type']);
+        static::assertSame('int', $propertyTypes['id']['type']);
+        static::assertSame('string', $propertyTypes['name']['type']);
+        static::assertSame('json', $propertyTypes['settings']['type']);
+        static::assertSame('uuid', $propertyTypes['uuid']['type']);
+        static::assertSame('enum', $propertyTypes['status']['type']);
+        static::assertSame('set', $propertyTypes['tags']['type']);
+        static::assertSame('datetime', $propertyTypes['created_at']['type']);
     }
 
     public function test_cast_to_php_type_with_int(): void
     {
         $result = $this->model->castToPhpType('id', '123');
-        self::assertSame(123, $result);
-        self::assertIsInt($result);
+        static::assertSame(123, $result);
+        static::assertIsInt($result);
     }
 
     public function test_cast_to_php_type_with_float(): void
     {
         $model = new TestTypedModelWithFloat('test_table', null);
         $result = $model->castToPhpType('price', '19.99');
-        self::assertSame(19.99, $result);
-        self::assertIsFloat($result);
+        static::assertSame(19.99, $result);
+        static::assertIsFloat($result);
     }
 
     public function test_cast_to_php_type_with_string(): void
     {
         $result = $this->model->castToPhpType('name', 123);
-        self::assertSame('123', $result);
-        self::assertIsString($result);
+        static::assertSame('123', $result);
+        static::assertIsString($result);
     }
 
     public function test_cast_to_php_type_with_bool(): void
     {
         $model = new TestTypedModelWithBool('test_table', null);
 
-        self::assertTrue($model->castToPhpType('active', '1'));
-        self::assertTrue($model->castToPhpType('active', 'true'));
-        self::assertTrue($model->castToPhpType('active', 'yes'));
-        self::assertTrue($model->castToPhpType('active', 'on'));
-        self::assertFalse($model->castToPhpType('active', '0'));
-        self::assertFalse($model->castToPhpType('active', 'false'));
-        self::assertFalse($model->castToPhpType('active', 0));
+        static::assertTrue($model->castToPhpType('active', '1'));
+        static::assertTrue($model->castToPhpType('active', 'true'));
+        static::assertTrue($model->castToPhpType('active', 'yes'));
+        static::assertTrue($model->castToPhpType('active', 'on'));
+        static::assertFalse($model->castToPhpType('active', '0'));
+        static::assertFalse($model->castToPhpType('active', 'false'));
+        static::assertFalse($model->castToPhpType('active', 0));
     }
 
     public function test_cast_to_php_type_with_json(): void
@@ -89,8 +89,8 @@ class StrongTypingTest extends TestCase
         $jsonString = '{"key": "value", "number": 42}';
         $result = $this->model->castToPhpType('settings', $jsonString);
 
-        self::assertIsArray($result);
-        self::assertSame(['key' => 'value', 'number' => 42], $result);
+        static::assertIsArray($result);
+        static::assertSame(['key' => 'value', 'number' => 42], $result);
     }
 
     public function test_cast_to_php_type_with_invalid_json(): void
@@ -106,7 +106,7 @@ class StrongTypingTest extends TestCase
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $result = $this->model->castToPhpType('uuid', $uuid);
 
-        self::assertSame($uuid, $result);
+        static::assertSame($uuid, $result);
     }
 
     public function test_cast_to_php_type_with_invalid_uuid(): void
@@ -121,14 +121,14 @@ class StrongTypingTest extends TestCase
     {
         $result = $this->model->castToPhpType('created_at', '2023-01-01 12:00:00');
 
-        self::assertInstanceOf(DateTime::class, $result);
-        self::assertSame('2023-01-01 12:00:00', $result->format('Y-m-d H:i:s'));
+        static::assertInstanceOf(DateTime::class, $result);
+        static::assertSame('2023-01-01 12:00:00', $result->format('Y-m-d H:i:s'));
     }
 
     public function test_cast_to_php_type_with_enum(): void
     {
         $result = $this->model->castToPhpType('status', 'active');
-        self::assertSame('active', $result);
+        static::assertSame('active', $result);
     }
 
     public function test_cast_to_php_type_with_invalid_enum(): void
@@ -142,7 +142,7 @@ class StrongTypingTest extends TestCase
     public function test_cast_to_php_type_with_set(): void
     {
         $result = $this->model->castToPhpType('tags', 'work,personal');
-        self::assertSame(['work', 'personal'], $result);
+        static::assertSame(['work', 'personal'], $result);
     }
 
     public function test_cast_to_php_type_with_invalid_set(): void
@@ -159,20 +159,20 @@ class StrongTypingTest extends TestCase
         $jsonArray = '["item1", "item2", "item3"]';
         $result = $model->castToPhpType('items', $jsonArray);
 
-        self::assertIsArray($result);
-        self::assertSame(['item1', 'item2', 'item3'], $result);
+        static::assertIsArray($result);
+        static::assertSame(['item1', 'item2', 'item3'], $result);
     }
 
     public function test_cast_to_database_type_with_int(): void
     {
         $result = $this->model->castToDatabaseType('id', '123');
-        self::assertSame(123, $result);
+        static::assertSame(123, $result);
     }
 
     public function test_cast_to_database_type_with_string(): void
     {
         $result = $this->model->castToDatabaseType('name', 123);
-        self::assertSame('123', $result);
+        static::assertSame('123', $result);
     }
 
     public function test_cast_to_database_type_with_string_too_long(): void
@@ -188,8 +188,8 @@ class StrongTypingTest extends TestCase
     {
         $model = new TestTypedModelWithBool('test_table', null);
 
-        self::assertSame(1, $model->castToDatabaseType('active', true));
-        self::assertSame(0, $model->castToDatabaseType('active', false));
+        static::assertSame(1, $model->castToDatabaseType('active', true));
+        static::assertSame(0, $model->castToDatabaseType('active', false));
     }
 
     public function test_cast_to_database_type_with_json(): void
@@ -197,8 +197,8 @@ class StrongTypingTest extends TestCase
         $data = ['key' => 'value', 'number' => 42];
         $result = $this->model->castToDatabaseType('settings', $data);
 
-        self::assertIsString($result);
-        self::assertSame('{"key":"value","number":42}', $result);
+        static::assertIsString($result);
+        static::assertSame('{"key":"value","number":42}', $result);
     }
 
     public function test_cast_to_database_type_with_date_time(): void
@@ -206,26 +206,26 @@ class StrongTypingTest extends TestCase
         $dateTime = new DateTime('2023-01-01 12:00:00');
         $result = $this->model->castToDatabaseType('created_at', $dateTime);
 
-        self::assertSame('2023-01-01 12:00:00', $result);
+        static::assertSame('2023-01-01 12:00:00', $result);
     }
 
     public function test_cast_to_database_type_with_enum(): void
     {
         $result = $this->model->castToDatabaseType('status', 'active');
-        self::assertSame('active', $result);
+        static::assertSame('active', $result);
     }
 
     public function test_cast_to_database_type_with_set(): void
     {
         $result = $this->model->castToDatabaseType('tags', ['work', 'personal']);
-        self::assertSame('work,personal', $result);
+        static::assertSame('work,personal', $result);
     }
 
     public function test_cast_to_database_type_with_uuid(): void
     {
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
         $result = $this->model->castToDatabaseType('uuid', $uuid);
-        self::assertSame($uuid, $result);
+        static::assertSame($uuid, $result);
     }
 
     public function test_cast_to_database_type_with_invalid_uuid(): void
@@ -239,19 +239,19 @@ class StrongTypingTest extends TestCase
     public function test_cast_to_php_type_with_null_value(): void
     {
         $result = $this->model->castToPhpType('name', null);
-        self::assertNull($result);
+        static::assertNull($result);
     }
 
     public function test_cast_to_database_type_with_null_value(): void
     {
         $result = $this->model->castToDatabaseType('name', null);
-        self::assertNull($result);
+        static::assertNull($result);
     }
 
     public function test_cast_to_php_type_with_undefined_property(): void
     {
         $result = $this->model->castToPhpType('undefined_property', 'some_value');
-        self::assertSame('some_value', $result);
+        static::assertSame('some_value', $result);
     }
 
     public function test_clear_property_types_cache(): void
@@ -264,8 +264,8 @@ class StrongTypingTest extends TestCase
 
         // El cache debería estar limpio, pero los tipos deberían ser los mismos
         $propertyTypes = TestTypedModel::getPropertyTypes();
-        self::assertIsArray($propertyTypes);
-        self::assertArrayHasKey('id', $propertyTypes);
+        static::assertIsArray($propertyTypes);
+        static::assertArrayHasKey('id', $propertyTypes);
     }
 
     public function test_mutators_and_accessors(): void
@@ -275,10 +275,10 @@ class StrongTypingTest extends TestCase
         $mutators = $model->getMutators();
         $accessors = $model->getAccessors();
 
-        self::assertIsArray($mutators);
-        self::assertIsArray($accessors);
-        self::assertArrayHasKey('name', $mutators);
-        self::assertArrayHasKey('name', $accessors);
+        static::assertIsArray($mutators);
+        static::assertIsArray($accessors);
+        static::assertArrayHasKey('name', $mutators);
+        static::assertArrayHasKey('name', $accessors);
     }
 
     public function test_cast_with_inet_type(): void
@@ -286,10 +286,10 @@ class StrongTypingTest extends TestCase
         $model = new TestTypedModelWithInet('test_table', null);
 
         $result = $model->castToPhpType('ip_address', '192.168.1.1');
-        self::assertSame('192.168.1.1', $result);
+        static::assertSame('192.168.1.1', $result);
 
         $result = $model->castToDatabaseType('ip_address', '192.168.1.1');
-        self::assertSame('192.168.1.1', $result);
+        static::assertSame('192.168.1.1', $result);
     }
 
     public function test_cast_with_invalid_inet_type(): void

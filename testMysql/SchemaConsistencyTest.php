@@ -32,8 +32,8 @@ class SchemaConsistencyTest extends TestCase
         $model = new EmptySchemaModel('empty_table', null);
         $errors = $model->validateSchemaConsistency();
 
-        self::assertCount(1, $errors);
-        self::assertStringContainsString('No property types defined', $errors[0]);
+        static::assertCount(1, $errors);
+        static::assertStringContainsString('No property types defined', $errors[0]);
     }
 
     public function test_validate_schema_consistency_with_matching_types(): void
@@ -44,7 +44,7 @@ class SchemaConsistencyTest extends TestCase
         // For this test we'd need to mock the database schema response
         // Since we can't easily mock the getTableValidationSchema method in this context,
         // we'll create a more comprehensive test in a real environment
-        self::assertTrue(method_exists($model, 'validateSchemaConsistency'));
+        static::assertTrue(method_exists($model, 'validateSchemaConsistency'));
     }
 
     public function test_property_consistency_validation(): void
@@ -62,15 +62,15 @@ class SchemaConsistencyTest extends TestCase
         $dbColumn = ['data_type' => 'int', 'is_nullable' => 'NO'];
 
         $errors = $method->invokeArgs($model, ['id', $propertyDef, $dbColumn]);
-        self::assertEmpty($errors);
+        static::assertEmpty($errors);
 
         // Test type mismatch
         $propertyDef = ['type' => 'string', 'nullable' => false];
         $dbColumn = ['data_type' => 'int', 'is_nullable' => 'NO'];
 
         $errors = $method->invokeArgs($model, ['id', $propertyDef, $dbColumn]);
-        self::assertNotEmpty($errors);
-        self::assertStringContainsString('Type mismatch for property', $errors[0]);
+        static::assertNotEmpty($errors);
+        static::assertStringContainsString('Type mismatch for property', $errors[0]);
     }
 
     public function test_nullability_consistency_validation(): void
@@ -86,8 +86,8 @@ class SchemaConsistencyTest extends TestCase
         $dbColumn = ['data_type' => 'varchar', 'is_nullable' => 'YES'];
 
         $errors = $method->invokeArgs($model, ['name', $propertyDef, $dbColumn]);
-        self::assertNotEmpty($errors);
-        self::assertStringContainsString('Nullability mismatch for property', $errors[0]);
+        static::assertNotEmpty($errors);
+        static::assertStringContainsString('Nullability mismatch for property', $errors[0]);
     }
 
     public function test_length_consistency_validation(): void
@@ -103,8 +103,8 @@ class SchemaConsistencyTest extends TestCase
         $dbColumn = ['data_type' => 'varchar', 'character_maximum_length' => 255];
 
         $errors = $method->invokeArgs($model, ['name', $propertyDef, $dbColumn]);
-        self::assertNotEmpty($errors);
-        self::assertStringContainsString('Length mismatch for property', $errors[0]);
+        static::assertNotEmpty($errors);
+        static::assertStringContainsString('Length mismatch for property', $errors[0]);
     }
 
     public function test_type_compatibility_mapping(): void
@@ -145,11 +145,9 @@ class SchemaConsistencyTest extends TestCase
             $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
 
             // Filter out any unrelated errors, only check for type mismatch
-            $typeMismatchErrors = array_filter($errors, static function ($error) {
-                return strpos($error, 'Type mismatch') !== false;
-            });
+            $typeMismatchErrors = array_filter($errors, static fn($error) => strpos($error, 'Type mismatch') !== false);
 
-            self::assertEmpty(
+            static::assertEmpty(
                 $typeMismatchErrors,
                 "Type mismatch error found for compatible types: {$modelType} <-> {$dbType}",
             );
@@ -169,11 +167,9 @@ class SchemaConsistencyTest extends TestCase
         $dbColumn = ['data_type' => 'text', 'is_nullable' => 'YES'];
 
         $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
-        $typeMismatchErrors = array_filter($errors, static function ($error) {
-            return strpos($error, 'Type mismatch') !== false;
-        });
+        $typeMismatchErrors = array_filter($errors, static fn($error) => strpos($error, 'Type mismatch') !== false);
 
-        self::assertNotEmpty($typeMismatchErrors);
+        static::assertNotEmpty($typeMismatchErrors);
     }
 
     public function test_clear_database_schema_cache(): void
@@ -181,11 +177,11 @@ class SchemaConsistencyTest extends TestCase
         $model = new TestSchemaModel('test_table', null);
 
         // This method should exist and be callable
-        self::assertTrue(method_exists($model, 'clearDatabaseSchemaCache'));
+        static::assertTrue(method_exists($model, 'clearDatabaseSchemaCache'));
 
         // Should not throw any exceptions
         $model->clearDatabaseSchemaCache();
-        self::assertTrue(true); // Test passes if no exception is thrown
+        static::assertTrue(true); // Test passes if no exception is thrown
     }
 
     public function test_schema_consistency_integration(): void
@@ -194,11 +190,11 @@ class SchemaConsistencyTest extends TestCase
         $model = new TestSchemaModel('test_table', null);
 
         // The method should exist and be callable
-        self::assertTrue(method_exists($model, 'validateSchemaConsistency'));
+        static::assertTrue(method_exists($model, 'validateSchemaConsistency'));
 
         // Should return an array (even if empty due to no database connection)
         $result = $model->validateSchemaConsistency();
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 }
 

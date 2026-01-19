@@ -23,16 +23,16 @@ class VersaORMTest extends TestCase
 {
     public function test_connection(): void
     {
-        self::assertNotNull(self::$orm, 'ORM instance should not be null');
-        self::assertInstanceOf(VersaORM::class, self::$orm);
+        static::assertNotNull(self::$orm, 'ORM instance should not be null');
+        static::assertInstanceOf(VersaORM::class, self::$orm);
     }
 
     public function test_exec_select(): void
     {
         $users = self::$orm->exec('SELECT * FROM users WHERE status = ? ORDER BY id ASC', ['active']);
-        self::assertCount(2, $users);
-        self::assertSame('Alice', $users[0]['name']);
-        self::assertSame('Charlie', $users[1]['name']);
+        static::assertCount(2, $users);
+        static::assertSame('Alice', $users[0]['name']);
+        static::assertSame('Charlie', $users[1]['name']);
     }
 
     public function test_exec_insert()
@@ -40,7 +40,7 @@ class VersaORMTest extends TestCase
         $query = "INSERT INTO users (name, email) VALUES ('Test User Exec', 'exec@test.com')";
         $result = self::$orm->exec($query);
 
-        self::assertTrue(
+        static::assertTrue(
             $result === null || is_array($result) && count($result) === 0,
             'exec() should return null or empty array for non-select statements',
         );
@@ -50,14 +50,14 @@ class VersaORMTest extends TestCase
     {
         self::$orm->exec('UPDATE users SET status = ? WHERE email = ?', ['banned', 'alice@example.com']);
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-        self::assertSame('banned', $user->status);
+        static::assertSame('banned', $user->status);
     }
 
     public function test_exec_delete(): void
     {
         self::$orm->exec('DELETE FROM users WHERE email = ?', ['alice@example.com']);
         $user = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-        self::assertNull($user);
+        static::assertNull($user);
     }
 
     public function test_transaction_success(): void
@@ -70,8 +70,8 @@ class VersaORMTest extends TestCase
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
 
-        self::assertSame('pending', $alice->status);
-        self::assertSame('pending', $bob->status);
+        static::assertSame('pending', $alice->status);
+        static::assertSame('pending', $bob->status);
     }
 
     public function test_transaction_rollback(): void
@@ -87,33 +87,33 @@ class VersaORMTest extends TestCase
 
             // Verificar que el cambio temporal existe
             $tempAlice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-            self::assertSame('rollback_test', $tempAlice->status);
+            static::assertSame('rollback_test', $tempAlice->status);
 
             // Hacer rollback
             self::$orm->exec('ROLLBACK');
 
             // Verificar que volvió al estado original
             $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-            self::assertSame($originalStatus, $alice->status);
+            static::assertSame($originalStatus, $alice->status);
         } catch (Exception $e) {
             // Si las transacciones no funcionan en el binario actual, simplemente marcamos el test como incompleto
-            self::markTestIncomplete('Transactions may not be fully supported in current binary version');
+            static::markTestIncomplete('Transactions may not be fully supported in current binary version');
         }
     }
 
     public function test_schema_get_tables(): void
     {
         $tables = self::$orm->schema('tables');
-        self::assertContains('users', $tables);
-        self::assertContains('posts', $tables);
-        self::assertContains('products', $tables);
+        static::assertContains('users', $tables);
+        static::assertContains('posts', $tables);
+        static::assertContains('products', $tables);
     }
 
     public function test_schema_get_columns(): void
     {
         $columns = self::$orm->schema('columns', 'users');
-        self::assertIsArray($columns, 'Schema should return an array');
-        self::assertNotEmpty($columns, 'Schema should not be empty');
+        static::assertIsArray($columns, 'Schema should return an array');
+        static::assertNotEmpty($columns, 'Schema should not be empty');
 
         // The schema can return different structures - check for column names as values or keys
         $hasIdColumn = false;
@@ -164,9 +164,9 @@ class VersaORMTest extends TestCase
             }
         }
 
-        self::assertTrue($hasIdColumn, 'Schema should include id column');
-        self::assertTrue($hasNameColumn, 'Schema should include name column');
-        self::assertTrue($hasEmailColumn, 'Schema should include email column');
+        static::assertTrue($hasIdColumn, 'Schema should include id column');
+        static::assertTrue($hasNameColumn, 'Schema should include name column');
+        static::assertTrue($hasEmailColumn, 'Schema should include email column');
     }
 
     public function test_throws_exception_on_invalid_query(): void

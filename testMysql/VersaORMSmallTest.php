@@ -22,10 +22,10 @@ class VersaORMSmallTest extends TestCase
 
         $orm->setConfig(array_merge($orig, ['custom_flag' => true]));
         $cfg = $orm->getConfig();
-        self::assertArrayHasKey('custom_flag', $cfg);
+        static::assertArrayHasKey('custom_flag', $cfg);
 
         $qb = $orm->table('users');
-        self::assertInstanceOf(QueryBuilder::class, $qb);
+        static::assertInstanceOf(QueryBuilder::class, $qb);
     }
 
     public function test_set_and_get_timezone(): void
@@ -33,8 +33,8 @@ class VersaORMSmallTest extends TestCase
         $orm = self::$orm;
         $prev = date_default_timezone_get();
         $orm->setTimezone('UTC');
-        self::assertSame('UTC', $orm->getTimezone());
-        self::assertSame('UTC', date_default_timezone_get());
+        static::assertSame('UTC', $orm->getTimezone());
+        static::assertSame('UTC', date_default_timezone_get());
         // restore
         date_default_timezone_set($prev);
     }
@@ -43,7 +43,7 @@ class VersaORMSmallTest extends TestCase
     {
         $orm = self::$orm;
         $metrics = $orm->metrics();
-        self::assertIsArray($metrics);
+        static::assertIsArray($metrics);
 
         // metricsReset should not throw and should reset internal state
         $orm->metricsReset();
@@ -51,7 +51,7 @@ class VersaORMSmallTest extends TestCase
 
         // after disconnect metrics() should recreate engine and return array
         $metrics2 = $orm->metrics();
-        self::assertIsArray($metrics2);
+        static::assertIsArray($metrics2);
     }
 
     public function test_add_type_converter_and_execute_query_alias(): void
@@ -59,10 +59,10 @@ class VersaORMSmallTest extends TestCase
         $orm = self::$orm;
 
         // Delegate addTypeConverter - ensure it doesn't throw
-        $orm->addTypeConverter('test_conv', fn($v) => (string) $v, null);
+        $orm->addTypeConverter('test_conv', static fn($v) => (string) $v, null);
 
         // executeQuery wrapper should proxy to exec/raw; use a simple select
         $res = $orm->executeQuery('raw', ['query' => 'SELECT 1 as one', 'bindings' => []]);
-        self::assertNotNull($res);
+        static::assertNotNull($res);
     }
 }

@@ -38,18 +38,18 @@ class InetCastingConsistencyTest extends TestCase
         };
 
         $rows = self::$orm->table('access_logs_inet_cast', get_class($model))->get();
-        self::assertCount(1, $rows);
-        self::assertSame('2001:db8:85a3::8a2e:370:7334', $rows[0]['ip_address']);
+        static::assertCount(1, $rows);
+        static::assertSame('2001:db8:85a3::8a2e:370:7334', $rows[0]['ip_address']);
 
         $first = self::$orm->table('access_logs_inet_cast', get_class($model))->firstArray();
-        self::assertNotNull($first);
-        self::assertSame('2001:db8:85a3::8a2e:370:7334', $first['ip_address']);
+        static::assertNotNull($first);
+        static::assertSame('2001:db8:85a3::8a2e:370:7334', $first['ip_address']);
 
         $objects = self::$orm->table('access_logs_inet_cast', get_class($model))->findAll();
-        self::assertSame('2001:db8:85a3::8a2e:370:7334', $objects[0]->export()['ip_address']);
+        static::assertSame('2001:db8:85a3::8a2e:370:7334', $objects[0]->export()['ip_address']);
 
         $one = self::$orm->table('access_logs_inet_cast', get_class($model))->where('id', '=', 1)->findOne();
-        self::assertNotNull($one);
-        self::assertSame('2001:db8:85a3::8a2e:370:7334', $one->export()['ip_address']);
+        static::assertNotNull($one);
+        static::assertSame('2001:db8:85a3::8a2e:370:7334', $one->export()['ip_address']);
     }
 }

@@ -68,11 +68,11 @@ class AdvancedSQLTest extends TestCase
             'row_num',
         ); // PARTITION BY department // ORDER BY salary DESC
 
-        self::assertIsArray($result);
-        self::assertNotEmpty($result);
+        static::assertIsArray($result);
+        static::assertNotEmpty($result);
 
         // Verificar que el resultado contiene la función window
-        self::assertArrayHasKey('row_num', $result[0] ?? []);
+        static::assertArrayHasKey('row_num', $result[0] ?? []);
     }
 
     public function test_window_function_rank(): void
@@ -88,8 +88,8 @@ class AdvancedSQLTest extends TestCase
             'salary_rank',
         );
 
-        self::assertIsArray($result);
-        self::assertNotEmpty($result);
+        static::assertIsArray($result);
+        static::assertNotEmpty($result);
     }
 
     public function test_window_function_lag(): void
@@ -105,7 +105,7 @@ class AdvancedSQLTest extends TestCase
             'prev_salary',
         );
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_window_function_invalid_function(): void
@@ -130,7 +130,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->withCte($ctes, 'SELECT department, COUNT(*) as count FROM high_earners GROUP BY department', []);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_with_cte_recursive(): void
@@ -162,7 +162,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->withCte($ctes, 'SELECT * FROM employee_hierarchy ORDER BY level, name', []);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_with_cte_empty(): void
@@ -191,7 +191,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->union($queries, false); // false = UNION (no ALL)
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_union_all(): void
@@ -211,7 +211,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->union($queries, true); // true = UNION ALL
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_union_insufficient_queries(): void
@@ -235,7 +235,7 @@ class AdvancedSQLTest extends TestCase
             'employee_names',
         );
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_advanced_aggregation_percentile(): void
@@ -244,7 +244,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->advancedAggregation('percentile', 'salary', ['percentile' => 0.5], [], 'median_salary'); // Mediana
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_advanced_aggregation_median(): void
@@ -253,7 +253,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->advancedAggregation('median', 'salary', [], ['department'], 'median_dept_salary');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_advanced_aggregation_variance(): void
@@ -262,7 +262,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->advancedAggregation('variance', 'salary', [], [], 'salary_variance');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_advanced_aggregation_invalid_type(): void
@@ -289,7 +289,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->jsonOperation('extract', 'profile', '$.name');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_json_operation_array_length(): void
@@ -298,7 +298,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->jsonOperation('array_length', 'profile', '$.skills');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_json_operation_contains(): void
@@ -307,7 +307,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->jsonOperation('contains', 'profile', '$.skills', 'PHP');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_json_operation_search(): void
@@ -316,7 +316,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->jsonOperation('search', 'settings', '$.theme', 'dark');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_json_operation_invalid(): void
@@ -345,7 +345,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->fullTextSearch(['title', 'content'], 'SQL database');
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_full_text_search_empty_columns(): void
@@ -372,9 +372,9 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->getDriverCapabilities();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
         // SQLite debería reportar sus capacidades
-        self::assertArrayHasKey('driver', $result);
+        static::assertArrayHasKey('driver', $result);
     }
 
     public function test_optimize_query(): void
@@ -383,7 +383,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->optimizeQuery(['query' => 'SELECT * FROM test_table WHERE salary > 50000']);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_optimize_query_empty(): void
@@ -401,7 +401,7 @@ class AdvancedSQLTest extends TestCase
 
         $result = $qb->getDriverLimits();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_combined_advanced_features(): void
@@ -419,7 +419,7 @@ class AdvancedSQLTest extends TestCase
             'rank_in_dept',
         );
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_advanced_sql_with_invalid_column(): void

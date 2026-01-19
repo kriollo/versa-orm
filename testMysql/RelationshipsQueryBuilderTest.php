@@ -34,16 +34,16 @@ class RelationshipsQueryBuilderTest extends TestCase
     {
         $user = UserQBTestModel::findOne('users', 1);
         $count = $user->posts()->where('published', '=', true)->count();
-        self::assertIsInt($count);
-        self::assertGreaterThanOrEqual(0, $count);
+        static::assertIsInt($count);
+        static::assertGreaterThanOrEqual(0, $count);
     }
 
     public function test_first_post_via_relation_query_builder(): void
     {
         $user = UserQBTestModel::findOne('users', 1);
         $post = $user->posts()->orderBy('id', 'asc')->firstArray();
-        self::assertIsArray($post);
-        self::assertArrayHasKey('id', $post);
+        static::assertIsArray($post);
+        static::assertArrayHasKey('id', $post);
     }
 
     public function test_dual_access_consistency(): void
@@ -51,6 +51,6 @@ class RelationshipsQueryBuilderTest extends TestCase
         $user = UserQBTestModel::findOne('users', 1);
         $postsViaProperty = $user->posts;
         $postsViaMethod = $user->posts()->findAll();
-        self::assertEquals(count($postsViaProperty), count($postsViaMethod));
+        static::assertEquals(count($postsViaProperty), count($postsViaMethod));
     }
 }

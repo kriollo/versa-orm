@@ -31,7 +31,7 @@ class TrashAllTest extends TestCase
         // Verificar que existen en la base de datos
         foreach ($users as $user) {
             $dbUser = VersaModel::load('users', $user->id);
-            self::assertNotNull($dbUser);
+            static::assertNotNull($dbUser);
         }
 
         // Eliminar todos con trashAll
@@ -40,14 +40,14 @@ class TrashAllTest extends TestCase
         // Verificar que fueron eliminados
         foreach ($users as $user) {
             $deletedUser = VersaModel::load('users', $user->id);
-            self::assertNull($deletedUser);
+            static::assertNull($deletedUser);
         }
     }
 
     public function test_trash_all_with_empty_array_does_nothing(): void
     {
         VersaModel::trashAll([]); // No debe lanzar excepción
-        self::assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function test_trash_all_throws_on_invalid_input(): void

@@ -75,51 +75,51 @@ class RelationshipsTest extends TestCase
     public function test_has_one_relationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
-        self::assertInstanceOf(ProfileTestModel::class, $user->profile);
-        self::assertSame('Alice bio', $user->profile->bio);
+        static::assertInstanceOf(ProfileTestModel::class, $user->profile);
+        static::assertSame('Alice bio', $user->profile->bio);
     }
 
     public function test_belongs_to_relationship(): void
     {
         $profile = ProfileTestModel::findOne('profiles', 1);
-        self::assertInstanceOf(UserTestModel::class, $profile->user);
-        self::assertSame('Alice', $profile->user->name);
+        static::assertInstanceOf(UserTestModel::class, $profile->user);
+        static::assertSame('Alice', $profile->user->name);
     }
 
     public function test_has_many_relationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
-        self::assertIsArray($user->posts);
-        self::assertCount(2, $user->posts);
-        self::assertInstanceOf(PostTestModel::class, $user->posts[0]);
-        self::assertSame('Alice Post 1', $user->posts[0]->title);
+        static::assertIsArray($user->posts);
+        static::assertCount(2, $user->posts);
+        static::assertInstanceOf(PostTestModel::class, $user->posts[0]);
+        static::assertSame('Alice Post 1', $user->posts[0]->title);
     }
 
     public function test_belongs_to_many_relationship(): void
     {
         $user = UserTestModel::findOne('users', 1);
-        self::assertIsArray($user->roles);
-        self::assertCount(2, $user->roles);
-        self::assertInstanceOf(RoleTestModel::class, $user->roles[0]);
-        self::assertSame('Admin', $user->roles[0]->name);
+        static::assertIsArray($user->roles);
+        static::assertCount(2, $user->roles);
+        static::assertInstanceOf(RoleTestModel::class, $user->roles[0]);
+        static::assertSame('Admin', $user->roles[0]->name);
     }
 
     public function test_eager_loading_with_has_many(): void
     {
         $user = parent::$orm->table('users', UserTestModel::class)->with('posts')->findOne();
-        self::assertNotNull($user);
-        self::assertArrayHasKey('posts', $user->getRelations());
-        self::assertCount(2, $user->getRelations()['posts']);
-        self::assertSame('Alice Post 1', $user->getRelations()['posts'][0]->title);
+        static::assertNotNull($user);
+        static::assertArrayHasKey('posts', $user->getRelations());
+        static::assertCount(2, $user->getRelations()['posts']);
+        static::assertSame('Alice Post 1', $user->getRelations()['posts'][0]->title);
     }
 
     public function test_eager_loading_with_belongs_to(): void
     {
         $post = parent::$orm->table('posts', PostTestModel::class)->with('user')->findOne();
-        self::assertNotNull($post);
-        self::assertArrayHasKey('user', $post->getRelations());
-        self::assertInstanceOf(UserTestModel::class, $post->getRelations()['user']);
-        self::assertSame('Alice', $post->getRelations()['user']->name);
+        static::assertNotNull($post);
+        static::assertArrayHasKey('user', $post->getRelations());
+        static::assertInstanceOf(UserTestModel::class, $post->getRelations()['user']);
+        static::assertSame('Alice', $post->getRelations()['user']->name);
     }
 
     public function test_attach_and_detach(): void
@@ -130,12 +130,12 @@ class RelationshipsTest extends TestCase
         // Attach
         $user->roles()->attach(1); // Admin
         $attached = parent::$orm->table('role_user')->where('user_id', '=', 2)->where('role_id', '=', 1)->findOne();
-        self::assertNotNull($attached);
+        static::assertNotNull($attached);
 
         // Detach
         $user->roles()->detach(1);
         $detached = parent::$orm->table('role_user')->where('user_id', '=', 2)->where('role_id', '=', 1)->findOne();
-        self::assertNull($detached);
+        static::assertNull($detached);
     }
 
     public function test_sync(): void
@@ -146,8 +146,8 @@ class RelationshipsTest extends TestCase
         // Buscar dinámicamente los IDs de los roles 'Viewer' y 'externo'
         $viewerRole = parent::$orm->table('roles')->where('name', '=', 'Viewer')->findOne();
         $externoRole = parent::$orm->table('roles')->where('name', '=', 'externo')->findOne();
-        self::assertNotNull($viewerRole);
-        self::assertNotNull($externoRole);
+        static::assertNotNull($viewerRole);
+        static::assertNotNull($externoRole);
         $idViewer = $viewerRole->id;
         $idExterno = $externoRole->id;
 
@@ -160,20 +160,20 @@ class RelationshipsTest extends TestCase
 
         // Verificar estado inicial recargando
         $user = $user->fresh();
-        self::assertCount(2, $user->roles);
+        static::assertCount(2, $user->roles);
 
         // Sync: debe dejar solo Viewer y externo
         $result = $user->roles()->sync([$idViewer, $idExterno]);
-        self::assertArrayHasKey('attached', $result);
-        self::assertArrayHasKey('detached', $result);
+        static::assertArrayHasKey('attached', $result);
+        static::assertArrayHasKey('detached', $result);
 
         // Recargar y verificar
         $user = $user->fresh();
-        $roleIds = array_map(fn($role) => $role->id, $user->roles);
-        self::assertCount(2, $user->roles);
-        self::assertContains($idViewer, $roleIds);
-        self::assertContains($idExterno, $roleIds);
-        self::assertNotContains(1, $roleIds);
+        $roleIds = array_map(static fn($role) => $role->id, $user->roles);
+        static::assertCount(2, $user->roles);
+        static::assertContains($idViewer, $roleIds);
+        static::assertContains($idExterno, $roleIds);
+        static::assertNotContains(1, $roleIds);
 
         // atacho el rol 2
         $user->roles()->attach(2);
@@ -186,9 +186,9 @@ class RelationshipsTest extends TestCase
         parent::$orm->commit();
 
         $user = parent::$orm->table('users')->where('name', '=', 'Test Commit')->findOne();
-        self::assertNotNull($user);
-        self::assertSame('Test Commit', $user->name);
-        self::assertSame('test.commit@example.com', $user->email);
+        static::assertNotNull($user);
+        static::assertSame('Test Commit', $user->name);
+        static::assertSame('test.commit@example.com', $user->email);
     }
 
     // TODO: Comentado temporalmente - requiere mejoras en conexión CLI para transacciones

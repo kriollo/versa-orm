@@ -102,12 +102,12 @@
     "mago:lint": "mago lint src/",
     "mago:lint:fix": "mago lint --fix --unsafe",
     "fix": [
-      "@cs:fix",
       "@rector:fix",
-      "@mago:lint:fix"
+      "@cs:fix",
+      "@mago:lint:fix",
+      "@mago:fmt"
     ],
     "format": [
-      "@pint",
       "@mago:fmt"
     ],
     "rector:check": [

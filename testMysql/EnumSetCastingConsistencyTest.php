@@ -43,28 +43,28 @@ class EnumSetCastingConsistencyTest extends TestCase
         };
 
         $rows = self::$orm->table('labels_enum_cast', get_class($model))->get();
-        self::assertCount(2, $rows);
+        static::assertCount(2, $rows);
 
         foreach ($rows as $r) {
-            self::assertIsString($r['status']);
-            self::assertIsArray($r['tags']);
+            static::assertIsString($r['status']);
+            static::assertIsArray($r['tags']);
         }
 
         $first = self::$orm->table('labels_enum_cast', get_class($model))->firstArray();
-        self::assertNotNull($first);
-        self::assertIsString($first['status']);
-        self::assertIsArray($first['tags']);
+        static::assertNotNull($first);
+        static::assertIsString($first['status']);
+        static::assertIsArray($first['tags']);
 
         $objects = self::$orm->table('labels_enum_cast', get_class($model))->findAll();
 
         foreach ($objects as $o) {
             $data = $o->export();
-            self::assertIsString($data['status']);
-            self::assertIsArray($data['tags']);
+            static::assertIsString($data['status']);
+            static::assertIsArray($data['tags']);
         }
 
         $one = self::$orm->table('labels_enum_cast', get_class($model))->where('status', '=', 'active')->findOne();
-        self::assertNotNull($one);
-        self::assertIsArray($one->export()['tags']);
+        static::assertNotNull($one);
+        static::assertIsArray($one->export()['tags']);
     }
 }

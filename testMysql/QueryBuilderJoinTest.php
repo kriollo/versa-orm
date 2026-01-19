@@ -28,8 +28,8 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertCount(2, $posts);
-        self::assertSame('Alice', $posts[0]['author']);
+        static::assertCount(2, $posts);
+        static::assertSame('Alice', $posts[0]['author']);
     }
 
     public function test_left_join(): void
@@ -44,7 +44,7 @@ class QueryBuilderJoinTest extends TestCase
             ->whereNull('posts.id')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(2, count($users)); // Charlie and Eve have no posts
+        static::assertGreaterThanOrEqual(2, count($users)); // Charlie and Eve have no posts
     }
 
     public function test_right_join(): void
@@ -58,12 +58,12 @@ class QueryBuilderJoinTest extends TestCase
             ->getAll();
 
         // Should return at least the existing posts
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
 
         // Verify structure - should have columns from both tables
         foreach ($results as $result) {
-            self::assertArrayHasKey('title', $result);
-            self::assertArrayHasKey('name', $result);
+            static::assertArrayHasKey('title', $result);
+            static::assertArrayHasKey('name', $result);
         }
     }
 
@@ -80,12 +80,12 @@ class QueryBuilderJoinTest extends TestCase
             ->getAll();
 
         // Should include all users and all posts
-        self::assertGreaterThanOrEqual(3, count($results));
+        static::assertGreaterThanOrEqual(3, count($results));
 
         // Verify structure - should have columns from both tables
         foreach ($results as $result) {
-            self::assertArrayHasKey('name', $result);
-            self::assertArrayHasKey('title', $result);
+            static::assertArrayHasKey('name', $result);
+            static::assertArrayHasKey('title', $result);
         }
     }
 
@@ -100,12 +100,12 @@ class QueryBuilderJoinTest extends TestCase
             ->getAll();
 
         // CROSS JOIN should return Cartesian product
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
 
         // Verify structure - each result should have both user and post
         foreach ($results as $result) {
-            self::assertArrayHasKey('user_name', $result);
-            self::assertArrayHasKey('post_title', $result);
+            static::assertArrayHasKey('user_name', $result);
+            static::assertArrayHasKey('post_title', $result);
         }
     }
 
@@ -119,11 +119,11 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
 
         foreach ($results as $result) {
-            self::assertArrayHasKey('title', $result);
-            self::assertArrayHasKey('author', $result);
+            static::assertArrayHasKey('title', $result);
+            static::assertArrayHasKey('author', $result);
         }
     }
 
@@ -139,10 +139,10 @@ class QueryBuilderJoinTest extends TestCase
             ->where('u.status', '=', 'active')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
 
         foreach ($results as $r) {
-            self::assertArrayHasKey('author', $r);
+            static::assertArrayHasKey('author', $r);
         }
     }
 
@@ -156,11 +156,11 @@ class QueryBuilderJoinTest extends TestCase
             ->where('posts.title', 'LIKE', '%Post%')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
 
         foreach ($results as $result) {
-            self::assertStringContainsString('Post', $result['title']);
-            self::assertSame('Alice', $result['name']); // Solo Alice tiene status 'active' y posts
+            static::assertStringContainsString('Post', $result['title']);
+            static::assertSame('Alice', $result['name']); // Solo Alice tiene status 'active' y posts
         }
     }
 
@@ -173,13 +173,13 @@ class QueryBuilderJoinTest extends TestCase
         // Test that new JOIN methods exist and are chainable
         $query = self::$orm->table('users');
 
-        self::assertTrue(method_exists($query, 'rightJoin'));
-        self::assertTrue(method_exists($query, 'fullOuterJoin'));
-        self::assertTrue(method_exists($query, 'crossJoin'));
+        static::assertTrue(method_exists($query, 'rightJoin'));
+        static::assertTrue(method_exists($query, 'fullOuterJoin'));
+        static::assertTrue(method_exists($query, 'crossJoin'));
 
         // Test method chaining
         $chainedQuery = $query->rightJoin('posts', 'users.id', '=', 'posts.user_id');
-        self::assertInstanceOf(QueryBuilder::class, $chainedQuery);
+        static::assertInstanceOf(QueryBuilder::class, $chainedQuery);
     }
 
     public function test_join_sql_generation(): void
@@ -191,15 +191,15 @@ class QueryBuilderJoinTest extends TestCase
             ->select(['users.name', 'posts.title'])
             ->rightJoin('posts', 'users.id', '=', 'posts.user_id');
 
-        self::assertInstanceOf(QueryBuilder::class, $query);
+        static::assertInstanceOf(QueryBuilder::class, $query);
 
         $query2 = self::$orm->table('users')->fullOuterJoin('posts', 'users.id', '=', 'posts.user_id');
 
-        self::assertInstanceOf(QueryBuilder::class, $query2);
+        static::assertInstanceOf(QueryBuilder::class, $query2);
 
         $query3 = self::$orm->table('users')->crossJoin('posts');
 
-        self::assertInstanceOf(QueryBuilder::class, $query3);
+        static::assertInstanceOf(QueryBuilder::class, $query3);
     }
 
     // ======================================================================
@@ -214,7 +214,7 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.id', '=', 99999) // Non-existent user
             ->getAll();
 
-        self::assertCount(0, $results);
+        static::assertCount(0, $results);
     }
 
     public function test_join_chaining(): void
@@ -226,12 +226,12 @@ class QueryBuilderJoinTest extends TestCase
             ->rightJoin('tags', 'posts.id', '=', 'tags.post_id');
 
         // Test that the query builder is chainable
-        self::assertInstanceOf(QueryBuilder::class, $query);
+        static::assertInstanceOf(QueryBuilder::class, $query);
 
         // Test that we can continue building the query
         $finalQuery = $query->select(['posts.title', 'users.name'])->where('users.status', '=', 'active');
 
-        self::assertInstanceOf(QueryBuilder::class, $finalQuery);
+        static::assertInstanceOf(QueryBuilder::class, $finalQuery);
     }
 
     public function test_join_with_subquery(): void
@@ -250,12 +250,12 @@ class QueryBuilderJoinTest extends TestCase
             ->getAll();
 
         // The test should work now with Rust engine support
-        self::assertIsArray($results);
+        static::assertIsArray($results);
 
         foreach ($results as $result) {
-            self::assertArrayHasKey('name', $result);
-            self::assertArrayHasKey('post_count', $result);
-            self::assertGreaterThan(1, $result['post_count']);
+            static::assertArrayHasKey('name', $result);
+            static::assertArrayHasKey('post_count', $result);
+            static::assertGreaterThan(1, $result['post_count']);
         }
     }
 }

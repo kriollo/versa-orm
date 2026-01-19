@@ -36,11 +36,11 @@ class QueryBuilderSubqueriesTest extends TestCase
     {
         // Expresión segura
         $result = $this->queryBuilder->selectRaw('COUNT(*) as total_users');
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
 
         // Expresión con bindings
         $result = $this->queryBuilder->selectRaw('UPPER(name) as upper_name', ['test']);
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -71,7 +71,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function test_order_by_raw_with_safe_expressions(): void
     {
         $result = $this->queryBuilder->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['active']);
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -91,7 +91,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function test_group_by_raw_with_safe_expressions(): void
     {
         $result = $this->queryBuilder->groupByRaw('YEAR(created_at), MONTH(created_at)');
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -111,7 +111,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function test_where_raw_with_safe_expressions(): void
     {
         $result = $this->queryBuilder->whereRaw('age > ? AND status = ?', [18, 'active']);
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -134,7 +134,7 @@ class QueryBuilderSubqueriesTest extends TestCase
             $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
         }, 'posts_count');
 
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -159,7 +159,7 @@ class QueryBuilderSubqueriesTest extends TestCase
             $query->select(['user_id'])->where('status', '=', 'active');
         });
 
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -197,7 +197,7 @@ class QueryBuilderSubqueriesTest extends TestCase
             $query->from('posts')->where('user_id', '=', 'users.id');
         });
 
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -209,7 +209,7 @@ class QueryBuilderSubqueriesTest extends TestCase
             $query->from('banned_users')->where('user_id', '=', 'users.id');
         });
 
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -221,7 +221,7 @@ class QueryBuilderSubqueriesTest extends TestCase
         $subQuery->select(['user_id'])->where('status', '=', 'published');
 
         $result = $this->queryBuilder->whereSubQuery('id', 'IN', $subQuery);
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 
     /**
@@ -319,7 +319,7 @@ class QueryBuilderSubqueriesTest extends TestCase
 
         foreach ($allowedFunctions as $function) {
             $result = $this->queryBuilder->selectRaw($function . ' as result');
-            self::assertInstanceOf(QueryBuilder::class, $result);
+            static::assertInstanceOf(QueryBuilder::class, $result);
         }
     }
 
@@ -339,6 +339,6 @@ class QueryBuilderSubqueriesTest extends TestCase
             ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 2 END', ['premium'])
             ->groupByRaw('YEAR(created_at), status');
 
-        self::assertInstanceOf(QueryBuilder::class, $result);
+        static::assertInstanceOf(QueryBuilder::class, $result);
     }
 }

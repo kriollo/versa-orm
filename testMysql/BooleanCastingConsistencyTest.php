@@ -44,30 +44,30 @@ class BooleanCastingConsistencyTest extends TestCase
 
         // 1. Obtener arrays (API) -> debe devolver bool
         $rows = self::$orm->table('users_bool_cast', get_class($model))->get();
-        self::assertIsArray($rows);
-        self::assertCount(2, $rows);
+        static::assertIsArray($rows);
+        static::assertCount(2, $rows);
 
         foreach ($rows as $r) {
-            self::assertIsBool($r['status'], 'El campo status no fue casteado a boolean en get()');
+            static::assertIsBool($r['status'], 'El campo status no fue casteado a boolean en get()');
         }
 
         // 2. firstArray()
         $first = self::$orm->table('users_bool_cast', get_class($model))->firstArray();
-        self::assertNotNull($first);
-        self::assertIsBool($first['status'], 'El campo status no fue casteado a boolean en firstArray()');
+        static::assertNotNull($first);
+        static::assertIsBool($first['status'], 'El campo status no fue casteado a boolean en firstArray()');
 
         // 3. findAll() (objetos) -> export() debe dar bool
         $objects = self::$orm->table('users_bool_cast', get_class($model))->findAll();
-        self::assertCount(2, $objects);
+        static::assertCount(2, $objects);
 
         foreach ($objects as $o) {
             $data = $o->export();
-            self::assertIsBool($data['status'], 'El campo status no fue casteado a boolean en export()');
+            static::assertIsBool($data['status'], 'El campo status no fue casteado a boolean en export()');
         }
 
         // 4. findOne()
         $one = self::$orm->table('users_bool_cast', get_class($model))->where('name', '=', 'A')->findOne();
-        self::assertNotNull($one);
-        self::assertIsBool($one->export()['status'], 'El campo status no fue casteado a boolean en findOne()');
+        static::assertNotNull($one);
+        static::assertIsBool($one->export()['status'], 'El campo status no fue casteado a boolean en findOne()');
     }
 }

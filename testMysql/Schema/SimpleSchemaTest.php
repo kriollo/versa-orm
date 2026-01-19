@@ -17,17 +17,17 @@ class SimpleSchemaTest extends TestCase
     public function testTypeMapperBasicFunctionality(): void
     {
         $mysqlType = TypeMapper::mapType('string', 'mysql');
-        $this->assertEquals('VARCHAR', $mysqlType);
+        static::assertEquals('VARCHAR', $mysqlType);
 
         $postgresType = TypeMapper::mapType('string', 'postgresql');
-        $this->assertEquals('VARCHAR', $postgresType);
+        static::assertEquals('VARCHAR', $postgresType);
 
         $sqliteType = TypeMapper::mapType('string', 'sqlite');
-        $this->assertEquals('TEXT', $sqliteType);
+        static::assertEquals('TEXT', $sqliteType);
     }
 
     public function testSchemaBuilderCanBeInstantiated(): void
     {
-        $this->assertTrue(true); // Test simple que siempre pasa
+        static::assertTrue(true); // Test simple que siempre pasa
     }
 }

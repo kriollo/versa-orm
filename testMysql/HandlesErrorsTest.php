@@ -35,9 +35,9 @@ class HandlesErrorsTest extends TestCase
         $m = new DummyModel();
         $res = $m->safeSave();
 
-        $this->assertIsArray($res);
-        $this->assertArrayHasKey('error', $res);
-        $this->assertArrayHasKey('code', $res['error']);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('error', $res);
+        static::assertArrayHasKey('code', $res['error']);
     }
 
     public function test_getErrorStats_records_error(): void
@@ -48,9 +48,9 @@ class HandlesErrorsTest extends TestCase
         $m->safeSave();
 
         $stats = DummyModel::getErrorStats();
-        $this->assertIsArray($stats);
-        $this->assertArrayHasKey('total_errors', $stats);
-        $this->assertGreaterThanOrEqual(1, $stats['total_errors']);
+        static::assertIsArray($stats);
+        static::assertArrayHasKey('total_errors', $stats);
+        static::assertGreaterThanOrEqual(1, $stats['total_errors']);
     }
 
     public function test_validateBeforeOperation_empty_attributes_sets_error_and_returns_false(): void
@@ -60,9 +60,9 @@ class HandlesErrorsTest extends TestCase
         $m = new DummyModel();
 
         $ok = $m->publicValidate('save');
-        $this->assertFalse($ok);
-        $this->assertTrue($m->hasError());
-        $this->assertNotNull($m->getLastErrorMessage());
+        static::assertFalse($ok);
+        static::assertTrue($m->hasError());
+        static::assertNotNull($m->getLastErrorMessage());
     }
 }
 

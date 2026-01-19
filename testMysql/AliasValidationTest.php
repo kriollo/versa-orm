@@ -21,7 +21,7 @@ class AliasValidationTest extends TestCase
         // Alias con palabras completas
         $result = self::$orm->table('users as u')->select(['u.*'])->limit(1)->get();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     /**
@@ -32,12 +32,12 @@ class AliasValidationTest extends TestCase
         // Patrón table.* - este era el que causaba "Invalid or malicious column name detected: t.*"
         $result = self::$orm->table('users as u')->select(['u.*'])->limit(1)->get();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
 
         // Asterisco simple
         $result = self::$orm->table('users')->select(['*'])->limit(1)->get();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     /**
@@ -48,10 +48,10 @@ class AliasValidationTest extends TestCase
         // Alias simple de columna
         $result = self::$orm->table('users')->select(['name as user_name'])->limit(1)->get();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
 
         if (!empty($result)) {
-            self::assertArrayHasKey('user_name', $result[0]);
+            static::assertArrayHasKey('user_name', $result[0]);
         }
     }
 
@@ -63,12 +63,12 @@ class AliasValidationTest extends TestCase
         // JOIN simple con alias solo si existe la relación
         $result = self::$orm->table('users as u')->select(['u.id', 'u.name'])->limit(1)->get();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
 
         // Test de alias con self-join en users si necesario
         $result = self::$orm->table('users as u1')->select(['u1.name as user1_name'])->limit(1)->get();
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     /**
@@ -87,10 +87,10 @@ class AliasValidationTest extends TestCase
             try {
                 self::$orm->table($maliciousAlias)->select(['*'])->limit(1)->get();
 
-                self::fail("Se esperaba que el alias malicioso fallara: {$maliciousAlias}");
+                static::fail("Se esperaba que el alias malicioso fallara: {$maliciousAlias}");
             } catch (VersaORMException $e) {
                 // Se espera que falle
-                self::assertStringContainsString('Invalid', $e->getMessage());
+                static::assertStringContainsString('Invalid', $e->getMessage());
             }
         }
     }

@@ -20,8 +20,8 @@ class StoreReturnTest extends TestCase
         $user->email = 'return_mysql@example.com';
         $user->status = 'active';
         $id = $user->store();
-        self::assertNotNull($id, 'store() debe devolver un ID en insert.');
-        self::assertSame($id, $user->id);
+        static::assertNotNull($id, 'store() debe devolver un ID en insert.');
+        static::assertSame($id, $user->id);
     }
 
     public function test_store_returns_id_on_update(): void
@@ -29,7 +29,7 @@ class StoreReturnTest extends TestCase
         $user = VersaModel::load('users', 1);
         $originalId = $user->id;
         $returned = $user->store();
-        self::assertSame($originalId, $returned);
+        static::assertSame($originalId, $returned);
     }
 
     public function test_store_and_get_id_convenience(): void
@@ -39,8 +39,8 @@ class StoreReturnTest extends TestCase
         $user->email = 'return2_mysql@example.com';
         $user->status = 'active';
         $id = $user->storeAndGetId();
-        self::assertNotNull($id);
-        self::assertSame($id, $user->id);
+        static::assertNotNull($id);
+        static::assertSame($id, $user->id);
     }
 
     public function test_static_store_model_returns_id(): void
@@ -50,7 +50,7 @@ class StoreReturnTest extends TestCase
         $user->email = 'return3_mysql@example.com';
         $user->status = 'active';
         $id = VersaModel::storeModel($user);
-        self::assertNotNull($id);
-        self::assertSame($id, $user->id);
+        static::assertNotNull($id);
+        static::assertSame($id, $user->id);
     }
 }

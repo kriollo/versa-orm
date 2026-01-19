@@ -32,7 +32,7 @@ class LazyQueryPlannerTest extends TestCase
         $isLazyProperty = $reflection->getProperty('isLazy');
         $isLazyProperty->setAccessible(true);
 
-        self::assertTrue($isLazyProperty->getValue($query));
+        static::assertTrue($isLazyProperty->getValue($query));
     }
 
     public function test_lazy_query_building(): void
@@ -46,7 +46,7 @@ class LazyQueryPlannerTest extends TestCase
             ->limit(10);
 
         // La consulta no se ejecuta hasta collect()
-        self::assertInstanceOf(QueryBuilder::class, $query);
+        static::assertInstanceOf(QueryBuilder::class, $query);
     }
 
     public function test_collect_executes_lazy_query(): void
@@ -61,9 +61,9 @@ class LazyQueryPlannerTest extends TestCase
             ->where('status', '=', 'active')
             ->collect();
 
-        self::assertIsArray($results);
-        self::assertNotEmpty($results);
-        self::assertArrayHasKey('name', $results[0]);
+        static::assertIsArray($results);
+        static::assertNotEmpty($results);
+        static::assertArrayHasKey('name', $results[0]);
     }
 
     public function test_chain_multiple_queries(): void
@@ -73,7 +73,7 @@ class LazyQueryPlannerTest extends TestCase
 
         $chainedQuery = $query1->chain($query2);
 
-        self::assertInstanceOf(QueryBuilder::class, $chainedQuery);
+        static::assertInstanceOf(QueryBuilder::class, $chainedQuery);
     }
 
     public function test_explain_plan(): void
@@ -86,10 +86,10 @@ class LazyQueryPlannerTest extends TestCase
             ->join('posts', 'users.id', '=', 'posts.user_id')
             ->explain();
 
-        self::assertIsArray($explanation);
-        self::assertArrayHasKey('plan', $explanation);
-        self::assertArrayHasKey('generated_sql', $explanation);
-        self::assertArrayHasKey('estimated_cost', $explanation['plan']);
+        static::assertIsArray($explanation);
+        static::assertArrayHasKey('plan', $explanation);
+        static::assertArrayHasKey('generated_sql', $explanation);
+        static::assertArrayHasKey('estimated_cost', $explanation['plan']);
     }
 
     public function test_complex_lazy_query(): void
@@ -110,10 +110,10 @@ class LazyQueryPlannerTest extends TestCase
             ->limit(5)
             ->collect();
 
-        self::assertIsArray($results);
-        self::assertCount(2, $results); // Solo usuarios activos
-        self::assertSame('User 1', $results[0]['name']);
-        self::assertSame('User 2', $results[1]['name']);
+        static::assertIsArray($results);
+        static::assertCount(2, $results); // Solo usuarios activos
+        static::assertSame('User 1', $results[0]['name']);
+        static::assertSame('User 2', $results[1]['name']);
     }
 
     public function test_lazy_query_with_joins(): void
@@ -136,10 +136,10 @@ class LazyQueryPlannerTest extends TestCase
             ->where('users.status', '=', 'active')
             ->collect();
 
-        self::assertIsArray($results);
-        self::assertNotEmpty($results);
-        self::assertArrayHasKey('name', $results[0]);
-        self::assertArrayHasKey('title', $results[0]);
+        static::assertIsArray($results);
+        static::assertNotEmpty($results);
+        static::assertArrayHasKey('name', $results[0]);
+        static::assertArrayHasKey('title', $results[0]);
     }
 
     public function test_query_optimization(): void
@@ -152,12 +152,12 @@ class LazyQueryPlannerTest extends TestCase
             ->where('verified', '=', true)
             ->explain();
 
-        self::assertIsArray($explanation);
-        self::assertArrayHasKey('plan', $explanation);
+        static::assertIsArray($explanation);
+        static::assertArrayHasKey('plan', $explanation);
 
         // Verificar que se aplicaron optimizaciones
         if (isset($explanation['optimizations_applied'])) {
-            self::assertIsBool($explanation['optimizations_applied']);
+            static::assertIsBool($explanation['optimizations_applied']);
         }
     }
 
@@ -187,11 +187,11 @@ class LazyQueryPlannerTest extends TestCase
         $lazyTime = microtime(true) - $start;
 
         // Verificar que los resultados son equivalentes
-        self::assertCount(count($normalResults), $lazyResults);
+        static::assertCount(count($normalResults), $lazyResults);
 
         // Para consultas simples, la diferencia de tiempo no debería ser muy grande
         $timeDifference = abs($normalTime - $lazyTime);
-        self::assertLessThan(1.0, $timeDifference, 'Time difference should be minimal for simple queries');
+        static::assertLessThan(1.0, $timeDifference, 'Time difference should be minimal for simple queries');
     }
 
     public function test_lazy_query_with_complex_operations(): void
@@ -208,7 +208,7 @@ class LazyQueryPlannerTest extends TestCase
             ->limit(10)
             ->collect();
 
-        self::assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     public function test_error_handling_in_lazy_mode(): void
@@ -232,10 +232,10 @@ class LazyQueryPlannerTest extends TestCase
 
         $sql = $explanation['generated_sql'];
 
-        self::assertIsString($sql);
-        self::assertStringContainsString('SELECT', $sql);
-        self::assertStringContainsString('FROM users', $sql);
-        self::assertStringContainsString('WHERE', $sql);
-        self::assertStringContainsString('ORDER BY', $sql);
+        static::assertIsString($sql);
+        static::assertStringContainsString('SELECT', $sql);
+        static::assertStringContainsString('FROM users', $sql);
+        static::assertStringContainsString('WHERE', $sql);
+        static::assertStringContainsString('ORDER BY', $sql);
     }
 }

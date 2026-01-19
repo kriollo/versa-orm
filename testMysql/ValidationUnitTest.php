@@ -25,8 +25,8 @@ class ValidationUnitTest extends TestCase
 
         $model->fill(['name' => 'John Doe', 'email' => 'john@example.com']);
 
-        self::assertSame('John Doe', $model->name);
-        self::assertSame('john@example.com', $model->email);
+        static::assertSame('John Doe', $model->name);
+        static::assertSame('john@example.com', $model->email);
     }
 
     public function test_fillable_attributes_block_unallowed_fields(): void
@@ -84,9 +84,9 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The name must be at least 3 characters.', $errors);
-        self::assertContains('The email must be a valid email address.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name must be at least 3 characters.', $errors);
+        static::assertContains('The email must be a valid email address.', $errors);
     }
 
     public function test_valid_model_passes_validation(): void
@@ -104,7 +104,7 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertEmpty($errors);
+        static::assertEmpty($errors);
     }
 
     public function test_is_fillable_method(): void
@@ -113,9 +113,9 @@ class ValidationUnitTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        self::assertTrue($model->isFillable('name'));
-        self::assertTrue($model->isFillable('email'));
-        self::assertFalse($model->isFillable('id'));
+        static::assertTrue($model->isFillable('name'));
+        static::assertTrue($model->isFillable('email'));
+        static::assertFalse($model->isFillable('id'));
     }
 
     public function test_is_guarded_method(): void
@@ -124,9 +124,9 @@ class ValidationUnitTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        self::assertFalse($model->isGuarded('name'));
-        self::assertFalse($model->isGuarded('email'));
-        self::assertTrue($model->isGuarded('id'));
+        static::assertFalse($model->isGuarded('name'));
+        static::assertFalse($model->isGuarded('email'));
+        static::assertTrue($model->isGuarded('id'));
     }
 
     public function test_max_length_validation_rule(): void
@@ -143,8 +143,8 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The name may not be greater than 10 characters.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name may not be greater than 10 characters.', $errors);
     }
 
     public function test_numeric_validation_rule(): void
@@ -161,8 +161,8 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The age must be numeric.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The age must be numeric.', $errors);
     }
 
     public function test_required_validation_rule(): void
@@ -179,8 +179,8 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The name field is required.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name field is required.', $errors);
     }
 
     public function test_min_length_validation_rule(): void
@@ -197,8 +197,8 @@ class ValidationUnitTest extends TestCase
 
         $errors = $model->validate();
 
-        self::assertNotEmpty($errors);
-        self::assertContains('The name must be at least 5 characters.', $errors);
+        static::assertNotEmpty($errors);
+        static::assertContains('The name must be at least 5 characters.', $errors);
     }
 
     public function test_get_fillable_method(): void
@@ -207,7 +207,7 @@ class ValidationUnitTest extends TestCase
             protected array $fillable = ['name', 'email'];
         };
 
-        self::assertSame(['name', 'email'], $model->getFillable());
+        static::assertSame(['name', 'email'], $model->getFillable());
     }
 
     public function test_get_guarded_method(): void
@@ -218,6 +218,6 @@ class ValidationUnitTest extends TestCase
             protected array $guarded = ['id', 'created_at'];
         };
 
-        self::assertSame(['id', 'created_at'], $model->getGuarded());
+        static::assertSame(['id', 'created_at'], $model->getGuarded());
     }
 }

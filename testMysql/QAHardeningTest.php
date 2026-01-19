@@ -74,8 +74,8 @@ class QAHardeningTest extends TestCase
     {
         $qb = new QueryBuilder($this->orm, 'order');
         $rows = $qb->select(['select'])->where('group', '=', 'g1')->get();
-        self::assertNotEmpty($rows);
-        self::assertSame('s1', $rows[0]['select'] ?? null);
+        static::assertNotEmpty($rows);
+        static::assertSame('s1', $rows[0]['select'] ?? null);
     }
 
     public function test_window_function_qualification_and_alias(): void
@@ -91,8 +91,8 @@ class QAHardeningTest extends TestCase
             [['column' => 'name', 'direction' => 'ASC']],
             'rn',
         );
-        self::assertNotEmpty($rows);
-        self::assertArrayHasKey('rn', $rows[0]);
+        static::assertNotEmpty($rows);
+        static::assertArrayHasKey('rn', $rows[0]);
     }
 
     public function test_full_text_search_boolean_mode_with_score(): void
@@ -100,9 +100,9 @@ class QAHardeningTest extends TestCase
         $qb = new QueryBuilder($this->orm, 'qa_docs');
         // Usar una consulta que garantice coincidencias (exigir "foo" y excluir "baz")
         $rows = $qb->fullTextSearch(['title', 'body'], '"foo" -baz', ['mode' => 'BOOLEAN', 'with_score' => true]);
-        self::assertIsArray($rows);
+        static::assertIsArray($rows);
         // score debe existir cuando with_score es true
-        self::assertArrayHasKey('score', $rows[0] ?? []);
+        static::assertArrayHasKey('score', $rows[0] ?? []);
     }
 
     public function test_cte_with_bindings(): void
@@ -118,14 +118,14 @@ class QAHardeningTest extends TestCase
             'SELECT * FROM docs WHERE title LIKE ?',
             ['%o%'],
         );
-        self::assertNotEmpty($rows);
+        static::assertNotEmpty($rows);
     }
 
     public function test_group_concat_with_special_separator(): void
     {
         $qb = new QueryBuilder($this->orm, 'qa_docs');
         $rows = $qb->advancedAggregation('group_concat', 'title', ['separator' => "'|,|'", 'order_by' => 'id ASC']);
-        self::assertIsArray($rows);
-        self::assertArrayHasKey('agg', $rows[0] ?? []);
+        static::assertIsArray($rows);
+        static::assertArrayHasKey('agg', $rows[0] ?? []);
     }
 }

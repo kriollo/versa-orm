@@ -67,11 +67,11 @@ class MySQLAdvancedSQLTest extends TestCase
             'row_num',
         );
 
-        self::assertIsArray($result);
-        self::assertNotEmpty($result);
+        static::assertIsArray($result);
+        static::assertNotEmpty($result);
 
         // Verificar que MySQL maneja correctamente las window functions
-        self::assertArrayHasKey('row_num', $result[0] ?? []);
+        static::assertArrayHasKey('row_num', $result[0] ?? []);
     }
 
     public function test_my_sqljson_operations_with_arrow_syntax(): void
@@ -81,8 +81,8 @@ class MySQLAdvancedSQLTest extends TestCase
         // Usar sintaxis específica de MySQL para JSON
         $result = $qb->jsonOperation('extract', 'profile', '$.skills[0]');
 
-        self::assertIsArray($result);
-        self::assertNotEmpty($result);
+        static::assertIsArray($result);
+        static::assertNotEmpty($result);
     }
 
     public function test_my_sql_full_text_search_with_match(): void
@@ -95,7 +95,7 @@ class MySQLAdvancedSQLTest extends TestCase
             'with_score' => true,
         ]);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_my_sql_query_hints(): void
@@ -109,7 +109,7 @@ class MySQLAdvancedSQLTest extends TestCase
         ]);
 
         $result = $qb->where('department', '=', 'Engineering')->get();
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_my_sql_advanced_aggregation_group_concat(): void
@@ -122,7 +122,7 @@ class MySQLAdvancedSQLTest extends TestCase
             'order_by' => 'salary DESC',
         ]);
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     public function test_my_sqlcte_with_recursive(): void
@@ -141,7 +141,7 @@ class MySQLAdvancedSQLTest extends TestCase
             [],
         );
 
-        self::assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     private function createMySQLTestTables(): void
