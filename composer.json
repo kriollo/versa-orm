@@ -90,6 +90,10 @@
       "@test-mysql",
       "@test-postgresql"
     ],
+    "test-coverage": [
+      "@putenv XDEBUG_MODE=coverage",
+      "phpunit --configuration phpunit.xml --coverage-html build/coverage --coverage-text"
+    ],
     "psalm-check": "psalm --no-cache --show-info=true",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
     "cs:fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
