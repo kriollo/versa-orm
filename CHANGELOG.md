@@ -25,10 +25,39 @@
 - TOTAL: 211.47ms → 141.88ms (33% ↑)
 ```
 
+### 🔧 Bug Fixes: Table Alias en UPDATE/DELETE
+
+**Corrección de Alias en Operaciones UPDATE/DELETE:**
+- Problema: El ORM rechazaba consultas como `table('versa_users as u')->update(...)` con error "Invalid or malicious table name detected"
+- Causa: Las operaciones UPDATE/DELETE enviaban el alias como parte del nombre de tabla al motor SQL
+- Solución:
+  - `compileUpdate()` y `compileDelete()` ahora extraen correctamente el nombre base de la tabla antes de compilar
+  - `compileWhere()` acepta parámetro `$removeAliases=true` para limpiar referencias de alias en WHERE cuando se usa UPDATE/DELETE
+  - El alias `u.email` se convierte a `email` automáticamente en contexto UPDATE/DELETE
+- **Tests**: 27 nuevos tests (9 SQLite + 9 MySQL + 9 PostgreSQL) validando:
+  - Nombres de tabla con alias simple: `table as u`
+  - Nombres de tabla con alias descriptivo: `table as users`
+  - Operaciones SELECT, UPDATE, DELETE con alias
+  - WHERE clauses con referencias de alias
+  - Compatible con todos los motores de base de datos
+
+**Ejemplos de uso:**
+```php
+// ✅ Ahora funciona correctamente
+$orm->table('versa_users as u')
+    ->where('u.email', '=', 'test@example.com')
+    ->update(['name' => 'Updated']);
+
+$orm->table('versa_users as u')
+    ->where('u.active', '=', false)
+    ->delete();
+```
+
 ### ✅ Validación de Quality Gates
 
-- ✔️ MySQL Tests: 489 tests (1 skipped)
-- ✔️ PostgreSQL Tests: 469 tests (2 skipped)
+- ✔️ MySQL Tests: 498 tests (1 skipped)
+- ✔️ PostgreSQL Tests: 478 tests (2 skipped)
+- ✔️ SQLite Tests: 424 tests (1 skipped, 2 deprecations)
 - ✔️ Zero breaking changes
 - ✔️ PHPStan Level 8: 0 errores
 - ✔️ Rector: sin warnings
