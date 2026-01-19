@@ -47,11 +47,11 @@ class PerformanceOptimizationTest extends TestCase
         $users2 = self::$orm->table('users')->where('id', '>', 0)->get();
 
         // Los resultados deben ser idénticos
-        self::assertEquals($users1, $users2);
+        static::assertEquals($users1, $users2);
 
         // Verificar que hay entradas en el caché
         $metrics = PdoEngine::getMetrics();
-        self::assertGreaterThan(0, $metrics['cache_hits']);
+        static::assertGreaterThan(0, $metrics['cache_hits']);
     }
 
     public function test_memory_leak_prevention_static_registries(): void
@@ -68,7 +68,7 @@ class PerformanceOptimizationTest extends TestCase
 
         // Verificar que tenemos métricas
         $metricsBefore = PdoEngine::getMetrics();
-        self::assertGreaterThan(0, $metricsBefore['queries']);
+        static::assertGreaterThan(0, $metricsBefore['queries']);
 
         // Limpiar todos los registros estáticos
         VersaORM::clearAllStaticRegistries();
@@ -78,15 +78,15 @@ class PerformanceOptimizationTest extends TestCase
 
         // Verificar que los caches fueron limpiados
         $metricsAfter = PdoEngine::getMetrics();
-        self::assertEquals(0, $metricsAfter['cache_hits']);
-        self::assertEquals(0, $metricsAfter['cache_misses']);
-        self::assertEquals(0, $metricsAfter['queries']);
+        static::assertSame(0, $metricsAfter['cache_hits']);
+        static::assertSame(0, $metricsAfter['cache_misses']);
+        static::assertSame(0, $metricsAfter['queries']);
 
         // Verificar que los modelos aún funcionan después de limpiar
         $newUser = VersaModel::dispense('users');
         $newUser->name = 'Test User 2';
         $newUser->email = 'test2@example.com';
-        self::assertNotNull($newUser->store());
+        static::assertNotNull($newUser->store());
     }
 
     public function test_cache_partial_cleanup(): void
@@ -101,20 +101,20 @@ class PerformanceOptimizationTest extends TestCase
         self::$orm->table('users')->count();
 
         $metricsBefore = PdoEngine::getMetrics();
-        self::assertGreaterThan(0, $metricsBefore['queries']);
+        static::assertGreaterThan(0, $metricsBefore['queries']);
 
         // Limpiar solo caches (no métricas)
         VersaORM::clearCaches();
 
         $metricsAfter = PdoEngine::getMetrics();
         // Las métricas de queries deben mantenerse
-        self::assertEquals($metricsBefore['queries'], $metricsAfter['queries']);
+        static::assertEquals($metricsBefore['queries'], $metricsAfter['queries']);
 
         // Verificar que las próximas consultas empiezan con cache limpio
         // (no podemos verificar los contadores directamente porque pueden tener valores residuales)
         // En su lugar, verificamos que la funcionalidad sigue trabajando
         $testResult = self::$orm->table('users')->limit(1)->get();
-        self::assertIsArray($testResult);
+        static::assertIsArray($testResult);
     }
 
     public function test_statement_cache_cleanup(): void
@@ -132,13 +132,13 @@ class PerformanceOptimizationTest extends TestCase
         $metricsAfter = PdoEngine::getMetrics();
 
         // Verificar que las métricas no se ven afectadas por limpiar el cache de statements
-        self::assertEquals($metricsBefore['queries'], $metricsAfter['queries']);
+        static::assertEquals($metricsBefore['queries'], $metricsAfter['queries']);
 
         // El próximo query debería tener que preparar el statement de nuevo
         self::$orm->table('users')->where('id', '=', 1)->get();
 
         // Esto es difícil de verificar directamente, pero al menos verificamos que no crashea
-        self::assertTrue(true);
+        static::assertTrue(true);
     }
 
     public function test_cache_structure_with_metadata(): void
@@ -157,10 +157,10 @@ class PerformanceOptimizationTest extends TestCase
         $result2 = self::$orm->table('users')->limit(1)->get();
 
         // Los resultados deben ser iguales
-        self::assertEquals($result1, $result2);
+        static::assertEquals($result1, $result2);
 
         // Verificar que fue un cache hit
         $metrics = PdoEngine::getMetrics();
-        self::assertGreaterThan(0, $metrics['cache_hits']);
+        static::assertGreaterThan(0, $metrics['cache_hits']);
     }
 }

@@ -20,8 +20,8 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertCount(2, $posts);
-        self::assertSame('Alice', $posts[0]['author']);
+        static::assertCount(2, $posts);
+        static::assertSame('Alice', $posts[0]['author']);
     }
 
     public function test_left_join(): void
@@ -35,7 +35,7 @@ class QueryBuilderJoinTest extends TestCase
             ->whereNull('posts.id')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($users));
+        static::assertGreaterThanOrEqual(1, count($users));
     }
 
     public function test_right_join(): void
@@ -46,7 +46,7 @@ class QueryBuilderJoinTest extends TestCase
             ->rightJoin('posts', 'users.id', '=', 'posts.user_id')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_full_outer_join(): void
@@ -59,7 +59,7 @@ class QueryBuilderJoinTest extends TestCase
             ->fullOuterJoin('posts', 'users.id', '=', 'posts.user_id')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(3, count($results));
+        static::assertGreaterThanOrEqual(3, count($results));
     }
 
     public function test_cross_join(): void
@@ -71,7 +71,7 @@ class QueryBuilderJoinTest extends TestCase
             ->limit(10)
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_multiple_joins(): void
@@ -83,7 +83,7 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_join_with_complex_conditions(): void
@@ -96,6 +96,6 @@ class QueryBuilderJoinTest extends TestCase
             ->where('posts.title', 'LIKE', '%Post%')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 }

@@ -45,7 +45,7 @@ class FinalGapTest extends TestCase
         $method->setAccessible(true);
 
         $keys = $method->invoke($model);
-        self::assertIsArray($keys);
+        static::assertIsArray($keys);
     }
 
     public function test_versamodel_create_or_update(): void
@@ -57,7 +57,7 @@ class FinalGapTest extends TestCase
         $this->orm->method('executeQuery')->willReturn([]);
 
         $result = $model->createOrUpdate(['id' => 1]);
-        self::assertNotNull($result);
+        static::assertNotNull($result);
     }
 
     public function test_pdo_engine_advanced_sql_paths(): void
@@ -76,7 +76,7 @@ class FinalGapTest extends TestCase
             ]);
         } catch (\Exception $e) {
             // Expected to fail on real PDO, but hits lines
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // Test CTE path
@@ -87,7 +87,7 @@ class FinalGapTest extends TestCase
                 'main_query' => 'SELECT * FROM c',
             ]);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // Test JSON operation path
@@ -99,7 +99,7 @@ class FinalGapTest extends TestCase
                 'path' => '$.key',
             ]);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // Test MySQL specific JSON path
@@ -112,7 +112,7 @@ class FinalGapTest extends TestCase
                 'path' => '$.key',
             ]);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
     }
 
@@ -124,7 +124,7 @@ class FinalGapTest extends TestCase
         // Mock schema to return index for smartUpsert in the expected format
         $this->orm
             ->method('schema')
-            ->willReturnCallback(function ($subject) {
+            ->willReturnCallback(static function ($subject) {
                 if ($subject === 'unique_keys') {
                     return ['unique_keys' => ['id']];
                 }
@@ -135,6 +135,6 @@ class FinalGapTest extends TestCase
 
         // This targets smartUpsert
         $result = $model->smartUpsert();
-        self::assertNotNull($result);
+        static::assertNotNull($result);
     }
 }

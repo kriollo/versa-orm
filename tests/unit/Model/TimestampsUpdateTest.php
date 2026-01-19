@@ -15,10 +15,10 @@ final class TimestampsUpdateTest extends TestCase
         $model->name = 'initial';
 
         $id = $model->store();
-        self::assertNotNull($id);
+        static::assertNotNull($id);
 
         $rowBefore = self::$orm->exec('SELECT * FROM test_timestamps_update WHERE id = ?', [$id]);
-        self::assertNotEmpty($rowBefore);
+        static::assertNotEmpty($rowBefore);
         $before = $rowBefore[0]['updated_at'] ?? null;
         // small sleep to ensure timestamp difference
         usleep(50000);
@@ -26,11 +26,11 @@ final class TimestampsUpdateTest extends TestCase
         $model->store();
 
         $rowAfter = self::$orm->exec('SELECT * FROM test_timestamps_update WHERE id = ?', [$id]);
-        self::assertNotEmpty($rowAfter);
+        static::assertNotEmpty($rowAfter);
         $after = $rowAfter[0]['updated_at'] ?? null;
 
-        self::assertNotNull($before);
-        self::assertNotNull($after);
-        self::assertNotSame($before, $after, 'updated_at should change after update');
+        static::assertNotNull($before);
+        static::assertNotNull($after);
+        static::assertNotSame($before, $after, 'updated_at should change after update');
     }
 }

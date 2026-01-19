@@ -57,9 +57,9 @@ class VersaUsersTableAliasTest extends TestCase
     {
         $results = $this->orm->table('versa_users')->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(2, $results);
-        $this->assertEquals('John Doe', $results[0]['name'] ?? null);
+        static::assertIsArray($results);
+        static::assertCount(2, $results);
+        static::assertSame('John Doe', $results[0]['name'] ?? null);
     }
 
     /**
@@ -72,8 +72,8 @@ class VersaUsersTableAliasTest extends TestCase
             ->select(['u.id', 'u.name', 'u.email'])
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(2, $results);
+        static::assertIsArray($results);
+        static::assertCount(2, $results);
     }
 
     /**
@@ -86,8 +86,8 @@ class VersaUsersTableAliasTest extends TestCase
             ->where('users.active', '=', true)
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(2, $results);
+        static::assertIsArray($results);
+        static::assertCount(2, $results);
     }
 
     /**
@@ -100,9 +100,9 @@ class VersaUsersTableAliasTest extends TestCase
             ->where('email', '=', 'john@example.com')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(1, $results);
-        $this->assertEquals('John Doe', $results[0]['name'] ?? null);
+        static::assertIsArray($results);
+        static::assertCount(1, $results);
+        static::assertSame('John Doe', $results[0]['name'] ?? null);
     }
 
     /**
@@ -115,9 +115,9 @@ class VersaUsersTableAliasTest extends TestCase
             ->where('u.name', '=', 'Jane Smith')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(1, $results);
-        $this->assertEquals('jane@example.com', $results[0]['email'] ?? null);
+        static::assertIsArray($results);
+        static::assertCount(1, $results);
+        static::assertSame('jane@example.com', $results[0]['email'] ?? null);
     }
 
     /**
@@ -127,7 +127,7 @@ class VersaUsersTableAliasTest extends TestCase
     {
         $count = $this->orm->table('versa_users as u')->count();
 
-        $this->assertEquals(2, $count);
+        static::assertSame(2, $count);
     }
 
     /**
@@ -140,10 +140,10 @@ class VersaUsersTableAliasTest extends TestCase
             ->orderBy('u.name', 'ASC')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(2, $results);
-        $this->assertEquals('Jane Smith', $results[0]['name'] ?? null);
-        $this->assertEquals('John Doe', $results[1]['name'] ?? null);
+        static::assertIsArray($results);
+        static::assertCount(2, $results);
+        static::assertSame('Jane Smith', $results[0]['name'] ?? null);
+        static::assertSame('John Doe', $results[1]['name'] ?? null);
     }
 
     /**
@@ -159,11 +159,11 @@ class VersaUsersTableAliasTest extends TestCase
                 'active' => 1,
             ]);
 
-        $this->assertIsInt($id);
-        $this->assertGreaterThan(0, $id);
+        static::assertIsInt($id);
+        static::assertGreaterThan(0, $id);
 
         $results = $this->orm->table('versa_users')->count();
-        $this->assertEquals(3, $results);
+        static::assertSame(3, $results);
     }
 
     /**
@@ -176,13 +176,13 @@ class VersaUsersTableAliasTest extends TestCase
             ->where('u.email', '=', 'john@example.com')
             ->update(['name' => 'John Updated']);
 
-        $this->assertInstanceOf(\VersaORM\QueryBuilder::class, $updated);
+        static::assertInstanceOf(\VersaORM\QueryBuilder::class, $updated);
 
         $result = $this->orm
             ->table('versa_users')
             ->where('email', '=', 'john@example.com')
             ->findOne();
 
-        $this->assertEquals('John Updated', $result->name ?? null);
+        static::assertSame('John Updated', $result->name ?? null);
     }
 }

@@ -27,9 +27,9 @@ final class PdoEngineBatchHandlersTest extends TestCase
         ];
 
         $res = $engine->execute('insertMany', ['table' => 'bh_test', 'records' => $records]);
-        self::assertIsArray($res);
-        self::assertArrayHasKey('total_inserted', $res);
-        self::assertSame(2, $res['total_inserted']);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('total_inserted', $res);
+        static::assertSame(2, $res['total_inserted']);
 
         // UpdateMany (increase v by 1 for all)
         $upd = $engine->execute('updatemany', [
@@ -38,8 +38,8 @@ final class PdoEngineBatchHandlersTest extends TestCase
             'data' => ['v' => 99],
             'max_records' => 1000,
         ]);
-        self::assertIsArray($upd);
-        self::assertArrayHasKey('rows_affected', $upd);
+        static::assertIsArray($upd);
+        static::assertArrayHasKey('rows_affected', $upd);
 
         // DeleteMany (delete where v = 99)
         $del = $engine->execute('deletemany', [
@@ -47,7 +47,7 @@ final class PdoEngineBatchHandlersTest extends TestCase
             'where' => [['column' => 'v', 'operator' => '=', 'value' => 99]],
             'max_records' => 1000,
         ]);
-        self::assertIsArray($del);
-        self::assertArrayHasKey('rows_affected', $del);
+        static::assertIsArray($del);
+        static::assertArrayHasKey('rows_affected', $del);
     }
 }

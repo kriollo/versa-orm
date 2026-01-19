@@ -45,7 +45,7 @@ final class CreateIndexPostgresTest extends TestCase
         $orm->schemaCreate('versa_users', $columns, $options);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured, 'No SQL captured');
+        static::assertNotEmpty($captured, 'No SQL captured');
 
         $indexSqlFound = false;
 
@@ -56,12 +56,12 @@ final class CreateIndexPostgresTest extends TestCase
 
             $indexSqlFound = true;
             // En Postgres sí esperamos USING BTREE si fue pedido
-            self::assertStringContainsString('USING BTREE', strtoupper($sql));
-            self::assertStringContainsString('(', $sql);
-            self::assertStringContainsString(')', $sql);
+            static::assertStringContainsString('USING BTREE', strtoupper($sql));
+            static::assertStringContainsString('(', $sql);
+            static::assertStringContainsString(')', $sql);
         }
 
-        self::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');
+        static::assertTrue($indexSqlFound, 'No CREATE INDEX statement captured');
     }
 
     public function test_schema_alter_drop_column_and_index_generates_valid_sql_for_postgres(): void
@@ -92,7 +92,7 @@ final class CreateIndexPostgresTest extends TestCase
         ]);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
+        static::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
 
         $dropColumnFound = false;
         $dropIndexFound = false;
@@ -107,7 +107,7 @@ final class CreateIndexPostgresTest extends TestCase
             }
         }
 
-        self::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
-        self::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
+        static::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
+        static::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
     }
 }

@@ -30,7 +30,7 @@ class PdoEngineComprehensiveTest extends TestCase
     public function testExecuteBasicQuery(): void
     {
         $result = $this->orm->exec('CREATE TABLE test (id INTEGER PRIMARY KEY, name VARCHAR)');
-        $this->assertNull($result);
+        static::assertNull($result);
     }
 
     /**
@@ -42,7 +42,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('INSERT INTO users (name) VALUES (?)', ['John']);
 
         $result = $this->orm->exec('SELECT COUNT(*) as count FROM users');
-        $this->assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     /**
@@ -57,7 +57,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->commit();
 
         $result = $this->orm->exec('SELECT COUNT(*) as count FROM transactions');
-        $this->assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     /**
@@ -73,7 +73,7 @@ class PdoEngineComprehensiveTest extends TestCase
 
         // Verificar que la inserción fue revocada
         $result = $this->orm->table('rollback_test')->count();
-        $this->assertEquals(0, $result);
+        static::assertSame(0, $result);
     }
 
     /**
@@ -89,10 +89,10 @@ class PdoEngineComprehensiveTest extends TestCase
         try {
             $this->orm->exec('INSERT INTO nonexistent_table VALUES (1)');
             $this->orm->commit();
-            $this->fail('Expected exception');
+            static::fail('Expected exception');
         } catch (\Exception $e) {
             $this->orm->rollback();
-            $this->assertIsString($e->getMessage());
+            static::assertIsString($e->getMessage());
         }
     }
 
@@ -105,7 +105,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('INSERT INTO products (name, price) VALUES (?, ?)', ['Laptop', 999.99]);
 
         $result = $this->orm->exec('SELECT * FROM products WHERE name = ? AND price > ?', ['Laptop', 500]);
-        $this->assertIsArray($result);
+        static::assertIsArray($result);
     }
 
     /**
@@ -119,7 +119,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('INSERT INTO numbers (value) VALUES (?)', [3]);
 
         $results = $this->orm->table('numbers')->get();
-        $this->assertCount(3, $results);
+        static::assertCount(3, $results);
     }
 
     /**
@@ -130,7 +130,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('CREATE TABLE empty_table (id INTEGER PRIMARY KEY, name VARCHAR)');
 
         $results = $this->orm->table('empty_table')->get();
-        $this->assertCount(0, $results);
+        static::assertCount(0, $results);
     }
 
     /**
@@ -143,7 +143,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('INSERT INTO items (name) VALUES (?)', ['Item2']);
 
         $count = $this->orm->table('items')->count();
-        $this->assertEquals(2, $count);
+        static::assertSame(2, $count);
     }
 
     /**
@@ -163,7 +163,7 @@ class PdoEngineComprehensiveTest extends TestCase
             ->table('records')
             ->where('status', '=', 'active')
             ->first();
-        $this->assertNotNull($result);
+        static::assertNotNull($result);
     }
 
     /**
@@ -180,7 +180,7 @@ class PdoEngineComprehensiveTest extends TestCase
             ->delete();
 
         $count = $this->orm->table('to_delete')->count();
-        $this->assertEquals(0, $count);
+        static::assertSame(0, $count);
     }
 
     /**
@@ -195,6 +195,6 @@ class PdoEngineComprehensiveTest extends TestCase
 
         // Probar con QueryBuilder
         $results = $this->orm->table('scores')->get();
-        $this->assertCount(3, $results);
+        static::assertCount(3, $results);
     }
 }

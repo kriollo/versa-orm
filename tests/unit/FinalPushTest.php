@@ -63,33 +63,33 @@ class FinalPushTest extends TestCase
         $model = new FinalPushModel($this->orm);
 
         // Int
-        self::assertSame(10, $model->castToPhpType('age', '10'));
-        self::assertSame(0, $model->castToPhpType('age', 'not-a-number'));
+        static::assertSame(10, $model->castToPhpType('age', '10'));
+        static::assertSame(0, $model->castToPhpType('age', 'not-a-number'));
 
         // Bool
-        self::assertTrue($model->castToPhpType('is_active', '1'));
-        self::assertTrue($model->castToPhpType('is_active', 'true'));
-        self::assertTrue($model->castToPhpType('is_active', 'yes'));
-        self::assertFalse($model->castToPhpType('is_active', '0'));
+        static::assertTrue($model->castToPhpType('is_active', '1'));
+        static::assertTrue($model->castToPhpType('is_active', 'true'));
+        static::assertTrue($model->castToPhpType('is_active', 'yes'));
+        static::assertFalse($model->castToPhpType('is_active', '0'));
 
         // JSON
-        self::assertSame(['a' => 1], $model->castToPhpType('meta', '{"a":1}'));
+        static::assertSame(['a' => 1], $model->castToPhpType('meta', '{"a":1}'));
 
         // UUID
         $uuid = '550e8400-e29b-41d4-a716-446655440000';
-        self::assertSame($uuid, $model->castToPhpType('uid', $uuid));
+        static::assertSame($uuid, $model->castToPhpType('uid', $uuid));
 
         // Enum
-        self::assertSame('active', $model->castToPhpType('status', 'active'));
+        static::assertSame('active', $model->castToPhpType('status', 'active'));
 
         // Inet
-        self::assertSame('127.0.0.1', $model->castToPhpType('ip', '127.0.0.1'));
-        self::assertSame('::1', $model->castToPhpType('ip', '::1'));
+        static::assertSame('127.0.0.1', $model->castToPhpType('ip', '127.0.0.1'));
+        static::assertSame('::1', $model->castToPhpType('ip', '::1'));
 
         // DateTime
         $now = time();
-        self::assertInstanceOf(\DateTimeInterface::class, $model->castToPhpType('born_at', $now));
-        self::assertInstanceOf(\DateTimeInterface::class, $model->castToPhpType('born_at', '2023-01-01 10:00:00'));
+        static::assertInstanceOf(\DateTimeInterface::class, $model->castToPhpType('born_at', $now));
+        static::assertInstanceOf(\DateTimeInterface::class, $model->castToPhpType('born_at', '2023-01-01 10:00:00'));
     }
 
     public function test_has_strong_typing_db_casts(): void
@@ -100,11 +100,11 @@ class FinalPushTest extends TestCase
         // If max_length is set and we exceed it.
         // Actually castToDatabaseType uses handlers too.
 
-        self::assertSame(1, $model->castToDatabaseType('is_active', true));
-        self::assertSame(0, $model->castToDatabaseType('is_active', false));
+        static::assertSame(1, $model->castToDatabaseType('is_active', true));
+        static::assertSame(0, $model->castToDatabaseType('is_active', false));
 
         $dt = new DateTime('2023-01-01 10:00:00');
-        self::assertSame('2023-01-01 10:00:00', $model->castToDatabaseType('born_at', $dt));
+        static::assertSame('2023-01-01 10:00:00', $model->castToDatabaseType('born_at', $dt));
     }
 
     public function test_handles_errors_safe_methods(): void
@@ -129,8 +129,8 @@ class FinalPushTest extends TestCase
         ];
 
         $api = $method->invoke($model, $errorData);
-        self::assertArrayHasKey('error', $api);
-        self::assertSame('TEST_ERR', $api['error']['code']);
+        static::assertArrayHasKey('error', $api);
+        static::assertSame('TEST_ERR', $api['error']['code']);
     }
 
     public function test_handles_errors_stats(): void
@@ -141,8 +141,8 @@ class FinalPushTest extends TestCase
         ]);
 
         $stats = FinalPushModel::getErrorStats();
-        self::assertGreaterThan(0, $stats['total_errors']);
-        self::assertArrayHasKey('LOG_ERR', $stats['error_types']);
+        static::assertGreaterThan(0, $stats['total_errors']);
+        static::assertArrayHasKey('LOG_ERR', $stats['error_types']);
     }
 
     public function test_versa_schema_more_methods(): void
@@ -151,8 +151,8 @@ class FinalPushTest extends TestCase
 
         $this->orm->method('schema')->willReturn([]);
 
-        self::assertFalse(VersaSchema::hasTable('non_existent'));
-        self::assertIsArray(VersaSchema::getColumnListing('some_table'));
+        static::assertFalse(VersaSchema::hasTable('non_existent'));
+        static::assertIsArray(VersaSchema::getColumnListing('some_table'));
 
         $this->expectException(\RuntimeException::class);
         VersaSchema::connection('other');
@@ -165,17 +165,17 @@ class FinalPushTest extends TestCase
         // Invalid UUID
         try {
             $model->castToPhpType('uid', 'invalid');
-            $this->fail('Expected exception for invalid UUID');
+            static::fail('Expected exception for invalid UUID');
         } catch (\Exception) {
-            $this->assertTrue(true);
+            static::assertTrue(true);
         }
 
         // Invalid IP
         try {
             $model->castToPhpType('ip', 'invalid-ip');
-            $this->fail('Expected exception for invalid IP');
+            static::fail('Expected exception for invalid IP');
         } catch (\Exception) {
-            $this->assertTrue(true);
+            static::assertTrue(true);
         }
     }
 }

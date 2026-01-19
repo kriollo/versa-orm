@@ -40,7 +40,7 @@ class ModelEventUnitTest extends TestCase
 
         $event = new ModelEvent($model, [], []);
 
-        $this->assertNotNull($event);
+        static::assertNotNull($event);
     }
 
     /**
@@ -51,8 +51,8 @@ class ModelEventUnitTest extends TestCase
         $model = VersaModel::load('users', 1);
         $event = new ModelEvent($model, [], []);
 
-        $this->assertNotNull($event->model);
-        $this->assertInstanceOf(VersaModel::class, $event->model);
+        static::assertNotNull($event->model);
+        static::assertInstanceOf(VersaModel::class, $event->model);
     }
 
     /**
@@ -64,7 +64,7 @@ class ModelEventUnitTest extends TestCase
         $original = ['name' => 'Old Name'];
         $event = new ModelEvent($model, $original, []);
 
-        $this->assertEquals($original, $event->original);
+        static::assertEquals($original, $event->original);
     }
 
     /**
@@ -76,7 +76,7 @@ class ModelEventUnitTest extends TestCase
         $changes = ['name' => 'New Name'];
         $event = new ModelEvent($model, [], $changes);
 
-        $this->assertEquals($changes, $event->changes);
+        static::assertEquals($changes, $event->changes);
     }
 
     /**
@@ -87,12 +87,12 @@ class ModelEventUnitTest extends TestCase
         $model = VersaModel::load('users', 1);
         $event = new ModelEvent($model, [], []);
 
-        $this->assertFalse($event->cancel);
+        static::assertFalse($event->cancel);
 
         $event->cancel('Operation cancelled');
 
-        $this->assertTrue($event->cancel);
-        $this->assertEquals('Operation cancelled', $event->error);
+        static::assertTrue($event->cancel);
+        static::assertSame('Operation cancelled', $event->error);
     }
 
     /**
@@ -105,7 +105,7 @@ class ModelEventUnitTest extends TestCase
 
         $event->cancel();
 
-        $this->assertTrue($event->cancel);
-        $this->assertNull($event->error);
+        static::assertTrue($event->cancel);
+        static::assertNull($event->error);
     }
 }

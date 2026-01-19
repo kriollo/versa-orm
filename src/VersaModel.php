@@ -1363,12 +1363,10 @@ class VersaModel implements TypedModelInterface
         $result = $orm->exec($sql, $bindings);
 
         if (is_array($result)) {
-            $rows = array_filter($result, 'is_array');
-
             // Nota: No aplicar casting aquí para mejorar performance.
             // Si se necesita casting, usar getModels() o getDataCasted() en modelos individuales.
 
-            return $rows;
+            return array_filter($result, 'is_array');
         }
 
         return [];
@@ -2175,9 +2173,11 @@ class VersaModel implements TypedModelInterface
         foreach ($this->attributes as $field => $value) {
             // Validación básica de campos vacío vs NULL
             // Campos comunes que suelen ser auto-increment o tienen valores por defecto
-            if (!(($value === '' || $value === null) && !in_array($field, ['id', 'created_at', 'updated_at'], true))) {
+            if (($value === '' || $value === null) && !in_array($field, ['id', 'created_at', 'updated_at'], true)) {
                 continue;
             }
+
+            continue;
         }
 
         return $errors;
@@ -2401,9 +2401,11 @@ class VersaModel implements TypedModelInterface
 
         $parts = explode('.', $id);
         foreach ($parts as $p) {
-            if ($p === '' || preg_match('/^[a-zA-Z_]\w*$/', $p) !== 1) {
-                return false;
+            if (!($p === '' || preg_match('/^[a-zA-Z_]\w*$/', $p) !== 1)) {
+                continue;
             }
+
+            return false;
         }
 
         return true;

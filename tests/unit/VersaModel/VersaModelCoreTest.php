@@ -19,7 +19,7 @@ final class VersaModelCoreTest extends TestCase
         };
 
         $model->fill(['name' => 'Alice']);
-        self::assertSame('Alice', $model->getAttribute('name'));
+        static::assertSame('Alice', $model->getAttribute('name'));
 
         $blocked = new class('users', null) extends VersaModel {
             protected array $fillable = [];
@@ -53,16 +53,16 @@ final class VersaModelCoreTest extends TestCase
         $method = $ref->getMethod('prepareValueForDatabaseSimple');
         $method->setAccessible(true);
 
-        self::assertSame(1, $method->invoke($model, true));
-        self::assertSame(0, $method->invoke($model, false));
+        static::assertSame(1, $method->invoke($model, true));
+        static::assertSame(0, $method->invoke($model, false));
 
         $dt = new DateTime('2020-01-02 15:04:05');
-        self::assertStringContainsString('2020-01-02', (string) $method->invoke($model, $dt));
+        static::assertStringContainsString('2020-01-02', (string) $method->invoke($model, $dt));
 
         $arr = ['a' => 1];
         $json = $method->invoke($model, $arr);
-        self::assertIsString($json);
-        self::assertStringContainsString('"a"', $json);
+        static::assertIsString($json);
+        static::assertStringContainsString('"a"', $json);
     }
 
     public function testValidateFieldAgainstSchemaIntegerAndEmail(): void
@@ -76,12 +76,12 @@ final class VersaModelCoreTest extends TestCase
         // Integer expected but given non-numeric
         $schemaInt = ['data_type' => 'int'];
         $errors = $method->invoke($model, 'age', 'abc', $schemaInt);
-        self::assertStringContainsString('must be an integer', $errors[0]);
+        static::assertStringContainsString('must be an integer', $errors[0]);
 
         // Email validation rule
         $schemaEmail = ['data_type' => 'varchar', 'validation_rules' => ['email']];
         $errors2 = $method->invoke($model, 'contact', 'not-an-email', $schemaEmail);
-        self::assertStringContainsString('must be a valid email', $errors2[0]);
+        static::assertStringContainsString('must be a valid email', $errors2[0]);
     }
 
     public function testStoreThrowsOnValidation(): void

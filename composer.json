@@ -101,9 +101,12 @@
     "mago:fmt": "mago fmt src/ example/ testMysql/ testPostgreSQL/ testSQLite/ tests/",
     "mago:lint": "mago lint src/",
     "mago:lint:fix": "mago lint --fix --unsafe",
-    "format": [
+    "fix": [
       "@cs:fix",
       "@rector:fix",
+      "@mago:lint:fix"
+    ],
+    "format": [
       "@pint",
       "@mago:fmt"
     ],

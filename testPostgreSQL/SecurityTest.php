@@ -24,7 +24,7 @@ class SecurityTest extends TestCase
         $maliciousInput = "' OR 1=1 --";
         $users = self::$orm->table('users')->where('email', '=', $maliciousInput)->getAll();
 
-        self::assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
+        static::assertCount(0, $users, 'SQL injection attempt in WHERE clause was not prevented.');
     }
 
     public function test_sql_injection_union_attack(): void
@@ -33,10 +33,10 @@ class SecurityTest extends TestCase
 
         try {
             $users = self::$orm->table('users')->where('id', '=', $unionAttack)->getAll();
-            self::assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
+            static::assertCount(0, $users, 'UNION-based SQL injection was not prevented.');
         } catch (VersaORMException $e) {
             // Postgres throws invalid text representation for integer column
-            self::assertStringContainsString('invalid', strtolower($e->getMessage()));
+            static::assertStringContainsString('invalid', strtolower($e->getMessage()));
         }
     }
 
@@ -51,7 +51,7 @@ class SecurityTest extends TestCase
 
         foreach ($booleanAttacks as $attack) {
             $users = self::$orm->table('users')->where('email', '=', $attack)->getAll();
-            self::assertCount(0, $users, "Boolean SQL injection was not prevented for: {$attack}");
+            static::assertCount(0, $users, "Boolean SQL injection was not prevented for: {$attack}");
         }
     }
 
@@ -65,7 +65,7 @@ class SecurityTest extends TestCase
 
         foreach ($stackedAttacks as $attack) {
             $users = self::$orm->table('users')->where('name', '=', $attack)->getAll();
-            self::assertCount(0, $users, "Stacked query injection was not prevented for: {$attack}");
+            static::assertCount(0, $users, "Stacked query injection was not prevented for: {$attack}");
         }
     }
 
@@ -76,7 +76,7 @@ class SecurityTest extends TestCase
     public function test_where_raw_with_proper_parameterization(): void
     {
         $users = self::$orm->table('users')->whereRaw('LOWER(name) = ?', ['alice'])->findAll();
-        self::assertCount(1, $users, 'Properly parameterized whereRaw should work.');
+        static::assertCount(1, $users, 'Properly parameterized whereRaw should work.');
     }
 
     public function test_where_raw_injection_prevention(): void
@@ -85,9 +85,9 @@ class SecurityTest extends TestCase
 
         try {
             $users = self::$orm->table('users')->whereRaw('id = ?', [$maliciousInput])->getAll();
-            self::assertCount(0, $users, 'whereRaw injection was not prevented.');
+            static::assertCount(0, $users, 'whereRaw injection was not prevented.');
         } catch (VersaORMException $e) {
-            self::assertStringContainsString('error', strtolower($e->getMessage()));
+            static::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -110,9 +110,9 @@ class SecurityTest extends TestCase
         foreach ($maliciousTableNames as $tableName) {
             try {
                 self::$orm->table($tableName)->getAll();
-                self::fail("Malicious table name '{$tableName}' should have been rejected.");
+                static::fail("Malicious table name '{$tableName}' should have been rejected.");
             } catch (VersaORMException $e) {
-                self::assertStringContainsString('error', strtolower($e->getMessage()));
+                static::assertStringContainsString('error', strtolower($e->getMessage()));
             }
         }
     }
@@ -130,9 +130,9 @@ class SecurityTest extends TestCase
         foreach ($maliciousColumns as $column) {
             try {
                 self::$orm->table('users')->select([$column])->getAll();
-                self::fail("Malicious column name '{$column}' should have been rejected.");
+                static::fail("Malicious column name '{$column}' should have been rejected.");
             } catch (VersaORMException $e) {
-                self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+                static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
             }
         }
     }
@@ -154,7 +154,7 @@ class SecurityTest extends TestCase
             } catch (VersaORMException $e) {
                 // Postgres might say "relation does not exist" or "table does not exist" or "no existe la relación"
                 $msg = strtolower($e->getMessage());
-                self::assertTrue(
+                static::assertTrue(
                     str_contains($msg, 'not exist')
                     || str_contains($msg, 'no existe')
                     || str_contains($msg, 'relation')
@@ -175,19 +175,19 @@ class SecurityTest extends TestCase
 
         try {
             self::$orm->table('users')->orderBy($maliciousOrderBy, 'asc')->getAll();
-            self::fail('Malicious ORDER BY should have been rejected.');
+            static::fail('Malicious ORDER BY should have been rejected.');
         } catch (VersaORMException $e) {
-            self::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+            static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
         }
     }
 
     public function test_limit_injection(): void
     {
         $users = self::$orm->table('users')->limit(1)->getAll();
-        self::assertCount(1, $users);
+        static::assertCount(1, $users);
 
         $users = self::$orm->table('users')->limit('2')->getAll();
-        self::assertLessThanOrEqual(2, count($users));
+        static::assertLessThanOrEqual(2, count($users));
     }
 
     // ======================================================================
@@ -213,7 +213,7 @@ class SecurityTest extends TestCase
                 ]);
 
             $user = self::$orm->table('users')->find($id);
-            self::assertSame($payload, $user->status, 'XSS input should be stored as-is');
+            static::assertSame($payload, $user->status, 'XSS input should be stored as-is');
 
             self::$orm->table('users')->where('id', '=', $id)->delete();
         }
@@ -233,8 +233,8 @@ class SecurityTest extends TestCase
 
         foreach ($maliciousBinds as $bind) {
             $result = self::$orm->exec('SELECT * FROM users WHERE email = ?', [$bind]);
-            self::assertIsArray($result);
-            self::assertCount(0, $result);
+            static::assertIsArray($result);
+            static::assertCount(0, $result);
         }
     }
 
@@ -250,11 +250,11 @@ class SecurityTest extends TestCase
             $maliciousInput = "'; COMMIT; DROP TABLE users; BEGIN; --";
             $users = self::$orm->table('users')->where('name', '=', $maliciousInput)->getAll();
 
-            self::assertCount(0, $users, 'Transaction injection was not prevented.');
+            static::assertCount(0, $users, 'Transaction injection was not prevented.');
 
             self::$orm->exec('ROLLBACK');
         } catch (VersaORMException $e) {
-            self::assertStringContainsString('error', strtolower($e->getMessage()));
+            static::assertStringContainsString('error', strtolower($e->getMessage()));
         }
     }
 
@@ -262,6 +262,6 @@ class SecurityTest extends TestCase
     {
         $nullByteAttack = "admin\x00'; DROP TABLE users; --";
         $users = self::$orm->table('users')->where('name', '=', $nullByteAttack)->getAll();
-        self::assertCount(0, $users);
+        static::assertCount(0, $users);
     }
 }

@@ -23,13 +23,13 @@ class ErrorHandlerUnitTest extends TestCase
      */
     public function testSetAndIsDebugMode(): void
     {
-        $this->assertFalse(ErrorHandler::isDebugMode());
+        static::assertFalse(ErrorHandler::isDebugMode());
 
         ErrorHandler::setDebugMode(true);
-        $this->assertTrue(ErrorHandler::isDebugMode());
+        static::assertTrue(ErrorHandler::isDebugMode());
 
         ErrorHandler::setDebugMode(false);
-        $this->assertFalse(ErrorHandler::isDebugMode());
+        static::assertFalse(ErrorHandler::isDebugMode());
     }
 
     /**
@@ -37,12 +37,10 @@ class ErrorHandlerUnitTest extends TestCase
      */
     public function testSetCustomHandler(): void
     {
-        $handler = function ($error) {
-            return "custom: {$error}";
-        };
+        $handler = static fn($error) => "custom: {$error}";
 
         ErrorHandler::setCustomHandler($handler);
-        $this->assertTrue(true); // Si llega aquí, no lanzó excepción
+        static::assertTrue(true); // Si llega aquí, no lanzó excepción
     }
 
     /**
@@ -57,8 +55,8 @@ class ErrorHandlerUnitTest extends TestCase
 
         ErrorHandler::configureFromVersaORM($config);
 
-        $this->assertTrue(ErrorHandler::isConfigured());
-        $this->assertTrue(ErrorHandler::isDebugMode());
+        static::assertTrue(ErrorHandler::isConfigured());
+        static::assertTrue(ErrorHandler::isDebugMode());
     }
 
     /**
@@ -74,7 +72,7 @@ class ErrorHandlerUnitTest extends TestCase
         ErrorHandler::configureFromVersaORM($config);
         $logPath = ErrorHandler::getLogPath();
 
-        $this->assertIsString($logPath);
+        static::assertIsString($logPath);
     }
 
     /**
@@ -86,6 +84,6 @@ class ErrorHandlerUnitTest extends TestCase
         $config = ['debug' => true];
         ErrorHandler::configureFromVersaORM($config);
 
-        $this->assertTrue(ErrorHandler::isConfigured());
+        static::assertTrue(ErrorHandler::isConfigured());
     }
 }

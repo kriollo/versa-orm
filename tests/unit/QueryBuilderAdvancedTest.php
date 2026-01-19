@@ -80,8 +80,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->selectRaw('COUNT(*) as order_count, SUM(total) as total_amount')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(1, $results);
+        static::assertIsArray($results);
+        static::assertCount(1, $results);
     }
 
     /**
@@ -94,8 +94,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->whereRaw('total > ?', [200])
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertGreaterThanOrEqual(1, count($results));
+        static::assertIsArray($results);
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     /**
@@ -108,8 +108,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->orderByRaw('total DESC')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertGreaterThan(0, count($results));
+        static::assertIsArray($results);
+        static::assertGreaterThan(0, count($results));
     }
 
     /**
@@ -123,7 +123,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->groupByRaw('status')
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -138,7 +138,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->having('total_qty', '>', 2)
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -151,8 +151,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->where('customer_name', 'LIKE', '%John%')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertGreaterThanOrEqual(1, count($results));
+        static::assertIsArray($results);
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     /**
@@ -165,7 +165,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->whereRaw('DATE(created_at) = ?', ['2026-01-01'])
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -178,8 +178,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->select(['customer_name'])
             ->get();
 
-        $this->assertIsArray($names);
-        $this->assertCount(3, $names);
+        static::assertIsArray($names);
+        static::assertCount(3, $names);
     }
 
     /**
@@ -194,7 +194,7 @@ class QueryBuilderAdvancedTest extends TestCase
             $totalProcessed++;
         }
 
-        $this->assertEquals(3, $totalProcessed);
+        static::assertSame(3, $totalProcessed);
     }
 
     /**
@@ -207,8 +207,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->selectRaw('AVG(total) as avg_total')
             ->get();
 
-        $this->assertIsArray($results);
-        $this->assertCount(1, $results);
+        static::assertIsArray($results);
+        static::assertCount(1, $results);
     }
 
     /**
@@ -221,7 +221,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->selectRaw('SUM(total) as total_sum')
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -234,7 +234,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->selectRaw('MAX(total) as max_total')
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -247,7 +247,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->selectRaw('MIN(total) as min_total')
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -261,7 +261,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->select(['o.customer_name', 'oi.product'])
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -274,7 +274,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->rightJoin('order_items', 'orders.id', '=', 'order_items.order_id')
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -288,7 +288,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->limit(5)
             ->get();
 
-        $this->assertIsArray($results);
+        static::assertIsArray($results);
     }
 
     /**
@@ -305,10 +305,10 @@ class QueryBuilderAdvancedTest extends TestCase
             ->where('status', '=', 'completed')
             ->get();
 
-        $this->assertIsArray($pending);
-        $this->assertIsArray($completed);
-        $this->assertGreaterThan(0, count($pending));
-        $this->assertGreaterThan(0, count($completed));
+        static::assertIsArray($pending);
+        static::assertIsArray($completed);
+        static::assertGreaterThan(0, count($pending));
+        static::assertGreaterThan(0, count($completed));
     }
 
     /**
@@ -325,8 +325,8 @@ class QueryBuilderAdvancedTest extends TestCase
             ->where('total', '<', 200)
             ->get();
 
-        $this->assertIsArray($expensive);
-        $this->assertIsArray($cheap);
+        static::assertIsArray($expensive);
+        static::assertIsArray($cheap);
     }
 
     /**
@@ -339,14 +339,14 @@ class QueryBuilderAdvancedTest extends TestCase
             ->where('status', '=', 'pending')
             ->exists();
 
-        $this->assertTrue($exists);
+        static::assertTrue($exists);
 
         $notExists = $this->orm
             ->table('orders')
             ->where('status', '=', 'nonexistent')
             ->exists();
 
-        $this->assertFalse($notExists);
+        static::assertFalse($notExists);
     }
 
     /**
@@ -359,7 +359,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->where('status', '=', 'nonexistent')
             ->count() === 0;
 
-        $this->assertTrue($doesntExist);
+        static::assertTrue($doesntExist);
     }
 
     /**
@@ -376,8 +376,8 @@ class QueryBuilderAdvancedTest extends TestCase
                 'created_at' => '2026-01-04 13:00:00',
             ]);
 
-        $this->assertIsInt($id);
-        $this->assertGreaterThan(0, $id);
+        static::assertIsInt($id);
+        static::assertGreaterThan(0, $id);
     }
 
     /**
@@ -396,7 +396,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->where('customer_name', '=', 'John Doe')
             ->first();
 
-        $this->assertEquals('updated', $updated->status);
+        static::assertSame('updated', $updated->status);
     }
 
     /**
@@ -415,7 +415,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->update(['quantity' => $originalQty + 1]);
 
         $updated = $this->orm->table('order_items')->find(1);
-        $this->assertEquals($originalQty + 1, $updated->quantity);
+        static::assertEquals($originalQty + 1, $updated->quantity);
     }
 
     /**
@@ -432,7 +432,7 @@ class QueryBuilderAdvancedTest extends TestCase
             ->update(['quantity' => max(0, $originalQty - 1)]);
 
         $updated = $this->orm->table('order_items')->find(2);
-        $this->assertGreaterThanOrEqual(0, $updated->quantity);
+        static::assertGreaterThanOrEqual(0, $updated->quantity);
     }
 
     /**
@@ -446,6 +446,6 @@ class QueryBuilderAdvancedTest extends TestCase
         $this->orm->exec('DELETE FROM temp_table');
 
         $count = $this->orm->table('temp_table')->count();
-        $this->assertEquals(0, $count);
+        static::assertSame(0, $count);
     }
 }

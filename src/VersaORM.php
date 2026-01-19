@@ -1173,12 +1173,7 @@ class VersaORM
             if (class_exists(ErrorHandler::class) && ErrorHandler::isConfigured()) {
                 ErrorHandler::handleException($ex, ['phase' => 'pdo_engine']);
             } else {
-                // Registrar como ERROR (sin fallbacks de logging)
-                try {
-                    $this->logError('PDO_ENGINE_FAILED', $ex->getMessage(), null, [], $ex->getMessage());
-                } catch (Throwable) {
-                    // Silenciar para no interferir con la excepción principal
-                }
+                $this->logError('PDO_ENGINE_FAILED', $ex->getMessage(), null, [], $ex->getMessage());
             }
 
             throw $ex;

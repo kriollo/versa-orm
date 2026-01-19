@@ -49,18 +49,18 @@ class HandlesErrorsTest extends TestCase
     public function testSafeSaveSuccess(): void
     {
         $result = $this->model->safeSave();
-        $this->assertTrue($result);
-        $this->assertFalse($this->model->hasError());
+        static::assertTrue($result);
+        static::assertFalse($this->model->hasError());
     }
 
     public function testSafeDeleteFailureHandlesException(): void
     {
         $result = $this->model->safeDelete();
 
-        $this->assertNull($result);
-        $this->assertTrue($this->model->hasError());
-        $this->assertEquals('Delete failed', $this->model->getLastErrorMessage());
-        $this->assertEquals('DELETE_ERROR', $this->model->getLastErrorCode());
+        static::assertNull($result);
+        static::assertTrue($this->model->hasError());
+        static::assertSame('Delete failed', $this->model->getLastErrorMessage());
+        static::assertSame('DELETE_ERROR', $this->model->getLastErrorCode());
     }
 
     public function testConfigureErrorHandling(): void
@@ -82,9 +82,9 @@ class HandlesErrorsTest extends TestCase
 
         $result = $this->model->safeDelete();
 
-        $this->assertIsArray($result);
-        $this->assertFalse($result['success']);
-        $this->assertEquals('Delete failed', $result['error']['message']);
-        $this->assertEquals('database_error', $result['error']['type']);
+        static::assertIsArray($result);
+        static::assertFalse($result['success']);
+        static::assertSame('Delete failed', $result['error']['message']);
+        static::assertSame('database_error', $result['error']['type']);
     }
 }

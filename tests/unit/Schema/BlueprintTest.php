@@ -16,11 +16,11 @@ class BlueprintTest extends TestCase
     public function test_blueprint_basic_getters(): void
     {
         $bp = new Blueprint('users');
-        self::assertSame('users', $bp->getTable());
-        self::assertEmpty($bp->getColumns());
-        self::assertEmpty($bp->getIndexes());
-        self::assertEmpty($bp->getForeignKeys());
-        self::assertEmpty($bp->getCommands());
+        static::assertSame('users', $bp->getTable());
+        static::assertEmpty($bp->getColumns());
+        static::assertEmpty($bp->getIndexes());
+        static::assertEmpty($bp->getForeignKeys());
+        static::assertEmpty($bp->getCommands());
     }
 
     public function test_blueprint_column_helpers(): void
@@ -48,7 +48,7 @@ class BlueprintTest extends TestCase
         $bp->foreignId('user_id');
 
         $columns = $bp->getColumns();
-        self::assertCount(21, $columns);
+        static::assertCount(21, $columns);
     }
 
     public function test_blueprint_commands_and_indices(): void
@@ -61,8 +61,8 @@ class BlueprintTest extends TestCase
         $bp->dropColumn('old_col');
         $bp->renameColumn('title', 'subject');
 
-        self::assertCount(3, $bp->getIndexes());
-        self::assertCount(2, $bp->getCommands());
+        static::assertCount(3, $bp->getIndexes());
+        static::assertCount(2, $bp->getCommands());
     }
 
     public function test_column_definition_to_sql(): void
@@ -71,9 +71,9 @@ class BlueprintTest extends TestCase
         $col = new ColumnDefinition('name', 'string', $bp);
         $col->length(50)->nullable()->default('John');
 
-        self::assertSame('`name` VARCHAR(50) NULL DEFAULT \'John\'', $col->toSql('mysql'));
-        self::assertSame('"name" VARCHAR(50) NULL DEFAULT \'John\'', $col->toSql('postgresql'));
-        self::assertSame('"name" TEXT NULL DEFAULT \'John\'', $col->toSql('sqlite'));
+        static::assertSame('`name` VARCHAR(50) NULL DEFAULT \'John\'', $col->toSql('mysql'));
+        static::assertSame('"name" VARCHAR(50) NULL DEFAULT \'John\'', $col->toSql('postgresql'));
+        static::assertSame('"name" TEXT NULL DEFAULT \'John\'', $col->toSql('sqlite'));
     }
 
     public function test_column_definition_modifiers(): void
@@ -83,15 +83,15 @@ class BlueprintTest extends TestCase
         $col->primary()->autoIncrement();
 
         $sql = $col->toSql('mysql');
-        self::assertStringContainsString('AUTO_INCREMENT', $sql);
+        static::assertStringContainsString('AUTO_INCREMENT', $sql);
 
         $col2 = new ColumnDefinition('created_at', 'timestamp', $bp);
         $col2->useCurrent();
-        self::assertStringContainsString('DEFAULT CURRENT_TIMESTAMP', $col2->toSql('mysql'));
+        static::assertStringContainsString('DEFAULT CURRENT_TIMESTAMP', $col2->toSql('mysql'));
 
         $col3 = new ColumnDefinition('updated_at', 'timestamp', $bp);
         $col3->useCurrentOnUpdate();
-        self::assertStringContainsString('ON UPDATE CURRENT_TIMESTAMP', $col3->toSql('mysql'));
+        static::assertStringContainsString('ON UPDATE CURRENT_TIMESTAMP', $col3->toSql('mysql'));
     }
 
     public function test_foreign_key_definition(): void
@@ -100,9 +100,9 @@ class BlueprintTest extends TestCase
         $col = $bp->foreignId('user_id');
         $foreign = $col->references('id')->on('users')->cascadeOnDelete();
 
-        self::assertSame('user_id', $foreign->getLocalColumn());
-        self::assertSame('id', $foreign->getForeignColumn());
-        self::assertSame('users', $foreign->getForeignTable());
-        self::assertSame('CASCADE', $foreign->getOnDelete());
+        static::assertSame('user_id', $foreign->getLocalColumn());
+        static::assertSame('id', $foreign->getForeignColumn());
+        static::assertSame('users', $foreign->getForeignTable());
+        static::assertSame('CASCADE', $foreign->getOnDelete());
     }
 }

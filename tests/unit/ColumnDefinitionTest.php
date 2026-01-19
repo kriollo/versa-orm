@@ -20,8 +20,8 @@ class ColumnDefinitionTest extends TestCase
     {
         $column = new ColumnDefinition('name', 'varchar');
 
-        $this->assertEquals('name', $column->getName());
-        $this->assertEquals('varchar', $column->getType());
+        static::assertSame('name', $column->getName());
+        static::assertSame('varchar', $column->getType());
     }
 
     /**
@@ -32,8 +32,8 @@ class ColumnDefinitionTest extends TestCase
         $blueprint = new Blueprint('users');
         $column = new ColumnDefinition('email', 'varchar', $blueprint);
 
-        $this->assertEquals('email', $column->getName());
-        $this->assertEquals('varchar', $column->getType());
+        static::assertSame('email', $column->getName());
+        static::assertSame('varchar', $column->getType());
     }
 
     /**
@@ -44,8 +44,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('bio', 'text');
         $result = $column->nullable();
 
-        $this->assertSame($column, $result); // Fluent interface
-        $this->assertTrue($column->getAttribute('nullable'));
+        static::assertSame($column, $result); // Fluent interface
+        static::assertTrue($column->getAttribute('nullable'));
     }
 
     /**
@@ -56,7 +56,7 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('name', 'varchar');
         $column->nullable(false);
 
-        $this->assertFalse($column->getAttribute('nullable'));
+        static::assertFalse($column->getAttribute('nullable'));
     }
 
     /**
@@ -67,8 +67,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('active', 'boolean');
         $result = $column->default(true);
 
-        $this->assertSame($column, $result);
-        $this->assertTrue($column->getAttribute('default'));
+        static::assertSame($column, $result);
+        static::assertTrue($column->getAttribute('default'));
     }
 
     /**
@@ -79,7 +79,7 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('status', 'varchar');
         $column->default('pending');
 
-        $this->assertEquals('pending', $column->getAttribute('default'));
+        static::assertSame('pending', $column->getAttribute('default'));
     }
 
     /**
@@ -90,7 +90,7 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('description', 'text');
         $column->default(null);
 
-        $this->assertNull($column->getAttribute('default'));
+        static::assertNull($column->getAttribute('default'));
     }
 
     /**
@@ -101,8 +101,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('quantity', 'integer');
         $result = $column->unsigned();
 
-        $this->assertSame($column, $result);
-        $this->assertTrue($column->getAttribute('unsigned'));
+        static::assertSame($column, $result);
+        static::assertTrue($column->getAttribute('unsigned'));
     }
 
     /**
@@ -113,8 +113,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('id', 'integer');
         $result = $column->autoIncrement();
 
-        $this->assertSame($column, $result);
-        $this->assertTrue($column->getAttribute('autoIncrement'));
+        static::assertSame($column, $result);
+        static::assertTrue($column->getAttribute('autoIncrement'));
     }
 
     /**
@@ -125,8 +125,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('id', 'integer');
         $result = $column->primary();
 
-        $this->assertSame($column, $result);
-        $this->assertTrue($column->getAttribute('primary'));
+        static::assertSame($column, $result);
+        static::assertTrue($column->getAttribute('primary'));
     }
 
     /**
@@ -138,10 +138,10 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('email', 'varchar', $blueprint);
         $result = $column->unique();
 
-        $this->assertSame($column, $result);
+        static::assertSame($column, $result);
         // unique() agrega un índice al blueprint, no al atributo
         $indexes = $blueprint->getIndexes();
-        $this->assertCount(1, $indexes);
+        static::assertCount(1, $indexes);
     }
 
     /**
@@ -153,10 +153,10 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('username', 'varchar', $blueprint);
         $result = $column->index();
 
-        $this->assertSame($column, $result);
+        static::assertSame($column, $result);
         // index() agrega un índice al blueprint
         $indexes = $blueprint->getIndexes();
-        $this->assertCount(1, $indexes);
+        static::assertCount(1, $indexes);
     }
 
     /**
@@ -167,8 +167,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('status', 'varchar');
         $result = $column->comment('User account status');
 
-        $this->assertSame($column, $result);
-        $this->assertEquals('User account status', $column->getAttribute('comment'));
+        static::assertSame($column, $result);
+        static::assertSame('User account status', $column->getAttribute('comment'));
     }
 
     /**
@@ -180,8 +180,8 @@ class ColumnDefinitionTest extends TestCase
         $column->setAttribute('precision', 10);
         $column->setAttribute('scale', 2);
 
-        $this->assertEquals(10, $column->getAttribute('precision'));
-        $this->assertEquals(2, $column->getAttribute('scale'));
+        static::assertSame(10, $column->getAttribute('precision'));
+        static::assertSame(2, $column->getAttribute('scale'));
     }
 
     /**
@@ -192,7 +192,7 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('name', 'varchar');
 
         $value = $column->getAttribute('nonexistent', 'default_value');
-        $this->assertEquals('default_value', $value);
+        static::assertSame('default_value', $value);
     }
 
     /**
@@ -205,9 +205,9 @@ class ColumnDefinitionTest extends TestCase
         $column->default('CURRENT_TIMESTAMP');
 
         $attributes = $column->getAttributes();
-        $this->assertIsArray($attributes);
-        $this->assertArrayHasKey('nullable', $attributes);
-        $this->assertArrayHasKey('default', $attributes);
+        static::assertIsArray($attributes);
+        static::assertArrayHasKey('nullable', $attributes);
+        static::assertArrayHasKey('default', $attributes);
     }
 
     /**
@@ -218,8 +218,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('name', 'varchar');
 
         $modifiers = $column->getModifiers();
-        $this->assertIsArray($modifiers);
-        $this->assertCount(0, $modifiers);
+        static::assertIsArray($modifiers);
+        static::assertCount(0, $modifiers);
     }
 
     /**
@@ -231,10 +231,10 @@ class ColumnDefinitionTest extends TestCase
 
         $result = $column->nullable(false)->default('user@example.com')->comment('User email address');
 
-        $this->assertSame($column, $result);
-        $this->assertFalse($column->getAttribute('nullable'));
-        $this->assertEquals('user@example.com', $column->getAttribute('default'));
-        $this->assertEquals('User email address', $column->getAttribute('comment'));
+        static::assertSame($column, $result);
+        static::assertFalse($column->getAttribute('nullable'));
+        static::assertSame('user@example.com', $column->getAttribute('default'));
+        static::assertSame('User email address', $column->getAttribute('comment'));
     }
 
     /**
@@ -245,9 +245,9 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('id', 'bigint');
         $column->unsigned()->autoIncrement()->primary();
 
-        $this->assertTrue($column->getAttribute('unsigned'));
-        $this->assertTrue($column->getAttribute('autoIncrement'));
-        $this->assertTrue($column->getAttribute('primary'));
+        static::assertTrue($column->getAttribute('unsigned'));
+        static::assertTrue($column->getAttribute('autoIncrement'));
+        static::assertTrue($column->getAttribute('primary'));
     }
 
     /**
@@ -258,8 +258,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('middle_name', 'varchar');
         $result = $column->after('first_name');
 
-        $this->assertSame($column, $result);
-        $this->assertEquals('first_name', $column->getAttribute('after'));
+        static::assertSame($column, $result);
+        static::assertSame('first_name', $column->getAttribute('after'));
     }
 
     /**
@@ -270,8 +270,8 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('priority', 'integer');
         $result = $column->first();
 
-        $this->assertSame($column, $result);
-        $this->assertTrue($column->getAttribute('first'));
+        static::assertSame($column, $result);
+        static::assertTrue($column->getAttribute('first'));
     }
 
     /**
@@ -282,7 +282,7 @@ class ColumnDefinitionTest extends TestCase
         $column = new ColumnDefinition('full_name', 'varchar');
         $result = $column->storedAs('CONCAT(first_name, " ", last_name)');
 
-        $this->assertSame($column, $result);
-        $this->assertEquals('CONCAT(first_name, " ", last_name)', $column->getAttribute('storedAs'));
+        static::assertSame($column, $result);
+        static::assertSame('CONCAT(first_name, " ", last_name)', $column->getAttribute('storedAs'));
     }
 }

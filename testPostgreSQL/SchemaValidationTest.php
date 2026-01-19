@@ -28,20 +28,20 @@ class SchemaValidationTest extends TestCase
 
         try {
             $schema = $method->invoke($model);
-            self::assertIsArray($schema);
+            static::assertIsArray($schema);
 
             if (!empty($schema)) {
-                self::assertArrayHasKey('id', $schema);
-                self::assertArrayHasKey('name', $schema);
-                self::assertArrayHasKey('email', $schema);
+                static::assertArrayHasKey('id', $schema);
+                static::assertArrayHasKey('name', $schema);
+                static::assertArrayHasKey('email', $schema);
 
                 $idColumn = $schema['id'];
-                self::assertArrayHasKey('is_required', $idColumn);
-                self::assertArrayHasKey('is_nullable', $idColumn);
-                self::assertArrayHasKey('data_type', $idColumn);
+                static::assertArrayHasKey('is_required', $idColumn);
+                static::assertArrayHasKey('is_nullable', $idColumn);
+                static::assertArrayHasKey('data_type', $idColumn);
             }
         } catch (Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
     }
 
@@ -82,10 +82,10 @@ class SchemaValidationTest extends TestCase
 
         $validationSchema = $method->invoke($model, $mockSchemaColumns);
 
-        self::assertIsArray($validationSchema);
-        self::assertArrayHasKey('name', $validationSchema);
-        self::assertTrue($validationSchema['name']['is_required']);
-        self::assertSame(255, $validationSchema['name']['max_length']);
+        static::assertIsArray($validationSchema);
+        static::assertArrayHasKey('name', $validationSchema);
+        static::assertTrue($validationSchema['name']['is_required']);
+        static::assertSame(255, $validationSchema['name']['max_length']);
     }
 
     /**
@@ -98,13 +98,13 @@ class SchemaValidationTest extends TestCase
         // Test 1: Datos válidos
         $model->fill(['name' => 'Juan Pérez', 'email' => 'juan@example.com']);
         $errors = $model->validate();
-        self::assertEmpty($errors);
+        static::assertEmpty($errors);
 
         // Test 2: Campo requerido faltante
         $model2 = new TestUserModelWithMockSchema('users', self::$orm);
         $model2->fill(['email' => 'test@example.com']);
         $errors2 = $model2->validate();
-        self::assertContains('The name field is required.', $errors2);
+        static::assertContains('The name field is required.', $errors2);
     }
 }
 

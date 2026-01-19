@@ -60,13 +60,13 @@ final class RelationsBelongsToTest extends TestCase
 
         // calling query() should add constraints
         $q = $rel->query();
-        self::assertSame($qb, $q);
-        self::assertSame(['where', 'id', '=', 7], $qb->called[0]);
+        static::assertSame($qb, $q);
+        static::assertSame(['where', 'id', '=', 7], $qb->called[0]);
 
         // calling getResults triggers findOne()
         $qb->called = [];
         $res = $rel->getResults();
-        self::assertNull($res);
-        self::assertSame('findOne', $qb->called[1][0]);
+        static::assertNull($res);
+        static::assertSame('findOne', $qb->called[1][0]);
     }
 }

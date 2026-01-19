@@ -32,11 +32,11 @@ class SchemaBuilderTest extends TestCase
         $this->orm
             ->expects(self::once())
             ->method('exec')
-            ->with(self::stringContains(
+            ->with(static::stringContains(
                 'CREATE TABLE "users" ("id" INTEGER, "name" TEXT NOT NULL, PRIMARY KEY ("id"))',
             ));
 
-        $schema->create('users', function (Blueprint $table) {
+        $schema->create('users', static function (Blueprint $table) {
             $table->id();
             $table->string('name');
         });
@@ -90,8 +90,8 @@ class SchemaBuilderTest extends TestCase
                 ['name' => 'posts'],
             ]);
 
-        self::assertTrue($schema->hasTable('users'));
-        self::assertFalse($schema->hasTable('missing'));
+        static::assertTrue($schema->hasTable('users'));
+        static::assertFalse($schema->hasTable('missing'));
     }
 
     public function test_has_column(): void
@@ -106,8 +106,8 @@ class SchemaBuilderTest extends TestCase
                 ['name' => 'name'],
             ]);
 
-        self::assertTrue($schema->hasColumn('users', 'name'));
-        self::assertFalse($schema->hasColumn('users', 'email'));
+        static::assertTrue($schema->hasColumn('users', 'name'));
+        static::assertFalse($schema->hasColumn('users', 'email'));
     }
 
     public function test_foreign_key_constraints_sqlite(): void

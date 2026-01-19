@@ -68,10 +68,10 @@ class VersaModelAdvancedTest extends TestCase
         $products = VersaModel::findAll('products', 'active = ?', [1]);
         $exported = VersaModel::exportAll($products);
 
-        $this->assertIsArray($exported);
-        $this->assertCount(2, $exported);
-        $this->assertArrayHasKey('name', $exported[0]);
-        $this->assertEquals('Laptop', $exported[0]['name']);
+        static::assertIsArray($exported);
+        static::assertCount(2, $exported);
+        static::assertArrayHasKey('name', $exported[0]);
+        static::assertSame('Laptop', $exported[0]['name']);
     }
 
     /**
@@ -80,10 +80,10 @@ class VersaModelAdvancedTest extends TestCase
     public function testCountStatic(): void
     {
         $count = VersaModel::count('products', 'active = ?', [1]);
-        $this->assertEquals(2, $count);
+        static::assertSame(2, $count);
 
         $totalCount = VersaModel::count('products');
-        $this->assertEquals(3, $totalCount);
+        static::assertSame(3, $totalCount);
     }
 
     /**
@@ -105,9 +105,9 @@ class VersaModelAdvancedTest extends TestCase
 
         $results = VersaModel::storeAll([$product1, $product2]);
 
-        $this->assertCount(2, $results);
-        $this->assertNotNull($product1->id);
-        $this->assertNotNull($product2->id);
+        static::assertCount(2, $results);
+        static::assertNotNull($product1->id);
+        static::assertNotNull($product2->id);
     }
 
     /**
@@ -116,12 +116,12 @@ class VersaModelAdvancedTest extends TestCase
     public function testTrashAll(): void
     {
         $products = VersaModel::findAll('products', 'active = ?', [0]);
-        $this->assertCount(1, $products);
+        static::assertCount(1, $products);
 
         VersaModel::trashAll($products);
 
         $remainingCount = VersaModel::count('products');
-        $this->assertEquals(2, $remainingCount);
+        static::assertSame(2, $remainingCount);
     }
 
     /**
@@ -138,8 +138,8 @@ class VersaModelAdvancedTest extends TestCase
         // Recargar - fresh devuelve una nueva instancia
         $freshProduct = $product->fresh();
 
-        $this->assertNotEquals($originalPrice, $freshProduct->price);
-        $this->assertEquals(1299.99, $freshProduct->price);
+        static::assertNotEquals($originalPrice, $freshProduct->price);
+        static::assertSame(1299.99, $freshProduct->price);
     }
 
     /**
@@ -148,10 +148,10 @@ class VersaModelAdvancedTest extends TestCase
     public function testHasId(): void
     {
         $product = VersaModel::load('products', 1);
-        $this->assertNotNull($product->id);
+        static::assertNotNull($product->id);
 
         $newProduct = VersaModel::dispense('products');
-        $this->assertNull($newProduct->id);
+        static::assertNull($newProduct->id);
     }
 
     /**
@@ -162,10 +162,10 @@ class VersaModelAdvancedTest extends TestCase
         $product = VersaModel::load('products', 1);
 
         $name = $product->getAttribute('name');
-        $this->assertEquals('Laptop', $name);
+        static::assertSame('Laptop', $name);
 
         $price = $product->getAttribute('price');
-        $this->assertEquals(999.99, $price);
+        static::assertSame(999.99, $price);
     }
 
     /**
@@ -174,14 +174,14 @@ class VersaModelAdvancedTest extends TestCase
     public function testAttributeModification(): void
     {
         $product = VersaModel::load('products', 1);
-        $this->assertEquals('Laptop', $product->getAttribute('name'));
+        static::assertSame('Laptop', $product->getAttribute('name'));
 
         $product->name = 'Modified Name';
 
         // Verificar con getAttribute que evita cache
         $product->store();
         $reloaded = VersaModel::load('products', 1);
-        $this->assertEquals('Modified Name', $reloaded->getAttribute('name'));
+        static::assertSame('Modified Name', $reloaded->getAttribute('name'));
     }
 
     /**
@@ -191,7 +191,7 @@ class VersaModelAdvancedTest extends TestCase
     {
         $product = VersaModel::load('products', 1);
         $original = $product->export();
-        $this->assertEquals('Laptop', $original['name']);
+        static::assertSame('Laptop', $original['name']);
 
         $product->name = 'New Name';
         $product->store();
@@ -200,7 +200,7 @@ class VersaModelAdvancedTest extends TestCase
         $reloaded = VersaModel::load('products', 1);
         $updated = $reloaded->export();
 
-        $this->assertEquals('New Name', $updated['name']);
+        static::assertSame('New Name', $updated['name']);
     }
 
     /**
@@ -216,9 +216,9 @@ class VersaModelAdvancedTest extends TestCase
             'active' => 1,
         ]);
 
-        $this->assertEquals('Headphones', $product->name);
-        $this->assertEquals(59.99, $product->price);
-        $this->assertEquals(30, $product->stock);
+        static::assertSame('Headphones', $product->name);
+        static::assertSame(59.99, $product->price);
+        static::assertSame(30, $product->stock);
     }
 
     /**
@@ -230,10 +230,10 @@ class VersaModelAdvancedTest extends TestCase
         $data = $product->export();
         $subset = array_intersect_key($data, array_flip(['name', 'price']));
 
-        $this->assertIsArray($subset);
-        $this->assertArrayHasKey('name', $subset);
-        $this->assertArrayHasKey('price', $subset);
-        $this->assertArrayNotHasKey('stock', $subset);
+        static::assertIsArray($subset);
+        static::assertArrayHasKey('name', $subset);
+        static::assertArrayHasKey('price', $subset);
+        static::assertArrayNotHasKey('stock', $subset);
     }
 
     /**
@@ -245,11 +245,11 @@ class VersaModelAdvancedTest extends TestCase
         $data = $product->export();
         $filtered = array_diff_key($data, array_flip(['stock', 'active']));
 
-        $this->assertIsArray($filtered);
-        $this->assertArrayHasKey('name', $filtered);
-        $this->assertArrayHasKey('price', $filtered);
-        $this->assertArrayNotHasKey('stock', $filtered);
-        $this->assertArrayNotHasKey('active', $filtered);
+        static::assertIsArray($filtered);
+        static::assertArrayHasKey('name', $filtered);
+        static::assertArrayHasKey('price', $filtered);
+        static::assertArrayNotHasKey('stock', $filtered);
+        static::assertArrayNotHasKey('active', $filtered);
     }
 
     /**
@@ -265,9 +265,9 @@ class VersaModelAdvancedTest extends TestCase
         $replica->price = $data['price'];
         $replica->stock = $data['stock'];
 
-        $this->assertNull($replica->id);
-        $this->assertEquals($product->name, $replica->name);
-        $this->assertEquals($product->price, $replica->price);
+        static::assertNull($replica->id);
+        static::assertEquals($product->name, $replica->name);
+        static::assertEquals($product->price, $replica->price);
     }
 
     /**
@@ -278,10 +278,10 @@ class VersaModelAdvancedTest extends TestCase
         $product = VersaModel::load('products', 1);
         $json = json_encode($product->export());
 
-        $this->assertIsString($json);
+        static::assertIsString($json);
         $decoded = json_decode($json, true);
-        $this->assertIsArray($decoded);
-        $this->assertEquals('Laptop', $decoded['name']);
+        static::assertIsArray($decoded);
+        static::assertSame('Laptop', $decoded['name']);
     }
 
     /**
@@ -295,13 +295,13 @@ class VersaModelAdvancedTest extends TestCase
         $product->store();
 
         $reloaded = VersaModel::load('products', 1);
-        $this->assertEquals(20, (int) $reloaded->stock);
+        static::assertSame(20, (int) $reloaded->stock);
 
         $reloaded->stock = 15;
         $reloaded->store();
 
         $final = VersaModel::load('products', 1);
-        $this->assertEquals(15, (int) $final->stock);
+        static::assertSame(15, (int) $final->stock);
     }
 
     /**
@@ -317,7 +317,7 @@ class VersaModelAdvancedTest extends TestCase
             ->where('active', '=', 1)
             ->get();
 
-        $this->assertGreaterThan(0, count($products));
+        static::assertGreaterThan(0, count($products));
     }
 
     /**
@@ -333,11 +333,11 @@ class VersaModelAdvancedTest extends TestCase
             'active' => 1,
         ]);
 
-        $this->assertEquals('Speaker', $product->name);
-        $this->assertEquals(89.99, $product->price);
+        static::assertSame('Speaker', $product->name);
+        static::assertSame(89.99, $product->price);
 
         // No debería tener ID hasta que se guarde
-        $this->assertNull($product->id);
+        static::assertNull($product->id);
     }
 
     /**
@@ -347,9 +347,9 @@ class VersaModelAdvancedTest extends TestCase
     {
         $product = VersaModel::findOne('products', 1);
 
-        $this->assertNotNull($product);
-        $this->assertEquals('Laptop', $product->name);
-        $this->assertNotNull($product->id);
+        static::assertNotNull($product);
+        static::assertSame('Laptop', $product->name);
+        static::assertNotNull($product->id);
     }
 
     /**
@@ -359,8 +359,8 @@ class VersaModelAdvancedTest extends TestCase
     {
         $products = VersaModel::findAll('products', 'active = ?', [1]);
 
-        $this->assertIsArray($products);
-        $this->assertEquals(2, count($products));
-        $this->assertEquals('Laptop', $products[0]->name);
+        static::assertIsArray($products);
+        static::assertSame(2, count($products));
+        static::assertSame('Laptop', $products[0]->name);
     }
 }

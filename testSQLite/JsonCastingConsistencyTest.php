@@ -47,19 +47,19 @@ class JsonCastingConsistencyTest extends TestCase
         };
 
         $rows = self::$orm->table('configs_json_cast', get_class($model))->get();
-        self::assertCount(1, $rows);
-        self::assertIsArray($rows[0]['settings']);
-        self::assertSame('dark', $rows[0]['settings']['theme']);
+        static::assertCount(1, $rows);
+        static::assertIsArray($rows[0]['settings']);
+        static::assertSame('dark', $rows[0]['settings']['theme']);
 
         $first = self::$orm->table('configs_json_cast', get_class($model))->firstArray();
-        self::assertNotNull($first);
-        self::assertIsArray($first['settings']);
+        static::assertNotNull($first);
+        static::assertIsArray($first['settings']);
 
         $objects = self::$orm->table('configs_json_cast', get_class($model))->findAll();
-        self::assertIsArray($objects[0]->export()['settings']);
+        static::assertIsArray($objects[0]->export()['settings']);
 
         $one = self::$orm->table('configs_json_cast', get_class($model))->where('name', '=', 'conf_a')->findOne();
-        self::assertNotNull($one);
-        self::assertIsArray($one->export()['settings']);
+        static::assertNotNull($one);
+        static::assertIsArray($one->export()['settings']);
     }
 }

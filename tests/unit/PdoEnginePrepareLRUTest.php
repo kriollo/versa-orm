@@ -38,7 +38,7 @@ final class PdoEnginePrepareLRUTest extends TestCase
         for ($i = 0; $i < ($limit + 3); $i++) {
             $sql = "SELECT {$i} as v";
             $stmt = $method->invoke($engine, $pdo, $sql);
-            self::assertNotNull($stmt);
+            static::assertNotNull($stmt);
         }
 
         // Call instance method clearStmtCache via reflection to ensure it runs
@@ -48,7 +48,7 @@ final class PdoEnginePrepareLRUTest extends TestCase
 
         // Metrics should have stmt_cache_misses key
         $metrics = PdoEngine::getMetrics();
-        self::assertIsArray($metrics);
-        self::assertArrayHasKey('stmt_cache_misses', $metrics);
+        static::assertIsArray($metrics);
+        static::assertArrayHasKey('stmt_cache_misses', $metrics);
     }
 }

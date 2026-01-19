@@ -71,10 +71,10 @@ final class RelationsBelongsToBehaviorTest extends TestCase
         $m->invoke($relation);
 
         // after addConstraints the query should have recorded a where
-        self::assertNotEmpty($query->recordedWheres);
+        static::assertNotEmpty($query->recordedWheres);
 
         // calling getResults should call findOne and return a VersaModel instance
         $result = $relation->getResults();
-        self::assertInstanceOf(\VersaORM\VersaModel::class, $result);
+        static::assertInstanceOf(\VersaORM\VersaModel::class, $result);
     }
 }

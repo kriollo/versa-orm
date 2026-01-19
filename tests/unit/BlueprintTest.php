@@ -20,7 +20,7 @@ class BlueprintTest extends TestCase
     {
         $blueprint = new Blueprint('users');
 
-        $this->assertEquals('users', $blueprint->getTable());
+        static::assertSame('users', $blueprint->getTable());
     }
 
     /**
@@ -31,11 +31,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
         $column = $blueprint->id();
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('id', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('id', $columns[0]->getName());
     }
 
     /**
@@ -47,8 +47,8 @@ class BlueprintTest extends TestCase
         $column = $blueprint->id('user_id');
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('user_id', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('user_id', $columns[0]->getName());
     }
 
     /**
@@ -59,11 +59,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
         $column = $blueprint->string('name');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('name', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('name', $columns[0]->getName());
     }
 
     /**
@@ -75,8 +75,8 @@ class BlueprintTest extends TestCase
         $column = $blueprint->string('email', 100);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('email', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('email', $columns[0]->getName());
     }
 
     /**
@@ -87,11 +87,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('products');
         $column = $blueprint->integer('stock');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('stock', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('stock', $columns[0]->getName());
     }
 
     /**
@@ -102,11 +102,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
         $column = $blueprint->boolean('active');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('active', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('active', $columns[0]->getName());
     }
 
     /**
@@ -117,11 +117,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('posts');
         $column = $blueprint->text('content');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('content', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('content', $columns[0]->getName());
     }
 
     /**
@@ -132,11 +132,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('posts');
         $column = $blueprint->timestamp('created_at');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('created_at', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('created_at', $columns[0]->getName());
     }
 
     /**
@@ -148,9 +148,9 @@ class BlueprintTest extends TestCase
         $blueprint->timestamps();
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(2, $columns);
-        $this->assertEquals('created_at', $columns[0]->getName());
-        $this->assertEquals('updated_at', $columns[1]->getName());
+        static::assertCount(2, $columns);
+        static::assertSame('created_at', $columns[0]->getName());
+        static::assertSame('updated_at', $columns[1]->getName());
     }
 
     /**
@@ -165,7 +165,7 @@ class BlueprintTest extends TestCase
         $blueprint->boolean('active');
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(4, $columns);
+        static::assertCount(4, $columns);
     }
 
     /**
@@ -176,8 +176,8 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
 
         $indexes = $blueprint->getIndexes();
-        $this->assertIsArray($indexes);
-        $this->assertCount(0, $indexes);
+        static::assertIsArray($indexes);
+        static::assertCount(0, $indexes);
     }
 
     /**
@@ -188,8 +188,8 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
 
         $foreignKeys = $blueprint->getForeignKeys();
-        $this->assertIsArray($foreignKeys);
-        $this->assertCount(0, $foreignKeys);
+        static::assertIsArray($foreignKeys);
+        static::assertCount(0, $foreignKeys);
     }
 
     /**
@@ -200,8 +200,8 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
 
         $commands = $blueprint->getCommands();
-        $this->assertIsArray($commands);
-        $this->assertCount(0, $commands);
+        static::assertIsArray($commands);
+        static::assertCount(0, $commands);
     }
 
     /**
@@ -212,11 +212,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('products');
         $column = $blueprint->float('price');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('price', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('price', $columns[0]->getName());
     }
 
     /**
@@ -227,11 +227,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('products');
         $column = $blueprint->decimal('price', 10, 2);
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('price', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('price', $columns[0]->getName());
     }
 
     /**
@@ -242,11 +242,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('events');
         $column = $blueprint->date('event_date');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('event_date', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('event_date', $columns[0]->getName());
     }
 
     /**
@@ -257,11 +257,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('settings');
         $column = $blueprint->json('config');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('config', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('config', $columns[0]->getName());
     }
 
     /**
@@ -272,11 +272,11 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('users');
         $column = $blueprint->enum('status', ['active', 'inactive', 'pending']);
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('status', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('status', $columns[0]->getName());
     }
 
     /**
@@ -287,10 +287,10 @@ class BlueprintTest extends TestCase
         $blueprint = new Blueprint('analytics');
         $column = $blueprint->bigInteger('views');
 
-        $this->assertInstanceOf(ColumnDefinition::class, $column);
+        static::assertInstanceOf(ColumnDefinition::class, $column);
 
         $columns = $blueprint->getColumns();
-        $this->assertCount(1, $columns);
-        $this->assertEquals('views', $columns[0]->getName());
+        static::assertCount(1, $columns);
+        static::assertSame('views', $columns[0]->getName());
     }
 }

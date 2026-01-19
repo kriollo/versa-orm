@@ -21,25 +21,25 @@ final class PdoEngineMetricsTest extends TestCase
         $res = $engine->execute('raw', ['query' => 'SELECT 1', 'bindings' => []]);
 
         $metrics = PdoEngine::getMetrics();
-        self::assertArrayHasKey('queries', $metrics);
-        self::assertGreaterThanOrEqual(1, $metrics['queries']);
+        static::assertArrayHasKey('queries', $metrics);
+        static::assertGreaterThanOrEqual(1, $metrics['queries']);
 
         // Record hydration and verify metrics updated
         PdoEngine::recordHydration(5, 12.3);
         $metrics = PdoEngine::getMetrics();
-        self::assertSame(5, $metrics['objects_hydrated']);
-        self::assertGreaterThanOrEqual(12.3, $metrics['hydration_ms']);
+        static::assertSame(5, $metrics['objects_hydrated']);
+        static::assertGreaterThanOrEqual(12.3, $metrics['hydration_ms']);
 
         // Record fast hydration and verify it increments fastpath counters and accumulates
         PdoEngine::recordHydrationFast(2, 1.1);
         $metrics = PdoEngine::getMetrics();
-        self::assertSame(1, $metrics['hydration_fastpath_uses']);
-        self::assertSame(2, $metrics['hydration_fastpath_rows']);
+        static::assertSame(1, $metrics['hydration_fastpath_uses']);
+        static::assertSame(2, $metrics['hydration_fastpath_rows']);
 
         // Reset and ensure metrics are zeroed
         PdoEngine::resetMetrics();
         $metrics = PdoEngine::getMetrics();
-        self::assertSame(0, $metrics['queries']);
-        self::assertSame(0, $metrics['objects_hydrated']);
+        static::assertSame(0, $metrics['queries']);
+        static::assertSame(0, $metrics['objects_hydrated']);
     }
 }

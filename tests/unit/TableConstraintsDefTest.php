@@ -17,10 +17,10 @@ class TableConstraintsDefTest extends TestCase
         $data = ['primary_key' => 'id', 'checks' => ['age > 18']];
         $constraints = new TableConstraintsDef($data);
 
-        $this->assertSame($data, $constraints->data);
-        $this->assertEquals('id', $constraints->primary_key);
-        $this->assertEquals(['age > 18'], $constraints->checks);
-        $this->assertNull($constraints->non_existent);
+        static::assertSame($data, $constraints->data);
+        static::assertSame('id', $constraints->primary_key);
+        static::assertEquals(['age > 18'], $constraints->checks);
+        static::assertNull($constraints->non_existent);
     }
 
     public function testSet(): void
@@ -28,15 +28,15 @@ class TableConstraintsDefTest extends TestCase
         $constraints = new TableConstraintsDef();
         $constraints->unique = ['email'];
 
-        $this->assertEquals(['email'], $constraints->unique);
-        $this->assertEquals(['email'], $constraints->data['unique']);
+        static::assertEquals(['email'], $constraints->unique);
+        static::assertEquals(['email'], $constraints->data['unique']);
     }
 
     public function testIsset(): void
     {
         $constraints = new TableConstraintsDef(['primary_key' => 'id']);
 
-        $this->assertTrue(isset($constraints->primary_key));
-        $this->assertFalse(isset($constraints->unique));
+        static::assertTrue(isset($constraints->primary_key));
+        static::assertFalse(isset($constraints->unique));
     }
 }

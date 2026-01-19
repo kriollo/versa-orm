@@ -107,11 +107,11 @@ final class RelationsTest extends TestCase
         $rel = new BelongsTo($qb, $model, 'foreign_id', 'id', 'owner');
 
         // query() debe devolver el QueryBuilder stub
-        self::assertSame($qb, $rel->query());
+        static::assertSame($qb, $rel->query());
 
         // Verificar delegación: llamar a where a través de la relación debe devolver el QueryBuilder
         $ret = $rel->where('id', '=', 123);
-        self::assertSame($qb, $ret);
+        static::assertSame($qb, $ret);
     }
 
     public function testHasOneAndHasManyDelegation(): void
@@ -120,12 +120,12 @@ final class RelationsTest extends TestCase
         $model = $this->makeModelStub(['local_id' => 77]);
 
         $hasOne = new HasOne($qb, $model, 'foreign_key', 'local_id');
-        self::assertSame($qb, $hasOne->query());
-        self::assertSame($qb, $hasOne->where('foreign_key', '=', 77));
+        static::assertSame($qb, $hasOne->query());
+        static::assertSame($qb, $hasOne->where('foreign_key', '=', 77));
 
         $hasMany = new HasMany($qb, $model, 'foreign_key', 'local_id');
-        self::assertSame($qb, $hasMany->query());
-        self::assertSame($qb, $hasMany->where('foreign_key', '=', 77));
+        static::assertSame($qb, $hasMany->query());
+        static::assertSame($qb, $hasMany->where('foreign_key', '=', 77));
     }
 
     public function testBelongsToManyAttachSyncDetach(): void
@@ -136,8 +136,8 @@ final class RelationsTest extends TestCase
         $b2m = new BelongsToMany($qb, $model, 'pivot', 'parent_id', 'related_id', 'id', 'id');
 
         // Evitar attach/sync/detach (invocan internamente execute sobre queries reales).
-        self::assertSame($qb, $b2m->query());
-        self::assertSame($qb, $b2m->where('parent_id', '=', 9));
+        static::assertSame($qb, $b2m->query());
+        static::assertSame($qb, $b2m->where('parent_id', '=', 9));
     }
 
     private function makeQueryBuilderStub(): QueryBuilder

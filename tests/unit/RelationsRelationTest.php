@@ -30,6 +30,6 @@ final class RelationsRelationTest extends TestCase
             }
         };
 
-        self::assertSame(['ok'], $concrete->getResults());
+        static::assertSame(['ok'], $concrete->getResults());
     }
 }

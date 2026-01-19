@@ -45,7 +45,7 @@ final class CreateIndexPgTest extends TestCase
         $orm->schemaCreate('versa_users', $columns, $options);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured);
+        static::assertNotEmpty($captured);
 
         $found = false;
         foreach ($captured as $sql) {
@@ -54,11 +54,11 @@ final class CreateIndexPgTest extends TestCase
             }
 
             $found = true;
-            self::assertStringContainsStringIgnoringCase('USING', $sql);
+            static::assertStringContainsStringIgnoringCase('USING', $sql);
             // Ensure USING is present before '('
-            self::assertMatchesRegularExpression('/USING\s+\w+\s*\(/i', $sql);
+            static::assertMatchesRegularExpression('/USING\s+\w+\s*\(/i', $sql);
         }
 
-        self::assertTrue($found, 'No CREATE INDEX captured');
+        static::assertTrue($found, 'No CREATE INDEX captured');
     }
 }

@@ -18,9 +18,9 @@ final class QueryBuilderIsSafeIdentifierTest extends TestCase
         $m = $ref->getMethod('isSafeIdentifier');
         $m->setAccessible(true);
 
-        self::assertTrue($m->invoke($qb, '*'));
-        self::assertTrue($m->invoke($qb, 'users.name'));
-        self::assertFalse($m->invoke($qb, 'name; DROP TABLE users;'));
-        self::assertFalse($m->invoke($qb, 'name -- comment'));
+        static::assertTrue($m->invoke($qb, '*'));
+        static::assertTrue($m->invoke($qb, 'users.name'));
+        static::assertFalse($m->invoke($qb, 'name; DROP TABLE users;'));
+        static::assertFalse($m->invoke($qb, 'name -- comment'));
     }
 }

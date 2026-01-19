@@ -30,13 +30,13 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($newProduct);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         // Verificar que se insertó correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-NEW-001')->firstArray();
-        self::assertNotNull($inserted);
-        self::assertSame('Producto Replace Nuevo', $inserted['name']);
-        self::assertEquals(199.99, (float) $inserted['price']);
+        static::assertNotNull($inserted);
+        static::assertSame('Producto Replace Nuevo', $inserted['name']);
+        static::assertSame(199.99, (float) $inserted['price']);
     }
 
     public function test_replace_into_existing_record_preserves_missing_columns(): void
@@ -64,18 +64,18 @@ class ReplaceIntoTest extends TestCase
 
         $result = self::$orm->table('products')->replaceInto($replacementProduct);
 
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         $updated = self::$orm->table('products')->where('sku', '=', 'REPLACE-EXIST-001')->firstArray();
-        self::assertNotNull($updated);
+        static::assertNotNull($updated);
 
         // Valores actualizados
-        self::assertSame('Producto Reemplazado', $updated['name']);
-        self::assertEquals(250.00, (float) $updated['price']);
+        static::assertSame('Producto Reemplazado', $updated['name']);
+        static::assertSame(250.00, (float) $updated['price']);
 
         // Valores PRESERVADOS (diferencia clave con MySQL REPLACE)
-        self::assertSame(10, $updated['stock']);
-        self::assertSame('Descripción original que debe conservarse', $updated['description']);
+        static::assertSame(10, $updated['stock']);
+        static::assertSame('Descripción original que debe conservarse', $updated['description']);
     }
 
     public function test_replace_into_with_versamodel(): void
@@ -96,10 +96,10 @@ class ReplaceIntoTest extends TestCase
         ];
 
         $result = self::$orm->table('products')->replaceInto($data);
-        self::assertSame('success', $result['status']);
+        static::assertSame('success', $result['status']);
 
         $saved = self::$orm->table('products')->where('sku', '=', 'REPLACE-MODEL-001')->findOne();
-        self::assertSame('Producto VersaModel Updated', $saved->name);
-        self::assertEquals(75.00, (float) $saved->price);
+        static::assertSame('Producto VersaModel Updated', $saved->name);
+        static::assertSame(75.00, (float) $saved->price);
     }
 }

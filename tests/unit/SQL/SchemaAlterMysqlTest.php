@@ -39,7 +39,7 @@ final class SchemaAlterMysqlTest extends TestCase
         ]);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
+        static::assertNotEmpty($captured, 'No SQL captured from schemaAlter');
 
         $dropColumnFound = false;
         $dropIndexFound = false;
@@ -54,7 +54,7 @@ final class SchemaAlterMysqlTest extends TestCase
             }
         }
 
-        self::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
-        self::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
+        static::assertTrue($dropColumnFound, 'No DROP COLUMN statement captured');
+        static::assertTrue($dropIndexFound, 'No DROP INDEX statement captured');
     }
 }

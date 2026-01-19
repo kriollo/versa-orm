@@ -38,11 +38,11 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        self::assertIsArray($res);
-        self::assertArrayHasKey('sql', $res);
-        self::assertArrayHasKey('bindings', $res);
-        self::assertStringContainsString('FROM users', $res['sql']);
-        self::assertSame([], $res['bindings']);
+        static::assertIsArray($res);
+        static::assertArrayHasKey('sql', $res);
+        static::assertArrayHasKey('bindings', $res);
+        static::assertStringContainsString('FROM users', $res['sql']);
+        static::assertSame([], $res['bindings']);
     }
 
     public function testBuildSelectSqlWithFromSubAndSelects(): void
@@ -65,9 +65,9 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        self::assertStringContainsString('FROM (SELECT id FROM users_inner) u', $res['sql']);
-        self::assertStringContainsString('u.id, u.name', $res['sql']);
-        self::assertSame([123], $res['bindings']);
+        static::assertStringContainsString('FROM (SELECT id FROM users_inner) u', $res['sql']);
+        static::assertStringContainsString('u.id, u.name', $res['sql']);
+        static::assertSame([123], $res['bindings']);
     }
 
     public function testBuildSelectSqlWithJoinsAndWheresBindings(): void
@@ -107,10 +107,10 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        self::assertStringContainsString('INNER JOIN profiles', $res['sql']);
-        self::assertStringContainsString('ON (profiles.user_id = users.id AND profiles.active = ?)', $res['sql']);
-        self::assertStringContainsString('WHERE users.id = ?', $res['sql']);
+        static::assertStringContainsString('INNER JOIN profiles', $res['sql']);
+        static::assertStringContainsString('ON (profiles.user_id = users.id AND profiles.active = ?)', $res['sql']);
+        static::assertStringContainsString('WHERE users.id = ?', $res['sql']);
         // Note: buildSelectSQL merges only fromSub and where bindings; join raw bindings are not merged here
-        self::assertSame([42], $res['bindings']);
+        static::assertSame([42], $res['bindings']);
     }
 }

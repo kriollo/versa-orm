@@ -29,7 +29,7 @@ final class SchemaAllPostgresTest extends TestCase
         $orm->schemaCreate('test_schema_all', $columns, $options);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured);
+        static::assertNotEmpty($captured);
 
         $foundCreate = false;
         $foundIndex = false;
@@ -43,8 +43,8 @@ final class SchemaAllPostgresTest extends TestCase
             }
         }
 
-        self::assertTrue($foundCreate, 'CREATE TABLE not generated');
-        self::assertTrue($foundIndex, 'CREATE INDEX not generated');
+        static::assertTrue($foundCreate, 'CREATE TABLE not generated');
+        static::assertTrue($foundIndex, 'CREATE INDEX not generated');
     }
 
     public function test_schema_alter_add_and_drop_columns_indexes_foreign(): void
@@ -94,7 +94,7 @@ final class SchemaAllPostgresTest extends TestCase
         ]);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured);
+        static::assertNotEmpty($captured);
 
         $hasAddColumn = false;
         $hasAddIndex = false;
@@ -123,12 +123,12 @@ final class SchemaAllPostgresTest extends TestCase
             }
         }
 
-        self::assertTrue($hasAddColumn, 'ADD COLUMN missing');
-        self::assertTrue($hasAddIndex, 'ADD INDEX missing');
-        self::assertTrue($hasAddForeign, 'ADD FOREIGN missing');
-        self::assertTrue($hasDropForeign, 'DROP FOREIGN missing');
-        self::assertTrue($hasDropIndex, 'DROP INDEX missing');
-        self::assertTrue($hasDropColumn, 'DROP COLUMN missing');
+        static::assertTrue($hasAddColumn, 'ADD COLUMN missing');
+        static::assertTrue($hasAddIndex, 'ADD INDEX missing');
+        static::assertTrue($hasAddForeign, 'ADD FOREIGN missing');
+        static::assertTrue($hasDropForeign, 'DROP FOREIGN missing');
+        static::assertTrue($hasDropIndex, 'DROP INDEX missing');
+        static::assertTrue($hasDropColumn, 'DROP COLUMN missing');
     }
 
     public function test_schema_rename_and_drop_table(): void
@@ -139,7 +139,7 @@ final class SchemaAllPostgresTest extends TestCase
         $orm->schemaDrop('new_table_name', true);
 
         $captured = $orm->captured;
-        self::assertNotEmpty($captured);
+        static::assertNotEmpty($captured);
 
         $hasRename = false;
         $hasDrop = false;
@@ -153,8 +153,8 @@ final class SchemaAllPostgresTest extends TestCase
             }
         }
 
-        self::assertTrue($hasRename, 'RENAME not executed');
-        self::assertTrue($hasDrop, 'DROP TABLE not executed');
+        static::assertTrue($hasRename, 'RENAME not executed');
+        static::assertTrue($hasDrop, 'DROP TABLE not executed');
     }
 
     private function makeOrmCollector(): object

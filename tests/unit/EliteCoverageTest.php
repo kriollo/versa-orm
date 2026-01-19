@@ -70,53 +70,53 @@ class EliteCoverageTest extends TestCase
         $handlers = $method->invoke($model);
 
         // 1. bool fallback
-        self::assertFalse($handlers['bool']($model, 'active', 'maybe'));
+        static::assertFalse($handlers['bool']($model, 'active', 'maybe'));
 
         // 2. array fallback (passing null to return [])
-        self::assertEquals([], $handlers['array']($model, 'data', null));
+        static::assertEquals([], $handlers['array']($model, 'data', null));
 
         // 3. json invalid
         try {
             $handlers['json']($model, 'data', 'invalid-json{');
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // 3.1 json invalid type
         try {
             $handlers['json']($model, 'data', 123);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // 4. datetime already instance
         $now = new DateTime();
-        self::assertSame($now, $handlers['datetime']($model, 'created_at', $now));
+        static::assertSame($now, $handlers['datetime']($model, 'created_at', $now));
 
         // 5. datetime exception
         try {
             $handlers['datetime']($model, 'created_at', 'invalid-date-string-123');
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // 6. enum invalid
         try {
             $handlers['enum']($model, 'status', 'gamma', ['values' => ['alpha', 'beta']]);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // 7. set handler coverage
         $setHandler = $handlers['set'];
-        self::assertEquals(['a', 'b'], $setHandler($model, 'flags', 'a,b'));
-        self::assertEquals(['a', 'b'], $setHandler($model, 'flags', '["a","b"]'));
-        self::assertEquals(['a'], $setHandler($model, 'flags', ['a']));
+        static::assertEquals(['a', 'b'], $setHandler($model, 'flags', 'a,b'));
+        static::assertEquals(['a', 'b'], $setHandler($model, 'flags', '["a","b"]'));
+        static::assertEquals(['a'], $setHandler($model, 'flags', ['a']));
 
         try {
             $setHandler($model, 'flags', 'c', ['values' => ['a', 'b']]);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
     }
 
@@ -133,31 +133,31 @@ class EliteCoverageTest extends TestCase
         try {
             $handlers['string']($model, 'name', str_repeat('a', 1000), ['max_length' => 5]);
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // 2. bool non-standard
-        self::assertEquals(0, $handlers['bool']($model, 'active', 'no'));
+        static::assertSame(0, $handlers['bool']($model, 'active', 'no'));
 
         // 3. json string path
-        self::assertEquals('{"a":1}', $handlers['json']($model, 'data', '{"a":1}'));
+        static::assertSame('{"a":1}', $handlers['json']($model, 'data', '{"a":1}'));
 
         // 4. uuid invalid
         try {
             $handlers['uuid']($model, 'uuid', 'not-a-uuid');
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
 
         // 5. datetime from timestamp
         $ts = time();
-        self::assertStringContainsString(date('Y-m-d'), $handlers['datetime']($model, 'created_at', $ts));
+        static::assertStringContainsString(date('Y-m-d'), $handlers['datetime']($model, 'created_at', $ts));
 
         // 6. inet invalid
         try {
             $handlers['inet']($model, 'ip', '999.999.999.999');
         } catch (\Exception $e) {
-            self::assertTrue(true);
+            static::assertTrue(true);
         }
     }
 
@@ -183,14 +183,14 @@ class EliteCoverageTest extends TestCase
 
         // safeStore
         $res = $model->safeStore();
-        self::assertNull($res);
-        self::assertTrue($model->hasError());
+        static::assertNull($res);
+        static::assertTrue($model->hasError());
 
         // safeUpdate
-        self::assertNull($model->safeUpdate(['name' => 'New']));
+        static::assertNull($model->safeUpdate(['name' => 'New']));
 
         // safeUpsert
-        self::assertNull($model->safeUpsert(['id']));
+        static::assertNull($model->safeUpsert(['id']));
 
         // safeFind
         // safeFind calls static::find() which we need to make throw
@@ -198,7 +198,7 @@ class EliteCoverageTest extends TestCase
         // But safeFindAll actually calls queryTable()->findAll() which is already mocked to throw
         // safeFindAll
         $resAll = EliteModel::safeFindAll(['id' => 1]);
-        self::assertNull($resAll);
+        static::assertNull($resAll);
     }
 
     public function test_handles_errors_protected_and_stats(): void
@@ -212,20 +212,20 @@ class EliteCoverageTest extends TestCase
 
         $res = $method->invoke(
             null,
-            function () {
+            static function () {
                 throw new VersaORMException('Static Error');
             },
             ['op' => 'test'],
         );
-        self::assertNull($res);
+        static::assertNull($res);
 
         // validateBeforeOperation
         $vMethod = $refl->getMethod('validateBeforeOperation');
         $vMethod->setAccessible(true);
-        self::assertFalse($vMethod->invoke($model, 'save')); // Empty attributes
+        static::assertFalse($vMethod->invoke($model, 'save')); // Empty attributes
 
         // error stats
         $stats = EliteModel::getErrorStats();
-        self::assertIsArray($stats);
+        static::assertIsArray($stats);
     }
 }

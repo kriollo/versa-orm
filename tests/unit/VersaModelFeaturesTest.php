@@ -42,16 +42,16 @@ class VersaModelFeaturesTest extends TestCase
     public function test_table_name_inference(): void
     {
         $model = new FeaturesTestModel($this->orm);
-        self::assertSame('test_table', $model->tableName());
+        static::assertSame('test_table', $model->tableName());
 
         $model2 = new InferredModel('inferredmodels', $this->orm);
-        self::assertSame('inferredmodels', $model2->tableName());
+        static::assertSame('inferredmodels', $model2->tableName());
     }
 
     public function test_event_listeners(): void
     {
         $called = false;
-        FeaturesTestModel::on('creating', function ($model, $event) use (&$called) {
+        FeaturesTestModel::on('creating', static function ($model, $event) use (&$called) {
             $called = true;
         });
 
@@ -63,7 +63,7 @@ class VersaModelFeaturesTest extends TestCase
         $method->setAccessible(true);
         $method->invoke($model, 'creating');
 
-        self::assertTrue($called);
+        static::assertTrue($called);
     }
 
     public function test_freeze_logic(): void
@@ -82,7 +82,7 @@ class VersaModelFeaturesTest extends TestCase
             ->willReturn(true);
 
         FeaturesTestModel::freeze(true);
-        self::assertTrue(FeaturesTestModel::isFrozen());
+        static::assertTrue(FeaturesTestModel::isFrozen());
     }
 
     public function test_fill_mass_assignment(): void
@@ -91,8 +91,8 @@ class VersaModelFeaturesTest extends TestCase
 
         // This should pass
         $model->fill(['name' => 'John', 'age' => 30]);
-        self::assertSame('John', $model->name);
-        self::assertSame(30, $model->age);
+        static::assertSame('John', $model->name);
+        static::assertSame(30, $model->age);
 
         // This should throw because 'secret' is not in fillable
         $this->expectException(VersaORMException::class);
@@ -106,9 +106,9 @@ class VersaModelFeaturesTest extends TestCase
         $model->name = 'John';
 
         // First access triggers casting
-        self::assertSame('John', $model->name);
+        static::assertSame('John', $model->name);
         // Second access should use cache (checked via coverage)
-        self::assertSame('John', $model->name);
+        static::assertSame('John', $model->name);
     }
 
     public function test_type_mapping_conversion(): void
@@ -116,16 +116,16 @@ class VersaModelFeaturesTest extends TestCase
         $model = new FeaturesTestModel($this->orm);
 
         $json = $model->convertValueByTypeMapping('meta', '{"a":1}', ['type' => 'json']);
-        self::assertSame(['a' => 1], $json);
+        static::assertSame(['a' => 1], $json);
 
         $uuid = $model->convertValueByTypeMapping('u', 'uuid-string', ['type' => 'uuid']);
-        self::assertSame('uuid-string', $uuid);
+        static::assertSame('uuid-string', $uuid);
 
         $arr = $model->convertValueByTypeMapping('tags', 'a,b', ['type' => 'array']);
-        self::assertSame(['a,b'], $arr); // explode is for set/enum
+        static::assertSame(['a,b'], $arr); // explode is for set/enum
 
         $enum = $model->convertValueByTypeMapping('status', 'active,inactive', ['type' => 'enum']);
-        self::assertSame(['active', 'inactive'], $enum);
+        static::assertSame(['active', 'inactive'], $enum);
     }
 
     public function test_load_type_mapping_config_throws_if_missing(): void
@@ -148,8 +148,8 @@ class VersaModelFeaturesTest extends TestCase
     public function test_orm_accessors(): void
     {
         $model = new FeaturesTestModel($this->orm);
-        self::assertSame($this->orm, $model->orm());
-        self::assertSame($this->orm, $model->db());
+        static::assertSame($this->orm, $model->orm());
+        static::assertSame($this->orm, $model->db());
     }
 
     public function test_validate_calls_internal_methods(): void
@@ -157,6 +157,6 @@ class VersaModelFeaturesTest extends TestCase
         // This targets the validate lines
         $model = new FeaturesTestModel($this->orm);
         $errors = $model->validate();
-        self::assertIsArray($errors);
+        static::assertIsArray($errors);
     }
 }

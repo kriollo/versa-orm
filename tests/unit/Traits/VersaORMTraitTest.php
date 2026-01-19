@@ -68,9 +68,9 @@ class VersaORMTraitTest extends TestCase
         $obj = new VersaORMTraitTestClass();
         $obj->connectORM();
 
-        self::assertInstanceOf(VersaORM::class, $obj->getORM());
+        static::assertInstanceOf(VersaORM::class, $obj->getORM());
 
         $obj->disconnectORM();
-        self::assertNull($obj->getORM());
+        static::assertNull($obj->getORM());
     }
 }

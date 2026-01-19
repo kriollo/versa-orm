@@ -22,8 +22,8 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertCount(2, $posts);
-        self::assertSame('Alice', $posts[0]['author']);
+        static::assertCount(2, $posts);
+        static::assertSame('Alice', $posts[0]['author']);
     }
 
     public function test_left_join(): void
@@ -37,7 +37,7 @@ class QueryBuilderJoinTest extends TestCase
             ->whereNull('posts.id')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($users));
+        static::assertGreaterThanOrEqual(1, count($users));
     }
 
     public function test_cross_join(): void
@@ -49,7 +49,7 @@ class QueryBuilderJoinTest extends TestCase
             ->limit(10)
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_multiple_joins(): void
@@ -61,7 +61,7 @@ class QueryBuilderJoinTest extends TestCase
             ->where('users.status', '=', 'active')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_composite_join_via_on(): void
@@ -75,7 +75,7 @@ class QueryBuilderJoinTest extends TestCase
             ->where('u.status', '=', 'active')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_join_with_complex_conditions(): void
@@ -88,18 +88,18 @@ class QueryBuilderJoinTest extends TestCase
             ->where('posts.title', 'LIKE', '%Post%')
             ->getAll();
 
-        self::assertGreaterThanOrEqual(1, count($results));
+        static::assertGreaterThanOrEqual(1, count($results));
     }
 
     public function test_join_methods_exist(): void
     {
         $query = self::$orm->table('users');
 
-        self::assertTrue(method_exists($query, 'rightJoin'));
-        self::assertTrue(method_exists($query, 'fullOuterJoin'));
-        self::assertTrue(method_exists($query, 'crossJoin'));
+        static::assertTrue(method_exists($query, 'rightJoin'));
+        static::assertTrue(method_exists($query, 'fullOuterJoin'));
+        static::assertTrue(method_exists($query, 'crossJoin'));
 
         $chainedQuery = $query->leftJoin('posts', 'users.id', '=', 'posts.user_id');
-        self::assertInstanceOf(QueryBuilder::class, $chainedQuery);
+        static::assertInstanceOf(QueryBuilder::class, $chainedQuery);
     }
 }

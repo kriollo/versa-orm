@@ -77,15 +77,15 @@ class QueryBuilderJoinRawTest extends TestCase
 
         // Campaña 1 tiene 3 videos
         static::assertSame(1, $result[0]['id']);
-        static::assertEquals(3, $result[0]['video_count']);
+        static::assertSame(3, $result[0]['video_count']);
 
         // Campaña 2 tiene 1 video
         static::assertSame(2, $result[1]['id']);
-        static::assertEquals(1, $result[1]['video_count']);
+        static::assertSame(1, $result[1]['video_count']);
 
         // Campaña 3 tiene 2 videos
         static::assertSame(3, $result[2]['id']);
-        static::assertEquals(2, $result[2]['video_count']);
+        static::assertSame(2, $result[2]['video_count']);
 
         // Campaña 4 no tiene videos (NULL por LEFT JOIN)
         static::assertSame(4, $result[3]['id']);
@@ -147,12 +147,12 @@ class QueryBuilderJoinRawTest extends TestCase
         static::assertSame('Campaña 1', $result[0]['nombre']);
         static::assertSame('Juan Pérez', $result[0]['nombre_usuario']);
         static::assertSame('/images/campana1_default.jpg', $result[0]['imagen_default']);
-        static::assertEquals(3, $result[0]['video_count']);
+        static::assertSame(3, $result[0]['video_count']);
 
         // Verificar segunda campaña
         static::assertSame(2, $result[1]['id']);
         static::assertSame('/images/campana2_default.jpg', $result[1]['imagen_default']);
-        static::assertEquals(1, $result[1]['video_count']);
+        static::assertSame(1, $result[1]['video_count']);
 
         // Verificar cuarta campaña (sin imagen default, sin videos)
         static::assertSame(4, $result[2]['id']);
@@ -269,7 +269,7 @@ class QueryBuilderJoinRawTest extends TestCase
 
         static::assertCount(3, $result);
         static::assertSame('Juan Pérez', $result[0]['usuario']);
-        static::assertEquals(3, $result[0]['video_count']);
+        static::assertSame(3, $result[0]['video_count']);
     }
 
     /**
@@ -297,7 +297,7 @@ class QueryBuilderJoinRawTest extends TestCase
         // Solo campañas activas con 2 o más videos: Campaña 1 (3 videos)
         static::assertCount(1, $result);
         static::assertSame('Campaña 1', $result[0]['nombre']);
-        static::assertEquals(3, $result[0]['video_count']);
+        static::assertSame(3, $result[0]['video_count']);
     }
 
     /**

@@ -21,9 +21,9 @@ class SchemaDefinitionsTest extends TestCase
     {
         $column = new ColumnDef(['name' => 'id', 'type' => 'INTEGER', 'nullable' => false]);
 
-        $this->assertEquals('id', $column->name);
-        $this->assertEquals('INTEGER', $column->type);
-        $this->assertFalse($column->nullable);
+        static::assertSame('id', $column->name);
+        static::assertSame('INTEGER', $column->type);
+        static::assertFalse($column->nullable);
     }
 
     /**
@@ -36,9 +36,9 @@ class SchemaDefinitionsTest extends TestCase
         $column->type = 'VARCHAR';
         $column->length = 255;
 
-        $this->assertEquals('username', $column->name);
-        $this->assertEquals('VARCHAR', $column->type);
-        $this->assertEquals(255, $column->length);
+        static::assertSame('username', $column->name);
+        static::assertSame('VARCHAR', $column->type);
+        static::assertSame(255, $column->length);
     }
 
     /**
@@ -48,8 +48,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $column = new ColumnDef(['name' => 'email']);
 
-        $this->assertTrue(isset($column->name));
-        $this->assertFalse(isset($column->nonexistent));
+        static::assertTrue(isset($column->name));
+        static::assertFalse(isset($column->nonexistent));
     }
 
     /**
@@ -59,8 +59,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $column = new ColumnDef();
 
-        $this->assertNull($column->name);
-        $this->assertNull($column->type);
+        static::assertNull($column->name);
+        static::assertNull($column->type);
     }
 
     /**
@@ -70,9 +70,9 @@ class SchemaDefinitionsTest extends TestCase
     {
         $index = new IndexDef(['name' => 'idx_email', 'columns' => ['email'], 'unique' => true]);
 
-        $this->assertEquals('idx_email', $index->name);
-        $this->assertEquals(['email'], $index->columns);
-        $this->assertTrue($index->unique);
+        static::assertSame('idx_email', $index->name);
+        static::assertEquals(['email'], $index->columns);
+        static::assertTrue($index->unique);
     }
 
     /**
@@ -85,9 +85,9 @@ class SchemaDefinitionsTest extends TestCase
         $index->columns = ['username'];
         $index->unique = false;
 
-        $this->assertEquals('idx_username', $index->name);
-        $this->assertEquals(['username'], $index->columns);
-        $this->assertFalse($index->unique);
+        static::assertSame('idx_username', $index->name);
+        static::assertEquals(['username'], $index->columns);
+        static::assertFalse($index->unique);
     }
 
     /**
@@ -97,8 +97,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $index = new IndexDef(['name' => 'idx_test']);
 
-        $this->assertTrue(isset($index->name));
-        $this->assertFalse(isset($index->columns));
+        static::assertTrue(isset($index->name));
+        static::assertFalse(isset($index->columns));
     }
 
     /**
@@ -108,8 +108,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $index = new IndexDef(['name' => 'idx_composite', 'columns' => ['first_name', 'last_name']]);
 
-        $this->assertEquals('idx_composite', $index->offsetGet('name'));
-        $this->assertEquals(['first_name', 'last_name'], $index->offsetGet('columns'));
+        static::assertSame('idx_composite', $index->offsetGet('name'));
+        static::assertEquals(['first_name', 'last_name'], $index->offsetGet('columns'));
     }
 
     /**
@@ -121,8 +121,8 @@ class SchemaDefinitionsTest extends TestCase
         $index->offsetSet('name', 'idx_new');
         $index->offsetSet('type', 'BTREE');
 
-        $this->assertEquals('idx_new', $index->offsetGet('name'));
-        $this->assertEquals('BTREE', $index->offsetGet('type'));
+        static::assertSame('idx_new', $index->offsetGet('name'));
+        static::assertSame('BTREE', $index->offsetGet('type'));
     }
 
     /**
@@ -132,8 +132,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $index = new IndexDef(['name' => 'idx_test']);
 
-        $this->assertTrue($index->offsetExists('name'));
-        $this->assertFalse($index->offsetExists('columns'));
+        static::assertTrue($index->offsetExists('name'));
+        static::assertFalse($index->offsetExists('columns'));
     }
 
     /**
@@ -144,8 +144,8 @@ class SchemaDefinitionsTest extends TestCase
         $index = new IndexDef(['name' => 'idx_test', 'type' => 'HASH']);
         $index->offsetUnset('type');
 
-        $this->assertFalse(isset($index->type));
-        $this->assertTrue(isset($index->name));
+        static::assertFalse(isset($index->type));
+        static::assertTrue(isset($index->name));
     }
 
     /**
@@ -155,8 +155,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $index = new IndexDef();
 
-        $this->assertNull($index->name);
-        $this->assertNull($index->columns);
+        static::assertNull($index->name);
+        static::assertNull($index->columns);
     }
 
     /**
@@ -166,8 +166,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $constraints = new TableConstraintsDef(['primaryKey' => 'id', 'foreignKeys' => []]);
 
-        $this->assertEquals('id', $constraints->primaryKey);
-        $this->assertEquals([], $constraints->foreignKeys);
+        static::assertSame('id', $constraints->primaryKey);
+        static::assertEquals([], $constraints->foreignKeys);
     }
 
     /**
@@ -179,8 +179,8 @@ class SchemaDefinitionsTest extends TestCase
         $constraints->primaryKey = 'user_id';
         $constraints->uniqueKeys = [['email']];
 
-        $this->assertEquals('user_id', $constraints->primaryKey);
-        $this->assertEquals([['email']], $constraints->uniqueKeys);
+        static::assertSame('user_id', $constraints->primaryKey);
+        static::assertEquals([['email']], $constraints->uniqueKeys);
     }
 
     /**
@@ -190,8 +190,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $constraints = new TableConstraintsDef(['primaryKey' => 'id']);
 
-        $this->assertTrue(isset($constraints->primaryKey));
-        $this->assertFalse(isset($constraints->foreignKeys));
+        static::assertTrue(isset($constraints->primaryKey));
+        static::assertFalse(isset($constraints->foreignKeys));
     }
 
     /**
@@ -201,8 +201,8 @@ class SchemaDefinitionsTest extends TestCase
     {
         $constraints = new TableConstraintsDef();
 
-        $this->assertNull($constraints->primaryKey);
-        $this->assertNull($constraints->foreignKeys);
+        static::assertNull($constraints->primaryKey);
+        static::assertNull($constraints->foreignKeys);
     }
 
     /**
@@ -219,9 +219,9 @@ class SchemaDefinitionsTest extends TestCase
             'checks' => ['age > 0'],
         ]);
 
-        $this->assertEquals('id', $constraints->primaryKey);
-        $this->assertCount(1, $constraints->foreignKeys);
-        $this->assertCount(2, $constraints->uniqueKeys);
-        $this->assertCount(1, $constraints->checks);
+        static::assertSame('id', $constraints->primaryKey);
+        static::assertCount(1, $constraints->foreignKeys);
+        static::assertCount(2, $constraints->uniqueKeys);
+        static::assertCount(1, $constraints->checks);
     }
 }

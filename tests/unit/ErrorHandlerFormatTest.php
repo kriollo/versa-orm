@@ -23,19 +23,19 @@ final class ErrorHandlerFormatTest extends TestCase
         $ex = new VersaORMException('Test message', 'TEST_CODE', 'SELECT 1', [1], [], null);
 
         $errorData = ErrorHandler::handleException($ex, ['test' => true]);
-        self::assertIsArray($errorData);
+        static::assertIsArray($errorData);
 
         // formatForDevelopment expects the array produced by handleException
         $out = ErrorHandler::formatForDevelopment($errorData);
-        self::assertIsString($out);
-        self::assertStringContainsString('Test message', $out);
+        static::assertIsString($out);
+        static::assertStringContainsString('Test message', $out);
 
         // log should have at least one entry
         $log = ErrorHandler::getErrorLog();
-        self::assertNotEmpty($log);
+        static::assertNotEmpty($log);
 
         // wrap should accept a callable and return its result
         $result = ErrorHandler::wrap(static fn() => 'ok', ['ctx' => 1]);
-        self::assertSame('ok', $result);
+        static::assertSame('ok', $result);
     }
 }
