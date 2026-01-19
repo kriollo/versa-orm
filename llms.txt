@@ -1,0 +1,290 @@
+VersaORM-PHP — Guía para LLMs (llms.txt)
+=====================================
+
+Propósito
+--------
+Este archivo existe para que asistentes de IA (LLMs) comprendan rápidamente el repositorio VersaORM-PHP, su arquitectura, sus puntos de entrada y el “contrato” de uso (API y convenciones). Complementa el README y referencia la documentación en /docs.
+
+Este proyecto implementa un ORM moderno en PHP 8.1+ construido sobre PDO nativo, con:
+- Modelos ActiveRecord (VersaModel)
+- Query Builder fluido (QueryBuilder)
+- Motor SQL multi-database con dialectos (PdoEngine)
+- SchemaBuilder (DDL fluido) + fachada estática (VersaSchema)
+- Enfoque fuerte en seguridad (prepared statements, validación básica de identificadores, mass assignment)
+
+Lectura recomendada (orden)
+---------------------------
+1) README: /README.md
+2) Índice de documentación: /docs/README.md
+3) Instalación/Configuración: /docs/02-instalacion/instalacion.md y /docs/02-instalacion/configuracion.md
+4) CRUD y modelos: /docs/03-basico/versamodel.md y /docs/03-basico/crud-basico.md
+5) QueryBuilder: /docs/04-query-builder/
+6) Seguridad: /docs/07-seguridad-tipado/ (especialmente mass assignment y freeze mode)
+7) SchemaBuilder/Migración: /docs/MigrationGuide_SchemaBuilder.md
+8) FK/Índices: /docs/ForeignKeysAndIndexes_CompleteGuide.md
+
+Mapa mental del código (archivos clave)
+--------------------------------------
+Core
+- /src/VersaORM.php
+  - Fachada principal: configuración, acceso a QueryBuilder (table()), ejecución raw (exec()), schemaBuilder(), freeze, métricas y conexión.
+- /src/VersaModel.php
+  - ActiveRecord: dispense/load/store/trash, fill/create/update, validación básica, timestamps, freeze por modelo, eventos.
+- /src/QueryBuilder.php
+  - Constructor de consultas: where/join/order/limit, agregaciones, raw, y métodos de retorno (arrays vs modelos).
+
+Motor SQL
+- /src/SQL/PdoEngine.php
+  - Ejecución PDO, dialectos por DB, cachés (query cache y statement cache), métricas.
+- /src/SQL/Dialects/*
+  - Dialectos por motor (MySQL/PostgreSQL/SQLite).
+
+Schema
+- /src/Schema/SchemaBuilder.php
+  - API fluida DDL (create/table/alter) de forma portable.
+- /src/Schema/VersaSchema.php
+  - Fachada estática tipo Laravel para el SchemaBuilder.
+- /src/Schema/Blueprint.php, /src/Schema/ColumnDefinition.php, /src/Schema/TypeMapper.php
+  - Componentes internos del SchemaBuilder.
+
+Relaciones y Tipado
+- /src/Traits/HasRelationships.php
+- /src/Relations/*
+- /src/Traits/HasStrongTyping.php
+- /src/Interfaces/TypedModelInterface.php
+
+Errores/Debug
+- /src/VersaORMException.php
+  - Excepción enriquecida (código, query, bindings, driver, método origen).
+- /src/ErrorHandler.php
+  - Formateo/log de errores (desarrollo vs producción) y wrapper.
+
+Pruebas
+- /testMysql/, /testPostgreSQL/, /testSQLite/ y /tests/
+  - Suite amplia (tipado/casting, joins, seguridad, DDL, performance, etc.).
+
+Ejemplos
+- /example/index.php y /example/app/
+  - Mini app y ejemplos prácticos.
+- /docs/setup/
+  - Scripts para montar una BD de ejemplo para la documentación.
+
+Conceptos esenciales y flujo de uso
+-----------------------------------
+1) Crear instancia ORM (config)
+   - El usuario construye un array de config y crea VersaORM.
+   - Luego registra esa instancia globalmente en VersaModel.
+
+   Ejemplo:
+   - new VersaORM([...])
+   - VersaModel::setORM($orm)
+
+2) QueryBuilder: consultas fluidas y seguras
+   - $orm->table('users') devuelve un QueryBuilder.
+   - Por defecto se usan bindings (prepared statements) para valores.
+   - Hay métodos para raw SQL cuando es necesario (whereRaw/onRaw/etc.), pero aun así se recomiendan bindings.
+
+3) ActiveRecord con VersaModel
+   - Para crear: VersaModel::dispense('users')
+   - Para cargar: VersaModel::load('users', $id)
+   - Para guardar: $model->store()
+   - Para borrar: $model->trash()
+
+4) SchemaBuilder
+   - $orm->schemaBuilder() (o VersaSchema::create/table/...) para DDL fluido.
+
+
+API (contrato práctico)
+-----------------------
+VersaORM (/src/VersaORM.php)
+- __construct(array $config = [])
+  Config típica (depende de driver):
+  - driver: 'mysql' | 'postgresql' | 'sqlite'
+  - host, port, database, username, password, charset
+  - options: opciones PDO
+  - debug: bool
+  Notas:
+  - VersaORM configura ErrorHandler según debug/log_path.
+
+- table(string $table, ?string $modelClass = null): QueryBuilder
+  - Punto de entrada para consultas fluidas.
+  - modelClass permite mapear resultados a una subclase de VersaModel.
+
+- exec(string $query, array $bindings = [])
+  - SQL directo con bindings.
+  - Para no-SELECT puede devolver null según normalización.
+
+- raw(...)
+  - Alias legacy de exec().
+
+- schema(string $subject, ?string $tableName = null)
+  - Operaciones de metadata/esquema (interno, depende del motor).
+
+- schemaBuilder(): SchemaBuilder
+  - API DDL fluida, portable.
+
+- setTimezone(string $tz) / getTimezone(): string
+  - Ajusta y devuelve la timezone usada por el runtime.
+
+- metrics(): ?array y metricsReset(): void
+  - Métricas del motor PDO (queries, cache hits/misses, tiempos, hidratación, etc.).
+
+
+VersaModel (/src/VersaModel.php)
+- static setORM(?VersaORM $orm): void
+  - Define la instancia global para operaciones estáticas.
+  - Si no se setea, muchas operaciones lanzan excepción.
+
+- static orm(): VersaORM y static db(): VersaORM
+  - Acceso rápido a la instancia global.
+
+- static dispense(string $table): self
+  - Crea un modelo vacío ligado a la ORM global.
+
+- static load(string $table, int|string $id, string $pk = 'id'): ?self
+  - Carga por PK. Devuelve null si no existe.
+
+- store(): int|string|null
+  Características importantes:
+  - Valida antes de guardar (validate()).
+  - Dispara eventos del ciclo de vida (saving/creating/created/updating/updated/saved...).
+  - Maneja timestamps automáticos (created_at/updated_at) con DateTimeImmutable UTC.
+  - Si freeze está desactivado, intenta crear columnas/tabla faltantes (auto-esquema).
+  - Devuelve el id insertado (si se puede determinar) o el id existente en update.
+
+- trash(): void
+  - Elimina por id y limpia atributos.
+  - Dispara eventos deleting/deleted.
+
+- fill(array $attributes): self
+  - Mass assignment seguro: filtra por $fillable / $guarded.
+
+- static create(array $attributes): static
+  - Crea instancia y aplica fill(). (Según uso, puede requerir store() posterior dependiendo del flujo.)
+
+- update(array $attributes): self
+  - fill() + store().
+
+- static freeze(bool $frozen = true): void / static isFrozen(): bool
+  - Freeze por modelo (bloquea operaciones DDL del esquema asociado).
+
+- Eventos del ciclo de vida
+  - static on(string $event, callable $listener): void
+  - El listener suele recibir ($model, ModelEvent $event) según docs.
+
+Notas de implementación relevantes para LLMs:
+- VersaModel usa atributos dinámicos via __get/__set y relaciones lazy.
+- Tipado fuerte/casting se apoya en el trait HasStrongTyping.
+
+
+QueryBuilder (/src/QueryBuilder.php)
+- Filosofía de retorno (muy importante):
+  - get() / getAll(): array de arrays (útil para JSON/API)
+  - first(): array|null
+  - count(): int
+  - exists(): bool
+  - findAll(): array de VersaModel
+  - findOne(): VersaModel|null
+  - find(id): VersaModel|null
+  - dispense(): VersaModel (nuevo modelo vacío)
+
+- Seguridad
+  - Valida identificadores de tabla/alias (isSafeIdentifier) para evitar input malicioso.
+  - Usa bindings para valores. Para raw, se recomiendan bindings.
+
+
+SchemaBuilder y VersaSchema (/src/Schema/*)
+- $orm->schemaBuilder() y/o VersaSchema (fachada estática)
+- Operaciones típicas:
+  - create('table', function(Blueprint $table) {...})
+  - table('table', function(Blueprint $table) {...})
+  - drop, dropIfExists, rename
+  - hasTable/hasColumn/hasIndex
+
+
+Seguridad (qué asumir y qué NO asumir)
+--------------------------------------
+- Prepared statements:
+  - El patrón general es parametrizar valores; evita concatenar valores en SQL.
+
+- Identificadores (tablas/columnas):
+  - Los valores de identificadores NO deben provenir de input de usuario sin validación.
+  - QueryBuilder valida tabla/alias, pero esto no sustituye higiene en tu aplicación.
+
+- Mass Assignment:
+  - Usa fill() / update() / create() en lugar de asignar arrays arbitrarios.
+  - Revisa la guía: /docs/07-seguridad-tipado/mass-assignment.md
+
+- Freeze mode:
+  - En producción, típicamente se recomienda freeze para evitar cambios automáticos de esquema.
+  - Revisa: /docs/07-seguridad-tipado/freeze-mode.md
+
+
+Tipado y Casting
+----------------
+VersaORM intenta convertir tipos comunes de DB ↔ PHP:
+- Booleans, JSON, DateTime/DateTimeImmutable, enums/sets, inet, etc.
+- Para entender el sistema: /src/Traits/HasStrongTyping.php + tests de casting en /testMysql/.
+
+También se pueden registrar conversores:
+- $orm->addTypeConverter('nombre', $phpHandler, $dbHandler)
+
+
+Errores y diagnóstico
+---------------------
+- Usa VersaORMException para errores con contexto (query, bindings, SQLSTATE, driver, método origen).
+- ErrorHandler puede:
+  - Loguear
+  - Formatear para desarrollo (incluye sugerencias)
+  - Formatear para producción (salida limitada)
+
+Archivos:
+- /src/VersaORMException.php
+- /src/ErrorHandler.php
+
+
+Testing y QA (cómo validar cambios)
+----------------------------------
+Composer scripts (ver /composer.json):
+- composer test-mysql
+- composer test-postgresql
+- composer test-sqlite
+- composer test-all
+- composer analyse (PHPStan)
+- composer format / format-check
+- composer qa / qa-full / qa-unit / qa-quality
+
+Notas:
+- Los tests están separados por DB en /testMysql/, /testPostgreSQL/, /testSQLite/.
+- Variables de entorno usadas por scripts de test (ej. DB_DRIVER, DB_HOST, DB_NAME, etc.).
+
+
+Guía rápida de “dónde implementar” cambios según el objetivo
+-----------------------------------------------------------
+- Si el cambio es sobre configuración global, ejecución raw, freeze/metrics: /src/VersaORM.php
+- Si el cambio es sobre CRUD, timestamps, validación, mass assignment, eventos: /src/VersaModel.php
+- Si el cambio es sobre SQL generado, where/join/group/having, retornos: /src/QueryBuilder.php
+- Si el cambio es sobre cache/metrics/prepare/ejecución PDO: /src/SQL/PdoEngine.php
+- Si el cambio es sobre DDL portable: /src/Schema/SchemaBuilder.php y /src/Schema/*
+- Si el cambio es sobre relaciones: /src/Traits/HasRelationships.php y /src/Relations/*
+
+
+Estilo y convenciones del repo
+------------------------------
+- PHP 8.1+.
+- Estilo PSR-12; herramientas: PHP-CS-Fixer + Mago (ver /docs/dev/formatting-guide.md).
+- Preferir cambios pequeños y bien testeados. El proyecto valora:
+  - seguridad por defecto
+  - performance (cachés/métricas)
+  - compatibilidad multi-DB
+
+
+Notas para LLMs al generar código en este repo
+---------------------------------------------
+- No inventes APIs: confirma en /src/ y en /docs/ antes de proponer un método.
+- Prefiere los métodos existentes (exec/table/dispense/store/trash) y patterns de tests.
+- Si el cambio afecta SQL o comportamiento multi-DB, revisa tests equivalentes en MySQL/PostgreSQL/SQLite.
+- Mantén prepared statements y bindings.
+- Documenta comportamiento en /docs/ cuando se agregue una feature pública.
+
+Fin.

@@ -20,6 +20,7 @@
 ## 📚 Documentación Completa
 
 - 📖 **[Documentación Principal](docs/README.md)** - Guía completa desde básico hasta avanzado
+- 🤖 **[Guía para IAs (llms.txt)](llms.txt)** - Mapa del repo y API clave para asistentes
 - 🚀 **[Inicio Rápido](#-inicio-rápido)** - Empieza en 5 minutos
 - ⚙️ **[Instalación](docs/02-instalacion/instalacion.md)** - Composer e instalación manual
 - 🔧 **[CRUD Básico](docs/03-basico/crud-basico.md)** - Create, Read, Update, Delete
