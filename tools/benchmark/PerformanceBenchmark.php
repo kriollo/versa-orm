@@ -263,7 +263,7 @@ class PerformanceBenchmark
 
         echo "\n📊 Top 3 operaciones más lentas:\n";
         $sorted = $this->results;
-        uasort($sorted, fn($a, $b) => $b['time_ms'] <=> $a['time_ms']);
+        uasort($sorted, fn ($a, $b) => $b['time_ms'] <=> $a['time_ms']);
         $i = 1;
         foreach (array_slice($sorted, 0, 3) as $label => $data) {
             printf("%d. %s: %.2f ms\n", $i++, $label, $data['time_ms']);

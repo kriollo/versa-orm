@@ -3,7 +3,8 @@
     "exclude": [
         "tests",
         "vendor",
-        "var"
+        "var",
+        "example"
     ],
     "rules": {
         "ordered_imports": false,

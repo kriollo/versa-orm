@@ -36,12 +36,12 @@ $mergedCoverage = null;
 foreach ($files as $file) {
     echo "Processing $file...\n";
     $coverage = include $file;
-    
+
     if (!$coverage instanceof CodeCoverage) {
         echo "Warning: $file did not return a valid CodeCoverage object.\n";
         continue;
     }
-    
+
     if ($mergedCoverage === null) {
         $mergedCoverage = $coverage;
     } else {
@@ -56,11 +56,11 @@ if ($mergedCoverage === null) {
 
 echo "Generating reports...\n";
 
-(new HtmlReport)->process($mergedCoverage, $outputDir . '/html');
+(new HtmlReport())->process($mergedCoverage, $outputDir . '/html');
 (new TextReport(Thresholds::default()))->process($mergedCoverage, false); // Returns string
 $text = (new TextReport(Thresholds::default()))->process($mergedCoverage, false);
 file_put_contents($outputDir . '/coverage.txt', $text);
-(new CloverReport)->process($mergedCoverage, $outputDir . '/clover.xml');
+(new CloverReport())->process($mergedCoverage, $outputDir . '/clover.xml');
 
 echo "\nDone! Combined report generated in:\n";
 echo "HTML: " . realpath($outputDir . '/html/index.html') . "\n";

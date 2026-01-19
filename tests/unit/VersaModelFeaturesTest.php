@@ -10,7 +10,7 @@ use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
-class TestModel extends VersaModel
+class FeaturesTestModel extends VersaModel
 {
     protected string $table = 'test_table';
 
@@ -36,12 +36,12 @@ class VersaModelFeaturesTest extends TestCase
         $this->orm = $this->createMock(VersaORM::class);
         $this->orm->method('getConfig')->willReturn(['driver' => 'sqlite']);
         VersaModel::setORM($this->orm);
-        TestModel::clearEventListeners();
+        FeaturesTestModel::clearEventListeners();
     }
 
     public function test_table_name_inference(): void
     {
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
         self::assertSame('test_table', $model->tableName());
 
         $model2 = new InferredModel('inferredmodels', $this->orm);
@@ -51,11 +51,11 @@ class VersaModelFeaturesTest extends TestCase
     public function test_event_listeners(): void
     {
         $called = false;
-        TestModel::on('creating', function ($model, $event) use (&$called) {
+        FeaturesTestModel::on('creating', function ($model, $event) use (&$called) {
             $called = true;
         });
 
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
 
         // Trigger event via reflection since it's protected
         $refl = new \ReflectionClass(VersaModel::class);
@@ -68,26 +68,26 @@ class VersaModelFeaturesTest extends TestCase
 
     public function test_freeze_logic(): void
     {
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
 
         // Mock freezeModel and isModelFrozen
         $this->orm
             ->expects(self::once())
             ->method('freezeModel')
-            ->with(TestModel::class, true);
+            ->with(FeaturesTestModel::class, true);
         $this->orm
             ->expects(self::once())
             ->method('isModelFrozen')
-            ->with(TestModel::class)
+            ->with(FeaturesTestModel::class)
             ->willReturn(true);
 
-        TestModel::freeze(true);
-        self::assertTrue(TestModel::isFrozen());
+        FeaturesTestModel::freeze(true);
+        self::assertTrue(FeaturesTestModel::isFrozen());
     }
 
     public function test_fill_mass_assignment(): void
     {
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
 
         // This should pass
         $model->fill(['name' => 'John', 'age' => 30]);
@@ -102,7 +102,7 @@ class VersaModelFeaturesTest extends TestCase
 
     public function test_casting_cache(): void
     {
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
         $model->name = 'John';
 
         // First access triggers casting
@@ -113,7 +113,7 @@ class VersaModelFeaturesTest extends TestCase
 
     public function test_type_mapping_conversion(): void
     {
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
 
         $json = $model->convertValueByTypeMapping('meta', '{"a":1}', ['type' => 'json']);
         self::assertSame(['a' => 1], $json);
@@ -131,7 +131,7 @@ class VersaModelFeaturesTest extends TestCase
     public function test_load_type_mapping_config_throws_if_missing(): void
     {
         $this->expectException(VersaORMException::class);
-        TestModel::loadTypeMappingConfig('/non/existent.json');
+        FeaturesTestModel::loadTypeMappingConfig('/non/existent.json');
     }
 
     public function test_versa_schema_facade(): void
@@ -147,7 +147,7 @@ class VersaModelFeaturesTest extends TestCase
 
     public function test_orm_accessors(): void
     {
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
         self::assertSame($this->orm, $model->orm());
         self::assertSame($this->orm, $model->db());
     }
@@ -155,7 +155,7 @@ class VersaModelFeaturesTest extends TestCase
     public function test_validate_calls_internal_methods(): void
     {
         // This targets the validate lines
-        $model = new TestModel($this->orm);
+        $model = new FeaturesTestModel($this->orm);
         $errors = $model->validate();
         self::assertIsArray($errors);
     }
