@@ -89,10 +89,26 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Atributos dinámicos del modelo cargados desde la base de datos o asignados.
+     * En modo lazy-loading, contiene valores sin castear que serán convertidos en __get().
      *
      * @var array<string, mixed>
      */
     private array $attributes = [];
+
+    /**
+     * Cache de atributos ya casteados para evitar re-casting en múltiples accesos.
+     * Clave: nombre del atributo, Valor: valor casteado.
+     *
+     * @var array<string, mixed>
+     */
+    private array $castingCache = [];
+
+    /**
+     * Conjunto de atributos que ya han sido casteados (para diferenciar null real de no-casteado).
+     *
+     * @var array<string, true>
+     */
+    private array $castedAttributes = [];
 
     private static ?VersaORM $ormInstance = null;
 
@@ -120,7 +136,7 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Obtener el valor de un atributo con casting automático.
+     * Obtener el valor de un atributo con casting automático (lazy).
      *
      * @return mixed
      */
@@ -132,14 +148,19 @@ class VersaModel implements TypedModelInterface
         }
 
         if (isset($this->attributes[$key])) {
-            $value = $this->attributes[$key];
-
-            // Aplicar accesorios y casting si el trait HasStrongTyping está disponible
-            if (method_exists($this, 'applyAccessor')) {
-                return $this->applyAccessor($key, $value);
+            // Implementar lazy casting: si no ha sido casteado, hacerlo ahora y cachearlo
+            if (!isset($this->castedAttributes[$key])) {
+                try {
+                    $this->castingCache[$key] = $this->castToPhpType($key, $this->attributes[$key]);
+                    $this->castedAttributes[$key] = true;
+                } catch (Throwable) {
+                    // Fallback: usar valor sin castear
+                    $this->castingCache[$key] = $this->attributes[$key];
+                    $this->castedAttributes[$key] = true;
+                }
             }
 
-            return $value;
+            return $this->castingCache[$key] ?? null;
         }
 
         if ($this->relationLoaded($key)) {
@@ -450,19 +471,12 @@ class VersaModel implements TypedModelInterface
                 }
             }
 
-            // Aplicar casting de tipos a los atributos antes de asignarlos
-            $castedAttributes = [];
-
-            foreach ($attributes as $key => $value) {
-                try {
-                    // Usar castToPhpType directamente para asignar atributos internos
-                    $castedAttributes[$key] = $this->castToPhpType($key, $value);
-                } catch (Throwable) {
-                    // Fallback al valor original si el casting falla
-                    $castedAttributes[$key] = $value;
-                }
-            }
-            $this->attributes = $castedAttributes;
+            // Cargar los atributos directamente sin casting (lazy-loading)
+            // El casting se hará bajo demanda en __get()
+            $this->attributes = $attributes;
+            // Limpiar el cache de casting para esta nueva carga
+            $this->castingCache = [];
+            $this->castedAttributes = [];
 
             // Cargar las relaciones encontradas
             foreach ($relations as $relationName => $relationData) {
@@ -1231,64 +1245,18 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Obtiene todos los datos del modelo con casting de tipos aplicado.
+     * Usa la cache de casting para evitar re-casteos.
      *
      * @return array<string, mixed>
      */
     public function getDataCasted(): array
     {
         $data = [];
-        $types = static::getPropertyTypes();
 
         foreach ($this->attributes as $key => $value) {
-            try {
-                // Aplicar casting manual más directo para casos problemáticos
-                if (isset($types[$key], $types[$key]['type'])) {
-                    $type = $types[$key]['type'];
-
-                    // Casting directo para tipos comunes
-                    switch ($type) {
-                        case 'boolean':
-                        case 'bool':
-                            $data[$key] = $value === null ? null : (bool) $value;
-                            break;
-                        case 'integer':
-                        case 'int':
-                            $data[$key] = $value === null ? null : (int) $value;
-                            break;
-                        case 'float':
-                        case 'double':
-                        case 'real':
-                            $data[$key] = $value === null ? null : (float) $value;
-                            break;
-                        case 'string':
-                            $data[$key] = $value === null ? null : (string) $value;
-                            break;
-                        case 'datetime':
-                        case 'date':
-                            if ($value === null) {
-                                $data[$key] = null;
-                            } elseif ($value instanceof DateTime) {
-                                $data[$key] = $value; // Ya es DateTime
-                            } else {
-                                try {
-                                    $data[$key] = new DateTime((string) $value);
-                                } catch (Throwable) {
-                                    $data[$key] = $value; // Fallback
-                                }
-                            }
-                            break;
-                        default:
-                            // Para otros tipos, usar el casting del trait
-                            $data[$key] = $this->applyAccessor($key, $value);
-                    }
-                } else {
-                    // Si no hay tipo definido, usar applyAccessor
-                    $data[$key] = $this->applyAccessor($key, $value);
-                }
-            } catch (Throwable) {
-                // Fallback al valor original si el casting falla
-                $data[$key] = $value;
-            }
+            // Usar el accesor __get() para obtener el valor casteado
+            // (que implementa lazy casting + caching)
+            $data[$key] = $this->__get($key);
         }
 
         return $data;
@@ -1380,6 +1348,7 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Obtiene todos los registros de una tabla como array de arrays.
+     * Nota: Devuelve datos sin casting. Para datos casteados, usar getModels() en su lugar.
      *
      * @param array<int, mixed> $bindings
      *
@@ -1396,33 +1365,8 @@ class VersaModel implements TypedModelInterface
         if (is_array($result)) {
             $rows = array_filter($result, 'is_array');
 
-            // Aplicar casting de tipos si la clase define property types
-            try {
-                if (method_exists(static::class, 'getPropertyTypes')) {
-                    /** @var array<string,array<string,mixed>> $types */
-                    $types = static::getPropertyTypes();
-
-                    if ($types !== []) {
-                        $tmp = new static('', $orm);
-
-                        foreach ($rows as $index => $row) {
-                            foreach ($row as $k => $v) {
-                                if (!isset($types[$k])) {
-                                    continue;
-                                }
-
-                                try {
-                                    $rows[$index][$k] = $tmp->castToPhpType($k, $v);
-                                } catch (Throwable) {
-                                    // fallback silencioso al valor original
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable) {
-                // Si algo falla, devolver sin casting
-            }
+            // Nota: No aplicar casting aquí para mejorar performance.
+            // Si se necesita casting, usar getModels() o getDataCasted() en modelos individuales.
 
             return $rows;
         }
@@ -1431,7 +1375,8 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Obtiene una sola fila como array.
+     * Obtiene una sola fila como array (sin casting).
+     * Nota: Devuelve datos crudos. Para datos casteados, usar getModel() en su lugar.
      *
      * @param array<int, mixed> $bindings
      *
@@ -1446,41 +1391,14 @@ class VersaModel implements TypedModelInterface
         $result = $orm->exec($sql, $bindings);
 
         if (is_array($result) && isset($result[0]) && is_array($result[0])) {
-            $row = $result[0];
-
-            // Intentar aplicar casting fuerte si la clase define property types
-            try {
-                if (method_exists(static::class, 'getPropertyTypes')) {
-                    /** @var array<string,array<string,mixed>> $types */
-                    $types = static::getPropertyTypes();
-
-                    if ($types !== []) {
-                        $tmp = new static($row['_table'] ?? '', $orm);
-
-                        foreach ($row as $k => $v) {
-                            if (!isset($types[$k])) {
-                                continue;
-                            }
-
-                            try {
-                                $row[$k] = $tmp->castToPhpType($k, $v);
-                            } catch (Throwable) {
-                                // fallback silencioso
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable) {
-            }
-
-            return $row;
+            return $result[0];
         }
 
         return null;
     }
 
     /**
-     * Obtiene un solo valor de una consulta.
+     * Obtiene un solo valor de una consulta (sin casting).
      *
      * @param array<int, mixed> $bindings
      *
@@ -1496,28 +1414,8 @@ class VersaModel implements TypedModelInterface
 
         if (is_array($result) && $result !== [] && is_array($result[0])) {
             $row = $result[0];
-            $value = array_values($row)[0] ?? null;
 
-            // Intentar caster el primer valor si tenemos tipos
-            try {
-                if (method_exists(static::class, 'getPropertyTypes')) {
-                    $types = static::getPropertyTypes();
-                    // Encontrar la primera clave asociada al valor
-                    $firstKey = array_key_first($row);
-
-                    if ($firstKey !== null && isset($types[$firstKey])) {
-                        $tmp = new static($row['_table'] ?? '', $orm);
-
-                        try {
-                            $value = $tmp->castToPhpType($firstKey, $value);
-                        } catch (Throwable) {
-                        }
-                    }
-                }
-            } catch (Throwable) {
-            }
-
-            return $value;
+            return array_values($row)[0] ?? null;
         }
 
         return null;

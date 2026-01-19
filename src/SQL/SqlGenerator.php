@@ -698,62 +698,37 @@ class SqlGenerator
             $column = (string) ($w['column'] ?? '');
             $value = $w['value'] ?? null;
 
-            match ($operator) {
-                'IN', 'NOT IN' => (static function () use (
-                    $operator,
-                    $value,
-                    $type,
-                    $column,
-                    $dialect,
-                    &$parts,
-                    &$bindings,
-                ): void {
-                    $vals = is_array($value) ? array_values($value) : [];
+            // Usar if/switch directo en lugar de match con closures para mejor performance
+            if ($operator === 'IN' || $operator === 'NOT IN') {
+                $vals = is_array($value) ? array_values($value) : [];
 
-                    if ($vals === []) {
-                        $parts[] = [$type, $operator === 'IN' ? '1=0' : '1=1'];
-
-                        return;
-                    }
+                if ($vals === []) {
+                    $parts[] = [$type, $operator === 'IN' ? '1=0' : '1=1'];
+                } else {
                     $ph = implode(', ', array_fill(0, count($vals), '?'));
                     $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $operator . ' (' . $ph . ')'];
 
                     foreach ($vals as $v) {
                         $bindings[] = $v;
                     }
-                })(),
-                'IS NULL', 'IS NOT NULL' => (static function () use (
-                    $operator,
-                    $type,
-                    $column,
-                    $dialect,
-                    &$parts,
-                ): void {
-                    $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $operator];
-                })(),
-                'BETWEEN' => (static function () use ($value, $type, $column, $dialect, &$parts, &$bindings): void {
-                    if (is_array($value) && count($value) === 2) {
-                        $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' BETWEEN ? AND ?'];
-                        $bindings[] = $value[0];
-                        $bindings[] = $value[1];
-                    }
-                })(),
-                'NOT BETWEEN' => (static function () use ($value, $type, $column, $dialect, &$parts, &$bindings): void {
-                    if (is_array($value) && count($value) === 2) {
-                        $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' NOT BETWEEN ? AND ?'];
-                        $bindings[] = $value[0];
-                        $bindings[] = $value[1];
-                    }
-                })(),
-                'EXISTS', 'NOT EXISTS' => throw new VersaORMException(
-                    'EXISTS subqueries not supported yet in PDO engine',
-                ),
-                default => (static function () use ($w, $type, $column, $dialect, $value, &$parts, &$bindings): void {
-                    $op = $w['operator'] ?? '=';
-                    $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $op . ' ?'];
-                    $bindings[] = $value;
-                })(),
-            };
+                }
+            } elseif ($operator === 'IS NULL' || $operator === 'IS NOT NULL') {
+                $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $operator];
+            } elseif ($operator === 'BETWEEN' || $operator === 'NOT BETWEEN') {
+                if (is_array($value) && count($value) === 2) {
+                    $betweenOp = $operator === 'BETWEEN' ? 'BETWEEN' : 'NOT BETWEEN';
+                    $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $betweenOp . ' ? AND ?'];
+                    $bindings[] = $value[0];
+                    $bindings[] = $value[1];
+                }
+            } elseif ($operator === 'EXISTS' || $operator === 'NOT EXISTS') {
+                throw new VersaORMException('EXISTS subqueries not supported yet in PDO engine');
+            } else {
+                // default case
+                $op = $w['operator'] ?? '=';
+                $parts[] = [$type, self::compileSelectPart($column, $dialect) . ' ' . $op . ' ?'];
+                $bindings[] = $value;
+            }
         }
 
         if (empty($parts)) {
