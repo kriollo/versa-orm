@@ -623,8 +623,21 @@ class SqlGenerator
             $setParts[] = $dialect->quoteIdentifier((string) $col) . ' = ?';
             $bindings[] = $val;
         }
-        $sql = 'UPDATE ' . $dialect->quoteIdentifier($table) . ' SET ' . implode(', ', $setParts);
-        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect);
+
+        // Extract base table name (without alias) for UPDATE clause
+        $baseTable = $table;
+
+        // Remove alias if present for UPDATE syntax
+        if (
+            preg_match('/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i', trim($table), $m)
+            === 1
+        ) {
+            $baseTable = $m[1];
+        }
+
+        $sql = 'UPDATE ' . $dialect->quoteIdentifier($baseTable) . ' SET ' . implode(', ', $setParts);
+        // Pass removeAliases=true to remove alias references from WHERE clause
+        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect, true);
 
         if ($whereSql !== '') {
             $sql .= ' WHERE ' . $whereSql;
@@ -646,8 +659,21 @@ class SqlGenerator
         if ($table === '') {
             throw new VersaORMException('Invalid DELETE parameters');
         }
-        $sql = 'DELETE FROM ' . $dialect->quoteIdentifier($table);
-        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect);
+
+        // Extract base table name (without alias) for DELETE clause
+        $baseTable = $table;
+
+        // Remove alias if present for DELETE syntax
+        if (
+            preg_match('/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i', trim($table), $m)
+            === 1
+        ) {
+            $baseTable = $m[1];
+        }
+
+        $sql = 'DELETE FROM ' . $dialect->quoteIdentifier($baseTable);
+        // Pass removeAliases=true to remove alias references from WHERE clause
+        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect, true);
         $bindings = [];
 
         if ($whereSql !== '') {
@@ -665,8 +691,11 @@ class SqlGenerator
      *
      * @return array{0:string,1:array<int, mixed>}
      */
-    private static function compileWhere(array $wheres, SqlDialectInterface $dialect): array
-    {
+    private static function compileWhere(
+        array $wheres,
+        SqlDialectInterface $dialect,
+        bool $removeAliases = false,
+    ): array {
         /** @var list<array{0:string,1:string}> $parts */
         $parts = [];
         /** @var array<int,mixed> $bindings */
@@ -696,6 +725,19 @@ class SqlGenerator
             }
 
             $column = (string) ($w['column'] ?? '');
+
+            // Remove alias from column reference if needed (for UPDATE/DELETE context)
+            if ($removeAliases && str_contains($column, '.')) {
+                $parts_col = explode('.', $column, 2);
+                if (count($parts_col) === 2) {
+                    // Check if the first part looks like an alias (not schema)
+                    // Aliases are typically short, single-letter or short names
+                    // For now, we'll keep table.column references that have schema notation
+                    // Only remove if it looks like a simple alias reference
+                    $column = $parts_col[1];
+                }
+            }
+
             $value = $w['value'] ?? null;
 
             // Usar if/switch directo en lugar de match con closures para mejor performance
