@@ -90,35 +90,23 @@
       "@test-mysql",
       "@test-postgresql"
     ],
-    "test-coverage": [
-      "@putenv XDEBUG_MODE=coverage",
-      "@putenv DB_DRIVER=sqlite",
-      "@putenv DB_NAME=:memory:",
-      "@php -r \"if (!is_dir('build/logs')) { mkdir('build/logs', 0755, true); }\"",
-      "phpunit --configuration phpunit-sqlite.xml --coverage-clover build/logs/clover.xml --testdox"
-    ],
     "psalm-check": "psalm --no-cache --show-info=true",
     "analyse": "phpstan analyse src --level=8 --memory-limit=1G",
-    "php-cs-fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
-    "php-cs-check": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php --dry-run --diff",
+    "cs:fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
     "mago:fmt": "mago fmt src/ example/ testMysql/ testPostgreSQL/ testSQLite/ tests/",
-    "mago:fmt:check": "mago fmt --check",
     "mago:lint": "mago lint src/",
     "mago:lint:fix": "mago lint --fix --unsafe",
     "format": [
-      "@php-cs-fix",
+      "@cs:fix",
+      "@rector:fix",
       "@mago:fmt"
     ],
-    "format-check": [
-      "@php-cs-check",
-      "@mago:fmt:check"
+    "rector:check": [
+      "rector process --dry-run --ansi"
     ],
-    "qa": "php qa-integration.php",
-    "qa-fix": "php qa-integration.php --fix",
-    "qa-full": "php tests/bin/qa-runner.php full",
-    "qa-unit": "php tests/bin/qa-runner.php unit",
-    "qa-quality": "php tests/bin/qa-runner.php quality",
-    "qa-benchmarks": "php tests/bin/qa-runner.php benchmarks",
+    "rector:fix": [
+      "rector process --ansi"
+    ],
     "post-install-cmd": []
   },
   "config": {

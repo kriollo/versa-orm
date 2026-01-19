@@ -57,6 +57,7 @@ test_database.db
 .github/copilot-instructions.md
 .github/rule.md
 logs/
+src/logs/
 src/binary/
 .gh-artifacts/
 build/
