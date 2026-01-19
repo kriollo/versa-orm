@@ -28,6 +28,48 @@ class SecurityTest extends TestCase
         }
     }
 
+    public function test_malicious_column_names_in_where_are_rejected(): void
+    {
+        foreach (['id;DROP', 'col--x', "field'name"] as $col) {
+            try {
+                self::$orm->table('users')->where($col, '=', 1)->count();
+                static::fail('Nombre de columna malicioso aceptado en WHERE: ' . $col);
+            } catch (VersaORMException $e) {
+                static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+            }
+        }
+    }
+
+    public function test_malicious_operator_in_where_is_rejected(): void
+    {
+        try {
+            self::$orm->table('users')->where('id', '= 1; DROP TABLE users; --', 1)->count();
+            static::fail('Operador malicioso aceptado en WHERE');
+        } catch (VersaORMException $e) {
+            static::assertStringContainsString('invalid operator in where', strtolower($e->getMessage()));
+        }
+    }
+
+    public function test_malicious_join_table_is_rejected(): void
+    {
+        try {
+            self::$orm->table('users')->join('posts; DROP TABLE users; --', 'users.id', '=', 'posts.user_id')->count();
+            static::fail('Tabla maliciosa aceptada en JOIN');
+        } catch (VersaORMException $e) {
+            static::assertStringContainsString('invalid or malicious table name', strtolower($e->getMessage()));
+        }
+    }
+
+    public function test_malicious_having_column_is_rejected(): void
+    {
+        try {
+            self::$orm->table('users')->groupBy(['id'])->having('id; DROP', '>', 0)->count();
+            static::fail('Columna maliciosa aceptada en HAVING');
+        } catch (VersaORMException $e) {
+            static::assertStringContainsString('invalid or malicious column name', strtolower($e->getMessage()));
+        }
+    }
+
     public function test_malicious_table_names(): void
     {
         foreach (['users; DROP TABLE posts;', 'table--comment', "users'name"] as $tbl) {

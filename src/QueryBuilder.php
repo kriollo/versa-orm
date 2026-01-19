@@ -16,7 +16,6 @@ use VersaORM\Relations\HasMany;
 use VersaORM\Relations\HasOne;
 use VersaORM\Relations\Relation;
 use VersaORM\SQL\PdoEngine;
-use VersaORM\VersaORM as VersaORMClass;
 
 use function array_key_exists;
 use function assert;
@@ -48,7 +47,7 @@ use function strlen;
  * - find(id) - Objeto VersaModel o null
  * - dispense() - Nuevo objeto VersaModel vacío
  *
- * @version 1.0.0
+ * @version 1.6.0
  *
  * @author  VersaORM Team
  * @license MIT
@@ -67,20 +66,11 @@ class QueryBuilder
 
     /**
      * Lista de JOINs.
-     * Admite joins simples y subqueries con alias y bindings.
      *
-     * @var list<array{
-     *   type:string,
-     *   table:string,
-     *   first?:string,
-     *   first_col?:string,
-     *   operator:string,
-     *   second?:string,
-     *   second_col?:int|string,
-     *   alias?:string,
-     *   subquery?:string,
-     *   subquery_bindings?:array<int,mixed>
-     * }>
+     * Nota: internamente esta estructura se muta con on()/onRaw(); mantener el tipo
+     * lo suficientemente amplio evita falsos positivos de análisis estático.
+     *
+     * @var list<array<string, mixed>>
      */
     private array $joins = [];
 
@@ -439,9 +429,19 @@ class QueryBuilder
      */
     public function having(string $column, string $operator, mixed $value): self
     {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+        }
+
+        $op = strtoupper(trim($operator));
+        $allowedOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE'];
+        if (!in_array($op, $allowedOperators, true)) {
+            throw new VersaORMException(sprintf('Invalid operator in having: %s', $operator));
+        }
+
         $this->having[] = [
             'column' => $column,
-            'operator' => $operator,
+            'operator' => $op,
             'value' => $value,
             'connector' => 'AND',
         ];
@@ -454,6 +454,10 @@ class QueryBuilder
      */
     public function join(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
+        if (!$this->isSafeTableReference($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
+
         $entry = [
             'type' => 'inner',
             'table' => $table,
@@ -464,12 +468,22 @@ class QueryBuilder
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
+            if (!$this->isSafeIdentifier($firstCol) || !$this->isSafeIdentifier($secondCol)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $firstCol));
+            }
+
+            $op = strtoupper(trim($operator));
+            $allowedJoinOps = ['=', '!=', '<>', '>', '<', '>=', '<='];
+            if (!in_array($op, $allowedJoinOps, true)) {
+                throw new VersaORMException(sprintf('Invalid operator in join: %s', $operator));
+            }
+
             $entry['first_col'] = $firstCol;
-            $entry['operator'] = $operator;
+            $entry['operator'] = $op;
             $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
                 'local' => $firstCol,
-                'operator' => $operator,
+                'operator' => $op,
                 'foreign' => $secondCol,
                 'boolean' => 'AND',
             ];
@@ -484,6 +498,10 @@ class QueryBuilder
      */
     public function leftJoin(string $table, string $firstCol = '', string $operator = '=', string $secondCol = ''): self
     {
+        if (!$this->isSafeTableReference($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
+
         $entry = [
             'type' => 'left',
             'table' => $table,
@@ -494,12 +512,22 @@ class QueryBuilder
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
+            if (!$this->isSafeIdentifier($firstCol) || !$this->isSafeIdentifier($secondCol)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $firstCol));
+            }
+
+            $op = strtoupper(trim($operator));
+            $allowedJoinOps = ['=', '!=', '<>', '>', '<', '>=', '<='];
+            if (!in_array($op, $allowedJoinOps, true)) {
+                throw new VersaORMException(sprintf('Invalid operator in join: %s', $operator));
+            }
+
             $entry['first_col'] = $firstCol;
-            $entry['operator'] = $operator;
+            $entry['operator'] = $op;
             $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
                 'local' => $firstCol,
-                'operator' => $operator,
+                'operator' => $op,
                 'foreign' => $secondCol,
                 'boolean' => 'AND',
             ];
@@ -518,6 +546,10 @@ class QueryBuilder
         string $operator = '=',
         string $secondCol = '',
     ): self {
+        if (!$this->isSafeTableReference($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
+
         $entry = [
             'type' => 'right',
             'table' => $table,
@@ -528,12 +560,22 @@ class QueryBuilder
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
+            if (!$this->isSafeIdentifier($firstCol) || !$this->isSafeIdentifier($secondCol)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $firstCol));
+            }
+
+            $op = strtoupper(trim($operator));
+            $allowedJoinOps = ['=', '!=', '<>', '>', '<', '>=', '<='];
+            if (!in_array($op, $allowedJoinOps, true)) {
+                throw new VersaORMException(sprintf('Invalid operator in join: %s', $operator));
+            }
+
             $entry['first_col'] = $firstCol;
-            $entry['operator'] = $operator;
+            $entry['operator'] = $op;
             $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
                 'local' => $firstCol,
-                'operator' => $operator,
+                'operator' => $op,
                 'foreign' => $secondCol,
                 'boolean' => 'AND',
             ];
@@ -552,6 +594,10 @@ class QueryBuilder
         string $operator = '=',
         string $secondCol = '',
     ): self {
+        if (!$this->isSafeTableReference($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
+
         $entry = [
             'type' => 'full_outer',
             'table' => $table,
@@ -562,12 +608,22 @@ class QueryBuilder
         ];
 
         if ($firstCol !== '' && $secondCol !== '') {
+            if (!$this->isSafeIdentifier($firstCol) || !$this->isSafeIdentifier($secondCol)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $firstCol));
+            }
+
+            $op = strtoupper(trim($operator));
+            $allowedJoinOps = ['=', '!=', '<>', '>', '<', '>=', '<='];
+            if (!in_array($op, $allowedJoinOps, true)) {
+                throw new VersaORMException(sprintf('Invalid operator in join: %s', $operator));
+            }
+
             $entry['first_col'] = $firstCol;
-            $entry['operator'] = $operator;
+            $entry['operator'] = $op;
             $entry['second_col'] = $secondCol;
             $entry['conditions'][] = [
                 'local' => $firstCol,
-                'operator' => $operator,
+                'operator' => $op,
                 'foreign' => $secondCol,
                 'boolean' => 'AND',
             ];
@@ -582,6 +638,9 @@ class QueryBuilder
      */
     public function crossJoin(string $table): self
     {
+        if (!$this->isSafeTableReference($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
         $this->joins[] = [
             'type' => 'cross',
             'table' => $table,
@@ -600,6 +659,9 @@ class QueryBuilder
      */
     public function naturalJoin(string $table): self
     {
+        if (!$this->isSafeTableReference($table)) {
+            throw new VersaORMException(sprintf('Invalid or malicious table name detected: %s', $table));
+        }
         $this->joins[] = [
             'type' => 'natural',
             'table' => $table,
@@ -677,7 +739,7 @@ class QueryBuilder
         $clause = trim($rawJoinClause);
 
         // Si no empieza con LEFT JOIN, agregarlo automáticamente
-        if (!preg_match('/^\s*LEFT\s+JOIN\s+/i', $clause)) {
+        if (preg_match('/^\s*LEFT\s+JOIN\s+/i', $clause) !== 1) {
             $clause = 'LEFT JOIN ' . $clause;
         }
 
@@ -700,7 +762,7 @@ class QueryBuilder
         $clause = trim($rawJoinClause);
 
         // Si no empieza con RIGHT JOIN, agregarlo automáticamente
-        if (!preg_match('/^\s*RIGHT\s+JOIN\s+/i', $clause)) {
+        if (preg_match('/^\s*RIGHT\s+JOIN\s+/i', $clause) !== 1) {
             $clause = 'RIGHT JOIN ' . $clause;
         }
 
@@ -723,7 +785,7 @@ class QueryBuilder
         $clause = trim($rawJoinClause);
 
         // Si no empieza con INNER JOIN, agregarlo automáticamente
-        if (!preg_match('/^\s*INNER\s+JOIN\s+/i', $clause)) {
+        if (preg_match('/^\s*INNER\s+JOIN\s+/i', $clause) !== 1) {
             $clause = 'INNER JOIN ' . $clause;
         }
 
@@ -782,6 +844,11 @@ class QueryBuilder
         }
         $idx = $count - 1;
 
+        // JOIN raw ya contiene cláusula completa; no admite on() encadenado.
+        if (($this->joins[$idx]['type'] ?? null) === 'raw') {
+            throw new VersaORMException('Cannot add ON condition: last JOIN is raw.');
+        }
+
         if (!isset($this->joins[$idx]['conditions']) || !is_array($this->joins[$idx]['conditions'])) {
             $this->joins[$idx]['conditions'] = [];
         }
@@ -815,6 +882,11 @@ class QueryBuilder
             throw new VersaORMException('Cannot add raw ON condition: no JOIN defined yet.');
         }
         $idx = $count - 1;
+
+        // JOIN raw ya contiene cláusula completa; no admite onRaw() encadenado.
+        if (($this->joins[$idx]['type'] ?? null) === 'raw') {
+            throw new VersaORMException('Cannot add raw ON condition: last JOIN is raw.');
+        }
         $expr = trim($expression);
         if (!$this->isSafeJoinRaw($expr)) {
             throw new VersaORMException('Potentially unsafe raw ON expression detected.');
@@ -1492,20 +1564,6 @@ class QueryBuilder
      */
     public function dispense(): VersaModel
     {
-        if ($this->orm instanceof VersaORMClass) {
-            try {
-                if ($this->orm->isDebugMode()) {
-                    try {
-                        $this->orm->logDebug('[DEBUG] Executing SQL with QueryBuilder');
-                    } catch (Throwable) {
-                        // ignore logging errors
-                    }
-                }
-            } catch (Throwable) {
-                // ignore
-            }
-        }
-
         return new VersaModel($this->table, $this->orm);
     }
 
@@ -1618,24 +1676,6 @@ class QueryBuilder
             'records' => $processedRecords,
             'batch_size' => $batchSize,
         ];
-
-        // Debug: Log what we're sending
-        if ($this->orm instanceof VersaORMClass) {
-            try {
-                if ($this->orm->isDebugMode()) {
-                    try {
-                        $firstRecord = $processedRecords !== [] ? $processedRecords[0] : null;
-                        $this->orm->logDebug('[DEBUG] insertMany PHP - First record: ' . json_encode($firstRecord), [
-                            'records' => $processedRecords,
-                        ]);
-                    } catch (Throwable) {
-                        // ignore logging errors
-                    }
-                }
-            } catch (Throwable) {
-                // ignore
-            }
-        }
 
         /** @var mixed $rawResult */
         $rawResult = $this->execute('insertMany', $params); // ejecutar solo una vez
@@ -3124,12 +3164,94 @@ class QueryBuilder
      */
     private function addWhereEntry(string $column, string $operator, mixed $value, string $type): void
     {
+        $op = strtoupper(trim($operator));
+
+        // RAW: se valida en whereRaw(), aquí sólo normalizamos shape
+        if ($op !== 'RAW') {
+            if (!$this->isSafeIdentifier($column)) {
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            }
+
+            $allowedOperators = [
+                '=',
+                '!=',
+                '<>',
+                '>',
+                '<',
+                '>=',
+                '<=',
+                'LIKE',
+                'NOT LIKE',
+                'IN',
+                'NOT IN',
+                'BETWEEN',
+                'NOT BETWEEN',
+                'IS NULL',
+                'IS NOT NULL',
+            ];
+
+            if (!in_array($op, $allowedOperators, true)) {
+                throw new VersaORMException(sprintf('Invalid operator in where: %s', $operator));
+            }
+
+            // Validaciones por operador
+            if (in_array($op, ['IN', 'NOT IN'], true) && !is_array($value)) {
+                throw new VersaORMException(sprintf('Operator %s requires an array of values', $op));
+            }
+            if (in_array($op, ['BETWEEN', 'NOT BETWEEN'], true)) {
+                if (!is_array($value) || count($value) !== 2) {
+                    throw new VersaORMException(sprintf('Operator %s requires an array with exactly 2 values', $op));
+                }
+            }
+            if (in_array($op, ['IS NULL', 'IS NOT NULL'], true)) {
+                $value = null;
+            }
+        }
+
         $this->wheres[] = [
             'column' => $column,
-            'operator' => $operator,
+            'operator' => $op,
             'value' => $value,
             'type' => $type === 'or' ? 'or' : 'and',
         ];
+    }
+
+    /**
+     * Valida referencias de tabla para JOIN (permite alias: "table alias" o "table AS alias").
+     */
+    private function isSafeTableReference(string $table): bool
+    {
+        $t = trim($table);
+        if ($t === '' || $t === '0') {
+            return false;
+        }
+
+        // Caso simple: "table" o "schema.table"
+        if ($this->isSafeIdentifier($t)) {
+            return true;
+        }
+
+        // Caso con alias: "table alias" o "table AS alias"
+        if (preg_match('/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i', $t, $m) !== 1) {
+            return false;
+        }
+
+        $base = $m[1];
+        $alias = $m[2];
+
+        // Validar base con soporte schema.table
+        if (str_contains($base, '.')) {
+            [$schemaOrTable, $tableOnly] = explode('.', $base, 2);
+            if (!$this->isValidDatabaseIdentifier($schemaOrTable) || !$this->isValidDatabaseIdentifier($tableOnly)) {
+                return false;
+            }
+        } else {
+            if (!$this->isValidDatabaseIdentifier($base)) {
+                return false;
+            }
+        }
+
+        return $this->isValidDatabaseIdentifier($alias);
     }
 
     /**
@@ -3410,24 +3532,6 @@ class QueryBuilder
             if (in_array($method, $batchMethods, true)) {
                 // Merge batch parameters directly into params rather than nesting under 'data'
                 $params = array_merge($params, $data);
-                // Debug: Log the final merged params
-                if ($this->orm instanceof VersaORMClass) {
-                    try {
-                        if ($this->orm->isDebugMode()) {
-                            try {
-                                $this->orm->logDebug(
-                                    '[DEBUG] buildPayload - Final merged params for ' . $method . ': '
-                                        . json_encode($params),
-                                    ['params' => $params],
-                                );
-                            } catch (Throwable) {
-                                // ignore
-                            }
-                        }
-                    } catch (Throwable) {
-                        // ignore
-                    }
-                }
             } else {
                 // For normal operations, keep existing behavior
                 $params['data'] = $data;
@@ -4087,24 +4191,6 @@ class QueryBuilder
     {
         // echo "=== DEBUG executeAdvancedSQL (Private) ===\n";
         // echo "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n";
-
-        if ($this->orm instanceof VersaORMClass) {
-            try {
-                if ($this->orm->isDebugMode()) {
-                    try {
-                        $this->orm->logDebug('[DEBUG] Executing advanced SQL operation from QueryBuilder...', [
-                            'params' => $params,
-                        ]);
-                    } catch (Throwable) {
-                        if (function_exists('error_log')) {
-                            error_log('[DEBUG] Executing advanced SQL operation from QueryBuilder...');
-                        }
-                    }
-                }
-            } catch (Throwable) {
-                // ignore
-            }
-        }
 
         if (!$this->orm instanceof VersaORM) {
             throw new Exception('VersaORM instance is required for advanced SQL execution.');

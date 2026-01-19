@@ -54,8 +54,16 @@ class ErrorHandler
         self::$config = $config;
 
         // Configurar log path
-        if (isset($config['log_path'])) {
+        if (
+            isset($config['log_path'])
+            && is_string($config['log_path'])
+            && $config['log_path'] !== ''
+            && $config['log_path'] !== '0'
+        ) {
             self::$logPath = rtrim($config['log_path'], '/\\');
+        } else {
+            // Default: /logs en la raíz del proyecto
+            self::$logPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'logs';
         }
 
         // Configurar debug mode desde la config
@@ -64,7 +72,7 @@ class ErrorHandler
         }
 
         // Crear directorio de logs si no existe
-        if (self::$logPath && !is_dir(self::$logPath)) {
+        if (is_string(self::$logPath) && self::$logPath !== '' && !is_dir(self::$logPath)) {
             mkdir(self::$logPath, 0o755, true);
         }
     }
@@ -453,10 +461,8 @@ class ErrorHandler
             array_shift(self::$errorLog);
         }
 
-        // Escribir a archivo si está configurado el log path
-        if (self::$logPath !== null && self::$logPath !== '' && self::$logPath !== '0') {
-            self::writeErrorToFile($errorData);
-        }
+        // Persistir siempre a disco (por defecto en /logs)
+        self::writeErrorToFile($errorData);
     }
 
     /**
@@ -465,7 +471,16 @@ class ErrorHandler
     private static function writeErrorToFile(array $errorData): void
     {
         if (self::$logPath === null || self::$logPath === '' || self::$logPath === '0') {
-            return;
+            self::$logPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'logs';
+        }
+
+        // Crear directorio de logs si no existe
+        if (!is_dir(self::$logPath)) {
+            try {
+                mkdir(self::$logPath, 0o755, true);
+            } catch (\Throwable) {
+                return;
+            }
         }
 
         $logFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_' . date('Y-m-d') . '.log';
@@ -485,15 +500,81 @@ class ErrorHandler
         // Escribir al archivo de log
         file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
         // Archivo detallado: incluye traza completa y objeto exception_log si existe
-        $detailPayload = $errorData;
-        if (isset($errorData['exception_log'])) {
-            $detailPayload['exception_log'] = $errorData['exception_log'];
-        }
+        $detailPayload = self::sanitizeErrorDataForLogging($errorData);
         $detailPayload['full_trace'] = $errorData['trace'] ?? [];
         file_put_contents(
             $detailFile,
             json_encode($detailPayload, JSON_UNESCAPED_UNICODE) . PHP_EOL,
             FILE_APPEND | LOCK_EX,
         );
+    }
+
+    /**
+     * Sanitiza el payload antes de persistirlo a disco.
+     * - En producción (debug desactivado): elimina bindings y reduce datos potencialmente sensibles.
+     * - En debug: mantiene estructura, pero recorta strings largos y oculta tokens obvios.
+     */
+    /**
+     * @param array<string, mixed> $errorData
+     *
+     * @return array<string, mixed>
+     */
+    private static function sanitizeErrorDataForLogging(array $errorData): array
+    {
+        $payload = $errorData;
+
+        // Nunca persistir el error log interno completo (puede crecer y duplicar datos)
+        unset($payload['exception_log']['trace']);
+
+        // Si hay exception_log enriquecido, sanitizar bindings.
+        if (isset($payload['exception_log']) && is_array($payload['exception_log'])) {
+            if (!self::$debugMode) {
+                $payload['exception_log']['bindings'] = [];
+                $payload['exception_log']['query'] = null;
+            } elseif (isset($payload['exception_log']['bindings']) && is_array($payload['exception_log']['bindings'])) {
+                $payload['exception_log']['bindings'] = self::sanitizeValue($payload['exception_log']['bindings']);
+            }
+        }
+
+        // Sanitizar cualquier string larga o con apariencia de secreto en todo el árbol
+        return self::sanitizeValue($payload);
+    }
+
+    /**
+     * Sanitiza valores de forma recursiva.
+     */
+    private static function sanitizeValue(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            $out = [];
+            foreach ($value as $k => $v) {
+                // Si el nombre de la clave sugiere secreto, redacted.
+                if (is_string($k) && preg_match('/(pass(word)?|token|secret|api[_-]?key|auth|cookie)/i', $k) === 1) {
+                    $out[$k] = '[redacted]';
+                    continue;
+                }
+                $out[$k] = self::sanitizeValue($v);
+            }
+
+            return $out;
+        }
+
+        if (is_string($value)) {
+            $v = $value;
+
+            // Redactar tokens largos (JWT, hashes largos, etc.) como medida defensiva.
+            if (strlen($v) > 120) {
+                return substr($v, 0, 40) . '...[truncated]';
+            }
+
+            // Redactar strings con patrón tipo JWT (header.payload.signature)
+            if (preg_match('/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/', $v) === 1) {
+                return '[redacted-jwt]';
+            }
+
+            return $v;
+        }
+
+        return $value;
     }
 }

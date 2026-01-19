@@ -2277,13 +2277,13 @@ class PdoEngine
         $tables = [];
 
         // Buscar FROM y JOIN simples (identificadores con o sin backticks)
-        if (preg_match_all('/\bFROM\s+`?([a-zA-Z0-9_\.]+)`?/i', $sql, $m1) === 1) {
+        if (preg_match_all('/\bFROM\s+`?([a-zA-Z0-9_\.]+)`?/i', $sql, $m1) > 0) {
             foreach ($m1[1] as $t) {
                 $tables[] = strtolower($t);
             }
         }
 
-        if (preg_match_all('/\bJOIN\s+`?([a-zA-Z0-9_\.]+)`?/i', $sql, $m2) === 1) {
+        if (preg_match_all('/\bJOIN\s+`?([a-zA-Z0-9_\.]+)`?/i', $sql, $m2) > 0) {
             foreach ($m2[1] as $t) {
                 $tables[] = strtolower($t);
             }

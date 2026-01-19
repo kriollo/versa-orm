@@ -87,7 +87,7 @@ use function strlen;
  * NOTA: Todos los métodos de consulta y manipulación de datos
  * están ahora en VersaModel para una arquitectura más limpia.
  *
- * @version 1.0.0
+ * @version 1.6.0
  *
  * @author  VersaORM Team
  * @license MIT
@@ -199,9 +199,7 @@ class VersaORM
 
         if (!$this->pdoEngine instanceof PdoEngine) {
             // Forzar inicialización perezosa para disponer de métricas
-            $this->pdoEngine = new PdoEngine($this->config, function (string $message, array $context = []): void {
-                $this->logDebug($message, $context);
-            });
+            $this->pdoEngine = new PdoEngine($this->config);
         }
 
         return PdoEngine::getMetrics();
@@ -219,9 +217,7 @@ class VersaORM
         }
 
         if (!$this->pdoEngine instanceof PdoEngine) {
-            $this->pdoEngine = new PdoEngine($this->config, function (string $message, array $context = []): void {
-                $this->logDebug($message, $context);
-            });
+            $this->pdoEngine = new PdoEngine($this->config);
         }
         $this->pdoEngine->resetAllMetrics();
     }
@@ -560,16 +556,6 @@ class VersaORM
             // Si el driver es sqlite, eliminar claves 'using' para evitar SQL no soportado
             if ($driver === 'sqlite' && isset($idx['using'])) {
                 unset($idx['using']);
-            }
-
-            // DEBUG: registrar el contenido del índice antes de crear
-            try {
-                @file_put_contents(
-                    __DIR__ . '/../var/tmp_idx_dump.log',
-                    var_export($idx, true) . "\n",
-                    FILE_APPEND | LOCK_EX,
-                );
-            } catch (\Throwable) {
             }
 
             $this->createIndexPortable($table, $idx, $driver);
@@ -938,7 +924,7 @@ class VersaORM
      */
     public function version(): string
     {
-        return '1.0.0';
+        return '1.6.0';
     }
 
     // Método disconnect unificado se declara más arriba (limpia conexión PDO y GC)
@@ -959,11 +945,16 @@ class VersaORM
 
         // Log de seguridad
         $status = $frozen ? 'ACTIVATED' : 'DEACTIVATED';
-        $this->logSecurityEvent("FREEZE_MODE_{$status}", [
+        $payload = [
             'global_freeze' => $frozen,
             'timestamp' => date('Y-m-d H:i:s'),
-            'trace' => $this->getDebugStackTrace(),
-        ]);
+        ];
+
+        if ($this->isDebugMode()) {
+            $payload['trace'] = $this->getDebugStackTrace();
+        }
+
+        $this->logSecurityEvent("FREEZE_MODE_{$status}", $payload);
 
         return $this;
     }
@@ -1041,15 +1032,20 @@ class VersaORM
         // Si es una operación DDL y hay freeze activo, bloquear
         if ($isDdlOperation && ($isGloballyFrozen || $isModelFrozen)) {
             // Log del intento de alteración
-            $this->logSecurityEvent('FREEZE_VIOLATION_ATTEMPT', [
+            $payload = [
                 'operation' => $operation,
                 'model_class' => $modelClass,
                 'global_frozen' => $isGloballyFrozen,
                 'model_frozen' => $isModelFrozen,
                 'context' => $context,
                 'timestamp' => date('Y-m-d H:i:s'),
-                'trace' => $this->getDebugStackTrace(),
-            ]);
+            ];
+
+            if ($this->isDebugMode()) {
+                $payload['trace'] = $this->getDebugStackTrace();
+            }
+
+            $this->logSecurityEvent('FREEZE_VIOLATION_ATTEMPT', $payload);
 
             $freezeType = $isGloballyFrozen ? 'global freeze mode' : "model '{$modelClass}' freeze mode";
             $warningMessage = "Operation '{$operation}' blocked by {$freezeType}.";
@@ -1098,34 +1094,9 @@ class VersaORM
      */
     public function logDebug(string $message, array $context = []): void
     {
-        if (!$this->isDebugMode()) {
-            return;
-        }
-
-        try {
-            $logDir = $this->getLogDirectory();
-
-            if (!is_dir($logDir) && (!mkdir($logDir, 0o755, true) && !is_dir($logDir))) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
-            }
-
-            $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
-            $timestamp = date('Y-m-d H:i:s');
-
-            $logEntry = sprintf("[%s] [PHP] [DEBUG] %s\n", $timestamp, $message);
-
-            if ($context !== []) {
-                $logEntry .= sprintf(
-                    "[%s] [PHP] [CONTEXT] %s\n",
-                    $timestamp,
-                    json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-                );
-            }
-
-            file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
-        } catch (Throwable) {
-            // Silenciar errores de logging para no interferir con la ejecución principal
-        }
+        // Logging DEBUG deshabilitado por diseño.
+        // Mantiene la firma para compatibilidad, pero no escribe nada.
+        return;
     }
 
     /**
@@ -1179,15 +1150,10 @@ class VersaORM
         // Validar parámetros de entrada
         $this->validateInput($action, $params);
 
-        // Log de la acción ejecutada
-        $this->logDebug("Executing action: {$action}", ['params' => $params]);
-
         try {
             // Reutilizar la misma instancia para mantener la conexión viva
             if (!$this->pdoEngine instanceof PdoEngine) {
-                $this->pdoEngine = new PdoEngine($this->config, function (string $message, array $context = []): void {
-                    $this->logDebug($message, $context);
-                });
+                $this->pdoEngine = new PdoEngine($this->config);
             }
 
             return $this->pdoEngine->execute($action, $params);
@@ -1207,13 +1173,11 @@ class VersaORM
             if (class_exists(ErrorHandler::class) && ErrorHandler::isConfigured()) {
                 ErrorHandler::handleException($ex, ['phase' => 'pdo_engine']);
             } else {
-                // Intentar usar el logger central; si falla, fallback a error_log
+                // Registrar como ERROR (sin fallbacks de logging)
                 try {
-                    $this->logDebug('[VersaORM][ERROR]', ['exception' => $ex->toLogArray(), 'phase' => 'pdo_engine']);
+                    $this->logError('PDO_ENGINE_FAILED', $ex->getMessage(), null, [], $ex->getMessage());
                 } catch (Throwable) {
-                    if (function_exists('error_log')) {
-                        @error_log('[VersaORM][ERROR] ' . json_encode($ex->toLogArray()));
-                    }
+                    // Silenciar para no interferir con la excepción principal
                 }
             }
 
@@ -1493,7 +1457,7 @@ class VersaORM
         ];
 
         foreach ($ddlPatterns as $pattern) {
-            if (!preg_match($pattern, $normalizedQuery)) {
+            if (preg_match($pattern, $normalizedQuery) !== 1) {
                 continue;
             }
 
@@ -1514,7 +1478,7 @@ class VersaORM
         }
 
         // Fallback al directorio por defecto
-        return __DIR__ . '/logs';
+        return dirname(__DIR__) . '/logs';
     }
 
     /**
@@ -1524,32 +1488,20 @@ class VersaORM
      */
     private function logSecurityEvent(string $event, array $data): void
     {
-        try {
-            $logDir = $this->getLogDirectory();
-
-            if (!is_dir($logDir) && (!mkdir($logDir, 0o755, true) && !is_dir($logDir))) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $logDir));
-            }
-
-            $securityLogFile = $logDir . '/php-security-' . date('Y-m-d') . '.log';
-            $timestamp = date('Y-m-d H:i:s');
-
-            $logEntry = sprintf(
-                "[%s] [SECURITY] [%s] %s\n",
-                $timestamp,
-                $event,
-                json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-            );
-
-            file_put_contents($securityLogFile, $logEntry, FILE_APPEND | LOCK_EX);
-
-            // También registrar en el log principal si el debug está habilitado
-            if ($this->isDebugMode()) {
-                $this->logDebug("Security Event: {$event}", $data);
-            }
-        } catch (Throwable) {
-            // Silenciar errores de logging para no interferir con la operación principal
+        // Solo se mantienen logs de WARNING/ERROR. Los eventos de seguridad informativos se ignoran.
+        // Únicamente reportamos intentos de violación de freeze como ERROR.
+        if ($event !== 'FREEZE_VIOLATION_ATTEMPT') {
+            return;
         }
+
+        // Registrar como ERROR; en no-debug se registrará sin query/bindings.
+        $this->logError(
+            'SECURITY',
+            'FREEZE_VIOLATION_ATTEMPT ' . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            null,
+            [],
+            '',
+        );
     }
 
     /**
@@ -1752,11 +1704,14 @@ class VersaORM
             $detailedMessage .= "\n\n=== DEBUG STACK TRACE ===\n";
             $detailedMessage .= $this->getDebugStackTrace();
 
-            // Log del error si está habilitado
+            // Log del error (solo ERROR/WARNING; detalles completos solo en debug)
             $this->logError($errorCode, $errorMessage, $query, $bindings, $detailedMessage);
         } else {
             // Mensaje resumido para producción
             $detailedMessage = $this->buildSimpleErrorMessage($errorCode, $errorMessage);
+
+            // Log del error en producción (sin query/bindings)
+            $this->logError($errorCode, $errorMessage, null, [], $detailedMessage);
         }
 
         throw new VersaORMException($detailedMessage, $errorCode, $query, $bindings, $errorDetails, $sqlState);
@@ -1870,10 +1825,6 @@ class VersaORM
         array $bindings,
         string $fullMessage,
     ): void {
-        if (!$this->isDebugMode()) {
-            return;
-        }
-
         try {
             $logDir = $this->getLogDirectory();
 
@@ -1885,6 +1836,13 @@ class VersaORM
             $logFile = $logDir . '/php-' . date('Y-m-d') . '.log';
             $timestamp = date('Y-m-d H:i:s');
 
+            $includeDetails = $this->isDebugMode();
+            $safeQuery = $includeDetails ? $query ?? 'N/A' : 'N/A';
+            $safeBindings = $includeDetails ? json_encode($bindings) : '[]';
+            $safeFull = $includeDetails
+                ? str_replace("\n", ' | ', $fullMessage !== '' ? $fullMessage : $errorMessage)
+                : $errorMessage;
+
             $logEntry = sprintf(
                 "[%s] [PHP] [ERROR] [%s] %s\n"
                 . "[%s] [PHP] [QUERY] %s\n"
@@ -1894,11 +1852,11 @@ class VersaORM
                 $errorCode,
                 $errorMessage,
                 $timestamp,
-                $query ?? 'N/A',
+                $safeQuery,
                 $timestamp,
-                json_encode($bindings),
+                $safeBindings,
                 $timestamp,
-                str_replace("\n", ' | ', $fullMessage),
+                $safeFull,
             );
 
             file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
@@ -1926,13 +1884,21 @@ class VersaORM
             foreach ($files as $file) {
                 $filename = basename($file, '.log');
 
-                // Si es un archivo con formato de fecha YYYY-MM-DD
-                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filename) === 1) {
-                    $fileDate = strtotime($filename);
+                // Aceptar formatos: YYYY-MM-DD, php-YYYY-MM-DD, php-security-YYYY-MM-DD
+                $datePart = null;
+                if (preg_match('/^(\d{4}-\d{2}-\d{2})$/', $filename, $m) === 1) {
+                    $datePart = $m[1];
+                } elseif (preg_match('/^(?:php|php-security)-?(\d{4}-\d{2}-\d{2})$/', $filename, $m) === 1) {
+                    $datePart = $m[1];
+                }
 
-                    if ($fileDate !== false && $sevenDaysAgo !== false && $fileDate < $sevenDaysAgo) {
-                        unlink($file);
-                    }
+                if ($datePart === null) {
+                    continue;
+                }
+
+                $fileDate = strtotime($datePart);
+                if ($fileDate !== false && $sevenDaysAgo !== false && $fileDate < $sevenDaysAgo) {
+                    unlink($file);
                 }
             }
         } catch (Throwable) {

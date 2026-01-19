@@ -143,7 +143,18 @@ trait HandlesErrors
      */
     public static function safeFindAll(array $conditions = []): mixed
     {
-        return static::withStaticErrorHandling(static fn() => static::findAll($conditions), [
+        return static::withStaticErrorHandling(static function () use ($conditions) {
+            $qb = static::queryTable();
+
+            foreach ($conditions as $column => $value) {
+                if (!is_string($column) || $column === '' || $column === '0') {
+                    continue;
+                }
+                $qb->where($column, '=', $value);
+            }
+
+            return $qb->findAll();
+        }, [
             'operation' => 'findAll',
             'conditions' => $conditions,
         ]);
@@ -204,7 +215,7 @@ trait HandlesErrors
             'model_class' => static::class,
             'model_table' => $this->getTable() ?? 'unknown',
             'model_attributes' => $this->attributes ?? [],
-            'operation_context' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3),
+            'operation_context' => ErrorHandler::isDebugMode() ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3) : [],
         ]);
 
         // Procesar el error

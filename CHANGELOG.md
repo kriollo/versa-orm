@@ -1,3 +1,26 @@
+## [1.6.0] - 2026-01-19
+
+### 🛡️ Seguridad (hardening SQL)
+
+- Validación estricta de identificadores y allowlist de operadores en WHERE/JOIN/HAVING para mitigar inyección por nombres/operadores.
+- Sanitización defensiva de payloads de error al persistir logs.
+
+### 🧾 Logging (solo errores)
+
+- Política "solo ERROR": se eliminan logs debug/info/warning y fallbacks.
+- Persistencia de errores garantizada por defecto en `logs/` (aunque no se configure `log_path`).
+
+### ⚡ Performance e I/O
+
+- Reducción de I/O: se eliminan escrituras de debug/dumps y se evita backtrace en hot paths cuando no hay debug.
+- Generación SQL sin side-effects de logging.
+
+### 🤖 DevEx / Calidad
+
+- Nuevo `llms.txt` y enlace en README para asistentes.
+- PHPStan: 0 errores en nivel 8.
+- Rector: configuración estable sin warnings en `rector:check`.
+
 ## [1.5.0] - 2026-01-14
 
 ### � Nueva Característica Principal: JOIN RAW con SQL Personalizado

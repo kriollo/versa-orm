@@ -183,23 +183,7 @@ class SqlGenerator
             $bindings = array_merge($bindings, $fromSub['bindings']);
         }
 
-        // Debug logging para diagnosticar errores de sintaxis en subconsultas UNION derivadas.
-        // Controlado por variable de entorno VERSA_DEBUG_SQL=1 para evitar ruido en entornos productivos.
-        if ($fromSub !== null && getenv('VERSA_DEBUG_SQL') === '1') {
-            try {
-                $logDir = __DIR__ . '/../../logs';
-                if (!is_dir($logDir)) {
-                    @mkdir($logDir, 0o777, true);
-                }
-                @file_put_contents(
-                    $logDir . '/sql_debug.log',
-                    '[' . date('H:i:s') . '] ' . $sql . ' | bindings=' . json_encode($bindings) . "\n",
-                    FILE_APPEND,
-                );
-            } catch (\Throwable $e) {
-                // Ignorar errores de logging
-            }
-        }
+        // Logging de debug eliminado: la generación SQL no debe tener side-effects de I/O.
 
         // JOINS (inner, left, right, cross, joinSub); FULL OUTER (limitado)
         /** @var list<array{type?:string,table?:string,first_col?:string,second_col?:string,operator?:string,subquery?:string,alias?:string,subquery_bindings?:array<int,mixed>}> $joins */
@@ -677,7 +661,7 @@ class SqlGenerator
     /**
      * Compila cláusulas WHERE.
      *
-     * @param list<array{type?:string,operator?:string,column?:string,value:mixed}> $wheres
+     * @param list<array<string, mixed>> $wheres
      *
      * @return array{0:string,1:array<int, mixed>}
      */
