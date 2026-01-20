@@ -43,8 +43,8 @@ class VersaModel implements TypedModelInterface
 {
     use HasRelationships;
     use HasStrongTyping {
-        HasStrongTyping::getPropertyTypes as private traitGetPropertyTypes;
-        HasStrongTyping::castToPhpType as private traitCastToPhpType;
+        HasStrongTyping::getPropertyTypes as protected traitGetPropertyTypes;
+        HasStrongTyping::castToPhpType as protected traitCastToPhpType;
     }
 
     // Métodos y traits ya definidos arriba
@@ -57,6 +57,9 @@ class VersaModel implements TypedModelInterface
     protected static array $eventListeners = [];
 
     protected string $table;
+
+    /** @var array<string, array<string, array{type?: string, values?: array<int, string>, max_length?: int, nullable?: bool}>> */
+    public static array $propertyTypeRegistryIntern = [];
 
     /**
      * Campos que pueden ser asignados masivamente.
@@ -424,7 +427,7 @@ class VersaModel implements TypedModelInterface
 
                 return $value;
             case 'uuid':
-                return (string) $value; // Assuming validation has ensured UUID format
+                return is_scalar($value) ? (string) $value : ''; // Assuming validation has ensured UUID format
             case 'array':
                 if (is_string($value)) {
                     $decoded = json_decode($value, true);
@@ -463,11 +466,12 @@ class VersaModel implements TypedModelInterface
             $attributes = [];
 
             foreach ($data as $key => $value) {
+                $keyStr = (string) $key;
                 // Si la clave corresponde a una relación (es un array u objeto)
-                if (method_exists($this, $key) && (is_array($value) || is_object($value))) {
-                    $relations[$key] = $value;
+                if (method_exists($this, $keyStr) && (is_array($value) || is_object($value))) {
+                    $relations[$keyStr] = $value;
                 } else {
-                    $attributes[$key] = $value;
+                    $attributes[$keyStr] = $value;
                 }
             }
 
@@ -499,7 +503,12 @@ class VersaModel implements TypedModelInterface
                                 }
 
                                 $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
-                                $relatedModel->loadInstance($relatedRecord);
+                                /** @var array<string, mixed> $relatedRecordNormal */
+                                $relatedRecordNormal = [];
+                                foreach ($relatedRecord as $k => $v) {
+                                    $relatedRecordNormal[(string) $k] = $v;
+                                }
+                                $relatedModel->loadInstance($relatedRecordNormal);
                                 $modelInstances[] = $relatedModel;
                             }
                         }
@@ -509,7 +518,12 @@ class VersaModel implements TypedModelInterface
                         $relatedModelClass = $relationInstance->query->getModelInstance()::class;
                         $relatedTable = $relationInstance->query->getTable();
                         $relatedModel = new $relatedModelClass($relatedTable, $this->orm);
-                        $relatedModel->loadInstance($relationData);
+                        /** @var array<string, mixed> $relationDataNormal */
+                        $relationDataNormal = [];
+                        foreach ($relationData as $rk => $rv) {
+                            $relationDataNormal[(string) $rk] = $rv;
+                        }
+                        $relatedModel->loadInstance($relationDataNormal);
                         $this->relations[$relationName] = $relatedModel;
                     } else {
                         $this->relations[$relationName] = $relationData;
@@ -537,7 +551,12 @@ class VersaModel implements TypedModelInterface
 
         if (is_array($result) && $result !== [] && is_array($result[0])) {
             // Usar loadInstance para aplicar casting correctamente
-            $this->loadInstance($result[0]);
+            /** @var array<string, mixed> $rowData */
+            $rowData = [];
+            foreach ($result[0] as $k => $v) {
+                $rowData[(string) $k] = $v;
+            }
+            $this->loadInstance($rowData);
         } else {
             throw new Exception('Record not found or invalid result format');
         }
@@ -678,45 +697,12 @@ class VersaModel implements TypedModelInterface
             }
 
             // Continuar con fallback silencioso en modo no-debug
+            // @todo: Loguear el error original si hay logger disponible
         }
-        // Fallback: buscar el registro más reciente que coincida con los datos insertados
-        $whereConditions = [];
-        $whereParams = [];
-        // Usar campos únicos comunes para encontrar el registro
-        if (isset($preparedAttributes['email'])) {
-            $whereConditions[] = 'email = ?';
-            $whereParams[] = $preparedAttributes['email'];
-        } else {
-            // Si no hay un campo único obvio, usar el primer campo escalar
-            foreach ($preparedAttributes as $key => $value) {
-                if (!(is_string($value) || is_numeric($value))) {
-                    continue;
-                }
 
-                $whereConditions[] = "{$key} = ?";
-                $whereParams[] = $value;
-                break;
-            }
-        }
-        if ($whereConditions !== []) {
-            $whereClause = implode(' AND ', $whereConditions);
-            $fallbackResult = $orm->exec(
-                "SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY id DESC LIMIT 1",
-                $whereParams,
-            );
-            if (is_array($fallbackResult) && $fallbackResult !== [] && is_array($fallbackResult[0])) {
-                // Merge los datos y luego aplicar casting
-                $mergedData = array_merge($this->attributes, $fallbackResult[0]);
-                $this->loadInstance($mergedData);
-                $this->fireEvent('created');
-                $this->fireEvent('saved');
-
-                return $this->attributes['id'] ?? null;
-            }
-        }
-        $this->fireEvent('saved');
-
-        return $this->attributes['id'] ?? null;
+        // Si llegamos aquí y no hay ID, es un error crítico en modo estricto.
+        // La lógica de fallback anterior (buscar max(id)) es insegura en concurrencia.
+        throw new VersaORMException('Could not determine ID for inserted record.', 'INSERT_FAILED_NO_ID');
     }
 
     /**
@@ -1301,7 +1287,12 @@ class VersaModel implements TypedModelInterface
 
             $model = new static($table, $orm);
             // Usar loadInstance para aplicar casting correctamente
-            $model->loadInstance($data[0]);
+            /** @var array<string, mixed> $rowData */
+            $rowData = [];
+            foreach ($data[0] as $k => $v) {
+                $rowData[(string) $k] = $v;
+            }
+            $model->loadInstance($rowData);
 
             return $model;
         } catch (Exception) {
@@ -1340,7 +1331,8 @@ class VersaModel implements TypedModelInterface
         $result = $orm->exec($sql, $bindings);
 
         if (is_array($result) && isset($result[0]) && is_array($result[0]) && isset($result[0]['count'])) {
-            return (int) $result[0]['count'];
+            $countVal = $result[0]['count'];
+            return is_numeric($countVal) ? (int) $countVal : 0;
         }
 
         return 0;
@@ -1363,10 +1355,20 @@ class VersaModel implements TypedModelInterface
         $result = $orm->exec($sql, $bindings);
 
         if (is_array($result)) {
-            // Nota: No aplicar casting aquí para mejorar performance.
-            // Si se necesita casting, usar getModels() o getDataCasted() en modelos individuales.
+            $filtered = [];
+            foreach ($result as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
 
-            return array_filter($result, 'is_array');
+                $stringKeyedRow = [];
+                foreach ($row as $k => $v) {
+                    $stringKeyedRow[(string) $k] = $v;
+                }
+                $filtered[] = $stringKeyedRow;
+            }
+
+            return $filtered;
         }
 
         return [];
@@ -1389,7 +1391,13 @@ class VersaModel implements TypedModelInterface
         $result = $orm->exec($sql, $bindings);
 
         if (is_array($result) && isset($result[0]) && is_array($result[0])) {
-            return $result[0];
+            $row = $result[0];
+            $stringKeyedRow = [];
+            foreach ($row as $k => $v) {
+                $stringKeyedRow[(string) $k] = $v;
+            }
+
+            return $stringKeyedRow;
         }
 
         return null;
@@ -1469,7 +1477,12 @@ class VersaModel implements TypedModelInterface
             }
 
             if (is_array($data) && $data !== [] && is_array($data[0])) {
-                $result->loadInstance($data[0]);
+                /** @var array<string, mixed> $rowData */
+                $rowData = [];
+                foreach ($data[0] as $k => $v) {
+                    $rowData[(string) $k] = $v;
+                }
+                $result->loadInstance($rowData);
             }
         }
 
@@ -1631,8 +1644,10 @@ class VersaModel implements TypedModelInterface
                 }
                 $qb = self::orm()->table($table, static::class);
                 $result = $qb->insertMany($records); // ahora puede devolver inserted_ids
-                $insertedIds = $result['inserted_ids'] ?? [];
-                if (is_array($insertedIds) && count($insertedIds) === count($models)) {
+                $insertedIdsRaw = $result['inserted_ids'] ?? [];
+                if (is_array($insertedIdsRaw) && count($insertedIdsRaw) === count($models)) {
+                    /** @var array<int, int|string|null> $insertedIds */
+                    $insertedIds = $insertedIdsRaw;
                     foreach ($models as $idx => $m) {
                         $m->id = $insertedIds[$idx];
                     }
@@ -1763,7 +1778,11 @@ class VersaModel implements TypedModelInterface
      */
     protected function fireEvent(string $event, array $context = []): bool
     {
-        $modelEvent = new ModelEvent($this, $context['original'] ?? [], $context['changes'] ?? []);
+        $origRaw = $context['original'] ?? [];
+        $orig = is_array($origRaw) ? $origRaw : [];
+        $changRaw = $context['changes'] ?? [];
+        $chang = is_array($changRaw) ? $changRaw : [];
+        $modelEvent = new ModelEvent($this, $orig, $chang);
         // Listeners registrados
         $listeners = static::$eventListeners[$event] ?? [];
         foreach ($listeners as $listener) {
@@ -1956,6 +1975,7 @@ class VersaModel implements TypedModelInterface
             $result = $orm->schema('columns', $this->table);
 
             if (is_array($result) && $result !== []) {
+                /** @var array<array<string, mixed>> $result */
                 return $this->processSchemaToValidationRules($result);
             }
         } catch (Exception) {
@@ -1992,18 +2012,31 @@ class VersaModel implements TypedModelInterface
                 continue;
             }
 
-            $columnName = (string) $column['column_name'];
-            $dataType = strtolower((string) ($column['data_type'] ?? ''));
-            $isNullable = (string) ($column['is_nullable'] ?? 'YES') === 'YES';
+            $columnIdRaw = $column['column_name'] ?? '';
+            $columnName = is_string($columnIdRaw)
+                ? $columnIdRaw
+                : (is_numeric($columnIdRaw) ? (string) $columnIdRaw : 'unknown');
+            $dataTypeRaw = $column['data_type'] ?? '';
+            $dataType = strtolower(
+                is_string($dataTypeRaw) ? $dataTypeRaw : (is_numeric($dataTypeRaw) ? (string) $dataTypeRaw : ''),
+            );
+            $isNullableRaw = $column['is_nullable'] ?? 'YES';
+            $isNullableValue = is_string($isNullableRaw)
+                ? $isNullableRaw
+                : (is_numeric($isNullableRaw) ? (string) $isNullableRaw : 'YES');
+            $isNullable = $isNullableValue === 'YES';
             $maxLength = $column['character_maximum_length'] ?? null;
-            $isAutoIncrement = (string) ($column['extra'] ?? '') === 'auto_increment';
-            $isRequired = !$isNullable && $column['column_default'] === null && !$isAutoIncrement;
+            $extraRaw = $column['extra'] ?? '';
+            $extra = is_string($extraRaw) ? $extraRaw : (is_numeric($extraRaw) ? (string) $extraRaw : '');
+            $isAutoIncrement = $extra === 'auto_increment';
+            $isRequired = !$isNullable && ($column['column_default'] ?? null) === null && !$isAutoIncrement;
 
             $validationRules = [];
 
             // Reglas basadas en el tipo de datos
-            if ((str_contains($dataType, 'varchar') || str_contains($dataType, 'char')) && $maxLength) {
-                $validationRules[] = "max:{$maxLength}";
+            if ((str_contains($dataType, 'varchar') || str_contains($dataType, 'char')) && is_numeric($maxLength)) {
+                $maxLengthStr = (string) $maxLength;
+                $validationRules[] = "max:{$maxLengthStr}";
             }
 
             // Para campos INTEGER que representan boolean, verificar si hay un tipo PHP definido como boolean
@@ -2071,17 +2104,22 @@ class VersaModel implements TypedModelInterface
         }
         // Max length validation (no aplicar para tipos fecha/hora ya que la "precision"
         // puede haber sido confundida con character_maximum_length por algunos drivers)
-        $dataType = strtolower((string) ($columnSchema['data_type'] ?? ''));
+        $dataTypeRaw = $columnSchema['data_type'] ?? '';
+        $dataType = strtolower(
+            is_string($dataTypeRaw) ? $dataTypeRaw : (is_numeric($dataTypeRaw) ? (string) $dataTypeRaw : ''),
+        );
         $isDateTimeType = in_array($dataType, ['datetime', 'timestamp', 'date', 'time'], true);
 
         if (
             !$isDateTimeType
             && isset($columnSchema['max_length'])
-            && $columnSchema['max_length'] > 0
+            && is_numeric($columnSchema['max_length'])
+            && (int) $columnSchema['max_length'] > 0
             && is_string($value)
-            && strlen($value) > $columnSchema['max_length']
+            && strlen($value) > (int) $columnSchema['max_length']
         ) {
-            $errors[] = "The {$field} may not be greater than {$columnSchema['max_length']} characters.";
+            $maxLength = (int) $columnSchema['max_length'];
+            $errors[] = "The {$field} may not be greater than {$maxLength} characters.";
         }
         $propertyTypes = static::getPropertyTypes();
         $phpType = $propertyTypes[$field]['type'] ?? null;
@@ -2125,7 +2163,10 @@ class VersaModel implements TypedModelInterface
             }
         } else {
             // Fallback: usar tipo de base de datos solo si no hay tipo PHP definido
-            $dataType = strtolower($columnSchema['data_type'] ?? '');
+            $dataTypeRaw = $columnSchema['data_type'] ?? '';
+            $dataType = strtolower(
+                is_string($dataTypeRaw) ? $dataTypeRaw : (is_numeric($dataTypeRaw) ? (string) $dataTypeRaw : ''),
+            );
 
             // Caso especial: TINYINT debería tratarse como boolean por defecto
             if ($dataType === 'tinyint') {
@@ -2220,7 +2261,7 @@ class VersaModel implements TypedModelInterface
 
     protected function isValidDate(mixed $value): bool
     {
-        if ($value === null || is_string($value) && $value === '') {
+        if (!is_string($value) || $value === '') {
             return false;
         }
         // Intentar parsear como fecha
@@ -2269,13 +2310,13 @@ class VersaModel implements TypedModelInterface
                 break;
 
             case 'alpha':
-                if (preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $value) === 0) {
+                if (!is_scalar($value) || preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', (string) $value) === 0) {
                     return "El {$field} solo puede contener letras.";
                 }
                 break;
 
             case 'alpha_num':
-                if (preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+$/', $value) === 0) {
+                if (!is_scalar($value) || preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+$/', (string) $value) === 0) {
                     return "El {$field} solo puede contener letras y números.";
                 }
                 break;
@@ -2353,7 +2394,7 @@ class VersaModel implements TypedModelInterface
                             }
                             break;
                         case 'regex':
-                            if (preg_match("/{$parameter}/", $value) === 0) {
+                            if (!is_scalar($value) || preg_match("/{$parameter}/", (string) $value) === 0) {
                                 return "El {$field} no tiene el formato correcto.";
                             }
                             break;
@@ -2464,7 +2505,8 @@ class VersaModel implements TypedModelInterface
                         return (float) $value !== 0.0 ? 1 : 0;
                     }
 
-                    return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true) ? 1 : 0;
+                    $valStr = is_string($value) ? $value : '';
+                    return in_array(strtolower($valStr), ['1', 'true', 'yes', 'on'], true) ? 1 : 0;
 
                 case 'integer':
                 case 'int':
@@ -2477,7 +2519,7 @@ class VersaModel implements TypedModelInterface
 
                 case 'string':
                 case 'uuid':
-                    return (string) $value;
+                    return is_scalar($value) ? (string) $value : '';
 
                 case 'datetime':
                 case 'date':
@@ -2548,7 +2590,10 @@ class VersaModel implements TypedModelInterface
             $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (id INTEGER PRIMARY KEY AUTOINCREMENT)";
             // Ajuste de sintaxis por driver
             $cfg = $orm->getConfig();
-            $driver = strtolower((string) ($cfg['driver'] ?? $cfg['database_type'] ?? 'mysql'));
+            $driverRaw = $cfg['driver'] ?? $cfg['database_type'] ?? 'mysql';
+            $driver = strtolower(
+                is_string($driverRaw) ? $driverRaw : (is_numeric($driverRaw) ? (string) $driverRaw : 'mysql'),
+            );
 
             if ($driver === 'mysql' || $driver === 'mariadb') {
                 $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (id INT AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB";
@@ -2595,17 +2640,20 @@ class VersaModel implements TypedModelInterface
             $existingColumnNames = [];
 
             foreach ($existingColumns as $column) {
-                if (isset($column['name'])) {
+                if (!is_array($column)) {
+                    if (is_scalar($column)) {
+                        $existingColumnNames[] = strtolower((string) $column);
+                    }
+                    continue;
+                }
+                if (isset($column['name']) && is_string($column['name'])) {
                     // VersaORM devuelve 'name' como campo principal
                     $existingColumnNames[] = strtolower($column['name']);
-                } elseif (isset($column['column_name'])) {
+                } elseif (isset($column['column_name']) && is_string($column['column_name'])) {
                     $existingColumnNames[] = strtolower($column['column_name']);
-                } elseif (isset($column['Field'])) {
+                } elseif (isset($column['Field']) && is_string($column['Field'])) {
                     // MySQL usa 'Field' en lugar de 'column_name'
                     $existingColumnNames[] = strtolower($column['Field']);
-                } elseif (is_string($column)) {
-                    // Si solo es un string con el nombre
-                    $existingColumnNames[] = strtolower($column);
                 }
             }
 
@@ -2648,14 +2696,18 @@ class VersaModel implements TypedModelInterface
                     $existingColumnNames = [];
 
                     foreach ($existingColumns as $column) {
-                        if (isset($column['name'])) {
+                        if (!is_array($column)) {
+                            if (is_scalar($column)) {
+                                $existingColumnNames[] = strtolower((string) $column);
+                            }
+                            continue;
+                        }
+                        if (isset($column['name']) && is_string($column['name'])) {
                             $existingColumnNames[] = strtolower($column['name']);
-                        } elseif (isset($column['column_name'])) {
+                        } elseif (isset($column['column_name']) && is_string($column['column_name'])) {
                             $existingColumnNames[] = strtolower($column['column_name']);
-                        } elseif (isset($column['Field'])) {
+                        } elseif (isset($column['Field']) && is_string($column['Field'])) {
                             $existingColumnNames[] = strtolower($column['Field']);
-                        } elseif (is_string($column)) {
-                            $existingColumnNames[] = strtolower($column);
                         }
                     }
                     $missingColumns = [];
@@ -2751,7 +2803,10 @@ class VersaModel implements TypedModelInterface
         try {
             // Determinar driver para generar SQL compatible
             $cfg = $orm->getConfig();
-            $driver = strtolower((string) ($cfg['driver'] ?? $cfg['database_type'] ?? 'mysql'));
+            $driverRaw = $cfg['driver'] ?? $cfg['database_type'] ?? 'mysql';
+            $driver = strtolower(
+                is_string($driverRaw) ? $driverRaw : (is_numeric($driverRaw) ? (string) $driverRaw : 'mysql'),
+            );
 
             // Normalizar tipo destino según driver
             $dbType = strtoupper($columnType);

@@ -97,8 +97,13 @@ class BelongsToMany extends Relation
         $current = $currentQuery->get();
         $currentIds = array_column($current, $this->relatedPivotKey);
 
-        $detached = array_diff($currentIds, $ids);
-        $attached = array_diff($ids, $currentIds);
+        $detachedRaw = array_diff($currentIds, $ids);
+        $attachedRaw = array_diff($ids, $currentIds);
+
+        /** @var array<int, int|string> $detached */
+        $detached = array_values(array_filter($detachedRaw, static fn($v) => is_int($v) || is_string($v)));
+        /** @var array<int, int|string> $attached */
+        $attached = array_values($attachedRaw);
 
         if (count($detached) > 0) {
             $this->detach($detached);
@@ -118,16 +123,7 @@ class BelongsToMany extends Relation
      *
      * @throws \Exception Si ocurre un error durante la eliminación
      *
-     * @return int Número de registros eliminados
-     */
-    /**
-     * Separa registros relacionados de la tabla pivote.
-     *
-     * @param array<int, int|string>|int|string|null $ids IDs específicos a separar
-     *
-     * @throws \Exception Si ocurre un error durante la eliminación
-     *
-     * @return void Número de registros eliminados
+     * @return void
      */
     public function detach($ids = null): void
     {

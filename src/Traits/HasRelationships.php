@@ -68,8 +68,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        /** @var string $table */
-        $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        $tableRaw = $defaultProperties['table'] ?? 'dummy';
+        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
 
         $instance = new $related($table, $this->getOrm());
 
@@ -87,8 +87,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        /** @var string $table */
-        $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        $tableRaw = $defaultProperties['table'] ?? 'dummy';
+        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
 
         $instance = new $related($table, $this->getOrm());
 
@@ -110,8 +110,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        /** @var string $table */
-        $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        $tableRaw = $defaultProperties['table'] ?? 'dummy';
+        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
 
         $instance = new $related($table, $this->getOrm());
         $ownerKey ??= $instance->getKeyName();
@@ -137,8 +137,8 @@ trait HasRelationships
         // Obtener el nombre de la tabla del modelo relacionado usando reflexión
         $reflection = new ReflectionClass($related);
         $defaultProperties = $reflection->getDefaultProperties();
-        /** @var string $table */
-        $table = (string) ($defaultProperties['table'] ?? 'dummy'); // Usar un nombre de tabla predeterminado si no se encuentra
+        $tableRaw = $defaultProperties['table'] ?? 'dummy';
+        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
 
         $instance = new $related($table, $this->getOrm());
         $relatedKey ??= $instance->getKeyName();

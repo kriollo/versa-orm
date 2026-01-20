@@ -21,10 +21,10 @@ final class PdoEngineUtilitiesTest extends TestCase
         $ref = new ReflectionClass(PdoEngine::class);
         $prop = $ref->getProperty('queryCache');
         $prop->setAccessible(true);
-        $prop->setValue([]);
+        $prop->setValue(null, []);
         $idx = $ref->getProperty('tableKeyIndex');
         $idx->setAccessible(true);
-        $idx->setValue([]);
+        $idx->setValue(null, []);
     }
 
     public function test_metrics_and_hydration_accumulate(): void

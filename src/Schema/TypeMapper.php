@@ -258,34 +258,43 @@ class TypeMapper
 
         // Aplicar longitud para tipos que la soportan
         if (isset($options['length']) && self::supportsLength($abstractType)) {
+            $rawLen = $options['length'];
+            $len = is_scalar($rawLen) && is_numeric($rawLen) ? (int) $rawLen : 255;
             if (str_starts_with($result, 'VARCHAR')) {
-                $result = "VARCHAR({$options['length']})";
+                $result = "VARCHAR({$len})";
             } elseif (str_starts_with($result, 'CHAR')) {
-                $result = "CHAR({$options['length']})";
+                $result = "CHAR({$len})";
             }
         }
 
         // Aplicar precisión y escala para tipos decimales
         if (isset($options['precision'], $options['scale'])) {
+            $rawPrecision = $options['precision'];
+            $rawScale = $options['scale'];
+            $precision = is_scalar($rawPrecision) && is_numeric($rawPrecision) ? (int) $rawPrecision : 10;
+            $scale = is_scalar($rawScale) && is_numeric($rawScale) ? (int) $rawScale : 0;
             if (in_array($abstractType, ['decimal', 'float', 'double'], true)) {
                 if (str_starts_with($result, 'DECIMAL')) {
-                    $result = "DECIMAL({$options['precision']},{$options['scale']})";
+                    $result = "DECIMAL({$precision},{$scale})";
                 } elseif (str_starts_with($result, 'FLOAT')) {
-                    $result = "FLOAT({$options['precision']},{$options['scale']})";
+                    $result = "FLOAT({$precision},{$scale})";
                 } elseif (str_starts_with($result, 'DOUBLE')) {
-                    $result = "DOUBLE({$options['precision']},{$options['scale']})";
+                    $result = "DOUBLE({$precision},{$scale})";
                 } elseif (str_starts_with($result, 'REAL')) {
-                    $result = "REAL({$options['precision']},{$options['scale']})";
+                    $result = "REAL({$precision},{$scale})";
                 } elseif (str_starts_with($result, 'NUMERIC')) {
-                    $result = "NUMERIC({$options['precision']},{$options['scale']})";
+                    $result = "NUMERIC({$precision},{$scale})";
                 }
             }
         }
 
         // Aplicar valores para ENUM
-        if ($abstractType === 'enum' && isset($options['values'])) {
+        if ($abstractType === 'enum' && isset($options['values']) && is_array($options['values'])) {
             if ($driver === 'mysql') {
-                $values = array_map(static fn($v) => "'{$v}'", $options['values']);
+                $values = array_map(
+                    static fn($v) => "'" . (is_scalar($v) ? (string) $v : '') . "'",
+                    $options['values'],
+                );
                 $result = 'ENUM(' . implode(',', $values) . ')';
             } elseif ($driver === 'postgresql') {
                 // Para PostgreSQL, usamos VARCHAR con CHECK constraint
@@ -297,9 +306,12 @@ class TypeMapper
         }
 
         // Aplicar valores para SET
-        if ($abstractType === 'set' && isset($options['values'])) {
+        if ($abstractType === 'set' && isset($options['values']) && is_array($options['values'])) {
             if ($driver === 'mysql') {
-                $values = array_map(static fn($v) => "'{$v}'", $options['values']);
+                $values = array_map(
+                    static fn($v) => "'" . (is_scalar($v) ? (string) $v : '') . "'",
+                    $options['values'],
+                );
                 $result = 'SET(' . implode(',', $values) . ')';
             } else {
                 // PostgreSQL y SQLite usan TEXT

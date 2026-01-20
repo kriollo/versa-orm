@@ -90,6 +90,7 @@
       "@putenv XDEBUG_MODE=coverage",
       "phpunit --configuration phpunit.xml --coverage-html build/coverage --coverage-text"
     ],
+    "coverage:stats": "php .github/scripts/coverage-stats.php tests/reports/coverage/sqlite/clover.xml",
     "phpstan": "phpstan analyse src --level=9 --memory-limit=1G",
     "cs:fix": "php-cs-fixer fix --ansi --config=.php-cs-fixer.dist.php",
     "mago:fmt": "mago fmt src/ example/ testMysql/ testPostgreSQL/ testSQLite/ tests/",

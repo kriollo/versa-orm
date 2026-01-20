@@ -203,8 +203,10 @@ class CacheTest extends TestCase
 
     public function test_cache_invalidate_without_parameters(): void
     {
-        $this->expectException(VersaORMException::class);
-        self::$orm->cache('invalidate'); // Sin table ni pattern
+        $result = self::$orm->cache('invalidate');
+        static::assertIsArray($result);
+        static::assertSame('success', $result['status']);
+        static::assertSame('cache invalidation skipped (no criteria)', $result['data']);
     }
 
     private function clearCache(): void

@@ -23,7 +23,8 @@ class SchemaBuilder
     public function __construct(VersaORM $orm)
     {
         $this->orm = $orm;
-        $this->driver = $this->orm->getConfig()['driver'] ?? 'mysql';
+        $rawDriver = $this->orm->getConfig()['driver'] ?? 'mysql';
+        $this->driver = is_scalar($rawDriver) ? (string) $rawDriver : 'mysql';
     }
 
     /**
@@ -188,8 +189,11 @@ class SchemaBuilder
     {
         try {
             $result = $this->orm->schema('columns', $table);
-
-            return is_array($result) ? $result : [];
+            if (!is_array($result)) {
+                return [];
+            }
+            /** @var array<int, array<string, mixed>> $validated */
+            return array_values($result);
         } catch (\Exception) {
             return [];
         }
@@ -204,8 +208,11 @@ class SchemaBuilder
     {
         try {
             $result = $this->orm->schema('indexes', $table);
-
-            return is_array($result) ? $result : [];
+            if (!is_array($result)) {
+                return [];
+            }
+            /** @var array<int, array<string, mixed>> $validated */
+            return array_values($result);
         } catch (\Exception) {
             return [];
         }
@@ -220,8 +227,11 @@ class SchemaBuilder
     {
         try {
             $result = $this->orm->schema('foreign_keys', $table);
-
-            return is_array($result) ? $result : [];
+            if (!is_array($result)) {
+                return [];
+            }
+            /** @var array<int, array<string, mixed>> $validated */
+            return array_values($result);
         } catch (\Exception) {
             return [];
         }
@@ -331,9 +341,12 @@ class SchemaBuilder
         $indexes = [];
 
         foreach ($blueprint->getIndexes() as $index) {
-            $type = $index['type'];
-            $columns = $index['columns'];
-            $name = $index['name'];
+            $typeRaw = $index['type'] ?? '';
+            $type = is_scalar($typeRaw) ? (string) $typeRaw : '';
+            /** @var array<int, string> $columns */
+            $columns = isset($index['columns']) && is_array($index['columns']) ? $index['columns'] : [];
+            $nameRaw = $index['name'] ?? null;
+            $name = is_scalar($nameRaw) ? (string) $nameRaw : null;
 
             switch ($type) {
                 case 'primary':
@@ -431,9 +444,12 @@ class SchemaBuilder
      */
     protected function createIndex(string $table, array $index): void
     {
-        $type = $index['type'];
-        $columns = $index['columns'];
-        $name = $index['name'] ?? $this->generateIndexName($table, $columns, $type);
+        $typeRaw = $index['type'] ?? '';
+        $type = is_scalar($typeRaw) ? (string) $typeRaw : '';
+        /** @var array<int, string> $columns */
+        $columns = isset($index['columns']) && is_array($index['columns']) ? $index['columns'] : [];
+        $nameRaw = $index['name'] ?? null;
+        $name = is_scalar($nameRaw) ? (string) $nameRaw : $this->generateIndexName($table, $columns, $type);
 
         $sql = match ($type) {
             'index' => "CREATE INDEX {$this->wrapColumn($name)} ON {$this->wrapTable($table)} ("

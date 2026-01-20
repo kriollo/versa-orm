@@ -1171,18 +1171,21 @@ class QueryBuilder
                         continue;
                     }
                     $m = new VersaModel($this->table, $this->orm);
-                    // Asignar atributos directamente (evita separación relaciones/casts costosos); loadInstance hace lógica adicional.
-                    // Dado que no hay relaciones en fast-path, podemos setear attributes internamente usando reflexión simple.
-                    // Para mantener compatibilidad, reutilizamos loadInstance (micro-optimización posible a futuro si es hotspot).
-                    $m->loadInstance($row);
+                    /** @var array<string, mixed> $rowNormal */
+                    $rowNormal = [];
+                    foreach ($row as $rk => $rv) {
+                        $rowNormal[(string) $rk] = $rv;
+                    }
+                    $m->loadInstance($rowNormal);
                     // Aplicar casting tipo a nivel de export ahora para asegurar consistencia inmediata
                     $m->export(); // export realiza casting; atributos internos siguen crudos pero acceso externo es consistente
                     $models[] = $m;
                 }
 
                 if ($this->orm instanceof VersaORM) {
+                    $rawEngine = $this->orm->getConfig()['engine'] ?? getenv('VOR_ENGINE') ?: 'pdo';
                     $cfgEngine = strtolower(
-                        (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                        is_string($rawEngine) ? $rawEngine : (is_numeric($rawEngine) ? (string) $rawEngine : 'pdo'),
                     );
 
                     if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
@@ -1202,7 +1205,12 @@ class QueryBuilder
                 continue;
             }
             $model = new $modelClass($this->table, $this->orm);
-            $model->loadInstance($row);
+            /** @var array<string, mixed> $rowNormal */
+            $rowNormal = [];
+            foreach ($row as $rk => $rv) {
+                $rowNormal[(string) $rk] = $rv;
+            }
+            $model->loadInstance($rowNormal);
 
             foreach ($this->with as $relation) {
                 $name = $relation['name'] ?? null;
@@ -1217,8 +1225,9 @@ class QueryBuilder
         // Registrar métricas de hidratación si el motor PDO está activo
         try {
             if ($this->orm instanceof VersaORM) {
+                $rawEngine = $this->orm->getConfig()['engine'] ?? getenv('VOR_ENGINE') ?: 'pdo';
                 $cfgEngine = strtolower(
-                    (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                    is_string($rawEngine) ? $rawEngine : (is_numeric($rawEngine) ? (string) $rawEngine : 'pdo'),
                 );
 
                 if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
@@ -1260,7 +1269,12 @@ class QueryBuilder
         foreach ($rows as $row) {
             try {
                 $m = new $modelClass($this->table, $this->orm);
-                $m->loadInstance($row);
+                /** @var array<string, mixed> $rowNormal */
+                $rowNormal = [];
+                foreach ($row as $rk => $rv) {
+                    $rowNormal[(string) $rk] = $rv;
+                }
+                $m->loadInstance($rowNormal);
                 // Cargar relaciones solicitadas (eager load) para que export incluya datos relacionados
                 foreach ($this->with as $relation) {
                     $rname = $relation['name'] ?? null;
@@ -1331,11 +1345,21 @@ class QueryBuilder
 
         try {
             $m = new $modelClass($this->table, $this->orm);
-            $m->loadInstance($row);
+            /** @var array<string, mixed> $rowNormal */
+            $rowNormal = [];
+            foreach ($row as $rk => $rv) {
+                $rowNormal[(string) $rk] = $rv;
+            }
+            $m->loadInstance($rowNormal);
 
             return $m->export(); // export con casting
         } catch (Throwable) {
-            return $row; // fallback sin casting
+            /** @var array<string, mixed> $rowNormal */
+            $rowNormal = [];
+            foreach ($row as $rk => $rv) {
+                $rowNormal[(string) $rk] = $rv;
+            }
+            return $rowNormal; // fallback sin casting
         }
     }
 
@@ -1362,11 +1386,17 @@ class QueryBuilder
             try {
                 $fpStart = microtime(true);
                 $m = new VersaModel($this->table, $this->orm);
-                $m->loadInstance($row); // simple; mapping directo interno
+                /** @var array<string, mixed> $rowNormal */
+                $rowNormal = [];
+                foreach ($row as $rk => $rv) {
+                    $rowNormal[(string) $rk] = $rv;
+                }
+                $m->loadInstance($rowNormal); // simple; mapping directo interno
 
                 if ($this->orm instanceof VersaORM) {
+                    $rawEngine = $this->orm->getConfig()['engine'] ?? getenv('VOR_ENGINE') ?: 'pdo';
                     $cfgEngine = strtolower(
-                        (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                        is_string($rawEngine) ? $rawEngine : (is_numeric($rawEngine) ? (string) $rawEngine : 'pdo'),
                     );
 
                     if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
@@ -1381,7 +1411,12 @@ class QueryBuilder
             }
         }
         $model = new $modelClass($this->table, $this->orm);
-        $model->loadInstance($row);
+        /** @var array<string, mixed> $rowNormal */
+        $rowNormal = [];
+        foreach ($row as $rk => $rv) {
+            $rowNormal[(string) $rk] = $rv;
+        }
+        $model->loadInstance($rowNormal);
 
         foreach ($this->with as $relation) {
             $name = $relation['name'] ?? null;
@@ -1393,8 +1428,9 @@ class QueryBuilder
 
         try {
             if ($this->orm instanceof VersaORM) {
+                $rawEngine = $this->orm->getConfig()['engine'] ?? getenv('VOR_ENGINE') ?: 'pdo';
                 $cfgEngine = strtolower(
-                    (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                    is_string($rawEngine) ? $rawEngine : (is_numeric($rawEngine) ? (string) $rawEngine : 'pdo'),
                 );
 
                 if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
@@ -1444,11 +1480,17 @@ class QueryBuilder
             try {
                 $fpStart = microtime(true);
                 $m = new VersaModel($this->table, $this->orm);
-                $m->loadInstance($row);
+                /** @var array<string, mixed> $rowNormal */
+                $rowNormal = [];
+                foreach ($row as $rk => $rv) {
+                    $rowNormal[(string) $rk] = $rv;
+                }
+                $m->loadInstance($rowNormal);
 
                 if ($this->orm instanceof VersaORM) {
+                    $rawEngine = $this->orm->getConfig()['engine'] ?? getenv('VOR_ENGINE') ?: 'pdo';
                     $cfgEngine = strtolower(
-                        (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                        is_string($rawEngine) ? $rawEngine : (is_numeric($rawEngine) ? (string) $rawEngine : 'pdo'),
                     );
 
                     if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
@@ -1462,12 +1504,18 @@ class QueryBuilder
             }
         }
         $model = new $modelClass($this->table, $this->orm);
-        $model->loadInstance($row);
+        /** @var array<string, mixed> $rowNormal */
+        $rowNormal = [];
+        foreach ($row as $rk => $rv) {
+            $rowNormal[(string) $rk] = $rv;
+        }
+        $model->loadInstance($rowNormal);
 
         try {
             if ($this->orm instanceof VersaORM) {
+                $rawEngine = $this->orm->getConfig()['engine'] ?? getenv('VOR_ENGINE') ?: 'pdo';
                 $cfgEngine = strtolower(
-                    (string) ($this->orm->getConfig()['engine'] ?? (getenv('VOR_ENGINE') ?: 'pdo')),
+                    is_string($rawEngine) ? $rawEngine : (is_numeric($rawEngine) ? (string) $rawEngine : 'pdo'),
                 );
 
                 if ($cfgEngine === 'pdo' && class_exists(PdoEngine::class)) {
@@ -2489,8 +2537,14 @@ class QueryBuilder
             $secondSQL = $queries->buildSelectSQL();
 
             $queryDefinitions = [
-                ['sql' => $currentSQL['sql'], 'bindings' => $currentSQL['bindings']],
-                ['sql' => $secondSQL['sql'], 'bindings' => $secondSQL['bindings']],
+                [
+                    'sql' => (string) $currentSQL['sql'],
+                    'bindings' => is_array($currentSQL['bindings']) ? array_values($currentSQL['bindings']) : [],
+                ],
+                [
+                    'sql' => (string) $secondSQL['sql'],
+                    'bindings' => is_array($secondSQL['bindings']) ? array_values($secondSQL['bindings']) : [],
+                ],
             ];
         } else {
             throw new VersaORMException('Invalid queries parameter for UNION');
@@ -2514,7 +2568,10 @@ class QueryBuilder
     {
         if ($query instanceof self) {
             $part = $query->buildSelectSQL();
-            $this->unionParts[] = ['sql' => $part['sql'], 'bindings' => $part['bindings']];
+            $this->unionParts[] = [
+                'sql' => (string) $part['sql'],
+                'bindings' => is_array($part['bindings']) ? array_values($part['bindings']) : [],
+            ];
 
             return $this;
         }
@@ -2522,7 +2579,10 @@ class QueryBuilder
             $tmp = new self($this->orm, $this->table);
             $query($tmp);
             $part = $tmp->buildSelectSQL();
-            $this->unionParts[] = ['sql' => $part['sql'], 'bindings' => $part['bindings']];
+            $this->unionParts[] = [
+                'sql' => (string) $part['sql'],
+                'bindings' => is_array($part['bindings']) ? array_values($part['bindings']) : [],
+            ];
 
             return $this;
         }
@@ -3623,7 +3683,10 @@ class QueryBuilder
         }
 
         $config = $this->orm->getConfig();
-        $driver = strtolower((string) ($config['driver'] ?? $config['database_type'] ?? 'mysql'));
+        $driverRaw = $config['driver'] ?? $config['database_type'] ?? 'mysql';
+        $driver = strtolower(
+            is_string($driverRaw) ? $driverRaw : (is_numeric($driverRaw) ? (string) $driverRaw : 'mysql'),
+        );
 
         // MySQL/MariaDB: usar REPLACE INTO nativo
         if ($driver === 'mysql' || $driver === 'mariadb') {
@@ -3700,7 +3763,10 @@ class QueryBuilder
         }
 
         $config = $this->orm->getConfig();
-        $driver = strtolower((string) ($config['driver'] ?? $config['database_type'] ?? 'mysql'));
+        $driverRaw = $config['driver'] ?? $config['database_type'] ?? 'mysql';
+        $driver = strtolower(
+            is_string($driverRaw) ? $driverRaw : (is_numeric($driverRaw) ? (string) $driverRaw : 'mysql'),
+        );
 
         // MySQL/MariaDB: usar REPLACE INTO en lotes
         if ($driver === 'mysql' || $driver === 'mariadb') {
@@ -3801,15 +3867,22 @@ class QueryBuilder
             $cols = $this->orm instanceof VersaORM ? (array) $this->orm->schema('columns', $this->table) : [];
 
             foreach ($cols as $col) {
-                $name = (string) ($col['column_name'] ?? $col['name'] ?? '');
+                $nameRaw = $col['column_name'] ?? $col['name'] ?? '';
+                $name = is_string($nameRaw) ? $nameRaw : (is_numeric($nameRaw) ? (string) $nameRaw : '');
                 $isPk = false;
 
                 if (isset($col['is_primary_key'])) {
                     $isPk = (bool) $col['is_primary_key'];
-                } elseif (isset($col['extra']) && strtolower((string) $col['extra']) === 'primary_key') {
-                    $isPk = true;
-                } elseif (isset($col['key']) && strtoupper((string) $col['key']) === 'PRI') {
-                    $isPk = true;
+                } elseif (isset($col['extra'])) {
+                    $extRaw = $col['extra'];
+                    $isPk =
+                        strtolower(is_string($extRaw) ? $extRaw : (is_numeric($extRaw) ? (string) $extRaw : ''))
+                        === 'primary_key';
+                } elseif (isset($col['key'])) {
+                    $keyRaw = $col['key'];
+                    $isPk =
+                        strtoupper(is_string($keyRaw) ? $keyRaw : (is_numeric($keyRaw) ? (string) $keyRaw : ''))
+                        === 'PRI';
                 }
 
                 if ($isPk && $name !== '' && in_array($name, $keysInData, true)) {
@@ -3832,7 +3905,10 @@ class QueryBuilder
                     if (!is_array($cols)) {
                         $cols = [$cols];
                     }
-                    $cols = array_values(array_filter(array_map('strval', $cols), static fn($col) => $col !== ''));
+                    $cols = array_values(array_filter(
+                        array_map(static fn($v) => is_scalar($v) ? (string) $v : '', $cols),
+                        static fn($col) => $col !== '',
+                    ));
 
                     if ($unique && $cols !== [] && array_diff($cols, $keysInData) === []) {
                         $pk = $cols;
@@ -3914,13 +3990,19 @@ class QueryBuilder
 
             if (isset($join['conditions'][0]) && is_array($join['conditions'][0])) {
                 $c = $join['conditions'][0];
-                $local = isset($c['local']) ? (string) $c['local'] : $local;
-                $foreign = isset($c['foreign']) ? (string) $c['foreign'] : $foreign;
-                $op = isset($c['operator']) ? (string) $c['operator'] : $op;
+                $local = isset($c['local']) ? (is_scalar($c['local']) ? (string) $c['local'] : $local) : $local;
+                $foreign = isset($c['foreign'])
+                    ? (is_scalar($c['foreign']) ? (string) $c['foreign'] : $foreign)
+                    : $foreign;
+                $op = isset($c['operator']) ? (is_scalar($c['operator']) ? (string) $c['operator'] : $op) : $op;
             }
+            $joinTypeRaw = $join['type'] ?? 'INNER';
+            $joinType = strtoupper(
+                is_string($joinTypeRaw) ? $joinTypeRaw : (is_numeric($joinTypeRaw) ? (string) $joinTypeRaw : 'INNER'),
+            );
             $joinConditions[] = [
-                'table' => $join['table'] ?? '',
-                'join_type' => strtoupper($join['type'] ?? 'INNER'),
+                'table' => is_scalar($join['table'] ?? '') ? (string) ($join['table'] ?? '') : '',
+                'join_type' => $joinType,
                 'local_column' => $local,
                 'foreign_column' => $foreign,
                 'operator' => $op,
@@ -4027,7 +4109,7 @@ class QueryBuilder
     /**
      * Construye la SQL SELECT para usar en intersect, except y union.
      *
-     * @return array<string, mixed> Array con 'sql' y 'bindings'
+     * @return array{sql: string, bindings: array<int, mixed>} Array con 'sql' y 'bindings'
      */
     private function buildSelectSQL(): array
     {
@@ -4098,8 +4180,14 @@ class QueryBuilder
             if (!is_array($join) || !isset($join['type'], $join['table'])) {
                 continue;
             }
-            $joinType = strtoupper((string) $join['type']);
-            $table = (string) $join['table'];
+            $joinTypeRaw = $join['type'];
+            $joinType = strtoupper(
+                is_string($joinTypeRaw) ? $joinTypeRaw : (is_numeric($joinTypeRaw) ? (string) $joinTypeRaw : 'INNER'),
+            );
+            $joinTableRaw = $join['table'];
+            $table = is_string($joinTableRaw)
+                ? $joinTableRaw
+                : (is_numeric($joinTableRaw) ? (string) $joinTableRaw : 'unknown');
             $sql .= ' ' . $joinType . ' JOIN ' . $table;
 
             // Construir condiciones

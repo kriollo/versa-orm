@@ -143,7 +143,7 @@ class BasicSchemaBuilderTest extends TestCase
         static::assertSame('CH001', $savedChannel1->codigo_interno);
         static::assertSame('Canal Principal', $savedChannel1->nombre);
         static::assertSame('https://example.com/image1.jpg', $savedChannel1->imagen);
-        static::assertEquals(false, $savedChannel1->required_register); // valor por defecto
+        static::assertFalse($savedChannel1->required_register); // valor por defecto
         // Verificar settings JSON
         $expectedSettings = ['theme' => 'dark', 'language' => 'es'];
         if (is_string($savedChannel1->settings)) {
@@ -184,7 +184,7 @@ class BasicSchemaBuilderTest extends TestCase
         static::assertSame('CH002', $savedChannel2->codigo_interno);
         static::assertSame('Canal Secundario', $savedChannel2->nombre);
         static::assertNull($savedChannel2->imagen); // nullable
-        static::assertEquals(false, $savedChannel2->required_register); // valor por defecto
+        static::assertFalse($savedChannel2->required_register); // valor por defecto
         static::assertNull($savedChannel2->settings); // nullable
 
         // Verificar timestamps del segundo registro

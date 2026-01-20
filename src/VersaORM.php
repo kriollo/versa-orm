@@ -410,8 +410,10 @@ class VersaORM
 
         /** @var list<array<string, mixed>> $columns */
         foreach ($columns as $col) {
-            $name = (string) ($col['name'] ?? '');
-            $type = (string) ($col['type'] ?? 'VARCHAR(255)');
+            $nameStr = $col['name'] ?? '';
+            $name = is_string($nameStr) ? $nameStr : (is_numeric($nameStr) ? (string) $nameStr : '');
+            $typeStr = $col['type'] ?? 'VARCHAR(255)';
+            $type = is_string($typeStr) ? $typeStr : (is_numeric($typeStr) ? (string) $typeStr : 'VARCHAR(255)');
 
             if ($name === '') {
                 continue;
@@ -464,8 +466,18 @@ class VersaORM
         }
 
         if (!empty($options['primary_key'])) {
-            $pk = (array) $options['primary_key'];
-            $pkCols = array_map($q, $pk);
+            /** @var mixed $pkRaw */
+            $pkRaw = $options['primary_key'];
+            $pk = is_array($pkRaw) ? $pkRaw : [$pkRaw];
+            $pkStrings = [];
+            foreach ($pk as $p) {
+                if (is_string($p)) {
+                    $pkStrings[] = $p;
+                } elseif (is_numeric($p)) {
+                    $pkStrings[] = (string) $p;
+                }
+            }
+            $pkCols = array_map($q, $pkStrings);
         }
 
         // Para SQLite, permitimos PRIMARY KEY a nivel de tabla cuando no se usó inline (INTEGER PRIMARY KEY)
@@ -533,16 +545,19 @@ class VersaORM
         $sql = $createHead . ' (' . implode(', ', $colSql) . ')';
 
         if ($driver === 'mysql' || $driver === 'mariadb') {
-            if (!empty($options['engine'])) {
-                $sql .= ' ENGINE=' . $options['engine'];
+            $engine = $options['engine'] ?? '';
+            if (is_string($engine) && $engine !== '') {
+                $sql .= ' ENGINE=' . $engine;
             }
 
-            if (!empty($options['charset'])) {
-                $sql .= ' DEFAULT CHARSET=' . $options['charset'];
+            $charset = $options['charset'] ?? '';
+            if (is_string($charset) && $charset !== '') {
+                $sql .= ' DEFAULT CHARSET=' . $charset;
             }
 
-            if (!empty($options['collation'])) {
-                $sql .= ' COLLATE=' . $options['collation'];
+            $collation = $options['collation'] ?? '';
+            if (is_string($collation) && $collation !== '') {
+                $sql .= ' COLLATE=' . $collation;
             }
         }
 
@@ -582,8 +597,10 @@ class VersaORM
             $clauses = [];
 
             foreach ($addCols as $col) {
-                $name = (string) ($col['name'] ?? '');
-                $type = (string) ($col['type'] ?? 'VARCHAR(255)');
+                $nameRaw = $col['name'] ?? '';
+                $name = is_string($nameRaw) ? $nameRaw : (is_numeric($nameRaw) ? (string) $nameRaw : '');
+                $typeRaw = $col['type'] ?? 'VARCHAR(255)';
+                $type = is_string($typeRaw) ? $typeRaw : (is_numeric($typeRaw) ? (string) $typeRaw : 'VARCHAR(255)');
 
                 if ($name === '') {
                     continue;
@@ -637,10 +654,11 @@ class VersaORM
                 if (is_string($idxEntry)) {
                     $idxName = $idxEntry;
                 } elseif (is_array($idxEntry)) {
-                    if (isset($idxEntry['name'])) {
-                        $idxName = (string) $idxEntry['name'];
-                    } elseif (isset($idxEntry[0])) {
-                        $idxName = (string) $idxEntry[0];
+                    $entryName = $idxEntry['name'] ?? null;
+                    if (is_string($entryName)) {
+                        $idxName = $entryName;
+                    } elseif (isset($idxEntry[0]) && is_string($idxEntry[0])) {
+                        $idxName = $idxEntry[0];
                     }
                 }
 
@@ -749,9 +767,9 @@ class VersaORM
                     $name = $c;
                 } elseif (is_array($c)) {
                     // Accept formats like ['name' => 'col'] or numeric arrays
-                    if (isset($c['name'])) {
+                    if (isset($c['name']) && is_scalar($c['name'])) {
                         $name = (string) $c['name'];
-                    } elseif (isset($c[0])) {
+                    } elseif (isset($c[0]) && is_scalar($c[0])) {
                         $name = (string) $c[0];
                     }
                 }
@@ -1158,11 +1176,15 @@ class VersaORM
 
             return $this->pdoEngine->execute($action, $params);
         } catch (Throwable $e) {
+            $queryRaw = $params['query'] ?? null;
+            $queryStr = is_string($queryRaw) ? $queryRaw : (is_numeric($queryRaw) ? (string) $queryRaw : null);
+            $bindingsRaw = $params['bindings'] ?? null;
+            $bindingsArr = is_array($bindingsRaw) ? $bindingsRaw : [];
             $ex = new VersaORMException(
                 'PDO engine execution error: ' . $e->getMessage(),
                 'PDO_ENGINE_FAILED',
-                $params['query'] ?? null,
-                is_array($params['bindings'] ?? null) ? $params['bindings'] : [],
+                $queryStr,
+                $bindingsArr,
                 ['action' => $action, 'params' => $this->safeParamsForLog($params)],
                 $this->extractSqlState($e),
                 (int) $e->getCode(),
@@ -1223,7 +1245,8 @@ class VersaORM
     private function createIndexPortable(string $table, array $idx, string $driver): void
     {
         $q = fn(string $id): string => $this->quoteIdent($id, $driver);
-        $name = (string) ($idx['name'] ?? '');
+        $idxNameRaw = $idx['name'] ?? '';
+        $name = is_string($idxNameRaw) ? $idxNameRaw : (is_numeric($idxNameRaw) ? (string) $idxNameRaw : '');
         /** @var list<array<string, mixed>|string> $cols */
         $cols = (array) ($idx['columns'] ?? []);
 
@@ -1233,8 +1256,13 @@ class VersaORM
         // Validar identificador del índice para evitar inyección por nombre malicioso
         $this->assertSafeIdentifier($name, 'index');
         $unique = !empty($idx['unique']);
-        $using = strtoupper((string) ($idx['using'] ?? ''));
-        $where = (string) ($idx['where'] ?? '');
+
+        $usingRaw = $idx['using'] ?? '';
+        $using = strtoupper(is_string($usingRaw) ? $usingRaw : (is_numeric($usingRaw) ? (string) $usingRaw : ''));
+
+        $whereRaw = $idx['where'] ?? '';
+        $where = is_string($whereRaw) ? $whereRaw : (is_numeric($whereRaw) ? (string) $whereRaw : '');
+
         $ifNotExists = !empty($idx['if_not_exists']);
         $concurrently = !empty($idx['concurrently']);
 
@@ -1254,7 +1282,9 @@ class VersaORM
         foreach ($cols as $c) {
             if (is_array($c) && isset($c['raw'])) {
                 $rawValue = $c['raw'];
-                $colsSql[] = is_string($rawValue) ? $rawValue : (string) $rawValue;
+                $colsSql[] = is_scalar($rawValue)
+                    ? (string) $rawValue
+                    : (is_object($rawValue) && method_exists($rawValue, '__toString') ? (string) $rawValue : 'unknown');
             } elseif (is_string($c)) {
                 // Validar nombres de columnas simples (no RAW)
                 $this->assertSafeIdentifier($c, 'column');
@@ -1377,17 +1407,17 @@ class VersaORM
             return (string) $value;
         }
 
-        // Cadenas: detectar funciones/constantes temporales conocidas
         if (is_string($value)) {
             $v = trim($value);
 
             if (preg_match('/^(CURRENT_TIMESTAMP(?:\(\))?|NOW\(\)|CURRENT_DATE|CURRENT_TIME)$/i', $v) === 1) {
                 return strtoupper($v);
             }
+
+            return '\'' . str_replace('\'', '\'\'', $value) . '\'';
         }
 
-        // Por defecto, comillar
-        return '\'' . str_replace('\'', '\'\'', (string) $value) . '\'';
+        return '\'\'';
     }
 
     private function isDdlOperation(string $operation): bool
@@ -1647,11 +1677,11 @@ class VersaORM
                 foreach ($where as $w) {
                     if (
                         is_array($w)
-                        && ($w['operator'] ?? null) === 'RAW'
+                        && isset($w['operator'])
+                        && $w['operator'] === 'RAW'
                         && isset($w['value'])
                         && is_array($w['value'])
                     ) {
-                        // Manejo especial para whereRaw
                         $rawSql = isset($w['value']['sql']) && is_string($w['value']['sql'])
                             ? $w['value']['sql']
                             : 'unknown';
@@ -1661,18 +1691,34 @@ class VersaORM
                         $bindingsStr = $rawBindings === [] ? '' : ' [bindings: ' . json_encode($rawBindings) . ']';
                         $whereDesc[] = "RAW({$rawSql}){$bindingsStr}";
                     } elseif (is_array($w) && isset($w['value']) && is_array($w['value'])) {
-                        $value = '[' . implode(',', $w['value']) . ']';
-                        $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
+                        $value =
+                            '['
+                            . implode(',', array_map(static fn($v) => is_scalar($v)
+                                ? (string) $v
+                                : gettype($v), $w['value']))
+                            . ']';
+                        $column = isset($w['column']) && is_string($w['column']) ? $w['column'] : 'unknown';
+                        $operator = isset($w['operator']) && is_string($w['operator']) ? $w['operator'] : '=';
+                        $whereDesc[] = "{$column} {$operator} {$value}";
                     } elseif (is_array($w)) {
-                        $value = (string) ($w['value'] ?? '');
-                        $whereDesc[] = "{$w['column']} {$w['operator']} {$value}";
+                        $valRaw = $w['value'] ?? '';
+                        $value = is_scalar($valRaw) ? (string) $valRaw : gettype($valRaw);
+                        $column = isset($w['column']) && is_string($w['column']) ? $w['column'] : 'unknown';
+                        $operator = isset($w['operator']) && is_string($w['operator']) ? $w['operator'] : '=';
+                        $whereDesc[] = "{$column} {$operator} {$value}";
                     }
                 }
                 $query .= ', where=[' . implode(' AND ', $whereDesc) . ']';
             }
 
             if ($orderBy !== [] && isset($orderBy[0]) && is_array($orderBy[0])) {
-                $query .= ", orderBy={$orderBy[0]['column']} {$orderBy[0]['direction']}";
+                $obColumn = isset($orderBy[0]['column']) && is_string($orderBy[0]['column'])
+                    ? $orderBy[0]['column']
+                    : 'unknown';
+                $obDirection = isset($orderBy[0]['direction']) && is_string($orderBy[0]['direction'])
+                    ? $orderBy[0]['direction']
+                    : 'ASC';
+                $query .= ", orderBy={$obColumn} {$obDirection}";
             }
 
             if ($limit !== 0 && ($limit !== '' && $limit !== '0')) {

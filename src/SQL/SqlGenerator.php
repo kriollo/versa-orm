@@ -25,7 +25,8 @@ class SqlGenerator
     public static function generate(string $action, array $params, SqlDialectInterface $dialect): array
     {
         if ($action === 'raw') {
-            $sql = (string) ($params['query'] ?? '');
+            $rawQuery = $params['query'] ?? '';
+            $sql = is_scalar($rawQuery) ? (string) $rawQuery : '';
             /** @var array<int,mixed> $bindings */
             $bindings = [];
 
@@ -38,7 +39,8 @@ class SqlGenerator
         }
 
         if ($action === 'query') {
-            $method = (string) ($params['method'] ?? 'get');
+            $rawMethod = $params['method'] ?? 'get';
+            $method = is_scalar($rawMethod) ? (string) $rawMethod : 'get';
 
             // Batch/write methods mapped into query by QueryBuilder
             if (in_array($method, ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'], true)) {
@@ -81,7 +83,8 @@ class SqlGenerator
      */
     private static function compileSelect(string $method, array $params, SqlDialectInterface $dialect): array
     {
-        $table = (string) ($params['table'] ?? '');
+        $rawTable = $params['table'] ?? '';
+        $table = is_scalar($rawTable) ? (string) $rawTable : '';
         /**
          * from_sub soporte: ['sql'=>string,'alias'=>string,'bindings'=>list<mixed>]
          * Si se provee, sustituye la referencia de FROM por (sql) alias y antepone sus bindings.
@@ -94,9 +97,11 @@ class SqlGenerator
             && is_array($params['from_sub'])
             && isset($params['from_sub']['sql'], $params['from_sub']['alias'])
         ) {
+            $rawSql = $params['from_sub']['sql'];
+            $rawAlias = $params['from_sub']['alias'];
             $fromSub = [
-                'sql' => (string) $params['from_sub']['sql'],
-                'alias' => (string) $params['from_sub']['alias'],
+                'sql' => is_scalar($rawSql) ? (string) $rawSql : '',
+                'alias' => is_scalar($rawAlias) ? (string) $rawAlias : '',
                 'bindings' => is_array($params['from_sub']['bindings'] ?? null)
                     ? array_values($params['from_sub']['bindings'])
                     : [],
@@ -149,7 +154,8 @@ class SqlGenerator
 
                 continue;
             }
-            $type = (string) ($sel['type'] ?? '');
+            $rawType = $sel['type'] ?? '';
+            $type = is_scalar($rawType) ? (string) $rawType : '';
 
             if ($type === 'raw' && isset($sel['expression'])) {
                 $selectSqlParts[] = $sel['expression'];
@@ -200,25 +206,32 @@ class SqlGenerator
             }
         }
         // Manejo especial para FULL OUTER JOIN cuando es un único join simple
-        $hasFullOuter = count($joins) === 1 && strtolower((string) ($joins[0]['type'] ?? '')) === 'full_outer';
+        $rawJoinType = $joins[0]['type'] ?? '';
+        $hasFullOuter =
+            count($joins) === 1 && strtolower(is_scalar($rawJoinType) ? (string) $rawJoinType : '') === 'full_outer';
 
         if ($hasFullOuter) {
             // Emulación FULL OUTER JOIN: LEFT JOIN + RIGHT JOIN (o LEFT JOIN invertido en SQLite)
             $j = $joins[0];
             $baseFrom = ' FROM ' . self::compileTableReference($table, $dialect);
+            $rawFirstCol = $j['first_col'] ?? '';
+            $rawSecondCol = $j['second_col'] ?? '';
             $onClause =
-                self::compileJoinColumn((string) $j['first_col'], $dialect)
+                self::compileJoinColumn(is_scalar($rawFirstCol) ? (string) $rawFirstCol : '', $dialect)
                 . ' '
                 . ($j['operator'] ?? '=')
                 . ' '
-                . self::compileJoinColumn((string) $j['second_col'], $dialect);
+                . self::compileJoinColumn(is_scalar($rawSecondCol) ? (string) $rawSecondCol : '', $dialect);
             $sel = implode(', ', $selectSqlParts);
             $leftSql =
                 'SELECT '
                 . $sel
                 . $baseFrom
                 . ' LEFT JOIN '
-                . self::compileTableReference((string) $j['table'], $dialect)
+                . self::compileTableReference(
+                    is_scalar($j['table'] ?? '') ? (string) ($j['table'] ?? '') : '',
+                    $dialect,
+                )
                 . ' ON '
                 . $onClause;
 
@@ -227,12 +240,14 @@ class SqlGenerator
             if ($isSQLite) {
                 // RIGHT JOIN no soportado: invertir tablas y columnas para simular RIGHT JOIN
                 $invBaseFrom = ' FROM ' . self::compileTableReference((string) $j['table'], $dialect);
+                $rawSecondCol = $j['second_col'] ?? '';
+                $rawFirstCol = $j['first_col'] ?? '';
                 $invOnClause =
-                    self::compileJoinColumn((string) $j['second_col'], $dialect)
+                    self::compileJoinColumn(is_scalar($rawSecondCol) ? (string) $rawSecondCol : '', $dialect)
                     . ' '
                     . ($j['operator'] ?? '=')
                     . ' '
-                    . self::compileJoinColumn((string) $j['first_col'], $dialect);
+                    . self::compileJoinColumn(is_scalar($rawFirstCol) ? (string) $rawFirstCol : '', $dialect);
                 $rightSql =
                     'SELECT '
                     . $sel
@@ -247,7 +262,10 @@ class SqlGenerator
                     . $sel
                     . $baseFrom
                     . ' RIGHT JOIN '
-                    . self::compileTableReference((string) $j['table'], $dialect)
+                    . self::compileTableReference(
+                        is_scalar($j['table'] ?? '') ? (string) ($j['table'] ?? '') : '',
+                        $dialect,
+                    )
                     . ' ON '
                     . $onClause;
             }
@@ -258,7 +276,8 @@ class SqlGenerator
         }
 
         foreach ($joins as $joinIdx => $join) {
-            $type = strtolower((string) ($join['type'] ?? 'inner'));
+            $rawType = $join['type'] ?? 'inner';
+            $type = strtolower(is_scalar($rawType) ? (string) $rawType : 'inner');
 
             // Procesar JOINs RAW: SQL crudo con bindings opcionales
             if ($type === 'raw') {
@@ -280,7 +299,11 @@ class SqlGenerator
             // Emulación RIGHT JOIN para SQLite (solo si es el primer JOIN, para evitar múltiples FROM)
             if ($type === 'right' && $isSQLite && $joinIdx === 0) {
                 // Reconstruir el SQL desde cero, invirtiendo tablas y columnas
-                $tableRef = self::compileTableReference((string) $join['table'], $dialect);
+                $rawJoinTable = $join['table'] ?? '';
+                $tableRef = self::compileTableReference(
+                    is_scalar($rawJoinTable) ? (string) $rawJoinTable : '',
+                    $dialect,
+                );
                 $leftJoinRef = self::compileTableReference($table, $dialect);
                 $conditions = [];
                 if (isset($join['conditions']) && is_array($join['conditions'])) {
@@ -288,9 +311,12 @@ class SqlGenerator
                         if (!is_array($c)) {
                             continue;
                         }
-                        $loc = (string) ($c['foreign'] ?? '');
-                        $opr = (string) ($c['operator'] ?? '=');
-                        $for = (string) ($c['local'] ?? '');
+                        $locRaw = $c['foreign'] ?? '';
+                        $loc = is_scalar($locRaw) ? (string) $locRaw : '';
+                        $oprRaw = $c['operator'] ?? '=';
+                        $opr = is_scalar($oprRaw) ? (string) $oprRaw : '=';
+                        $forRaw = $c['local'] ?? '';
+                        $for = is_scalar($forRaw) ? (string) $forRaw : '';
                         if ($loc === '' || $for === '') {
                             continue;
                         }
@@ -301,16 +327,20 @@ class SqlGenerator
                             . ' '
                             . self::compileJoinColumn($for, $dialect);
                         if ($idx > 0) {
-                            $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
+                            $boolRaw = $c['boolean'] ?? 'AND';
+                            $bool = strtoupper(is_scalar($boolRaw) ? (string) $boolRaw : 'AND') === 'OR' ? 'OR' : 'AND';
                             $fragment = $bool . ' ' . $fragment;
                         }
                         $conditions[] = $fragment;
                     }
                 }
                 if ($conditions === []) {
-                    $first = (string) ($join['second_col'] ?? '');
-                    $op = (string) ($join['operator'] ?? '=');
-                    $second = (string) ($join['first_col'] ?? '');
+                    $firstRaw = $join['second_col'] ?? '';
+                    $first = is_scalar($firstRaw) ? (string) $firstRaw : '';
+                    $opRaw = $join['operator'] ?? '=';
+                    $op = is_scalar($opRaw) ? (string) $opRaw : '=';
+                    $secondRaw = $join['first_col'] ?? '';
+                    $second = is_scalar($secondRaw) ? (string) $secondRaw : '';
                     if ($first === '' || $second === '') {
                         throw new VersaORMException('Invalid JOIN columns');
                     }
@@ -336,8 +366,10 @@ class SqlGenerator
             }
 
             if ($type === 'cross') {
-                $sql .= ' CROSS JOIN ' . self::compileTableReference((string) $join['table'], $dialect);
-
+                $rawJoinTable = $join['table'] ?? '';
+                $sql .=
+                    ' CROSS JOIN '
+                    . self::compileTableReference(is_scalar($rawJoinTable) ? (string) $rawJoinTable : '', $dialect);
                 continue;
             }
 
@@ -356,7 +388,11 @@ class SqlGenerator
                     $bindings = array_merge($bindings, $join['subquery_bindings']);
                 }
             } else {
-                $tableRef = self::compileTableReference((string) $join['table'], $dialect);
+                $rawJoinTable = $join['table'] ?? '';
+                $tableRef = self::compileTableReference(
+                    is_scalar($rawJoinTable) ? (string) $rawJoinTable : '',
+                    $dialect,
+                );
             }
 
             $jt = strtoupper($type) . ' JOIN ' . $tableRef;
@@ -377,7 +413,8 @@ class SqlGenerator
                         }
                         $fragment = $rawSql;
                         if ($idx > 0) {
-                            $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
+                            $boolRaw = $c['boolean'] ?? 'AND';
+                            $bool = strtoupper(is_scalar($boolRaw) ? (string) $boolRaw : 'AND') === 'OR' ? 'OR' : 'AND';
                             $fragment = $bool . ' ' . $fragment;
                         }
                         // Acumular bindings de la condición raw
@@ -388,9 +425,12 @@ class SqlGenerator
 
                         continue;
                     }
-                    $loc = (string) ($c['local'] ?? '');
-                    $opr = (string) ($c['operator'] ?? '=');
-                    $for = (string) ($c['foreign'] ?? '');
+                    $locRaw = $c['local'] ?? '';
+                    $loc = is_scalar($locRaw) ? (string) $locRaw : '';
+                    $oprRaw = $c['operator'] ?? '=';
+                    $opr = is_scalar($oprRaw) ? (string) $oprRaw : '=';
+                    $forRaw = $c['foreign'] ?? '';
+                    $for = is_scalar($forRaw) ? (string) $forRaw : '';
                     if ($loc === '' || $for === '') {
                         continue;
                     }
@@ -401,7 +441,8 @@ class SqlGenerator
                         . ' '
                         . self::compileJoinColumn($for, $dialect);
                     if ($idx > 0) {
-                        $bool = strtoupper((string) ($c['boolean'] ?? 'AND')) === 'OR' ? 'OR' : 'AND';
+                        $boolRaw = $c['boolean'] ?? 'AND';
+                        $bool = strtoupper(is_scalar($boolRaw) ? (string) $boolRaw : 'AND') === 'OR' ? 'OR' : 'AND';
                         $fragment = $bool . ' ' . $fragment;
                     }
                     $conditions[] = $fragment;
@@ -410,9 +451,12 @@ class SqlGenerator
 
             if ($conditions === []) {
                 // Fallback a first_col/operator/second_col
-                $first = (string) ($join['first_col'] ?? '');
-                $op = (string) ($join['operator'] ?? '=');
-                $second = (string) ($join['second_col'] ?? '');
+                $firstRaw = $join['first_col'] ?? '';
+                $first = is_scalar($firstRaw) ? (string) $firstRaw : '';
+                $opRaw = $join['operator'] ?? '=';
+                $op = is_scalar($opRaw) ? (string) $opRaw : '=';
+                $secondRaw = $join['second_col'] ?? '';
+                $second = is_scalar($secondRaw) ? (string) $secondRaw : '';
 
                 if ($first === '' || $second === '') {
                     throw new VersaORMException('Invalid JOIN columns');
@@ -504,8 +548,10 @@ class SqlGenerator
             $havingParts = [];
 
             foreach ($having as $h) {
-                $col = (string) ($h['column'] ?? '');
-                $op = (string) ($h['operator'] ?? '=');
+                $rawCol = $h['column'] ?? '';
+                $col = is_scalar($rawCol) ? (string) $rawCol : '';
+                $rawOp = $h['operator'] ?? '=';
+                $op = is_scalar($rawOp) ? (string) $rawOp : '=';
                 $havingParts[] = [$col, self::compileSelectPart($col, $dialect) . ' ' . $op . ' ?'];
                 $bindings[] = $h['value'] ?? null;
             }
@@ -532,21 +578,29 @@ class SqlGenerator
             $ob = $orderBy[0] ?? [];
 
             if (isset($ob['type']) && $ob['type'] === 'raw') {
-                $sql .= ' ORDER BY ' . ($ob['expression'] ?? '');
+                $rawExpr = $ob['expression'] ?? '';
+                $sql .= ' ORDER BY ' . (is_scalar($rawExpr) ? (string) $rawExpr : '');
             } elseif (isset($ob['column'])) {
-                $dir = strtoupper((string) ($ob['direction'] ?? 'ASC'));
+                $rawDir = $ob['direction'] ?? 'ASC';
+                $dir = strtoupper(is_scalar($rawDir) ? (string) $rawDir : 'ASC');
 
                 if (!in_array($dir, ['ASC', 'DESC'], true)) {
                     $dir = 'ASC';
                 }
-                $sql .= ' ORDER BY ' . self::compileSelectPart((string) $ob['column'], $dialect) . ' ' . $dir;
+                $rawCol = $ob['column'] ?? '';
+                $sql .=
+                    ' ORDER BY '
+                    . self::compileSelectPart(is_scalar($rawCol) ? (string) $rawCol : '', $dialect)
+                    . ' '
+                    . $dir;
             }
         }
 
-        // LIMIT/OFFSET
+        $rawLimitLimit = $params['limit'] ?? null;
+        $rawOffsetOffset = $params['offset'] ?? null;
         $sql .= $dialect->compileLimitOffset(
-            isset($params['limit']) ? (int) $params['limit'] : null,
-            isset($params['offset']) ? (int) $params['offset'] : null,
+            is_numeric($rawLimitLimit) ? (int) $rawLimitLimit : null,
+            is_numeric($rawOffsetOffset) ? (int) $rawOffsetOffset : null,
         );
 
         if ($method === 'count') {
@@ -580,7 +634,8 @@ class SqlGenerator
      */
     private static function compileInsert(array $params, SqlDialectInterface $dialect): array
     {
-        $table = (string) ($params['table'] ?? '');
+        $rawTable = $params['table'] ?? '';
+        $table = is_scalar($rawTable) ? (string) $rawTable : '';
         $data = $params['data'] ?? [];
 
         if ($table === '' || !is_array($data) || $data === []) {
@@ -588,9 +643,10 @@ class SqlGenerator
         }
         $cols = array_keys($data);
         $placeholders = array_fill(0, count($cols), '?');
+        $rawTable = $params['table'] ?? '';
         $sql =
             'INSERT INTO '
-            . $dialect->quoteIdentifier($table)
+            . $dialect->quoteIdentifier(is_scalar($rawTable) ? (string) $rawTable : '')
             . ' ('
             . implode(', ', array_map([$dialect, 'quoteIdentifier'], $cols))
             . ')'
@@ -609,7 +665,8 @@ class SqlGenerator
      */
     private static function compileUpdate(array $params, SqlDialectInterface $dialect): array
     {
-        $table = (string) ($params['table'] ?? '');
+        $rawTable = $params['table'] ?? '';
+        $table = is_scalar($rawTable) ? (string) $rawTable : '';
         $data = $params['data'] ?? [];
 
         if ($table === '' || !is_array($data) || $data === []) {
@@ -620,7 +677,8 @@ class SqlGenerator
 
         /** @var array<string,mixed> $data */
         foreach ($data as $col => $val) {
-            $setParts[] = $dialect->quoteIdentifier((string) $col) . ' = ?';
+            $colStr = is_scalar($col) ? (string) $col : '';
+            $setParts[] = $dialect->quoteIdentifier($colStr) . ' = ?';
             $bindings[] = $val;
         }
 
@@ -637,7 +695,9 @@ class SqlGenerator
 
         $sql = 'UPDATE ' . $dialect->quoteIdentifier($baseTable) . ' SET ' . implode(', ', $setParts);
         // Pass removeAliases=true to remove alias references from WHERE clause
-        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect, true);
+        /** @var list<array<string, mixed>> $whereParams */
+        $whereParams = is_array($params['where'] ?? null) ? $params['where'] : [];
+        [$whereSql, $whereBindings] = self::compileWhere($whereParams, $dialect, true);
 
         if ($whereSql !== '') {
             $sql .= ' WHERE ' . $whereSql;
@@ -654,7 +714,8 @@ class SqlGenerator
      */
     private static function compileDelete(array $params, SqlDialectInterface $dialect): array
     {
-        $table = (string) ($params['table'] ?? '');
+        $rawTable = $params['table'] ?? '';
+        $table = is_scalar($rawTable) ? (string) $rawTable : '';
 
         if ($table === '') {
             throw new VersaORMException('Invalid DELETE parameters');
@@ -673,7 +734,10 @@ class SqlGenerator
 
         $sql = 'DELETE FROM ' . $dialect->quoteIdentifier($baseTable);
         // Pass removeAliases=true to remove alias references from WHERE clause
-        [$whereSql, $whereBindings] = self::compileWhere($params['where'] ?? [], $dialect, true);
+        $rawWheres = $params['where'] ?? [];
+        $whereParams = is_array($rawWheres) ? $rawWheres : [];
+        /** @var list<array<string, mixed>> $whereParams */
+        [$whereSql, $whereBindings] = self::compileWhere($whereParams, $dialect, true);
         $bindings = [];
 
         if ($whereSql !== '') {
@@ -703,11 +767,14 @@ class SqlGenerator
 
         foreach ($wheres as $w) {
             /** @var array{type?:string,operator?:string,column?:string,value?:mixed} $w */
-            $type = strtolower((string) ($w['type'] ?? 'and'));
-            $operator = strtoupper((string) ($w['operator'] ?? '='));
+            $rawType = $w['type'] ?? 'and';
+            $type = strtolower(is_scalar($rawType) ? (string) $rawType : 'and');
+            $rawOp = $w['operator'] ?? '=';
+            $operator = strtoupper(is_scalar($rawOp) ? (string) $rawOp : '=');
 
             if ($operator === 'RAW' && isset($w['value']) && is_array($w['value']) && isset($w['value']['sql'])) {
-                $clause = '(' . $w['value']['sql'] . ')';
+                $rawSqlVal = $w['value']['sql'];
+                $clause = '(' . (is_scalar($rawSqlVal) ? (string) $rawSqlVal : '') . ')';
                 $clauseBindings = [];
 
                 if (isset($w['value']['bindings']) && is_array($w['value']['bindings'])) {
@@ -724,7 +791,8 @@ class SqlGenerator
                 continue;
             }
 
-            $column = (string) ($w['column'] ?? '');
+            $rawColumn = $w['column'] ?? '';
+            $column = is_scalar($rawColumn) ? (string) $rawColumn : '';
 
             // Remove alias from column reference if needed (for UPDATE/DELETE context)
             if ($removeAliases && str_contains($column, '.')) {
@@ -792,6 +860,7 @@ class SqlGenerator
         // manejar "table.column as alias" o funciones simples ya validadas en capa superior
         if (stripos($expr, ' as ') !== false) {
             $parts = preg_split('/\s+as\s+/i', $expr);
+            /** @var non-empty-list<string> $parts */
             $left = $parts[0] ?? '';
             $alias = $parts[1] ?? '';
 
@@ -847,7 +916,8 @@ class SqlGenerator
      */
     private static function compileBatch(string $method, array $params, SqlDialectInterface $dialect): array
     {
-        $table = (string) ($params['table'] ?? '');
+        $rawTable = $params['table'] ?? '';
+        $table = is_scalar($rawTable) ? (string) $rawTable : '';
 
         if ($table === '') {
             throw new VersaORMException('Missing table for batch operation');

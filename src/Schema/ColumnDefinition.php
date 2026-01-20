@@ -24,7 +24,7 @@ class ColumnDefinition
 
     protected ?Blueprint $blueprint = null;
 
-    public function __construct(string $name, string $type, Blueprint $blueprint = null)
+    public function __construct(string $name, string $type, ?Blueprint $blueprint = null)
     {
         $this->name = $name;
         $this->type = $type;
@@ -133,7 +133,7 @@ class ColumnDefinition
     /**
      * Crea un índice único en la columna.
      */
-    public function unique(string $indexName = null): self
+    public function unique(?string $indexName = null): self
     {
         if ($this->blueprint !== null) {
             $this->blueprint->addIndex('unique', [$this->name], $indexName);
@@ -145,7 +145,7 @@ class ColumnDefinition
     /**
      * Crea un índice en la columna.
      */
-    public function index(string $indexName = null): self
+    public function index(?string $indexName = null): self
     {
         if ($this->blueprint !== null) {
             $this->blueprint->addIndex('index', [$this->name], $indexName);
@@ -303,7 +303,7 @@ class ColumnDefinition
     /**
      * Crea una clave foránea usando convenciones.
      */
-    public function constrained(string $table = null, string $column = 'id', string $indexName = null): self
+    public function constrained(?string $table = null, string $column = 'id', ?string $indexName = null): self
     {
         if ($table === null) {
             // Inferir nombre de tabla desde el nombre de columna
@@ -455,6 +455,8 @@ class ColumnDefinition
                 };
             } elseif (is_string($default) && !in_array(strtoupper($default), ['CURRENT_TIMESTAMP', 'NOW()'], true)) {
                 $default = "'{$default}'";
+            } else {
+                $default = is_scalar($default) ? (string) $default : '';
             }
             $modifiers[] = "DEFAULT {$default}";
         }
@@ -476,7 +478,8 @@ class ColumnDefinition
 
         // COMMENT
         if (isset($this->attributes['comment'])) {
-            $comment = str_replace("'", "''", $this->attributes['comment']);
+            $commentRaw = $this->attributes['comment'];
+            $comment = str_replace("'", "''", is_scalar($commentRaw) ? (string) $commentRaw : '');
             $modifiers[] = "COMMENT '{$comment}'";
         }
 

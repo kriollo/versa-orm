@@ -1,3 +1,36 @@
+## [1.8.0] - 2026-01-20
+
+### 🚀 CI/CD & Automation (Refactorización de CI)
+
+**Flujo de Trabajo Unificado:**
+- Consolidación de múltiples workflows (`phpunit.yml`, `php-coverage.yml`, etc.) en un único archivo `ci.yml` altamente optimizado.
+- **Reporte de Cobertura Inteligente:** Integración de `coverage-stats.php` que imprime un resumen detallado (Top 10 archivos con menos cobertura) directamente en los logs de GitHub Actions.
+- **Validación PHPStan Nivel 9:** Elevación del estándar de calidad a nivel 9 (máximo) en todo el núcleo del proyecto (`src/`).
+- **Matriz de Compatibilidad Mejorada:** Pruebas automáticas en PHP 8.1, 8.2, 8.3 y 8.4 contra SQLite, MySQL y PostgreSQL con reportes consolidados en los PRs.
+
+### 🔧 Engine & Stability (Robustez del Motor)
+
+**Mejoras en PdoEngine:**
+- **Graceful Cache Invalidation:** El método de invalidación de caché ahora maneja llamadas sin criterios de forma segura (skipping) en lugar de lanzar excepciones, unificando el comportamiento en todos los drivers.
+- **Strict Casting Fixes:** Corrección de múltiples casts implícitos de `mixed` a `string/int` para cumplir con PHPStan Level 9.
+- **Advanced Operations:** Refuerzo de la lógica de operaciones JSON y CTEs con mejores validaciones de tipos escalares.
+
+**Consistencia entre Drivers:**
+- Armonización de la suite de pruebas `CacheTest` para asegurar que el comportamiento del caché sea idéntico en MySQL, PostgreSQL y SQLite.
+- Eliminación de inconsistencias en la captura de excepciones durante la invalidación de caché.
+
+### 🛠️ Developer Experience (Experiencia de Desarrollo)
+
+- **Nuevo comando de estadísticas:** `composer coverage:stats` permite ver el resumen de cobertura localmente de forma instantánea.
+- **Optimización de CI:** Eliminación de dependencias externas críticas (Mago) en el flujo de automatización para evitar cuellos de botella por red/servidores externos, manteniendo Mago para uso local.
+
+### ✅ Estado de Calidad
+- ✔️ **PHPStan Level 9**: 0 errores.
+- ✔️ **Tests SQLite**: 618 tests pasando (100%).
+- ✔️ **Tests MySQL**: 498 tests pasando (100%).
+- ✔️ **Tests PostgreSQL**: 471 tests pasando (100%).
+- ✔️ **Cobertura Global**: ~54% (con seguimiento detallado de hotspots).
+
 ## [1.7.0] - 2026-01-19
 
 ### ⚡ Performance Optimization (Mejoras de Rendimiento)

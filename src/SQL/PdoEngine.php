@@ -117,7 +117,8 @@ class PdoEngine
         $this->connector = new PdoConnection($this->config);
         $this->dialect = $this->detectDialect();
         // Configurar límite de caché si se provee
-        $limit = (int) ($this->config['statement_cache_limit'] ?? 100);
+        $rawLimit = $this->config['statement_cache_limit'] ?? 100;
+        $limit = is_numeric($rawLimit) ? (int) $rawLimit : 100;
 
         if ($limit > 0 && $limit < 5000) {
             self::$stmtCacheLimit = $limit;
@@ -236,7 +237,8 @@ class PdoEngine
 
         // Acción especial 'schema' para introspección mínima (MySQL/SQLite/Postgres)
         if ($action === 'schema') {
-            $subject = strtolower((string) ($params['subject'] ?? ''));
+            $rawSubject = $params['subject'] ?? '';
+            $subject = strtolower(is_scalar($rawSubject) ? (string) $rawSubject : '');
 
             if ($subject === 'tables') {
                 // Normalizar a arreglo simple de nombres de tabla (strings)
@@ -255,13 +257,15 @@ class PdoEngine
             }
 
             if ($subject === 'columns') {
-                $table = (string) ($params['table_name'] ?? $params['table'] ?? '');
+                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
+                $table = is_scalar($rawTable) ? (string) $rawTable : '';
 
                 return $table !== '' ? $this->fetchColumns($pdo, $table) : [];
             }
 
             if ($subject === 'indexes') {
-                $table = (string) ($params['table_name'] ?? $params['table'] ?? '');
+                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
+                $table = is_scalar($rawTable) ? (string) $rawTable : '';
 
                 return $table !== '' ? $this->fetchIndexes($pdo, $table) : [];
             }
@@ -303,7 +307,8 @@ class PdoEngine
 
         // Gestión de caché (enable/disable/clear/status/invalidate)
         if ($action === 'cache') {
-            $cacheAction = strtolower((string) ($params['action'] ?? ''));
+            $rawCacheAction = $params['action'] ?? '';
+            $cacheAction = strtolower(is_scalar($rawCacheAction) ? (string) $rawCacheAction : '');
 
             return match ($cacheAction) {
                 'enable' => (static function (): string {
@@ -322,40 +327,42 @@ class PdoEngine
 
                     return 'cache cleared';
                 })(),
+                'ttl' => (static function (array $params): string {
+                    $rawTtl = $params['ttl'] ?? 1800;
+                    $ttl = is_numeric($rawTtl) ? (int) $rawTtl : 1800;
+                    self::$queryCacheTtl = $ttl;
+                    return "cache ttl set to {$ttl}s";
+                })($params),
+                'limit' => (static function (array $params): string {
+                    $rawLimit = $params['limit'] ?? 1000;
+                    $limit = is_numeric($rawLimit) ? (int) $rawLimit : 1000;
+                    self::$queryCacheLimit = $limit;
+                    return "cache limit set to {$limit}";
+                })($params),
                 'status' => count(self::$queryCache),
                 'stats' => [
                     'enabled' => self::$cacheEnabled,
                     'entries' => count(self::$queryCache),
                     'tables_indexed' => count(self::$tableKeyIndex),
                 ],
-                'invalidate' => (function () use ($params): string {
-                    $table = isset($params['table']) ? (string) $params['table'] : '';
-                    $pattern = isset($params['pattern']) ? (string) $params['pattern'] : '';
+                'invalidate' => (static function (array $params): string {
+                    $rawTable = $params['table'] ?? '';
+                    $table = is_scalar($rawTable) ? (string) $rawTable : '';
+                    $rawPattern = $params['pattern'] ?? '';
+                    $pattern = is_scalar($rawPattern) ? (string) $rawPattern : '';
 
-                    // Comportamiento diferenciado: en MySQL requerimos criterio; en SQLite permitimos benigno
-                    // getName siempre existe en el dialecto que implementa SqlDialectInterface
-                    $driverName = $this->dialect->getName();
                     if ($table === '' && $pattern === '') {
-                        if ($driverName === 'sqlite') {
-                            return 'cache invalidation skipped (no criteria)';
-                        }
-
-                        throw new VersaORMException(
-                            'Cache invalidation requires a table or pattern parameter.',
-                            'INVALID_CACHE_INVALIDATE',
-                        );
-                    }
-
-                    if ($table !== '') {
-                        self::invalidateCacheForTable($table);
+                        return 'cache invalidation skipped (no criteria)';
                     }
 
                     if ($pattern !== '') {
                         self::invalidateCacheByPattern($pattern);
+                    } elseif ($table !== '') {
+                        self::invalidateCacheForTable($table);
                     }
 
                     return 'cache invalidated';
-                })(),
+                })($params),
                 default => throw new VersaORMException(
                     'PDO engine does not support this cache action: ' . $cacheAction,
                     'UNSUPPORTED_CACHE_ACTION',
@@ -366,13 +373,15 @@ class PdoEngine
         // Soporte mínimo para operaciones avanzadas cuando el motor es PDO
         if ($action === 'advanced_sql') {
             $driver = $this->dialect->getName();
-            $opType = (string) ($params['operation_type'] ?? '');
+            $rawOpType = $params['operation_type'] ?? '';
+            $opType = is_scalar($rawOpType) ? (string) $rawOpType : '';
 
             try {
                 return match ($opType) {
                     'set_operation' => (function () use ($params, $pdo, $driver) {
                         // Espera: set_type en ['UNION','UNION ALL','INTERSECT','INTERSECT ALL','EXCEPT','EXCEPT ALL']
-                        $setType = strtoupper((string) ($params['set_type'] ?? ''));
+                        $rawSetType = $params['set_type'] ?? '';
+                        $setType = strtoupper(is_scalar($rawSetType) ? (string) $rawSetType : '');
                         /** @var list<array{sql?:string,bindings?:array<int,mixed>|mixed}> $queries */
                         $queries = is_array($params['queries'] ?? null) ? $params['queries'] : [];
                         if (count($queries) < 2) {
@@ -432,10 +441,14 @@ class PdoEngine
                     })(),
                     'window_function' => (function () use ($params, $pdo) {
                         // SELECT existente + columna window
-                        $table = (string) ($params['table'] ?? '');
-                        $function = strtolower((string) ($params['function'] ?? 'row_number'));
-                        $column = (string) ($params['column'] ?? '*');
-                        $alias = (string) ($params['alias'] ?? 'window_result');
+                        $rawTable = $params['table'] ?? '';
+                        $table = is_scalar($rawTable) ? (string) $rawTable : '';
+                        $rawFunction = $params['function'] ?? 'row_number';
+                        $function = strtolower(is_scalar($rawFunction) ? (string) $rawFunction : 'row_number');
+                        $rawColumn = $params['column'] ?? '*';
+                        $column = is_scalar($rawColumn) ? (string) $rawColumn : '*';
+                        $rawAlias = $params['alias'] ?? 'window_result';
+                        $alias = is_scalar($rawAlias) ? (string) $rawAlias : 'window_result';
                         /** @var list<string> $partition */
                         $partition = [];
 
@@ -475,21 +488,25 @@ class PdoEngine
                                 }
 
                                 $wheres[] = [
-                                    'type' => (string) ($w['type'] ?? 'basic'),
-                                    'field' => (string) $w['field'],
-                                    'operator' => (string) $w['operator'],
+                                    'type' => is_scalar($w['type'] ?? null)
+                                        ? (string) ($w['type'] ?? 'basic')
+                                        : 'basic',
+                                    'field' => is_scalar($w['field']) ? (string) $w['field'] : '',
+                                    'operator' => is_scalar($w['operator']) ? (string) $w['operator'] : '=',
                                     'value' => $w['value'] ?? null,
-                                    'boolean' => (string) ($w['boolean'] ?? 'and'),
+                                    'boolean' => is_scalar($w['boolean'] ?? null)
+                                        ? (string) ($w['boolean'] ?? 'and')
+                                        : 'and',
                                 ];
                             }
                         }
-                        // Mapear función a SQL
+                        $ntileBuckets = $params['args']['buckets'] ?? 2;
                         $funcSql = match ($function) {
                             'row_number', 'rank', 'dense_rank' => strtoupper($function) . '()',
                             'lag', 'lead' => strtoupper($function) . '(' . ($column === '*' ? '1' : $column) . ')',
                             'first_value' => 'FIRST_VALUE(' . $column . ')',
                             'last_value' => 'LAST_VALUE(' . $column . ')',
-                            'ntile' => 'NTILE(' . (int) ($params['args']['buckets'] ?? 2) . ')',
+                            'ntile' => 'NTILE(' . (is_numeric($ntileBuckets) ? (int) $ntileBuckets : 2) . ')',
                             default => 'ROW_NUMBER()',
                         };
                         // Detectar alias de tabla si viene como "table AS alias" o "table alias"
@@ -632,13 +649,13 @@ class PdoEngine
                         $isRecursive = false;
 
                         foreach ($ctes as $c) {
-                            $name = (string) ($c['name'] ?? 'cte');
-                            $querySql = (string) ($c['query'] ?? '');
+                            $name = is_scalar($c['name'] ?? null) ? (string) $c['name'] : 'cte';
+                            $querySql = is_scalar($c['query'] ?? null) ? (string) $c['query'] : '';
                             $colsDef = '';
 
                             if (!empty($c['columns']) && is_array($c['columns'])) {
                                 $quotedCols = array_map(fn($col): string => $this->dialect->quoteIdentifier(
-                                    (string) $col,
+                                    is_scalar($col) ? (string) $col : '',
                                 ), $c['columns']);
                                 $colsDef = ' (' . implode(', ', $quotedCols) . ')';
                             }
@@ -654,10 +671,10 @@ class PdoEngine
                                 . ')';
 
                             if (isset($c['bindings']) && is_array($c['bindings'])) {
-                                $bindings = array_merge($bindings, $c['bindings']);
+                                $bindings = array_merge($bindings, array_values($c['bindings']));
                             }
                         }
-                        $main = (string) ($params['main_query'] ?? '');
+                        $main = is_scalar($params['main_query'] ?? null) ? (string) $params['main_query'] : '';
                         $mainBindings = [];
 
                         if (isset($params['main_query_bindings']) && is_array($params['main_query_bindings'])) {
@@ -696,7 +713,7 @@ class PdoEngine
                         $bindings = [];
 
                         foreach ($queries as $q) {
-                            $sqlPart = (string) ($q['sql'] ?? '');
+                            $sqlPart = is_scalar($q['sql'] ?? null) ? (string) $q['sql'] : '';
 
                             // SQLite puede quejarse de paréntesis en cada SELECT en UNION
                             $parts[] = $this->dialect->getName() === 'sqlite' ? $sqlPart : '(' . $sqlPart . ')';
@@ -710,10 +727,12 @@ class PdoEngine
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
                     })(),
                     'json_operation' => (function () use ($params, $pdo, $driver) {
-                        $table = (string) ($params['table'] ?? '');
-                        $col = (string) ($params['column'] ?? '');
-                        $op = (string) ($params['json_operation'] ?? 'extract');
-                        $path = (string) ($params['path'] ?? '');
+                        $table = is_scalar($params['table'] ?? null) ? (string) $params['table'] : '';
+                        $col = is_scalar($params['column'] ?? null) ? (string) $params['column'] : '';
+                        $op = is_scalar($params['json_operation'] ?? null)
+                            ? (string) $params['json_operation']
+                            : 'extract';
+                        $path = is_scalar($params['path'] ?? null) ? (string) $params['path'] : '';
                         /** @var list<array{type:string,field:string,operator:string,value:mixed,boolean?:string}> $wheres */
                         $wheres = [];
 
@@ -724,11 +743,11 @@ class PdoEngine
                                 }
 
                                 $wheres[] = [
-                                    'type' => (string) ($w['type'] ?? 'basic'),
-                                    'field' => (string) $w['field'],
-                                    'operator' => (string) $w['operator'],
+                                    'type' => is_scalar($w['type'] ?? null) ? (string) $w['type'] : 'basic',
+                                    'field' => is_scalar($w['field'] ?? null) ? (string) $w['field'] : '',
+                                    'operator' => is_scalar($w['operator'] ?? null) ? (string) $w['operator'] : '=',
                                     'value' => $w['value'] ?? null,
-                                    'boolean' => (string) ($w['boolean'] ?? 'and'),
+                                    'boolean' => is_scalar($w['boolean'] ?? null) ? (string) $w['boolean'] : 'and',
                                 ];
                             }
                         }
@@ -823,7 +842,7 @@ class PdoEngine
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
                     })(),
                     'full_text_search' => (function () use ($params, $pdo, $driver) {
-                        $table = (string) ($params['table'] ?? '');
+                        $table = is_scalar($params['table'] ?? null) ? (string) $params['table'] : '';
                         /** @var list<string> $cols */
                         $cols = [];
 
@@ -836,7 +855,7 @@ class PdoEngine
                                 $cols[] = $c;
                             }
                         }
-                        $term = (string) ($params['search_term'] ?? '');
+                        $term = is_scalar($params['search_term'] ?? null) ? (string) $params['search_term'] : '';
                         $options = (array) ($params['options'] ?? []);
 
                         if ($driver === 'mysql') {
@@ -868,8 +887,10 @@ class PdoEngine
 
                         if ($driver === 'postgres') {
                             // Usar to_tsvector/tsquery; si la columna ya es tsvector, comparar directamente
-                            $language = (string) ($options['language'] ?? 'english');
-                            $operator = (string) ($options['operator'] ?? '@@');
+                            $language = is_scalar($options['language'] ?? null)
+                                ? (string) $options['language']
+                                : 'english';
+                            $operator = is_scalar($options['operator'] ?? null) ? (string) $options['operator'] : '@@';
                             $rank = !empty($options['rank']);
                             $colExpr = implode(' || \" \" || ', array_map(
                                 static fn($c): string => "to_tsvector('" . $language . "', " . $c . ')',
@@ -919,9 +940,9 @@ class PdoEngine
                                 'Unsupported advanced_sql operation in PDO engine: array_operations',
                             );
                         }
-                        $table = (string) ($params['table'] ?? '');
-                        $col = (string) ($params['column'] ?? '');
-                        $op = (string) ($params['array_operation'] ?? '');
+                        $table = is_scalar($params['table'] ?? null) ? (string) $params['table'] : '';
+                        $col = is_scalar($params['column'] ?? null) ? (string) $params['column'] : '';
+                        $op = is_scalar($params['array_operation'] ?? null) ? (string) $params['array_operation'] : '';
                         $value = $params['value'] ?? null;
                         $whereSql = '';
                         $bindings = [];
@@ -929,11 +950,19 @@ class PdoEngine
                         switch ($op) {
                             case 'contains':
                                 $whereSql = $col . ' @> ?';
-                                $bindings[] = is_array($value) ? '{' . implode(',', $value) . '}' : '{' . $value . '}';
+                                $bindings[] = is_array($value)
+                                    ? '{' . implode(',', $value) . '}'
+                                    : '{'
+                                    . (is_scalar($value) ? (string) $value : '')
+                                    . '}';
                                 break;
                             case 'overlap':
                                 $whereSql = $col . ' && ?';
-                                $bindings[] = is_array($value) ? '{' . implode(',', $value) . '}' : '{' . $value . '}';
+                                $bindings[] = is_array($value)
+                                    ? '{' . implode(',', $value) . '}'
+                                    : '{'
+                                    . (is_scalar($value) ? (string) $value : '')
+                                    . '}';
                                 break;
                             case 'any':
                                 $whereSql = '? = ANY(' . $col . ')';
@@ -953,9 +982,11 @@ class PdoEngine
                         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
                     })(),
                     'advanced_aggregation' => (function () use ($params, $pdo, $driver) {
-                        $type = (string) ($params['aggregation_type'] ?? '');
-                        $table = (string) ($params['table'] ?? '');
-                        $column = (string) ($params['column'] ?? '');
+                        $type = is_scalar($params['aggregation_type'] ?? null)
+                            ? (string) $params['aggregation_type']
+                            : '';
+                        $table = is_scalar($params['table'] ?? null) ? (string) $params['table'] : '';
+                        $column = is_scalar($params['column'] ?? null) ? (string) $params['column'] : '';
                         /** @var list<string> $groupBy */
                         $groupBy = [];
 
@@ -970,8 +1001,12 @@ class PdoEngine
                         }
 
                         if ($type === 'group_concat') {
-                            $sep = (string) ($params['options']['separator'] ?? ',');
-                            $order = (string) ($params['options']['order_by'] ?? '');
+                            $sep = is_scalar($params['options']['separator'] ?? null)
+                                ? (string) $params['options']['separator']
+                                : ',';
+                            $order = is_scalar($params['options']['order_by'] ?? null)
+                                ? (string) $params['options']['order_by']
+                                : '';
                             $sepValue = str_replace("'", "''", $sep);
 
                             if ($driver === 'mysql') {
@@ -1048,7 +1083,7 @@ class PdoEngine
                     ))(),
                     'optimize_query' => [
                         'optimization_suggestions' => [],
-                        'generated_sql' => (string) ($params['query'] ?? ''),
+                        'generated_sql' => is_scalar($params['query'] ?? null) ? (string) $params['query'] : '',
                     ],
                     default => throw new VersaORMException('Unsupported advanced_sql operation in PDO engine: '
                     . $opType),
@@ -1062,7 +1097,7 @@ class PdoEngine
 
         // Normalización por acción
         if ($action === 'query') {
-            $method = (string) ($params['method'] ?? 'get');
+            $method = is_scalar($params['method'] ?? null) ? (string) $params['method'] : 'get';
 
             // Batch operations mapped to query
             if (in_array($method, ['insertMany', 'updateMany', 'deleteMany', 'upsertMany'], true)) {
@@ -1116,7 +1151,8 @@ class PdoEngine
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC) ?? [];
-                $result = (int) ($row['count'] ?? 0);
+                $rawCount = $row['count'] ?? 0;
+                $result = is_numeric($rawCount) ? (int) $rawCount : 0;
 
                 if (self::$cacheEnabled) {
                     $this->storeInCache($sql, $bindings, 'count', $result);
@@ -1140,8 +1176,9 @@ class PdoEngine
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC) ?? [];
-                $val = array_values($row)[0] ?? 0;
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $rowArray = is_array($row) ? $row : [];
+                $val = array_values($rowArray)[0] ?? 0;
                 $result = (bool) $val;
 
                 if (self::$cacheEnabled) {
@@ -1201,6 +1238,7 @@ class PdoEngine
                 $stmt->closeCursor();
             } catch (Throwable) { // ignore
             }
+            /** @var array<string, mixed> $result */
             $result = is_array($rows) ? $rows : [];
 
             if (self::$cacheEnabled) {
@@ -1212,7 +1250,8 @@ class PdoEngine
 
         if ($action === 'raw') {
             // Preparar SQL/bindings directamente desde params para el caso 'raw'
-            $sql = (string) ($params['sql'] ?? $params['query'] ?? '');
+            $rawSqlVal = $params['sql'] ?? $params['query'] ?? '';
+            $sql = is_scalar($rawSqlVal) ? (string) $rawSqlVal : '';
             /** @var array<int,mixed> $bindings */
             $bindings = is_array($params['bindings'] ?? null) ? array_values($params['bindings']) : [];
 
@@ -1502,7 +1541,10 @@ class PdoEngine
                     $stmt->bindValue($param, $val, PDO::PARAM_NULL);
                 } else {
                     // floats y strings van como STR
-                    $stmt->bindValue($param, (string) $val, PDO::PARAM_STR);
+                    $valStr = is_scalar($val)
+                        ? (string) $val
+                        : (is_object($val) && method_exists($val, '__toString') ? (string) $val : '');
+                    $stmt->bindValue($param, $valStr, PDO::PARAM_STR);
                 }
             }
             $stmt->execute();
@@ -1582,7 +1624,8 @@ class PdoEngine
 
     private function detectDialect(): SqlDialectInterface
     {
-        $driver = strtolower((string) ($this->config['driver'] ?? 'mysql'));
+        $rawDriver = $this->config['driver'] ?? 'mysql';
+        $driver = strtolower(is_scalar($rawDriver) ? (string) $rawDriver : 'mysql');
 
         return match ($driver) {
             'mysql', 'mariadb' => new MySQLDialect(),
@@ -1602,7 +1645,8 @@ class PdoEngine
     private function handleInsertMany(array $params, PDO $pdo): array
     {
         $records = $params['records'] ?? [];
-        $batchSize = (int) ($params['batch_size'] ?? 1000);
+        $rawBatchSize = $params['batch_size'] ?? 1000;
+        $batchSize = is_numeric($rawBatchSize) ? (int) $rawBatchSize : 1000;
 
         if (!is_array($records) || $records === []) {
             return [
@@ -1619,8 +1663,8 @@ class PdoEngine
         $driverName = '';
 
         try {
-            /** @var string $dn */
-            $dn = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $rawDn = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $dn = is_scalar($rawDn) ? (string) $rawDn : '';
             $driverName = strtolower($dn);
         } catch (Throwable) {
             $driverName = '';
@@ -1670,14 +1714,14 @@ class PdoEngine
                             $returned = $st->fetchAll(PDO::FETCH_COLUMN);
                             if (is_array($returned) && count($returned) > 0) {
                                 foreach ($returned as $rid) {
-                                    $insertedIds[] = (int) $rid;
+                                    $insertedIds[] = is_numeric($rid) ? (int) $rid : 0;
                                 }
                             } else {
                                 // Si no devolvió nada, fall back a lastInsertId para otros drivers
                                 try {
                                     $lastIdRaw = $pdo->lastInsertId();
                                     if ($lastIdRaw !== false && $lastIdRaw !== '') {
-                                        $lastId = (int) $lastIdRaw;
+                                        $lastId = is_numeric($lastIdRaw) ? (int) $lastIdRaw : 0;
                                         if ($lastId > 0) {
                                             $firstId = $lastId - $chunkCount + 1;
                                             if ($firstId > 0) {
@@ -1778,7 +1822,8 @@ class PdoEngine
      */
     private function handleUpdateMany(array $params, PDO $pdo): array
     {
-        $max = (int) ($params['max_records'] ?? 10000);
+        $rawMax = $params['max_records'] ?? 10000;
+        $max = is_numeric($rawMax) ? (int) $rawMax : 10000;
         [$countSql, $countBindings] = SqlGenerator::generate(
             'query',
             [
@@ -1791,7 +1836,8 @@ class PdoEngine
         $stc = $this->prepareCached($pdo, $countSql);
         $stc->execute($countBindings);
         $row = $stc->fetch(PDO::FETCH_ASSOC) ?? [];
-        $toAffect = (int) ($row['count'] ?? 0);
+        $rawCount = $row['count'] ?? 0;
+        $toAffect = is_numeric($rawCount) ? (int) $rawCount : 0;
 
         if ($toAffect > $max) {
             throw new VersaORMException(
@@ -1839,7 +1885,8 @@ class PdoEngine
      */
     private function handleDeleteMany(array $params, PDO $pdo): array
     {
-        $max = (int) ($params['max_records'] ?? 10000);
+        $rawMax = $params['max_records'] ?? 10000;
+        $max = is_numeric($rawMax) ? (int) $rawMax : 10000;
         [$countSql, $countBindings] = SqlGenerator::generate(
             'query',
             [
@@ -1852,7 +1899,8 @@ class PdoEngine
         $stc = $this->prepareCached($pdo, $countSql);
         $stc->execute($countBindings);
         $row = $stc->fetch(PDO::FETCH_ASSOC) ?? [];
-        $toAffect = (int) ($row['count'] ?? 0);
+        $rawCount = $row['count'] ?? 0;
+        $toAffect = is_numeric($rawCount) ? (int) $rawCount : 0;
 
         if ($toAffect > $max) {
             throw new VersaORMException(
@@ -1957,7 +2005,8 @@ class PdoEngine
                     continue;
                 }
 
-                $out[] = ['table_name' => isset($r['table_name']) ? (string) $r['table_name'] : null];
+                $tableName = $r['table_name'] ?? null;
+                $out[] = ['table_name' => is_scalar($tableName) ? (string) $tableName : null];
             }
 
             return $out;
@@ -1973,7 +2022,8 @@ class PdoEngine
                     continue;
                 }
 
-                $out[] = ['table_name' => isset($r['table_name']) ? (string) $r['table_name'] : null];
+                $tableName = $r['table_name'] ?? null;
+                $out[] = ['table_name' => is_scalar($tableName) ? (string) $tableName : null];
             }
 
             return $out;
@@ -2016,12 +2066,16 @@ class PdoEngine
                         $length = null;
                     }
                 }
-                $name = (string) ($col['Field'] ?? '');
+                $rawName = $col['Field'] ?? '';
+                $name = is_scalar($rawName) ? (string) $rawName : '';
+                $rawNull = $col['Null'] ?? 'NO';
                 $result[] = [
                     'column_name' => $name,
                     'name' => $name,
                     'data_type' => $type,
-                    'is_nullable' => strtoupper((string) ($col['Null'] ?? 'NO')) === 'YES' ? 'YES' : 'NO',
+                    'is_nullable' => strtoupper(is_scalar($rawNull) ? (string) $rawNull : 'NO') === 'YES'
+                        ? 'YES'
+                        : 'NO',
                     'column_default' => $col['Default'] ?? null,
                     'character_maximum_length' => $length,
                     'extra' => $col['Extra'] ?? '',
