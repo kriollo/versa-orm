@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Mago
         run: |
-          curl -sSL https://mago.carthage.software/install.sh | sh
+          curl -sSL https://mago.carthage.software/install.sh | bash
           echo "$HOME/.mago/bin" >> $GITHUB_PATH
 
       - name: Mago Lint
