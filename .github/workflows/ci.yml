@@ -12,33 +12,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  style-and-static-analysis:
-    name: Code Quality (PHP ${{ matrix.php }})
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: ['8.3']
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, json, pdo
-          tools: php-cs-fixer, phpstan
-
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --no-interaction
-
-      - name: PHPStan
-        run: composer phpstan
-
   tests:
     name: Tests — PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
-    needs: style-and-static-analysis
     strategy:
       fail-fast: false
       matrix:

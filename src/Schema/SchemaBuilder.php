@@ -192,7 +192,8 @@ class SchemaBuilder
             if (!is_array($result)) {
                 return [];
             }
-            /** @var array<int, array<string, mixed>> $validated */
+
+            /** @var array<int, array<string, mixed>> */
             return array_values($result);
         } catch (\Exception) {
             return [];
@@ -211,7 +212,7 @@ class SchemaBuilder
             if (!is_array($result)) {
                 return [];
             }
-            /** @var array<int, array<string, mixed>> $validated */
+            /** @var array<int, array<string, mixed>> */
             return array_values($result);
         } catch (\Exception) {
             return [];
@@ -230,7 +231,7 @@ class SchemaBuilder
             if (!is_array($result)) {
                 return [];
             }
-            /** @var array<int, array<string, mixed>> $validated */
+            /** @var array<int, array<string, mixed>> */
             return array_values($result);
         } catch (\Exception) {
             return [];
