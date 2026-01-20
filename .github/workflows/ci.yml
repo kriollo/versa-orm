@@ -103,19 +103,27 @@ jobs:
       - name: Merge Coverage
         if: always()
         run: |
-          wget -q -O phpcov.phar https://phar.phpunit.de/phpcov.phar
-          php phpcov.phar merge --clover build/logs/clover.xml build/logs/cov-dir || true
+          if [ -d "build/logs/cov-dir" ] && [ "$(ls -A build/logs/cov-dir)" ]; then
+            wget -q -O phpcov.phar https://phar.phpunit.de/phpcov.phar
+            php phpcov.phar merge --clover build/logs/clover.xml build/logs/cov-dir
+          else
+            echo "No coverage files found in build/logs/cov-dir, skipping merge."
+          fi
 
       - name: Coverage Summary
         if: always()
         run: |
           if [ -f build/logs/clover.xml ]; then
             php .github/scripts/coverage-stats.php build/logs/clover.xml
+          else
+            echo "clover.xml not found, skipping summary."
           fi
 
       - name: Upload Coverage to Codecov
+        if: always()
         uses: codecov/codecov-action@v4
         with:
+          token: 51e43ae6-0e27-43c4-a161-0f54255c6a7f
           files: build/logs/clover.xml
           flags: php-${{ matrix.php }}
           fail_ci_if_error: false
