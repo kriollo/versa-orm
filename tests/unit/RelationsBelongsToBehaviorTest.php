@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 // Stubs para usar en los tests: declarar en el espacio global para evitar clases anidadas
-if (!class_exists('TestQueryBuilder')) {
-    class TestQueryBuilder extends \VersaORM\QueryBuilder
+if (!class_exists('TestQueryBuilderBelongsToBehavior')) {
+    class TestQueryBuilderBelongsToBehavior extends \VersaORM\QueryBuilder
     {
         public array $recordedWheres = [];
 
@@ -58,7 +61,7 @@ final class RelationsBelongsToBehaviorTest extends TestCase
 {
     public function test_addConstraints_and_query_delegate(): void
     {
-        $query = new TestQueryBuilder();
+        $query = new TestQueryBuilderBelongsToBehavior();
         $parent = new TestVersaModel();
 
         // BelongsTo constructor requiere 5 args: query, parent, foreignKey, ownerKey, relationName

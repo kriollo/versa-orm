@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
+use DateTime;
+use DateTimeInterface;
 use PHPUnit\Framework\TestCase;
 use VersaORM\Traits\HasStrongTyping;
 

@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit\VersaModel;
+
+use DateTime;
 use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 use VersaORM\VersaORMException;

@@ -45,9 +45,11 @@ class DateTimeCastingConsistencyTest extends TestCase
         static::assertCount(2, $rows);
 
         foreach ($rows as $r) {
-            if ($r['published_at'] !== null) {
-                static::assertInstanceOf(DateTimeInterface::class, $r['published_at']);
+            if ($r['published_at'] === null) {
+                continue;
             }
+
+            static::assertInstanceOf(DateTimeInterface::class, $r['published_at']);
         }
 
         $first = self::$orm->table('posts_dt_cast', get_class($model))->firstArray();

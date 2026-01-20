@@ -2,21 +2,24 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\PostgreSQL;
+
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
+use Exception;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 /**
- * Tests para validar la funcionalidad freeze/frozen mode en SQLite
+ * Tests para validar la funcionalidad freeze/frozen mode en PostgreSQL
  * Tarea 7.2 - Task: Implementar freeze/frozen mode completamente.
  */
 
 /**
- * @group sqlite
+ * @group postgresql
  */
-class TestModel extends VersaModel
+class PostgreSQLTestModel extends VersaModel
 {
     public function __construct($orm = null)
     {
@@ -24,10 +27,14 @@ class TestModel extends VersaModel
     }
 }
 
-// Configuración de base de datos para pruebas SQLite
+// Configuración de base de datos para pruebas PostgreSQL
 $config = [
-    'driver' => 'sqlite',
-    'database' => ':memory:', // Base de datos en memoria para tests
+    'driver' => 'pgsql',
+    'host' => 'localhost',
+    'username' => 'test_user',
+    'password' => 'test_pass',
+    'database' => 'test_db',
+    'port' => 5432,
     'debug' => true,
 ];
 
@@ -35,36 +42,36 @@ try {
     $orm = new VersaORM($config);
 
     // Establecer la instancia global para que los modelos funcionen
-    TestModel::setORM($orm);
+    PostgreSQLTestModel::setORM($orm);
 
-    echo "=== Tests de Freeze Mode para SQLite ===\n";
+    echo "=== Tests de Freeze Mode para PostgreSQL ===\n";
 
     // Test 1: Verificar estado inicial (no frozen)
     assert($orm->isFrozen() === false, 'El ORM no debe estar frozen inicialmente');
-    assert($orm->isModelFrozen(TestModel::class) === false, 'El modelo no debe estar frozen inicialmente');
+    assert($orm->isModelFrozen(PostgreSQLTestModel::class) === false, 'El modelo no debe estar frozen inicialmente');
 
     // Test 2: Activar freeze global
     $orm->freeze(true);
     assert($orm->isFrozen() === true, 'El ORM debe estar frozen después de activar freeze global');
 
     // Test 3: Verificar que modelo también está frozen globalmente
-    assert(TestModel::isFrozen() === true, 'El modelo debe detectar freeze global');
+    assert(PostgreSQLTestModel::isFrozen() === true, 'El modelo debe detectar freeze global');
 
     // Test 4: Desactivar freeze global
     $orm->freeze(false);
     assert($orm->isFrozen() === false, 'El ORM no debe estar frozen después de desactivar');
-    assert(TestModel::isFrozen() === false, 'El modelo no debe detectar freeze después de desactivar global');
+    assert(PostgreSQLTestModel::isFrozen() === false, 'El modelo no debe detectar freeze después de desactivar global');
 
     echo "✓ Tests básicos de freeze mode completados\n";
 
     /*
-     * Tests reales de bloqueo de operaciones DDL para SQLite
+     * Tests reales de bloqueo de operaciones DDL para PostgreSQL
      * Estos tests verifican que las operaciones DDL sean realmente bloqueadas
      * cuando el modo freeze está activo.
      */
     echo "\n=== Tests de Bloqueo DDL (Reales y Estrictos) ===\n";
 
-    class SQLiteDDLBlockingTest
+    class PostgreSQLDDLBlockingTest
     {
         private VersaORM $orm;
 
@@ -82,9 +89,9 @@ try {
 
             // Test 1: schemaCreate debe ser bloqueado
             try {
-                $this->orm->schemaCreate('test_blocked_table_sqlite', [
-                    'id' => ['type' => 'integer', 'primary' => true, 'auto_increment' => true],
-                    'name' => ['type' => 'text'],
+                $this->orm->schemaCreate('test_blocked_table_pg', [
+                    ['name' => 'id', 'type' => 'serial', 'primary' => true],
+                    ['name' => 'name', 'type' => 'varchar', 'length' => 100],
                 ]);
                 assert(false, 'schemaCreate debería haber sido bloqueado');
             } catch (VersaORMException $e) {
@@ -103,7 +110,7 @@ try {
 
             // Test 3: schemaAlter debe ser bloqueado
             try {
-                $this->orm->schemaAlter('any_table', ['add_column' => ['new_col' => ['type' => 'text']]]);
+                $this->orm->schemaAlter('any_table', ['add' => [['name' => 'new_col', 'type' => 'varchar']]]);
                 assert(false, 'schemaAlter debería haber sido bloqueado');
             } catch (VersaORMException $e) {
                 assert($e->getErrorCode() === 'FREEZE_VIOLATION', 'Error code debe ser FREEZE_VIOLATION');
@@ -118,21 +125,22 @@ try {
 
         public function testRealBlockedRawQueries(): void
         {
-            echo "2. Test: Bloqueo real de consultas SQL raw DDL para SQLite\n";
+            echo "2. Test: Bloqueo real de consultas SQL raw DDL para PostgreSQL\n";
 
             // Activar freeze global
             $this->orm->freeze(true);
 
             $ddlQueries = [
-                'CREATE TABLE test_raw_blocked_sqlite (id INTEGER PRIMARY KEY AUTOINCREMENT)',
-                'DROP TABLE IF EXISTS test_raw_blocked_sqlite',
-                'ALTER TABLE test_raw_blocked_sqlite ADD COLUMN name TEXT',
-                'CREATE INDEX idx_test_sqlite ON test_raw_blocked_sqlite (id)',
+                'CREATE TABLE test_raw_blocked_pg (id SERIAL PRIMARY KEY)',
+                'DROP TABLE IF EXISTS test_raw_blocked_pg',
+                'ALTER TABLE test_raw_blocked_pg ADD COLUMN name VARCHAR(100)',
+                'TRUNCATE TABLE test_raw_blocked_pg',
+                'CREATE INDEX idx_test_pg ON test_raw_blocked_pg (id)',
             ];
 
             foreach ($ddlQueries as $query) {
                 try {
-                    $this->orm->query($query);
+                    $this->orm->exec($query);
                     assert(false, "Query '{$query}' debería haber sido bloqueada");
                 } catch (VersaORMException $e) {
                     // Verificar que fue bloqueada por freeze, no por otro error
@@ -160,9 +168,9 @@ try {
 
             // Crear una tabla de prueba real
             try {
-                $this->orm->schemaCreate('test_allowed_operations_sqlite', [
-                    'id' => ['type' => 'integer', 'primary' => true, 'auto_increment' => true],
-                    'test_column' => ['type' => 'text'],
+                $this->orm->schemaCreate('test_allowed_operations_pg', [
+                    ['name' => 'id', 'type' => 'serial', 'primary' => true],
+                    ['name' => 'test_column', 'type' => 'varchar', 'length' => 50],
                 ]);
                 echo "   - createTable: ALLOWED ✓\n";
             } catch (Exception $e) {
@@ -174,20 +182,9 @@ try {
                 }
             }
 
-            // Intentar alterar la tabla
-            try {
-                $this->orm->schemaAlter('test_allowed_operations_sqlite', [
-                    'add_column' => ['new_test_col' => ['type' => 'text']],
-                ]);
-                echo "   - alterTable: ALLOWED ✓\n";
-            } catch (Exception $e) {
-                // Si falla por otro motivo, reportar pero continuar
-                echo '   - alterTable: ERROR - ' . $e->getMessage() . "\n";
-            }
-
             // Limpiar: eliminar tabla de prueba
             try {
-                $this->orm->schemaDrop('test_allowed_operations_sqlite');
+                $this->orm->schemaDrop('test_allowed_operations_pg');
                 echo "   - dropTable: ALLOWED ✓\n";
             } catch (Exception $e) {
                 echo '   - dropTable: ERROR - ' . $e->getMessage() . "\n";
@@ -198,13 +195,13 @@ try {
     }
 
     // Ejecutar los tests reales
-    $realDDLTest = new SQLiteDDLBlockingTest($orm);
+    $realDDLTest = new PostgreSQLDDLBlockingTest($orm);
     $realDDLTest->testRealBlockedOperations();
     $realDDLTest->testRealBlockedRawQueries();
     $realDDLTest->testOperationsAllowedWhenNotFrozen();
 
     echo "\n=== RESUMEN FINAL ===\n";
-    echo "✅ Freeze Mode implementado completamente para SQLite\n";
+    echo "✅ Freeze Mode implementado completamente para PostgreSQL\n";
     echo "✅ API PHP: freeze(), freezeModel(), isFrozen(), isModelFrozen()\n";
     echo "✅ Validaciones DDL implementadas\n";
     echo "✅ Tests reales y estrictos completados\n";

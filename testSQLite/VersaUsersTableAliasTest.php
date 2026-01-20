@@ -12,6 +12,9 @@ use VersaORM\VersaORM;
  * Test para validar que 'versa_users' es un nombre de tabla válido con alias.
  * Verifica que el ORM no rechace nombres de tabla que comienzan con prefijos específicos.
  */
+/**
+ * @group sqlite
+ */
 class VersaUsersTableAliasTest extends TestCase
 {
     private VersaORM $orm;

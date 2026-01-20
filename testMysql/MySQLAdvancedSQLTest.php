@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Mysql;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\VersaORM;

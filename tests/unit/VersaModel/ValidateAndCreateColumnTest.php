@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit\VersaModel;
+
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use TypeError;
 use VersaORM\VersaModel;
 
 /**

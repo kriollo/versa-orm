@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\PostgreSQL;
+
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use VersaORM\VersaModel;
 
 /**

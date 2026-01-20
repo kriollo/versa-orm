@@ -15,6 +15,7 @@
         <testsuite name="All">
             <directory>./testSQLite</directory>
             <directory>./tests/unit</directory>
+            <exclude>./testSQLite/SQLiteDDLBlockingTest.php</exclude>
         </testsuite>
     </testsuites>
 

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit\Relations;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\Relations\Relation;

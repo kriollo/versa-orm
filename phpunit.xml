@@ -11,9 +11,40 @@
          beStrictAboutChangesToGlobalState="true">
 
   <testsuites>
-    <testsuite name="VersaORM SQLite Test Suite">
-  <directory>./testSQLite</directory>
-  <directory>./tests/unit</directory>
+    <!-- SQLite Test Suite (default) -->
+    <testsuite name="SQLite">
+      <directory>./testSQLite</directory>
+      <directory>./tests/unit</directory>
+      <directory>./tests/Compatibility</directory>
+      <exclude>./testSQLite/SQLiteDDLBlockingTest.php</exclude>
+    </testsuite>
+
+    <!-- MySQL Test Suite -->
+    <testsuite name="MySQL">
+      <directory>./testMysql</directory>
+      <directory>./tests/Mysql</directory>
+      <directory>./tests/unit</directory>
+      <directory>./tests/Compatibility</directory>
+      <exclude>./tests/Mysql/RealDDLBlockingTest.php</exclude>
+    </testsuite>
+
+    <!-- PostgreSQL Test Suite -->
+    <testsuite name="PostgreSQL">
+      <directory>./testPostgreSQL</directory>
+      <directory>./tests/unit</directory>
+      <directory>./tests/Compatibility</directory>
+      <exclude>./testPostgreSQL/PostgreSQLDDLBlockingTest.php</exclude>
+    </testsuite>
+
+    <!-- All Tests (for CI/CD) -->
+    <testsuite name="All">
+      <directory>./testMysql</directory>
+      <directory>./testPostgreSQL</directory>
+      <directory>./testSQLite</directory>
+      <directory>./tests</directory>
+      <exclude>./testSQLite/SQLiteDDLBlockingTest.php</exclude>
+      <exclude>./testPostgreSQL/PostgreSQLDDLBlockingTest.php</exclude>
+      <exclude>./tests/Mysql/RealDDLBlockingTest.php</exclude>
     </testsuite>
   </testsuites>
 

@@ -12,6 +12,9 @@ use VersaORM\VersaORM;
  * Test para validar que 'versa_users' es un nombre de tabla válido con alias en PostgreSQL.
  * Verifica que el ORM no rechace nombres de tabla que comienzan con prefijos específicos.
  */
+/**
+ * @group postgresql
+ */
 class VersaUsersTableAliasTest extends TestCase
 {
     private VersaORM $orm;

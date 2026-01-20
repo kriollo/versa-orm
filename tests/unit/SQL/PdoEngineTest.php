@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit\SQL;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\SQL\PdoEngine;
 

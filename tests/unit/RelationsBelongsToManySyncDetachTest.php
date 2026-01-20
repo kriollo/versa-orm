@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\Relations\BelongsToMany;
 use VersaORM\VersaModel;
 
-if (!class_exists('VersaORMStub')) {
-    class VersaORMStub extends \VersaORM\VersaORM
+if (!class_exists('VersaORMStubBelongsToMany')) {
+    class VersaORMStubBelongsToMany extends \VersaORM\VersaORM
     {
         public function __construct()
         {
@@ -87,7 +89,7 @@ final class RelationsBelongsToManySyncDetachTest extends TestCase
 {
     public function testAttachViaReflectionExecutesPivotInsert(): void
     {
-        $orm = new VersaORMStub();
+        $orm = new VersaORMStubBelongsToMany();
         $relatedQ = new TBMQuery();
 
         $parent = new TBMModel();

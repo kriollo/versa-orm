@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
+use Exception;
 use PHPUnit\Framework\TestCase;
 use VersaORM\Relations\Relation;
 use VersaORM\VersaModel;

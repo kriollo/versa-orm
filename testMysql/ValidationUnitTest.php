@@ -15,6 +15,9 @@ use VersaORM\VersaORMException;
 /**
  * @group mysql
  */
+/**
+ * @group mysql
+ */
 class ValidationUnitTest extends TestCase
 {
     public function test_fillable_attributes_allow_mass_assignment(): void

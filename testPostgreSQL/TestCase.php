@@ -8,8 +8,9 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
-require_once __DIR__ . '/bootstrap.php';
-
+/**
+ * @group postgresql
+ */
 class TestCase extends BaseTestCase
 {
     public static ?VersaORM $orm = null;
@@ -19,16 +20,17 @@ class TestCase extends BaseTestCase
     public static function setUpBeforeClass(): void
     {
         if (self::$orm === null) {
+            require_once __DIR__ . '/bootstrap.php';
             global $config;
             $dbConfig = [
-                'engine' => $config['DB']['engine'],
-                'driver' => $config['DB']['DB_DRIVER'],
-                'database' => $config['DB']['DB_NAME'],
-                'debug' => $config['DB']['debug'],
-                'host' => $config['DB']['DB_HOST'] ?? '',
-                'port' => (int) ($config['DB']['DB_PORT'] ?? 0),
-                'username' => $config['DB']['DB_USER'] ?? '',
-                'password' => $config['DB']['DB_PASS'] ?? '',
+                'engine' => $config['DB']['engine'] ?? 'pdo',
+                'driver' => $config['DB']['DB_DRIVER'] ?? 'postgresql',
+                'database' => $config['DB']['DB_NAME'] ?? 'versaorm_test',
+                'debug' => $config['DB']['debug'] ?? true,
+                'host' => $config['DB']['DB_HOST'] ?? 'localhost',
+                'port' => (int) ($config['DB']['DB_PORT'] ?? 5432),
+                'username' => $config['DB']['DB_USER'] ?? 'local',
+                'password' => $config['DB']['DB_PASS'] ?? 'local',
             ];
 
             self::$orm = new VersaORM($dbConfig);

@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Mysql;
+
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use VersaORM\VersaModel;
 
 /**
@@ -145,7 +148,7 @@ class SchemaConsistencyTest extends TestCase
             $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
 
             // Filter out any unrelated errors, only check for type mismatch
-            $typeMismatchErrors = array_filter($errors, static fn($error) => strpos($error, 'Type mismatch') !== false);
+            $typeMismatchErrors = array_filter($errors, static fn($error) => str_contains($error, 'Type mismatch'));
 
             static::assertEmpty(
                 $typeMismatchErrors,
@@ -167,7 +170,7 @@ class SchemaConsistencyTest extends TestCase
         $dbColumn = ['data_type' => 'text', 'is_nullable' => 'YES'];
 
         $errors = $method->invokeArgs($model, ['test_field', $propertyDef, $dbColumn]);
-        $typeMismatchErrors = array_filter($errors, static fn($error) => strpos($error, 'Type mismatch') !== false);
+        $typeMismatchErrors = array_filter($errors, static fn($error) => str_contains($error, 'Type mismatch'));
 
         static::assertNotEmpty($typeMismatchErrors);
     }

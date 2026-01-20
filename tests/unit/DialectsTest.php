@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\SQL\Dialects\MySQLDialect;
 use VersaORM\SQL\Dialects\PostgreSQLDialect;

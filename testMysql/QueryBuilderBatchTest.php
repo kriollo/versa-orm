@@ -320,7 +320,7 @@ class QueryBuilderBatchTest extends TestCase
         // Debug: Imprimir el producto completo
 
         static::assertSame('Updated Product 1', $updatedProduct1['name']);
-        static::assertEquals(150.0, (float) $updatedProduct1['price'], 'Updated price should be 150.0', 0.01);
+        static::assertSame(150.0, (float) $updatedProduct1['price'], 'Updated price should be 150.0', 0.01);
 
         $newProduct = self::$orm->table('products')->where('sku', '=', 'UPSERT003')->firstArray();
         static::assertSame('New Product 3', $newProduct['name']);

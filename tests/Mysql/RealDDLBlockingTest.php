@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+namespace VersaORM\Tests\Mysql;
 
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
+use Exception;
+use InvalidArgumentException;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
+use VersaORM\VersaORMException;
 
 /**
  * Tests para validar la funcionalidad freeze/frozen mode
@@ -187,8 +191,8 @@ class RealDDLBlockingTest
         // Test 1: schemaCreate debe ser bloqueado
         try {
             $this->orm->schemaCreate('test_blocked_table', [
-                'id' => ['type' => 'int', 'primary' => true, 'auto_increment' => true],
-                'name' => ['type' => 'varchar', 'length' => 100],
+                ['name' => 'id', 'type' => 'int', 'primary' => true, 'autoIncrement' => true],
+                ['name' => 'name', 'type' => 'varchar', 'length' => 100],
             ]);
             assert(false, 'schemaCreate debería haber sido bloqueado');
         } catch (VersaORMException $e) {
@@ -207,7 +211,7 @@ class RealDDLBlockingTest
 
         // Test 3: schemaAlter debe ser bloqueado
         try {
-            $this->orm->schemaAlter('any_table', ['add_column' => ['new_col' => ['type' => 'varchar']]]);
+            $this->orm->schemaAlter('any_table', ['add' => [['name' => 'new_col', 'type' => 'varchar']]]);
             assert(false, 'schemaAlter debería haber sido bloqueado');
         } catch (VersaORMException $e) {
             assert($e->getErrorCode() === 'FREEZE_VIOLATION', 'Error code debe ser FREEZE_VIOLATION');
@@ -246,7 +250,7 @@ class RealDDLBlockingTest
 
         foreach ($ddlQueries as $query) {
             try {
-                $this->orm->query($query);
+                $this->orm->exec($query);
                 assert(false, "Query '{$query}' debería haber sido bloqueada");
             } catch (VersaORMException $e) {
                 // Verificar que fue bloqueada por freeze, no por otro error
@@ -301,8 +305,8 @@ class RealDDLBlockingTest
         // Crear una tabla de prueba real
         try {
             $this->orm->schemaCreate('test_allowed_operations', [
-                'id' => ['type' => 'int', 'primary' => true, 'auto_increment' => true],
-                'test_column' => ['type' => 'varchar', 'length' => 50],
+                ['name' => 'id', 'type' => 'int', 'primary' => true, 'autoIncrement' => true],
+                ['name' => 'test_column', 'type' => 'varchar', 'length' => 50],
             ]);
             echo "   - createTable: ALLOWED ✓\n";
         } catch (Exception $e) {
@@ -317,7 +321,7 @@ class RealDDLBlockingTest
         // Intentar alterar la tabla
         try {
             $this->orm->schemaAlter('test_allowed_operations', [
-                'add_column' => ['new_test_col' => ['type' => 'varchar', 'length' => 100]],
+                'add' => [['name' => 'new_test_col', 'type' => 'varchar', 'length' => 100]],
             ]);
             echo "   - alterTable: ALLOWED ✓\n";
         } catch (Exception $e) {

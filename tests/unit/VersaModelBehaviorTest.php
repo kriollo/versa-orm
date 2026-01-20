@@ -11,11 +11,28 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
+if (!class_exists('VersaORM\Tests\Unit\TestModelBehavior')) {
+    class TestModelBehavior extends VersaModel
+    {
+        protected string $table = 'custom_table';
+
+        public function __construct(?string $tableName = null, ?VersaORM $orm = null)
+        {
+            parent::__construct($tableName ?? $this->table, $orm);
+        }
+
+        public static function tableName(): string
+        {
+            return 'custom_table';
+        }
+    }
+}
+
 class VersaModelBehaviorTest extends TestCase
 {
     public function testTableNameFromStaticProperty(): void
     {
-        static::assertSame('custom_table', TestModel::tableName());
+        static::assertSame('custom_table', TestModelBehavior::tableName());
     }
 
     public function testSetAndGetGlobalOrm(): void
@@ -31,7 +48,7 @@ class VersaModelBehaviorTest extends TestCase
         $orm = new VersaORM(['driver' => 'sqlite', 'database' => ':memory:']);
         VersaModel::setORM($orm);
 
-        $m = new TestModel('custom_table', $orm);
+        $m = new TestModelBehavior(null, $orm);
 
         $data = [
             'id' => 1,

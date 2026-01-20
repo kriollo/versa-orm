@@ -77,9 +77,9 @@ class PerformanceOptimizationTest extends TestCase
 
         // Verificar que los caches fueron limpiados
         $metricsAfter = PdoEngine::getMetrics();
-        static::assertEquals(0, $metricsAfter['cache_hits']);
-        static::assertEquals(0, $metricsAfter['cache_misses']);
-        static::assertEquals(0, $metricsAfter['queries']);
+        static::assertSame(0, $metricsAfter['cache_hits']);
+        static::assertSame(0, $metricsAfter['cache_misses']);
+        static::assertSame(0, $metricsAfter['queries']);
 
         // Verificar que los modelos aún funcionan después de limpiar
         $newUser = VersaModel::dispense('users');

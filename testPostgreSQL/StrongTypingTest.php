@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\PostgreSQL;
+
+use DateTime;
 use PHPUnit\Framework\TestCase;
 use VersaORM\VersaModel;
 use VersaORM\VersaORMException;

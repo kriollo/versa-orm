@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 // testPostgreSQL/bootstrap.php
+if (getenv('DB_ENGINE') && !in_array(getenv('DB_ENGINE'), ['postgresql', 'postgres'])) {
+    return;
+}
 
 // Cargar el autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';

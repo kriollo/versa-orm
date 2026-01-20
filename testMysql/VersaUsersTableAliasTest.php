@@ -12,6 +12,9 @@ use VersaORM\VersaORM;
  * Test para validar que 'versa_users' es un nombre de tabla válido con alias en MySQL.
  * Verifica que el ORM no rechace nombres de tabla que comienzan con prefijos específicos.
  */
+/**
+ * @group mysql
+ */
 class VersaUsersTableAliasTest extends TestCase
 {
     private VersaORM $orm;
@@ -78,7 +81,7 @@ class VersaUsersTableAliasTest extends TestCase
 
         static::assertIsArray($results);
         static::assertCount(2, $results);
-        static::assertEquals('John Doe', $results[0]['name'] ?? null);
+        static::assertSame('John Doe', $results[0]['name'] ?? null);
     }
 
     /**
@@ -121,7 +124,7 @@ class VersaUsersTableAliasTest extends TestCase
 
         static::assertIsArray($results);
         static::assertCount(1, $results);
-        static::assertEquals('John Doe', $results[0]['name'] ?? null);
+        static::assertSame('John Doe', $results[0]['name'] ?? null);
     }
 
     /**
@@ -136,7 +139,7 @@ class VersaUsersTableAliasTest extends TestCase
 
         static::assertIsArray($results);
         static::assertCount(1, $results);
-        static::assertEquals('jane@example.com', $results[0]['email'] ?? null);
+        static::assertSame('jane@example.com', $results[0]['email'] ?? null);
     }
 
     /**
@@ -146,7 +149,7 @@ class VersaUsersTableAliasTest extends TestCase
     {
         $count = $this->orm->table('versa_users as u')->count();
 
-        static::assertEquals(2, $count);
+        static::assertSame(2, $count);
     }
 
     /**
@@ -161,8 +164,8 @@ class VersaUsersTableAliasTest extends TestCase
 
         static::assertIsArray($results);
         static::assertCount(2, $results);
-        static::assertEquals('Jane Smith', $results[0]['name'] ?? null);
-        static::assertEquals('John Doe', $results[1]['name'] ?? null);
+        static::assertSame('Jane Smith', $results[0]['name'] ?? null);
+        static::assertSame('John Doe', $results[1]['name'] ?? null);
     }
 
     /**
@@ -182,7 +185,7 @@ class VersaUsersTableAliasTest extends TestCase
         static::assertGreaterThan(0, $id);
 
         $results = $this->orm->table('versa_users')->count();
-        static::assertEquals(3, $results);
+        static::assertSame(3, $results);
     }
 
     /**
@@ -202,6 +205,6 @@ class VersaUsersTableAliasTest extends TestCase
             ->where('email', '=', 'john@example.com')
             ->findOne();
 
-        static::assertEquals('John Updated', $result->name ?? null);
+        static::assertSame('John Updated', $result->name ?? null);
     }
 }

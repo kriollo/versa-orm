@@ -12,6 +12,9 @@ use VersaORM\VersaORMException;
  * Test unitario para validar la funcionalidad de validación y Mass Assignment
  * que implementa la Task 1.6.
  */
+/**
+ * @group postgresql
+ */
 class ValidationUnitTest extends TestCase
 {
     public function test_fillable_attributes_allow_mass_assignment(): void

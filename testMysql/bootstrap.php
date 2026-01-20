@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 // tests/bootstrap.php
+if (getenv('DB_ENGINE') && getenv('DB_ENGINE') !== 'mysql') {
+    return;
+}
 
 // Cargar el autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';

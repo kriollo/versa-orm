@@ -42,7 +42,7 @@ class UpsertOperationsTest extends TestCase
         $inserted = self::$orm->table('products')->where('sku', '=', 'UPSERT-NEW-001')->firstArray();
         static::assertNotNull($inserted);
         static::assertSame('Nuevo Producto Upsert', $inserted['name']);
-        static::assertEquals(299.99, (float) $inserted['price']);
+        static::assertSame(299.99, (float) $inserted['price']);
     }
 
     public function test_upsert_existing_record(): void
@@ -66,7 +66,7 @@ class UpsertOperationsTest extends TestCase
         $updated = self::$orm->table('products')->where('sku', '=', 'P001')->firstArray();
         static::assertNotNull($updated);
         static::assertSame('Laptop Actualizada', $updated['name']);
-        static::assertEquals(1299.99, (float) $updated['price']);
+        static::assertSame(1299.99, (float) $updated['price']);
         static::assertSame(25, $updated['stock']);
     }
 
@@ -255,7 +255,7 @@ class UpsertOperationsTest extends TestCase
         // Verificar actualización
         $updated = self::$orm->table('products')->where('sku', '=', 'P002')->firstArray();
         static::assertSame('Smartphone Actualizado', $updated['name']);
-        static::assertEquals(899.99, (float) $updated['price']);
+        static::assertSame(899.99, (float) $updated['price']);
     }
 
     // ======================================================================

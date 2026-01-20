@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\Relations\BelongsTo;
 use VersaORM\VersaModel;
 
-if (!class_exists('VersaORMStub')) {
-    class VersaORMStub extends \VersaORM\VersaORM
+if (!class_exists('VersaORMStubBelongsTo')) {
+    class VersaORMStubBelongsTo extends \VersaORM\VersaORM
     {
         public function __construct()
         {
@@ -22,8 +24,8 @@ if (!class_exists('VersaORMStub')) {
     }
 }
 
-if (!class_exists('TestQueryBuilder')) {
-    class TestQueryBuilder extends QueryBuilder
+if (!class_exists('TestQueryBuilderBelongsTo')) {
+    class TestQueryBuilderBelongsTo extends QueryBuilder
     {
         public function __construct()
         {
@@ -65,7 +67,7 @@ final class RelationsBelongsToSyncDetachTest extends TestCase
     public function testAddConstraintsUsesParentAttribute(): void
     {
         $orm = new VersaORMStub();
-        $qb = new TestQueryBuilder();
+        $qb = new TestQueryBuilderBelongsTo();
 
         $parent = new TestVersaModelForBelongs();
 

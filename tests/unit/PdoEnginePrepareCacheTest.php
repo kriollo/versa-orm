@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use VersaORM\SQL\PdoConnection;
 use VersaORM\SQL\PdoEngine;
 

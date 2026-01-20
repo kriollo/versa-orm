@@ -46,7 +46,7 @@ class ReplaceIntoTest extends TestCase
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-NEW-001')->firstArray();
         static::assertNotNull($inserted);
         static::assertSame('Producto Replace Nuevo', $inserted['name']);
-        static::assertEquals(199.99, (float) $inserted['price']);
+        static::assertSame(199.99, (float) $inserted['price']);
         static::assertSame('Producto creado con REPLACE INTO', $inserted['description']);
     }
 
@@ -83,7 +83,7 @@ class ReplaceIntoTest extends TestCase
         $replaced = self::$orm->table('products')->where('sku', '=', 'REPLACE-EXIST-001')->firstArray();
         static::assertNotNull($replaced);
         static::assertSame('Producto Reemplazado', $replaced['name']);
-        static::assertEquals(250.00, (float) $replaced['price']);
+        static::assertSame(250.00, (float) $replaced['price']);
         static::assertSame(25, $replaced['stock']);
 
         // La descripción debe ser NULL porque no se incluyó en el reemplazo
@@ -110,7 +110,7 @@ class ReplaceIntoTest extends TestCase
         // Verificar que todos los campos se guardaron
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-COMPLETE-001')->firstArray();
         static::assertSame('Producto Completo', $inserted['name']);
-        static::assertEquals(399.99, (float) $inserted['price']);
+        static::assertSame(399.99, (float) $inserted['price']);
         static::assertSame(50, $inserted['stock']);
         static::assertSame('Descripción completa del producto', $inserted['description']);
         static::assertSame('Electronics', $inserted['category']);
@@ -135,7 +135,7 @@ class ReplaceIntoTest extends TestCase
         // Verificar que los NULLs se manejaron correctamente
         $inserted = self::$orm->table('products')->where('sku', '=', 'REPLACE-NULL-001')->firstArray();
         static::assertSame('Producto con NULLs', $inserted['name']);
-        static::assertEquals(150.00, (float) $inserted['price']);
+        static::assertSame(150.00, (float) $inserted['price']);
         static::assertNull($inserted['description']);
         static::assertNull($inserted['category']);
     }
@@ -206,7 +206,7 @@ class ReplaceIntoTest extends TestCase
         // Verificar que UPSERT preservó los otros campos
         $afterUpsert = self::$orm->table('products')->where('sku', '=', 'COMPARE-001')->firstArray();
         static::assertSame('Producto Actualizado UPSERT', $afterUpsert['name']);
-        static::assertEquals(150.00, (float) $afterUpsert['price']);
+        static::assertSame(150.00, (float) $afterUpsert['price']);
         static::assertSame(10, $afterUpsert['stock']); // Preservado
         static::assertSame('Descripción inicial', $afterUpsert['description']); // Preservado
         static::assertSame('Categoría inicial', $afterUpsert['category']); // Preservado
@@ -223,7 +223,7 @@ class ReplaceIntoTest extends TestCase
         // Verificar que REPLACE INTO eliminó los campos no especificados
         $afterReplace = self::$orm->table('products')->where('sku', '=', 'COMPARE-001')->firstArray();
         static::assertSame('Producto Reemplazado REPLACE', $afterReplace['name']);
-        static::assertEquals(200.00, (float) $afterReplace['price']);
+        static::assertSame(200.00, (float) $afterReplace['price']);
         static::assertSame(0, $afterReplace['stock']); // Se resetea al valor por defecto (0), no NULL
         static::assertNull($afterReplace['description']); // Se perdió
         static::assertNull($afterReplace['category']); // Se perdió
@@ -363,6 +363,6 @@ class ReplaceIntoTest extends TestCase
         // Verificar que se guardó correctamente
         $saved = self::$orm->table('products')->where('sku', '=', 'REPLACE-MODEL-001')->firstArray();
         static::assertSame('Producto desde VersaModel', $saved['name']);
-        static::assertEquals(450.00, (float) $saved['price']);
+        static::assertSame(450.00, (float) $saved['price']);
     }
 }

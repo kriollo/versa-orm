@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace VersaORM\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\Relations\BelongsTo;
@@ -11,8 +13,8 @@ use VersaORM\Relations\HasOne;
 use VersaORM\VersaModel;
 
 // Test doubles: concrete subclasses to allow reflection to access methods like execute
-if (!class_exists('TestQueryBuilder')) {
-    class TestQueryBuilder extends QueryBuilder
+if (!class_exists('TestQueryBuilderRelations')) {
+    class TestQueryBuilderRelations extends QueryBuilder
     {
         public function __construct() {}
 
@@ -142,7 +144,7 @@ final class RelationsTest extends TestCase
 
     private function makeQueryBuilderStub(): QueryBuilder
     {
-        return new TestQueryBuilder();
+        return new TestQueryBuilderRelations();
     }
 
     private function makeModelStub(array $attributes = [], string $keyName = 'id'): VersaModel
