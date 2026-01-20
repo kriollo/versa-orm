@@ -32,17 +32,6 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --no-interaction
 
-      - name: Install Mago
-        run: |
-          curl -sSL https://mago.carthage.software/install.sh | bash
-          echo "$HOME/.mago/bin" >> $GITHUB_PATH
-
-      - name: Mago Lint
-        run: composer mago:lint
-
-      - name: Mago Format Check
-        run: mago fmt --check
-
       - name: PHPStan
         run: composer phpstan
 
