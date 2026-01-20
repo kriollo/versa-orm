@@ -1,8 +1,7 @@
 parameters:
-    level: 8
+    level: 9
     paths:
         - src
-        - example
     excludePaths:
         - src/binary/*
         - vendor/*
