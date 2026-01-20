@@ -34,11 +34,11 @@ class SchemaValidationTest extends TestCase
     {
         $this->orm = new VersaORM([
             'driver' => 'mysql',
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'port' => (int) ($_ENV['DB_PORT'] ?? 3306),
-            'database' => $_ENV['DB_NAME'] ?? 'versaorm_test',
-            'username' => $_ENV['DB_USER'] ?? 'root',
-            'password' => $_ENV['DB_PASS'] ?? '',
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'port' => (int) (getenv('DB_PORT') ?: 3306),
+            'database' => getenv('DB_NAME') ?: 'versaorm_test',
+            'username' => getenv('DB_USER') ?: 'local',
+            'password' => getenv('DB_PASS') ?: 'local',
             'charset' => 'utf8mb4',
             'debug_mode' => true,
         ]);

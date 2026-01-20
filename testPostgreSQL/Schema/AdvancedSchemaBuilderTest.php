@@ -27,12 +27,12 @@ class AdvancedSchemaBuilderTest extends TestCase
 
         $this->orm = new VersaORM([
             'driver' => 'postgresql',
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'database' => $_ENV['DB_NAME'] ?? 'versaorm_test',
-            'username' => $_ENV['DB_USER'] ?? 'local',
-            'password' => $_ENV['DB_PASS'] ?? 'local',
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'database' => getenv('DB_NAME') ?: 'versaorm_test',
+            'username' => getenv('DB_USER') ?: 'local',
+            'password' => getenv('DB_PASS') ?: 'local',
             'charset' => 'utf8',
-            'port' => $_ENV['DB_PORT'] ?? 5432,
+            'port' => (int) (getenv('DB_PORT') ?: 5432),
             'debug' => true,
             'freeze' => false,
         ]);

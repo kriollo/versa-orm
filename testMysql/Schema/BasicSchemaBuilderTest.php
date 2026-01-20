@@ -28,10 +28,10 @@ class BasicSchemaBuilderTest extends TestCase
         // Crear una instancia ORM para las pruebas
         $this->orm = new VersaORM([
             'driver' => 'mysql',
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'database' => $_ENV['DB_NAME'] ?? 'versaorm_test',
-            'username' => $_ENV['DB_USER'] ?? 'root',
-            'password' => $_ENV['DB_PASS'] ?? '',
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'database' => getenv('DB_NAME') ?: 'versaorm_test',
+            'username' => getenv('DB_USER') ?: 'local',
+            'password' => getenv('DB_PASS') ?: 'local',
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'debug' => true,
