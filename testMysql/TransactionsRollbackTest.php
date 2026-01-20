@@ -22,11 +22,11 @@ class TransactionsRollbackTest extends TestCase
         $config = [
             'engine' => 'pdo',
             'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => 3306,
-            'database' => 'versaorm_test',
-            'username' => 'local',
-            'password' => 'local',
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'port' => (int) (getenv('DB_PORT') ?: 3306),
+            'database' => getenv('DB_NAME') ?: 'versaorm_test',
+            'username' => getenv('DB_USER') ?: 'local',
+            'password' => getenv('DB_PASS') ?: 'local',
         ];
         $this->orm = new VersaORM($config);
 

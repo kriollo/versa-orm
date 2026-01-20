@@ -30,11 +30,11 @@ class PostgreSQLTestModel extends VersaModel
 // Configuración de base de datos para pruebas PostgreSQL
 $config = [
     'driver' => 'pgsql',
-    'host' => 'localhost',
-    'username' => 'test_user',
-    'password' => 'test_pass',
-    'database' => 'test_db',
-    'port' => 5432,
+    'host' => getenv('DB_HOST') ?: 'localhost',
+    'username' => getenv('DB_USER') ?: 'local',
+    'password' => getenv('DB_PASS') ?: 'local',
+    'database' => getenv('DB_NAME') ?: 'versaorm_test',
+    'port' => (int) (getenv('DB_PORT') ?: 5432),
     'debug' => true,
 ];
 

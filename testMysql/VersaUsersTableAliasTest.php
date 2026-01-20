@@ -23,10 +23,11 @@ class VersaUsersTableAliasTest extends TestCase
     {
         $this->orm = new VersaORM([
             'driver' => 'mysql',
-            'host' => 'localhost',
-            'database' => 'versaorm_test',
-            'username' => 'root',
-            'password' => '',
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'port' => (int) (getenv('DB_PORT') ?: 3306),
+            'database' => getenv('DB_NAME') ?: 'versaorm_test',
+            'username' => getenv('DB_USER') ?: 'local',
+            'password' => getenv('DB_PASS') ?: 'local',
             'debug' => false,
         ]);
 

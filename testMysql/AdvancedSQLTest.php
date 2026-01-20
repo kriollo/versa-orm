@@ -35,12 +35,12 @@ class AdvancedSQLTest extends TestCase
         // Configuración directa (sin bootstrap global que interfiere)
         $config = [
             'driver' => 'mysql',
-            'database' => 'versaorm_test',
+            'database' => getenv('DB_NAME') ?: 'versaorm_test',
             'debug' => true,
-            'host' => 'localhost',
-            'port' => 3306,
-            'username' => 'local',
-            'password' => 'local',
+            'host' => getenv('DB_HOST') ?: 'localhost',
+            'port' => (int) (getenv('DB_PORT') ?: 3306),
+            'username' => getenv('DB_USER') ?: 'local',
+            'password' => getenv('DB_PASS') ?: 'local',
         ];
 
         $this->orm = new VersaORM($config);
