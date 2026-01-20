@@ -16,7 +16,7 @@ $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($artifactsBa
 foreach ($rii as $file) {
     if ($file->isDir()) continue;
     $filename = $file->getFilename();
-    if (preg_match('/^junit-php(\d+(?:\.\d+)*)\.xml$/', $filename, $m)) {
+    if (preg_match('/^junit-php(\d+(?:\.\d+)*).*\.xml$/', $filename, $m)) {
         $version = $m[1];
         $path = $file->getPathname();
         $xml = @simplexml_load_file($path);
@@ -25,15 +25,30 @@ foreach ($rii as $file) {
             $failures = (int)$xml['failures'];
             $errors = (int)$xml['errors'];
             $time = (float)$xml['time'];
-            $successRate = $tests > 0 ? (($tests - $failures - $errors) / $tests) * 100 : 0;
-            $results[$version] = [
-                'tests' => $tests,
-                'failures' => $failures,
-                'errors' => $errors,
-                'time' => $time,
-                'success_rate' => $successRate,
-                'path' => $path,
-            ];
+            
+            if (!isset($results[$version])) {
+                $results[$version] = [
+                    'tests' => 0,
+                    'failures' => 0,
+                    'errors' => 0,
+                    'time' => 0,
+                    'success_rate' => 0,
+                    'paths' => [],
+                ];
+            }
+            
+            $results[$version]['tests'] += $tests;
+            $results[$version]['failures'] += $failures;
+            $results[$version]['errors'] += $errors;
+            $results[$version]['time'] += $time;
+            $results[$version]['paths'][] = $path;
+            
+            // Recalculate success rate for the version
+            $vTests = $results[$version]['tests'];
+            $vFails = $results[$version]['failures'];
+            $vErrs = $results[$version]['errors'];
+            $results[$version]['success_rate'] = $vTests > 0 ? (($vTests - $vFails - $vErrs) / $vTests) * 100 : 0;
+            
         } else {
             // parse error reading xml
             fwrite(STDERR, "Failed to parse XML at: $path\n");
