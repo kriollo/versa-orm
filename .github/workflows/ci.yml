@@ -68,13 +68,16 @@ jobs:
             pg_isready -h 127.0.0.1 -p 5432 -U postgres >/dev/null 2>&1 && break || sleep 1
           done
 
-      - name: Configure DB Users
+      - name: Configure DB Users and Databases
         run: |
-          # MySQL User
-          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE USER IF NOT EXISTS 'local'@'%' IDENTIFIED BY 'local'; GRANT ALL PRIVILEGES ON test.* TO 'local'@'%'; FLUSH PRIVILEGES;"
-          # Postgres Role
+          # MySQL User and Database
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS versaorm_test;"
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE USER IF NOT EXISTS 'local'@'%' IDENTIFIED BY 'local'; GRANT ALL PRIVILEGES ON test.* TO 'local'@'%'; GRANT ALL PRIVILEGES ON versaorm_test.* TO 'local'@'%'; FLUSH PRIVILEGES;"
+          # Postgres Role and Database
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN CREATE ROLE local WITH LOGIN PASSWORD 'local'; END IF; END \$\$;"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "SELECT 'CREATE DATABASE versaorm_test' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'versaorm_test')\gexec"
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "GRANT ALL PRIVILEGES ON DATABASE test TO local;"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "GRANT ALL PRIVILEGES ON DATABASE versaorm_test TO local;"
 
       - name: Create artifacts directory
         run: mkdir -p build/logs/cov-dir tests/reports/sqlite tests/reports/mysql tests/reports/postgresql
@@ -86,7 +89,7 @@ jobs:
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_NAME: test
+          DB_NAME: versaorm_test
           DB_USER: local
           DB_PASS: local
         run: vendor/bin/phpunit -c phpunit-mysql.xml --colors=always --coverage-php build/logs/cov-dir/mysql.cov
@@ -95,7 +98,7 @@ jobs:
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-          DB_NAME: test
+          DB_NAME: versaorm_test
           DB_USER: local
           DB_PASS: local
         run: vendor/bin/phpunit -c phpunit-postgresql.xml --colors=always --coverage-php build/logs/cov-dir/postgres.cov
