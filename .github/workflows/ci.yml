@@ -75,7 +75,7 @@ jobs:
           mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE USER IF NOT EXISTS 'local'@'%' IDENTIFIED BY 'local'; GRANT ALL PRIVILEGES ON test.* TO 'local'@'%'; GRANT ALL PRIVILEGES ON versaorm_test.* TO 'local'@'%'; FLUSH PRIVILEGES;"
           # Postgres Role and Database
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN CREATE ROLE local WITH LOGIN PASSWORD 'local'; END IF; END \$\$;"
-          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "SELECT 'CREATE DATABASE versaorm_test' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'versaorm_test')\gexec"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "CREATE DATABASE versaorm_test" 2>/dev/null || true
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "GRANT ALL PRIVILEGES ON DATABASE test TO local;"
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "GRANT ALL PRIVILEGES ON DATABASE versaorm_test TO local;"
 
