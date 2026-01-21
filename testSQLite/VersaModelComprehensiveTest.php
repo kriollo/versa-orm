@@ -80,7 +80,7 @@ class VersaModelComprehensiveTest extends TestCase
         ];
 
         $model = new VersaModel('test_models', $config);
-        static::assertEquals('test_models', $model->getTable());
+        static::assertSame('test_models', $model->getTable());
     }
 
     /** Test: __set y __get básicos */
@@ -90,8 +90,8 @@ class VersaModelComprehensiveTest extends TestCase
         $model->name = 'John Doe';
         $model->age = 30;
 
-        static::assertEquals('John Doe', $model->name);
-        static::assertEquals(30, $model->age);
+        static::assertSame('John Doe', $model->name);
+        static::assertSame(30, $model->age);
     }
 
     /** Test: __isset y __unset */
@@ -136,10 +136,10 @@ class VersaModelComprehensiveTest extends TestCase
         $model = VersaModel::dispense('test_models');
         $loaded = $model->loadInstance($data);
 
-        static::assertEquals(1, $loaded->id);
-        static::assertEquals('Alice', $loaded->name);
-        static::assertEquals('alice@example.com', $loaded->email);
-        static::assertEquals(25, $loaded->age);
+        static::assertSame(1, $loaded->id);
+        static::assertSame('Alice', $loaded->name);
+        static::assertSame('alice@example.com', $loaded->email);
+        static::assertSame(25, $loaded->age);
     }
 
     /** Test: loadInstance con primary key personalizada */
@@ -153,7 +153,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model = VersaModel::dispense('test_models');
         $loaded = $model->loadInstance($data, 'user_id');
 
-        static::assertEquals(99, $loaded->user_id);
+        static::assertSame(99, $loaded->user_id);
     }
 
     /** Test: fill con fillable definido */
@@ -170,8 +170,8 @@ class VersaModelComprehensiveTest extends TestCase
             'role' => 'admin', // No debe asignarse
         ]);
 
-        static::assertEquals('John', $model->name);
-        static::assertEquals('john@example.com', $model->email);
+        static::assertSame('John', $model->name);
+        static::assertSame('john@example.com', $model->email);
         static::assertNull($model->password);
         static::assertNull($model->role);
     }
@@ -190,8 +190,8 @@ class VersaModelComprehensiveTest extends TestCase
             'password' => 'secret', // No debe asignarse
         ]);
 
-        static::assertEquals('Jane', $model->name);
-        static::assertEquals('jane@example.com', $model->email);
+        static::assertSame('Jane', $model->name);
+        static::assertSame('jane@example.com', $model->email);
         static::assertNull($model->password);
     }
 
@@ -219,8 +219,8 @@ class VersaModelComprehensiveTest extends TestCase
             'name' => 'Updated',
         ]);
 
-        static::assertEquals('Updated', $model->name);
-        static::assertEquals('original@example.com', $model->email); // No cambió
+        static::assertSame('Updated', $model->name);
+        static::assertSame('original@example.com', $model->email); // No cambió
     }
 
     /** Test: getAttribute retorna valor correcto */
@@ -229,7 +229,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model = VersaModel::dispense('test_models');
         $model->name = 'Test';
 
-        static::assertEquals('Test', $model->getAttribute('name'));
+        static::assertSame('Test', $model->getAttribute('name'));
         static::assertNull($model->getAttribute('nonExistent'));
     }
 
@@ -237,14 +237,14 @@ class VersaModelComprehensiveTest extends TestCase
     public function testGetForeignKey(): void
     {
         $model = VersaModel::dispense('test_models');
-        static::assertEquals('test_models_id', $model->getForeignKey());
+        static::assertSame('test_models_id', $model->getForeignKey());
     }
 
     /** Test: getKeyName retorna 'id' por defecto */
     public function testGetKeyName(): void
     {
         $model = VersaModel::dispense('test_models');
-        static::assertEquals('id', $model->getKeyName());
+        static::assertSame('id', $model->getKeyName());
     }
 
     /** Test: newQuery retorna QueryBuilder */
@@ -362,7 +362,7 @@ class VersaModelComprehensiveTest extends TestCase
         // Fresh debe recargar desde BD
         $freshModel = $model->fresh();
 
-        static::assertEquals('Original Name', $freshModel->name);
+        static::assertSame('Original Name', $freshModel->name);
     }
 
     /** Test: trash elimina registro */
@@ -384,7 +384,7 @@ class VersaModelComprehensiveTest extends TestCase
             ->table('test_models')
             ->where('id', '=', $id)
             ->count();
-        static::assertEquals(0, $count);
+        static::assertSame(0, $count);
     }
 
     /** Test: store inserta nuevo registro */
@@ -404,7 +404,7 @@ class VersaModelComprehensiveTest extends TestCase
             ->table('test_models')
             ->where('id', '=', $id)
             ->first();
-        static::assertEquals('New User', $record['name']);
+        static::assertSame('New User', $record['name']);
     }
 
     /** Test: store actualiza registro existente */
@@ -428,7 +428,7 @@ class VersaModelComprehensiveTest extends TestCase
             ->table('test_models')
             ->where('id', '=', $id)
             ->first();
-        static::assertEquals('Updated', $record['name']);
+        static::assertSame('Updated', $record['name']);
     }
 
     /** Test: storeAndGetId retorna ID después de insertar */
@@ -467,7 +467,7 @@ class VersaModelComprehensiveTest extends TestCase
     public function testTableNameInference(): void
     {
         $tableName = VersaModel::tableName();
-        static::assertEquals('versa_models', $tableName);
+        static::assertSame('versa_models', $tableName);
     }
 
     /** Test: dispenseInstance crea nueva instancia */
@@ -477,7 +477,7 @@ class VersaModelComprehensiveTest extends TestCase
         $newInstance = $model->dispenseInstance('posts');
 
         static::assertInstanceOf(VersaModel::class, $newInstance);
-        static::assertEquals('posts', $newInstance->getTable());
+        static::assertSame('posts', $newInstance->getTable());
     }
 
     /** Test: castToPhpType con JSON */
@@ -496,8 +496,8 @@ class VersaModelComprehensiveTest extends TestCase
         $result = $model->castToPhpType('metadata', $jsonString);
 
         static::assertIsArray($result);
-        static::assertEquals('value', $result['key']);
-        static::assertEquals(123, $result['number']);
+        static::assertSame('value', $result['key']);
+        static::assertSame(123, $result['number']);
     }
 
     /** Test: castToPhpType con datetime */
@@ -633,7 +633,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model1->name = 'First';
         $result1 = $model1->upsert(['email'], ['name']);
 
-        static::assertEquals('inserted', $result1['action']);
+        static::assertSame('inserted', $result1['action']);
 
         // Segundo upsert debe actualizar
         $model2 = VersaModel::dispense('test_models');
@@ -641,7 +641,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model2->name = 'Updated';
         $result2 = $model2->upsert(['email'], ['name']);
 
-        static::assertEquals('updated', $result2['action']);
+        static::assertSame('updated', $result2['action']);
 
         // Verificar que se actualizó
         $record = $this->orm
@@ -649,7 +649,7 @@ class VersaModelComprehensiveTest extends TestCase
             ->where('email', '=', 'unique@example.com')
             ->first();
 
-        static::assertEquals('Updated', $record['name']);
+        static::assertSame('Updated', $record['name']);
     }
 
     /** Test: save detecta insert vs update automáticamente */
@@ -661,7 +661,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model1->email = 'new@example.com';
         $result1 = $model1->save();
 
-        static::assertEquals('inserted', $result1['action']);
+        static::assertSame('inserted', $result1['action']);
 
         // Con ID = UPDATE
         $model2 = VersaModel::dispense('test_models');
@@ -669,7 +669,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model2->name = 'Updated Record';
         $result2 = $model2->save();
 
-        static::assertEquals('updated', $result2['action']);
+        static::assertSame('updated', $result2['action']);
     }
 
     /** Test: convertValueByTypeMapping procesa correctamente */
@@ -710,7 +710,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model1->name = 'Smart User';
         $result1 = $model1->smartUpsert();
 
-        static::assertEquals('inserted', $result1['action']);
+        static::assertSame('inserted', $result1['action']);
 
         // Segunda inserción debe actualizar (email es unique)
         $model2 = VersaModel::dispense('test_models');
@@ -718,7 +718,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model2->name = 'Smart User Updated';
         $result2 = $model2->smartUpsert();
 
-        static::assertEquals('updated', $result2['action']);
+        static::assertSame('updated', $result2['action']);
     }
 
     /** Test: insertOrUpdate funciona correctamente */

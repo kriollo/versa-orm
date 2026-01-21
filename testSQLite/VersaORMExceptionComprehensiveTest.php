@@ -28,13 +28,13 @@ class VersaORMExceptionComprehensiveTest extends TestCase
             new Exception('Previous exception'),
         );
 
-        static::assertEquals('Test error message', $exception->getMessage());
-        static::assertEquals('TEST_ERROR', $exception->getErrorCode());
-        static::assertEquals('SELECT * FROM users WHERE id = ?', $exception->getQuery());
+        static::assertSame('Test error message', $exception->getMessage());
+        static::assertSame('TEST_ERROR', $exception->getErrorCode());
+        static::assertSame('SELECT * FROM users WHERE id = ?', $exception->getQuery());
         static::assertEquals([1], $exception->getBindings());
         static::assertEquals(['detail' => 'Some detail'], $exception->getErrorDetails());
-        static::assertEquals('23000', $exception->getSqlState());
-        static::assertEquals(500, $exception->getCode());
+        static::assertSame('23000', $exception->getSqlState());
+        static::assertSame(500, $exception->getCode());
         static::assertInstanceOf(Exception::class, $exception->getPrevious());
     }
 
@@ -43,8 +43,8 @@ class VersaORMExceptionComprehensiveTest extends TestCase
     {
         $exception = new VersaORMException('Simple error');
 
-        static::assertEquals('Simple error', $exception->getMessage());
-        static::assertEquals('UNKNOWN_ERROR', $exception->getErrorCode());
+        static::assertSame('Simple error', $exception->getMessage());
+        static::assertSame('UNKNOWN_ERROR', $exception->getErrorCode());
         static::assertNull($exception->getQuery());
         static::assertEquals([], $exception->getBindings());
         static::assertEquals([], $exception->getErrorDetails());
@@ -61,7 +61,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
             ['John', 1],
         );
 
-        static::assertEquals('UPDATE users SET name = ? WHERE id = ?', $exception->getQuery());
+        static::assertSame('UPDATE users SET name = ? WHERE id = ?', $exception->getQuery());
     }
 
     /** Test: getQuery retorna null cuando no hay query */
@@ -99,7 +99,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
     {
         $exception = new VersaORMException('Custom error', 'CUSTOM_CODE_123');
 
-        static::assertEquals('CUSTOM_CODE_123', $exception->getErrorCode());
+        static::assertSame('CUSTOM_CODE_123', $exception->getErrorCode());
     }
 
     /** Test: getErrorCode retorna UNKNOWN_ERROR por defecto */
@@ -107,7 +107,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
     {
         $exception = new VersaORMException('Default error');
 
-        static::assertEquals('UNKNOWN_ERROR', $exception->getErrorCode());
+        static::assertSame('UNKNOWN_ERROR', $exception->getErrorCode());
     }
 
     /** Test: getErrorDetails retorna detalles de error */
@@ -138,7 +138,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
     {
         $exception = new VersaORMException('SQL state error', 'SQL_ERROR', null, [], [], '23000'); // Integrity constraint violation
 
-        static::assertEquals('23000', $exception->getSqlState());
+        static::assertSame('23000', $exception->getSqlState());
     }
 
     /** Test: getSqlState retorna null cuando no hay SQL state */
@@ -282,7 +282,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
         $exception = new VersaORMException('Driver test');
         $exception->withDriver('sqlite');
 
-        static::assertEquals('sqlite', $exception->getDriver());
+        static::assertSame('sqlite', $exception->getDriver());
     }
 
     /** Test: getDriver retorna null cuando no está configurado */
@@ -299,7 +299,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
         $exception = new VersaORMException('Origin test');
         $exception->withOrigin('QueryBuilder::where');
 
-        static::assertEquals('QueryBuilder::where', $exception->getOriginMethod());
+        static::assertSame('QueryBuilder::where', $exception->getOriginMethod());
     }
 
     /** Test: getOriginMethod retorna null cuando no está configurado */
@@ -320,9 +320,9 @@ class VersaORMExceptionComprehensiveTest extends TestCase
 
         $details = $exception->getErrorDetails();
 
-        static::assertEquals('should override', $details['original']); // New overrides
-        static::assertEquals('detail', $details['new']); // New added
-        static::assertEquals('this', $details['keep']); // Keep preserved
+        static::assertSame('should override', $details['original']); // New overrides
+        static::assertSame('detail', $details['new']); // New added
+        static::assertSame('this', $details['keep']); // Keep preserved
     }
 
     /** Test: toLogArray retorna array completo */
@@ -355,11 +355,11 @@ class VersaORMExceptionComprehensiveTest extends TestCase
         static::assertArrayHasKey('details', $logArray);
         static::assertArrayHasKey('trace', $logArray);
 
-        static::assertEquals('Log test', $logArray['message']);
-        static::assertEquals('LOG_ERROR', $logArray['error_code']);
-        static::assertEquals('42000', $logArray['sql_state']);
-        static::assertEquals('mysql', $logArray['driver']);
-        static::assertEquals('TestMethod', $logArray['origin_method']);
+        static::assertSame('Log test', $logArray['message']);
+        static::assertSame('LOG_ERROR', $logArray['error_code']);
+        static::assertSame('42000', $logArray['sql_state']);
+        static::assertSame('mysql', $logArray['driver']);
+        static::assertSame('TestMethod', $logArray['origin_method']);
     }
 
     /** Test: toLogArray incluye previous exception */
@@ -371,9 +371,9 @@ class VersaORMExceptionComprehensiveTest extends TestCase
         $logArray = $exception->toLogArray();
 
         static::assertIsArray($logArray['previous']);
-        static::assertEquals('Exception', $logArray['previous']['class']);
-        static::assertEquals('Previous error', $logArray['previous']['message']);
-        static::assertEquals(123, $logArray['previous']['code']);
+        static::assertSame('Exception', $logArray['previous']['class']);
+        static::assertSame('Previous error', $logArray['previous']['message']);
+        static::assertSame(123, $logArray['previous']['code']);
     }
 
     /** Test: toLogArray con trace */
@@ -410,7 +410,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
         $exception = new VersaORMException('Wrapped error', 'WRAPPED', null, [], [], null, 0, $previous);
 
         static::assertSame($previous, $exception->getPrevious());
-        static::assertEquals('Original error', $exception->getPrevious()->getMessage());
+        static::assertSame('Original error', $exception->getPrevious()->getMessage());
     }
 
     /** Test: JSON encoding de bindings en __toString */
@@ -463,7 +463,7 @@ class VersaORMExceptionComprehensiveTest extends TestCase
         $result = $exception->withDriver('mysql')->withOrigin('QueryBuilder::insert');
 
         static::assertSame($exception, $result);
-        static::assertEquals('mysql', $exception->getDriver());
-        static::assertEquals('QueryBuilder::insert', $exception->getOriginMethod());
+        static::assertSame('mysql', $exception->getDriver());
+        static::assertSame('QueryBuilder::insert', $exception->getOriginMethod());
     }
 }
