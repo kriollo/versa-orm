@@ -2,7 +2,7 @@
 
 **ORM sencillo y seguro para PHP – minimiza SQL manual y acelera tu desarrollo.**
 
-[![CI](https://github.com/kriollo/versa-orm/actions/workflows/phpunit.yml/badge.svg)](https://github.com/kriollo/versa-orm/actions/workflows/phpunit.yml)
+[![CI](https://github.com/kriollo/versa-orm/actions/workflows/ci.yml/badge.svg)](https://github.com/kriollo/versa-orm/actions/workflows/ci.yml)
 [![Codecov](https://codecov.io/gh/kriollo/versa-orm/branch/main/graph/badge.svg)](https://codecov.io/gh/kriollo/versa-orm)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kriollo/versa-orm)
 [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)](#)

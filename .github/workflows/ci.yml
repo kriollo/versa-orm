@@ -104,8 +104,7 @@ jobs:
         if: always()
         run: |
           if [ -d "build/logs/cov-dir" ] && [ "$(ls -A build/logs/cov-dir)" ]; then
-            wget -q -O phpcov.phar https://phar.phpunit.de/phpcov.phar
-            php phpcov.phar merge --clover build/logs/clover.xml build/logs/cov-dir
+            vendor/bin/phpcov merge --clover build/logs/clover.xml build/logs/cov-dir
           else
             echo "No coverage files found in build/logs/cov-dir, skipping merge."
           fi
@@ -175,7 +174,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = 'consolidated-reports/matrix-summary.json';
-            
+
             if (fs.existsSync(path)) {
               const results = JSON.parse(fs.readFileSync(path, 'utf8'));
               let comment = '## 🧪 PHP Compatibility & DB Matrix Results\n\n';
@@ -187,18 +186,18 @@ jobs:
                 const status = (data.failures === 0 && data.errors === 0) ? '✅' : '❌';
                 comment += `| ${status} PHP ${version} | ${data.tests} | ${data.failures} | ${data.errors} | ${successRate}% | ${data.time.toFixed(2)}s |\n`;
               }
-              
+
               const sm = results.summary;
               const overallStatus = (sm.total_failures === 0 && sm.total_errors === 0) ? '✅' : '❌';
               comment += '|-------------|-------------|----------|--------|--------------|------|\n';
               comment += `| ${overallStatus} **TOTAL** | ${sm.total_tests} | ${sm.total_failures} | ${sm.total_errors} | ${sm.overall_success_rate.toFixed(1)}% | ${sm.total_time.toFixed(2)}s |\n\n`;
-              
+
               if (sm.total_failures === 0 && sm.total_errors === 0) {
                 comment += '🎉 All tests passed across all supported PHP versions!\n';
               } else {
                 comment += '⚠️ Some tests failed. Please check the detailed logs.\n';
               }
-              
+
               comment += `\n*Manual artifacts are available in the [Actions tab](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})*`;
 
               github.rest.issues.createComment({
