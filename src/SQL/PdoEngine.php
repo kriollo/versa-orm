@@ -2282,7 +2282,7 @@ class PdoEngine
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
-            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $rows */
+            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $result */
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 
@@ -2292,11 +2292,11 @@ class PdoEngine
                 'PRAGMA foreign_key_list(' . $this->dialect->quoteIdentifier($table) . ')',
             );
             $stmt->execute();
-            /** @var list<array{table?:string,from?:string,to?:string,on_delete?:string,on_update?:string}> $rows */
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
+            /** @var list<array{table?:string,from?:string,to?:string,on_delete?:string,on_update?:string}> $result */
             $out = [];
 
-            foreach ($rows as $r) {
+            foreach ($result as $r) {
                 $out[] = [
                     'name' => ($r['from'] ?? '') . '_' . ($r['table'] ?? '') . '_fk',
                     'column' => $r['from'] ?? '',
@@ -2340,7 +2340,7 @@ class PdoEngine
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
-            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $rows */
+            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $result */
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 

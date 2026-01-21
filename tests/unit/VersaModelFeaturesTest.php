@@ -44,8 +44,9 @@ class VersaModelFeaturesTest extends TestCase
         $model = new FeaturesTestModel($this->orm);
         static::assertSame('test_table', $model->tableName());
 
-        $model2 = new InferredModel('inferredmodels', $this->orm);
-        static::assertSame('inferredmodels', $model2->tableName());
+        // InferredModel -> inferred_models (snake_case + plural)
+        $model2 = new InferredModel('inferred_models', $this->orm);
+        static::assertSame('inferred_models', $model2->tableName());
     }
 
     public function test_event_listeners(): void

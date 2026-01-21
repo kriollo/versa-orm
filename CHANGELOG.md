@@ -1,3 +1,55 @@
+## [1.8.3] - 2026-01-21
+
+### 🔧 Correcciones de Tipado Estático (PHPStan Level 9)
+
+**VersaModel.php - Type Safety Mejorado:**
+- **Línea 209**: Corrección de tipado en `tableName()`
+  - `preg_replace()` puede retornar `string|null`, ahora se valida antes de `strtolower()`
+  - Fallback seguro a `$class` si `preg_replace()` retorna null
+- **Líneas 424-436**: Validación de tipos antes de casting en `convertValueByTypeMapping()`
+  - `integer/int`: Validación con `is_numeric()`, `is_string()`, `is_bool()` antes de cast
+  - `float/double/decimal`: Misma validación antes de cast a float
+  - `string`: Validación con `is_scalar()` o método `__toString()` antes de cast
+  - Previene warnings de "Cannot cast mixed to int/float/string"
+- **Línea 1006**: Validación explícita de tipo en `getUniqueKeys()`
+  - `$config['driver']` se valida con `is_string()` antes de usar `strtolower()`
+  - Previene "Cannot cast mixed to string"
+- **Línea 1014**: Comparación estricta en detección de índices únicos
+  - Cambiado de `$index['unique'] == 1` a `$index['unique'] === 1`
+  - Agregada validación `is_string($index['name'])` antes de usar la variable
+- **Línea 1060**: Tipo de retorno array clarificado
+  - Agregado `array_values()` para garantizar array indexado
+  - PHPDoc explícito `@var array<string>` para el resultado
+
+**PdoEngine.php - Corrección de PHPDoc:**
+- **Líneas 2286, 2293, 2344**: Variables PHPDoc corregidas en `fetchForeignKeys()`
+  - Error: PHPDoc documentaba variable `$rows` que no existía
+  - Corrección: Asignar resultado a variable `$result` antes de documentar
+  - PHPDoc ahora coincide con variable real: `@var list<array{...}> $result`
+  - Afecta a consultas de foreign keys en MySQL, SQLite y PostgreSQL
+
+**HasStrongTyping.php - Manejo de Booleanos PostgreSQL:**
+- Soporte para formato nativo de PostgreSQL (`'t'` / `'f'`)
+- Edge cases corregidos: strings no reconocidos retornan `false` en lugar de usar `(bool)` cast
+- Agregado `''` (string vacío) a valores que retornan false
+
+### ✅ Validación de Calidad
+
+- **PHPStan Level 9**: ✅ 0 errores (todas las correcciones de tipado validadas)
+- **SQLite Tests**: ✅ 865 tests, 2248 assertions (0 errores, 0 fallos)
+- **PostgreSQL Tests**: ✅ 558 tests, 1609 assertions (0 errores, 0 fallos)
+- **Unit Tests**: ✅ 498 tests, 1273 assertions (0 errores, 0 fallos)
+- **Total**: ✅ 1921 tests pasando sin errores
+
+### 🎯 Impacto
+
+- **Robustez mejorada**: Prevención de errores de tipo en runtime
+- **IntelliSense mejorado**: IDEs pueden inferir tipos correctamente
+- **Mantenibilidad**: Código más predecible y fácil de mantener
+- **Sin breaking changes**: Todas las correcciones son internas y compatibles hacia atrás
+
+---
+
 ## [1.8.2] - 2026-01-21
 
 ### 🔧 SchemaBuilder: Compatibilidad Multi-DB Mejorada

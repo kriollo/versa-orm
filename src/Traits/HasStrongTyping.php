@@ -509,7 +509,23 @@ trait HasStrongTyping
             }
 
             if (is_string($v)) {
-                return in_array(strtolower($v), ['1', 'true', 'yes', 'on'], true);
+                $lower = strtolower($v);
+                // PostgreSQL usa 't' y 'f' para booleanos
+                if ($lower === 't' || $lower === 'true' || $lower === '1' || $lower === 'yes' || $lower === 'on') {
+                    return true;
+                }
+                if (
+                    $lower === 'f'
+                    || $lower === 'false'
+                    || $lower === '0'
+                    || $lower === 'no'
+                    || $lower === 'off'
+                    || $lower === ''
+                ) {
+                    return false;
+                }
+                // Para cadenas no reconocidas, retornar false en lugar de hacer cast
+                return false;
             }
 
             return (bool) $v;

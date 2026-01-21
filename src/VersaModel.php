@@ -205,7 +205,9 @@ class VersaModel implements TypedModelInterface
             return $vars['table'];
         }
         $class = (new ReflectionClass($cls))->getShortName();
-        $table = strtolower($class);
+        // Convertir CamelCase a snake_case
+        $snakeCased = preg_replace('/(?<!^)[A-Z]/', '_$0', $class);
+        $table = strtolower($snakeCased ?? $class);
         if (str_ends_with($table, 'y')) {
             $table = substr($table, 0, -1) . 'ies';
         } else {
@@ -420,6 +422,27 @@ class VersaModel implements TypedModelInterface
         }
 
         switch ($type) {
+            case 'integer':
+            case 'int':
+                if (is_numeric($value) || is_string($value) || is_bool($value)) {
+                    return (int) $value;
+                }
+                return 0;
+            case 'float':
+            case 'double':
+            case 'decimal':
+                if (is_numeric($value) || is_string($value) || is_bool($value)) {
+                    return (float) $value;
+                }
+                return 0.0;
+            case 'boolean':
+            case 'bool':
+                return (bool) $value;
+            case 'string':
+                if (is_scalar($value) || is_object($value) && method_exists($value, '__toString')) {
+                    return (string) $value;
+                }
+                return '';
             case 'json':
                 if (is_string($value)) {
                     return json_decode($value, true);
@@ -759,6 +782,11 @@ class VersaModel implements TypedModelInterface
         // Usar el QueryBuilder para hacer upsert
         $result = $orm->table($this->table)->upsert($this->attributes, $uniqueKeys, $updateColumns);
 
+        // Mapear 'operation' a 'action' para consistencia con API
+        if (isset($result['operation'])) {
+            $result['action'] = $result['operation'];
+        }
+
         // Si fue exitoso y se insertó un nuevo registro, actualizar el ID si es posible
         if (isset($result['operation']) && $result['operation'] === 'inserted_or_updated') {
             // Intentar obtener el ID del registro después del upsert
@@ -830,6 +858,11 @@ class VersaModel implements TypedModelInterface
         // Usar el QueryBuilder para hacer save inteligente
         $result = $orm->table($this->table)->save($this->attributes, $primaryKey);
 
+        // Mapear 'operation' a 'action' para consistencia con API
+        if (isset($result['operation'])) {
+            $result['action'] = $result['operation'];
+        }
+
         // Actualizar el modelo con los datos devueltos
         if (isset($result['id'])) {
             $this->attributes[$primaryKey] = $result['id'];
@@ -881,7 +914,14 @@ class VersaModel implements TypedModelInterface
         $this->ensureColumnsExist($orm);
 
         // Usar el QueryBuilder para hacer insertOrUpdate
-        return $orm->table($this->table)->insertOrUpdate($this->attributes, $uniqueKeys, $updateColumns);
+        $result = $orm->table($this->table)->insertOrUpdate($this->attributes, $uniqueKeys, $updateColumns);
+
+        // Mapear 'operation' a 'action' para consistencia con API
+        if (isset($result['operation'])) {
+            $result['action'] = $result['operation'];
+        }
+
+        return $result;
     }
 
     /**
@@ -929,6 +969,11 @@ class VersaModel implements TypedModelInterface
         // Usar el QueryBuilder para hacer createOrUpdate
         $result = $orm->table($this->table)->createOrUpdate($this->attributes, $conditions, $updateColumns);
 
+        // Mapear 'operation' a 'action' para consistencia con API
+        if (isset($result['operation'])) {
+            $result['action'] = $result['operation'];
+        }
+
         // Actualizar el modelo con el ID si se creó un nuevo registro
         if (isset($result['id'])) {
             $this->attributes['id'] = $result['id'];
@@ -953,11 +998,93 @@ class VersaModel implements TypedModelInterface
         }
 
         try {
-            // Usar el método público schema para obtener información de índices únicos
-            $result = $orm->schema('unique_keys', $this->table);
+            $uniqueKeys = [];
 
-            if (is_array($result) && isset($result['unique_keys'])) {
-                return $result['unique_keys'];
+            // Primero intentar usar el método schema si está disponible
+            try {
+                $result = $orm->schema('unique_keys', $this->table);
+                if (is_array($result) && isset($result['unique_keys'])) {
+                    return $result['unique_keys'];
+                }
+            } catch (Exception) {
+                // Si falla, continuar con detección directa
+            }
+
+            // Detectar índices únicos usando consultas SQL nativas según el driver
+            $config = $orm->getConfig();
+            $driverValue = $config['driver'] ?? 'mysql';
+            $driver = strtolower(is_string($driverValue) ? $driverValue : 'mysql');
+
+            if ($driver === 'sqlite') {
+                // Para SQLite, usar PRAGMA index_list y PRAGMA index_info
+                $indexes = $orm->exec("PRAGMA index_list({$this->table})");
+
+                if (is_array($indexes)) {
+                    foreach ($indexes as $index) {
+                        // Verificar si el índice es único (unique = 1)
+                        if (
+                            !(
+                                isset($index['unique'])
+                                && $index['unique'] === 1
+                                && isset($index['name'])
+                                && is_string($index['name'])
+                            )
+                        ) {
+                            continue;
+                        }
+
+                        $indexName = $index['name'];
+                        $indexInfo = $orm->exec("PRAGMA index_info({$indexName})");
+
+                        if (is_array($indexInfo)) {
+                            foreach ($indexInfo as $col) {
+                                if (!isset($col['name'])) {
+                                    continue;
+                                }
+
+                                $uniqueKeys[] = $col['name'];
+                            }
+                        }
+                    }
+                }
+            } elseif ($driver === 'mysql' || $driver === 'mariadb') {
+                // Para MySQL/MariaDB
+                $sql = "SHOW INDEX FROM `{$this->table}` WHERE Non_unique = 0";
+                $indexes = $orm->exec($sql);
+
+                if (is_array($indexes)) {
+                    foreach ($indexes as $index) {
+                        if (!(isset($index['Column_name']) && $index['Key_name'] !== 'PRIMARY')) {
+                            continue;
+                        }
+
+                        $uniqueKeys[] = $index['Column_name'];
+                    }
+                }
+            } elseif ($driver === 'postgresql' || $driver === 'pgsql') {
+                // Para PostgreSQL
+                $sql = "SELECT a.attname
+                        FROM pg_index i
+                        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                        WHERE i.indrelid = '{$this->table}'::regclass
+                        AND i.indisunique = true
+                        AND i.indisprimary = false";
+                $indexes = $orm->exec($sql);
+
+                if (is_array($indexes)) {
+                    foreach ($indexes as $index) {
+                        if (!isset($index['attname'])) {
+                            continue;
+                        }
+
+                        $uniqueKeys[] = $index['attname'];
+                    }
+                }
+            }
+
+            if (!empty($uniqueKeys)) {
+                /** @var array<string> $result */
+                return array_values(array_unique($uniqueKeys));
             }
 
             // Fallback: buscar columnas comunes que suelen ser únicas
@@ -1128,8 +1255,17 @@ class VersaModel implements TypedModelInterface
      */
     public function export(): array
     {
-        // Usar el método seguro que acabamos de crear
-        return $this->getDataCasted();
+        // Obtener los datos del modelo casteados
+        $data = $this->getDataCasted();
+
+        // Incluir relaciones cargadas si existen
+        if (!empty($this->relations)) {
+            foreach ($this->relations as $relationName => $relationData) {
+                $data[$relationName] = $relationData;
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -1156,7 +1292,7 @@ class VersaModel implements TypedModelInterface
 
     public function getForeignKey(): string
     {
-        return strtolower(basename(str_replace('\\', '/', static::class))) . '_id';
+        return $this->table . '_id';
     }
 
     public function getKeyName(): string
