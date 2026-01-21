@@ -285,4 +285,168 @@ class ColumnDefinitionTest extends TestCase
         static::assertSame($column, $result);
         static::assertSame('CONCAT(first_name, " ", last_name)', $column->getAttribute('storedAs'));
     }
+
+    // ==================== TESTS ADICIONALES PARA COVERAGE COMPLETO ====================
+
+    public function testCharsetModifier(): void
+    {
+        $column = new ColumnDefinition('name', 'varchar');
+        $column->charset('utf8mb4');
+        static::assertSame('utf8mb4', $column->getAttribute('charset'));
+    }
+
+    public function testCollationModifier(): void
+    {
+        $column = new ColumnDefinition('name', 'varchar');
+        $column->collation('utf8mb4_unicode_ci');
+        static::assertSame('utf8mb4_unicode_ci', $column->getAttribute('collation'));
+    }
+
+    public function testUseCurrentModifier(): void
+    {
+        $column = new ColumnDefinition('created_at', 'timestamp');
+        $column->useCurrent();
+        static::assertTrue($column->getAttribute('useCurrent'));
+    }
+
+    public function testUseCurrentOnUpdateModifier(): void
+    {
+        $column = new ColumnDefinition('updated_at', 'timestamp');
+        $column->useCurrentOnUpdate();
+        static::assertTrue($column->getAttribute('useCurrentOnUpdate'));
+    }
+
+    public function testVirtualAsModifier(): void
+    {
+        $column = new ColumnDefinition('total', 'decimal');
+        $column->virtualAs('price * quantity');
+        static::assertSame('price * quantity', $column->getAttribute('virtualAs'));
+    }
+
+    public function testValuesModifier(): void
+    {
+        $column = new ColumnDefinition('status', 'enum');
+        $values = ['active', 'inactive', 'pending'];
+        $column->values($values);
+        static::assertSame($values, $column->getAttribute('values'));
+    }
+
+    public function testOnDeleteModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->onDelete('cascade');
+        static::assertSame('CASCADE', $column->getAttribute('onDelete'));
+    }
+
+    public function testOnUpdateModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->onUpdate('cascade');
+        static::assertSame('CASCADE', $column->getAttribute('onUpdate'));
+    }
+
+    public function testCascadeOnDeleteModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->cascadeOnDelete();
+        static::assertSame('CASCADE', $column->getAttribute('onDelete'));
+    }
+
+    public function testCascadeOnUpdateModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->cascadeOnUpdate();
+        static::assertSame('CASCADE', $column->getAttribute('onUpdate'));
+    }
+
+    public function testRestrictOnDeleteModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->restrictOnDelete();
+        static::assertSame('RESTRICT', $column->getAttribute('onDelete'));
+    }
+
+    public function testRestrictOnUpdateModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->restrictOnUpdate();
+        static::assertSame('RESTRICT', $column->getAttribute('onUpdate'));
+    }
+
+    public function testNullOnDeleteModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->nullOnDelete();
+        static::assertSame('SET NULL', $column->getAttribute('onDelete'));
+    }
+
+    public function testNullOnUpdateModifier(): void
+    {
+        $column = new ColumnDefinition('user_id', 'integer');
+        $column->nullOnUpdate();
+        static::assertSame('SET NULL', $column->getAttribute('onUpdate'));
+    }
+
+    public function testLengthModifier(): void
+    {
+        $column = new ColumnDefinition('code', 'varchar');
+        $column->length(50);
+        static::assertSame(50, $column->getAttribute('length'));
+    }
+
+    public function testPrecisionModifier(): void
+    {
+        $column = new ColumnDefinition('price', 'decimal');
+        $column->precision(10, 2);
+        static::assertSame(10, $column->getAttribute('precision'));
+        static::assertSame(2, $column->getAttribute('scale'));
+    }
+
+    public function testReferencesMethod(): void
+    {
+        $blueprint = new Blueprint('posts');
+        $column = new ColumnDefinition('user_id', 'integer', $blueprint);
+
+        $result = $column->references('id');
+
+        static::assertInstanceOf(\VersaORM\Schema\ForeignKeyDefinition::class, $result);
+    }
+
+    public function testConstrainedMethod(): void
+    {
+        $blueprint = new Blueprint('posts');
+        $column = new ColumnDefinition('user_id', 'integer', $blueprint);
+
+        $result = $column->constrained('users');
+
+        static::assertSame($column, $result);
+        $foreignKeys = $blueprint->getForeignKeys();
+        static::assertCount(1, $foreignKeys);
+    }
+
+    public function testConstrainedMethodWithDefaultTable(): void
+    {
+        $blueprint = new Blueprint('posts');
+        $column = new ColumnDefinition('user_id', 'integer', $blueprint);
+
+        // Sin especificar tabla, debe inferir 'users' desde 'user_id'
+        $result = $column->constrained();
+
+        static::assertSame($column, $result);
+        $foreignKeys = $blueprint->getForeignKeys();
+        static::assertCount(1, $foreignKeys);
+    }
+
+    public function testMultipleConstraintsChaining(): void
+    {
+        $blueprint = new Blueprint('orders');
+        $column = new ColumnDefinition('user_id', 'integer', $blueprint);
+
+        $result = $column->unsigned()->nullable(false)->index()->comment('User foreign key');
+
+        static::assertSame($column, $result);
+        static::assertTrue($column->getAttribute('unsigned'));
+        static::assertFalse($column->getAttribute('nullable'));
+        static::assertSame('User foreign key', $column->getAttribute('comment'));
+    }
 }

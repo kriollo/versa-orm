@@ -24,6 +24,9 @@ class ColumnDefinition
 
     protected ?Blueprint $blueprint = null;
 
+    /** @var ForeignKeyDefinition|null La última foreign key creada por esta columna */
+    protected ?ForeignKeyDefinition $lastForeignKey = null;
+
     public function __construct(string $name, string $type, ?Blueprint $blueprint = null)
     {
         $this->name = $name;
@@ -235,6 +238,27 @@ class ColumnDefinition
     }
 
     /**
+     * Marca la columna como que necesita ser modificada.
+     * Esto se usa en ALTER TABLE para indicar que la columna debe ser cambiada.
+     */
+    public function change(): self
+    {
+        $this->attributes['change'] = true;
+
+        return $this;
+    }
+
+    /**
+     * Marca la columna como tipo ARRAY (PostgreSQL).
+     */
+    public function array(): self
+    {
+        $this->attributes['array'] = true;
+
+        return $this;
+    }
+
+    /**
      * Crea una columna calculada almacenada.
      */
     public function storedAs(string $expression): self
@@ -322,6 +346,9 @@ class ColumnDefinition
             $this->blueprint->addForeignKey($foreign);
         }
 
+        // Guardar referencia a la foreign key para que métodos posteriores la puedan modificar
+        $this->lastForeignKey = $foreign;
+
         return $this;
     }
 
@@ -332,6 +359,11 @@ class ColumnDefinition
     {
         $this->attributes['onDelete'] = strtoupper($action);
 
+        // Si hay una foreign key asociada, actualizar también su acción onDelete
+        if ($this->lastForeignKey !== null) {
+            $this->lastForeignKey->onDelete($action);
+        }
+
         return $this;
     }
 
@@ -341,6 +373,11 @@ class ColumnDefinition
     public function onUpdate(string $action): self
     {
         $this->attributes['onUpdate'] = strtoupper($action);
+
+        // Si hay una foreign key asociada, actualizar también su acción onUpdate
+        if ($this->lastForeignKey !== null) {
+            $this->lastForeignKey->onUpdate($action);
+        }
 
         return $this;
     }

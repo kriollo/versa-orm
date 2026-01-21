@@ -55,6 +55,17 @@ class SchemaBuilder
     }
 
     /**
+     * Crea una nueva tabla solo si no existe.
+     *
+     * @param string $table Nombre de la tabla
+     * @param callable $callback Función que recibe un Blueprint para definir la tabla
+     */
+    public function createIfNotExists(string $table, callable $callback): void
+    {
+        $this->create($table, $callback, true);
+    }
+
+    /**
      * Modifica una tabla existente usando una definición fluida.
      *
      * @param string $table Nombre de la tabla
@@ -73,8 +84,8 @@ class SchemaBuilder
         // Crear nuevas columnas si las hay
         $this->addNewColumns($blueprint);
 
-        // Crear índices adicionales si los hay
-        $this->createIndexes($blueprint);
+        // Crear índices adicionales si los hay (incluir unique porque estamos en ALTER TABLE)
+        $this->createIndexes($blueprint, true);
 
         // Crear claves foráneas si las hay
         $this->createForeignKeys($blueprint);
@@ -113,6 +124,19 @@ class SchemaBuilder
             $result = $this->orm->schema('tables');
             $tables = is_array($result) ? $result : [];
 
+            // schema('tables') puede devolver:
+            // - Un array simple de nombres: ['table1', 'table2']
+            // - Un array de arrays con clave 'name': [['name' => 'table1'], ['name' => 'table2']]
+            if ($tables === []) {
+                return false;
+            }
+
+            // Si el primer elemento es un string, es un array simple
+            if (is_string($tables[0] ?? null)) {
+                return in_array($table, $tables, true);
+            }
+
+            // Si no, intentar con array_column
             return in_array($table, array_column($tables, 'name'), true);
         } catch (\Exception) {
             return false;
@@ -148,12 +172,22 @@ class SchemaBuilder
             $columnList = is_array($columns) ? $columns : [$columns];
 
             foreach ($indexes as $index) {
-                if (!(isset($index['columns']) && $index['columns'] === $columnList)) {
-                    continue;
+                // Verificar por columnas si están disponibles
+                if (isset($index['columns'])) {
+                    $indexColumns = is_array($index['columns']) ? $index['columns'] : [$index['columns']];
+                    if ($indexColumns === $columnList) {
+                        if ($type === 'index' || isset($index['type']) && $index['type'] === $type) {
+                            return true;
+                        }
+                    }
                 }
 
-                if ($type === 'index' || isset($index['type']) && $index['type'] === $type) {
-                    return true;
+                // Fallback: verificar por nombre del índice (ej: table_column_index)
+                if (isset($index['name'])) {
+                    $expectedName = $table . '_' . implode('_', $columnList) . '_' . $type;
+                    if ($index['name'] === $expectedName) {
+                        return true;
+                    }
                 }
             }
 
@@ -427,11 +461,20 @@ class SchemaBuilder
     /**
      * Crea los índices definidos en el blueprint.
      */
-    protected function createIndexes(Blueprint $blueprint): void
+    protected function createIndexes(Blueprint $blueprint, bool $includeUnique = false): void
     {
         foreach ($blueprint->getIndexes() as $index) {
-            if (in_array($index['type'], ['primary', 'unique'], true)) {
-                continue; // Ya se crearon a nivel de tabla
+            $typeRaw = $index['type'] ?? '';
+            $type = is_scalar($typeRaw) ? (string) $typeRaw : '';
+
+            // En CREATE TABLE, primary y unique ya están en la definición de columnas
+            // En ALTER TABLE, necesitamos crear unique explícitamente
+            if ($type === 'primary') {
+                continue; // PRIMARY siempre se define en la columna
+            }
+
+            if ($type === 'unique' && !$includeUnique) {
+                continue; // UNIQUE solo se omite en CREATE TABLE
             }
 
             $this->createIndex($blueprint->getTable(), $index);
@@ -599,9 +642,53 @@ class SchemaBuilder
     protected function addNewColumns(Blueprint $blueprint): void
     {
         foreach ($blueprint->getColumns() as $column) {
-            $sql = "ALTER TABLE {$this->wrapTable($blueprint->getTable())} ADD COLUMN " . $column->toSql($this->driver);
-            $this->orm->exec($sql);
+            // Si la columna tiene el atributo 'change', modificarla en lugar de agregarla
+            if ((bool) $column->getAttribute('change', false)) {
+                $this->modifyColumn($blueprint->getTable(), $column);
+            } else {
+                $sql =
+                    "ALTER TABLE {$this->wrapTable($blueprint->getTable())} ADD COLUMN "
+                    . $column->toSql($this->driver);
+                $this->orm->exec($sql);
+            }
         }
+    }
+
+    /**
+     * Modifica una columna existente.
+     */
+    protected function modifyColumn(string $table, ColumnDefinition $column): void
+    {
+        $columnName = $column->getName();
+        $columnDef = $column->toSql($this->driver);
+
+        $sql = match ($this->driver) {
+            'mysql' => "ALTER TABLE {$this->wrapTable($table)} MODIFY COLUMN {$columnDef}",
+            'postgresql' => $this->buildPostgresAlterColumn($table, $column),
+            'sqlite' => throw new VersaORMException('SQLite does not support altering columns directly'),
+            default => throw new VersaORMException("Unsupported driver: {$this->driver}"),
+        };
+
+        $this->orm->exec($sql);
+    }
+
+    /**
+     * Construye SQL para ALTER COLUMN en PostgreSQL.
+     */
+    protected function buildPostgresAlterColumn(string $table, ColumnDefinition $column): string
+    {
+        $tableName = $this->wrapTable($table);
+        $columnName = $this->wrapColumn($column->getName());
+
+        // PostgreSQL requiere múltiples sentencias para cambiar tipo, nullable, default, etc.
+        // Por simplicidad, solo cambiamos el tipo aquí
+        $type = TypeMapper::mapType($column->getType(), 'postgresql', $column->getAttributes());
+
+        if (is_array($type)) {
+            $type = $type[0];
+        }
+
+        return "ALTER TABLE {$tableName} ALTER COLUMN {$columnName} TYPE {$type}";
     }
 
     /**

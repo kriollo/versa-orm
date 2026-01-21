@@ -264,6 +264,14 @@ class Blueprint
     }
 
     /**
+     * Crea una columna de tipo JSONB (PostgreSQL).
+     */
+    public function jsonb(string $column): ColumnDefinition
+    {
+        return $this->addColumn($column, 'jsonb');
+    }
+
+    /**
      * Crea una columna de tipo DATE.
      */
     public function date(string $column): ColumnDefinition
@@ -306,6 +314,14 @@ class Blueprint
             ->nullable()
             ->useCurrent()
             ->useCurrentOnUpdate();
+    }
+
+    /**
+     * Crea una columna deleted_at para soft deletes.
+     */
+    public function softDeletes(): ColumnDefinition
+    {
+        return $this->timestamp('deleted_at')->nullable();
     }
 
     /**

@@ -8,22 +8,35 @@ declare(strict_types=1);
  * Uso: php scripts/coverage-report.php
  */
 
-$coverageDir = __DIR__ . '/../build/coverage';
-$cloverFile = $coverageDir . '/clover.xml';
+// Intentar varios posibles ubicaciones de clover.xml
+$possiblePaths = [
+    __DIR__ . '/../tests/reports/coverage/sqlite/clover.xml',  // Ubicación por defecto de phpunit.xml
+    __DIR__ . '/../build/coverage/clover.xml',
+    __DIR__ . '/../build/logs/clover.xml',
+    __DIR__ . '/../build/coverage/combined/clover.xml',
+];
 
-// Intentar varios posibles ubicaciones
-if (!file_exists($cloverFile)) {
-    $cloverFile = __DIR__ . '/../build/logs/clover.xml';
-}
-if (!file_exists($cloverFile)) {
-    $cloverFile = __DIR__ . '/../build/coverage/combined/clover.xml';
+$cloverFile = null;
+foreach ($possiblePaths as $path) {
+    if (file_exists($path)) {
+        $cloverFile = $path;
+        break;
+    }
 }
 
-if (!file_exists($cloverFile)) {
+if ($cloverFile === null || !file_exists($cloverFile)) {
     echo "❌ No se encontró el archivo de coverage.\n";
-    echo "   Ejecuta primero: composer test-coverage\n\n";
+    echo "   Ejecuta primero: composer test-coverage\n";
+    echo "   Buscando en:\n";
+    foreach ($possiblePaths as $path) {
+        echo "   - " . $path . " " . (file_exists($path) ? "✓" : "✗") . "\n";
+    }
+    echo "\n";
     exit(1);
 }
+
+echo "\n📁 Leyendo coverage desde: " . basename(dirname($cloverFile)) . "/" . basename($cloverFile) . "\n";
+
 
 echo "\n╔══════════════════════════════════════════════════════════════╗\n";
 echo "║          📊 ANÁLISIS DE COBERTURA DE TESTS                  ║\n";

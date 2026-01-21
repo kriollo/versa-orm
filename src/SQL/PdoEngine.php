@@ -270,6 +270,13 @@ class PdoEngine
                 return $table !== '' ? $this->fetchIndexes($pdo, $table) : [];
             }
 
+            if ($subject === 'foreign_keys') {
+                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
+                $table = is_scalar($rawTable) ? (string) $rawTable : '';
+
+                return $table !== '' ? $this->fetchForeignKeys($pdo, $table) : [];
+            }
+
             return [];
         }
 
@@ -2073,6 +2080,7 @@ class PdoEngine
                     'column_name' => $name,
                     'name' => $name,
                     'data_type' => $type,
+                    'type' => $type,
                     'is_nullable' => strtoupper(is_scalar($rawNull) ? (string) $rawNull : 'NO') === 'YES'
                         ? 'YES'
                         : 'NO',
@@ -2093,10 +2101,12 @@ class PdoEngine
 
             foreach ($columns as $col) {
                 $name = (string) ($col['name'] ?? '');
+                $dataType = strtolower((string) ($col['type'] ?? ''));
                 $result[] = [
                     'column_name' => $name,
                     'name' => $name,
-                    'data_type' => strtolower((string) ($col['type'] ?? '')),
+                    'data_type' => $dataType,
+                    'type' => $dataType,
                     'is_nullable' => (int) ($col['notnull'] ?? 0) === 0 ? 'YES' : 'NO',
                     'column_default' => $col['dflt_value'] ?? null,
                     'character_maximum_length' => null,
@@ -2118,10 +2128,12 @@ class PdoEngine
 
             foreach ($columns as $col) {
                 $name = (string) ($col['column_name'] ?? '');
+                $dataType = strtolower((string) ($col['data_type'] ?? ''));
                 $result[] = [
                     'column_name' => $name,
                     'name' => $name,
-                    'data_type' => strtolower((string) ($col['data_type'] ?? '')),
+                    'data_type' => $dataType,
+                    'type' => $dataType,
                     'is_nullable' => strtoupper((string) ($col['is_nullable'] ?? 'NO')) === 'YES' ? 'YES' : 'NO',
                     'column_default' => $col['column_default'] ?? null,
                     'character_maximum_length' => $col['character_maximum_length'] ?? null,
@@ -2147,20 +2159,25 @@ class PdoEngine
             $stmt->execute();
             /** @var list<array{Key_name?:string,Column_name?:string,Non_unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
-            $out = [];
 
+            // Agrupar columnas por nombre de índice
+            $indexes = [];
             foreach ($rows as $r) {
                 $keyName = $r['Key_name'] ?? '';
                 $columnName = $r['Column_name'] ?? '';
                 $nonUnique = isset($r['Non_unique']) ? (int) $r['Non_unique'] : 1;
-                $out[] = [
-                    'name' => $keyName,
-                    'column' => $columnName,
-                    'unique' => $nonUnique === 0,
-                ];
+
+                if (!isset($indexes[$keyName])) {
+                    $indexes[$keyName] = [
+                        'name' => $keyName,
+                        'columns' => [],
+                        'unique' => $nonUnique === 0,
+                    ];
+                }
+                $indexes[$keyName]['columns'][] = $columnName;
             }
 
-            return $out;
+            return array_values($indexes);
         }
 
         if ($driver === 'sqlite') {
@@ -2168,18 +2185,38 @@ class PdoEngine
             $stmt->execute();
             /** @var list<array{name?:string,unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
-            $out = [];
+            $indexes = [];
 
             foreach ($rows as $r) {
                 $idxName = $r['name'] ?? '';
                 $isUnique = isset($r['unique']) && (int) $r['unique'] === 1;
-                $out[] = [
+
+                // Obtener las columnas de este índice
+                $stmtInfo = $this->prepareCached(
+                    $pdo,
+                    'PRAGMA index_info(' . $this->dialect->quoteIdentifier($idxName) . ')',
+                );
+                $stmtInfo->execute();
+                /** @var list<array{name?:string}> $colRows */
+                $colRows = $stmtInfo->fetchAll(PDO::FETCH_ASSOC) ?? [];
+
+                $columns = [];
+                foreach ($colRows as $colRow) {
+                    if (!isset($colRow['name'])) {
+                        continue;
+                    }
+
+                    $columns[] = $colRow['name'];
+                }
+
+                $indexes[$idxName] = [
                     'name' => $idxName,
+                    'columns' => $columns,
                     'unique' => $isUnique,
                 ];
             }
 
-            return $out;
+            return array_values($indexes);
         }
 
         if ($driver === 'postgres') {
@@ -2188,25 +2225,123 @@ class PdoEngine
             JOIN pg_index ix ON t.oid = ix.indrelid
             JOIN pg_class i ON i.oid = ix.indexrelid
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
-            WHERE t.relkind = 'r' AND t.relname = ?";
+            WHERE t.relkind = 'r' AND t.relname = ?
+            ORDER BY i.relname, a.attnum";
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
             /** @var list<array{name?:string,column?:string,unique?:bool|int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
-            $out = [];
 
+            // Agrupar columnas por nombre de índice
+            $indexes = [];
             foreach ($rows as $r) {
                 $idxName = $r['name'] ?? '';
                 $colName = $r['column'] ?? '';
                 $uniqueFlag = isset($r['unique']) && (bool) $r['unique'];
+
+                if (!isset($indexes[$idxName])) {
+                    $indexes[$idxName] = [
+                        'name' => $idxName,
+                        'columns' => [],
+                        'unique' => $uniqueFlag,
+                    ];
+                }
+                $indexes[$idxName]['columns'][] = $colName;
+            }
+
+            return array_values($indexes);
+        }
+
+        return [];
+    }
+
+    /**
+     * Obtiene las claves foráneas de una tabla según el driver.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchForeignKeys(PDO $pdo, string $table): array
+    {
+        $driver = $this->dialect->getName();
+
+        if ($driver === 'mysql') {
+            $sql = 'SELECT
+                kcu.CONSTRAINT_NAME as name,
+                kcu.COLUMN_NAME as `column`,
+                kcu.REFERENCED_TABLE_NAME as foreign_table,
+                kcu.REFERENCED_COLUMN_NAME as foreign_column,
+                rc.DELETE_RULE as on_delete,
+                rc.UPDATE_RULE as on_update
+            FROM information_schema.KEY_COLUMN_USAGE kcu
+            LEFT JOIN information_schema.REFERENTIAL_CONSTRAINTS rc
+                ON kcu.CONSTRAINT_NAME = rc.CONSTRAINT_NAME
+                AND kcu.TABLE_SCHEMA = rc.CONSTRAINT_SCHEMA
+            WHERE kcu.TABLE_SCHEMA = DATABASE()
+              AND kcu.TABLE_NAME = ?
+              AND kcu.REFERENCED_TABLE_NAME IS NOT NULL';
+
+            $stmt = $this->prepareCached($pdo, $sql);
+            $this->bindAndExecute($stmt, [$table]);
+            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $rows */
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
+        }
+
+        if ($driver === 'sqlite') {
+            $stmt = $this->prepareCached(
+                $pdo,
+                'PRAGMA foreign_key_list(' . $this->dialect->quoteIdentifier($table) . ')',
+            );
+            $stmt->execute();
+            /** @var list<array{table?:string,from?:string,to?:string,on_delete?:string,on_update?:string}> $rows */
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
+            $out = [];
+
+            foreach ($rows as $r) {
                 $out[] = [
-                    'name' => $idxName,
-                    'column' => $colName,
-                    'unique' => $uniqueFlag,
+                    'name' => ($r['from'] ?? '') . '_' . ($r['table'] ?? '') . '_fk',
+                    'column' => $r['from'] ?? '',
+                    'foreign_table' => $r['table'] ?? '',
+                    'foreign_column' => $r['to'] ?? '',
+                    'on_delete' => $r['on_delete'] ?? 'NO ACTION',
+                    'on_update' => $r['on_update'] ?? 'NO ACTION',
                 ];
             }
 
             return $out;
+        }
+
+        if ($driver === 'postgres') {
+            $sql = "SELECT
+                con.conname AS name,
+                att.attname AS column,
+                fc.relname AS foreign_table,
+                fatt.attname AS foreign_column,
+                CASE con.confdeltype
+                    WHEN 'a' THEN 'NO ACTION'
+                    WHEN 'r' THEN 'RESTRICT'
+                    WHEN 'c' THEN 'CASCADE'
+                    WHEN 'n' THEN 'SET NULL'
+                    WHEN 'd' THEN 'SET DEFAULT'
+                END AS on_delete,
+                CASE con.confupdtype
+                    WHEN 'a' THEN 'NO ACTION'
+                    WHEN 'r' THEN 'RESTRICT'
+                    WHEN 'c' THEN 'CASCADE'
+                    WHEN 'n' THEN 'SET NULL'
+                    WHEN 'd' THEN 'SET DEFAULT'
+                END AS on_update
+            FROM pg_constraint con
+            JOIN pg_class tc ON con.conrelid = tc.oid
+            JOIN pg_attribute att ON att.attrelid = tc.oid AND att.attnum = ANY(con.conkey)
+            JOIN pg_class fc ON con.confrelid = fc.oid
+            JOIN pg_attribute fatt ON fatt.attrelid = fc.oid AND fatt.attnum = ANY(con.confkey)
+            WHERE con.contype = 'f'
+              AND tc.relname = ?";
+
+            $stmt = $this->prepareCached($pdo, $sql);
+            $this->bindAndExecute($stmt, [$table]);
+            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $rows */
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 
         return [];
@@ -2219,8 +2354,6 @@ class PdoEngine
      * @param array<string,mixed> $op
      *
      * @return array{0:string,1:array<int,mixed>}
-     */
-    /**
      * @param array{
      *   table?:string,
      *   columns?:array<int,string>,
