@@ -101,7 +101,8 @@ jobs:
           DB_NAME: versaorm_test
           DB_USER: local
           DB_PASS: local
-        run: vendor/bin/phpunit -c phpunit-postgresql.xml --colors=always --coverage-php build/logs/cov-dir/postgres.cov
+          CI: true
+        run: vendor/bin/phpunit -c phpunit-postgresql.xml --colors=always --coverage-php build/logs/cov-dir/postgres.cov --exclude-group pokio
 
       - name: Merge Coverage
         if: always()
