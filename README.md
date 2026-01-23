@@ -9,7 +9,6 @@
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
-
 - Última versión estable: 1.8.4
 - Compatible con PHP 8.1+
 
@@ -28,10 +27,11 @@
 - 🔗 **[Relaciones](docs/05-relaciones/)** - hasMany, belongsTo, many-to-many
 - 📖 **[Referencia SQL](docs/08-referencia-sql/)** - Equivalencias SQL ↔ VersaORM
 
-### 🆕 Guías Especializadas (v1.4.1+)
+### 🆕 Guías Especializadas (v1.8.4+)
 
 - 🔧 **[Migración SchemaBuilder](docs/MigrationGuide_SchemaBuilder.md)** - De schemaCreate() al nuevo SchemaBuilder
 - 🔗 **[Foreign Keys e Índices](docs/ForeignKeysAndIndexes_CompleteGuide.md)** - Guía completa con ejemplos prácticos
+- 🐘 **[PostgreSQL SSL & Pokio](docs/pokio-ssl-troubleshooting.md)** - Solución a errores de concurrencia y SSL (v1.8.4)
 
 ## 📋 ¿Qué es VersaORM?
 
@@ -89,10 +89,11 @@ $user->store(); // Actualización automática
 - ⏰ **Timestamps automáticos** - `created_at` y `updated_at` con valores por defecto (Fix v1.4.1)
 - 🏗️ **SchemaBuilder moderno** - API fluida para DDL con migración desde arrays
 - 🔑 **Foreign Keys flexibles** - Sintaxis `foreign(['campo'])` y `foreign('campo')` validadas
-- 💾 **Conversión de tipos** - Fechas, booleanos, JSON automático
-- 🔀 **Operaciones de conjuntos** - UNION, INTERSECT, EXCEPT
+- 💾 **Conversión de tipos avanzada** - Fechas, booleanos, JSON y **auto-inferencia de tipos** (v1.8.4)
+- 🔀 **Operaciones de conjuntos** - UNION, INTERSECT, EXCEPT y **Full Outer Join emulado** (v1.8.4)
 - 🚫 **Cero compilación** - Solo PHP puro
 - 📦 **Batch simple de modelos** - `VersaModel::storeAll([$m1,$m2])` devuelve array de IDs
+- ⚡ **Soporte Pokio (Async/Fork)** - Preparado para concurrencia segura con PostgreSQL y SSL (v1.8.4)
 
 ## ✨ Arquitectura
 
@@ -359,11 +360,10 @@ try {
 }
 ```
 
-
-
 ## 🔧 Configuración Rápida
 
 ### Configuración Básica
+
 ```php
 use VersaORM\VersaORM;
 use VersaORM\VersaModel;
@@ -378,7 +378,7 @@ $orm = new VersaORM([
 ]);
 
 VersaModel::setORM($orm);
-````
+```
 
 ### Configuraciones por Base de Datos
 

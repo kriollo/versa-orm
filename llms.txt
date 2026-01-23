@@ -22,6 +22,7 @@ Lectura recomendada (orden)
 6) Seguridad: /docs/07-seguridad-tipado/ (especialmente mass assignment y freeze mode)
 7) SchemaBuilder/Migración: /docs/MigrationGuide_SchemaBuilder.md
 8) FK/Índices: /docs/ForeignKeysAndIndexes_CompleteGuide.md
+9) PostgreSQL SSL/Pokio: /docs/pokio-ssl-troubleshooting.md (v1.8.4)
 
 Mapa mental del código (archivos clave)
 --------------------------------------
@@ -175,6 +176,7 @@ VersaModel (/src/VersaModel.php)
 Notas de implementación relevantes para LLMs:
 - VersaModel usa atributos dinámicos via __get/__set y relaciones lazy.
 - Tipado fuerte/casting se apoya en el trait HasStrongTyping.
+- v1.8.4+: Soporte para inferencia automática de tipos desde el esquema de la BD si no están definidos.
 
 
 QueryBuilder (/src/QueryBuilder.php)
