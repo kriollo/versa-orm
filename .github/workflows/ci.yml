@@ -2,9 +2,9 @@ name: CI — VersaORM
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.1', '8.2', '8.3', '8.4']
+        php: ["8.1", "8.2", "8.3", "8.4"]
 
     services:
       mysql:
@@ -52,7 +52,11 @@ jobs:
           coverage: xdebug
 
       - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --no-interaction
+        run: |
+          if [ "${{ matrix.php }}" == "8.1" ] || [ "${{ matrix.php }}" == "8.2" ]; then
+            composer remove nunomaduro/pokio --dev --no-update
+          fi
+          composer install --no-progress --prefer-dist --no-interaction
 
       - name: Setup DB Clients
         run: sudo apt-get update && sudo apt-get install -y default-mysql-client postgresql-client
@@ -83,7 +87,7 @@ jobs:
         run: mkdir -p build/logs/cov-dir tests/reports/sqlite tests/reports/mysql tests/reports/postgresql
 
       - name: Run SQLite Tests
-        run: vendor/bin/phpunit -c phpunit-sqlite.xml --colors=always --coverage-php build/logs/cov-dir/sqlite.cov
+        run: vendor/bin/phpunit -c phpunit-sqlite.xml --colors=always --coverage-php build/logs/cov-dir/sqlite.cov --exclude-group pokio
 
       - name: Run MySQL Tests
         env:
@@ -92,7 +96,7 @@ jobs:
           DB_NAME: versaorm_test
           DB_USER: local
           DB_PASS: local
-        run: vendor/bin/phpunit -c phpunit-mysql.xml --colors=always --coverage-php build/logs/cov-dir/mysql.cov
+        run: vendor/bin/phpunit -c phpunit-mysql.xml --colors=always --coverage-php build/logs/cov-dir/mysql.cov --exclude-group pokio
 
       - name: Run PostgreSQL Tests
         env:
@@ -157,7 +161,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: "8.3"
 
       - name: Download all JUnit artifacts
         uses: actions/download-artifact@v4
