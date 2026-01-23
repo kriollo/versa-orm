@@ -51,8 +51,9 @@ class SetOperationsTest extends TestCase
     public function test_union_basic(): void
     {
         $qb = new QueryBuilder(self::$orm, 'set_ops_a');
+        // Base query must select same columns as union queries
+        $qb->select(['value']);
         $rows = $qb->union([
-            ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], false);
         $values = array_map(static fn($r) => (int) $r['value'], $rows);
@@ -65,8 +66,9 @@ class SetOperationsTest extends TestCase
     public function test_union_all_basic(): void
     {
         $qb = new QueryBuilder(self::$orm, 'set_ops_a');
+        // Base query must select same columns as union queries
+        $qb->select(['value']);
         $rows = $qb->union([
-            ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], true);
         $values = array_map(static fn($r) => (int) $r['value'], $rows);

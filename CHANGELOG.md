@@ -1,8 +1,45 @@
+## [1.8.4] - 2026-01-23
+
+### 🔧 Estabilidad del Núcleo y Tipado Inteligente
+
+**HasStrongTyping.php - Inferencia de Tipos Dinámica:**
+
+- **Inferencia desde Esquema**: Implementado `getColumnTypeFromSchema()` para detectar tipos automáticamente desde la BD cuando no están definidos en el modelo.
+  - Mejora crítica para campos `float`, `double` y `real` que antes se trataban como strings por defecto.
+- **Soporte PostgreSQL SSL/Fork**: Mejorado el flujo de detección de drivers para manejar reconexiones seguras.
+- **Manejo de Booleanos**: Refinada la lógica para strings booleanos de PostgreSQL (`'t'`, `'true'`, `'f'`, `'false'`).
+
+**QueryBuilder.php - Robustez y Seguridad:**
+
+- **Havings Estables**: Corregida la compilación de cláusulas `HAVING` para asegurar que las propiedades se concatenen correctamente con conectores `AND`.
+- **Hardening de Métodos RAW**: Validación reforzada en `selectRaw()`, `whereRaw()` y `joinRaw()` para prevenir expresiones vacías o malformadas.
+- **Fluent Joins**: Mejorada la consistencia en los métodos de join con alias y condiciones complejas.
+
+**SqlGenerator.php - Generación SQL Optimizada:**
+
+- **Full Outer Join SQLite**: Refinada la emulación de `FULL OUTER JOIN` mediante la inversión controlada de tablas en `LEFT JOIN`.
+- **SELECT Compilation**: Limpieza de side-effects y mejora en la normalización de partes del SELECT.
+
+### 📚 Documentación y Testing
+
+- **Pokio & SSL Troubleshooting**: Nueva guía [Solución: Errores SSL con PostgreSQL y Pokio](docs/pokio-ssl-troubleshooting.md) detallando patrones de reconexión para procesos fork.
+- **Suites de Pruebas PostgreSQL**: Agregados tests intensivos para validación de SSL y concurrencia (`PokioSSLTest.php`, `PokioAsyncTest.php`).
+- **Edge Cases de Tipado**: Nuevos tests para validación de tipos estrictos en SQLite y PostgreSQL.
+
+### ✅ Validación de Calidad
+
+- **PHPStan Level 9**: ✅ 0 errores (validación estricta de todo el núcleo `src/`).
+- **Tests Multi-Motor**: ✅ Cobertura completa validada en SQLite, MySQL y PostgreSQL.
+- **Seguridad**: ✅ Validación estricta de identificadores en todas las capas de compilación.
+
+---
+
 ## [1.8.3] - 2026-01-21
 
 ### 🔧 Correcciones de Tipado Estático (PHPStan Level 9)
 
 **VersaModel.php - Type Safety Mejorado:**
+
 - **Línea 209**: Corrección de tipado en `tableName()`
   - `preg_replace()` puede retornar `string|null`, ahora se valida antes de `strtolower()`
   - Fallback seguro a `$class` si `preg_replace()` retorna null
@@ -22,6 +59,7 @@
   - PHPDoc explícito `@var array<string>` para el resultado
 
 **PdoEngine.php - Corrección de PHPDoc:**
+
 - **Líneas 2286, 2293, 2344**: Variables PHPDoc corregidas en `fetchForeignKeys()`
   - Error: PHPDoc documentaba variable `$rows` que no existía
   - Corrección: Asignar resultado a variable `$result` antes de documentar
@@ -29,6 +67,7 @@
   - Afecta a consultas de foreign keys en MySQL, SQLite y PostgreSQL
 
 **HasStrongTyping.php - Manejo de Booleanos PostgreSQL:**
+
 - Soporte para formato nativo de PostgreSQL (`'t'` / `'f'`)
 - Edge cases corregidos: strings no reconocidos retornan `false` en lugar de usar `(bool)` cast
 - Agregado `''` (string vacío) a valores que retornan false
@@ -55,6 +94,7 @@
 ### 🔧 SchemaBuilder: Compatibilidad Multi-DB Mejorada
 
 **Correcciones para SQLite:**
+
 - **fetchIndexes() mejorado**: Ahora obtiene las columnas de cada índice usando `PRAGMA index_info()`
   - Retorna estructura consistente: `['name' => ..., 'columns' => [...], 'unique' => ...]`
   - Compatible con el formato de MySQL y PostgreSQL
@@ -68,6 +108,7 @@
   - SQLite no soporta estas operaciones directamente (limitación del motor)
 
 **Correcciones para MySQL:**
+
 - **Configuración de base de datos**: Cambiado default de 'test' a 'versaorm_test'
   - Unificado formato de variables de entorno con PostgreSQL (`getenv('DB_NAME')`)
   - Mayor consistencia entre motores de bases de datos
@@ -81,17 +122,20 @@
   - Las columnas estaban en tabla diferente a `KEY_COLUMN_USAGE`
 
 **Mejoras de Calidad (PHPStan Level 9):**
+
 - Reemplazado `empty($tables)` con comparación estricta `$tables === []`
 - Añadido cast explícito `(bool)` en condición de `getAttribute('change', false)`
 - Eliminación de warnings de comparaciones no estrictas
 
 ### ✅ Estado de Tests
+
 - **MySQL**: 19/19 tests pasando (SchemaBuilderIntegration) ✅
 - **PostgreSQL**: 20/20 tests pasando (SchemaBuilderIntegration) ✅
 - **SQLite**: 26/26 tests pasando, 2 skipped (limitaciones conocidas) ✅
 - **PHPStan Level 9**: 0 errores ✅
 
 ### 🎯 Impacto
+
 - **100% de compatibilidad** entre MySQL, PostgreSQL y SQLite para operaciones de esquema
 - **Consistencia de API**: Mismo código funciona en los 3 motores sin cambios
 - **Robustez mejorada**: Índices y foreign keys funcionan correctamente en todos los motores
@@ -101,6 +145,7 @@
 ### 🚀 CI/CD & Automation (Refactorización de CI)
 
 **Flujo de Trabajo Unificado:**
+
 - Consolidación de múltiples workflows (`phpunit.yml`, `php-coverage.yml`, etc.) en un único archivo `ci.yml` altamente optimizado.
 - **Reporte de Cobertura Inteligente:** Integración de `coverage-stats.php` que imprime un resumen detallado (Top 10 archivos con menos cobertura) directamente en los logs de GitHub Actions.
 - **Validación PHPStan Nivel 9:** Elevación del estándar de calidad a nivel 9 (máximo) en todo el núcleo del proyecto (`src/`).
@@ -109,11 +154,13 @@
 ### 🔧 Engine & Stability (Robustez del Motor)
 
 **Mejoras en PdoEngine:**
+
 - **Graceful Cache Invalidation:** El método de invalidación de caché ahora maneja llamadas sin criterios de forma segura (skipping) en lugar de lanzar excepciones, unificando el comportamiento en todos los drivers.
 - **Strict Casting Fixes:** Corrección de múltiples casts implícitos de `mixed` a `string/int` para cumplir con PHPStan Level 9.
 - **Advanced Operations:** Refuerzo de la lógica de operaciones JSON y CTEs con mejores validaciones de tipos escalares.
 
 **Consistencia entre Drivers:**
+
 - Armonización de la suite de pruebas `CacheTest` para asegurar que el comportamiento del caché sea idéntico en MySQL, PostgreSQL y SQLite.
 - Eliminación de inconsistencias en la captura de excepciones durante la invalidación de caché.
 
@@ -123,6 +170,7 @@
 - **Optimización de CI:** Eliminación de dependencias externas críticas (Mago) en el flujo de automatización para evitar cuellos de botella por red/servidores externos, manteniendo Mago para uso local.
 
 ### ✅ Estado de Calidad
+
 - ✔️ **PHPStan Level 9**: 0 errores.
 - ✔️ **Tests SQLite**: 618 tests pasando (100%).
 - ✔️ **Tests MySQL**: 498 tests pasando (100%).
@@ -134,20 +182,24 @@
 ### ⚡ Performance Optimization (Mejoras de Rendimiento)
 
 **Lazy Type Casting (Casting bajo demanda):**
+
 - Se diferencia el casting de tipos hasta el acceso de propiedades (`__get()`), evitando transformaciones innecesarias en hidratación masiva.
 - Implementación de `$castingCache` para cachear valores ya casteados y evitar re-casting en múltiples accesos.
 - **Impacto: 31% de mejora en rendimiento total (~65ms → 42ms en operaciones SELECT de 1100 registros).**
 
 **Eliminación de Closures en SQL Compilation:**
+
 - Reemplazo de `match` expressions con closures anónimas por `if/switch` directo en `compileWhere()`.
 - Reducción de overhead de creación y ejecución de closures.
 - **Impacto: 3-5% de mejora adicional en queries complejas.**
 
 **Simplificación de métodos estáticos:**
+
 - `getAll()`, `getRow()`, `getCell()` ahora devuelven datos sin casting (mejora performance en data farms masivos).
 - Si se necesita casting, usar métodos de instancia (`getDataCasted()`) o modelos con `loadInstance()`.
 
 **Benchmark Results (SQLite in-memory):**
+
 ```
 - SELECT simple (1100 registros): 67.05ms → 42.91ms (36% ↑)
 - Hidratación bulk + casting: 57.15ms → 46.29ms (19% ↑)
@@ -159,6 +211,7 @@
 ### 🔧 Bug Fixes: Table Alias en UPDATE/DELETE
 
 **Corrección de Alias en Operaciones UPDATE/DELETE:**
+
 - Problema: El ORM rechazaba consultas como `table('versa_users as u')->update(...)` con error "Invalid or malicious table name detected"
 - Causa: Las operaciones UPDATE/DELETE enviaban el alias como parte del nombre de tabla al motor SQL
 - Solución:
@@ -173,6 +226,7 @@
   - Compatible con todos los motores de base de datos
 
 **Ejemplos de uso:**
+
 ```php
 // ✅ Ahora funciona correctamente
 $orm->table('versa_users as u')
@@ -589,6 +643,7 @@ if (VersaSchema::hasTable('users')) {
 - **Documentación**: Configuración de validación mejorada y actualizada
 
 ### 🗃️ Base de Datos
+
 - **Mejoras en motor PDO**: Optimizaciones en `PdoEngine` y `SqlGenerator`
 
 ## [1.2.0] - 2025-08-27
@@ -624,6 +679,7 @@ if (VersaSchema::hasTable('users')) {
 - **Relaciones ORM ahora compatibles con QueryBuilder**
   Las relaciones (`hasOne`, `hasMany`, `belongsTo`, `belongsToMany`) permiten manipulación avanzada de consultas mediante el QueryBuilder, soportando filtros, joins, ordenamientos y paginación directamente sobre las relaciones.
   Ejemplo:
+
   ```php
   $user->posts()->where('published', true)->orderBy('created_at', 'desc')->limit(5)->get();
   ```
@@ -656,13 +712,15 @@ if (VersaSchema::hasTable('users')) {
 
 - Ejemplos actualizados para reflejar las nuevas capacidades del ORM y el uso avanzado de relaciones y QueryBuilder.
 - Mejoras en los scripts de setup y migración para facilitar la adopción y pruebas.
+
 # v1.1 - 2025-08-19
+
 - Métodos attach, detach, sync y fresh() en BelongsToMany para gestión directa de la tabla pivot.
 - Documentación actualizada para relaciones muchos-a-muchos.
 - Fixes de compatibilidad con Psalm y QueryBuilder.
 - Mejoras en los tests de relaciones y sincronización.
-# Changelog
 
+# Changelog
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
@@ -673,32 +731,38 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
 ### Mejorado 🚀
 
 ### Seguridad 🔒
+
 - Validación preventiva en `onRaw()` contra sentencias múltiples (`;`), comentarios (`--`, `#`, `/* */`) y palabras DDL/DML peligrosas (DROP, ALTER, INSERT, etc.).
 
 ### Tests ✅
+
 - Nuevos archivos de pruebas multi‑motor: `testSQLite/QueryBuilderOnRawTest.php`, `testMysql/QueryBuilderOnRawTest.php`, `testPostgreSQL/QueryBuilderOnRawTest.php` cubriendo:
   - Uso básico `onRaw`
   - Múltiples llamadas encadenadas `onRaw()`
   - Bindings aplicados correctamente
 
 ### Documentación 📚
+
 - Sección añadida a `docs/user-guide/02-query-builder.md` describiendo `on()` vs `onRaw()`, casos de uso, tabla comparativa y ejemplos.
 
 ### Interno 🔧
 
 ---
+
 ## [1.4_beta] - 2025-08-05
 
 ### Añadido ⚡
-  - Método `upsert()` individual para inserción inteligente con detección automática de duplicados
-  - Método `insertOrUpdate()` como alias intuitivo para operaciones upsert
-  - Método `save()` inteligente que detecta automáticamente si es INSERT o UPDATE
-  - Método `replaceInto()` para compatibilidad específica MySQL con reemplazo completo
-  - Integración completa en VersaModel con validación automática y manejo de errores
-    - MySQL: `INSERT ... ON DUPLICATE KEY UPDATE`
-    - PostgreSQL: `INSERT ... ON CONFLICT DO UPDATE`
+
+- Método `upsert()` individual para inserción inteligente con detección automática de duplicados
+- Método `insertOrUpdate()` como alias intuitivo para operaciones upsert
+- Método `save()` inteligente que detecta automáticamente si es INSERT o UPDATE
+- Método `replaceInto()` para compatibilidad específica MySQL con reemplazo completo
+- Integración completa en VersaModel con validación automática y manejo de errores
+  - MySQL: `INSERT ... ON DUPLICATE KEY UPDATE`
+  - PostgreSQL: `INSERT ... ON CONFLICT DO UPDATE`
 
 ### Mejorado 🚀
+
 - **QueryBuilder**: Ampliado con 5 nuevos métodos CRUD (líneas 1580-2100+)
   - Validación completa de datos de entrada con sanitización automática
   - Manejo inteligente de claves únicas y detección de conflictos
@@ -710,6 +774,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
   - Validación estricta de claves únicas y columnas de actualización
 
 ### Técnico 🔧
+
 - Añadidos tests unitarios completos (`versaorm_cli/src/tests/replace_and_upsert_tests.rs`)
   - Tests de validación de estructura JSON (514 líneas)
   - Tests de construcción SQL específica por base de datos
@@ -725,6 +790,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
 - Manejo robusto de errores con propagación correcta desde Rust a PHP
 
 ### Documentación 📚
+
 - Nueva guía completa: [Operaciones UPSERT y REPLACE INTO](docs/user-guide/11-upsert-replace-operations.md) (742 líneas)
   - Documentación exhaustiva con ejemplos prácticos de todos los métodos
   - Comparativas detalladas UPSERT vs REPLACE INTO vs INSERT/UPDATE tradicional
@@ -736,6 +802,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
 - Ejemplos prácticos en guía rápida (`docs/user-guide/12-query-builder-quick-examples.md`)
 
 ### Calidad y Estándares 📋
+
 - ✅ Código PHP con PSR-12 compliance y validación completa
 - ✅ Código Rust con convenciones estándar y manejo de errores robusto
 - ✅ Tests unitarios completos con cobertura de casos edge
@@ -744,6 +811,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.
 - ✅ Validación de seguridad en todas las operaciones de entrada
 
 ### Ejemplos de Uso
+
 ```php
 // Nuevo: UPSERT inteligente - insertar si no existe, actualizar si existe
 $result = $orm->table('products')->upsert(
@@ -770,6 +838,7 @@ $result = $orm->table('settings')->insertOrUpdate(
 ## [1.3.0_beta] - 2025-08-06
 
 ### Añadido ⚡
+
 - **Operaciones UPSERT y REPLACE INTO**: Nuevas operaciones avanzadas de inserción/actualización inteligente
   - Método `upsert()` individual para inserción inteligente (insertar si no existe, actualizar si existe)
   - Método `replaceInto()` individual para reemplazo completo (solo MySQL)
@@ -781,6 +850,7 @@ $result = $orm->table('settings')->insertOrUpdate(
   - Manejo inteligente de tablas sin columna `id` autoincremental
 
 ### Mejorado 🚀
+
 - **Operaciones Batch**: Ampliadas las operaciones de lote existentes
   - `upsertMany()` ahora disponible para operaciones masivas de upsert
   - Integración perfecta con las operaciones batch existentes
@@ -789,6 +859,7 @@ $result = $orm->table('settings')->insertOrUpdate(
 - **Compatibilidad**: Implementación que funciona con y sin soporte nativo del binario Rust
 
 ### Técnico 🔧
+
 - Añadidos 22 tests completos para operaciones UPSERT y REPLACE INTO (`QueryBuilderReplaceAndUpsertTest.php`)
 - Actualización de `VersaoORM.php` para incluir nuevas acciones válidas
 - Correcciones en el esquema de pruebas (tabla `products` con columnas faltantes)
@@ -797,6 +868,7 @@ $result = $orm->table('settings')->insertOrUpdate(
 - Integración completa con tests existentes (84+ tests pasando)
 
 ### Documentación 📚
+
 - Nueva guía completa: [Operaciones UPSERT y REPLACE INTO](docs/user-guide/11-upsert-replace-operations.md)
 - Actualización de [Operaciones de Lote](docs/user-guide/03-batch-operations.md) con `replaceIntoMany()`
 - Comparaciones detalladas entre SQL tradicional vs VersaORM
@@ -809,6 +881,7 @@ $result = $orm->table('settings')->insertOrUpdate(
 - Documentación de diferencias críticas entre UPSERT y REPLACE INTO
 
 ### Ejemplos de Uso
+
 ```php
 // UPSERT - Inserción inteligente con control granular
 $result = $orm->table('products')->upsert(
@@ -830,6 +903,7 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
 ```
 
 ### Casos de Uso Resueltos
+
 - ✅ Sincronización de inventario desde APIs externas
 - ✅ Sistemas de configuración que requieren reemplazo completo
 - ✅ Contadores y estadísticas con actualización inteligente
@@ -837,6 +911,7 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
 - ✅ Preferencias de usuario con claves compuestas
 
 ### Migración
+
 - **Cambios Breaking**: Ninguno - Completamente compatible con código existente
 - **Nueva API**: Opcional - Nuevos métodos `upsert()`, `replaceInto()` y `replaceIntoMany()`
 - **Compatibilidad**: Funciona en MySQL, PostgreSQL, SQLite (con fallbacks automáticos)
@@ -846,6 +921,7 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
 ## [1.2.0_beta] - 2025-08-05
 
 ### Añadido ⚡
+
 - **Modo Lazy y Planificador de Consultas**: Nueva funcionalidad revolucionaria que optimiza automáticamente las consultas complejas
   - Método `->lazy()` para activar modo de optimización automática
   - Método `->collect()` para ejecutar consultas optimizadas
@@ -855,11 +931,13 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
   - Sistema de caching inteligente para planes de consulta reutilizables
 
 ### Mejorado 🚀
+
 - **Rendimiento**: Las consultas complejas ahora son significativamente más rápidas con optimización automática
 - **Query Builder**: Integración perfecta del modo lazy con API existente
 - **Rust Core**: Nuevas funciones de optimización en el núcleo Rust para análisis de consultas
 
 ### Técnico 🔧
+
 - Añadidos 12 tests completos para el modo lazy (`LazyQueryPlannerTest.php`)
 - Integración completa con infraestructura existente de tests
 - Análisis estático completado con PHPStan nivel 8 (0 errores)
@@ -867,6 +945,7 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
 - Binario Rust compilado y deployado en `src/binary/versaorm_cli.exe`
 
 ### Documentación 📚
+
 - Nueva guía completa: [Modo Lazy y Planificador de Consultas](docs/user-guide/10-lazy-mode-query-planner.md)
 - Ejemplos detallados de "antes vs después" mostrando mejoras de rendimiento
 - Integración de ejemplos lazy en todas las guías existentes
@@ -874,6 +953,7 @@ $result = $orm->table('products')->replaceIntoMany($products, 1000);
 - Documentación de mejores prácticas para uso del modo lazy
 
 ### Ejemplos de Uso
+
 ```php
 // ANTES: Múltiples construcciones SQL
 $users = $orm->table('users')
@@ -892,6 +972,7 @@ $users = $orm->table('users')
 ```
 
 ### Migración
+
 - **Cambios Breaking**: Ninguno - Completamente compatible con código existente
 - **Nueva API**: Opcional - Solo usar `->lazy()` y `->collect()` cuando se desee optimización automática
 
@@ -900,12 +981,14 @@ $users = $orm->table('users')
 ## [1.1.0_beta] - 2025-07-30
 
 ### Añadido
+
 - Sistema de caché básico
 - Validación avanzada con Mass Assignment Protection
 - Tipado fuerte y validación de esquemas
 - Modo Freeze para protección de esquema en producción
 
 ### Mejorado
+
 - Rendimiento general del ORM
 - Seguridad contra inyección SQL
 - Compatibilidad con múltiples bases de datos
@@ -915,6 +998,7 @@ $users = $orm->table('users')
 ## [1.0.0_beta] - 2025-07-15
 
 ### Añadido
+
 - Lanzamiento inicial de VersaORM-PHP
 - Query Builder completo
 - Sistema de modelos Active Record

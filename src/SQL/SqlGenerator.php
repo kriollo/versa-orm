@@ -528,14 +528,14 @@ class SqlGenerator
         }
 
         // HAVING (simple col op ? )
-        /** @var list<array{column:string,operator?:string,value:mixed}> $having */
+        /** @var list<array{column:string,operator?:string,value:mixed,type?:string,expression?:string,bindings?:array<int,mixed>}> $having */
         $having = [];
 
         if (isset($params['having']) && is_array($params['having'])) {
             $havingRaw = array_values($params['having']);
 
             foreach ($havingRaw as $h) {
-                if (!(is_array($h) && isset($h['column']) && is_string($h['column']))) {
+                if (!is_array($h)) {
                     continue;
                 }
 
@@ -544,18 +544,30 @@ class SqlGenerator
         }
 
         if ($having !== []) {
-            /** @var list<array{0:string,1:string}> $havingParts */
+            /** @var list<string> $havingParts */
             $havingParts = [];
 
             foreach ($having as $h) {
-                $rawCol = $h['column'] ?? '';
-                $col = is_scalar($rawCol) ? (string) $rawCol : '';
-                $rawOp = $h['operator'] ?? '=';
-                $op = is_scalar($rawOp) ? (string) $rawOp : '=';
-                $havingParts[] = [$col, self::compileSelectPart($col, $dialect) . ' ' . $op . ' ?'];
-                $bindings[] = $h['value'] ?? null;
+                // Check if it's a raw expression
+                if (isset($h['type']) && $h['type'] === 'raw' && isset($h['expression'])) {
+                    $havingParts[] = $h['expression'];
+                    // Add bindings if present
+                    if (isset($h['bindings']) && is_array($h['bindings'])) {
+                        $bindings = array_merge($bindings, array_values($h['bindings']));
+                    }
+                } elseif (isset($h['column']) && is_string($h['column'])) {
+                    // Normal having clause
+                    $col = $h['column'];
+                    $rawOp = $h['operator'] ?? '=';
+                    $op = is_scalar($rawOp) ? (string) $rawOp : '=';
+                    $havingParts[] = self::compileSelectPart($col, $dialect) . ' ' . $op . ' ?';
+                    $bindings[] = $h['value'] ?? null;
+                }
             }
-            $sql .= ' HAVING ' . implode(' AND ', array_map(static fn($hp): string => $hp[1], $havingParts));
+
+            if ($havingParts !== []) {
+                $sql .= ' HAVING ' . implode(' AND ', $havingParts);
+            }
         }
 
         // ORDER BY (single or raw)

@@ -47,7 +47,7 @@ use function strlen;
  * - find(id) - Objeto VersaModel o null
  * - dispense() - Nuevo objeto VersaModel vacío
  *
- * @version 1.6.0
+ * @version 1.8.4
  *
  * @author  VersaORM Team
  * @license MIT
@@ -355,30 +355,50 @@ class QueryBuilder
     }
 
     /**
-     * Añade una subconsulta en WHERE.
+     * Añade una cláusula HAVING basada en columna.
      *
-     * @param Closure|QueryBuilder $callback
+     * @param mixed $value El valor a comparar
      */
-    public function whereSubQuery(string $column, string $operator, $callback): self
+    public function having(string $column, string $operator, mixed $value): self
     {
         if (!$this->isSafeIdentifier($column)) {
-            throw new VersaORMException(sprintf('Invalid column name in whereSubQuery: %s', $column));
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
         }
 
-        $validOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS'];
-
-        if (!in_array(strtoupper($operator), $validOperators, true)) {
-            throw new VersaORMException(sprintf('Invalid operator in whereSubQuery: %s', $operator));
+        $op = strtoupper(trim($operator));
+        $allowedOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE'];
+        if (!in_array($op, $allowedOperators, true)) {
+            throw new VersaORMException(sprintf('Invalid operator in having: %s', $operator));
         }
 
-        $subQuery = $this->buildSubQuery($callback);
-
-        $this->wheres[] = [
+        $this->having[] = [
             'column' => $column,
-            'operator' => strtoupper($operator),
-            'value' => $subQuery,
-            'type' => 'and',
-            'subquery' => true,
+            'operator' => $op,
+            'value' => $value,
+            'connector' => 'AND',
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Añade una cláusula HAVING con expresión SQL raw.
+     *
+     * @param string               $expression SQL expression (e.g., "COUNT(*) > ?")
+     * @param array<int, mixed> $bindings   Values for placeholders
+     */
+    public function havingRaw(string $expression, array $bindings = []): self
+    {
+        // Basic security check
+        if (!$this->isSafeRawExpression($expression)) {
+            throw new VersaORMException('Potentially unsafe HAVING expression detected: ' . $expression);
+        }
+
+        $this->having[] = [
+            'type' => 'raw',
+            'expression' => $expression,
+            'bindings' => $bindings,
+            'connector' => 'AND',
         ];
 
         return $this;
@@ -405,6 +425,36 @@ class QueryBuilder
     }
 
     /**
+     * Añade una subconsulta en WHERE con columna y operador.
+     *
+     * @param Closure|QueryBuilder $callback
+     */
+    public function whereSubQuery(string $column, string $operator, $callback): self
+    {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+        }
+
+        $validOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS'];
+
+        if (!in_array(strtoupper($operator), $validOperators, true)) {
+            throw new VersaORMException(sprintf('Invalid operator in whereSubQuery: %s', $operator));
+        }
+
+        $subQuery = $this->buildSubQuery($callback);
+
+        $this->wheres[] = [
+            'column' => $column,
+            'operator' => strtoupper($operator),
+            'value' => $subQuery,
+            'type' => 'and',
+            'subquery' => true,
+        ];
+
+        return $this;
+    }
+
+    /**
      * Añade una subconsulta NOT EXISTS en WHERE.
      *
      * @param Closure|QueryBuilder $callback
@@ -419,31 +469,6 @@ class QueryBuilder
             'value' => $subQuery,
             'type' => 'and',
             'subquery' => true,
-        ];
-
-        return $this;
-    }
-
-    /**
-     * Añade una cláusula HAVING.
-     */
-    public function having(string $column, string $operator, mixed $value): self
-    {
-        if (!$this->isSafeIdentifier($column)) {
-            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
-        }
-
-        $op = strtoupper(trim($operator));
-        $allowedOperators = ['=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE'];
-        if (!in_array($op, $allowedOperators, true)) {
-            throw new VersaORMException(sprintf('Invalid operator in having: %s', $operator));
-        }
-
-        $this->having[] = [
-            'column' => $column,
-            'operator' => $op,
-            'value' => $value,
-            'connector' => 'AND',
         ];
 
         return $this;
@@ -1552,15 +1577,40 @@ class QueryBuilder
     }
 
     /**
-     * Inserta un nuevo registro.
+     * Inserta un nuevo registro o múltiples registros.
      *
-     * @param array<string, mixed> $data
+     * @param array<string, mixed>|array<int, array<string, mixed>> $data Single record or array of records
      */
     public function insert(array $data): bool
     {
+        // Detectar si es batch insert (array de arrays con índices numéricos)
+        if ($this->isMultiDimensionalArray($data)) {
+            // Es un batch insert, usar insertMany
+            return $this->insertMany($data) > 0;
+        }
+
+        // Es un insert simple
         $result = $this->execute('insert', $data);
 
         return is_int($result) && $result > 0;
+    }
+
+    /**
+     * Verifica si un array es multidimensional (batch de registros).
+     *
+     * @param array<string, mixed>|array<int, array<string, mixed>> $data
+     * @phpstan-assert-if-true array<int, array<string, mixed>> $data
+     */
+    private function isMultiDimensionalArray(array $data): bool
+    {
+        if ($data === []) {
+            return false;
+        }
+
+        // Si el primer elemento es un array y la clave es numérica, es batch
+        $firstKey = array_key_first($data);
+
+        return is_int($firstKey) && is_array($data[$firstKey]);
     }
 
     /**
@@ -1589,22 +1639,26 @@ class QueryBuilder
      * Actualiza los registros que coincidan con las cláusulas WHERE.
      *
      * @param array<string, mixed> $data
+     *
+     * @return int Número de filas afectadas
      */
-    public function update(array $data): self
+    public function update(array $data): int
     {
-        $this->execute('update', $data);
+        $result = $this->execute('update', $data);
 
-        return $this;
+        return is_int($result) ? $result : 0;
     }
 
     /**
      * Elimina los registros que coincidan con las cláusulas WHERE.
+     *
+     * @return int Número de filas eliminadas
      */
-    public function delete(): void
+    public function delete(): int
     {
-        $this->execute('delete');
+        $result = $this->execute('delete');
 
-        // return null;
+        return is_int($result) ? $result : 0;
     }
 
     /**
@@ -2502,6 +2556,14 @@ class QueryBuilder
 
         // Si es un array de queries
         if (is_array($queries)) {
+            // Agregar la query base primero
+            $baseSQL = $this->buildSelectSQL();
+            $queryDefinitions[] = [
+                'sql' => (string) $baseSQL['sql'],
+                'bindings' => is_array($baseSQL['bindings']) ? array_values($baseSQL['bindings']) : [],
+            ];
+
+            // Agregar las queries adicionales
             foreach ($queries as $query) {
                 // Requerir explícitamente ambas claves (sql y bindings) para cumplir con la expectativa del test
                 if (!is_array($query) || !isset($query['sql'], $query['bindings'])) {
@@ -3813,7 +3875,7 @@ class QueryBuilder
         // Otros drivers (PostgreSQL, SQLite): emular con upsertMany por PK/índices únicos
         [$uniqueKeys, $updateColumns] = $this->detectUpsertKeysForReplace($records[0]);
 
-        if (empty($uniqueKeys)) {
+        if ($uniqueKeys === []) {
             // Sin claves únicas detectadas en los datos: repetir insertMany simple
             // Reutilizar generate/execute de upsertMany espera unique_keys, así que haremos inserciones individuales
             $inserted = 0;

@@ -179,7 +179,7 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function test_where_sub_query_with_invalid_column(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->expectExceptionMessage('Invalid column name in whereSubQuery');
+        $this->expectExceptionMessage('Invalid or malicious column name detected');
 
         self::$orm
             ->table('users')

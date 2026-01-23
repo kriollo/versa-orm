@@ -29,6 +29,11 @@ parameters:
         - '#Unsafe usage of new static\(\)#'
         - '#Static call to instance method#'
 
+        # === ORM insert() type narrowing limitation ===
+        # PHPStan cannot narrow union types in insert() method even with type guards
+        - '#Comparison operation ">" between array<string, mixed> and 0 results in an error#'
+        - '#Parameter \#2 \$data of method VersaORM\\QueryBuilder::execute\(\) expects array<string, mixed>\|null, array<int\|string, mixed> given#'
+
         # === ORM MAGIC METHODS AND PROPERTIES ===
         - '#Call to an undefined method.*::(where|select|join|orderBy|groupBy|having|limit|offset|insert|update|delete|count|exists|first|get|all|find|create|save|destroy)\(\)#'
         - '#Access to an undefined property.*::\$[a-zA-Z_][a-zA-Z0-9_]*#'

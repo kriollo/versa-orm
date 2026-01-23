@@ -159,9 +159,11 @@ class DatabaseSpecificTypesTest extends TestCase
         $model->complex_data = $complexData;
         $model->store();
 
-        static::assertIsArray($model->complex_data);
-        static::assertSame('dark', $model->complex_data['user_preferences']['theme']);
-        static::assertContains('admin', $model->complex_data['permissions']);
+        // MySQL stores JSON as string, so we need to decode it
+        $storedData = is_string($model->complex_data) ? json_decode($model->complex_data, true) : $model->complex_data;
+        static::assertIsArray($storedData);
+        static::assertSame('dark', $storedData['user_preferences']['theme']);
+        static::assertContains('admin', $storedData['permissions']);
     }
 
     public function test_type_validation_errors(): void

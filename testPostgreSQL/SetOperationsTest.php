@@ -52,20 +52,24 @@ class SetOperationsTest extends TestCase
     public function test_union_all_keeps_duplicates(): void
     {
         $qb = new QueryBuilder(self::$orm, 'set_ops_a');
+        // Base query must select same columns as union queries
+        $qb->select(['value']);
+
         $result = $qb->union([
-            ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], true); // UNION ALL
         $values = array_map(static fn($r) => (int) $r['value'], $result);
-        // Conteo esperado: 5 + 5 = 10 filas (sin eliminar duplicados)
+        // Conteo esperado: 5 (base) + 5 (union) = 10 filas (sin eliminar duplicados)
         static::assertCount(10, $values, 'UNION ALL debe conservar duplicados');
     }
 
     public function test_union_removes_duplicates(): void
     {
         $qb = new QueryBuilder(self::$orm, 'set_ops_a');
+        // Base query must select same columns as union queries
+        $qb->select(['value']);
+
         $result = $qb->union([
-            ['sql' => 'SELECT value FROM set_ops_a', 'bindings' => []],
             ['sql' => 'SELECT value FROM set_ops_b', 'bindings' => []],
         ], false); // UNION
         $values = array_map(static fn($r) => (int) $r['value'], $result);

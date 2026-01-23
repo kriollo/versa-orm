@@ -160,6 +160,21 @@ trait HasStrongTyping
         $types = static::getPropertyTypes();
 
         if (!isset($types[$property])) {
+            // Si no hay tipo de propiedad definido, intentar determinar el tipo desde el esquema de la BD
+            // para hacer el casting apropiado (especialmente importante para float/double)
+            $dbType = $this->getColumnTypeFromSchema($property);
+            if ($dbType !== null) {
+                // Si tenemos info de la BD, usar el handler correspondiente
+                $handler = self::getPhpCastHandlers()[$dbType] ?? null;
+                if ($handler !== null) {
+                    try {
+                        return $handler($this, $property, $value, []);
+                    } catch (\Throwable) {
+                        // Si falla el casting, continuar con heurísticas
+                    }
+                }
+            }
+
             // Heurística segura: si es string y parece JSON, decodificar.
             if (is_string($value) && $value !== '') {
                 // Comprobación rápida para JSON: debe empezar por { o [ y terminar por } o ]
@@ -221,6 +236,88 @@ trait HasStrongTyping
                 "Error casting property {$property} to PHP type {$type}: " . $e->getMessage(),
                 'TYPE_CASTING_ERROR',
             );
+        }
+    }
+
+    /**
+     * Get the PHP type for a column from the database schema.
+     * Returns null if unable to determine type.
+     *
+     * @return string|null PHP type (int, float, string, bool, etc.)
+     */
+    private function getColumnTypeFromSchema(string $columnName): ?string
+    {
+        // Mapping from database types to PHP types
+        $typeMap = [
+            'integer' => 'int',
+            'int' => 'int',
+            'bigint' => 'int',
+            'smallint' => 'int',
+            'tinyint' => 'bool', // Commonly used for boolean
+            'serial' => 'int',
+            'bigserial' => 'int',
+            'float' => 'float',
+            'double' => 'float',
+            'real' => 'float',
+            'double precision' => 'float',
+            // DECIMAL and NUMERIC should remain as string to preserve precision
+            // 'decimal' => 'string',  // Keep as string - will use default heuristics
+            // 'numeric' => 'string',  // Keep as string - will use default heuristics
+            'varchar' => 'string',
+            'char' => 'string',
+            'text' => 'string',
+            'boolean' => 'bool',
+            'bool' => 'bool',
+            'date' => 'datetime',
+            'datetime' => 'datetime',
+            'timestamp' => 'datetime',
+            'json' => 'json',
+            'jsonb' => 'json',
+        ];
+
+        try {
+            // Get schema info from ORM
+            $orm = $this->orm ?? \VersaORM\VersaModel::orm();
+            if (!$orm instanceof VersaORM) {
+                return null;
+            }
+
+            // Cache schema to avoid repeated queries
+            if ($this->databaseSchemaCache === null) {
+                $schema = $orm->schema('columns', $this->table);
+                if (!is_array($schema)) {
+                    return null;
+                }
+
+                $this->databaseSchemaCache = [];
+                foreach ($schema as $column) {
+                    if (!isset($column['column_name'], $column['data_type'])) {
+                        continue;
+                    }
+
+                    if (!is_string($column['column_name']) || !is_string($column['data_type'])) {
+                        continue;
+                    }
+                    $colName = strtolower($column['column_name']);
+                    $dataType = strtolower($column['data_type']);
+                    $this->databaseSchemaCache[$colName] = $dataType;
+                }
+            }
+
+            $lowerColumnName = strtolower($columnName);
+            if (!isset($this->databaseSchemaCache[$lowerColumnName])) {
+                return null;
+            }
+
+            $dbType = $this->databaseSchemaCache[$lowerColumnName];
+            if (!is_string($dbType)) {
+                return null;
+            }
+
+            // Return mapped PHP type
+            return $typeMap[$dbType] ?? null;
+        } catch (\Throwable) {
+            return null;
         }
     }
 

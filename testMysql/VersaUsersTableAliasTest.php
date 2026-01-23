@@ -199,7 +199,7 @@ class VersaUsersTableAliasTest extends TestCase
             ->where('u.email', '=', 'john@example.com')
             ->update(['name' => 'John Updated']);
 
-        static::assertInstanceOf(\VersaORM\QueryBuilder::class, $updated);
+        static::assertIsInt($updated);
 
         $result = $this->orm
             ->table('versa_users')

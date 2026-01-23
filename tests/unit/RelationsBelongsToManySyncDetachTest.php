@@ -36,9 +36,10 @@ if (!class_exists('TBMQuery')) {
             return true;
         }
 
-        public function delete(): void
+        public function delete(): int
         {
             // noop
+            return 0;
         }
 
         public function from(string $table): static

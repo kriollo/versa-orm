@@ -11,7 +11,7 @@ namespace VersaORM;
  * RETORNA: Siempre objetos manipulables (store, trash, propiedades dinámicas)
  * USO: Para operaciones CRUD individuales y manipulación de registros
  *
- * @version 1.6.0
+ * @version 1.8.4
  *
  * @author  VersaORM Team
  * @license MIT
@@ -1038,7 +1038,7 @@ class VersaModel implements TypedModelInterface
 
                         if (is_array($indexInfo)) {
                             foreach ($indexInfo as $col) {
-                                if (!isset($col['name'])) {
+                                if (!isset($col['name']) || !is_string($col['name'])) {
                                     continue;
                                 }
 
@@ -1054,7 +1054,13 @@ class VersaModel implements TypedModelInterface
 
                 if (is_array($indexes)) {
                     foreach ($indexes as $index) {
-                        if (!(isset($index['Column_name']) && $index['Key_name'] !== 'PRIMARY')) {
+                        if (
+                            !(
+                                isset($index['Column_name'])
+                                && is_string($index['Column_name'])
+                                && $index['Key_name'] !== 'PRIMARY'
+                            )
+                        ) {
                             continue;
                         }
 
@@ -1073,7 +1079,7 @@ class VersaModel implements TypedModelInterface
 
                 if (is_array($indexes)) {
                     foreach ($indexes as $index) {
-                        if (!isset($index['attname'])) {
+                        if (!isset($index['attname']) || !is_string($index['attname'])) {
                             continue;
                         }
 
@@ -1083,7 +1089,6 @@ class VersaModel implements TypedModelInterface
             }
 
             if (!empty($uniqueKeys)) {
-                /** @var array<string> $result */
                 return array_values(array_unique($uniqueKeys));
             }
 
@@ -2271,9 +2276,16 @@ class VersaModel implements TypedModelInterface
 
                 case 'integer':
                 case 'int':
-                    if (!is_numeric($value) || (string) (int) $value !== (string) $value) {
-                        $errors[] = "The {$field} must be an integer.";
+                    // Accept integers (including PHP_INT_MAX) and numeric strings that represent integers
+                    if (is_int($value)) {
+                        // Already an integer, all good
+                        break;
                     }
+                    if (is_numeric($value) && (float) $value === floor((float) $value)) {
+                        // Numeric value that represents an integer (handles large integers as strings)
+                        break;
+                    }
+                    $errors[] = "The {$field} must be an integer.";
                     break;
                 case 'float':
                 case 'double':
@@ -2310,7 +2322,12 @@ class VersaModel implements TypedModelInterface
                     $errors[] = "The {$field} must be a boolean value.";
                 }
             } elseif (str_contains($dataType, 'int')) {
-                if (!is_numeric($value) || (string) (int) $value !== (string) $value) {
+                // Accept integers (including PHP_INT_MAX) and numeric strings that represent integers
+                if (is_int($value)) {
+                    // Already an integer, all good
+                } elseif (is_numeric($value) && (float) $value === floor((float) $value)) {
+                    // Numeric value that represents an integer (handles large integers as strings)
+                } else {
                     $errors[] = "The {$field} must be an integer.";
                 }
             } elseif (str_contains($dataType, 'decimal') || str_contains($dataType, 'float')) {

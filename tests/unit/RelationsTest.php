@@ -33,9 +33,10 @@ if (!class_exists('TestQueryBuilderRelations')) {
             return $this;
         }
 
-        public function delete(): void
+        public function delete(): int
         {
             // no-op for tests
+            return 0;
         }
 
         public function findOne(): ?VersaModel

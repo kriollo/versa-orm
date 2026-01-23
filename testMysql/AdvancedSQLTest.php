@@ -179,12 +179,10 @@ class AdvancedSQLTest extends TestCase
     public function test_union(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
+        // Base query must select same columns as union queries
+        $qb->select(['name']);
 
         $queries = [
-            [
-                'sql' => 'SELECT name FROM test_table WHERE department = ?',
-                'bindings' => ['Engineering'],
-            ],
             [
                 'sql' => 'SELECT name FROM test_table WHERE salary > ?',
                 'bindings' => [80000],
@@ -199,12 +197,10 @@ class AdvancedSQLTest extends TestCase
     public function test_union_all(): void
     {
         $qb = new QueryBuilder($this->orm, 'test_table');
+        // Base query must select same columns as union queries
+        $qb->select(['department']);
 
         $queries = [
-            [
-                'sql' => 'SELECT department FROM test_table WHERE salary > 70000',
-                'bindings' => [],
-            ],
             [
                 'sql' => 'SELECT department FROM test_table WHERE department = ?',
                 'bindings' => ['Marketing'],

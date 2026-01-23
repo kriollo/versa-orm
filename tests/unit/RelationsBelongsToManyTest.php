@@ -38,10 +38,11 @@ if (!class_exists('TBtmQuery')) {
             return [];
         }
 
-        // QueryBuilder::delete(): void in real class, keep signature compatible
-        public function delete(): void
+        // QueryBuilder::delete(): int in real class, keep signature compatible
+        public function delete(): int
         {
             $this->called[] = ['delete'];
+            return 0;
         }
 
         // execute is protected in QueryBuilder; attach uses reflection to call it

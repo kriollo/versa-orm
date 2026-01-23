@@ -357,7 +357,7 @@ class QueryBuilderTest extends TestCase
             ->where('email', '=', 'alice@example.com')
             ->update(['status' => 'on_vacation']);
 
-        static::assertInstanceOf(QueryBuilder::class, $updated);
+        static::assertIsInt($updated);
 
         $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
         static::assertSame('on_vacation', $alice->status);
@@ -367,7 +367,7 @@ class QueryBuilderTest extends TestCase
     {
         $deleted = self::$orm->table('users')->where('email', '=', 'bob@example.com')->delete();
 
-        static::assertNull($deleted);
+        static::assertIsInt($deleted);
         $bob = self::$orm->table('users')->where('email', '=', 'bob@example.com')->findOne();
         static::assertNull($bob);
     }

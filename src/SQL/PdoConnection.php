@@ -104,6 +104,24 @@ class PdoConnection
                     $port = (string) ($this->config['port'] ?? '5432');
                     $database = (string) ($this->config['database'] ?? '');
                     $dsn = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
+
+                    // Soportar opciones de SSL para PostgreSQL
+                    // sslmode: disable, allow, prefer, require, verify-ca, verify-full
+                    if (isset($this->config['sslmode'])) {
+                        $dsn .= ';sslmode=' . (string) $this->config['sslmode'];
+                    }
+
+                    // Otras opciones de SSL
+                    if (isset($this->config['sslcert'])) {
+                        $dsn .= ';sslcert=' . (string) $this->config['sslcert'];
+                    }
+                    if (isset($this->config['sslkey'])) {
+                        $dsn .= ';sslkey=' . (string) $this->config['sslkey'];
+                    }
+                    if (isset($this->config['sslrootcert'])) {
+                        $dsn .= ';sslrootcert=' . (string) $this->config['sslrootcert'];
+                    }
+
                     $poolKey =
                         'pgsql|'
                         . $dsn

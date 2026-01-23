@@ -158,6 +158,9 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     public function test_union(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
+        // Base query must select same columns as union queries
+        $qb->select(['name'])->where('department', '=', 'Sales');
+
         $queries = [
             [
                 'sql' => 'SELECT name FROM employees WHERE department = ?',
@@ -175,6 +178,9 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     public function test_union_all(): void
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
+        // Base query must select same columns as union queries
+        $qb->select(['department'])->where('salary', '>', 60000);
+
         $queries = [
             [
                 'sql' => 'SELECT department FROM employees WHERE salary > 70000',
