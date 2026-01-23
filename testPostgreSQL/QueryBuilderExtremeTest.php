@@ -239,31 +239,6 @@ class QueryBuilderExtremeTest extends TestCase
     }
 
     /**
-     * Test: DISTINCT con múltiples columnas.
-     *
-     * @TODO: Implementar método distinct() en QueryBuilder
-     */
-    public function test_distinct_multiple_columns(): void
-    {
-        // SKIPPED: distinct() method not yet implemented
-        static::markTestSkipped('distinct() method not yet implemented in QueryBuilder');
-
-        // $results = self::$orm
-        //     ->table('users')
-        //     ->distinct()
-        //     ->select(['status', 'email'])
-        //     ->get();
-        // static::assertIsArray($results);
-        // // Verificar que no hay duplicados
-        // $combinations = [];
-        // foreach ($results as $result) {
-        //     $key = $result['status'] . '|' . $result['email'];
-        //     static::assertArrayNotHasKey($key, $combinations);
-        //     $combinations[$key] = true;
-        // }
-    }
-
-    /**
      * Test: WHERE IN con array vacío.
      */
     public function test_where_in_with_empty_array(): void
@@ -341,27 +316,6 @@ class QueryBuilderExtremeTest extends TestCase
         $notNullResults = self::$orm->table('users')->whereNotNull('status')->get();
 
         static::assertIsArray($notNullResults);
-    }
-
-    /**
-     * Test: RAW queries con bind parameters.
-     *
-     * @TODO: Implementar método query() en VersaORM instance
-     */
-    public function test_raw_query_with_bindings(): void
-    {
-        // SKIPPED: query() method not available on VersaORM instance
-        static::markTestSkipped('query() method not available on VersaORM instance');
-
-        // $results = self::$orm->query(
-        //     'SELECT * FROM users WHERE status = ? AND id > ? ORDER BY id LIMIT ?',
-        //     ['active', 0, 10],
-        // );
-        // static::assertIsArray($results);
-        // foreach ($results as $result) {
-        //     static::assertSame('active', $result['status']);
-        //     static::assertGreaterThan(0, $result['id']);
-        // }
     }
 
     /**
@@ -514,40 +468,5 @@ class QueryBuilderExtremeTest extends TestCase
         $count = self::$orm->table('users')->where('status', '=', 'batch')->count();
 
         static::assertSame(100, $count);
-    }
-
-    /**
-     * Test: Incremento y decremento de columnas.
-     *
-     * @TODO: Implementar métodos increment() y decrement() en QueryBuilder
-     */
-    public function test_increment_decrement_columns(): void
-    {
-        // SKIPPED: increment() and decrement() methods not yet implemented
-        static::markTestSkipped('increment() and decrement() methods not yet implemented in QueryBuilder');
-
-        // self::$orm->schemaCreate('test_counters', [
-        //     ['name' => 'id', 'type' => 'SERIAL', 'primary' => true],
-        //     ['name' => 'counter', 'type' => 'INTEGER', 'default' => 0],
-        // ]);
-        // $model = VersaModel::dispense('test_counters');
-        // $model->counter = 10;
-        // $model->store();
-        // $id = $model->id;
-        // // Incrementar
-        // self::$orm
-        //     ->table('test_counters')
-        //     ->where('id', '=', $id)
-        //     ->increment('counter', 5);
-        // $updated = VersaModel::load('test_counters', $id);
-        // static::assertSame(15, $updated->counter);
-        // // Decrementar
-        // self::$orm
-        //     ->table('test_counters')
-        //     ->where('id', '=', $id)
-        //     ->decrement('counter', 3);
-        // $updated2 = VersaModel::load('test_counters', $id);
-        // static::assertSame(12, $updated2->counter);
-        // self::$orm->schemaDrop('test_counters');
     }
 }

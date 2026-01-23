@@ -335,14 +335,6 @@ class QueryBuilderJoinRawTest extends TestCase
         self::$orm->table('anima_campanas')->joinRaw('')->getAll();
     }
 
-    /**
-     * Test de validación: bindings debe ser array.
-     */
-    public function testJoinRawInvalidBindingsThrowsException(): void
-    {
-        static::markTestSkipped('Type hints in PHP 8.1+ prevent invalid types from being passed');
-    }
-
     private static function createTestTables(): void
     {
         // Tabla de campañas (similar al caso del usuario) - MySQL

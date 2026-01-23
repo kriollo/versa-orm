@@ -77,24 +77,19 @@ class VersaORMTest extends TestCase
         $originalStatus = $alice->status;
 
         // Simular rollback verificando que el cambio no se persiste si hay error
-        try {
-            self::$orm->exec('START TRANSACTION');
-            self::$orm->exec("UPDATE users SET status = 'rollback_test' WHERE email = ?", ['alice@example.com']);
+        self::$orm->exec('START TRANSACTION');
+        self::$orm->exec("UPDATE users SET status = 'rollback_test' WHERE email = ?", ['alice@example.com']);
 
-            // Verificar que el cambio temporal existe
-            $tempAlice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-            static::assertSame('rollback_test', $tempAlice->status);
+        // Verificar que el cambio temporal existe
+        $tempAlice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
+        static::assertSame('rollback_test', $tempAlice->status);
 
-            // Hacer rollback
-            self::$orm->exec('ROLLBACK');
+        // Hacer rollback
+        self::$orm->exec('ROLLBACK');
 
-            // Verificar que volvió al estado original
-            $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
-            static::assertSame($originalStatus, $alice->status);
-        } catch (Exception $e) {
-            // Si las transacciones no funcionan en el binario actual, simplemente marcamos el test como incompleto
-            static::markTestIncomplete('Transactions may not be fully supported in current binary version');
-        }
+        // Verificar que volvió al estado original
+        $alice = self::$orm->table('users')->where('email', '=', 'alice@example.com')->findOne();
+        static::assertSame($originalStatus, $alice->status);
     }
 
     public function test_schema_get_tables(): void

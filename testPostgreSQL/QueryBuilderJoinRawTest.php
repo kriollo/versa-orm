@@ -337,22 +337,6 @@ class QueryBuilderJoinRawTest extends TestCase
         self::$orm->table('anima_campanas')->joinRaw('')->getAll();
     }
 
-    /**
-     * Test de validación: bindings debe ser array
-     * Nota: En PHP 8.1+, el type hint estricto captura esto en tiempo de ejecución
-     * antes de que se lance una excepción, por lo que este test no se puede ejecutar.
-     */
-    public function testJoinRawInvalidBindingsThrowsException(): void
-    {
-        // Skip this test - PHP 8.1+ type checking prevents this from being called
-        static::markTestSkipped('Type hints in PHP 8.1+ prevent invalid types from being passed');
-
-        // $this->expectException(\TypeError::class);
-        // self::$orm->table('anima_campanas')
-        //     ->joinRaw('INNER JOIN versa_users ON true', 'invalid')
-        //     ->getAll();
-    }
-
     private static function createTestTables(): void
     {
         // Tabla de campañas (similar al caso del usuario)

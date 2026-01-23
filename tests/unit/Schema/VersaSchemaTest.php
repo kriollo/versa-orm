@@ -192,14 +192,6 @@ final class VersaSchemaTest extends TestCase
             $table->string('email')->index();
         });
 
-        // Verificar que el índice fue creado
-        $indexes = VersaSchema::getIndexes('test_users');
-
-        // Si no hay índices creados, el test no es aplicable para esta configuración
-        if (empty($indexes)) {
-            static::markTestSkipped('Index creation not supported in current configuration');
-        }
-
         static::assertTrue(VersaSchema::hasIndex('test_users', 'email'));
     }
 
@@ -211,14 +203,6 @@ final class VersaSchemaTest extends TestCase
             $table->string('last_name');
             $table->index(['first_name', 'last_name']);
         });
-
-        // Verificar que el índice fue creado
-        $indexes = VersaSchema::getIndexes('test_users');
-
-        // Si no hay índices creados, el test no es aplicable para esta configuración
-        if (empty($indexes)) {
-            static::markTestSkipped('Composite index creation not supported in current configuration');
-        }
 
         static::assertTrue(VersaSchema::hasIndex('test_users', ['first_name', 'last_name']));
     }
