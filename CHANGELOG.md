@@ -1,3 +1,17 @@
+## [1.8.5] - 2026-01-30
+
+### 🔧 Correcciones y Estabilidad
+
+**ErrorHandler.php - Gestión de Logs:**
+
+- **Permisos de Directorio**: Corregida la creación de la carpeta de logs aumentando los permisos de `0o755` a `0o775` para asegurar la escritura en entornos con grupos compartidos.
+
+**Calidad y Testing:**
+
+- **PHPStan Analysis**: Refinada la lógica de parseo en `PHPStanAnalyzer.php` para manejar correctamente resultados vacíos y mejorar la precisión del reporte de calidad.
+
+---
+
 ## [1.8.4] - 2026-01-23
 
 ### 🔧 Estabilidad del Núcleo y Tipado Inteligente
