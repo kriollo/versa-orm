@@ -215,7 +215,7 @@ class Report
         $directory = dirname($filepath);
 
         if (!is_dir($directory)) {
-            mkdir($directory, 0o755, true);
+            mkdir($directory, 0o775, true);
         }
 
         return file_put_contents($filepath, $this->toJson()) !== false;

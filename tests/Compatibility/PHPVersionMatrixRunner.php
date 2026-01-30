@@ -97,7 +97,7 @@ class PHPVersionMatrixRunner
             $directory = dirname($filepath);
 
             if (!is_dir($directory)) {
-                mkdir($directory, 0o755, true);
+                mkdir($directory, 0o775, true);
             }
             file_put_contents($filepath, $json);
         }
@@ -117,7 +117,7 @@ class PHPVersionMatrixRunner
             $directory = dirname($filepath);
 
             if (!is_dir($directory)) {
-                mkdir($directory, 0o755, true);
+                mkdir($directory, 0o775, true);
             }
             file_put_contents($filepath, $html);
         }

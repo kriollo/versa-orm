@@ -59,7 +59,7 @@ final class ErrorHandlerTest extends TestCase
     {
         $tmp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'versa_err_test_' . uniqid();
         // Ensure directory removed after
-        @mkdir($tmp, 0o755, true);
+        @mkdir($tmp, 0o775, true);
 
         ErrorHandler::configureFromVersaORM(['log_path' => $tmp, 'debug' => true]);
 

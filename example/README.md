@@ -23,12 +23,14 @@ Una aplicación de demostración tipo Trello construida con PHP y VersaORM para 
 ## 🛠️ Instalación
 
 1. **Clonar el repositorio**:
+
    ```bash
    git clone https://github.com/kriollo/versa-orm.git
    cd versa-orm/example
    ```
 
 2. **Instalar dependencias**:
+
    ```bash
    composer install
    ```
@@ -44,7 +46,7 @@ Una aplicación de demostración tipo Trello construida con PHP y VersaORM para 
 
 5. **Permisos**:
    ```bash
-   chmod -R 755 .
+   chmod -R 775 .
    chmod -R 777 ../logs
    ```
 
@@ -86,6 +88,7 @@ example/
 ## 🎨 Características de VersaORM Demostradas
 
 ### 1. **Modelos ActiveRecord**
+
 ```php
 // Crear registros
 $user = User::create(['name' => 'Juan', 'email' => 'juan@example.com']);
@@ -103,6 +106,7 @@ $user->trash();
 ```
 
 ### 2. **🆕 Modo Lazy - Consultas Ultra-Optimizadas**
+
 ```php
 // ❌ ANTES (Ineficiente):
 $tasks = Task::getAll("SELECT * FROM tasks WHERE status = ?", ['todo']);
@@ -118,6 +122,7 @@ $tasks = $orm->table('tasks as t')
 ```
 
 ### 3. **Consultas Complejas con JOINs Optimizados**
+
 ```php
 // Consulta compleja con múltiples JOINs optimizada automáticamente
 $tasks = $orm->table('tasks as t')
@@ -131,6 +136,7 @@ $tasks = $orm->table('tasks as t')
 ```
 
 ### 4. **Relaciones Many-to-Many**
+
 ```php
 // Asignar etiquetas a una tarea
 $task->setLabels([1, 2, 3]);
@@ -140,6 +146,7 @@ $labels = $task->labels();
 ```
 
 ### 4. **Validaciones**
+
 ```php
 protected array $rules = [
     'name' => ['required', 'min:2', 'max:100'],
@@ -148,6 +155,7 @@ protected array $rules = [
 ```
 
 ### 5. **Asignación Masiva**
+
 ```php
 protected array $fillable = ['name', 'email', 'avatar_color'];
 
@@ -156,6 +164,7 @@ $user->fill($_POST);
 ```
 
 ### 6. **Timestamps Automáticos**
+
 ```php
 protected bool $timestamps = true;
 // Maneja automáticamente created_at y updated_at
@@ -172,14 +181,17 @@ Para ver una comparación completa entre el modo normal y el modo lazy:
 ### Ejemplos de Mejoras Implementadas:
 
 #### 📊 Dashboard Optimizado:
+
 - **ANTES**: 4 consultas separadas + ordenamiento en PHP
 - **DESPUÉS**: 4 consultas COUNT eficientes + 1 consulta lazy con JOINs optimizados
 
 #### 📝 Lista de Tareas con Filtros:
+
 - **ANTES**: Cargar TODAS las tareas + filtrar en PHP + consultas N+1
 - **DESPUÉS**: Filtros aplicados en DB + JOINs optimizados + paginación eficiente
 
 #### 🏷️ Tareas por Etiqueta:
+
 - **ANTES**: SQL manual complejo propenso a errores
 - **DESPUÉS**: Query Builder seguro con optimización automática de JOINs
 
@@ -195,6 +207,7 @@ Para ver una comparación completa entre el modo normal y el modo lazy:
 ## 🌟 Ejemplos de Uso Avanzado
 
 ### Consultas Complejas
+
 ```php
 // Tareas con información de proyecto y usuario
 $tasks = Task::getAll("
@@ -213,6 +226,7 @@ $tasks = Task::getAll("
 ```
 
 ### Estadísticas de Proyecto
+
 ```php
 // Progreso del proyecto
 $project = Project::find(1);
@@ -326,6 +340,7 @@ php test_typing_simple.php
 ```
 
 Este script valida:
+
 - Consistencia del esquema en todos los modelos
 - Casting correcto de tipos de datos
 - Validación de enums y restricciones

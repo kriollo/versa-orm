@@ -30,7 +30,7 @@ class PHPStanAnalyzer
         $this->phpstanPath = $phpstanPath;
 
         if (!is_dir($this->reportsDir)) {
-            mkdir($this->reportsDir, 0o755, true);
+            mkdir($this->reportsDir, 0o775, true);
         }
     }
 

@@ -230,7 +230,7 @@ class TestLogger
     private function ensureLogDirectory(): void
     {
         if (!is_dir($this->outputDir)) {
-            mkdir($this->outputDir, 0o755, true);
+            mkdir($this->outputDir, 0o775, true);
         }
     }
 

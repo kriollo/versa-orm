@@ -30,6 +30,8 @@ class ErrorHandler
 
     private static ?string $logPath = null;
 
+    private static ?int $permissionFolderLog = null;
+
     /**
      * Configura el modo debug.
      */
@@ -71,9 +73,14 @@ class ErrorHandler
             self::$debugMode = (bool) $config['debug'];
         }
 
+        // Configurar permission folder log
+        self::$permissionFolderLog = isset($config['permission_folder_log'])
+            ? (int) $config['permission_folder_log']
+            : 0o775;
+
         // Crear directorio de logs si no existe
         if (is_string(self::$logPath) && self::$logPath !== '' && !is_dir(self::$logPath)) {
-            mkdir(self::$logPath, 0o755, true);
+            mkdir(self::$logPath, self::$permissionFolderLog, true);
         }
     }
 
@@ -477,7 +484,7 @@ class ErrorHandler
         // Crear directorio de logs si no existe
         if (!is_dir(self::$logPath)) {
             try {
-                mkdir(self::$logPath, 0o755, true);
+                mkdir(self::$logPath, 0o775, true);
             } catch (\Throwable) {
                 return;
             }

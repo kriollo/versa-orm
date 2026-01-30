@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\SQLite;
 
-use Exception;
 use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 

@@ -32,7 +32,7 @@ class PsalmAnalyzer
         $this->psalmPath = $psalmPath;
 
         if (!is_dir($this->reportsDir)) {
-            mkdir($this->reportsDir, 0o755, true);
+            mkdir($this->reportsDir, 0o775, true);
         }
     }
 

@@ -7,6 +7,7 @@ Esta guía te llevará paso a paso por el proceso de instalación de VersaORM en
 ## Requisitos del Sistema
 
 ### Requisitos Mínimos
+
 - **PHP**: 8.1 o superior
 - **PDO**: Extensión PDO habilitada
 - **Base de datos**: MySQL 5.7+, PostgreSQL 9.6+, o SQLite 3.8+
@@ -102,6 +103,7 @@ try {
 ```
 
 Ejecuta el test:
+
 ```bash
 php test-instalacion.php
 ```
@@ -185,11 +187,13 @@ VersaModel::setORM($orm);
 1. **Instalar XAMPP** desde [apachefriends.org](https://www.apachefriends.org/)
 
 2. **Ubicar tu proyecto**:
+
    ```
    C:\xampp\htdocs\mi-proyecto\
    ```
 
 3. **Instalar Composer en XAMPP**:
+
    ```bash
    # Abrir terminal en C:\xampp\htdocs\mi-proyecto\
    composer require versaorm/versaorm
@@ -215,6 +219,7 @@ VersaModel::setORM($orm);
 1. **Instalar WAMP** desde [wampserver.com](http://www.wampserver.com/)
 
 2. **Ubicar proyecto**:
+
    ```
    C:\wamp64\www\mi-proyecto\
    ```
@@ -224,6 +229,7 @@ VersaModel::setORM($orm);
 ### LAMP (Linux)
 
 1. **Instalar LAMP**:
+
    ```bash
    # Ubuntu/Debian
    sudo apt update
@@ -234,6 +240,7 @@ VersaModel::setORM($orm);
    ```
 
 2. **Instalar Composer**:
+
    ```bash
    curl -sS https://getcomposer.org/installer | php
    sudo mv composer.phar /usr/local/bin/composer
@@ -252,7 +259,7 @@ VersaModel::setORM($orm);
 Crea un `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
   web:
     image: php:8.1-apache
@@ -283,6 +290,7 @@ volumes:
 ```
 
 Ejecutar:
+
 ```bash
 docker-compose up -d
 docker-compose exec web composer require versaorm/versaorm
@@ -295,6 +303,7 @@ docker-compose exec web composer require versaorm/versaorm
 **Causa**: Autoload no configurado correctamente
 
 **Solución**:
+
 ```php
 <?php
 // Verificar que el autoload esté incluido
@@ -309,6 +318,7 @@ require_once 'lib/versaorm/autoload.php';  // Instalación manual
 **Causa**: Driver PDO no instalado
 
 **Solución**:
+
 ```bash
 # Ubuntu/Debian
 sudo apt install php-mysql php-pgsql php-sqlite3
@@ -328,10 +338,11 @@ sudo yum install php-mysql php-pgsql php-sqlite
 **Causa**: Permisos incorrectos en directorios
 
 **Solución**:
+
 ```bash
 # Dar permisos al directorio del proyecto
 sudo chown -R www-data:www-data /var/www/html/mi-proyecto
-sudo chmod -R 755 /var/www/html/mi-proyecto
+sudo chmod -R 775 /var/www/html/mi-proyecto
 
 # Para desarrollo local
 sudo chown -R $USER:$USER /var/www/html/mi-proyecto
@@ -342,6 +353,7 @@ sudo chown -R $USER:$USER /var/www/html/mi-proyecto
 **Causa**: Credenciales de base de datos incorrectas
 
 **Solución**:
+
 ```php
 <?php
 // Verificar credenciales

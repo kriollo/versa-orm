@@ -275,7 +275,7 @@ $config = [
 // Crear directorio de base de datos si no existe
 $db_dir = dirname($config['database']);
 if (!is_dir($db_dir)) {
-    mkdir($db_dir, 0755, true);
+    mkdir($db_dir, 0775, true);
 }
 
 try {
@@ -558,6 +558,7 @@ $test->testAllDatabases();
 **Causa:** Servidor de base de datos no está ejecutándose
 
 **Solución:**
+
 ```bash
 # MySQL
 sudo service mysql start
@@ -575,6 +576,7 @@ sudo service postgresql start
 **Causa:** Credenciales incorrectas
 
 **Solución:**
+
 ```php
 <?php
 // Verificar credenciales paso a paso
@@ -597,6 +599,7 @@ try {
 **Causa:** Base de datos no existe
 
 **Solución:**
+
 ```sql
 -- Crear base de datos manualmente
 CREATE DATABASE mi_aplicacion CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -613,6 +616,7 @@ $pdo->exec("CREATE DATABASE IF NOT EXISTS mi_aplicacion CHARACTER SET utf8mb4 CO
 **Causa:** Ruta de archivo SQLite incorrecta o sin permisos
 
 **Solución:**
+
 ```php
 <?php
 // Usar ruta absoluta
@@ -622,7 +626,7 @@ $orm = new VersaORM(['driver' => 'sqlite', 'database' => $db_path]);
 // Verificar permisos del directorio
 $db_dir = dirname($db_path);
 if (!is_writable($db_dir)) {
-    chmod($db_dir, 0755);
+    chmod($db_dir, 0775);
 }
 ?>
 ```
@@ -632,6 +636,7 @@ if (!is_writable($db_dir)) {
 **Causa:** PostgreSQL no está ejecutándose o configuración incorrecta
 
 **Solución:**
+
 ```bash
 # Verificar estado de PostgreSQL
 sudo systemctl status postgresql
@@ -648,6 +653,7 @@ netstat -an | grep 5432
 **Síntoma:** Consultas lentas
 
 **Solución:**
+
 ```php
 <?php
 // Configurar opciones de rendimiento
@@ -666,6 +672,7 @@ $orm = new VersaORM($config);
 **Causa:** Consultas sin buffer en MySQL
 
 **Solución:**
+
 ```php
 <?php
 $options = [

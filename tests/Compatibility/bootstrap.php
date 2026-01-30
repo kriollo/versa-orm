@@ -65,7 +65,7 @@ if (!$autoloaded) {
 $reportsDir = __DIR__ . '/../reports/php-compatibility';
 
 if (!is_dir($reportsDir)) {
-    mkdir($reportsDir, 0o755, true);
+    mkdir($reportsDir, 0o775, true);
 }
 
 // Configurar variables de entorno para tests

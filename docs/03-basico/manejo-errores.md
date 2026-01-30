@@ -60,6 +60,7 @@ try {
 ```
 
 **Soluciones comunes:**
+
 - Verificar credenciales de base de datos
 - Confirmar que el servidor de BD esté ejecutándose
 - Revisar configuración de firewall/red
@@ -340,7 +341,7 @@ class VersaORMLogger {
         // Crear directorio si no existe
         $dir = dirname($logFile);
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            mkdir($dir, 0775, true);
         }
     }
 
@@ -633,8 +634,11 @@ catch (VersaORMException $e) {
 ## Próximos pasos
 
 Ahora que sabes manejar errores en VersaORM, puedes continuar con:
+
 - [Query Builder](../04-query-builder/README.md) - Para consultas más complejas
 - [Relaciones](../05-relaciones/README.md) - Trabajar con múltiples tablas
 - [Funcionalidades Avanzadas](../06-avanzado/README.md) - Transacciones y operaciones batch
+
+```
 
 ```

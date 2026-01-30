@@ -116,7 +116,7 @@ class CoverageAnalyzer
 
         // Ensure reports directory exists
         if (!is_dir($reportsDir)) {
-            mkdir($reportsDir, 0o755, true);
+            mkdir($reportsDir, 0o775, true);
         }
 
         // Run PHPUnit with coverage
