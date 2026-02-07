@@ -4196,6 +4196,7 @@ class QueryBuilder
     private function buildSelectSQL(): array
     {
         $sql = 'SELECT ';
+        $bindings = [];
 
         // SELECT: si hay fromSub y no se definió select explícito, seleccionar alias.*
         if ($this->selects === []) {
@@ -4222,7 +4223,9 @@ class QueryBuilder
                         $selectParts[] = $select['expression'];
 
                         if (isset($select['bindings']) && is_array($select['bindings'])) {
-                            $bindings = array_merge($bindings, $select['bindings']);
+                            /** @var list<mixed> $sb */
+                            $sb = array_values($select['bindings']);
+                            $bindings = array_merge($bindings, $sb);
                         }
 
                         continue;
@@ -4257,6 +4260,9 @@ class QueryBuilder
         // FROM (soporta tabla derivada de UNION)
         if ($this->fromSub !== null) {
             $sql .= ' FROM (' . $this->fromSub['sql'] . ') ' . $this->fromSub['alias'];
+            /** @var list<mixed> $fb */
+            $fb = array_values($this->fromSub['bindings']);
+            $bindings = array_merge($bindings, $fb);
         } else {
             $sql .= ' FROM ' . $this->table;
         }
@@ -4287,7 +4293,14 @@ class QueryBuilder
                     if (($c['type'] ?? '') === 'raw' && isset($c['sql']) && is_string($c['sql'])) {
                         $boolean = strtoupper((string) ($c['boolean'] ?? 'AND'));
                         $fragment = '(' . $c['sql'] . ')';
-                        $condParts[] = [$boolean, $fragment, $c['bindings'] ?? []];
+
+                        if (isset($c['bindings']) && is_array($c['bindings'])) {
+                            /** @var list<mixed> $jb */
+                            $jb = array_values($c['bindings']);
+                            $bindings = array_merge($bindings, $jb);
+                        }
+
+                        $condParts[] = [$boolean, $fragment];
 
                         continue;
                     }
@@ -4298,7 +4311,7 @@ class QueryBuilder
                     if ($local !== '' && $foreign !== '') {
                         $boolean = strtoupper((string) ($c['boolean'] ?? 'AND'));
                         $fragment = $local . ' ' . $op . ' ' . $foreign;
-                        $condParts[] = [$boolean, $fragment, []];
+                        $condParts[] = [$boolean, $fragment];
                     }
                 }
             }
@@ -4317,13 +4330,6 @@ class QueryBuilder
         }
 
         // WHERE
-        $bindings = [];
-        if ($this->fromSub !== null) {
-            /** @var list<mixed> $fb */
-            $fb = $this->fromSub['bindings'];
-            $bindings = array_merge($bindings, $fb);
-        }
-
         if ($this->wheres !== []) {
             $sql .= ' WHERE ';
             $whereParts = [];

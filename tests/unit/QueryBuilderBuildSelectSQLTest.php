@@ -112,7 +112,7 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
         static::assertStringContainsString('INNER JOIN profiles', $res['sql']);
         static::assertStringContainsString('ON (profiles.user_id = users.id AND profiles.active = ?)', $res['sql']);
         static::assertStringContainsString('WHERE users.id = ?', $res['sql']);
-        // Note: buildSelectSQL merges only fromSub and where bindings; join raw bindings are not merged here
-        static::assertSame([42], $res['bindings']);
+        // Note: buildSelectSQL now correctly merges join raw bindings and where bindings
+        static::assertSame([1, 42], $res['bindings']);
     }
 }

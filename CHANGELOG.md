@@ -5,13 +5,15 @@
 **QueryBuilder.php - Seguridad y Bindings:**
 
 - **Validación de Funciones**: Se actualizó `isSQLFunction()` para permitir el carácter `/` en los argumentos, facilitando la concatenación de fechas en PostgreSQL y otros motores.
-- **Recolección de Bindings**: Corregido bug en `buildSelectSQL()` que omitía la recolección de bindings en expresiones `selectRaw()`.
+- **Estabilidad y Tipado (Hotfix)**: Corregido `TypeError: array_merge(): Argument #1 must be of type array, null given` al inicializar correctamente la variable `$bindings` en `buildSelectSQL()`.
+- **Recolección de Bindings Mejorada**: Refactorizada la gestión de bindings en `buildSelectSQL()` para incluir parámetros de cláusulas `JOIN` y asegurar que el orden de los bindings coincida con la estructura SQL (`SELECT` -> `FROM` -> `JOIN` -> `WHERE`).
 - **Nuevos Métodos de Inspección**: Expuestos los métodos `toSql()` y `getBindings()` para facilitar el debugging y la integración con otros sistemas.
 
 **Testing:**
 
-- **Quoting de Literales**: Ajustada la suite de pruebas `PostgreSQLInvoiceJsonTest.php` para usar comillas simples en literales de cadena, cumpliendo con el estándar SQL estricto.
+- **Core SQL Validation**: Actualizada la suite `QueryBuilderBuildSelectSQLTest.php` para validar la correcta recolección de bindings en JOINs complejos.
 - **Invoice JSON Tests**: Agregados tests específicos para validación de agregación JSON y concatenación compleja.
+- **Quoting de Literales**: Ajustada la suite de pruebas `PostgreSQLInvoiceJsonTest.php` para usar comillas simples en literales de cadena, cumpliendo con el estándar SQL estricto.
 
 ---
 
