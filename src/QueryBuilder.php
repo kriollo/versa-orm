@@ -2364,6 +2364,26 @@ class QueryBuilder
     }
 
     /**
+     * Devuelve el SQL generado para la consulta de selección actual.
+     *
+     * @return string
+     */
+    public function toSql(): string
+    {
+        return $this->buildSelectSQL()['sql'];
+    }
+
+    /**
+     * Devuelve los bindings acumulados para la consulta de selección actual.
+     *
+     * @return array<int, mixed>
+     */
+    public function getBindings(): array
+    {
+        return $this->buildSelectSQL()['bindings'];
+    }
+
+    /**
      * Encadena múltiples operaciones en modo lazy.
      */
     public function chain(self $otherQuery): self
@@ -3220,9 +3240,9 @@ class QueryBuilder
                 return true; // COUNT(*), etc.
             }
 
-            // Permitir argumentos simples como column names, números, strings
+            // Permitir argumentos simples como column names, números, strings y el carácter /
             // Verificar que no contenga patrones maliciosos
-            $argsSimple = preg_match('/^[a-zA-Z0-9_.,\s\'"]+$/', $functionArgs) === 1;
+            $argsSimple = preg_match('/^[a-zA-Z0-9_.,\s\'"\/]+$/', $functionArgs) === 1;
             if (
                 $argsSimple && (
                     !str_contains($functionArgs, '--')
@@ -4200,6 +4220,10 @@ class QueryBuilder
 
                     if ($type === 'raw' && isset($select['expression']) && is_string($select['expression'])) {
                         $selectParts[] = $select['expression'];
+
+                        if (isset($select['bindings']) && is_array($select['bindings'])) {
+                            $bindings = array_merge($bindings, $select['bindings']);
+                        }
 
                         continue;
                     }

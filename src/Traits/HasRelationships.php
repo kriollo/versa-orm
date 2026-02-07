@@ -35,7 +35,7 @@ trait HasRelationships
             }
         }
 
-        throw new Exception("Método '$method' no existe o no es una relación válida en " . static::class);
+        throw new Exception("Método '{$method}' no existe o no es una relación válida en " . static::class);
     }
 
     public function __get($key)
