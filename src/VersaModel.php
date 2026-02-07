@@ -11,7 +11,7 @@ namespace VersaORM;
  * RETORNA: Siempre objetos manipulables (store, trash, propiedades dinámicas)
  * USO: Para operaciones CRUD individuales y manipulación de registros
  *
- * @version 1.8.4
+ * @version 1.8.6
  *
  * @author  VersaORM Team
  * @license MIT

@@ -1,3 +1,20 @@
+## [1.8.6] - 2026-02-06
+
+### 🛠️ Mejoras y Seguridad (Hardening )
+
+**QueryBuilder.php - Seguridad y Bindings:**
+
+- **Validación de Funciones**: Se actualizó `isSQLFunction()` para permitir el carácter `/` en los argumentos, facilitando la concatenación de fechas en PostgreSQL y otros motores.
+- **Recolección de Bindings**: Corregido bug en `buildSelectSQL()` que omitía la recolección de bindings en expresiones `selectRaw()`.
+- **Nuevos Métodos de Inspección**: Expuestos los métodos `toSql()` y `getBindings()` para facilitar el debugging y la integración con otros sistemas.
+
+**PostgreSQL & Testing:**
+
+- **Quoting de Literales**: Ajustada la suite de pruebas `PostgreSQLInvoiceJsonTest.php` para usar comillas simples en literales de cadena, cumpliendo con el estándar SQL estricto.
+- **Invoice JSON Tests**: Agregados tests específicos para validación de agregación JSON y concatenación compleja.
+
+---
+
 ## [1.8.5] - 2026-01-30
 
 ### 🔧 Correcciones y Estabilidad

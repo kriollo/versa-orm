@@ -47,7 +47,7 @@ use function strlen;
  * - find(id) - Objeto VersaModel o null
  * - dispense() - Nuevo objeto VersaModel vacío
  *
- * @version 1.8.4
+ * @version 1.8.6
  *
  * @author  VersaORM Team
  * @license MIT
