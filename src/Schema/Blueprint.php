@@ -401,7 +401,7 @@ class Blueprint
     /**
      * Crea una columna foreign ID basada en un modelo.
      */
-    public function foreignIdFor(string $model, string $column = null): ColumnDefinition
+    public function foreignIdFor(string $model, ?string $column = null): ColumnDefinition
     {
         if ($column === null) {
             $baseName = basename(str_replace('\\', '/', $model));
@@ -447,7 +447,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function primary(string|array $columns, string $name = null): void
+    public function primary(string|array $columns, ?string $name = null): void
     {
         $this->addIndex('primary', $columns, $name);
     }
@@ -457,7 +457,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function unique(string|array $columns, string $name = null): void
+    public function unique(string|array $columns, ?string $name = null): void
     {
         $this->addIndex('unique', $columns, $name);
     }
@@ -467,7 +467,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function index(string|array $columns, string $name = null): void
+    public function index(string|array $columns, ?string $name = null): void
     {
         $this->addIndex('index', $columns, $name);
     }
@@ -477,7 +477,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function fullText(string|array $columns, string $name = null): void
+    public function fullText(string|array $columns, ?string $name = null): void
     {
         $this->addIndex('fulltext', $columns, $name);
     }
@@ -487,7 +487,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function spatialIndex(string|array $columns, string $name = null): void
+    public function spatialIndex(string|array $columns, ?string $name = null): void
     {
         $this->addIndex('spatial', $columns, $name);
     }
@@ -495,7 +495,7 @@ class Blueprint
     /**
      * Elimina una clave primaria.
      */
-    public function dropPrimary(string $index = null): void
+    public function dropPrimary(?string $index = null): void
     {
         $this->addCommand('dropPrimary', compact('index'));
     }
@@ -535,7 +535,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function foreign(string|array $columns, string $name = null): ForeignKeyDefinition
+    public function foreign(string|array $columns, ?string $name = null): ForeignKeyDefinition
     {
         $columns = is_array($columns) ? $columns : [$columns];
         $foreign = new ForeignKeyDefinition($columns[0], '');
@@ -616,7 +616,7 @@ class Blueprint
      *
      * @param array<int, string>|string $columns
      */
-    public function addIndex(string $type, string|array $columns, string $name = null): void
+    public function addIndex(string $type, string|array $columns, ?string $name = null): void
     {
         $columns = is_array($columns) ? $columns : [$columns];
 

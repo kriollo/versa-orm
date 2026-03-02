@@ -1,3 +1,15 @@
+## [1.8.7] - 2026-03-02
+
+### 🐛 Corrección de Compatibilidad PHP 8.4
+
+**Schema/Blueprint.php — Nullable implícito corregido:**
+
+- **PHP 8.4 Deprecated fix**: Corregidos 9 métodos que usaban `type $param = null` sin el operador `?` explícito, lo que generaba warnings `Deprecated: Implicitly marking parameter as nullable` en PHP 8.4.
+- Métodos corregidos: `foreignIdFor()`, `primary()`, `unique()`, `index()`, `fullText()`, `spatialIndex()`, `dropPrimary()`, `foreign()`, `addIndex()`.
+- El cambio (`string $x = null` → `?string $x = null`) es retrocompatible con PHP 8.1–8.4 ya que el operador `?` existe desde PHP 7.1.
+
+---
+
 ## [1.8.6] - 2026-02-06
 
 ### 🛠️ Mejoras y Seguridad (Hardening )
