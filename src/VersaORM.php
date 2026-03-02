@@ -87,7 +87,7 @@ use function strlen;
  * NOTA: Todos los métodos de consulta y manipulación de datos
  * están ahora en VersaModel para una arquitectura más limpia.
  *
- * @version 1.8.7
+ * @version 1.8.8
  *
  * @author  VersaORM Team
  * @license MIT

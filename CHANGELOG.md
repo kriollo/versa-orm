@@ -1,3 +1,38 @@
+## [1.8.8] - 2026-03-02
+
+### ✨ Modelos Tipados, Hooks de Ciclo de Vida y Protección contra Recursión
+
+**VersaModel.php — Subclases tipadas (IDE-friendly):**
+
+- **`protected static string $tableName`**: Nueva propiedad estática para declarar la tabla en subclases con tipado fuerte.
+- **`protected static function resolveTable()`**: Nuevo método que auto-infiere el nombre de tabla desde el nombre de la clase (`UserProfile` → `user_profiles`) cuando no se define `$tableName`. Retrocompatible.
+- **`dispense()` con tipado estático**: Cambiado el tipo de retorno de `self` a `static`. Llamar `User::dispense()` le indica al IDE que el retorno es `User`, no `VersaModel`. El parámetro `$table` es ahora opcional.
+- **`load()` con tipado estático**: Tipo de retorno cambiado a `?static`. Marcado como `final`.
+- **`find()` nuevo método `final`**: Atajo limpio a `load()` sin repetir el nombre de tabla — `User::find(1)` equivale a `User::load('users', 1)`. IDE detecta el tipo correcto como `?User`.
+- **`dispenseInstance()` con tipado estático**: Tipo de retorno cambiado a `static`. Marcado como `final`.
+
+**VersaModel.php — Métodos CRUD protegidos con `final`:**
+
+- Marcados como `final`: `store()`, `save()`, `trash()`, `storeAndGetId()`, `create()`, `update()`.
+- Elimina colisiones silenciosas: definir `save()` en una subclase ahora provoca un error fatal de PHP en tiempo de carga (visible en el IDE), en lugar de causar recursión infinita en tiempo de ejecución.
+
+**VersaModel.php — Hooks de ciclo de vida:**
+
+- Añadidos 9 métodos protegidos vacíos (extensión segura en subclases sin riesgo de colisión):
+  - `beforeSave()` / `afterSave()`
+  - `beforeCreate()` / `afterCreate()`
+  - `beforeUpdate()` / `afterUpdate()`
+  - `beforeDelete()` / `afterDelete()`
+  - `afterRetrieve()`
+- Se integran con el sistema de eventos existente (`fireEvent`) sin duplicar lógica.
+
+**VersaModel.php — Guardia contra recursión infinita:**
+
+- Añadida propiedad `private bool $storeInProgress` como centinela.
+- `store()` y `save()` lanzan `VersaORMException('RECURSIVE_STORE')` si un hook o listener llama a `store()` / `save()` mientras ya están en ejecución, en lugar de colapsar el proceso con un stack overflow.
+
+---
+
 ## [1.8.7] - 2026-03-02
 
 ### 🐛 Corrección de Compatibilidad PHP 8.4

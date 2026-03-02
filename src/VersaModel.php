@@ -11,7 +11,7 @@ namespace VersaORM;
  * RETORNA: Siempre objetos manipulables (store, trash, propiedades dinámicas)
  * USO: Para operaciones CRUD individuales y manipulación de registros
  *
- * @version 1.8.7
+ * @version 1.8.8
  *
  * @author  VersaORM Team
  * @license MIT
@@ -1525,7 +1525,7 @@ class VersaModel implements TypedModelInterface
      *   $user = User::dispense();
      *   $user->name = 'John'; // ← el IDE conoce los campos via @property en User
      */
-    final public static function dispense(string $table = ''): static
+    public static function dispense(string $table = ''): static
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call Model::setORM() first.');
