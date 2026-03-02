@@ -29,11 +29,6 @@ class MinimalModelForHandleErrors
         throw new VersaORMException('Simulated save error', 'SIM_SAVE_ERR');
     }
 
-    public static function find(int|string $id, string $pk = 'id'): ?static
-    {
-        return null;
-    }
-
     public function exists(): bool
     {
         return false;

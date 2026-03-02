@@ -125,6 +125,13 @@ class VersaModel implements TypedModelInterface
     private static ?VersaORM $ormInstance = null;
 
     /**
+     * Guardia interna para detectar recursión en store()/save().
+     * Protege contra hooks (beforeSave, afterSave, eventos) que llamen
+     * accidentalmente a store() o save() de nuevo.
+     */
+    private bool $storeInProgress = false;
+
+    /**
      * @param array<string, mixed>|VersaORM|null $orm
      */
     public function __construct(string $table, $orm)
@@ -596,16 +603,83 @@ class VersaModel implements TypedModelInterface
         return $this;
     }
 
+    // ========== HOOKS DE CICLO DE VIDA (puntos de extensión para subclases) ==========
+
+    /**
+     * Hook invocado antes de cualquier INSERT o UPDATE.
+     * Sobreescriba este método en su subclase en lugar de store() o save().
+     *
+     * @example
+     *   protected function beforeSave(): void { $this->slug = slugify($this->name); }
+     */
+    protected function beforeSave(): void {}
+
+    /**
+     * Hook invocado después de un INSERT o UPDATE exitoso.
+     */
+    protected function afterSave(): void {}
+
+    /**
+     * Hook invocado antes de un INSERT nuevo.
+     */
+    protected function beforeCreate(): void {}
+
+    /**
+     * Hook invocado después de un INSERT exitoso.
+     */
+    protected function afterCreate(): void {}
+
+    /**
+     * Hook invocado antes de un UPDATE.
+     */
+    protected function beforeUpdate(): void {}
+
+    /**
+     * Hook invocado después de un UPDATE exitoso.
+     */
+    protected function afterUpdate(): void {}
+
+    /**
+     * Hook invocado antes de un DELETE.
+     * Puede usarse para lógica de soft-delete o validaciones previas al borrado.
+     */
+    protected function beforeDelete(): void {}
+
+    /**
+     * Hook invocado después de un DELETE exitoso.
+     */
+    protected function afterDelete(): void {}
+
+    /**
+     * Hook invocado después de cargar un registro desde la base de datos.
+     */
+    protected function afterRetrieve(): void {}
+
+    // ========== CRUD PRINCIPAL (final — usar hooks para personalizar) ==========
+
     /**
      * Guardar el modelo en la base de datos.
      * Ejecuta validación antes de guardar.
      * Si el modo freeze está desactivado, creará automáticamente columnas faltantes.
      * Devuelve el ID (existente o insertado) si puede determinarse.
      *
+     * ⚠️  No sobreescriba este método en subclases.
+     *     Use los hooks beforeSave() / afterSave() / beforeCreate() / afterCreate()
+     *     / beforeUpdate() / afterUpdate() o registre listeners con static::on().
+     *
      * @throws VersaORMException
      */
-    public function store(): int|string|null
+    final public function store(): int|string|null
     {
+        if ($this->storeInProgress) {
+            throw new VersaORMException(
+                'Recursión infinita detectada en store() sobre ' . static::class . '. '
+                . 'No sobreescriba store() — use los hooks beforeSave() / afterSave() en su lugar.',
+                'RECURSIVE_STORE',
+            );
+        }
+        $this->storeInProgress = true;
+        try {
         $this->assertSafeModelTable();
 
         // Ejecutar validación antes de guardar
@@ -735,13 +809,16 @@ class VersaModel implements TypedModelInterface
         // Si llegamos aquí y no hay ID, es un error crítico en modo estricto.
         // La lógica de fallback anterior (buscar max(id)) es insegura en concurrencia.
         throw new VersaORMException('Could not determine ID for inserted record.', 'INSERT_FAILED_NO_ID');
+        } finally {
+            $this->storeInProgress = false;
+        }
     }
 
     /**
      * Guarda el modelo y devuelve el ID insertado (si aplica). En updates devuelve el ID existente.
      * No lanza excepción adicional más allá de las de store().
      */
-    public function storeAndGetId(): int|string|null
+    final public function storeAndGetId(): int|string|null
     {
         return $this->store();
     }
@@ -830,14 +907,26 @@ class VersaModel implements TypedModelInterface
      * Método save() inteligente - Detecta automáticamente si insertar o actualizar.
      * Utiliza la clave primaria para determinar la operación.
      *
+     * ⚠️  No sobreescriba este método. Use los hooks beforeSave() / afterSave()
+     *     o registre listeners con static::on().
+     *
      * @param string $primaryKey Nombre de la clave primaria (default: 'id')
      *
      * @throws VersaORMException Si los datos son inválidos
      *
      * @return array<string, mixed> Información sobre la operación realizada
      */
-    public function save(string $primaryKey = 'id'): array
+    final public function save(string $primaryKey = 'id'): array
     {
+        if ($this->storeInProgress) {
+            throw new VersaORMException(
+                'Recursión infinita detectada en save() sobre ' . static::class . '. '
+                . 'No sobreescriba save() — use los hooks beforeSave() / afterSave() en su lugar.',
+                'RECURSIVE_STORE',
+            );
+        }
+        $this->storeInProgress = true;
+        try {
         if ($this->attributes === []) {
             throw new VersaORMException('save requires model data', 'NO_DATA_FOR_SAVE');
         }
@@ -878,6 +967,9 @@ class VersaModel implements TypedModelInterface
         }
 
         return $result;
+        } finally {
+            $this->storeInProgress = false;
+        }
     }
 
     /**
@@ -1146,7 +1238,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Eliminar el registro del modelo en la base de datos.
      */
-    public function trash(): void
+    final public function trash(): void
     {
         $this->assertSafeModelTable();
 
@@ -1179,7 +1271,7 @@ class VersaModel implements TypedModelInterface
      *
      * @param array<string, mixed> $attributes
      */
-    public static function create(array $attributes): static
+    final public static function create(array $attributes): static
     {
         /**
          * @var static $instance
@@ -1198,7 +1290,7 @@ class VersaModel implements TypedModelInterface
      *
      * @throws VersaORMException
      */
-    public function update(array $attributes): self
+    final public function update(array $attributes): self
     {
         $this->fill($attributes);
         $this->store();
@@ -1433,7 +1525,7 @@ class VersaModel implements TypedModelInterface
      *   $user = User::dispense();
      *   $user->name = 'John'; // ← el IDE conoce los campos via @property en User
      */
-    public static function dispense(string $table = ''): static
+    final public static function dispense(string $table = ''): static
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call Model::setORM() first.');
@@ -1450,7 +1542,7 @@ class VersaModel implements TypedModelInterface
      *
      * @param int|string $id
      */
-    public static function load(string $table, $id, string $pk = 'id'): ?static
+    final public static function load(string $table, $id, string $pk = 'id'): ?static
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call Model::setORM() first.');
@@ -1494,7 +1586,7 @@ class VersaModel implements TypedModelInterface
      *   $user = User::find(1);     // IDE detecta el tipo como ?User
      *   $user = User::find('abc', 'uuid'); // Con PK personalizada
      */
-    public static function find(int|string $id, string $pk = 'id'): ?static
+    final public static function find(int|string $id, string $pk = 'id'): ?static
     {
         return static::load(static::resolveTable(), $id, $pk);
     }
@@ -1502,7 +1594,7 @@ class VersaModel implements TypedModelInterface
     /**
      * Crea una nueva instancia del modelo y la asocia a la ORM actual.
      */
-    public function dispenseInstance(string $table): static
+    final public function dispenseInstance(string $table): static
     {
         return new static($table, $this->orm);
     }

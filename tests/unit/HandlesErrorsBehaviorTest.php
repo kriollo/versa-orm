@@ -41,10 +41,6 @@ class MinimalModelForErrorHandling
         return true;
     }
 
-    public static function find(int|string $id, string $pk = 'id'): ?static
-    {
-        return null;
-    }
 
     // Wrappers públicos para pruebas que exponen comportamiento protegido
     public function _validateBeforeOperation(string $op): bool

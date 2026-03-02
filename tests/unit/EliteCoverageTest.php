@@ -39,11 +39,6 @@ class EliteModel extends VersaModel
         parent::__construct($this->table, $orm);
     }
 
-    // Override to avoid missing method in mock or parent
-    public static function find(int|string $id, string $pk = 'id'): ?static
-    {
-        return null;
-    }
 }
 
 /**

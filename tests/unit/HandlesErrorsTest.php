@@ -19,20 +19,6 @@ if (!class_exists('DummyHandlesModel')) {
 
         public function __construct() {}
 
-        public function save(string $primaryKey = 'id'): array
-        {
-            throw new VersaORMException('boom', 'E_BOOM');
-        }
-
-        public function store(): int
-        {
-            throw new VersaORMException('store failed', 'E_STORE');
-        }
-
-        public static function find(int|string $id, string $pk = 'id'): ?static
-        {
-            throw new VersaORMException('not found', 'E_NOT_FOUND');
-        }
     }
 }
 
