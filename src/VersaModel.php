@@ -58,6 +58,15 @@ class VersaModel implements TypedModelInterface
 
     protected string $table;
 
+    /**
+     * Nombre de la tabla asociada al modelo.
+     * Las subclases pueden sobreescribir esta propiedad para definir la tabla explícitamente.
+     * Si no se define, se infiere automáticamente desde el nombre de la clase (CamelCase → snake_case plural).
+     *
+     * @example protected static string $tableName = 'users';
+     */
+    protected static string $tableName = '';
+
     /** @var array<string, array<string, array{type?: string, values?: array<int, string>, max_length?: int, nullable?: bool}>> */
     public static array $propertyTypeRegistryIntern = [];
 
@@ -1390,17 +1399,50 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Crea un nuevo modelo vacío (método estático).
+     * Resuelve el nombre de tabla para el modelo actual.
+     *
+     * Prioridad:
+     * 1. `static::$tableName` si está declarado en la subclase.
+     * 2. Inferencia automática desde el nombre de la clase (CamelCase → snake_case plural).
+     *    Ejemplo: `UserProfile` → `user_profiles`, `User` → `users`.
      */
-    public static function dispense(string $table): self
+    protected static function resolveTable(): string
+    {
+        if (static::$tableName !== '') {
+            return static::$tableName;
+        }
+
+        // Auto-inferir: UserProfile -> user_profiles
+        $shortName = (new ReflectionClass(static::class))->getShortName();
+        $snake = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $shortName) ?? $shortName);
+
+        return $snake . 's';
+    }
+
+    /**
+     * Crea un nuevo modelo vacío (método estático).
+     *
+     * Cuando se llama desde una subclase tipada, el parámetro `$table` es opcional
+     * y se resuelve automáticamente usando `static::resolveTable()`.
+     *
+     * @example
+     *   // Genérico:
+     *   $bean = VersaModel::dispense('users');
+     *
+     *   // Tipado (IDE detecta el tipo como User):
+     *   $user = User::dispense();
+     *   $user->name = 'John'; // ← el IDE conoce los campos via @property en User
+     */
+    public static function dispense(string $table = ''): static
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call Model::setORM() first.');
         }
 
         $orm = self::$ormInstance;
+        $tableName = $table !== '' ? $table : static::resolveTable();
 
-        return new self($table, $orm);
+        return new static($tableName, $orm);
     }
 
     /**
@@ -1408,7 +1450,7 @@ class VersaModel implements TypedModelInterface
      *
      * @param int|string $id
      */
-    public static function load(string $table, $id, string $pk = 'id'): ?self
+    public static function load(string $table, $id, string $pk = 'id'): ?static
     {
         if (!self::$ormInstance instanceof VersaORM) {
             throw new Exception('No ORM instance available. Call Model::setORM() first.');
@@ -1442,13 +1484,27 @@ class VersaModel implements TypedModelInterface
     }
 
     /**
-     * Crea una nueva instancia del modelo y la asocia a la ORM actual.
+     * Carga un modelo por ID usando la tabla inferida de la subclase (API limpia).
      *
-     * Crea una nueva instancia del modelo para la tabla dada.
+     * Equivale a `load(static::resolveTable(), $id, $pk)` pero sin repetir el nombre de tabla.
+     *
+     * @param int|string $id
+     *
+     * @example
+     *   $user = User::find(1);     // IDE detecta el tipo como ?User
+     *   $user = User::find('abc', 'uuid'); // Con PK personalizada
      */
-    public function dispenseInstance(string $table): self
+    public static function find(int|string $id, string $pk = 'id'): ?static
     {
-        return new self($table, $this->orm);
+        return static::load(static::resolveTable(), $id, $pk);
+    }
+
+    /**
+     * Crea una nueva instancia del modelo y la asocia a la ORM actual.
+     */
+    public function dispenseInstance(string $table): static
+    {
+        return new static($table, $this->orm);
     }
 
     // ========== MÉTODOS GENERALES DE CONSULTA ==========

@@ -29,7 +29,7 @@ if (!class_exists('DummyHandlesModel')) {
             throw new VersaORMException('store failed', 'E_STORE');
         }
 
-        public static function find(mixed $id): mixed
+        public static function find(int|string $id, string $pk = 'id'): ?static
         {
             throw new VersaORMException('not found', 'E_NOT_FOUND');
         }

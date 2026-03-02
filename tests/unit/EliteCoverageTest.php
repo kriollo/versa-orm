@@ -40,7 +40,7 @@ class EliteModel extends VersaModel
     }
 
     // Override to avoid missing method in mock or parent
-    public static function find(mixed $id): ?static
+    public static function find(int|string $id, string $pk = 'id'): ?static
     {
         return null;
     }

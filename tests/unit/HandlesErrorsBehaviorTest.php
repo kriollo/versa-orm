@@ -41,7 +41,7 @@ class MinimalModelForErrorHandling
         return true;
     }
 
-    public static function find($id)
+    public static function find(int|string $id, string $pk = 'id'): ?static
     {
         return null;
     }

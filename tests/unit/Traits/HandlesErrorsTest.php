@@ -56,7 +56,7 @@ class HandlesErrorsTest extends TestCase
                 return 'test_table';
             }
 
-            public static function find($id)
+            public static function find(int|string $id, string $pk = 'id'): ?static
             {
                 if ($id === 999) {
                     throw new VersaORMException('Record not found', 'NOT_FOUND');
