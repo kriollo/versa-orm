@@ -96,7 +96,7 @@ class LifecycleEventsTest extends TestCase
     {
         $called = false;
         $model = new class(self::$table, TestCase::$orm) extends VersaModel {
-            public function beforeCreate()
+            public function beforeCreate(): void
             {
                 global $called;
                 $called = true;

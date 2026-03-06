@@ -272,6 +272,51 @@ class Blueprint
     }
 
     /**
+     * Crea una columna de tipo vector (pgvector, solo PostgreSQL).
+     *
+     * @param int $dimensions Número de dimensiones del vector (por defecto 1536 para text-embedding-ada-002)
+     */
+    public function vector(string $column, int $dimensions = 1536): ColumnDefinition
+    {
+        return $this->addColumn($column, 'vector')->dimensions($dimensions);
+    }
+
+    /**
+     * Crea una columna de tipo TSVECTOR para búsqueda full-text nativa (solo PostgreSQL).
+     */
+    public function tsvector(string $column): ColumnDefinition
+    {
+        return $this->addColumn($column, 'tsvector');
+    }
+
+    /**
+     * Registra un índice vectorial HNSW o IVFFlat (pgvector, solo PostgreSQL).
+     *
+     * @param string|array<int,string> $columns  Columna(s) a indexar (normalmente una sola columna vector)
+     * @param string                   $method   Algoritmo: 'hnsw' | 'ivfflat'
+     * @param string                   $metric   Clase de operador: 'vector_cosine_ops' | 'vector_l2_ops' | 'vector_ip_ops'
+     * @param array<string, int>       $options  Parámetros WITH (ej: ['m' => 16, 'ef_construction' => 64])
+     * @param string|null              $name     Nombre del índice (se genera automáticamente si es null)
+     */
+    public function vectorIndex(
+        string|array $columns,
+        string $method = 'hnsw',
+        string $metric = 'vector_cosine_ops',
+        array $options = [],
+        ?string $name = null,
+    ): void {
+        $columns = is_array($columns) ? $columns : [$columns];
+        $this->indexes[] = [
+            'type'         => 'vector_index',
+            'index_method' => $method,
+            'metric'       => $metric,
+            'columns'      => $columns,
+            'options'      => $options,
+            'name'         => $name,
+        ];
+    }
+
+    /**
      * Crea una columna de tipo DATE.
      */
     public function date(string $column): ColumnDefinition

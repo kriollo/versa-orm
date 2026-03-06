@@ -289,6 +289,16 @@ class ColumnDefinition
     }
 
     /**
+     * Especifica las dimensiones para columnas vector (pgvector).
+     */
+    public function dimensions(int $dims): self
+    {
+        $this->attributes['dimensions'] = $dims;
+
+        return $this;
+    }
+
+    /**
      * Especifica la precisión para tipos decimales.
      */
     public function precision(int $precision, int $scale = 0): self

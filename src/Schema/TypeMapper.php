@@ -104,6 +104,8 @@ class TypeMapper
             'unsignedSmallInteger' => 'SMALLINT',
             'unsignedTinyInteger' => 'SMALLINT',
             'uuid' => 'UUID',
+            'vector' => 'vector',    // pgvector — dimensiones se aplican en applyTypeOptions()
+            'tsvector' => 'TSVECTOR', // búsqueda full-text nativa de PostgreSQL
             'year' => 'INTEGER',
         ],
         'sqlite' => [
@@ -306,6 +308,13 @@ class TypeMapper
                 // SQLite usa TEXT
                 $result = 'TEXT';
             }
+        }
+
+        // Aplicar dimensiones para columnas vector (pgvector)
+        if ($abstractType === 'vector' && isset($options['dimensions'])) {
+            $rawDims = $options['dimensions'];
+            $dims = is_scalar($rawDims) && is_numeric($rawDims) ? (int) $rawDims : 1536;
+            return 'vector(' . $dims . ')';
         }
 
         // Aplicar valores para SET

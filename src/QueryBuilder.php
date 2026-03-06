@@ -1030,6 +1030,99 @@ class QueryBuilder
         return $this;
     }
 
+    // -------------------------------------------------------------------------
+    // Similitud vectorial (pgvector)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Añade una columna al SELECT con la puntuación de similitud respecto a un embedding dado.
+     *
+     * Para métricas coseno y L2 la similitud se calcula como 1 - distancia.
+     * Para inner_product se calcula como -1 * (v1 <#> v2).
+     *
+     * @param array<int, float> $embedding  Vector de referencia para comparar
+     * @param string            $metric     'cosine' | 'l2' | 'euclidean' | 'inner_product' | 'dot'
+     * @param string            $alias      Alias de la columna resultado
+     */
+    public function selectVectorSimilarity(
+        string $column,
+        array $embedding,
+        string $metric = 'cosine',
+        string $alias = 'similarity',
+    ): self {
+        if (!$this->isSafeIdentifier($column) || !$this->isSafeIdentifier($alias)) {
+            throw new VersaORMException('Identificador inválido en selectVectorSimilarity');
+        }
+
+        $op      = $this->vectorMetricOperator($metric);
+        $literal = $this->formatVectorLiteral($embedding);
+        $quotedCol = "\"{$column}\"";
+
+        $expr = $metric === 'inner_product' || $metric === 'dot'
+            ? "(-1 * ({$quotedCol} {$op} ?::vector)) AS \"{$alias}\""
+            : "(1 - ({$quotedCol} {$op} ?::vector)) AS \"{$alias}\"";
+
+        return $this->selectRaw($expr, [$literal]);
+    }
+
+    /**
+     * Ordena los resultados por distancia vectorial (ASC = más cercano primero).
+     *
+     * @param array<int, float> $embedding  Vector de referencia
+     * @param string            $metric     'cosine' | 'l2' | 'euclidean' | 'inner_product' | 'dot'
+     * @param string            $direction  'asc' | 'desc'
+     */
+    public function orderBySimilarity(
+        string $column,
+        array $embedding,
+        string $metric = 'cosine',
+        string $direction = 'asc',
+    ): self {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException('Identificador inválido en orderBySimilarity');
+        }
+
+        $op      = $this->vectorMetricOperator($metric);
+        $literal = $this->formatVectorLiteral($embedding);
+        $dir     = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        $expr    = "\"{$column}\" {$op} ?::vector {$dir}";
+
+        return $this->orderByRaw($expr, [$literal]);
+    }
+
+    /**
+     * Filtra filas cuya similitud respecto al embedding sea mayor o igual al umbral dado.
+     *
+     * Internamente usa la distancia: distancia <= (1 - threshold) para coseno/L2,
+     * y (v1 <#> v2) <= -threshold para inner_product.
+     *
+     * @param array<int, float> $embedding  Vector de referencia
+     * @param float             $threshold  Umbral mínimo de similitud [0, 1]
+     * @param string            $metric     'cosine' | 'l2' | 'euclidean' | 'inner_product' | 'dot'
+     */
+    public function whereVectorSimilarity(
+        string $column,
+        array $embedding,
+        float $threshold,
+        string $metric = 'cosine',
+    ): self {
+        if (!$this->isSafeIdentifier($column)) {
+            throw new VersaORMException('Identificador inválido en whereVectorSimilarity');
+        }
+
+        $op      = $this->vectorMetricOperator($metric);
+        $literal = $this->formatVectorLiteral($embedding);
+
+        // Para inner_product la distancia <#> es negativa, umbral se invierte
+        $distanceThreshold = ($metric === 'inner_product' || $metric === 'dot')
+            ? -$threshold
+            : 1.0 - $threshold;
+
+        $sql = "\"{$column}\" {$op} ?::vector <= ?";
+
+        return $this->whereRaw($sql, [$literal, $distanceThreshold]);
+    }
+
     /**
      * Limita el número de resultados.
      *
@@ -3121,6 +3214,37 @@ class QueryBuilder
         }
 
         return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers privados — pgvector
+    // -------------------------------------------------------------------------
+
+    /**
+     * Formatea un array de floats como literal pgvector '[f1,f2,...]'.
+     *
+     * Los valores se castean a float para garantizar formato numérico seguro.
+     *
+     * @param array<int, float> $embedding
+     */
+    private function formatVectorLiteral(array $embedding): string
+    {
+        return '[' . implode(',', array_map('floatval', $embedding)) . ']';
+    }
+
+    /**
+     * Retorna el operador SQL pgvector según la métrica solicitada.
+     *
+     * @throws VersaORMException si la métrica no está soportada
+     */
+    private function vectorMetricOperator(string $metric): string
+    {
+        return match ($metric) {
+            'cosine'                       => '<=>',
+            'l2', 'euclidean'              => '<->',
+            'inner_product', 'dot'         => '<#>',
+            default => throw new VersaORMException("Métrica vectorial no soportada: {$metric}"),
+        };
     }
 
     /**

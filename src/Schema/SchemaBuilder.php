@@ -273,6 +273,19 @@ class SchemaBuilder
     }
 
     /**
+     * Habilita la extensión pgvector en la base de datos (solo PostgreSQL).
+     *
+     * Debe ejecutarse una vez antes de usar columnas vector o índices vectoriales.
+     */
+    public function enablePgVector(): void
+    {
+        if ($this->driver !== 'postgresql') {
+            throw new VersaORMException('pgvector solo está disponible para PostgreSQL');
+        }
+        $this->orm->exec('CREATE EXTENSION IF NOT EXISTS vector');
+    }
+
+    /**
      * Deshabilita las constraints de claves foráneas.
      */
     public function disableForeignKeyConstraints(): void
@@ -504,6 +517,7 @@ class SchemaBuilder
                 . ')',
             'fulltext' => $this->buildFullTextIndex($table, $columns, $name),
             'spatial' => $this->buildSpatialIndex($table, $columns, $name),
+            'vector_index' => $this->buildVectorIndex($table, $index),
             default => throw new VersaORMException("Unsupported index type: {$type}"),
         };
 
@@ -546,6 +560,70 @@ class SchemaBuilder
                 . ')',
             default => throw new VersaORMException("Spatial indexes are not supported for {$this->driver}"),
         };
+    }
+
+    /**
+     * Construye un índice vectorial HNSW o IVFFlat para pgvector (solo PostgreSQL).
+     *
+     * @param array<string, mixed> $index
+     */
+    protected function buildVectorIndex(string $table, array $index): string
+    {
+        if ($this->driver !== 'postgresql') {
+            throw new VersaORMException('Los índices vectoriales solo están disponibles en PostgreSQL');
+        }
+
+        /** @var array<int, string> $columns */
+        $columns = isset($index['columns']) && is_array($index['columns']) ? $index['columns'] : [];
+        $column      = $columns[0] ?? '';
+        $method      = isset($index['index_method']) && is_string($index['index_method'])
+            ? $index['index_method']
+            : 'hnsw';
+        $metric      = isset($index['metric']) && is_string($index['metric'])
+            ? $index['metric']
+            : 'vector_cosine_ops';
+        /** @var array<string, int> $options */
+        $options     = isset($index['options']) && is_array($index['options']) ? $index['options'] : [];
+        $nameRaw     = $index['name'] ?? null;
+        $name        = is_string($nameRaw) && $nameRaw !== ''
+            ? $nameRaw
+            : $this->generateIndexName($table, [$column], 'vector_' . $method);
+
+        // Validar método e índice contra lista blanca para prevenir inyección SQL
+        $validMethods = ['hnsw', 'ivfflat'];
+        $validMetrics = ['vector_cosine_ops', 'vector_l2_ops', 'vector_ip_ops'];
+
+        if (!in_array($method, $validMethods, true)) {
+            throw new VersaORMException("Método de índice vectorial no soportado: {$method}");
+        }
+
+        if (!in_array($metric, $validMetrics, true)) {
+            throw new VersaORMException("Métrica de índice vectorial no soportada: {$metric}");
+        }
+
+        $sql = sprintf(
+            'CREATE INDEX %s ON %s USING %s (%s %s)',
+            $this->wrapColumn($name),
+            $this->wrapTable($table),
+            $method,
+            $this->wrapColumn($column),
+            $metric,
+        );
+
+        if ($options !== []) {
+            $clauses = [];
+            foreach ($options as $key => $value) {
+                // Solo permitir claves alfanuméricas (sin underscores peligrosos) y valores numéricos
+                if (preg_match('/^\w+$/', (string) $key) === 1 && is_numeric($value)) {
+                    $clauses[] = "{$key} = {$value}";
+                }
+            }
+            if ($clauses !== []) {
+                $sql .= ' WITH (' . implode(', ', $clauses) . ')';
+            }
+        }
+
+        return $sql;
     }
 
     /**
