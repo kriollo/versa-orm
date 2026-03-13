@@ -9,7 +9,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4.svg)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#)
 
-- Última versión estable: 1.8.8
+- Última versión estable: 1.9.0
 - Compatible con PHP 8.1+
 
 # <p align="center"><img src="art/versaORMLogo.png" alt="VersaORM Logo" width="480" /></p>

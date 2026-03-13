@@ -1,6 +1,6 @@
 {
   "name": "versaorm/versaorm-php",
-  "version": "1.8.8",
+  "version": "1.9.0",
   "description": "ORM ligero y seguro para PHP con motor PDO nativo - Query Builder fluido, Active Record simple, alto rendimiento",
   "type": "library",
   "keywords": [
