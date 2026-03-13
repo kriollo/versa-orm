@@ -11,6 +11,9 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   tests:
     name: Tests — PHP ${{ matrix.php }}
@@ -42,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -128,7 +131,7 @@ jobs:
 
       - name: Upload Coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: 51e43ae6-0e27-43c4-a161-0f54255c6a7f
           files: build/logs/clover.xml
@@ -144,7 +147,7 @@ jobs:
 
       - name: Save JUnit as artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: junit-${{ matrix.php }}
           path: tests/reports/junit-php${{ matrix.php }}-*.xml
@@ -156,7 +159,7 @@ jobs:
     if: always() && github.event_name == 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -164,7 +167,7 @@ jobs:
           php-version: "8.3"
 
       - name: Download all JUnit artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts
 
@@ -177,7 +180,7 @@ jobs:
 
       - name: Comment PR with Results
         if: success()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
