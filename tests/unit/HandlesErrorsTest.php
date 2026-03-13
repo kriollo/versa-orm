@@ -18,7 +18,6 @@ if (!class_exists('DummyHandlesModel')) {
         protected string $table = 'dummy_handles';
 
         public function __construct() {}
-
     }
 }
 

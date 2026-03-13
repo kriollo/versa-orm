@@ -62,20 +62,20 @@ class StrictTypingEdgeCasesTest extends TestCase
         ]);
 
         $model = VersaModel::dispense('test_integers');
-        $model->value = 2147483647; // INT32_MAX
+        $model->value = 2_147_483_647; // INT32_MAX
         $model->store();
 
         $loaded = VersaModel::load('test_integers', $model->id);
-        static::assertSame(2147483647, $loaded->value);
+        static::assertSame(2_147_483_647, $loaded->value);
         static::assertIsInt($loaded->value);
 
         // INT32 Min
         $model2 = VersaModel::dispense('test_integers');
-        $model2->value = -2147483648; // INT32_MIN
+        $model2->value = -2_147_483_648; // INT32_MIN
         $model2->store();
 
         $loaded2 = VersaModel::load('test_integers', $model2->id);
-        static::assertSame(-2147483648, $loaded2->value);
+        static::assertSame(-2_147_483_648, $loaded2->value);
 
         // Valor cero
         $model3 = VersaModel::dispense('test_integers');
@@ -99,11 +99,11 @@ class StrictTypingEdgeCasesTest extends TestCase
         ]);
 
         $model = VersaModel::dispense('test_bigints');
-        $model->value = 9223372036854775807; // PHP_INT_MAX en 64 bits
+        $model->value = 9_223_372_036_854_775_807; // PHP_INT_MAX en 64 bits
         $model->store();
 
         $loaded = VersaModel::load('test_bigints', $model->id);
-        static::assertSame(9223372036854775807, $loaded->value);
+        static::assertSame(9_223_372_036_854_775_807, $loaded->value);
         static::assertIsInt($loaded->value);
 
         // Valor negativo muy grande
@@ -171,7 +171,7 @@ class StrictTypingEdgeCasesTest extends TestCase
 
         // Valor muy grande
         $model = VersaModel::dispense('test_floats');
-        $model->value = 1.7976931348623157E+308; // Cerca del máximo
+        $model->value = 1.797_693_134_862_315_7E+308; // Cerca del máximo
         $model->store();
 
         $loaded = VersaModel::load('test_floats', $model->id);
@@ -180,7 +180,7 @@ class StrictTypingEdgeCasesTest extends TestCase
 
         // Valor muy pequeño positivo
         $model2 = VersaModel::dispense('test_floats');
-        $model2->value = 2.2250738585072014E-308;
+        $model2->value = 2.225_073_858_507_201_4E-308;
         $model2->store();
 
         $loaded2 = VersaModel::load('test_floats', $model2->id);
@@ -196,7 +196,7 @@ class StrictTypingEdgeCasesTest extends TestCase
 
         // Valor negativo
         $model4 = VersaModel::dispense('test_floats');
-        $model4->value = -123.456789;
+        $model4->value = -123.456_789;
         $model4->store();
 
         $loaded4 = VersaModel::load('test_floats', $model4->id);
@@ -300,13 +300,13 @@ class StrictTypingEdgeCasesTest extends TestCase
         ]);
 
         // Texto muy grande (1 MB)
-        $largeText = str_repeat('Lorem ipsum dolor sit amet. ', 36408); // ~1MB
+        $largeText = str_repeat('Lorem ipsum dolor sit amet. ', 36_408); // ~1MB
         $model = VersaModel::dispense('test_texts');
         $model->content = $largeText;
         $model->store();
 
         $loaded = VersaModel::load('test_texts', $model->id);
-        static::assertGreaterThan(1000000, strlen($loaded->content));
+        static::assertGreaterThan(1_000_000, strlen($loaded->content));
         static::assertSame($largeText, $loaded->content);
 
         // Texto con caracteres especiales y Unicode

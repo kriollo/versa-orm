@@ -575,17 +575,13 @@ class SchemaBuilder
 
         /** @var array<int, string> $columns */
         $columns = isset($index['columns']) && is_array($index['columns']) ? $index['columns'] : [];
-        $column      = $columns[0] ?? '';
-        $method      = isset($index['index_method']) && is_string($index['index_method'])
-            ? $index['index_method']
-            : 'hnsw';
-        $metric      = isset($index['metric']) && is_string($index['metric'])
-            ? $index['metric']
-            : 'vector_cosine_ops';
+        $column = $columns[0] ?? '';
+        $method = isset($index['index_method']) && is_string($index['index_method']) ? $index['index_method'] : 'hnsw';
+        $metric = isset($index['metric']) && is_string($index['metric']) ? $index['metric'] : 'vector_cosine_ops';
         /** @var array<string, int> $options */
-        $options     = isset($index['options']) && is_array($index['options']) ? $index['options'] : [];
-        $nameRaw     = $index['name'] ?? null;
-        $name        = is_string($nameRaw) && $nameRaw !== ''
+        $options = isset($index['options']) && is_array($index['options']) ? $index['options'] : [];
+        $nameRaw = $index['name'] ?? null;
+        $name = is_string($nameRaw) && $nameRaw !== ''
             ? $nameRaw
             : $this->generateIndexName($table, [$column], 'vector_' . $method);
 
@@ -614,9 +610,11 @@ class SchemaBuilder
             $clauses = [];
             foreach ($options as $key => $value) {
                 // Solo permitir claves alfanuméricas (sin underscores peligrosos) y valores numéricos
-                if (preg_match('/^\w+$/', (string) $key) === 1 && is_numeric($value)) {
-                    $clauses[] = "{$key} = {$value}";
+                if (!(preg_match('/^\w+$/', (string) $key) === 1 && is_numeric($value))) {
+                    continue;
                 }
+
+                $clauses[] = "{$key} = {$value}";
             }
             if ($clauses !== []) {
                 $sql .= ' WITH (' . implode(', ', $clauses) . ')';

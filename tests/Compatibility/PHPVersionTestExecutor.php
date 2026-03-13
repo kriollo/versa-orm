@@ -185,11 +185,11 @@ class PHPVersionTestExecutor
 
             // Test características específicas por versión
             $versionTests = [
-                70400 => ['typed_properties', 'arrow_functions', 'null_coalescing_assignment'],
-                80000 => ['named_arguments', 'attributes', 'constructor_promotion', 'union_types'],
-                80100 => ['enums', 'readonly_properties', 'intersection_types'],
-                80200 => ['readonly_classes', 'dnf_types', 'constants_in_traits'],
-                80300 => ['typed_class_constants', 'override_attribute'],
+                70_400 => ['typed_properties', 'arrow_functions', 'null_coalescing_assignment'],
+                80_000 => ['named_arguments', 'attributes', 'constructor_promotion', 'union_types'],
+                80_100 => ['enums', 'readonly_properties', 'intersection_types'],
+                80_200 => ['readonly_classes', 'dnf_types', 'constants_in_traits'],
+                80_300 => ['typed_class_constants', 'override_attribute'],
             ];
 
             foreach ($versionTests as $versionId => $expectedFeatures) {
@@ -211,11 +211,11 @@ class PHPVersionTestExecutor
 
             // Test funciones específicas de versión
             $functionTests = [
-                'str_contains' => 80000,
-                'str_starts_with' => 80000,
-                'str_ends_with' => 80000,
-                'array_is_list' => 80100,
-                'enum_exists' => 80100,
+                'str_contains' => 80_000,
+                'str_starts_with' => 80_000,
+                'str_ends_with' => 80_000,
+                'array_is_list' => 80_100,
+                'enum_exists' => 80_100,
             ];
 
             foreach ($functionTests as $function => $requiredVersion) {

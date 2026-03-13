@@ -163,17 +163,17 @@ register_shutdown_function(static function (): void {
 // PHP 8.0+ configuraciones
 logCompatibilityTest('PHP 8.0+ features available');
 
-if (PHP_VERSION_ID >= 80100) {
+if (PHP_VERSION_ID >= 80_100) {
     // PHP 8.1+ configuraciones
     logCompatibilityTest('PHP 8.1+ features available');
 }
 
-if (PHP_VERSION_ID >= 80200) {
+if (PHP_VERSION_ID >= 80_200) {
     // PHP 8.2+ configuraciones
     logCompatibilityTest('PHP 8.2+ features available');
 }
 
-if (PHP_VERSION_ID >= 80300) {
+if (PHP_VERSION_ID >= 80_300) {
     // PHP 8.3+ configuraciones
     logCompatibilityTest('PHP 8.3+ features available');
 }

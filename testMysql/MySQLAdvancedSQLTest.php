@@ -158,7 +158,7 @@ class MySQLAdvancedSQLTest extends TestCase
             [
                 'name' => 'Alice Johnson',
                 'department' => 'Engineering',
-                'salary' => 90000.00,
+                'salary' => 90_000.00,
                 'hire_date' => '2020-01-15',
                 'profile' => '{"skills": ["PHP", "MySQL"], "level": "senior"}',
                 'bio' => 'Senior PHP developer with expertise in database optimization',
@@ -166,7 +166,7 @@ class MySQLAdvancedSQLTest extends TestCase
             [
                 'name' => 'Bob Smith',
                 'department' => 'Engineering',
-                'salary' => 85000.00,
+                'salary' => 85_000.00,
                 'hire_date' => '2019-03-10',
                 'profile' => '{"skills": ["JavaScript", "React"], "level": "mid"}',
                 'bio' => 'Frontend developer specializing in React applications',
@@ -174,7 +174,7 @@ class MySQLAdvancedSQLTest extends TestCase
             [
                 'name' => 'Carol Williams',
                 'department' => 'Marketing',
-                'salary' => 70000.00,
+                'salary' => 70_000.00,
                 'hire_date' => '2021-06-20',
                 'profile' => '{"skills": ["Content", "SEO"], "level": "senior"}',
                 'bio' => 'Marketing expert with focus on content strategy and SEO',

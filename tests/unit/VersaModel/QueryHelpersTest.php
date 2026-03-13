@@ -67,9 +67,7 @@ final class QueryHelpersTest extends TestCase
             }
 
             // Sobrescribir métodos de la clase base con stubs mínimos
-            public function setConfig(array $config): void
-            {
-            }
+            public function setConfig(array $config): void {}
 
             public function getConfig(): array
             {
@@ -81,30 +79,20 @@ final class QueryHelpersTest extends TestCase
                 return null;
             }
 
-            public function metricsReset(): void
-            {
-            }
+            public function metricsReset(): void {}
 
-            public function disconnect(): void
-            {
-            }
+            public function disconnect(): void {}
 
-            public function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void
-            {
-            }
+            public function addTypeConverter(string $name, callable $phpHandler, ?callable $dbHandler = null): void {}
 
-            public function setTimezone(string $tz): void
-            {
-            }
+            public function setTimezone(string $tz): void {}
 
             public function getTimezone(): string
             {
                 return date_default_timezone_get();
             }
 
-            public function logDebug(string $message, array $context = []): void
-            {
-            }
+            public function logDebug(string $message, array $context = []): void {}
         };
 
         // Registrar fake ORM global para VersaModel

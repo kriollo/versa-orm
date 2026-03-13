@@ -1054,13 +1054,14 @@ class QueryBuilder
             throw new VersaORMException('Identificador inválido en selectVectorSimilarity');
         }
 
-        $op      = $this->vectorMetricOperator($metric);
+        $op = $this->vectorMetricOperator($metric);
         $literal = $this->formatVectorLiteral($embedding);
         $quotedCol = "\"{$column}\"";
 
-        $expr = $metric === 'inner_product' || $metric === 'dot'
-            ? "(-1 * ({$quotedCol} {$op} ?::vector)) AS \"{$alias}\""
-            : "(1 - ({$quotedCol} {$op} ?::vector)) AS \"{$alias}\"";
+        $expr =
+            $metric === 'inner_product' || $metric === 'dot'
+                ? "(-1 * ({$quotedCol} {$op} ?::vector)) AS \"{$alias}\""
+                : "(1 - ({$quotedCol} {$op} ?::vector)) AS \"{$alias}\"";
 
         return $this->selectRaw($expr, [$literal]);
     }
@@ -1082,10 +1083,10 @@ class QueryBuilder
             throw new VersaORMException('Identificador inválido en orderBySimilarity');
         }
 
-        $op      = $this->vectorMetricOperator($metric);
+        $op = $this->vectorMetricOperator($metric);
         $literal = $this->formatVectorLiteral($embedding);
-        $dir     = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
-        $expr    = "\"{$column}\" {$op} ?::vector {$dir}";
+        $dir = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        $expr = "\"{$column}\" {$op} ?::vector {$dir}";
 
         return $this->orderByRaw($expr, [$literal]);
     }
@@ -1110,13 +1111,11 @@ class QueryBuilder
             throw new VersaORMException('Identificador inválido en whereVectorSimilarity');
         }
 
-        $op      = $this->vectorMetricOperator($metric);
+        $op = $this->vectorMetricOperator($metric);
         $literal = $this->formatVectorLiteral($embedding);
 
         // Para inner_product la distancia <#> es negativa, umbral se invierte
-        $distanceThreshold = ($metric === 'inner_product' || $metric === 'dot')
-            ? -$threshold
-            : 1.0 - $threshold;
+        $distanceThreshold = $metric === 'inner_product' || $metric === 'dot' ? -$threshold : 1.0 - $threshold;
 
         $sql = "\"{$column}\" {$op} ?::vector <= ?";
 
@@ -1840,7 +1839,7 @@ class QueryBuilder
         }
 
         // Validar tamaño de lote
-        if ($batchSize <= 0 || $batchSize > 10000) {
+        if ($batchSize <= 0 || $batchSize > 10_000) {
             throw new VersaORMException('Batch size must be between 1 and 10000');
         }
 
@@ -1890,7 +1889,7 @@ class QueryBuilder
      *
      * @return array<string, mixed> información sobre la operación: rows_affected, etc
      */
-    public function updateMany(array $data, int $maxRecords = 10000): array
+    public function updateMany(array $data, int $maxRecords = 10_000): array
     {
         if ($data === []) {
             throw new VersaORMException('updateMany requires data to update');
@@ -1910,7 +1909,7 @@ class QueryBuilder
         }
 
         // Validar límite máximo por seguridad
-        if ($maxRecords <= 0 || $maxRecords > 100000) {
+        if ($maxRecords <= 0 || $maxRecords > 100_000) {
             throw new VersaORMException('Max records limit must be between 1 and 100000');
         }
 
@@ -1935,14 +1934,14 @@ class QueryBuilder
      *
      * @return array<string, mixed> información sobre la operación: rows_affected, etc
      */
-    public function deleteMany(int $maxRecords = 10000): array
+    public function deleteMany(int $maxRecords = 10_000): array
     {
         if ($this->wheres === []) {
             throw new VersaORMException('deleteMany requires WHERE conditions to prevent accidental mass deletions');
         }
 
         // Validar límite máximo por seguridad
-        if ($maxRecords <= 0 || $maxRecords > 100000) {
+        if ($maxRecords <= 0 || $maxRecords > 100_000) {
             throw new VersaORMException('Max records limit must be between 1 and 100000');
         }
 
@@ -2386,7 +2385,7 @@ class QueryBuilder
         }
 
         // Validar tamaño de lote
-        if ($batchSize <= 0 || $batchSize > 10000) {
+        if ($batchSize <= 0 || $batchSize > 10_000) {
             throw new VersaORMException('Batch size must be between 1 and 10000');
         }
 
@@ -3240,9 +3239,9 @@ class QueryBuilder
     private function vectorMetricOperator(string $metric): string
     {
         return match ($metric) {
-            'cosine'                       => '<=>',
-            'l2', 'euclidean'              => '<->',
-            'inner_product', 'dot'         => '<#>',
+            'cosine' => '<=>',
+            'l2', 'euclidean' => '<->',
+            'inner_product', 'dot' => '<#>',
             default => throw new VersaORMException("Métrica vectorial no soportada: {$metric}"),
         };
     }

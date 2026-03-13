@@ -1084,7 +1084,7 @@ class PdoEngine
                         // Valores aproximados comunes o seguros
                         [
                             'max_columns' => 2000,
-                            'max_sql_length' => 1000000,
+                            'max_sql_length' => 1_000_000,
                             'max_page_size' => 4096,
                         ]
                     ))(),
@@ -1829,8 +1829,8 @@ class PdoEngine
      */
     private function handleUpdateMany(array $params, PDO $pdo): array
     {
-        $rawMax = $params['max_records'] ?? 10000;
-        $max = is_numeric($rawMax) ? (int) $rawMax : 10000;
+        $rawMax = $params['max_records'] ?? 10_000;
+        $max = is_numeric($rawMax) ? (int) $rawMax : 10_000;
         [$countSql, $countBindings] = SqlGenerator::generate(
             'query',
             [
@@ -1892,8 +1892,8 @@ class PdoEngine
      */
     private function handleDeleteMany(array $params, PDO $pdo): array
     {
-        $rawMax = $params['max_records'] ?? 10000;
-        $max = is_numeric($rawMax) ? (int) $rawMax : 10000;
+        $rawMax = $params['max_records'] ?? 10_000;
+        $max = is_numeric($rawMax) ? (int) $rawMax : 10_000;
         [$countSql, $countBindings] = SqlGenerator::generate(
             'query',
             [

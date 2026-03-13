@@ -41,7 +41,6 @@ class MinimalModelForErrorHandling
         return true;
     }
 
-
     // Wrappers públicos para pruebas que exponen comportamiento protegido
     public function _validateBeforeOperation(string $op): bool
     {

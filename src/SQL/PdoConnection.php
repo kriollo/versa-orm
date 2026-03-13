@@ -83,13 +83,13 @@ class PdoConnection
         try {
             $poolKey = '';
             [$dsn, $poolKey] = match ($driver) {
-                'mysql', 'mariadb' => (function (): array{
-                        $host = (string) ($this->config['host'] ?? '127.0.0.1');
-                        $port = (string) ($this->config['port'] ?? '3306');
-                        $database = (string) ($this->config['database'] ?? '');
-                        $charset = (string) ($this->config['charset'] ?? 'utf8mb4');
-                        $dsn = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
-                        $poolKey =
+                'mysql', 'mariadb' => (function (): array {
+                    $host = (string) ($this->config['host'] ?? '127.0.0.1');
+                    $port = (string) ($this->config['port'] ?? '3306');
+                    $database = (string) ($this->config['database'] ?? '');
+                    $charset = (string) ($this->config['charset'] ?? 'utf8mb4');
+                    $dsn = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
+                    $poolKey =
                         'mysql|'
                         . $dsn
                         . '|'
@@ -97,32 +97,32 @@ class PdoConnection
                         . '|'
                         . ($this->config['password'] ?? '');
 
-                        return [$dsn, $poolKey];
-                    })(),
-                'pgsql', 'postgres', 'postgresql' => (function (): array{
-                        $host = (string) ($this->config['host'] ?? '127.0.0.1');
-                        $port = (string) ($this->config['port'] ?? '5432');
-                        $database = (string) ($this->config['database'] ?? '');
-                        $dsn = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
+                    return [$dsn, $poolKey];
+                })(),
+                'pgsql', 'postgres', 'postgresql' => (function (): array {
+                    $host = (string) ($this->config['host'] ?? '127.0.0.1');
+                    $port = (string) ($this->config['port'] ?? '5432');
+                    $database = (string) ($this->config['database'] ?? '');
+                    $dsn = 'pgsql:host=' . $host . ';port=' . $port . ';dbname=' . $database;
 
-                        // Soportar opciones de SSL para PostgreSQL
-                        // sslmode: disable, allow, prefer, require, verify-ca, verify-full
-                        if (isset($this->config['sslmode'])) {
-                            $dsn .= ';sslmode=' . (string) $this->config['sslmode'];
-                        }
+                    // Soportar opciones de SSL para PostgreSQL
+                    // sslmode: disable, allow, prefer, require, verify-ca, verify-full
+                    if (isset($this->config['sslmode'])) {
+                        $dsn .= ';sslmode=' . (string) $this->config['sslmode'];
+                    }
 
-                        // Otras opciones de SSL
-                        if (isset($this->config['sslcert'])) {
-                            $dsn .= ';sslcert=' . (string) $this->config['sslcert'];
-                        }
-                        if (isset($this->config['sslkey'])) {
-                            $dsn .= ';sslkey=' . (string) $this->config['sslkey'];
-                        }
-                        if (isset($this->config['sslrootcert'])) {
-                            $dsn .= ';sslrootcert=' . (string) $this->config['sslrootcert'];
-                        }
+                    // Otras opciones de SSL
+                    if (isset($this->config['sslcert'])) {
+                        $dsn .= ';sslcert=' . (string) $this->config['sslcert'];
+                    }
+                    if (isset($this->config['sslkey'])) {
+                        $dsn .= ';sslkey=' . (string) $this->config['sslkey'];
+                    }
+                    if (isset($this->config['sslrootcert'])) {
+                        $dsn .= ';sslrootcert=' . (string) $this->config['sslrootcert'];
+                    }
 
-                        $poolKey =
+                    $poolKey =
                         'pgsql|'
                         . $dsn
                         . '|'
@@ -130,17 +130,17 @@ class PdoConnection
                         . '|'
                         . ($this->config['password'] ?? '');
 
-                        return [$dsn, $poolKey];
-                    })(),
-                'sqlite' => (function (): array{
-                        $path = (string) ($this->config['database'] ?? ':memory:');
-                        $dsn = sprintf('sqlite:%s', $path);
-                        // Para ':memory:' NO usar pool para que cada instancia tenga su propio
-                        // PDO (los tests unitarios esperan que ':memory:' no reutilice la conexión)
-                        $poolKey = $path === ':memory:' ? '' : 'sqlite|' . $dsn;
+                    return [$dsn, $poolKey];
+                })(),
+                'sqlite' => (function (): array {
+                    $path = (string) ($this->config['database'] ?? ':memory:');
+                    $dsn = sprintf('sqlite:%s', $path);
+                    // Para ':memory:' NO usar pool para que cada instancia tenga su propio
+                    // PDO (los tests unitarios esperan que ':memory:' no reutilice la conexión)
+                    $poolKey = $path === ':memory:' ? '' : 'sqlite|' . $dsn;
 
-                        return [$dsn, $poolKey];
-                    })(),
+                    return [$dsn, $poolKey];
+                })(),
                 default => throw new VersaORMException('Unsupported PDO driver: ' . $driver),
             };
 

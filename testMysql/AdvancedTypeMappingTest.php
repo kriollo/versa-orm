@@ -224,9 +224,9 @@ class AdvancedTypeMappingTest extends TestCase
         $model = $modelClass;
 
         $dbVal = $model->castToDatabaseType('amount', 123.45);
-        static::assertSame(12345, $dbVal);
+        static::assertSame(12_345, $dbVal);
 
-        $phpVal = $model->castToPhpType('amount', 12345);
+        $phpVal = $model->castToPhpType('amount', 12_345);
         static::assertIsFloat($phpVal);
         static::assertSame(123.45, $phpVal);
     }
@@ -248,7 +248,7 @@ class AdvancedTypeMappingTest extends TestCase
         };
         // Crear instancia (anónima ya instanciada)
         $model = $modelClass;
-        $timestamp = 1700000000; // unix timestamp fijo
+        $timestamp = 1_700_000_000; // unix timestamp fijo
 
         $phpDt = $model->castToPhpType('any', $timestamp);
         static::assertInstanceOf(\DateTimeInterface::class, $phpDt);

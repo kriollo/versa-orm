@@ -168,7 +168,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             ],
             [
                 'sql' => 'SELECT name FROM employees WHERE salary > ?',
-                'bindings' => [80000],
+                'bindings' => [80_000],
             ],
         ];
         $result = $qb->union($queries, false);
@@ -179,7 +179,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
     {
         $qb = new QueryBuilder(self::$orm, 'employees');
         // Base query must select same columns as union queries
-        $qb->select(['department'])->where('salary', '>', 60000);
+        $qb->select(['department'])->where('salary', '>', 60_000);
 
         $queries = [
             [
@@ -235,7 +235,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
         $qb1->where('department', '=', 'Engineering');
 
         $qb2 = new QueryBuilder(self::$orm, 'employees');
-        $qb2->where('salary', '>', 80000);
+        $qb2->where('salary', '>', 80_000);
 
         // INTERSECT operation
         $result = $qb1->intersect($qb2);
@@ -282,7 +282,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             [
                 'name' => 'Alice Johnson',
                 'department' => 'Engineering',
-                'salary' => 90000.00,
+                'salary' => 90_000.00,
                 'hire_date' => '2020-01-15',
                 'profile' => '{"skills": ["PHP", "PostgreSQL"], "level": "senior", "certifications": ["AWS", "Docker"]}',
                 'skills' => '{"PHP", "PostgreSQL", "Docker"}',
@@ -291,7 +291,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             [
                 'name' => 'Bob Smith',
                 'department' => 'Engineering',
-                'salary' => 85000.00,
+                'salary' => 85_000.00,
                 'hire_date' => '2019-03-10',
                 'profile' => '{"skills": ["Python", "Django"], "level": "mid", "certifications": ["GCP"]}',
                 'skills' => '{"Python", "Django", "PostgreSQL"}',
@@ -300,7 +300,7 @@ class PostgreSQLAdvancedSQLTest extends TestCase
             [
                 'name' => 'Carol Williams',
                 'department' => 'Data Science',
-                'salary' => 95000.00,
+                'salary' => 95_000.00,
                 'hire_date' => '2021-06-20',
                 'profile' => '{"skills": ["R", "Statistics"], "level": "senior", "certifications": ["Tableau"]}',
                 'skills' => '{"R", "Statistics", "PostgreSQL", "Tableau"}',

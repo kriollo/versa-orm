@@ -32,6 +32,7 @@
 - 🔧 **[Migración SchemaBuilder](docs/MigrationGuide_SchemaBuilder.md)** - De schemaCreate() al nuevo SchemaBuilder
 - 🔗 **[Foreign Keys e Índices](docs/ForeignKeysAndIndexes_CompleteGuide.md)** - Guía completa con ejemplos prácticos
 - 🐘 **[PostgreSQL SSL & Pokio](docs/pokio-ssl-troubleshooting.md)** - Solución a errores de concurrencia y SSL (v1.8.4)
+- ⚡ **[Tuning DB para Tests](docs/DatabaseTestTuning_MariaDB_PostgreSQL.md)** - Perfil rápido para MariaDB y PostgreSQL en entorno local
 
 ## 📋 ¿Qué es VersaORM?
 

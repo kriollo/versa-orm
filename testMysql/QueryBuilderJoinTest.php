@@ -211,7 +211,7 @@ class QueryBuilderJoinTest extends TestCase
         $results = self::$orm
             ->table('users')
             ->join('posts', 'users.id', '=', 'posts.user_id')
-            ->where('users.id', '=', 99999) // Non-existent user
+            ->where('users.id', '=', 99_999) // Non-existent user
             ->getAll();
 
         static::assertCount(0, $results);

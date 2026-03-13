@@ -496,7 +496,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
 
         $documentoInvalido = VersaModel::dispense('test_documentos');
         $documentoInvalido->titulo = 'Documento Inválido';
-        $documentoInvalido->usuario_id = 99999; // ID que no existe
+        $documentoInvalido->usuario_id = 99_999; // ID que no existe
         $documentoInvalido->store(); // Esto debe lanzar excepción
     }
 }

@@ -39,7 +39,7 @@ final class TimestampsUpdateTest extends TestCase
         static::assertNotEmpty($rowBefore);
         $before = $rowBefore[0]['updated_at'] ?? null;
         // small sleep to ensure timestamp difference
-        usleep(50000);
+        usleep(50_000);
         $model->name = 'changed';
         $model->store();
 

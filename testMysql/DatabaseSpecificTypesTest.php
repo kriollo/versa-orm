@@ -88,7 +88,7 @@ class DatabaseSpecificTypesTest extends TestCase
         static::assertSame($jsonData, $model->metadata);
 
         // Test DECIMAL con precisión
-        $model->price = 123.456789;
+        $model->price = 123.456_789;
         $model->store();
         static::assertIsFloat($model->price);
 
@@ -192,7 +192,7 @@ class DatabaseSpecificTypesTest extends TestCase
 
         // Test con dataset grande
         $largeArray = array_fill(0, 1000, [
-            'id' => rand(1, 1000000),
+            'id' => rand(1, 1_000_000),
             'name' => 'Test Item ' . rand(1, 1000),
             'data' => ['nested' => array_fill(0, 100, 'value')],
         ]);

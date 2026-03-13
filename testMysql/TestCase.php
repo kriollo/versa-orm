@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VersaORM\Tests\Mysql;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
+use Throwable;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
@@ -20,21 +21,47 @@ class TestCase extends BaseTestCase
     public static function setUpBeforeClass(): void
     {
         if (self::$orm === null) {
-            require_once __DIR__ . "/bootstrap.php";
+            require_once __DIR__ . '/bootstrap.php';
             global $config;
             $dbConfig = [
-                "engine" => $config["DB"]["engine"] ?? "pdo",
-                "driver" => $config["DB"]["DB_DRIVER"] ?? "mysql",
-                "database" => $config["DB"]["DB_NAME"] ?? "versaorm_test",
-                "debug" => $config["DB"]["debug"] ?? true,
-                "host" => $config["DB"]["DB_HOST"] ?? "localhost",
-                "port" => (int) ($config["DB"]["DB_PORT"] ?? 3306),
-                "username" => $config["DB"]["DB_USER"] ?? "local",
-                "password" => $config["DB"]["DB_PASS"] ?? "local",
+                'engine' => $config['DB']['engine'] ?? 'pdo',
+                'driver' => $config['DB']['DB_DRIVER'] ?? 'mysql',
+                'database' => $config['DB']['DB_NAME'] ?? 'versaorm_test',
+                'debug' => $config['DB']['debug'] ?? true,
+                'host' => $config['DB']['DB_HOST'] ?? 'localhost',
+                'port' => (int) ($config['DB']['DB_PORT'] ?? 3306),
+                'username' => $config['DB']['DB_USER'] ?? 'local',
+                'password' => $config['DB']['DB_PASS'] ?? 'local',
             ];
 
             self::$orm = new VersaORM($dbConfig);
             VersaModel::setORM(self::$orm);
+            self::applyFastSessionTuning();
+        }
+    }
+
+    protected static function applyFastSessionTuning(): void
+    {
+        $turbo = getenv('DB_TEST_TURBO');
+
+        if ($turbo === false || $turbo === '0') {
+            return;
+        }
+
+        // Ajustes por sesion: aceleran tests locales sin requerir cambiar archivos globales del servidor.
+        $sessionStatements = [
+            'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED',
+            'SET SESSION sql_notes = 0',
+            'SET SESSION innodb_flush_log_at_trx_commit = 2',
+            'SET SESSION sync_binlog = 0',
+        ];
+
+        foreach ($sessionStatements as $sql) {
+            try {
+                self::$orm?->exec($sql);
+            } catch (Throwable) {
+                // Algunos motores/usuarios no permiten todos los SET SESSION; continuar sin bloquear tests.
+            }
         }
     }
 
@@ -59,19 +86,19 @@ class TestCase extends BaseTestCase
         // No es necesario hacer rollback si el esquema se recrea cada vez.
         global $config;
 
-        if (($config["DB"]["DB_DRIVER"] ?? "") === "mysql") {
-            self::$orm->exec("SET FOREIGN_KEY_CHECKS = 0;");
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        self::$orm->exec("DROP TABLE IF EXISTS role_user;");
-        self::$orm->exec("DROP TABLE IF EXISTS posts;");
-        self::$orm->exec("DROP TABLE IF EXISTS profiles;");
-        self::$orm->exec("DROP TABLE IF EXISTS roles;");
-        self::$orm->exec("DROP TABLE IF EXISTS users;");
-        self::$orm->exec("DROP TABLE IF EXISTS products;");
-        self::$orm->exec("DROP TABLE IF EXISTS test_users;");
+        self::$orm->exec('DROP TABLE IF EXISTS role_user;');
+        self::$orm->exec('DROP TABLE IF EXISTS posts;');
+        self::$orm->exec('DROP TABLE IF EXISTS profiles;');
+        self::$orm->exec('DROP TABLE IF EXISTS roles;');
+        self::$orm->exec('DROP TABLE IF EXISTS users;');
+        self::$orm->exec('DROP TABLE IF EXISTS products;');
+        self::$orm->exec('DROP TABLE IF EXISTS test_users;');
 
-        if (($config["DB"]["DB_DRIVER"] ?? "") === "mysql") {
-            self::$orm->exec("SET FOREIGN_KEY_CHECKS = 1;");
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
     }
 
@@ -82,49 +109,49 @@ class TestCase extends BaseTestCase
         // Configuración específica para MySQL
         global $config;
 
-        if ($config["DB"]["DB_DRIVER"] === "mysql") {
+        if ($config['DB']['DB_DRIVER'] === 'mysql') {
             // Desactivar checks durante la creación para evitar problemas de orden
-            self::$orm->exec("SET FOREIGN_KEY_CHECKS = 0;");
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
             self::$orm->exec(
                 'SET sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO";',
             );
         }
 
         self::$orm->schemaCreate(
-            "users",
+            'users',
             [
                 [
-                    "name" => "id",
-                    "type" => "INT",
-                    "primary" => true,
-                    "autoIncrement" => true,
-                    "nullable" => false,
+                    'name' => 'id',
+                    'type' => 'INT',
+                    'primary' => true,
+                    'autoIncrement' => true,
+                    'nullable' => false,
                 ],
                 [
-                    "name" => "name",
-                    "type" => "VARCHAR(255)",
-                    "nullable" => false,
+                    'name' => 'name',
+                    'type' => 'VARCHAR(255)',
+                    'nullable' => false,
                 ],
                 [
-                    "name" => "email",
-                    "type" => "VARCHAR(191)",
-                    "nullable" => false,
-                    "default" => "",
+                    'name' => 'email',
+                    'type' => 'VARCHAR(191)',
+                    'nullable' => false,
+                    'default' => '',
                 ],
-                ["name" => "status", "type" => "VARCHAR(50)"],
+                ['name' => 'status', 'type' => 'VARCHAR(50)'],
                 [
-                    "name" => "created_at",
-                    "type" => "TIMESTAMP",
-                    "default" => "CURRENT_TIMESTAMP",
+                    'name' => 'created_at',
+                    'type' => 'TIMESTAMP',
+                    'default' => 'CURRENT_TIMESTAMP',
                 ],
             ],
             [
-                "engine" => "InnoDB",
-                "constraints" => [
-                    "unique" => [
+                'engine' => 'InnoDB',
+                'constraints' => [
+                    'unique' => [
                         [
-                            "name" => "users_email_unique",
-                            "columns" => ["email"],
+                            'name' => 'users_email_unique',
+                            'columns' => ['email'],
                         ],
                     ],
                 ],
@@ -132,28 +159,28 @@ class TestCase extends BaseTestCase
         );
 
         self::$orm->schemaCreate(
-            "profiles",
+            'profiles',
             [
                 [
-                    "name" => "id",
-                    "type" => "INT",
-                    "primary" => true,
-                    "autoIncrement" => true,
-                    "nullable" => false,
+                    'name' => 'id',
+                    'type' => 'INT',
+                    'primary' => true,
+                    'autoIncrement' => true,
+                    'nullable' => false,
                 ],
-                ["name" => "user_id", "type" => "INT"],
-                ["name" => "bio", "type" => "TEXT"],
+                ['name' => 'user_id', 'type' => 'INT'],
+                ['name' => 'bio', 'type' => 'TEXT'],
             ],
             [
-                "engine" => "InnoDB",
-                "constraints" => [
-                    "foreign" => [
+                'engine' => 'InnoDB',
+                'constraints' => [
+                    'foreign' => [
                         [
-                            "name" => "fk_profiles_users",
-                            "columns" => ["user_id"],
-                            "refTable" => "users",
-                            "refColumns" => ["id"],
-                            "onDelete" => "cascade",
+                            'name' => 'fk_profiles_users',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
                         ],
                     ],
                 ],
@@ -161,39 +188,39 @@ class TestCase extends BaseTestCase
         );
 
         self::$orm->schemaCreate(
-            "posts",
+            'posts',
             [
                 [
-                    "name" => "id",
-                    "type" => "INT",
-                    "primary" => true,
-                    "autoIncrement" => true,
-                    "nullable" => false,
+                    'name' => 'id',
+                    'type' => 'INT',
+                    'primary' => true,
+                    'autoIncrement' => true,
+                    'nullable' => false,
                 ],
-                ["name" => "user_id", "type" => "INT"],
+                ['name' => 'user_id', 'type' => 'INT'],
                 [
-                    "name" => "title",
-                    "type" => "VARCHAR(255)",
-                    "nullable" => false,
+                    'name' => 'title',
+                    'type' => 'VARCHAR(255)',
+                    'nullable' => false,
                 ],
-                ["name" => "content", "type" => "TEXT"],
-                ["name" => "published_at", "type" => "DATETIME"],
+                ['name' => 'content', 'type' => 'TEXT'],
+                ['name' => 'published_at', 'type' => 'DATETIME'],
                 [
-                    "name" => "published",
-                    "type" => "BOOLEAN",
-                    "default" => false,
+                    'name' => 'published',
+                    'type' => 'BOOLEAN',
+                    'default' => false,
                 ],
             ],
             [
-                "engine" => "InnoDB",
-                "constraints" => [
-                    "foreign" => [
+                'engine' => 'InnoDB',
+                'constraints' => [
+                    'foreign' => [
                         [
-                            "name" => "fk_posts_users",
-                            "columns" => ["user_id"],
-                            "refTable" => "users",
-                            "refColumns" => ["id"],
-                            "onDelete" => "cascade",
+                            'name' => 'fk_posts_users',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
                         ],
                     ],
                 ],
@@ -201,48 +228,48 @@ class TestCase extends BaseTestCase
         );
 
         self::$orm->schemaCreate(
-            "roles",
+            'roles',
             [
                 [
-                    "name" => "id",
-                    "type" => "INT",
-                    "primary" => true,
-                    "autoIncrement" => true,
-                    "nullable" => false,
+                    'name' => 'id',
+                    'type' => 'INT',
+                    'primary' => true,
+                    'autoIncrement' => true,
+                    'nullable' => false,
                 ],
                 [
-                    "name" => "name",
-                    "type" => "VARCHAR(255)",
-                    "nullable" => false,
+                    'name' => 'name',
+                    'type' => 'VARCHAR(255)',
+                    'nullable' => false,
                 ],
             ],
-            ["engine" => "InnoDB"],
+            ['engine' => 'InnoDB'],
         );
 
         self::$orm->schemaCreate(
-            "role_user",
+            'role_user',
             [
-                ["name" => "user_id", "type" => "INT", "nullable" => false],
-                ["name" => "role_id", "type" => "INT", "nullable" => false],
+                ['name' => 'user_id', 'type' => 'INT', 'nullable' => false],
+                ['name' => 'role_id', 'type' => 'INT', 'nullable' => false],
             ],
             [
-                "engine" => "InnoDB",
-                "primary_key" => ["user_id", "role_id"],
-                "constraints" => [
-                    "foreign" => [
+                'engine' => 'InnoDB',
+                'primary_key' => ['user_id', 'role_id'],
+                'constraints' => [
+                    'foreign' => [
                         [
-                            "name" => "fk_ru_user",
-                            "columns" => ["user_id"],
-                            "refTable" => "users",
-                            "refColumns" => ["id"],
-                            "onDelete" => "cascade",
+                            'name' => 'fk_ru_user',
+                            'columns' => ['user_id'],
+                            'refTable' => 'users',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
                         ],
                         [
-                            "name" => "fk_ru_role",
-                            "columns" => ["role_id"],
-                            "refTable" => "roles",
-                            "refColumns" => ["id"],
-                            "onDelete" => "cascade",
+                            'name' => 'fk_ru_role',
+                            'columns' => ['role_id'],
+                            'refTable' => 'roles',
+                            'refColumns' => ['id'],
+                            'onDelete' => 'cascade',
                         ],
                     ],
                 ],
@@ -250,30 +277,30 @@ class TestCase extends BaseTestCase
         );
 
         self::$orm->schemaCreate(
-            "products",
+            'products',
             [
                 [
-                    "name" => "sku",
-                    "type" => "VARCHAR(50)",
-                    "primary" => true,
-                    "nullable" => false,
+                    'name' => 'sku',
+                    'type' => 'VARCHAR(50)',
+                    'primary' => true,
+                    'nullable' => false,
                 ],
                 [
-                    "name" => "name",
-                    "type" => "VARCHAR(255)",
-                    "nullable" => false,
+                    'name' => 'name',
+                    'type' => 'VARCHAR(255)',
+                    'nullable' => false,
                 ],
-                ["name" => "price", "type" => "DECIMAL(10, 2)"],
-                ["name" => "stock", "type" => "INT", "default" => 0],
-                ["name" => "description", "type" => "TEXT"],
-                ["name" => "category", "type" => "VARCHAR(100)"],
+                ['name' => 'price', 'type' => 'DECIMAL(10, 2)'],
+                ['name' => 'stock', 'type' => 'INT', 'default' => 0],
+                ['name' => 'description', 'type' => 'TEXT'],
+                ['name' => 'category', 'type' => 'VARCHAR(100)'],
             ],
-            ["engine" => "InnoDB"],
+            ['engine' => 'InnoDB'],
         );
 
-        if ($config["DB"]["DB_DRIVER"] === "mysql") {
+        if ($config['DB']['DB_DRIVER'] === 'mysql') {
             // Reactivar checks una vez creado todo
-            self::$orm->exec("SET FOREIGN_KEY_CHECKS = 1;");
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
     }
 
@@ -281,20 +308,20 @@ class TestCase extends BaseTestCase
     {
         global $config;
 
-        if (($config["DB"]["DB_DRIVER"] ?? "") === "mysql") {
-            self::$orm->exec("SET FOREIGN_KEY_CHECKS = 0;");
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
         // Dropear en orden seguro para FKs
-        self::$orm->schemaDrop("role_user");
-        self::$orm->schemaDrop("posts");
-        self::$orm->schemaDrop("profiles");
-        self::$orm->schemaDrop("roles");
-        self::$orm->schemaDrop("users");
-        self::$orm->schemaDrop("products");
-        self::$orm->schemaDrop("test_users");
+        self::$orm->schemaDrop('role_user');
+        self::$orm->schemaDrop('posts');
+        self::$orm->schemaDrop('profiles');
+        self::$orm->schemaDrop('roles');
+        self::$orm->schemaDrop('users');
+        self::$orm->schemaDrop('products');
+        self::$orm->schemaDrop('test_users');
 
-        if (($config["DB"]["DB_DRIVER"] ?? "") === "mysql") {
-            self::$orm->exec("SET FOREIGN_KEY_CHECKS = 1;");
+        if (($config['DB']['DB_DRIVER'] ?? '') === 'mysql') {
+            self::$orm->exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
     }
 
@@ -302,102 +329,94 @@ class TestCase extends BaseTestCase
     {
         // Seed users (omitir ID, dejar que SQLite asigne automáticamente)
         self::$orm
-            ->table("users")
+            ->table('users')
             ->insert([
-                "name" => "Alice",
-                "email" => "alice@example.com",
-                "status" => "active",
+                'name' => 'Alice',
+                'email' => 'alice@example.com',
+                'status' => 'active',
             ]);
         self::$orm
-            ->table("users")
+            ->table('users')
             ->insert([
-                "name" => "Bob",
-                "email" => "bob@example.com",
-                "status" => "inactive",
+                'name' => 'Bob',
+                'email' => 'bob@example.com',
+                'status' => 'inactive',
             ]);
         self::$orm
-            ->table("users")
+            ->table('users')
             ->insert([
-                "name" => "Charlie",
-                "email" => "charlie@example.com",
-                "status" => "active",
+                'name' => 'Charlie',
+                'email' => 'charlie@example.com',
+                'status' => 'active',
             ]);
 
         // Seed posts (usar IDs 1, 2, 3 como user_id)
         self::$orm
-            ->table("posts")
+            ->table('posts')
             ->insert([
-                "user_id" => 1,
-                "title" => "Alice Post 1",
-                "content" => "Content 1",
-                "published" => true,
+                'user_id' => 1,
+                'title' => 'Alice Post 1',
+                'content' => 'Content 1',
+                'published' => true,
             ]);
         self::$orm
-            ->table("posts")
+            ->table('posts')
             ->insert([
-                "user_id" => 1,
-                "title" => "Alice Post 2",
-                "content" => "Content 2",
+                'user_id' => 1,
+                'title' => 'Alice Post 2',
+                'content' => 'Content 2',
             ]);
         self::$orm
-            ->table("posts")
+            ->table('posts')
             ->insert([
-                "user_id" => 2,
-                "title" => "Bob Post 1",
-                "content" => "Content 3",
+                'user_id' => 2,
+                'title' => 'Bob Post 1',
+                'content' => 'Content 3',
             ]);
 
         // Seed products
         self::$orm
-            ->table("products")
+            ->table('products')
             ->insert([
-                "sku" => "P001",
-                "name" => "Laptop",
-                "price" => 1200.5,
-                "stock" => 10,
+                'sku' => 'P001',
+                'name' => 'Laptop',
+                'price' => 1200.5,
+                'stock' => 10,
             ]);
         self::$orm
-            ->table("products")
+            ->table('products')
             ->insert([
-                "sku" => "P002",
-                "name" => "Mouse",
-                "price" => 25.0,
-                "stock" => 100,
+                'sku' => 'P002',
+                'name' => 'Mouse',
+                'price' => 25.0,
+                'stock' => 100,
             ]);
         self::$orm
-            ->table("products")
+            ->table('products')
             ->insert([
-                "sku" => "P003",
-                "name" => "Keyboard",
-                "price" => 15.0,
-                "stock" => 50,
+                'sku' => 'P003',
+                'name' => 'Keyboard',
+                'price' => 15.0,
+                'stock' => 50,
             ]);
         self::$orm
-            ->table("products")
+            ->table('products')
             ->insert([
-                "sku" => "P004",
-                "name" => "Monitor",
-                "price" => 300.0,
-                "stock" => 20,
+                'sku' => 'P004',
+                'name' => 'Monitor',
+                'price' => 300.0,
+                'stock' => 20,
             ]);
 
         // Seed relationships data
-        self::$orm
-            ->table("profiles")
-            ->insert(["user_id" => 1, "bio" => "Alice bio"]);
-        self::$orm->table("roles")->insert(["name" => "Admin"]);
-        self::$orm->table("roles")->insert(["name" => "Editor"]);
-        self::$orm->table("roles")->insert(["name" => "Viewer"]);
-        self::$orm->table("roles")->insert(["name" => "externo"]);
+        self::$orm->table('profiles')->insert(['user_id' => 1, 'bio' => 'Alice bio']);
+        self::$orm->table('roles')->insert(['name' => 'Admin']);
+        self::$orm->table('roles')->insert(['name' => 'Editor']);
+        self::$orm->table('roles')->insert(['name' => 'Viewer']);
+        self::$orm->table('roles')->insert(['name' => 'externo']);
 
-        self::$orm
-            ->table("role_user")
-            ->insert(["user_id" => 1, "role_id" => 1]);
-        self::$orm
-            ->table("role_user")
-            ->insert(["user_id" => 1, "role_id" => 2]);
-        self::$orm
-            ->table("role_user")
-            ->insert(["user_id" => 2, "role_id" => 2]);
+        self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 1]);
+        self::$orm->table('role_user')->insert(['user_id' => 1, 'role_id' => 2]);
+        self::$orm->table('role_user')->insert(['user_id' => 2, 'role_id' => 2]);
     }
 }

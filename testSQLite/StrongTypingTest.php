@@ -92,7 +92,7 @@ class StrongTypingTest extends TestCase
         };
         // Crear instancia (anónima ya instanciada)
         $model = $modelClass;
-        $timestamp = 1700000000; // unix timestamp fijo
+        $timestamp = 1_700_000_000; // unix timestamp fijo
 
         $phpDt = $model->castToPhpType('any', $timestamp);
         static::assertInstanceOf(\DateTimeInterface::class, $phpDt);

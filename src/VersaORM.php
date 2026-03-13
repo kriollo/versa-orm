@@ -1580,7 +1580,7 @@ class VersaORM
                     throw new VersaORMException('Raw action requires a valid query string.', 'INVALID_QUERY');
                 }
 
-                if (strlen($params['query']) > 1000000) { // 1MB limit
+                if (strlen($params['query']) > 1_000_000) { // 1MB limit
                     throw new VersaORMException('Query string exceeds maximum length (1MB).', 'QUERY_TOO_LONG');
                 }
 

@@ -185,7 +185,7 @@ class AdvancedSQLTest extends TestCase
         $queries = [
             [
                 'sql' => 'SELECT name FROM test_table WHERE salary > ?',
-                'bindings' => [80000],
+                'bindings' => [80_000],
             ],
         ];
 
@@ -408,7 +408,7 @@ class AdvancedSQLTest extends TestCase
         $qb = new QueryBuilder($this->orm, 'test_table');
 
         // Usar window function con WHERE conditions
-        $result = $qb->where('salary', '>', 70000)->windowFunction(
+        $result = $qb->where('salary', '>', 70_000)->windowFunction(
             'row_number',
             '*',
             [],
@@ -493,11 +493,11 @@ class AdvancedSQLTest extends TestCase
     {
         // Datos para test_table
         $employees = [
-            ['name' => 'Alice Johnson', 'department' => 'Engineering', 'salary' => 90000, 'hire_date' => '2020-01-15'],
-            ['name' => 'Bob Smith', 'department' => 'Engineering', 'salary' => 85000, 'hire_date' => '2019-03-10'],
-            ['name' => 'Carol Williams', 'department' => 'Marketing', 'salary' => 70000, 'hire_date' => '2021-06-20'],
-            ['name' => 'David Brown', 'department' => 'Engineering', 'salary' => 95000, 'hire_date' => '2018-11-05'],
-            ['name' => 'Eve Davis', 'department' => 'Marketing', 'salary' => 75000, 'hire_date' => '2020-08-12'],
+            ['name' => 'Alice Johnson', 'department' => 'Engineering', 'salary' => 90_000, 'hire_date' => '2020-01-15'],
+            ['name' => 'Bob Smith', 'department' => 'Engineering', 'salary' => 85_000, 'hire_date' => '2019-03-10'],
+            ['name' => 'Carol Williams', 'department' => 'Marketing', 'salary' => 70_000, 'hire_date' => '2021-06-20'],
+            ['name' => 'David Brown', 'department' => 'Engineering', 'salary' => 95_000, 'hire_date' => '2018-11-05'],
+            ['name' => 'Eve Davis', 'department' => 'Marketing', 'salary' => 75_000, 'hire_date' => '2020-08-12'],
         ];
 
         foreach ($employees as $employee) {

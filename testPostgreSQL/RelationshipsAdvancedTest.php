@@ -483,7 +483,7 @@ class RelationshipsAdvancedTest extends TestCase
 
         // Intentar crear post con user_id inexistente
         $post = VersaModel::dispense('posts');
-        $post->user_id = 99999; // ID que no existe
+        $post->user_id = 99_999; // ID que no existe
         $post->title = 'Invalid Post';
         $post->content = 'Should fail';
         $post->store(); // Debería fallar por constraint de foreign key

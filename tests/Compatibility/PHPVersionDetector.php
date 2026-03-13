@@ -29,7 +29,7 @@ class PHPVersionDetector
 {
     public static array $supportedVersions = [
         '7.4' => [
-            'min_version_id' => 70400,
+            'min_version_id' => 70_400,
             'features' => [
                 'typed_properties',
                 'arrow_functions',
@@ -41,7 +41,7 @@ class PHPVersionDetector
             'eol_date' => '2022-11-28',
         ],
         '8.0' => [
-            'min_version_id' => 80000,
+            'min_version_id' => 80_000,
             'features' => [
                 'named_arguments',
                 'attributes',
@@ -57,7 +57,7 @@ class PHPVersionDetector
             'eol_date' => '2023-11-26',
         ],
         '8.1' => [
-            'min_version_id' => 80100,
+            'min_version_id' => 80_100,
             'features' => [
                 'enums',
                 'readonly_properties',
@@ -72,7 +72,7 @@ class PHPVersionDetector
             'eol_date' => '2024-11-25',
         ],
         '8.2' => [
-            'min_version_id' => 80200,
+            'min_version_id' => 80_200,
             'features' => [
                 'readonly_classes',
                 'dnf_types',
@@ -85,7 +85,7 @@ class PHPVersionDetector
             'eol_date' => '2025-12-08',
         ],
         '8.3' => [
-            'min_version_id' => 80300,
+            'min_version_id' => 80_300,
             'features' => [
                 'typed_class_constants',
                 'dynamic_class_constant_fetch',

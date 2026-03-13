@@ -307,12 +307,12 @@ class Blueprint
     ): void {
         $columns = is_array($columns) ? $columns : [$columns];
         $this->indexes[] = [
-            'type'         => 'vector_index',
+            'type' => 'vector_index',
             'index_method' => $method,
-            'metric'       => $metric,
-            'columns'      => $columns,
-            'options'      => $options,
-            'name'         => $name,
+            'metric' => $metric,
+            'columns' => $columns,
+            'options' => $options,
+            'name' => $name,
         ];
     }
 

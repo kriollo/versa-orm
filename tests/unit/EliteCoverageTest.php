@@ -38,7 +38,6 @@ class EliteModel extends VersaModel
     {
         parent::__construct($this->table, $orm);
     }
-
 }
 
 /**

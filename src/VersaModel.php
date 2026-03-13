@@ -612,66 +612,48 @@ class VersaModel implements TypedModelInterface
      * @example
      *   protected function beforeSave(): void { $this->slug = slugify($this->name); }
      */
-    protected function beforeSave(): void
-    {
-    }
+    protected function beforeSave(): void {}
 
     /**
      * Hook invocado después de un INSERT o UPDATE exitoso.
      */
-    protected function afterSave(): void
-    {
-    }
+    protected function afterSave(): void {}
 
     /**
      * Hook invocado antes de un INSERT nuevo.
      */
-    protected function beforeCreate(): void
-    {
-    }
+    protected function beforeCreate(): void {}
 
     /**
      * Hook invocado después de un INSERT exitoso.
      */
-    protected function afterCreate(): void
-    {
-    }
+    protected function afterCreate(): void {}
 
     /**
      * Hook invocado antes de un UPDATE.
      */
-    protected function beforeUpdate(): void
-    {
-    }
+    protected function beforeUpdate(): void {}
 
     /**
      * Hook invocado después de un UPDATE exitoso.
      */
-    protected function afterUpdate(): void
-    {
-    }
+    protected function afterUpdate(): void {}
 
     /**
      * Hook invocado antes de un DELETE.
      * Puede usarse para lógica de soft-delete o validaciones previas al borrado.
      */
-    protected function beforeDelete(): void
-    {
-    }
+    protected function beforeDelete(): void {}
 
     /**
      * Hook invocado después de un DELETE exitoso.
      */
-    protected function afterDelete(): void
-    {
-    }
+    protected function afterDelete(): void {}
 
     /**
      * Hook invocado después de cargar un registro desde la base de datos.
      */
-    protected function afterRetrieve(): void
-    {
-    }
+    protected function afterRetrieve(): void {}
 
     // ========== CRUD PRINCIPAL (final — usar hooks para personalizar) ==========
 
@@ -691,7 +673,9 @@ class VersaModel implements TypedModelInterface
     {
         if ($this->storeInProgress) {
             throw new VersaORMException(
-                'Recursión infinita detectada en store() sobre ' . static::class . '. '
+                'Recursión infinita detectada en store() sobre '
+                . static::class
+                . '. '
                 . 'No sobreescriba store() — use los hooks beforeSave() / afterSave() en su lugar.',
                 'RECURSIVE_STORE',
             );
@@ -941,7 +925,9 @@ class VersaModel implements TypedModelInterface
     {
         if ($this->storeInProgress) {
             throw new VersaORMException(
-                'Recursión infinita detectada en save() sobre ' . static::class . '. '
+                'Recursión infinita detectada en save() sobre '
+                . static::class
+                . '. '
                 . 'No sobreescriba save() — use los hooks beforeSave() / afterSave() en su lugar.',
                 'RECURSIVE_STORE',
             );
@@ -3094,7 +3080,7 @@ class VersaModel implements TypedModelInterface
                 return 'VARCHAR(255)';
             }
 
-            if ($length <= 65535) {
+            if ($length <= 65_535) {
                 return 'TEXT';
             }
 

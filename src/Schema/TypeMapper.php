@@ -104,7 +104,7 @@ class TypeMapper
             'unsignedSmallInteger' => 'SMALLINT',
             'unsignedTinyInteger' => 'SMALLINT',
             'uuid' => 'UUID',
-            'vector' => 'vector',    // pgvector — dimensiones se aplican en applyTypeOptions()
+            'vector' => 'vector', // pgvector — dimensiones se aplican en applyTypeOptions()
             'tsvector' => 'TSVECTOR', // búsqueda full-text nativa de PostgreSQL
             'year' => 'INTEGER',
         ],

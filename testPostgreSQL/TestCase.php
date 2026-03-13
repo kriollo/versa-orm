@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VersaORM\Tests\PostgreSQL;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
+use Throwable;
 use VersaORM\VersaModel;
 use VersaORM\VersaORM;
 
@@ -35,6 +36,34 @@ class TestCase extends BaseTestCase
 
             self::$orm = new VersaORM($dbConfig);
             VersaModel::setORM(self::$orm);
+            self::applyFastSessionTuning();
+        }
+    }
+
+    protected static function applyFastSessionTuning(): void
+    {
+        $turbo = getenv('DB_TEST_TURBO');
+
+        if ($turbo === false || $turbo === '0') {
+            return;
+        }
+
+        // Ajustes de performance por sesion para laboratorio local.
+        $sessionStatements = [
+            'SET synchronous_commit = off',
+            'SET jit = off',
+            "SET work_mem = '64MB'",
+            "SET maintenance_work_mem = '256MB'",
+            "SET temp_buffers = '32MB'",
+            'SET client_min_messages = warning',
+        ];
+
+        foreach ($sessionStatements as $sql) {
+            try {
+                self::$orm?->exec($sql);
+            } catch (Throwable) {
+                // No todos los parametros estan disponibles para todos los roles/versiones.
+            }
         }
     }
 
@@ -264,13 +293,15 @@ class TestCase extends BaseTestCase
                 ],
                 [
                     'constraints' => [
-                        'foreign' => [[
-                            'name' => 'fk_profiles_users',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
-                        ]],
+                        'foreign' => [
+                            [
+                                'name' => 'fk_profiles_users',
+                                'columns' => ['user_id'],
+                                'refTable' => 'users',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ]
+                        ],
                     ],
                 ],
             );
@@ -286,13 +317,15 @@ class TestCase extends BaseTestCase
                 ],
                 [
                     'constraints' => [
-                        'foreign' => [[
-                            'name' => 'fk_posts_users',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
-                        ]],
+                        'foreign' => [
+                            [
+                                'name' => 'fk_posts_users',
+                                'columns' => ['user_id'],
+                                'refTable' => 'users',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ]
+                        ],
                     ],
                 ],
             );
@@ -405,13 +438,15 @@ class TestCase extends BaseTestCase
                 ],
                 [
                     'constraints' => [
-                        'foreign' => [[
-                            'name' => 'fk_profiles_users',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
-                        ]],
+                        'foreign' => [
+                            [
+                                'name' => 'fk_profiles_users',
+                                'columns' => ['user_id'],
+                                'refTable' => 'users',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ]
+                        ],
                     ],
                 ],
             );
@@ -433,13 +468,15 @@ class TestCase extends BaseTestCase
                 ],
                 [
                     'constraints' => [
-                        'foreign' => [[
-                            'name' => 'fk_posts_users',
-                            'columns' => ['user_id'],
-                            'refTable' => 'users',
-                            'refColumns' => ['id'],
-                            'onDelete' => 'cascade',
-                        ]],
+                        'foreign' => [
+                            [
+                                'name' => 'fk_posts_users',
+                                'columns' => ['user_id'],
+                                'refTable' => 'users',
+                                'refColumns' => ['id'],
+                                'onDelete' => 'cascade',
+                            ]
+                        ],
                     ],
                 ],
             );

@@ -60,23 +60,47 @@
   "scripts": {
     "test-mysql": [
       "@putenv XDEBUG_MODE=off",
+      "@putenv DB_TEST_TURBO=1",
       "@putenv DB_DRIVER=mysql",
-      "@putenv DB_HOST=localhost",
+      "@putenv DB_HOST=127.0.0.1",
       "@putenv DB_PORT=3306",
       "@putenv DB_NAME=versaorm_test",
       "@putenv DB_USER=local",
       "@putenv DB_PASS=local",
       "phpunit --configuration phpunit-mysql.xml --testdox"
     ],
+    "test-mysql-fast": [
+      "@putenv XDEBUG_MODE=off",
+      "@putenv DB_TEST_TURBO=1",
+      "@putenv DB_DRIVER=mysql",
+      "@putenv DB_HOST=127.0.0.1",
+      "@putenv DB_PORT=3306",
+      "@putenv DB_NAME=versaorm_test",
+      "@putenv DB_USER=local",
+      "@putenv DB_PASS=local",
+      "phpunit --configuration phpunit-mysql.xml"
+    ],
     "test-postgresql": [
       "@putenv XDEBUG_MODE=off",
+      "@putenv DB_TEST_TURBO=1",
       "@putenv DB_DRIVER=postgresql",
-      "@putenv DB_HOST=localhost",
+      "@putenv DB_HOST=127.0.0.1",
       "@putenv DB_PORT=5432",
       "@putenv DB_NAME=versaorm_test",
       "@putenv DB_USER=local",
       "@putenv DB_PASS=local",
       "phpunit --configuration phpunit-postgresql.xml --testdox"
+    ],
+    "test-postgresql-fast": [
+      "@putenv XDEBUG_MODE=off",
+      "@putenv DB_TEST_TURBO=1",
+      "@putenv DB_DRIVER=postgresql",
+      "@putenv DB_HOST=127.0.0.1",
+      "@putenv DB_PORT=5432",
+      "@putenv DB_NAME=versaorm_test",
+      "@putenv DB_USER=local",
+      "@putenv DB_PASS=local",
+      "phpunit --configuration phpunit-postgresql.xml"
     ],
     "test-sqlite": [
       "@putenv XDEBUG_MODE=off",

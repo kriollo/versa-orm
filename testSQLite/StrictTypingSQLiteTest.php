@@ -107,16 +107,16 @@ class StrictTypingSQLiteTest extends TestCase
         ]);
 
         $model = VersaModel::dispense('test_real');
-        $model->value = 3.14159;
+        $model->value = 3.141_59;
         $model->store();
 
         $loaded = VersaModel::load('test_real', $model->id);
         static::assertIsFloat($loaded->value);
-        static::assertEqualsWithDelta(3.14159, $loaded->value, 0.00001);
+        static::assertEqualsWithDelta(3.141_59, $loaded->value, 0.000_01);
 
         // Valor muy pequeño
         $model2 = VersaModel::dispense('test_real');
-        $model2->value = 0.00000001;
+        $model2->value = 0.000_000_01;
         $model2->store();
 
         $loaded2 = VersaModel::load('test_real', $model2->id);
@@ -239,16 +239,16 @@ class StrictTypingSQLiteTest extends TestCase
 
         // Máximo valor positivo (64-bit)
         $model = VersaModel::dispense('test_int_limits');
-        $model->value = 9223372036854775807;
+        $model->value = 9_223_372_036_854_775_807;
         $model->store();
 
         $loaded = VersaModel::load('test_int_limits', $model->id);
-        static::assertSame(9223372036854775807, $loaded->value);
+        static::assertSame(9_223_372_036_854_775_807, $loaded->value);
 
         // Valores grandes negativos - usar un valor más seguro que PHP_INT_MIN
         // PHP_INT_MIN puede causar overflow en PDO/SQLite
         $model2 = VersaModel::dispense('test_int_limits');
-        $largeNegative = -9223372036854775807; // Slightly less extreme than PHP_INT_MIN
+        $largeNegative = -9_223_372_036_854_775_807; // Slightly less extreme than PHP_INT_MIN
         $model2->value = $largeNegative;
         $model2->store();
 

@@ -24,7 +24,7 @@ final class BatchOperationsTypedBindTest extends TestCase
         static::assertSame('success', $resU['status'] ?? null);
         static::assertGreaterThanOrEqual(2, $resU['rows_affected'] ?? 0);
 
-        $resD = self::$orm->table('users')->where('id', '>', 1000000)->deleteMany(maxRecords: 1000);
+        $resD = self::$orm->table('users')->where('id', '>', 1_000_000)->deleteMany(maxRecords: 1000);
         static::assertSame('success', $resD['status'] ?? null);
         static::assertSame(0, $resD['rows_affected'] ?? -1);
     }

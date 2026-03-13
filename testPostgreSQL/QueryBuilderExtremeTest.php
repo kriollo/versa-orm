@@ -201,7 +201,7 @@ class QueryBuilderExtremeTest extends TestCase
         static::assertCount(1, $results2);
 
         // OFFSET muy grande (más allá de los datos)
-        $results3 = self::$orm->table('users')->offset(10000)->get();
+        $results3 = self::$orm->table('users')->offset(10_000)->get();
 
         static::assertIsArray($results3);
         static::assertEmpty($results3);

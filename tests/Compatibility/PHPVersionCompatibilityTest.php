@@ -421,35 +421,35 @@ class PHPVersionCompatibilityTest extends TestCase
         $version = PHP_VERSION_ID;
 
         // PHP 7.4+ features
-        self::$versionFeatures['typed_properties'] = $version >= 70400;
-        self::$versionFeatures['arrow_functions'] = $version >= 70400;
-        self::$versionFeatures['null_coalescing_assignment'] = $version >= 70400;
-        self::$versionFeatures['array_spread'] = $version >= 70400;
+        self::$versionFeatures['typed_properties'] = $version >= 70_400;
+        self::$versionFeatures['arrow_functions'] = $version >= 70_400;
+        self::$versionFeatures['null_coalescing_assignment'] = $version >= 70_400;
+        self::$versionFeatures['array_spread'] = $version >= 70_400;
 
         // PHP 8.0+ features
-        self::$versionFeatures['named_arguments'] = $version >= 80000;
-        self::$versionFeatures['attributes'] = $version >= 80000;
-        self::$versionFeatures['constructor_promotion'] = $version >= 80000;
-        self::$versionFeatures['union_types'] = $version >= 80000;
-        self::$versionFeatures['match_expression'] = $version >= 80000;
-        self::$versionFeatures['nullsafe_operator'] = $version >= 80000;
+        self::$versionFeatures['named_arguments'] = $version >= 80_000;
+        self::$versionFeatures['attributes'] = $version >= 80_000;
+        self::$versionFeatures['constructor_promotion'] = $version >= 80_000;
+        self::$versionFeatures['union_types'] = $version >= 80_000;
+        self::$versionFeatures['match_expression'] = $version >= 80_000;
+        self::$versionFeatures['nullsafe_operator'] = $version >= 80_000;
 
         // PHP 8.1+ features
-        self::$versionFeatures['enums'] = $version >= 80100;
-        self::$versionFeatures['readonly_properties'] = $version >= 80100;
-        self::$versionFeatures['intersection_types'] = $version >= 80100;
-        self::$versionFeatures['first_class_callables'] = $version >= 80100;
-        self::$versionFeatures['new_in_initializers'] = $version >= 80100;
+        self::$versionFeatures['enums'] = $version >= 80_100;
+        self::$versionFeatures['readonly_properties'] = $version >= 80_100;
+        self::$versionFeatures['intersection_types'] = $version >= 80_100;
+        self::$versionFeatures['first_class_callables'] = $version >= 80_100;
+        self::$versionFeatures['new_in_initializers'] = $version >= 80_100;
 
         // PHP 8.2+ features
-        self::$versionFeatures['readonly_classes'] = $version >= 80200;
-        self::$versionFeatures['dnf_types'] = $version >= 80200;
-        self::$versionFeatures['constants_in_traits'] = $version >= 80200;
+        self::$versionFeatures['readonly_classes'] = $version >= 80_200;
+        self::$versionFeatures['dnf_types'] = $version >= 80_200;
+        self::$versionFeatures['constants_in_traits'] = $version >= 80_200;
 
         // PHP 8.3+ features
-        self::$versionFeatures['typed_class_constants'] = $version >= 80300;
-        self::$versionFeatures['dynamic_class_constant_fetch'] = $version >= 80300;
-        self::$versionFeatures['override_attribute'] = $version >= 80300;
+        self::$versionFeatures['typed_class_constants'] = $version >= 80_300;
+        self::$versionFeatures['dynamic_class_constant_fetch'] = $version >= 80_300;
+        self::$versionFeatures['override_attribute'] = $version >= 80_300;
     }
 
     /**
