@@ -694,8 +694,25 @@ trait HasStrongTyping
             }
 
             if (is_int($v) || ctype_digit((string) $v)) {
+                $timezone = date_default_timezone_get();
+
+                if (is_object($s) && method_exists($s, 'getOrm')) {
+                    try {
+                        $orm = $s->getOrm();
+
+                        if ($orm instanceof VersaORM) {
+                            $ormTimezone = $orm->getTimezone();
+                            if ($ormTimezone !== '') {
+                                $timezone = $ormTimezone;
+                            }
+                        }
+                    } catch (Throwable) {
+                        // Mantener fallback global cuando no se puede resolver el ORM/timezone.
+                    }
+                }
+
                 return (new DateTimeImmutable('@'
-                . (int) $v))->setTimezone(new DateTimeZone(date_default_timezone_get()));
+                    . (int) $v))->setTimezone(new DateTimeZone($timezone));
             }
 
             throw new VersaORMException("Invalid datetime value for property {$p}");
@@ -841,12 +858,12 @@ trait HasStrongTyping
         };
         $bool = static fn($s, $p, $v, $_ = []): int => (
             is_bool($v)
-                ? $v
-                : (
-                    is_numeric($v)
-                        ? (float) $v !== 0.0
-                        : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true)
-                )
+            ? $v
+            : (
+                is_numeric($v)
+                ? (float) $v !== 0.0
+                : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true)
+            )
         )
             ? 1
             : 0;

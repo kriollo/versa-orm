@@ -19,12 +19,7 @@ trait VersaORMTrait
     protected ?VersaORM $db = null;
 
     protected static array $DEFAULT_CONFIG = [
-        'driver' => 'mysql',
-        'host' => 'localhost',
-        'port' => 3306,
-        'database' => '',
-        'username' => '',
-        'password' => '',
+        'engine' => 'pdo',
     ];
 
     /**

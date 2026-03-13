@@ -1,3 +1,39 @@
+## [1.9.0] - 2026-03-13
+
+### 🔧 Timezone Correctness y Hardening de Conexión
+
+**VersaModel.php — Timestamps con timezone del ORM:**
+
+- `store()` ya no usa UTC hardcodeado para `created_at` / `updated_at`.
+- Ahora usa `getTimezone()` de la instancia ORM cuando está disponible.
+- Fallback seguro a `date_default_timezone_get()` cuando no hay timezone configurada o viene vacía.
+- Corrige desfases visibles en motores que persisten `timestamp without time zone`.
+
+**HasStrongTyping.php — Casting datetime alineado al ORM:**
+
+- El cast de timestamps unix a `DateTimeImmutable` ahora intenta resolver la timezone desde el ORM del modelo.
+- Si no puede resolver ORM/timezone, mantiene fallback a `date_default_timezone_get()`.
+- Mejora consistencia entre valores casteados y persistencia automática de timestamps.
+
+**PdoConnection.php — Defaults y autenticación más seguros:**
+
+- Host por defecto para MySQL/PostgreSQL cambiado de `localhost` a `127.0.0.1` para evitar resolución implícita por socket en entornos donde sólo TCP está disponible.
+- El fallback implícito de credenciales `local/local` ya no se aplica automáticamente.
+- Se añade fallback opcional explícito vía `options.allow_local_fallback_auth`.
+
+**VersaORMTrait.php — Configuración base menos rígida:**
+
+- `DEFAULT_CONFIG` simplificada para evitar defaults de driver/host/port/credenciales hardcodeados.
+- Se mantiene `engine => pdo` como valor base seguro.
+
+### ✅ Validación
+
+- SQLite: `882` tests (`2301` assertions) sin fallas/errores.
+- MySQL: `520` tests (`1559` assertions) OK.
+- PostgreSQL: `645` tests (`1961` assertions) OK.
+
+---
+
 ## [1.8.8] - 2026-03-02
 
 ### ✨ Modelos Tipados, Hooks de Ciclo de Vida y Protección contra Recursión

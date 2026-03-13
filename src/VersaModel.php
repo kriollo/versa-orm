@@ -612,48 +612,66 @@ class VersaModel implements TypedModelInterface
      * @example
      *   protected function beforeSave(): void { $this->slug = slugify($this->name); }
      */
-    protected function beforeSave(): void {}
+    protected function beforeSave(): void
+    {
+    }
 
     /**
      * Hook invocado después de un INSERT o UPDATE exitoso.
      */
-    protected function afterSave(): void {}
+    protected function afterSave(): void
+    {
+    }
 
     /**
      * Hook invocado antes de un INSERT nuevo.
      */
-    protected function beforeCreate(): void {}
+    protected function beforeCreate(): void
+    {
+    }
 
     /**
      * Hook invocado después de un INSERT exitoso.
      */
-    protected function afterCreate(): void {}
+    protected function afterCreate(): void
+    {
+    }
 
     /**
      * Hook invocado antes de un UPDATE.
      */
-    protected function beforeUpdate(): void {}
+    protected function beforeUpdate(): void
+    {
+    }
 
     /**
      * Hook invocado después de un UPDATE exitoso.
      */
-    protected function afterUpdate(): void {}
+    protected function afterUpdate(): void
+    {
+    }
 
     /**
      * Hook invocado antes de un DELETE.
      * Puede usarse para lógica de soft-delete o validaciones previas al borrado.
      */
-    protected function beforeDelete(): void {}
+    protected function beforeDelete(): void
+    {
+    }
 
     /**
      * Hook invocado después de un DELETE exitoso.
      */
-    protected function afterDelete(): void {}
+    protected function afterDelete(): void
+    {
+    }
 
     /**
      * Hook invocado después de cargar un registro desde la base de datos.
      */
-    protected function afterRetrieve(): void {}
+    protected function afterRetrieve(): void
+    {
+    }
 
     // ========== CRUD PRINCIPAL (final — usar hooks para personalizar) ==========
 
@@ -680,135 +698,138 @@ class VersaModel implements TypedModelInterface
         }
         $this->storeInProgress = true;
         try {
-        $this->assertSafeModelTable();
+            $this->assertSafeModelTable();
 
-        // Ejecutar validación antes de guardar
-        $validationErrors = $this->validate();
-        if ($validationErrors !== []) {
-            throw new VersaORMException(
-                'Validation failed: ' . implode(', ', $validationErrors),
-                'VALIDATION_ERROR',
-                null,
-                [],
-                ['errors' => $validationErrors, 'attributes' => $this->attributes],
-            );
-        }
-
-        // Evento: saving (antes de cualquier operación)
-        if (!$this->fireEvent('saving')) {
-            return null;
-        }
-
-        $orm = $this->orm ?? self::$ormInstance;
-        if (!$orm instanceof VersaORM) {
-            throw new VersaORMException('No ORM instance available for store operation', 'NO_ORM_INSTANCE');
-        }
-        // Si no hay atributos (modelo vacío), no intentar insertar timestamps
-        // ni llamar al motor de base de datos: lanzar excepción esperada por tests.
-        if ($this->attributes === []) {
-            throw new VersaORMException('No data to insert', 'NO_DATA_TO_INSERT');
-        }
-
-        // Asignar timestamps automáticos antes de asegurar columnas para que
-        // ensureColumnsExist pueda crear las columnas si faltan.
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        if (isset($this->attributes['id'])) {
-            // UPDATE: actualizar updated_at para que exista durante la verificación de columnas
-            $this->attributes['updated_at'] = $now;
-        } else {
-            // INSERT: establecer created_at y updated_at solo si no fueron provistos
-            if (!array_key_exists('created_at', $this->attributes) || $this->attributes['created_at'] === null) {
-                $this->attributes['created_at'] = $now;
+            // Ejecutar validación antes de guardar
+            $validationErrors = $this->validate();
+            if ($validationErrors !== []) {
+                throw new VersaORMException(
+                    'Validation failed: ' . implode(', ', $validationErrors),
+                    'VALIDATION_ERROR',
+                    null,
+                    [],
+                    ['errors' => $validationErrors, 'attributes' => $this->attributes],
+                );
             }
-            if (!array_key_exists('updated_at', $this->attributes) || $this->attributes['updated_at'] === null) {
-                $this->attributes['updated_at'] = $now;
-            }
-        }
 
-        // Intentar asegurar que tabla/columnas existan si freeze está desactivado
-        try {
-            $this->ensureColumnsExist($orm);
-        } catch (VersaORMException $e) {
-            // Si la tabla no existe, crearla mínimamente y reintentar ensureColumnsExist
-            if (
-                stripos($e->getMessage(), 'no such table') !== false
-                || stripos($e->getMessage(), 'doesn\'t exist') !== false
-            ) {
-                $this->createBaseTableIfMissing($orm);
-                $this->ensureColumnsExist($orm);
-            }
-        }
-
-        if (isset($this->attributes['id'])) {
-            // UPDATE existente
-            if (!$this->fireEvent('updating')) {
+            // Evento: saving (antes de cualquier operación)
+            if (!$this->fireEvent('saving')) {
                 return null;
             }
-            $fields = [];
-            $params = [];
-            foreach ($this->attributes as $key => $value) {
-                if ($key === 'id') {
-                    continue;
+
+            $orm = $this->orm ?? self::$ormInstance;
+            if (!$orm instanceof VersaORM) {
+                throw new VersaORMException('No ORM instance available for store operation', 'NO_ORM_INSTANCE');
+            }
+            // Si no hay atributos (modelo vacío), no intentar insertar timestamps
+            // ni llamar al motor de base de datos: lanzar excepción esperada por tests.
+            if ($this->attributes === []) {
+                throw new VersaORMException('No data to insert', 'NO_DATA_TO_INSERT');
+            }
+
+            // Usar la timezone configurada en el ORM para evitar desfases al persistir timestamps naive.
+            $ormTimezone = method_exists($orm, 'getTimezone') ? $orm->getTimezone() : date_default_timezone_get();
+            if ($ormTimezone === '') {
+                $ormTimezone = date_default_timezone_get();
+            }
+            $now = new \DateTimeImmutable('now', new \DateTimeZone($ormTimezone));
+            if (isset($this->attributes['id'])) {
+                // UPDATE: actualizar updated_at para que exista durante la verificación de columnas
+                $this->attributes['updated_at'] = $now;
+            } else {
+                // INSERT: establecer created_at y updated_at solo si no fueron provistos
+                if (!array_key_exists('created_at', $this->attributes) || $this->attributes['created_at'] === null) {
+                    $this->attributes['created_at'] = $now;
                 }
-
-                self::assertSafeSqlIdentifier($key, 'column');
-
-                $fields[] = "{$key} = ?";
-                $params[] = $this->prepareValueForDatabase($key, $value);
+                if (!array_key_exists('updated_at', $this->attributes) || $this->attributes['updated_at'] === null) {
+                    $this->attributes['updated_at'] = $now;
+                }
             }
-            $params[] = $this->attributes['id'];
-            if ($fields !== []) { // Sólo ejecutar si hay algo que actualizar
-                $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . ' WHERE id = ?';
-                $orm->exec($sql, $params);
+
+            // Intentar asegurar que tabla/columnas existan si freeze está desactivado
+            try {
+                $this->ensureColumnsExist($orm);
+            } catch (VersaORMException $e) {
+                // Si la tabla no existe, crearla mínimamente y reintentar ensureColumnsExist
+                if (
+                    stripos($e->getMessage(), 'no such table') !== false
+                    || stripos($e->getMessage(), 'doesn\'t exist') !== false
+                ) {
+                    $this->createBaseTableIfMissing($orm);
+                    $this->ensureColumnsExist($orm);
+                }
             }
-            $this->fireEvent('updated');
-            $this->fireEvent('saved');
 
-            return $this->attributes['id'];
-        }
+            if (isset($this->attributes['id'])) {
+                // UPDATE existente
+                if (!$this->fireEvent('updating')) {
+                    return null;
+                }
+                $fields = [];
+                $params = [];
+                foreach ($this->attributes as $key => $value) {
+                    if ($key === 'id') {
+                        continue;
+                    }
 
-        // INSERT nuevo - filtrar campos que no deben insertarse manualmente
-        if (!$this->fireEvent('creating')) {
-            return null;
-        }
-        // timestamps ya asignados antes de ensureColumnsExist
-        $filteredAttributes = $this->attributes;
-        unset($filteredAttributes['id']); // No insertar ID manualmente
-        // Preparar valores para la base de datos (convertir DateTime a string, etc.)
-        $preparedAttributes = [];
-        foreach ($filteredAttributes as $key => $value) {
-            self::assertSafeSqlIdentifier($key, 'column');
-            $preparedAttributes[$key] = $this->prepareValueForDatabase($key, $value);
-        }
-        if ($preparedAttributes === []) {
-            throw new VersaORMException('No data to insert', 'NO_DATA_TO_INSERT');
-        }
+                    self::assertSafeSqlIdentifier($key, 'column');
 
-        // Intentar obtener el ID en forma nativa usando el QueryBuilder
-        try {
-            /** @var int|null $newId */
-            $newId = $orm->table($this->table)->insertGetId($preparedAttributes);
-            if ($newId !== null && $newId !== '') {
-                // Normalizar a int si es numérico
-                $this->attributes['id'] = is_numeric($newId) ? (int) $newId : $newId;
-                $this->fireEvent('created');
+                    $fields[] = "{$key} = ?";
+                    $params[] = $this->prepareValueForDatabase($key, $value);
+                }
+                $params[] = $this->attributes['id'];
+                if ($fields !== []) { // Sólo ejecutar si hay algo que actualizar
+                    $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . ' WHERE id = ?';
+                    $orm->exec($sql, $params);
+                }
+                $this->fireEvent('updated');
                 $this->fireEvent('saved');
 
-                return $this->attributes['id']; // Insert completado con ID asignado
-            }
-        } catch (Throwable $e) {
-            // Temporal: relanzar la excepción para diagnóstico directo en tests/CLI
-            if ($orm->isDebugMode()) {
-                throw $e;
+                return $this->attributes['id'];
             }
 
-            // Continuar con fallback silencioso en modo no-debug
-            // @todo: Loguear el error original si hay logger disponible
-        }
+            // INSERT nuevo - filtrar campos que no deben insertarse manualmente
+            if (!$this->fireEvent('creating')) {
+                return null;
+            }
+            // timestamps ya asignados antes de ensureColumnsExist
+            $filteredAttributes = $this->attributes;
+            unset($filteredAttributes['id']); // No insertar ID manualmente
+            // Preparar valores para la base de datos (convertir DateTime a string, etc.)
+            $preparedAttributes = [];
+            foreach ($filteredAttributes as $key => $value) {
+                self::assertSafeSqlIdentifier($key, 'column');
+                $preparedAttributes[$key] = $this->prepareValueForDatabase($key, $value);
+            }
+            if ($preparedAttributes === []) {
+                throw new VersaORMException('No data to insert', 'NO_DATA_TO_INSERT');
+            }
 
-        // Si llegamos aquí y no hay ID, es un error crítico en modo estricto.
-        // La lógica de fallback anterior (buscar max(id)) es insegura en concurrencia.
-        throw new VersaORMException('Could not determine ID for inserted record.', 'INSERT_FAILED_NO_ID');
+            // Intentar obtener el ID en forma nativa usando el QueryBuilder
+            try {
+                /** @var int|null $newId */
+                $newId = $orm->table($this->table)->insertGetId($preparedAttributes);
+                if ($newId !== null && $newId !== '') {
+                    // Normalizar a int si es numérico
+                    $this->attributes['id'] = is_numeric($newId) ? (int) $newId : $newId;
+                    $this->fireEvent('created');
+                    $this->fireEvent('saved');
+
+                    return $this->attributes['id']; // Insert completado con ID asignado
+                }
+            } catch (Throwable $e) {
+                // Temporal: relanzar la excepción para diagnóstico directo en tests/CLI
+                if ($orm->isDebugMode()) {
+                    throw $e;
+                }
+
+                // Continuar con fallback silencioso en modo no-debug
+                // @todo: Loguear el error original si hay logger disponible
+            }
+
+            // Si llegamos aquí y no hay ID, es un error crítico en modo estricto.
+            // La lógica de fallback anterior (buscar max(id)) es insegura en concurrencia.
+            throw new VersaORMException('Could not determine ID for inserted record.', 'INSERT_FAILED_NO_ID');
         } finally {
             $this->storeInProgress = false;
         }
@@ -927,46 +948,46 @@ class VersaModel implements TypedModelInterface
         }
         $this->storeInProgress = true;
         try {
-        if ($this->attributes === []) {
-            throw new VersaORMException('save requires model data', 'NO_DATA_FOR_SAVE');
-        }
+            if ($this->attributes === []) {
+                throw new VersaORMException('save requires model data', 'NO_DATA_FOR_SAVE');
+            }
 
-        // Ejecutar validación antes de guardar
-        $validationErrors = $this->validate();
+            // Ejecutar validación antes de guardar
+            $validationErrors = $this->validate();
 
-        if ($validationErrors !== []) {
-            throw new VersaORMException(
-                'Validation failed: ' . implode(', ', $validationErrors),
-                'VALIDATION_ERROR',
-                null,
-                [],
-                ['errors' => $validationErrors, 'attributes' => $this->attributes],
-            );
-        }
+            if ($validationErrors !== []) {
+                throw new VersaORMException(
+                    'Validation failed: ' . implode(', ', $validationErrors),
+                    'VALIDATION_ERROR',
+                    null,
+                    [],
+                    ['errors' => $validationErrors, 'attributes' => $this->attributes],
+                );
+            }
 
-        $orm = $this->orm ?? self::$ormInstance;
+            $orm = $this->orm ?? self::$ormInstance;
 
-        if (!$orm instanceof VersaORM) {
-            throw new VersaORMException('No ORM instance available for save operation', 'NO_ORM_INSTANCE');
-        }
+            if (!$orm instanceof VersaORM) {
+                throw new VersaORMException('No ORM instance available for save operation', 'NO_ORM_INSTANCE');
+            }
 
-        // Verificar y crear columnas faltantes si freeze está desactivado
-        $this->ensureColumnsExist($orm);
+            // Verificar y crear columnas faltantes si freeze está desactivado
+            $this->ensureColumnsExist($orm);
 
-        // Usar el QueryBuilder para hacer save inteligente
-        $result = $orm->table($this->table)->save($this->attributes, $primaryKey);
+            // Usar el QueryBuilder para hacer save inteligente
+            $result = $orm->table($this->table)->save($this->attributes, $primaryKey);
 
-        // Mapear 'operation' a 'action' para consistencia con API
-        if (isset($result['operation'])) {
-            $result['action'] = $result['operation'];
-        }
+            // Mapear 'operation' a 'action' para consistencia con API
+            if (isset($result['operation'])) {
+                $result['action'] = $result['operation'];
+            }
 
-        // Actualizar el modelo con los datos devueltos
-        if (isset($result['id'])) {
-            $this->attributes[$primaryKey] = $result['id'];
-        }
+            // Actualizar el modelo con los datos devueltos
+            if (isset($result['id'])) {
+                $this->attributes[$primaryKey] = $result['id'];
+            }
 
-        return $result;
+            return $result;
         } finally {
             $this->storeInProgress = false;
         }
