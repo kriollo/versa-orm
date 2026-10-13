@@ -1,4 +1,4 @@
-## [2.0.0] - 2026-10-11
+## [2.0.0] - 2026-10-12
 
 ### 💥 Cambios incompatibles
 
@@ -231,6 +231,12 @@ segundo generador de SQL.
 - **`clearDatabaseSchemaCache()`** sólo limpiaba la copia de la instancia, así que la
   siguiente consulta la repoblaba desde la caché compartida del proceso. Ahora invalida
   ambas.
+- **`BelongsToMany::sync()` preserva el tipo de los ids.** Internamente se comparan
+  como strings (`array_diff` castea), y normalizarlos sin más hacía que
+  `sync([1, 2])` devolviera `['1', '2']`: un llamador que buscara sus ids con
+  comparación estricta dejaba de encontrarlos. Ahora se indexa por la forma string
+  pero se devuelven los valores originales. Los tests sólo hacían `assertArrayHasKey`,
+  así que no lo detectaban; se añadió el assert que faltaba.
 - **Orden de columnas en los índices de PostgreSQL.** `schema('indexes')` las ordenaba
   por su posición en la *tabla* (`attnum = ANY(indkey)` + `ORDER BY attnum`), no por su
   posición en el *índice*: un índice sobre `(precio_total, cantidad)` se reportaba como
@@ -241,14 +247,52 @@ segundo generador de SQL.
   guardaban como valores, así que el dedupe era un `in_array()` O(n) sobre una lista
   creciente de hashes y la evicción LRU era cuadrática; ahora son claves de array.
 
+### 🧯 Tipado estricto
+
+Una versión más nueva de PHPStan destapó 15 errores de tipado reales que la anterior no
+detectaba. Se corrigieron en el código, no suprimiéndolos:
+
+- `implode()` sobre `array<mixed>` en cuatro sitios (`QueryBuilder` GROUP BY,
+  `PdoEngine` literales de array de PostgreSQL, `SqlGenerator` HAVING, `VersaORM`
+  descripción de consulta para el log): los elementos no estaban garantizados como
+  convertibles a string. Ahora se castean uno a uno.
+- Cinco `(string)` sobre `mixed` en `SqlGenerator` (operador y tabla del JOIN, alias de
+  subconsulta, SQL de condición raw): los payloads llegan como `array<string, mixed>`,
+  así que castear directo falla en ejecución si el valor es un array.
+- `array_diff()` en `BelongsToMany::sync()` con valores no casteables a string.
+- Dos comprobaciones imposibles: `isset()` sobre una propiedad no nullable
+  (`QueryBuilder::$lazyOperations`, la rama era inalcanzable) y `$this->pdo !== null`
+  sobre una propiedad no nullable (`PdoConnection`).
+
+PHPStan nivel 9 queda **sin errores** con la versión que instala CI.
+
+---
+
 ### 🔧 Herramientas y CI
 
 - **CI no ejecutaba ningún análisis estático.** Añadidos PHPStan nivel 9 y la
   comprobación de estilo como pasos bloqueantes. PHPStan pasa **sin errores** (antes del
   trabajo había 3 sin suprimir).
+- **CI era no determinista.** `composer.lock` está en `.gitignore`, así que CI resuelve
+  dependencias frescas: instalaba una versión de PHPStan distinta de la local y fallaba
+  con 18 errores que en local no aparecían. Ahora las herramientas de análisis están
+  acotadas (`phpstan ~2.3.1`, `phpstan-strict-rules ~2.1.0`, `php-cs-fixer ~3.94.0`),
+  de modo que un release menor no puede tumbar CI sin aviso.
+- **`phpVersion: 80100` fijo en `phpstan.neon`.** Sin esto PHPStan analizaba según el
+  PHP que lo ejecuta, así que la matriz 8.1–8.4 y el entorno local inferían tipos
+  distintos sobre el mismo código. Se fija el mínimo que declara `composer.json`.
+- **El análisis estático y el estilo corren una sola vez** (`matrix.php == '8.4'`) en
+  vez de repetir el mismo trabajo en las cuatro entradas de la matriz.
+- **`mago.toml` restaurado.** El del working tree era de otro proyecto (apuntaba a
+  `versaWYS/kernel` y **excluía `src`**), así que `composer mago:lint` no analizaba nada.
 - **pgvector en CI**: la imagen `postgres:14` no trae la extensión, así que los 13 tests
   de soporte vectorial se saltaban en CI y en local, dejando esa funcionalidad sin
   verificar en ninguna parte. Se usa `pgvector/pgvector:pg16` y se crea la extensión.
+- **Permisos del esquema `public` en PostgreSQL.** Al subir la imagen de CI de
+  `postgres:14` a `pgvector/pgvector:pg16` todos los tests de PostgreSQL empezaron a
+  fallar con *"permission denied for schema public"*: desde PostgreSQL 15 ese esquema
+  ya no es escribible por cualquier usuario, y el `GRANT` sobre la base de datos no
+  alcanza. Se concede explícitamente sobre el esquema.
 - **`DB_TEST_TURBO` en CI** para MySQL y PostgreSQL: sin él, CI corría MySQL en modo
   durable, unas 11 veces más lento que PostgreSQL.
 - **`tests/unit` corre ahora en los tres motores.** Sus 572 tests son agnósticos del
@@ -262,10 +306,13 @@ segundo generador de SQL.
 
 ### ✅ Validación
 
-- SQLite: `944` tests (`2471` assertions), sin fallos ni warnings.
-- PostgreSQL: `1209` tests (`3476` assertions) OK — incluye ahora `tests/unit`.
-- MySQL/MariaDB: suite completa OK — incluye ahora `tests/unit`.
-- PHPStan nivel 9: **sin errores** (antes del trabajo había 3 sin suprimir).
+- SQLite: `944` tests (`2474` assertions) OK.
+- MySQL/MariaDB: `1084` tests (`3013` assertions) OK — incluye ahora `tests/unit`.
+- PostgreSQL: `1209` tests (`3479` assertions) OK — incluye ahora `tests/unit`.
+  (Los 15 saltados son los de pgvector: la extensión no está en el PostgreSQL local,
+  sí en la imagen de CI.)
+- PHPStan nivel 9, con la versión que instala CI: **sin errores**.
+- php-cs-fixer: sin cambios pendientes.
 - Se añadieron 16 tests de regresión (`tests/unit/Regression/`), de los cuales **11
   fallan contra el código anterior**, y el primer `#[DataProvider]` del repositorio
   (`tests/unit/SQL/SelectExpressionTest.php`, 26 formas válidas + 18 maliciosas).
@@ -278,6 +325,13 @@ segundo generador de SQL.
   escala por lote y no por fila, un lote grande no desborda el límite de placeholders,
   hidratar 1 000 filas no introspecciona por fila, 50 INSERT idénticos se preparan una
   vez, y la memoria queda acotada al leer en lotes.
+- **La suite se auto-sana.** `dropSchema()` borraba una lista fija de tablas, pero otras
+  clases de test crean las suyas (`test_table`, `json_test`, `employees`, `*_cast`, ...)
+  y no todas limpian al terminar: una corrida abortada dejaba tablas huérfanas y la
+  siguiente fallaba con "table already exists" en decenas de tests, por un motivo ajeno
+  al cambio que se estuviera probando. Ahora la base de pruebas se vacía una vez al
+  arrancar el proceso (no en `setUp`/`tearDown`, que correrían por test y destruirían
+  los fixtures de otras clases). Verificado ensuciando las tres bases a propósito.
 - `AdvancedSchemaBuilderTest`, triplicado en los tres motores, tenía 7
   `assertTrue(true)` por copia: creaba tablas, índices, claves foráneas y hasta
   ejecutaba un `drop()` sin comprobar nada. Ahora verifica columnas, índices, la

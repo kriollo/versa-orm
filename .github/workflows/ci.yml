@@ -87,6 +87,12 @@ jobs:
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "CREATE DATABASE versaorm_test" 2>/dev/null || true
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "GRANT ALL PRIVILEGES ON DATABASE test TO local;"
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "GRANT ALL PRIVILEGES ON DATABASE versaorm_test TO local;"
+          # Desde PostgreSQL 15 el esquema 'public' ya no es escribible por cualquier
+          # usuario: GRANT sobre la BASE DE DATOS no alcanza, hay que concederlo sobre el
+          # esquema. Sin esto, con la imagen pg16 todo CREATE TABLE del usuario de test
+          # falla con "permission denied for schema public".
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "GRANT ALL ON SCHEMA public TO local;"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "GRANT ALL ON SCHEMA public TO local;"
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "CREATE EXTENSION IF NOT EXISTS vector;" || true
 
       # El análisis estático no depende del PHP del runner (phpstan.neon fija
