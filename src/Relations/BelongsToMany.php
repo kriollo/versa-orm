@@ -95,15 +95,28 @@ class BelongsToMany extends Relation
         $currentQuery = $this->query->from($this->pivotTable)->where($this->foreignPivotKey, '=', $parentKey);
 
         $current = $currentQuery->get();
-        $currentIds = array_column($current, $this->relatedPivotKey);
 
-        $detachedRaw = array_diff($currentIds, $ids);
-        $attachedRaw = array_diff($ids, $currentIds);
+        // array_diff compara como strings, así que se indexa por la forma en string
+        // pero se conservan los valores ORIGINALES: así `sync()` sigue devolviendo los
+        // ids con el tipo que recibió (int o string) y no se altera su contrato.
+        $index = static function (array $values): array {
+            $map = [];
+
+            foreach ($values as $value) {
+                if (is_int($value) || is_string($value)) {
+                    $map[(string) $value] = $value;
+                }
+            }
+
+            return $map;
+        };
+        $currentById = $index(array_column($current, $this->relatedPivotKey));
+        $wantedById = $index($ids);
 
         /** @var array<int, int|string> $detached */
-        $detached = array_values(array_filter($detachedRaw, static fn($v) => is_int($v) || is_string($v)));
+        $detached = array_values(array_diff_key($currentById, $wantedById));
         /** @var array<int, int|string> $attached */
-        $attached = array_values($attachedRaw);
+        $attached = array_values(array_diff_key($wantedById, $currentById));
 
         if (count($detached) > 0) {
             $this->detach($detached);

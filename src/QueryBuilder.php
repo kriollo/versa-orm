@@ -3057,10 +3057,8 @@ class QueryBuilder
             throw new VersaORMException(sprintf('Potentially unsafe query hint: %s', $hint));
         }
 
-        // Guardar hints para usar en la construcción de la query
-        if (!isset($this->lazyOperations)) {
-            $this->lazyOperations = [];
-        }
+        // $lazyOperations se inicializa en la declaración de la propiedad, así que el
+        // isset() era siempre verdadero y la rama inalcanzable.
 
         $this->lazyOperations[] = [
             'type' => 'query_hints',
@@ -3659,8 +3657,12 @@ class QueryBuilder
         }
 
         // GROUP BY
-        if ($builder->groupBy !== [] && is_array($builder->groupBy)) {
-            $sql .= ' GROUP BY ' . implode(', ', $builder->groupBy);
+        if ($builder->groupBy !== []) {
+            $groupByCols = array_map(
+                static fn(mixed $col): string => is_scalar($col) ? (string) $col : '',
+                $builder->groupBy,
+            );
+            $sql .= ' GROUP BY ' . implode(', ', array_filter($groupByCols, static fn(string $c): bool => $c !== ''));
         }
 
         // HAVING

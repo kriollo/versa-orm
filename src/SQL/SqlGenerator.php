@@ -219,7 +219,7 @@ class SqlGenerator
             $onClause =
                 self::compileJoinColumn(is_scalar($rawFirstCol) ? (string) $rawFirstCol : '', $dialect)
                 . ' '
-                . ($j['operator'] ?? '=')
+                . self::scalarOr($j['operator'] ?? null, '=')
                 . ' '
                 . self::compileJoinColumn(is_scalar($rawSecondCol) ? (string) $rawSecondCol : '', $dialect);
             $sel = implode(', ', $selectSqlParts);
@@ -239,13 +239,13 @@ class SqlGenerator
             $isSQLite = stripos($dialect->getName(), 'sqlite') !== false;
             if ($isSQLite) {
                 // RIGHT JOIN no soportado: invertir tablas y columnas para simular RIGHT JOIN
-                $invBaseFrom = ' FROM ' . self::compileTableReference((string) $j['table'], $dialect);
+                $invBaseFrom = ' FROM ' . self::compileTableReference(self::scalarOr($j['table'] ?? null, ''), $dialect);
                 $rawSecondCol = $j['second_col'] ?? '';
                 $rawFirstCol = $j['first_col'] ?? '';
                 $invOnClause =
                     self::compileJoinColumn(is_scalar($rawSecondCol) ? (string) $rawSecondCol : '', $dialect)
                     . ' '
-                    . ($j['operator'] ?? '=')
+                    . self::scalarOr($j['operator'] ?? null, '=')
                     . ' '
                     . self::compileJoinColumn(is_scalar($rawFirstCol) ? (string) $rawFirstCol : '', $dialect);
                 $rightSql =
@@ -380,7 +380,7 @@ class SqlGenerator
             $tableRef = '';
 
             if (isset($join['subquery']) && is_string($join['subquery'])) {
-                $alias = (string) ($join['alias'] ?? $join['table'] ?? 'subq');
+                $alias = self::scalarOr($join['alias'] ?? $join['table'] ?? null, 'subq');
                 $tableRef = '(' . $join['subquery'] . ') AS ' . $dialect->quoteIdentifier($alias);
 
                 // merge bindings from subquery
@@ -407,7 +407,7 @@ class SqlGenerator
                     // Condición RAW soporta 'type' => 'raw', 'sql' y 'bindings'
                     $isRaw = isset($c['type']) && $c['type'] === 'raw' && isset($c['sql']);
                     if ($isRaw) {
-                        $rawSql = (string) $c['sql'];
+                        $rawSql = self::scalarOr($c['sql'] ?? null, '');
                         if ($rawSql === '') {
                             continue;
                         }
@@ -566,7 +566,8 @@ class SqlGenerator
             }
 
             if ($havingParts !== []) {
-                $sql .= ' HAVING ' . implode(' AND ', $havingParts);
+                $having = array_map(static fn(mixed $p): string => is_scalar($p) ? (string) $p : '', $havingParts);
+                $sql .= ' HAVING ' . implode(' AND ', array_filter($having, static fn(string $p): bool => $p !== ''));
             }
         }
 
@@ -818,7 +819,6 @@ class SqlGenerator
             $qualifiers[] = trim($parsed['alias'], '`"\'');
         }
 
-        /** @var list<string> $unique */
         return array_values(array_unique($qualifiers));
     }
 
@@ -925,6 +925,17 @@ class SqlGenerator
         }
 
         return [$sql, $bindings];
+    }
+
+    /**
+     * Devuelve el valor como string si es escalar, o el respaldo indicado.
+     *
+     * Los payloads llegan como array<string, mixed>, así que castear directo con
+     * (string) sobre un valor que podría ser array falla en tiempo de ejecución.
+     */
+    private static function scalarOr(mixed $value, string $fallback): string
+    {
+        return is_scalar($value) ? (string) $value : $fallback;
     }
 
     private static function compileSelectPart(string $expr, SqlDialectInterface $dialect): string

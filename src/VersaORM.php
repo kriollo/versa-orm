@@ -1753,7 +1753,11 @@ class VersaORM
                 ? $params['limit']
                 : null;
 
-            $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $select);
+            $selectParts = array_map(
+                static fn(mixed $col): string => is_scalar($col) ? (string) $col : '',
+                $select,
+            );
+            $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $selectParts);
 
             if ($where !== []) {
                 $whereDesc = [];

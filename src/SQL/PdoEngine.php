@@ -265,9 +265,17 @@ class PdoEngine
                     $names = [];
 
                     foreach ($rows as $r) {
-                        if (is_array($r) && isset($r['table_name'])) {
-                            $names[] = $r['table_name'];
-                        } elseif (is_string($r)) {
+                        if (is_array($r)) {
+                            $tableName = $r['table_name'] ?? null;
+
+                            if (is_scalar($tableName) && (string) $tableName !== '') {
+                                $names[] = (string) $tableName;
+                            }
+
+                            continue;
+                        }
+
+                        if (is_string($r) && $r !== '') {
                             $names[] = $r;
                         }
                     }
@@ -967,15 +975,11 @@ class PdoEngine
                         switch ($op) {
                             case 'contains':
                                 $whereSql = $col . ' @> ?';
-                                $bindings[] = is_array($value)
-                                    ? '{' . implode(',', $value) . '}'
-                                    : '{' . (is_scalar($value) ? (string) $value : '') . '}';
+                                $bindings[] = self::toPostgresArrayLiteral($value);
                                 break;
                             case 'overlap':
                                 $whereSql = $col . ' && ?';
-                                $bindings[] = is_array($value)
-                                    ? '{' . implode(',', $value) . '}'
-                                    : '{' . (is_scalar($value) ? (string) $value : '') . '}';
+                                $bindings[] = self::toPostgresArrayLiteral($value);
                                 break;
                             case 'any':
                                 $whereSql = '? = ANY(' . $col . ')';
@@ -1509,6 +1513,25 @@ class PdoEngine
         $byBudget = intdiv($max, max(1, $columnsPerRow));
 
         return max(1, min($requested > 0 ? $requested : 1000, $byBudget));
+    }
+
+    /**
+     * Convierte un valor a literal de array de PostgreSQL ('{a,b}').
+     *
+     * Los elementos se castean uno a uno: implode() sobre un array<mixed> no garantiza
+     * que todos sean convertibles a string.
+     */
+    private static function toPostgresArrayLiteral(mixed $value): string
+    {
+        if (!is_array($value)) {
+            return '{' . (is_scalar($value) ? (string) $value : '') . '}';
+        }
+        $parts = array_map(
+            static fn(mixed $v): string => is_scalar($v) ? (string) $v : '',
+            $value,
+        );
+
+        return '{' . implode(',', $parts) . '}';
     }
 
     /** Descarta la introspección de esquema memorizada (llamar tras cualquier DDL). */
@@ -2393,7 +2416,6 @@ class PdoEngine
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
-            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $foreignKeys */
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 
@@ -2451,7 +2473,6 @@ class PdoEngine
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
-            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $foreignKeys */
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 

@@ -140,14 +140,16 @@ declare(strict_types=1);
                     <?php if ($pagination['has_prev'] ?? false) { ?>
                         <a href="?action=tasks&page=<?php echo $pagination['prev_page']; ?>&per_page=<?php echo
                             $pagination['per_page']; ?><?php echo
-                            empty($filters['status']) ? '' : '&status=' . urlencode($filters['status']); ?><?php echo
-                            empty($filters['priority'])
-                                ? ''
-                                : '&priority=' . urlencode($filters['priority']); ?><?php echo
-                            empty($filters['project_id'])
-                                ? ''
-                                : '&project_id=' . urlencode($filters['project_id']); ?><?php echo
-                            empty($filters['user_id']) ? '' : '&user_id=' . urlencode($filters['user_id']); ?>"
+                                empty($filters['status'])
+                                    ? ''
+                                    : '&status=' . urlencode($filters['status']); ?><?php echo
+                                empty($filters['priority'])
+                                    ? ''
+                                    : '&priority=' . urlencode($filters['priority']); ?><?php echo
+                                    empty($filters['project_id'])
+                                        ? ''
+                                        : '&project_id=' . urlencode($filters['project_id']); ?><?php echo
+                                    empty($filters['user_id']) ? '' : '&user_id=' . urlencode($filters['user_id']); ?>"
                             class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </a>
@@ -160,14 +162,16 @@ declare(strict_types=1);
                     <?php if ($pagination['has_next'] ?? false) { ?>
                         <a href="?action=tasks&page=<?php echo $pagination['next_page']; ?>&per_page=<?php echo
                             $pagination['per_page']; ?><?php echo
-                            empty($filters['status']) ? '' : '&status=' . urlencode($filters['status']); ?><?php echo
-                            empty($filters['priority'])
-                                ? ''
-                                : '&priority=' . urlencode($filters['priority']); ?><?php echo
-                            empty($filters['project_id'])
-                                ? ''
-                                : '&project_id=' . urlencode($filters['project_id']); ?><?php echo
-                            empty($filters['user_id']) ? '' : '&user_id=' . urlencode($filters['user_id']); ?>"
+                                empty($filters['status'])
+                                    ? ''
+                                    : '&status=' . urlencode($filters['status']); ?><?php echo
+                                empty($filters['priority'])
+                                    ? ''
+                                    : '&priority=' . urlencode($filters['priority']); ?><?php echo
+                                    empty($filters['project_id'])
+                                        ? ''
+                                        : '&project_id=' . urlencode($filters['project_id']); ?><?php echo
+                                    empty($filters['user_id']) ? '' : '&user_id=' . urlencode($filters['user_id']); ?>"
                             class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </a>

@@ -285,12 +285,12 @@ class PdoConnection
                     // Limpiar pool si está lleno
                     self::prunePool();
 
-                    if ($this->pdo !== null) {
-                        self::$pool[$poolKey] = [
-                            'pdo' => $this->pdo,
-                            'last_used' => time(),
-                        ];
-                    }
+                    // $this->pdo ya está asignada en este punto (la propiedad no es
+                    // nullable), así que la comprobación era siempre verdadera.
+                    self::$pool[$poolKey] = [
+                        'pdo' => $this->pdo,
+                        'last_used' => time(),
+                    ];
                 }
             }
         } catch (Throwable $e) {

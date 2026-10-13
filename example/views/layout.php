@@ -104,9 +104,9 @@ declare(strict_types=1);
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
             <div class="alert alert-<?php echo
                 $flash['type']; ?> p-4 rounded-md transition-colors duration-200 <?php echo
-                $flash['type'] === 'success'
-                    ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300'
-                    : 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'; ?>">
+                    $flash['type'] === 'success'
+                        ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300'
+                        : 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'; ?>">
                 <i class="fas fa-<?php echo
                     $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle'; ?> mr-2"></i>
                 <?php echo htmlspecialchars($flash['message']); ?>

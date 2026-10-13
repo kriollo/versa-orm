@@ -120,6 +120,16 @@ final class RelationsBelongsToManySyncDetachTest extends TestCase
         static::assertArrayHasKey('attached', $res);
         static::assertArrayHasKey('detached', $res);
 
+        // sync() devuelve los ids CON EL TIPO QUE RECIBIÓ. Internamente se comparan como
+        // strings (array_diff castea), y una normalización descuidada hacía que un
+        // sync([1, 2]) devolviera ['1', '2']: el llamador que buscara el id con
+        // comparación estricta dejaba de encontrarlo. assertArrayHasKey no lo detectaba.
+        static::assertSame([1, 2], $res['attached']);
+        static::assertSame([], $res['detached']);
+
+        $resStrings = $rel->sync(['a', 'b']);
+        static::assertSame(['a', 'b'], $resStrings['attached']);
+
         // detach should not throw
         static::assertNull($rel->detach([1]));
     }

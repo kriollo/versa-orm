@@ -6,6 +6,11 @@ parameters:
         - src/binary/*
         - vendor/*
 
+    # Versión objetivo fija: sin esto PHPStan analiza según el PHP que lo ejecuta, así
+    # que local (8.4) y CI (matriz 8.1-8.4) inferían tipos distintos y daban resultados
+    # distintos sobre el mismo código. Se fija el mínimo soportado por composer.json.
+    phpVersion: 80100
+
     # === COMPATIBILITY SETTINGS ===
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
