@@ -82,6 +82,9 @@ jobs:
           # MySQL User and Database
           mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS versaorm_test;"
           mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE USER IF NOT EXISTS 'local'@'%' IDENTIFIED BY 'local'; GRANT ALL PRIVILEGES ON test.* TO 'local'@'%'; GRANT ALL PRIVILEGES ON versaorm_test.* TO 'local'@'%'; FLUSH PRIVILEGES;"
+          # El smoke test de la demo instala su propia base (todoapp.sql hace
+          # DROP/CREATE DATABASE), así que necesita poder crearla.
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "GRANT ALL PRIVILEGES ON \`versaorm_demo\`.* TO 'local'@'%'; GRANT CREATE, DROP ON *.* TO 'local'@'%'; FLUSH PRIVILEGES;"
           # Postgres Role and Database
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'local') THEN CREATE ROLE local WITH LOGIN PASSWORD 'local'; END IF; END \$\$;"
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "CREATE DATABASE versaorm_test" 2>/dev/null || true
@@ -132,6 +135,20 @@ jobs:
           DB_PASS: local
           CI: true
         run: vendor/bin/phpunit -c phpunit-postgresql.xml --colors=always --coverage-php build/logs/cov-dir/postgres.cov --exclude-group pokio
+
+      # El ejemplo no se ejercitaba en CI salvo por el chequeo de estilo, así que un
+      # fallo funcional (una relación mal declarada, un método inexistente) no lo
+      # detectaba nadie. Este paso instala la demo y recorre modelos, relaciones,
+      # rutas HTTP y los endpoints JSON.
+      - name: Demo App Smoke Test
+        if: matrix.php == '8.4'
+        env:
+          DEMO_DB_HOST: 127.0.0.1
+          DEMO_DB_PORT: 3306
+          DEMO_DB_NAME: versaorm_demo
+          DEMO_DB_USER: local
+          DEMO_DB_PASS: local
+        run: php example/smoke.php
 
       - name: Merge Coverage
         if: always()

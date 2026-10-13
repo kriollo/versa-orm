@@ -140,6 +140,12 @@ final class Installer
             throw new RuntimeException('La migración está vacía o no se pudo leer.');
         }
 
+        // El volcado nombra la base explícitamente (DROP/CREATE DATABASE y USE). Si la
+        // configuración apunta a otro nombre —por ejemplo vía DEMO_DB_NAME— hay que
+        // reescribirlo, o la migración crearía la base equivocada y la app no
+        // encontraría sus tablas.
+        $sql = $this->retargetDatabaseName($sql);
+
         try {
             $this->serverConnection()->exec($sql);
         } catch (PDOException $e) {
@@ -157,6 +163,25 @@ final class Installer
             sprintf('Migración ejecutada: %s', basename($path)),
             sprintf('Base «%s» con %d tablas', $this->databaseName(), count(self::EXPECTED_TABLES)),
         ];
+    }
+
+    /** Nombre de la base que trae escrito el volcado. */
+    private const DUMP_DATABASE = 'versaorm_trello';
+
+    /** Reescribe el nombre de la base en el volcado para que coincida con la config. */
+    private function retargetDatabaseName(string $sql): string
+    {
+        $target = $this->databaseName();
+
+        if ($target === '' || $target === self::DUMP_DATABASE) {
+            return $sql;
+        }
+
+        return str_replace(
+            ['`' . self::DUMP_DATABASE . '`', ' ' . self::DUMP_DATABASE . ' '],
+            ['`' . $target . '`', ' ' . $target . ' '],
+            $sql,
+        );
     }
 
     /**

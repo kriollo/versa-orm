@@ -33,8 +33,14 @@ spl_autoload_register(function ($class): void {
     }
 });
 
-// Cargar configuración
-$config = require_once __DIR__ . '/config.php';
+// Cargar configuración.
+//
+// require y no require_once: config.php DEVUELVE un array, y require_once sólo
+// devuelve el valor la primera vez; en las siguientes devuelve true. Si otro script
+// (el instalador, setup_database.php, el smoke test) carga config.php antes que el
+// bootstrap, $config quedaba en true y la app fallaba con
+// "App::__construct(): Argument #2 ($config) must be of type array, true given".
+$config = require __DIR__ . '/config.php';
 
 // Configurar zona horaria
 date_default_timezone_set($config['app']['timezone'] ?? 'UTC');
