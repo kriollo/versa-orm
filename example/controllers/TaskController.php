@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Controllers;
 
+use App\Models\Task;
+use Exception;
+
 final class TaskController
 {
     public static function handle(string $action, ?int $id): void
@@ -122,7 +125,65 @@ final class TaskController
                 ]);
                 break;
 
-                // ...otros casos: task_create, task_edit, task_delete, task_change_status
+            case 'task_create':
+                if ($_POST !== []) {
+                    try {
+                        $task = models()->task()->createOne($_POST);
+                        $task->setLabels($_POST['labels'] ?? []);
+                        flash('success', 'Tarea creada exitosamente');
+                        redirect('?action=tasks');
+                    } catch (Exception $e) {
+                        flash('error', 'Error al crear tarea: ' . $e->getMessage());
+                    }
+                }
+
+                $orm = app()->orm();
+                $projects = $orm->table('projects')->select(['id', 'name'])->getAll();
+                $users = $orm->table('users')->select(['id', 'name', 'email'])->getAll();
+                $labels = $orm->table('labels')->select(['id', 'name', 'color'])->getAll();
+                render('tasks/create', [
+                    'projects' => $projects,
+                    'users' => $users,
+                    'labels' => $labels,
+                ]);
+                break;
+
+            case 'task_edit':
+                if ($id === null || $id === 0) {
+                    flash('error', 'ID de tarea requerido');
+                    redirect('?action=tasks');
+                }
+
+                $task = models()->task()->find($id);
+                if (!$task instanceof Task) {
+                    flash('error', 'Tarea no encontrada');
+                    redirect('?action=tasks');
+                }
+
+                if ($_POST !== []) {
+                    try {
+                        $task->fill($_POST);
+                        $task->store();
+                        $task->setLabels($_POST['labels'] ?? []);
+                        flash('success', 'Tarea actualizada exitosamente');
+                        redirect('?action=tasks');
+                    } catch (Exception $e) {
+                        flash('error', 'Error al actualizar tarea: ' . $e->getMessage());
+                    }
+                }
+
+                $orm = app()->orm();
+                $projects = $orm->table('projects')->select(['id', 'name'])->getAll();
+                $users = $orm->table('users')->select(['id', 'name', 'email'])->getAll();
+                $labels = $orm->table('labels')->select(['id', 'name', 'color'])->getAll();
+                render('tasks/edit', [
+                    'task' => $task,
+                    'projects' => $projects,
+                    'users' => $users,
+                    'labels' => $labels,
+                    'taskLabels' => $task->getLabelIds(),
+                ]);
+                break;
         }
     }
 }

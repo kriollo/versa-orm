@@ -108,10 +108,11 @@ final class ProjectController
                         if ($exists) {
                             flash('warning', 'El usuario ya es miembro del proyecto');
                         } else {
-                            $pivot = $project->dispenseInstance('project_users');
-                            $pivot->project_id = (int) $_POST['project_id'];
-                            $pivot->user_id = (int) $_POST['user_id'];
-                            $pivot->store();
+                            // Delegado al modelo, que lo resuelve por la relación.
+                            // dispenseInstance('project_users') hace `new static(...)`:
+                            // devolvía un modelo tipado como Project sobre la tabla
+                            // pivote y heredaba sus reglas, así que el insert fallaba.
+                            $project->addMember((int) $_POST['user_id']);
                             flash('success', 'Miembro agregado exitosamente');
                         }
                         redirect('?action=project_show&id=' . $_POST['project_id']);
@@ -133,21 +134,9 @@ final class ProjectController
                             redirect('?action=projects');
                             break;
                         }
-                        $orm = app()->orm();
-                        $rows = app()
-                            ->orm()
-                            ->table('project_users')
-                            ->select(['id'])
-                            ->where('project_id', '=', (int) $_POST['project_id'])
-                            ->where('user_id', '=', (int) $_POST['user_id'])
-                            ->get();
-                        foreach ($rows as $row) {
-                            if (!isset($row['id'])) {
-                                continue;
-                            }
-                            $pivot = $project->load('project_users', (int) $row['id']);
-                            $pivot?->trash();
-                        }
+                        // Mismo motivo que en project_add_member: load('project_users', ...)
+                        // también devolvía un modelo tipado como Project.
+                        $project->removeMember((int) $_POST['user_id']);
                         flash('success', 'Miembro removido exitosamente');
                         redirect('?action=project_show&id=' . $_POST['project_id']);
                     } catch (Exception $e) {

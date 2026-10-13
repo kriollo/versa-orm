@@ -16,7 +16,7 @@ Una aplicación de demostración tipo Trello construida con PHP y VersaORM para 
 ## 📋 Requisitos
 
 - PHP 8.1 o superior
-- MySQL 5.7 o superior
+- MySQL 5.7+ / MariaDB 10.3+
 - Servidor web (Apache/Nginx)
 - Composer
 
@@ -35,16 +35,58 @@ Una aplicación de demostración tipo Trello construida con PHP y VersaORM para 
    composer install
    ```
 
-3. **Configurar base de datos**:
-   - Crear una base de datos MySQL llamada `versaorm_trello`
-   - Importar el archivo `database.sql`
-   - Editar `config.php` con tus credenciales de base de datos
+3. **Configurar la conexión**:
 
-4. **Configurar servidor web**:
-   - Configurar el document root a la carpeta `example`
-   - Asegurar que mod_rewrite esté habilitado (Apache)
+   Editar `example/app/config.php` con tus credenciales de MySQL. Por defecto:
 
-5. **Permisos**:
+   ```php
+   'host' => '127.0.0.1', 'port' => 3306,
+   'database' => 'versaorm_trello',
+   'username' => 'local', 'password' => 'local',
+   ```
+
+4. **Instalar la base de datos**:
+
+   No hace falta crear la base ni importar nada a mano. Hay dos vías, y ambas
+   dejan la demo con datos de ejemplo listos para usar:
+
+   ```bash
+   # Opción A — desde consola
+   php example/install.php
+
+   #   --status    sólo diagnóstico, sin tocar nada
+   #   --force     recrea la base aunque ya exista (destructivo)
+   #   --no-seed   crea el esquema sin datos de demostración
+   ```
+
+   ```
+   Opción B — desde el navegador
+   Abrir example/install.php: muestra el diagnóstico (conexión, base, tablas,
+   datos) y un botón para ejecutar la migración.
+   ```
+
+   Si entras a la demo sin la base instalada, te redirige al instalador en vez
+   de mostrar un error de conexión.
+
+   El instalador ejecuta `todoapp.sql` (esquema) y luego carga los datos de
+   demostración: 3 usuarios, 2 proyectos con sus miembros, 4 etiquetas y 6
+   tareas repartidas entre los tres estados y las cuatro prioridades, con
+   etiquetas y notas asociadas, incluida una tarea vencida para ver el aviso.
+
+   **Alternativa**: `php example/app/setup_database.php` hace lo mismo pero
+   construyendo el esquema y los datos **con el propio ORM** (`dispense()`,
+   `store()`, relaciones), en vez de importar el `.sql`. Sirve como
+   demostración adicional de la API.
+
+5. **Levantar la aplicación**:
+
+   ```bash
+   php -S localhost:8000 -t example
+   ```
+
+   O apuntar el document root de Apache/Nginx a la carpeta `example`.
+
+6. **Permisos** (sólo si usas un servidor web con otro usuario):
    ```bash
    chmod -R 775 .
    chmod -R 777 ../logs

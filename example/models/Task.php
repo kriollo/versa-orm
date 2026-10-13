@@ -67,7 +67,11 @@ class Task extends BaseModel
      */
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'id', 'project_id');
+        // belongsTo($related, $foreignKey, $ownerKey): la clave foránea vive en ESTA
+        // tabla (tasks.project_id) y apunta a projects.id. Estaban invertidos, así que
+        // la consulta salía como `WHERE project_id = ?` contra `projects`, tabla que no
+        // tiene esa columna.
+        return $this->belongsTo(Project::class, 'project_id', 'id');
     }
 
     /**
@@ -168,32 +172,11 @@ class Task extends BaseModel
      */
     public function setLabels(array $labelIds): void
     {
-        // Eliminar etiquetas actuales usando VersaModel
-        $existingLabels = $this->getOrm()->table('task_labels')->where('task_id', '=', $this->id)->get();
-
-        foreach ($existingLabels as $existing) {
-            if (!isset($existing['id'])) {
-                continue;
-            }
-
-            $taskLabel = $this->load('task_labels', (int) $existing['id']);
-
-            if ($taskLabel instanceof VersaModel) {
-                $taskLabel->trash();
-            }
-        }
-
-        // Asignar nuevas etiquetas usando VersaModel
-        foreach ($labelIds as $labelId) {
-            if (empty($labelId)) {
-                continue;
-            }
-
-            $taskLabel = $this->dispenseInstance('task_labels');
-            $taskLabel->task_id = $this->id;
-            $taskLabel->label_id = $labelId;
-            $taskLabel->store();
-        }
+        // sync() calcula qué adjuntar y qué separar en una sola operación. La versión
+        // anterior recorría el pivote con dispenseInstance()/load('task_labels', ...),
+        // que hacen `new static(...)` y devolvían modelos tipados como Task sobre la
+        // tabla pivote, arrastrando sus reglas de validación.
+        $this->labels()->sync(array_values(array_filter($labelIds)));
     }
 
     /**

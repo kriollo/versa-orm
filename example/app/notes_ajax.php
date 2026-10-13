@@ -9,6 +9,27 @@ use App\Models\Task;
 
 header('Content-Type: application/json');
 
+/**
+ * Normaliza fechas para una respuesta JSON.
+ *
+ * VersaORM castea las columnas datetime a objetos DateTime; al serializarlos
+ * directamente, json_encode emite su estructura interna en vez de la fecha.
+ *
+ * @param array<string, mixed> $row
+ *
+ * @return array<string, mixed>
+ */
+function json_api_dates(array $row): array
+{
+    foreach ($row as $key => $value) {
+        if ($value instanceof DateTimeInterface) {
+            $row[$key] = $value->format('Y-m-d H:i:s');
+        }
+    }
+
+    return $row;
+}
+
 $action = $_POST['action'] ?? $_GET['action'] ?? null;
 $taskId = $_POST['task_id'] ?? $_GET['task_id'] ?? null;
 
@@ -40,6 +61,10 @@ switch ($action) {
                     }
                 }
                 $noteArr['user_name'] = $userName;
+                // Las columnas datetime llegan casteadas a DateTime, y json_encode
+                // volcaba el objeto ({"date":...,"timezone_type":3,...}), así que el JS
+                // pintaba "[object Object]" en la fecha de la nota.
+                $noteArr = json_api_dates($noteArr);
                 $notesData[] = $noteArr;
             }
             echo json_encode(['success' => true, 'notes' => $notesData]);

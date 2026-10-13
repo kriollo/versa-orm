@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 use App\Models\Label;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -35,5 +36,10 @@ class ModelManager
     public function label(): Label
     {
         return new Label(Label::tableName(), $this->orm);
+    }
+
+    public function note(): Note
+    {
+        return new Note(Note::tableName(), $this->orm);
     }
 }

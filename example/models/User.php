@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\BaseModel;
+use VersaORM\Relations\HasMany;
 use Exception;
 
 use function count;
@@ -146,17 +147,28 @@ class User extends BaseModel
     /**
      * Obtener tareas asignadas al usuario.
      */
+    /**
+     * Relación de tareas del usuario.
+     *
+     * Faltaba: sólo existía la versión que devuelve arrays, así que
+     * `$user->tasks()->getResults()` fallaba y el modelo quedaba fuera del eager
+     * loading con `with(['tasks'])`. Se sigue la convención que ya usaba este modelo
+     * para los proyectos: `xxxRelation()` devuelve la relación y `xxx()` las filas.
+     */
+    public function tasksRelation(): HasMany
+    {
+        return $this->hasMany(Task::class, 'user_id', 'id');
+    }
+
     public function tasks(): array
     {
         try {
-            $tasks = $this
+            return $this
                 ->getOrm()
                 ->table('tasks', Task::class)
                 ->where('user_id', '=', $this->id)
                 ->orderBy('created_at', 'desc')
-                ->get();
-
-            return $tasks ?: [];
+                ->get() ?: [];
         } catch (Exception) {
             return [];
         }

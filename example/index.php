@@ -20,6 +20,13 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Si la base no está instalada, llevar al instalador en vez de reventar con un
+// "Unknown database" que no le dice nada a quien prueba la demo por primera vez.
+if (!App\Installer::fromConfig($config)->isInstalled()) {
+    header('Location: install.php');
+    exit;
+}
+
 // Obtener la acción y parámetros de la URL
 $action = $_GET['action'] ?? 'dashboard';
 $id = isset($_GET['id']) ? (int) $_GET['id'] : null;

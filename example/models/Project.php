@@ -114,30 +114,20 @@ class Project extends BaseModel
         if ($exists) {
             return;
         }
-        $pivot = $this->dispenseInstance('project_users');
-        $pivot->project_id = $this->id;
-        $pivot->user_id = $userId;
-        $pivot->store();
+
+        // Vía la relación, no con dispenseInstance('project_users'): ese método hace
+        // `new static(...)`, así que devolvía un modelo tipado como Project apuntando a
+        // la tabla pivote y heredaba sus reglas de validación. El insert fallaba con
+        // "The name field is required., The owner_id field is required.".
+        $this->members()->attach($userId);
     }
 
     /** Remover miembro del proyecto eliminando fila pivot. */
     public function removeMember(int $userId): void
     {
-        $rows = $this
-            ->getOrm()
-            ->table('project_users')
-            ->select(['id'])
-            ->where('project_id', '=', $this->id)
-            ->where('user_id', '=', $userId)
-            ->get();
-
-        foreach ($rows as $row) {
-            if (!isset($row['id'])) {
-                continue;
-            }
-            $pivot = $this->load('project_users', (int) $row['id']);
-            $pivot?->trash();
-        }
+        // Igual que addMember(): load('project_users', ...) también devolvía un modelo
+        // tipado como Project. La relación resuelve el pivote sin modelo intermedio.
+        $this->members()->detach($userId);
     }
 
     // ===================== Tipado fuerte / esquema =====================

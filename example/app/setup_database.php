@@ -20,8 +20,10 @@ use VersaORM\VersaModel;
 try {
     echo "🚀 Configurando base de datos con VersaORM...\n\n";
 
-    // Obtener instancia de VersaORM
-    $orm = VersaModel::getGlobalORM();
+    // El bootstrap crea el ORM de forma perezosa: hay que pedirlo al contenedor para
+    // que quede registrado como instancia global. Sin esto, getGlobalORM() devolvía
+    // null y el script abortaba con "No se pudo obtener la instancia de VersaORM".
+    $orm = app()->orm();
 
     if (!$orm instanceof VersaORM) {
         throw new Exception('No se pudo obtener la instancia de VersaORM');
