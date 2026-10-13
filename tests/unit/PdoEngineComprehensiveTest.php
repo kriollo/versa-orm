@@ -154,15 +154,9 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('CREATE TABLE records (id INTEGER PRIMARY KEY, status VARCHAR)');
         $this->orm->exec('INSERT INTO records (status) VALUES (?)', ['inactive']);
 
-        $this->orm
-            ->table('records')
-            ->where('status', '=', 'inactive')
-            ->update(['status' => 'active']);
+        $this->orm->table('records')->where('status', '=', 'inactive')->update(['status' => 'active']);
 
-        $result = $this->orm
-            ->table('records')
-            ->where('status', '=', 'active')
-            ->first();
+        $result = $this->orm->table('records')->where('status', '=', 'active')->first();
         static::assertNotNull($result);
     }
 
@@ -174,10 +168,7 @@ class PdoEngineComprehensiveTest extends TestCase
         $this->orm->exec('CREATE TABLE to_delete (id INTEGER PRIMARY KEY, name VARCHAR)');
         $this->orm->exec('INSERT INTO to_delete (name) VALUES (?)', ['temp']);
 
-        $this->orm
-            ->table('to_delete')
-            ->where('name', '=', 'temp')
-            ->delete();
+        $this->orm->table('to_delete')->where('name', '=', 'temp')->delete();
 
         $count = $this->orm->table('to_delete')->count();
         static::assertSame(0, $count);

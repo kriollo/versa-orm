@@ -46,10 +46,7 @@ class SchemaBuilderTest extends TestCase
     {
         $schema = new SchemaBuilder($this->orm);
 
-        $this->orm
-            ->expects(self::once())
-            ->method('schemaDrop')
-            ->with('users', false);
+        $this->orm->expects(self::once())->method('schemaDrop')->with('users', false);
 
         $schema->drop('users');
     }
@@ -58,10 +55,7 @@ class SchemaBuilderTest extends TestCase
     {
         $schema = new SchemaBuilder($this->orm);
 
-        $this->orm
-            ->expects(self::once())
-            ->method('schemaDrop')
-            ->with('users', true);
+        $this->orm->expects(self::once())->method('schemaDrop')->with('users', true);
 
         $schema->dropIfExists('users');
     }
@@ -70,10 +64,7 @@ class SchemaBuilderTest extends TestCase
     {
         $schema = new SchemaBuilder($this->orm);
 
-        $this->orm
-            ->expects(self::once())
-            ->method('schemaRename')
-            ->with('old', 'new');
+        $this->orm->expects(self::once())->method('schemaRename')->with('old', 'new');
 
         $schema->rename('old', 'new');
     }

@@ -75,10 +75,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testSelectRaw(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->selectRaw('COUNT(*) as order_count, SUM(total) as total_amount')
-            ->get();
+        $results = $this->orm->table('orders')->selectRaw('COUNT(*) as order_count, SUM(total) as total_amount')->get();
 
         static::assertIsArray($results);
         static::assertCount(1, $results);
@@ -89,10 +86,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testWhereRaw(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->whereRaw('total > ?', [200])
-            ->get();
+        $results = $this->orm->table('orders')->whereRaw('total > ?', [200])->get();
 
         static::assertIsArray($results);
         static::assertGreaterThanOrEqual(1, count($results));
@@ -103,10 +97,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testOrderByRaw(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->orderByRaw('total DESC')
-            ->get();
+        $results = $this->orm->table('orders')->orderByRaw('total DESC')->get();
 
         static::assertIsArray($results);
         static::assertGreaterThan(0, count($results));
@@ -117,11 +108,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testGroupByRaw(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->selectRaw('status, COUNT(*) as count')
-            ->groupByRaw('status')
-            ->get();
+        $results = $this->orm->table('orders')->selectRaw('status, COUNT(*) as count')->groupByRaw('status')->get();
 
         static::assertIsArray($results);
     }
@@ -146,10 +133,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testWhereLike(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->where('customer_name', 'LIKE', '%John%')
-            ->get();
+        $results = $this->orm->table('orders')->where('customer_name', 'LIKE', '%John%')->get();
 
         static::assertIsArray($results);
         static::assertGreaterThanOrEqual(1, count($results));
@@ -160,10 +144,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testWhereDate(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->whereRaw('DATE(created_at) = ?', ['2026-01-01'])
-            ->get();
+        $results = $this->orm->table('orders')->whereRaw('DATE(created_at) = ?', ['2026-01-01'])->get();
 
         static::assertIsArray($results);
     }
@@ -173,10 +154,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testPluck(): void
     {
-        $names = $this->orm
-            ->table('orders')
-            ->select(['customer_name'])
-            ->get();
+        $names = $this->orm->table('orders')->select(['customer_name'])->get();
 
         static::assertIsArray($names);
         static::assertCount(3, $names);
@@ -202,10 +180,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testAverage(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->selectRaw('AVG(total) as avg_total')
-            ->get();
+        $results = $this->orm->table('orders')->selectRaw('AVG(total) as avg_total')->get();
 
         static::assertIsArray($results);
         static::assertCount(1, $results);
@@ -216,10 +191,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testSum(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->selectRaw('SUM(total) as total_sum')
-            ->get();
+        $results = $this->orm->table('orders')->selectRaw('SUM(total) as total_sum')->get();
 
         static::assertIsArray($results);
     }
@@ -229,10 +201,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testMax(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->selectRaw('MAX(total) as max_total')
-            ->get();
+        $results = $this->orm->table('orders')->selectRaw('MAX(total) as max_total')->get();
 
         static::assertIsArray($results);
     }
@@ -242,10 +211,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testMin(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->selectRaw('MIN(total) as min_total')
-            ->get();
+        $results = $this->orm->table('orders')->selectRaw('MIN(total) as min_total')->get();
 
         static::assertIsArray($results);
     }
@@ -282,11 +248,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testCrossJoin(): void
     {
-        $results = $this->orm
-            ->table('orders')
-            ->crossJoin('order_items')
-            ->limit(5)
-            ->get();
+        $results = $this->orm->table('orders')->crossJoin('order_items')->limit(5)->get();
 
         static::assertIsArray($results);
     }
@@ -296,14 +258,8 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testUnion(): void
     {
-        $pending = $this->orm
-            ->table('orders')
-            ->where('status', '=', 'pending')
-            ->get();
-        $completed = $this->orm
-            ->table('orders')
-            ->where('status', '=', 'completed')
-            ->get();
+        $pending = $this->orm->table('orders')->where('status', '=', 'pending')->get();
+        $completed = $this->orm->table('orders')->where('status', '=', 'completed')->get();
 
         static::assertIsArray($pending);
         static::assertIsArray($completed);
@@ -316,14 +272,8 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testMultipleQueries(): void
     {
-        $expensive = $this->orm
-            ->table('orders')
-            ->where('total', '>', 100)
-            ->get();
-        $cheap = $this->orm
-            ->table('orders')
-            ->where('total', '<', 200)
-            ->get();
+        $expensive = $this->orm->table('orders')->where('total', '>', 100)->get();
+        $cheap = $this->orm->table('orders')->where('total', '<', 200)->get();
 
         static::assertIsArray($expensive);
         static::assertIsArray($cheap);
@@ -334,17 +284,11 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testExists(): void
     {
-        $exists = $this->orm
-            ->table('orders')
-            ->where('status', '=', 'pending')
-            ->exists();
+        $exists = $this->orm->table('orders')->where('status', '=', 'pending')->exists();
 
         static::assertTrue($exists);
 
-        $notExists = $this->orm
-            ->table('orders')
-            ->where('status', '=', 'nonexistent')
-            ->exists();
+        $notExists = $this->orm->table('orders')->where('status', '=', 'nonexistent')->exists();
 
         static::assertFalse($notExists);
     }
@@ -354,10 +298,7 @@ class QueryBuilderAdvancedTest extends TestCase
      */
     public function testDoesntExist(): void
     {
-        $doesntExist = $this->orm
-            ->table('orders')
-            ->where('status', '=', 'nonexistent')
-            ->count() === 0;
+        $doesntExist = $this->orm->table('orders')->where('status', '=', 'nonexistent')->count() === 0;
 
         static::assertTrue($doesntExist);
     }
@@ -386,15 +327,9 @@ class QueryBuilderAdvancedTest extends TestCase
     public function testUpdateOrInsert(): void
     {
         // Actualizar existente
-        $this->orm
-            ->table('orders')
-            ->where('customer_name', '=', 'John Doe')
-            ->update(['status' => 'updated']);
+        $this->orm->table('orders')->where('customer_name', '=', 'John Doe')->update(['status' => 'updated']);
 
-        $updated = $this->orm
-            ->table('orders')
-            ->where('customer_name', '=', 'John Doe')
-            ->first();
+        $updated = $this->orm->table('orders')->where('customer_name', '=', 'John Doe')->first();
 
         static::assertSame('updated', $updated->status);
     }

@@ -95,6 +95,12 @@ use function strlen;
 class VersaORM
 {
     /**
+     * Versión de la librería. Fuente única: antes version() devolvía '1.6.0'
+     * hardcodeado mientras composer.json declaraba otra cosa.
+     */
+    public const VERSION = '2.0.0';
+
+    /**
      * Configuración principal del ORM (forma parcial esperada).
      *
      * @var array{
@@ -942,7 +948,7 @@ class VersaORM
      */
     public function version(): string
     {
-        return '1.6.0';
+        return self::VERSION;
     }
 
     // Método disconnect unificado se declara más arriba (limpia conexión PDO y GC)
@@ -1180,6 +1186,17 @@ class VersaORM
             $queryStr = is_string($queryRaw) ? $queryRaw : (is_numeric($queryRaw) ? (string) $queryRaw : null);
             $bindingsRaw = $params['bindings'] ?? null;
             $bindingsArr = is_array($bindingsRaw) ? $bindingsRaw : [];
+
+            // El motor ya adjunta el SQL compilado y sus bindings en los campos
+            // estructurados; para las acciones estructuradas (insert, update, …) no
+            // existe $params['query'], así que sin esto se perderían al re-envolver.
+            if ($e instanceof VersaORMException) {
+                $queryStr ??= $e->getQuery();
+
+                if ($bindingsArr === []) {
+                    $bindingsArr = $e->getBindings();
+                }
+            }
             $ex = new VersaORMException(
                 'PDO engine execution error: ' . $e->getMessage(),
                 'PDO_ENGINE_FAILED',
@@ -1468,28 +1485,87 @@ class VersaORM
      */
     private function isRawQueryDDL(string $query): bool
     {
-        // Normalizar la consulta: eliminar espacios en blanco y convertir a minúsculas
-        $normalizedQuery = strtolower(trim($query));
+        // Normalizar: quitar comentarios iniciales y colapsar espacios. Antes sólo se
+        // aplicaba trim(), así que `/* x */ CREATE TABLE ...` pasaba el filtro.
+        $normalizedQuery = self::stripLeadingSqlNoise($query);
 
-        // Patrones DDL comunes
-        $ddlPatterns = [
-            '/^create\s+(table|index|view|database|schema|trigger|procedure|function)/',
-            '/^drop\s+(table|index|view|database|schema|trigger|procedure|function)/',
-            '/^alter\s+(table|index|view|database|schema)/',
-            '/^truncate\s+table/',
-            '/^rename\s+table/',
-            '/^comment\s+on/',
+        if ($normalizedQuery === '') {
+            return false;
+        }
+
+        // Allowlist del primer token en vez de blacklist de patrones DDL. La blacklist
+        // anterior dejaba pasar, con freeze activo: CREATE OR REPLACE VIEW,
+        // CREATE UNIQUE INDEX, CREATE TEMPORARY TABLE, ALTER SEQUENCE/TYPE/
+        // MATERIALIZED VIEW, SET FOREIGN_KEY_CHECKS=0, GRANT, REVOKE...
+        //
+        // Invertir el criterio cierra la categoría completa: con freeze sólo se permite
+        // lo que manipula datos, no lo que puede tocar el esquema o los permisos.
+        $firstToken = strtok($normalizedQuery, " \t\n\r(");
+
+        // 'set' entra aquí porque configura la SESIÓN, no el esquema: `SET sql_mode`,
+        // `SET NAMES`, `SET SESSION TRANSACTION ISOLATION LEVEL` y
+        // `SET FOREIGN_KEY_CHECKS` son legítimos con freeze activo, y clasificarlos como
+        // DDL rompía cualquier código de inicialización de conexión.
+        $allowedWithFreeze = [
+            'select',
+            'with',
+            'insert',
+            'update',
+            'delete',
+            'replace',
+            'explain',
+            'show',
+            'pragma',
+            'set',
+            'begin',
+            'start',
+            'commit',
+            'rollback',
+            'savepoint',
+            'release',
+            'analyze',
+            'use',
+            'describe',
+            'desc',
         ];
 
-        foreach ($ddlPatterns as $pattern) {
-            if (preg_match($pattern, $normalizedQuery) !== 1) {
-                continue;
-            }
-
+        if ($firstToken === false || !in_array($firstToken, $allowedWithFreeze, true)) {
             return true;
         }
 
-        return false;
+        // PRAGMA de SQLite sí puede cambiar el esquema cuando asigna
+        // (p.ej. `PRAGMA writable_schema = ON`); SHOW nunca.
+        return $firstToken === 'pragma' && str_contains($normalizedQuery, '=');
+    }
+
+    /**
+     * Quita comentarios y espacio inicial de una sentencia para poder inspeccionar su
+     * primer token de verdad.
+     */
+    private static function stripLeadingSqlNoise(string $query): string
+    {
+        $sql = strtolower(trim($query));
+
+        // Repetir: pueden encadenarse varios comentarios antes de la sentencia.
+        while ($sql !== '') {
+            if (str_starts_with($sql, '--') || str_starts_with($sql, '#')) {
+                $newline = strpbrk($sql, "\r\n");
+                $sql = $newline === false ? '' : ltrim($newline);
+
+                continue;
+            }
+
+            if (str_starts_with($sql, '/*')) {
+                $end = strpos($sql, '*/');
+                $sql = $end === false ? '' : ltrim(substr($sql, $end + 2));
+
+                continue;
+            }
+
+            break;
+        }
+
+        return $sql;
     }
 
     /**
@@ -1606,8 +1682,16 @@ class VersaORM
                 break;
         }
 
-        // Validar que los parámetros no contengan referencias circulares
-        $this->checkCircularReferences($params);
+        // Validar que los parámetros no contengan referencias circulares.
+        //
+        // Sólo tiene sentido recorrer el árbol si de verdad hay algún objeto: una
+        // referencia circular necesita objetos, y los arrays planos no pueden tenerla.
+        // Para un insertMany los registros se mezclan en la raíz de $params, así que un
+        // lote de 10 000 × 20 provocaba ~200 000 llamadas recursivas antes de generar
+        // una sola línea de SQL, buscando ciclos en datos escalares.
+        if (self::containsObject($params)) {
+            $this->checkCircularReferences($params);
+        }
     }
 
     /**
@@ -2017,6 +2101,36 @@ class VersaORM
      * @param array<int, string> $visited
      *
      * @throws VersaORMException
+     */
+    /**
+     * ¿Hay algún objeto en el árbol? Recorrido iterativo y con corte temprano, mucho más
+     * barato que la comprobación de ciclos completa.
+     *
+     * @param array<array-key, mixed> $data
+     */
+    private static function containsObject(array $data): bool
+    {
+        $stack = [$data];
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+
+            foreach ($current as $value) {
+                if (is_object($value)) {
+                    return true;
+                }
+
+                if (is_array($value) && $value !== []) {
+                    $stack[] = $value;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<string> $visited
      */
     private function checkCircularReferences(mixed $data, array &$visited = []): void
     {

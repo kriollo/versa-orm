@@ -32,9 +32,7 @@ $title = 'Proyectos - VersaORM Trello Demo'; ?>
         <?php foreach ($projects as $project) { ?>
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow transition-colors">
                 <!-- Header del proyecto con color -->
-                <div class="h-24" style="background: linear-gradient(135deg, <?php echo
-                    htmlspecialchars($project->color)
-                ; ?>, <?php echo htmlspecialchars($project->color); ?>80);">
+                <div class="h-24" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($project->color); ?>, <?php echo htmlspecialchars($project->color); ?>80);">
                     <div class="p-4 h-full flex items-end">
                         <h3 class="text-white font-bold text-lg truncate"><?php echo htmlspecialchars($project->name); ?></h3>
                     </div>
@@ -82,8 +80,7 @@ $title = 'Proyectos - VersaORM Trello Demo'; ?>
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo
-                                    count($tasks) > 0 ? (count($completedTasks) / count($tasks)) * 100 : 0
-                                ; ?>%"></div>
+                                    count($tasks) > 0 ? (count($completedTasks) / count($tasks)) * 100 : 0; ?>%"></div>
                             </div>
                         </div>
 
@@ -95,16 +92,13 @@ $title = 'Proyectos - VersaORM Trello Demo'; ?>
                             <span class="text-xs text-gray-500 dark:text-gray-400 mr-2">Miembros:</span>
                             <div class="flex -space-x-2">
                                 <?php foreach (array_slice($members, 0, 3) as $member) { ?>
-                                    <div class="avatar border-2 border-white dark:border-gray-800" style="background-color: <?php echo
-                                        htmlspecialchars($member->avatar_color)
-                                    ; ?>" title="<?php echo htmlspecialchars($member->name); ?>">
+                                    <div class="avatar border-2 border-white dark:border-gray-800" style="background-color: <?php echo htmlspecialchars($member->avatar_color); ?>" title="<?php echo htmlspecialchars($member->name); ?>">
                                         <?php echo strtoupper(substr($member->name, 0, 2)); ?>
                                     </div>
                                 <?php } ?>
                                 <?php if (count($members) > 3) { ?>
                                     <div class="avatar bg-gray-500 border-2 border-white dark:border-gray-800" title="<?php echo
-                                        count($members) - 3
-                                    ; ?> más">
+                                        count($members) - 3; ?> más">
                                         +<?php echo count($members) - 3; ?>
                                     </div>
                                 <?php } ?>
@@ -115,13 +109,15 @@ $title = 'Proyectos - VersaORM Trello Demo'; ?>
 
                     <!-- Acciones -->
                     <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <a href="?action=project_show&id=<?php echo $project->id; ?>" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                        <a href="?action=project_show&id=<?php echo
+                            $project->id; ?>" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
                             <i class="fas fa-eye mr-1"></i>
                             Ver detalles
                         </a>
                         <div class="flex items-center space-x-2">
 
-                            <a href="?action=project_edit&id=<?php echo $project->id; ?>" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300" title="Editar">
+                            <a href="?action=project_edit&id=<?php echo
+                                $project->id; ?>" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300" title="Editar">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a href="?action=project_delete&id=<?php echo $project->id; ?>"

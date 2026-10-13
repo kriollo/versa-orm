@@ -20,7 +20,9 @@ class SQLiteDialect implements SqlDialectInterface
             [$t, $c] = explode('.', $name, 2);
 
             if ($c === '*') {
-                return sprintf('"%s".*', $t);
+                // El nombre de la tabla también se escapa: esta rama saltaba el
+                // str_replace de abajo, así que `x",(SELECT 1),"y.*` salía inyectado.
+                return sprintf('"%s".*', str_replace('"', '""', $t));
             }
         }
 

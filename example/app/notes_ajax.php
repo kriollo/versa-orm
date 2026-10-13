@@ -29,7 +29,11 @@ switch ($action) {
                 $userName = 'Usuario desconocido';
 
                 if (isset($noteArr['user_id'])) {
-                    $user = app()->orm()->table('users')->where('id', '=', (int) $noteArr['user_id'])->firstArray();
+                    $user = app()
+                        ->orm()
+                        ->table('users')
+                        ->where('id', '=', (int) $noteArr['user_id'])
+                        ->firstArray();
 
                     if ($user !== null && $user !== []) {
                         $userName = $user['name'] ?? $userName;

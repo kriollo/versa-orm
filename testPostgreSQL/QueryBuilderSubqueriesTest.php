@@ -120,11 +120,9 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_select_sub_query_with_closure(): void
     {
-        $result = self::$orm
-            ->table('users')
-            ->selectSubQuery(static function (QueryBuilder $query): void {
-                $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
-            }, 'posts_count');
+        $result = self::$orm->table('users')->selectSubQuery(static function (QueryBuilder $query): void {
+            $query->select(['COUNT(*)'])->where('user_id', '=', 'users.id');
+        }, 'posts_count');
 
         static::assertInstanceOf(QueryBuilder::class, $result);
     }
@@ -137,11 +135,9 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid alias name in selectSubQuery');
 
-        self::$orm
-            ->table('users')
-            ->selectSubQuery(static function (QueryBuilder $query): void {
-                $query->select(['COUNT(*)']);
-            }, 'invalid--alias');
+        self::$orm->table('users')->selectSubQuery(static function (QueryBuilder $query): void {
+            $query->select(['COUNT(*)']);
+        }, 'invalid--alias');
     }
 
     /**
@@ -149,11 +145,9 @@ class QueryBuilderSubqueriesTest extends TestCase
      */
     public function test_where_sub_query_with_valid_operators(): void
     {
-        $result = self::$orm
-            ->table('users')
-            ->whereSubQuery('id', 'IN', static function (QueryBuilder $query): void {
-                $query->select(['user_id'])->where('status', '=', 'active');
-            });
+        $result = self::$orm->table('users')->whereSubQuery('id', 'IN', static function (QueryBuilder $query): void {
+            $query->select(['user_id'])->where('status', '=', 'active');
+        });
 
         static::assertInstanceOf(QueryBuilder::class, $result);
     }
@@ -166,11 +160,9 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Invalid operator in whereSubQuery');
 
-        self::$orm
-            ->table('users')
-            ->whereSubQuery('id', 'LIKE', static function (QueryBuilder $query): void {
-                $query->select(['user_id']);
-            });
+        self::$orm->table('users')->whereSubQuery('id', 'LIKE', static function (QueryBuilder $query): void {
+            $query->select(['user_id']);
+        });
     }
 
     /**
@@ -264,7 +256,9 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $longExpression = str_repeat('a', 501); // Más de 500 caracteres
+        // El límite se subió de 500 a 2000: las expresiones raw legítimas (CASE anidados,
+        // listas largas de CONCAT) pasaban de 500 con facilidad.
+        $longExpression = str_repeat('a', 2001);
         self::$orm->table('users')->selectRaw($longExpression);
     }
 

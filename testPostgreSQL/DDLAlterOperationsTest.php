@@ -72,12 +72,14 @@ final class DDLAlterOperationsTest extends TestCase
         // rename a -> a_id
         $orm->schemaAlter('tddl', ['rename' => [['from' => 'a', 'to' => 'a_id']]]);
         // modify b to VARCHAR(200) NOT NULL DEFAULT ''
-        $orm->schemaAlter('tddl', ['modify' => [[
-            'name' => 'b',
-            'type' => 'VARCHAR(200)',
-            'nullable' => false,
-            'default' => '',
-        ]]]);
+        $orm->schemaAlter('tddl', [
+            'modify' => [[
+                'name' => 'b',
+                'type' => 'VARCHAR(200)',
+                'nullable' => false,
+                'default' => '',
+            ]],
+        ]);
         // drop column b
         $orm->schemaAlter('tddl', ['drop' => ['b']]);
 

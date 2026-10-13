@@ -43,7 +43,7 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
         static::assertIsArray($res);
         static::assertArrayHasKey('sql', $res);
         static::assertArrayHasKey('bindings', $res);
-        static::assertStringContainsString('FROM users', $res['sql']);
+        static::assertStringContainsString('FROM `users`', $res['sql']);
         static::assertSame([], $res['bindings']);
     }
 
@@ -67,8 +67,8 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
 
         $res = $m->invoke($qb);
 
-        static::assertStringContainsString('FROM (SELECT id FROM users_inner) u', $res['sql']);
-        static::assertStringContainsString('u.id, u.name', $res['sql']);
+        static::assertStringContainsString('FROM (SELECT id FROM users_inner) AS `u`', $res['sql']);
+        static::assertStringContainsString('`u`.`id`, `u`.`name`', $res['sql']);
         static::assertSame([123], $res['bindings']);
     }
 
@@ -77,42 +77,22 @@ final class QueryBuilderBuildSelectSQLTest extends TestCase
         $orm = new VersaORMStub();
         $qb = new QueryBuilder($orm, 'users');
 
+        // Por la API real, no inyectando estado por reflexión: la forma interna que
+        // inyectaba este test ('sql' + 'bindings' sueltos en wheres) sólo la entendía el
+        // generador duplicado que se eliminó.
+        $qb->joinRaw('INNER JOIN profiles ON profiles.user_id = users.id AND profiles.active = ?', [
+            1,
+        ])->whereRaw('users.id = ?', [42]);
+
         $ref = new \ReflectionClass($qb);
-
-        // Add a join with a raw ON condition
-        $joinsProp = $ref->getProperty('joins');
-        $joinsProp->setAccessible(true);
-        $joinsProp->setValue($qb, [
-            [
-                'type' => 'inner',
-                'table' => 'profiles',
-                'conditions' => [
-                    [
-                        'type' => 'raw',
-                        'sql' => 'profiles.user_id = users.id AND profiles.active = ?',
-                        'bindings' => [1],
-                        'boolean' => 'AND',
-                    ],
-                ],
-            ],
-        ]);
-
-        // Add where raw entry in the wheres
-        $wheresProp = $ref->getProperty('wheres');
-        $wheresProp->setAccessible(true);
-        $wheresProp->setValue($qb, [
-            ['sql' => 'users.id = ?', 'bindings' => [42]],
-        ]);
-
         $m = $ref->getMethod('buildSelectSQL');
         $m->setAccessible(true);
 
         $res = $m->invoke($qb);
 
-        static::assertStringContainsString('INNER JOIN profiles', $res['sql']);
-        static::assertStringContainsString('ON (profiles.user_id = users.id AND profiles.active = ?)', $res['sql']);
-        static::assertStringContainsString('WHERE users.id = ?', $res['sql']);
-        // Note: buildSelectSQL now correctly merges join raw bindings and where bindings
+        static::assertStringContainsString('INNER JOIN profiles ON profiles.user_id = users.id', $res['sql']);
+        static::assertStringContainsString('WHERE (users.id = ?)', $res['sql']);
+        // Los bindings del JOIN van antes que los del WHERE, en el orden de los placeholders.
         static::assertSame([1, 42], $res['bindings']);
     }
 }

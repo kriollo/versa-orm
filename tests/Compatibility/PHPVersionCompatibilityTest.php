@@ -318,8 +318,7 @@ class PHPVersionCompatibilityTest extends TestCase
                 . PHP_VERSION
                 . ': '
                 . number_format($executionTime, 4)
-                . "s for {$iterations} iterations\n"
-        ;
+                . "s for {$iterations} iterations\n";
     }
 
     /**

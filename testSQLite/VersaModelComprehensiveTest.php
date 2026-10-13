@@ -375,10 +375,7 @@ class VersaModelComprehensiveTest extends TestCase
 
         $model->trash();
 
-        $count = $this->orm
-            ->table('test_models')
-            ->where('id', '=', $id)
-            ->count();
+        $count = $this->orm->table('test_models')->where('id', '=', $id)->count();
         static::assertSame(0, $count);
     }
 
@@ -395,10 +392,7 @@ class VersaModelComprehensiveTest extends TestCase
         static::assertGreaterThan(0, $id);
 
         // Verificar en BD
-        $record = $this->orm
-            ->table('test_models')
-            ->where('id', '=', $id)
-            ->firstArray();
+        $record = $this->orm->table('test_models')->where('id', '=', $id)->firstArray();
         static::assertSame('New User', $record['name']);
     }
 
@@ -419,10 +413,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model->store();
 
         // Verificar actualización
-        $record = $this->orm
-            ->table('test_models')
-            ->where('id', '=', $id)
-            ->firstArray();
+        $record = $this->orm->table('test_models')->where('id', '=', $id)->firstArray();
         static::assertSame('Updated', $record['name']);
     }
 
@@ -639,10 +630,7 @@ class VersaModelComprehensiveTest extends TestCase
         static::assertSame('updated', $result2['action']);
 
         // Verificar que se actualizó
-        $record = $this->orm
-            ->table('test_models')
-            ->where('email', '=', 'unique@example.com')
-            ->firstArray();
+        $record = $this->orm->table('test_models')->where('email', '=', 'unique@example.com')->firstArray();
 
         static::assertSame('Updated', $record['name']);
     }

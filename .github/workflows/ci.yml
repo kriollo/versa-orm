@@ -34,7 +34,9 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
       postgres:
-        image: postgres:14
+        # pgvector incluido: con la imagen postgres:14 base, los tests de soporte
+        # vectorial se saltaban en CI y en local, dejando esa funcionalidad sin verificar.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: test
           POSTGRES_USER: postgres
@@ -85,6 +87,13 @@ jobs:
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "CREATE DATABASE versaorm_test" 2>/dev/null || true
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d test -c "GRANT ALL PRIVILEGES ON DATABASE test TO local;"
           PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "GRANT ALL PRIVILEGES ON DATABASE versaorm_test TO local;"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d versaorm_test -c "CREATE EXTENSION IF NOT EXISTS vector;" || true
+
+      - name: Static Analysis (PHPStan level 9)
+        run: vendor/bin/phpstan analyse src --level=9 --memory-limit=1G --no-progress
+
+      - name: Code Style Check
+        run: vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff
 
       - name: Create artifacts directory
         run: mkdir -p build/logs/cov-dir tests/reports/sqlite tests/reports/mysql tests/reports/postgresql
@@ -94,6 +103,7 @@ jobs:
 
       - name: Run MySQL Tests
         env:
+          DB_TEST_TURBO: 1
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_NAME: versaorm_test
@@ -103,6 +113,7 @@ jobs:
 
       - name: Run PostgreSQL Tests
         env:
+          DB_TEST_TURBO: 1
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
           DB_NAME: versaorm_test
@@ -133,7 +144,7 @@ jobs:
         if: always()
         uses: codecov/codecov-action@v5
         with:
-          token: 51e43ae6-0e27-43c4-a161-0f54255c6a7f
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: build/logs/clover.xml
           flags: php-${{ matrix.php }}
           fail_ci_if_error: false

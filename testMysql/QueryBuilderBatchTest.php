@@ -150,7 +150,10 @@ class QueryBuilderBatchTest extends TestCase
         static::assertSame('success', $result['status']);
 
         // Verificar que se actualizaron los registros correctos
-        $updatedCount = self::$orm->table('users')->where('status', '=', $uniqueMarker . '_updated')->count();
+        $updatedCount = self::$orm
+            ->table('users')
+            ->where('status', '=', $uniqueMarker . '_updated')
+            ->count();
         static::assertSame(2, $updatedCount);
     }
 

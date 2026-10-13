@@ -58,6 +58,32 @@ trait HasRelationships
     }
 
     /**
+     * Resuelve el nombre de tabla de un modelo relacionado.
+     *
+     * Antes se leía la propiedad por defecto `$table` por reflexión y, si no existía, se
+     * usaba la literal 'dummy' — así que una subclase tipada que declara `$tableName`
+     * (el mecanismo introducido para dar tipos al IDE) acababa consultando una tabla
+     * inexistente llamada "dummy". Ahora se delega en el propio modelo, que ya sabe
+     * resolver `$table`, `$tableName` y la inferencia por nombre de clase.
+     *
+     * @param class-string<VersaModel> $related
+     */
+    private static function resolveRelatedTable(string $related): string
+    {
+        $table = $related::tableName();
+
+        if ($table !== '' && $table !== 'dummy') {
+            return $table;
+        }
+
+        // Último recurso: la propiedad por defecto, por compatibilidad.
+        $defaults = (new ReflectionClass($related))->getDefaultProperties();
+        $raw = $defaults['table'] ?? '';
+
+        return is_scalar($raw) && (string) $raw !== '' ? (string) $raw : $table;
+    }
+
+    /**
      * @param class-string<VersaModel> $related
      */
     public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
@@ -65,11 +91,7 @@ trait HasRelationships
         $foreignKey ??= $this->getForeignKey();
         $localKey ??= $this->getKeyName();
 
-        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new ReflectionClass($related);
-        $defaultProperties = $reflection->getDefaultProperties();
-        $tableRaw = $defaultProperties['table'] ?? 'dummy';
-        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
+        $table = self::resolveRelatedTable($related);
 
         $instance = new $related($table, $this->getOrm());
 
@@ -84,11 +106,7 @@ trait HasRelationships
         $foreignKey ??= $this->getForeignKey();
         $localKey ??= $this->getKeyName();
 
-        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new ReflectionClass($related);
-        $defaultProperties = $reflection->getDefaultProperties();
-        $tableRaw = $defaultProperties['table'] ?? 'dummy';
-        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
+        $table = self::resolveRelatedTable($related);
 
         $instance = new $related($table, $this->getOrm());
 
@@ -107,11 +125,7 @@ trait HasRelationships
         $relation ??= $this->getRelationName();
         $foreignKey ??= $relation . '_id';
 
-        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new ReflectionClass($related);
-        $defaultProperties = $reflection->getDefaultProperties();
-        $tableRaw = $defaultProperties['table'] ?? 'dummy';
-        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
+        $table = self::resolveRelatedTable($related);
 
         $instance = new $related($table, $this->getOrm());
         $ownerKey ??= $instance->getKeyName();
@@ -134,11 +148,7 @@ trait HasRelationships
         $relatedPivotKey ??= (new $related('dummy', $this->getOrm()))->getForeignKey();
         $parentKey ??= $this->getKeyName();
 
-        // Obtener el nombre de la tabla del modelo relacionado usando reflexión
-        $reflection = new ReflectionClass($related);
-        $defaultProperties = $reflection->getDefaultProperties();
-        $tableRaw = $defaultProperties['table'] ?? 'dummy';
-        $table = is_scalar($tableRaw) ? (string) $tableRaw : 'dummy';
+        $table = self::resolveRelatedTable($related);
 
         $instance = new $related($table, $this->getOrm());
         $relatedKey ??= $instance->getKeyName();

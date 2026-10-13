@@ -67,6 +67,81 @@ class PdoConnection
     /**
      * Limpiar completamente el pool de conexiones.
      */
+    /**
+     * Opciones PDO de TLS para MySQL/MariaDB.
+     *
+     * Claves de configuración admitidas (equivalentes a las de PostgreSQL):
+     *  - sslrootcert / ssl_ca   → CA con la que verificar el servidor
+     *  - sslcert    / ssl_cert  → certificado de cliente
+     *  - sslkey     / ssl_key   → clave privada de cliente
+     *  - ssl_cipher             → cifradores permitidos
+     *  - sslmode                → 'verify-full'/'verify-ca' exigen verificar el
+     *                             certificado del servidor; 'require' cifra sin verificar
+     *
+     * @return array<int, mixed>
+     */
+    private function mysqlSslOptions(): array
+    {
+        $pick = function (string ...$keys): ?string {
+            foreach ($keys as $key) {
+                $value = $this->config[$key] ?? null;
+
+                if (is_string($value) && $value !== '') {
+                    return $value;
+                }
+            }
+
+            return null;
+        };
+        $options = [];
+        $ca = $pick('sslrootcert', 'ssl_ca');
+        $cert = $pick('sslcert', 'ssl_cert');
+        $key = $pick('sslkey', 'ssl_key');
+        $cipher = $pick('ssl_cipher');
+
+        if ($ca !== null) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = $ca;
+        }
+
+        if ($cert !== null) {
+            $options[PDO::MYSQL_ATTR_SSL_CERT] = $cert;
+        }
+
+        if ($key !== null) {
+            $options[PDO::MYSQL_ATTR_SSL_KEY] = $key;
+        }
+
+        if ($cipher !== null) {
+            $options[PDO::MYSQL_ATTR_SSL_CIPHER] = $cipher;
+        }
+        $sslmode = strtolower((string) ($this->config['sslmode'] ?? ''));
+
+        // Verificar el certificado del servidor es opt-in explícito: activarlo sin CA
+        // configurada rompería conexiones que hoy funcionan.
+        if ($options !== [] && defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = in_array($sslmode, ['verify-ca', 'verify-full'], true);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Clave del pool de conexiones.
+     *
+     * Las credenciales van hasheadas: antes el password viajaba en claro como *clave de
+     * un array estático* de vida larga, así que aparecía en cualquier var_dump, dump de
+     * Xdebug o volcado de memoria. El hash distingue igual de bien dos conexiones con el
+     * mismo DSN y credenciales distintas.
+     */
+    private function poolKey(string $driver, string $dsn): string
+    {
+        return $driver
+        . '|'
+        . $dsn
+        . '|'
+        . hash('sha256', ($this->config['username'] ?? '') . "\0" . ($this->config['password'] ?? ''));
+    }
+
     public static function clearPool(): void
     {
         self::$pool = [];
@@ -89,13 +164,7 @@ class PdoConnection
                     $database = (string) ($this->config['database'] ?? '');
                     $charset = (string) ($this->config['charset'] ?? 'utf8mb4');
                     $dsn = 'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $database . ';charset=' . $charset;
-                    $poolKey =
-                        'mysql|'
-                        . $dsn
-                        . '|'
-                        . ($this->config['username'] ?? '')
-                        . '|'
-                        . ($this->config['password'] ?? '');
+                    $poolKey = $this->poolKey('mysql', $dsn);
 
                     return [$dsn, $poolKey];
                 })(),
@@ -122,13 +191,7 @@ class PdoConnection
                         $dsn .= ';sslrootcert=' . (string) $this->config['sslrootcert'];
                     }
 
-                    $poolKey =
-                        'pgsql|'
-                        . $dsn
-                        . '|'
-                        . ($this->config['username'] ?? '')
-                        . '|'
-                        . ($this->config['password'] ?? '');
+                    $poolKey = $this->poolKey('pgsql', $dsn);
 
                     return [$dsn, $poolKey];
                 })(),
@@ -151,6 +214,13 @@ class PdoConnection
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
+
+            // TLS para MySQL/MariaDB. Antes sólo PostgreSQL tenía soporte de SSL, así que
+            // no había forma de abrir una conexión MySQL con TLS verificado desde la
+            // configuración de la librería: el tráfico iba en claro.
+            if ($driver === 'mysql' || $driver === 'mariadb') {
+                $options += $this->mysqlSslOptions();
+            }
 
             // Ajustes específicos para SQLite
             if ($driver === 'sqlite') {

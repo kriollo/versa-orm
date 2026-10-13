@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 // testPostgreSQL/bootstrap.php
-if (getenv('DB_ENGINE') && !in_array(getenv('DB_ENGINE'), ['postgresql', 'postgres'])) {
+if (getenv('DB_ENGINE') && !in_array(getenv('DB_ENGINE'), ['postgresql', 'postgres'], strict: true)) {
     return;
 }
 

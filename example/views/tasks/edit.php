@@ -46,9 +46,9 @@ declare(strict_types=1);
                         name="description"
                         rows="4"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="Describe los detalles de la tarea"><?php echo
-                            htmlspecialchars($task->description ?? '')
-                        ; ?></textarea>
+                        placeholder="Describe los detalles de la tarea"><?php echo htmlspecialchars(
+                            $task->description ?? '',
+                        ); ?></textarea>
                 </div>
 
                 <!-- Asignación y configuración -->
@@ -67,8 +67,7 @@ declare(strict_types=1);
                         <option value="">Selecciona un proyecto</option>
                         <?php foreach ($projects as $project) { ?>
                             <option value="<?php echo $project['id']; ?>" <?php echo
-                                $task->project_id === $project['id'] ? 'selected' : ''
-                            ; ?>>
+                                $task->project_id === $project['id'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($project['name']); ?>
                             </option>
                         <?php } ?>
@@ -83,11 +82,10 @@ declare(strict_types=1);
                         <option value="">Sin asignar</option>
                         <?php foreach ($users as $user) { ?>
                             <option value="<?php echo $user['id']; ?>" <?php echo
-                                $task->user_id === $user['id'] ? 'selected' : ''
-                            ; ?>>
-                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo
-                                    htmlspecialchars($user['email'])
-                                ; ?>)
+                                $task->user_id === $user['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($user['name']); ?> (<?php echo htmlspecialchars(
+                                    $user['email'],
+                                ); ?>)
                             </option>
                         <?php } ?>
                     </select>
@@ -98,9 +96,12 @@ declare(strict_types=1);
                     <select id="status"
                         name="status"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                        <option value="todo" <?php echo $task->status === 'todo' ? 'selected' : ''; ?>>Por Hacer</option>
-                        <option value="in_progress" <?php echo $task->status === 'in_progress' ? 'selected' : ''; ?>>En Progreso</option>
-                        <option value="done" <?php echo $task->status === 'done' ? 'selected' : ''; ?>>Completada</option>
+                        <option value="todo" <?php echo
+                            $task->status === 'todo' ? 'selected' : ''; ?>>Por Hacer</option>
+                        <option value="in_progress" <?php echo
+                            $task->status === 'in_progress' ? 'selected' : ''; ?>>En Progreso</option>
+                        <option value="done" <?php echo
+                            $task->status === 'done' ? 'selected' : ''; ?>>Completada</option>
                     </select>
                 </div>
 
@@ -110,9 +111,11 @@ declare(strict_types=1);
                         name="priority"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                         <option value="low" <?php echo $task->priority === 'low' ? 'selected' : ''; ?>>Baja</option>
-                        <option value="medium" <?php echo $task->priority === 'medium' ? 'selected' : ''; ?>>Media</option>
+                        <option value="medium" <?php echo
+                            $task->priority === 'medium' ? 'selected' : ''; ?>>Media</option>
                         <option value="high" <?php echo $task->priority === 'high' ? 'selected' : ''; ?>>Alta</option>
-                        <option value="urgent" <?php echo $task->priority === 'urgent' ? 'selected' : ''; ?>>Urgente</option>
+                        <option value="urgent" <?php echo
+                            $task->priority === 'urgent' ? 'selected' : ''; ?>>Urgente</option>
                     </select>
                 </div>
 
@@ -139,12 +142,12 @@ declare(strict_types=1);
                                     <?php echo in_array($label['id'], $taskLabels ?? [], true) ? 'checked' : ''; ?>
                                     class="mr-3 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded">
                                 <div class="flex items-center flex-1">
-                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo
-                                        htmlspecialchars($label['color'])
-                                    ; ?>"></div>
-                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo
-                                        htmlspecialchars($label['name'])
-                                    ; ?></span>
+                                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars(
+                                        $label['color'],
+                                    ); ?>"></div>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors"><?php echo htmlspecialchars(
+                                        $label['name'],
+                                    ); ?></span>
                                 </div>
                             </label>
                         <?php } ?>
@@ -157,13 +160,11 @@ declare(strict_types=1);
                 <div class="grid grid-cols-2 gap-4 text-sm text-gray-500 dark:text-gray-400">
                     <div>
                         <strong>Creada:</strong> <?php echo
-                            isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : ''
-                        ; ?>
+                            isset($task->created_at) ? safe_date('d/m/Y H:i', $task->created_at) : ''; ?>
                     </div>
                     <div>
                         <strong>Actualizada:</strong> <?php echo
-                            isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''
-                        ; ?>
+                            isset($task->updated_at) ? safe_date('d/m/Y H:i', $task->updated_at) : ''; ?>
                     </div>
                 </div>
             </div>

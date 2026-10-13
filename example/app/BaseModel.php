@@ -148,11 +148,7 @@ abstract class BaseModel extends VersaModel
         $page = max(1, $page);
         $perPage = max(1, $perPage);
         $offset = ($page - 1) * $perPage;
-        $items = $this
-            ->querySelf()
-            ->limit($perPage)
-            ->offset($offset)
-            ->getAll();
+        $items = $this->querySelf()->limit($perPage)->offset($offset)->getAll();
         $total = $this->querySelf()->count();
 
         return [

@@ -493,22 +493,27 @@ class ErrorHandler
         $logFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_' . date('Y-m-d') . '.log';
         $detailFile = self::$logPath . DIRECTORY_SEPARATOR . 'versaorm_errors_detail_' . date('Y-m-d') . '.log';
 
-        $logEntry = [
+        // 'context' incluye model_attributes (la fila completa), así que el resumen
+        // también tiene que pasar por el sanitizador, no sólo el detalle.
+        $logEntry = self::sanitizeValue([
             'timestamp' => date('Y-m-d H:i:s'),
             'error_code' => $errorData['error']['error_code'],
             'message' => $errorData['error']['message'],
             'origin' => $errorData['origin'],
             'query' => $errorData['query']['sql'] ?? null,
             'context' => $errorData['context'],
-        ];
+        ]);
 
         $logLine = json_encode($logEntry, JSON_UNESCAPED_UNICODE) . PHP_EOL;
 
         // Escribir al archivo de log
         file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
-        // Archivo detallado: incluye traza completa y objeto exception_log si existe
+
+        // Archivo detallado: incluye la traza completa y el objeto exception_log si existe.
+        // La traza se agrega ANTES de sanitizar: las entradas de debug_backtrace llevan
+        // 'args', y ahí viajan la config de conexión (password incluido) y los bindings.
+        $errorData['full_trace'] = $errorData['trace'] ?? [];
         $detailPayload = self::sanitizeErrorDataForLogging($errorData);
-        $detailPayload['full_trace'] = $errorData['trace'] ?? [];
         file_put_contents(
             $detailFile,
             json_encode($detailPayload, JSON_UNESCAPED_UNICODE) . PHP_EOL,
@@ -533,13 +538,27 @@ class ErrorHandler
         // Nunca persistir el error log interno completo (puede crecer y duplicar datos)
         unset($payload['exception_log']['trace']);
 
-        // Si hay exception_log enriquecido, sanitizar bindings.
-        if (isset($payload['exception_log']) && is_array($payload['exception_log'])) {
+        // Mismo criterio para los dos sitios que llevan valores de la consulta:
+        // 'query' (bindings + formatted_sql, que es el SQL con los valores incrustados)
+        // y 'exception_log'. Sin debug no se persiste ningún valor; con debug se recortan.
+        foreach (['query', 'exception_log'] as $section) {
+            if (!isset($payload[$section]) || !is_array($payload[$section])) {
+                continue;
+            }
+
             if (!self::$debugMode) {
-                $payload['exception_log']['bindings'] = [];
-                $payload['exception_log']['query'] = null;
-            } elseif (isset($payload['exception_log']['bindings']) && is_array($payload['exception_log']['bindings'])) {
-                $payload['exception_log']['bindings'] = self::sanitizeValue($payload['exception_log']['bindings']);
+                $payload[$section]['bindings'] = [];
+                $payload[$section]['formatted_sql'] = null;
+
+                if ($section === 'exception_log') {
+                    $payload[$section]['query'] = null;
+                }
+
+                continue;
+            }
+
+            if (isset($payload[$section]['bindings']) && is_array($payload[$section]['bindings'])) {
+                $payload[$section]['bindings'] = self::sanitizeValue($payload[$section]['bindings']);
             }
         }
 
@@ -574,8 +593,11 @@ class ErrorHandler
                 return substr($v, 0, 40) . '...[truncated]';
             }
 
-            // Redactar strings con patrón tipo JWT (header.payload.signature)
-            if (preg_match('/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/', $v) === 1) {
+            // Redactar strings con patrón tipo JWT (header.payload.signature).
+            // Se exige longitud mínima por segmento: el patrón 'a.b.c' a secas también
+            // matcheaba versiones ("8.4.13") y hostnames ("db.prod.internal"), que
+            // terminaban en el log como '[redacted-jwt]' en vez de su valor real.
+            if (preg_match('/^[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}$/', $v) === 1) {
                 return '[redacted-jwt]';
             }
 

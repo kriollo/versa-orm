@@ -17,6 +17,48 @@ class TestCase extends BaseTestCase
 
     private static bool $schemaCreated = false;
 
+    /** @var bool Vaciado inicial de la base de pruebas, una sola vez por proceso. */
+    private static bool $testDatabaseCleaned = false;
+
+    /**
+     * Vacía la base de pruebas una vez al arrancar el proceso.
+     *
+     * Hace la suite idempotente: una corrida abortada dejaba tablas huérfanas (las que
+     * crean otras clases de test: test_table, json_test, employees, *_cast, ...) y la
+     * siguiente fallaba con "table already exists" en decenas de tests, por un motivo
+     * ajeno al cambio que se estuviera probando.
+     *
+     * Se hace UNA vez por proceso y no en setUp()/tearDown(): esas se ejecutan por test,
+     * y vaciar la base ahí destruiría los fixtures que otras clases crean en su propio
+     * setUpBeforeClass() y necesitan vivos entre sus tests.
+     */
+    protected static function cleanTestDatabaseOnce(): void
+    {
+        if (self::$testDatabaseCleaned || !self::$orm instanceof VersaORM) {
+            return;
+        }
+        self::$testDatabaseCleaned = true;
+        $tables = self::$orm->schema('tables');
+
+        if (!is_array($tables)) {
+            return;
+        }
+
+        foreach ($tables as $table) {
+            $name = is_array($table) ? $table['table_name'] ?? null : $table;
+
+            if (!is_string($name) || $name === '') {
+                continue;
+            }
+
+            try {
+                self::$orm->schemaDrop($name);
+            } catch (\Throwable) {
+                // Mejor esfuerzo: una tabla con dependencias no debe impedir el resto.
+            }
+        }
+    }
+
     public static function setUpBeforeClass(): void
     {
         if (self::$orm === null) {
@@ -36,6 +78,7 @@ class TestCase extends BaseTestCase
             self::$orm = new VersaORM($dbConfig);
             VersaModel::setORM(self::$orm);
         }
+        self::cleanTestDatabaseOnce();
     }
 
     public static function tearDownAfterClass(): void

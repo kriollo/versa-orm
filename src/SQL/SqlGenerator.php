@@ -709,7 +709,7 @@ class SqlGenerator
         // Pass removeAliases=true to remove alias references from WHERE clause
         /** @var list<array<string, mixed>> $whereParams */
         $whereParams = is_array($params['where'] ?? null) ? $params['where'] : [];
-        [$whereSql, $whereBindings] = self::compileWhere($whereParams, $dialect, true);
+        [$whereSql, $whereBindings] = self::compileWhere($whereParams, $dialect, self::qualifiersFor($table));
 
         if ($whereSql !== '') {
             $sql .= ' WHERE ' . $whereSql;
@@ -749,7 +749,7 @@ class SqlGenerator
         $rawWheres = $params['where'] ?? [];
         $whereParams = is_array($rawWheres) ? $rawWheres : [];
         /** @var list<array<string, mixed>> $whereParams */
-        [$whereSql, $whereBindings] = self::compileWhere($whereParams, $dialect, true);
+        [$whereSql, $whereBindings] = self::compileWhere($whereParams, $dialect, self::qualifiersFor($table));
         $bindings = [];
 
         if ($whereSql !== '') {
@@ -761,16 +761,79 @@ class SqlGenerator
     }
 
     /**
+     * Quita el calificador de una columna sólo si corresponde a la tabla afectada o a su
+     * alias. Si apunta a otra cosa, se lanza excepción: reinterpretar en silencio el
+     * predicado de un DELETE o un UPDATE es pérdida de datos, no una conveniencia.
+     *
+     * @param list<string> $allowedQualifiers
+     */
+    private static function stripKnownQualifier(string $column, array $allowedQualifiers): string
+    {
+        $pos = strrpos($column, '.');
+
+        if ($pos === false) {
+            return $column;
+        }
+        $qualifier = substr($column, 0, $pos);
+        $bare = substr($column, $pos + 1);
+
+        foreach ($allowedQualifiers as $allowed) {
+            if ($allowed !== '' && strcasecmp($qualifier, $allowed) === 0) {
+                return $bare;
+            }
+        }
+
+        throw new VersaORMException(sprintf(
+            'Qualified column "%s" does not refer to the affected table (%s). '
+            . 'UPDATE/DELETE only accept columns of their own table; '
+            . 'use a subquery for conditions on other tables.',
+            $column,
+            implode(', ', array_filter($allowedQualifiers, static fn(string $q): bool => $q !== '')),
+        ));
+    }
+
+    /**
+     * Calificadores válidos para el WHERE de un UPDATE/DELETE: la tabla, su último
+     * segmento (si viene como schema.tabla) y su alias.
+     *
+     * @return list<string>
+     */
+    private static function qualifiersFor(string $tableReference): array
+    {
+        $parsed = SelectExpression::parseTableReference($tableReference);
+
+        if ($parsed === null) {
+            return [trim($tableReference)];
+        }
+        $table = $parsed['table'];
+        $qualifiers = [$table];
+
+        $lastDot = strrpos($table, '.');
+
+        if ($lastDot !== false) {
+            $qualifiers[] = substr($table, $lastDot + 1);
+        }
+
+        if ($parsed['alias'] !== null) {
+            $qualifiers[] = trim($parsed['alias'], '`"\'');
+        }
+
+        /** @var list<string> $unique */
+        return array_values(array_unique($qualifiers));
+    }
+
+    /**
      * Compila cláusulas WHERE.
      *
      * @param list<array<string, mixed>> $wheres
+     * @param list<string>|null $allowedQualifiers calificadores admitidos (UPDATE/DELETE); null = no quitar
      *
      * @return array{0:string,1:array<int, mixed>}
      */
     private static function compileWhere(
         array $wheres,
         SqlDialectInterface $dialect,
-        bool $removeAliases = false,
+        ?array $allowedQualifiers = null,
     ): array {
         /** @var list<array{0:string,1:string}> $parts */
         $parts = [];
@@ -806,16 +869,13 @@ class SqlGenerator
             $rawColumn = $w['column'] ?? '';
             $column = is_scalar($rawColumn) ? (string) $rawColumn : '';
 
-            // Remove alias from column reference if needed (for UPDATE/DELETE context)
-            if ($removeAliases && str_contains($column, '.')) {
-                $parts_col = explode('.', $column, 2);
-                if (count($parts_col) === 2) {
-                    // Check if the first part looks like an alias (not schema)
-                    // Aliases are typically short, single-letter or short names
-                    // For now, we'll keep table.column references that have schema notation
-                    // Only remove if it looks like a simple alias reference
-                    $column = $parts_col[1];
-                }
+            // UPDATE/DELETE no admiten calificadores: hay que quitarlos. Pero se resuelven
+            // contra la tabla y su alias reales en vez de adivinar ("los alias suelen ser
+            // cortos"), porque adivinar convertía `where('accounts.id', '=', 1)->delete()`
+            // sobre `users` en `DELETE FROM users WHERE id = 1`: un predicado distinto y
+            // una fila borrada de la tabla equivocada.
+            if ($allowedQualifiers !== null && str_contains($column, '.')) {
+                $column = self::stripKnownQualifier($column, $allowedQualifiers);
             }
 
             $value = $w['value'] ?? null;
@@ -869,36 +929,46 @@ class SqlGenerator
 
     private static function compileSelectPart(string $expr, SqlDialectInterface $dialect): string
     {
-        // manejar "table.column as alias" o funciones simples ya validadas en capa superior
-        if (stripos($expr, ' as ') !== false) {
-            $parts = preg_split('/\s+as\s+/i', $expr);
-            /** @var non-empty-list<string> $parts */
-            $left = $parts[0] ?? '';
-            $alias = $parts[1] ?? '';
+        // Mismo parser que usa la validación en QueryBuilder: antes cada lado hacía su
+        // propio preg_split sobre ' as ' y discrepaban (p.ej. 'CAST(x AS CHAR) AS y'
+        // acababa como 'CAST(x AS `CHAR) AS y`').
+        $parsed = SelectExpression::parse($expr);
 
-            return self::compileSelectPart($left, $dialect) . ' AS ' . $dialect->quoteIdentifier($alias);
+        if ($parsed === null) {
+            // No representable: se emite citado como un identificador cualquiera, que es
+            // la alternativa inerte. La validación ya debería haberlo rechazado antes.
+            return $dialect->quoteIdentifier($expr);
+        }
+        $sql = match ($parsed['kind']) {
+            'star' => '*',
+            // Una expresión de función se emite tal cual; SelectExpression es la frontera
+            // de seguridad que garantiza que sólo contiene funciones permitidas.
+            'function' => $parsed['expr'],
+            default => self::compileIdentifierParts($parsed['parts'], $dialect),
+        };
+
+        if ($parsed['alias'] !== null) {
+            $sql .= ' AS ' . $dialect->quoteIdentifier(trim($parsed['alias'], '`"\''));
         }
 
-        // funciones: si parece FUNC(...), no entrecomillar (debe evaluarse antes que table.column)
-        if (preg_match('/^[A-Za-z_]+\s*\(.*\)$/', $expr) === 1) {
-            return $expr;
+        return $sql;
+    }
+
+    /**
+     * Cita cada segmento de un identificador calificado. `*` como último segmento
+     * (`tabla.*`) se deja sin citar porque no es un nombre.
+     *
+     * @param list<string> $parts
+     */
+    private static function compileIdentifierParts(array $parts, SqlDialectInterface $dialect): string
+    {
+        $out = [];
+
+        foreach ($parts as $part) {
+            $out[] = $part === '*' ? '*' : $dialect->quoteIdentifier($part);
         }
 
-        if (str_contains($expr, '.')) {
-            [$t, $c] = explode('.', $expr, 2);
-
-            if ($c === '*') {
-                return $dialect->quoteIdentifier($t) . '.*';
-            }
-
-            return $dialect->quoteIdentifier($t) . '.' . $dialect->quoteIdentifier($c);
-        }
-
-        if ($expr === '*') {
-            return '*';
-        }
-
-        return $dialect->quoteIdentifier($expr);
+        return implode('.', $out);
     }
 
     private static function compileJoinColumn(string $expr, SqlDialectInterface $dialect): string
@@ -1023,15 +1093,23 @@ class SqlGenerator
                 $sql .= implode(', ', $valuesSql);
                 $driverHint = $dialect->getName();
 
-                if (stripos($driverHint, 'postgres') !== false) {
+                // SQLite usa la misma sintaxis estándar que PostgreSQL
+                // (ON CONFLICT ... DO UPDATE SET col = excluded.col). Antes caía en la
+                // rama de MySQL y generaba 'ON DUPLICATE KEY UPDATE', que SQLite
+                // rechaza: upsertMany() era inutilizable en SQLite.
+                $usesOnConflict =
+                    stripos($driverHint, 'postgres') !== false
+                    || stripos($driverHint, 'sqlite') !== false;
+
+                if ($usesOnConflict) {
                     if (empty($unique)) {
-                        throw new VersaORMException('PostgreSQL upsert requires unique_keys');
+                        throw new VersaORMException(sprintf('%s upsert requires unique_keys', $driverHint));
                     }
                     $conflict = '(' . implode(', ', array_map($dialect->quoteIdentifier(...), $unique)) . ')';
                     $sets = [];
 
                     foreach ($setCols as $c) {
-                        $sets[] = $dialect->quoteIdentifier($c) . ' = EXCLUDED.' . $dialect->quoteIdentifier($c);
+                        $sets[] = $dialect->quoteIdentifier($c) . ' = excluded.' . $dialect->quoteIdentifier($c);
                     }
                     $sql .= ' ON CONFLICT ' . $conflict . ' DO UPDATE SET ' . implode(', ', $sets);
                 } else {

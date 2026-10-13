@@ -135,15 +135,14 @@ class QueryBuilderExtraTest extends TestCase
         static::assertIsArray($jsonOp);
 
         // arrayOperations signature: (operation, column, value)
-        // Esta operación es específica de PostgreSQL; en otros drivers debe lanzar excepción.
-        $driver = getenv('DB_DRIVER') ?: $_SERVER['DB_DRIVER'] ?? 'sqlite';
-        if ($driver === 'postgresql') {
-            $arrOps = $qb->arrayOperations('length', 'body');
-            static::assertIsArray($arrOps);
-        } else {
-            $this->expectException(\VersaORM\VersaORMException::class);
-            $qb->arrayOperations('length', 'body');
-        }
+        // Esta operación es específica de PostgreSQL. El ORM de este test es SQLite
+        // (ver setUpBeforeClass), así que siempre debe lanzar excepción.
+        //
+        // Antes la rama se elegía con la variable de entorno DB_DRIVER en vez de con el
+        // driver real del ORM, así que al ejecutar la suite con la configuración de
+        // PostgreSQL se tomaba la rama equivocada y el test fallaba.
+        $this->expectException(\VersaORM\VersaORMException::class);
+        $qb->arrayOperations('length', 'body');
     }
 
     public function testAdvancedQueryFeatures()

@@ -14,6 +14,10 @@
         <!-- All tests suite -->
         <testsuite name="All">
             <directory>./testPostgreSQL</directory>
+            <!-- Los tests unitarios son agnósticos del driver, pero sólo corrían bajo la
+                 configuración de SQLite, así que ninguna regresión específica de motor
+                 que tocaran se detectaba en MySQL ni en PostgreSQL. -->
+            <directory>./tests/unit</directory>
             <exclude>./testPostgreSQL/PostgreSQLDDLBlockingTest.php</exclude>
         </testsuite>
     </testsuites>

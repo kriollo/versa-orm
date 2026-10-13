@@ -61,7 +61,11 @@ $title = 'Error - VersaORM Trello Demo'; ?>
                     <p><strong>Timestamp:</strong> <?php echo date('Y-m-d H:i:s'); ?></p>
                     <p><strong>Método:</strong> <?php echo $_SERVER['REQUEST_METHOD'] ?? 'N/A'; ?></p>
                     <p><strong>URI:</strong> <?php echo $_SERVER['REQUEST_URI'] ?? 'N/A'; ?></p>
-                    <p><strong>User Agent:</strong> <?php echo substr($_SERVER['HTTP_USER_AGENT'] ?? 'N/A', 0, 100); ?>...</p>
+                    <p><strong>User Agent:</strong> <?php echo substr(
+                        $_SERVER['HTTP_USER_AGENT'] ?? 'N/A',
+                        0,
+                        100,
+                    ); ?>...</p>
                 </div>
             </div>
         <?php } ?>

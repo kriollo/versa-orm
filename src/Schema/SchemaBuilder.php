@@ -406,7 +406,7 @@ class SchemaBuilder
                         $constraintName . 'UNIQUE (' . implode(', ', array_map([$this, 'wrapColumn'], $columns)) . ')';
                     break;
 
-                // Los índices regulares se crean por separado
+                    // Los índices regulares se crean por separado
             }
         }
 

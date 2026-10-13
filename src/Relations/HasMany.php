@@ -20,7 +20,7 @@ class HasMany extends HasOne // Extends HasOne because the constraint logic is i
      */
     public function __call($method, $arguments)
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         /** @phpstan-ignore-next-line */
         return $this->query->$method(...$arguments);
@@ -31,14 +31,14 @@ class HasMany extends HasOne // Extends HasOne because the constraint logic is i
      */
     public function query(): QueryBuilder
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         return $this->query;
     }
 
     public function getResults(): mixed
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         return $this->query->findAll();
     }

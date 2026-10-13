@@ -7,7 +7,7 @@ namespace Controllers;
 use App\Models\User;
 use Exception;
 
-class UserController
+final class UserController
 {
     public static function handle(string $action, ?int $id): void
     {

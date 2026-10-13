@@ -167,7 +167,9 @@ class QueryBuilderSubqueriesTest extends TestCase
     public function test_too_long_expression_validation(): void
     {
         $this->expectException(VersaORMException::class);
-        $this->queryBuilder->selectRaw(str_repeat('a', 501));
+        // El límite se subió de 500 a 2000: las expresiones raw legítimas (CASE anidados,
+        // listas largas de CONCAT) pasaban de 500 con facilidad.
+        $this->queryBuilder->selectRaw(str_repeat('a', 2001));
     }
 
     public function test_sql_comments_detection(): void

@@ -703,10 +703,10 @@ class PHPVersionTestExecutor
         switch ($last) {
             case 'g':
                 $value *= 1024;
-            // no break
+                // no break
             case 'm':
                 $value *= 1024;
-            // no break
+                // no break
             case 'k':
                 $value *= 1024;
         }

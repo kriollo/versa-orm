@@ -172,10 +172,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model->name = 'Updated User';
         $model->store();
 
-        $record = $this->orm
-            ->table('test_models')
-            ->where('id', '=', $id)
-            ->firstArray();
+        $record = $this->orm->table('test_models')->where('id', '=', $id)->firstArray();
         static::assertSame('Updated User', $record['name']);
     }
 
@@ -193,10 +190,7 @@ class VersaModelComprehensiveTest extends TestCase
         $model->id = $id;
         $model->trash();
 
-        $count = $this->orm
-            ->table('test_models')
-            ->where('id', '=', $id)
-            ->count();
+        $count = $this->orm->table('test_models')->where('id', '=', $id)->count();
         static::assertSame(0, $count);
     }
 

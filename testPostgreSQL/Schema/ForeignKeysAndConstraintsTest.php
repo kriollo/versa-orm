@@ -76,6 +76,83 @@ class ForeignKeysAndConstraintsTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Afirma que la tabla declara la clave foránea indicada.
+     *
+     * Estos tests construían las tablas y terminaban en assertTrue(true), así que no
+     * verificaban nada: una generación de DDL que perdiera la cláusula REFERENCES o la
+     * acción ON DELETE pasaba igual.
+     *
+     * @param array<string, string> $expected columna => "tabla_referenciada.columna"
+     */
+    private function assertForeignKey(
+        string $table,
+        string $column,
+        string $foreignTable,
+        string $foreignColumn,
+        ?string $onDelete = null,
+    ): void {
+        $keys = $this->orm->schema('foreign_keys', $table);
+        static::assertIsArray($keys);
+        $match = null;
+
+        foreach ($keys as $key) {
+            if (($key['column'] ?? null) !== $column) {
+                continue;
+            }
+
+            $match = $key;
+            break;
+        }
+        static::assertNotNull($match, sprintf(
+            '%s no declara una clave foránea sobre %s. Encontradas: %s',
+            $table,
+            $column,
+            json_encode($keys),
+        ));
+        static::assertSame($foreignTable, $match['foreign_table'] ?? null, 'tabla referenciada');
+        static::assertSame($foreignColumn, $match['foreign_column'] ?? null, 'columna referenciada');
+
+        if ($onDelete !== null) {
+            static::assertSame(
+                strtoupper($onDelete),
+                strtoupper((string) ($match['on_delete'] ?? '')),
+                sprintf('ON DELETE de %s.%s', $table, $column),
+            );
+        }
+    }
+
+    /**
+     * Afirma que la tabla declara un índice sobre las columnas indicadas.
+     *
+     * @param list<string> $columns
+     */
+    private function assertIndexOn(string $table, array $columns, ?bool $unique = null): void
+    {
+        $indexes = $this->orm->schema('indexes', $table);
+        static::assertIsArray($indexes);
+        $found = null;
+
+        foreach ($indexes as $index) {
+            $cols = array_values((array) ($index['columns'] ?? []));
+
+            if ($cols === $columns) {
+                $found = $index;
+                break;
+            }
+        }
+        static::assertNotNull($found, sprintf(
+            '%s no declara un índice sobre (%s). Encontrados: %s',
+            $table,
+            implode(', ', $columns),
+            json_encode(array_column($indexes, 'columns')),
+        ));
+
+        if ($unique !== null) {
+            static::assertSame($unique, (bool) ($found['unique'] ?? false), 'unicidad del índice');
+        }
+    }
+
     public function testForeignKeyWithArraySyntax(): void
     {
         // Crear tabla padre
@@ -138,7 +215,7 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->foreign('usuario_id')->references('id')->on('test_usuarios')->onDelete('RESTRICT'); // No permitir borrar usuario si tiene documentos
         });
 
-        static::assertTrue(true);
+        $this->assertForeignKey('test_documentos', 'usuario_id', 'test_usuarios', 'id', 'RESTRICT');
     }
 
     public function testCompositeForeignKeys(): void
@@ -174,7 +251,9 @@ class ForeignKeysAndConstraintsTest extends TestCase
              */
         });
 
-        static::assertTrue(true);
+        // La clave foránea compuesta está comentada en la definición de arriba, así que
+        // aquí sólo se verifica que la clave primaria compuesta sí se creó.
+        $this->assertIndexOn('test_composite_example', ['codigo_pais', 'codigo_ciudad'], true);
     }
 
     public function testDifferentOnDeleteActions(): void
@@ -202,7 +281,8 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->foreign('rol_secundario_id')->references('id')->on('test_roles')->onDelete('SET NULL');
         });
 
-        static::assertTrue(true);
+        $this->assertForeignKey('test_usuarios', 'rol_principal_id', 'test_roles', 'id', 'CASCADE');
+        $this->assertForeignKey('test_usuarios', 'rol_secundario_id', 'test_roles', 'id', 'SET NULL');
     }
 
     public function testComprehensiveIndexTypes(): void
@@ -258,7 +338,13 @@ class ForeignKeysAndConstraintsTest extends TestCase
             // $table->index('precio', 'idx_precio_alto')->where('precio > 1000');
         });
 
-        static::assertTrue(true);
+        // El test declara varios tipos de índice; se verifica que llegaran al esquema con
+        // sus columnas y su unicidad.
+        $this->assertIndexOn('test_productos', ['nombre']);
+        $this->assertIndexOn('test_productos', ['sku'], true);
+        $this->assertIndexOn('test_productos', ['codigo_barras']);
+        $this->assertIndexOn('test_productos', ['nombre', 'categoria'], true);
+        $this->assertIndexOn('test_productos', ['precio', 'stock', 'activo']);
     }
 
     public function testManyToManyRelationship(): void
@@ -302,7 +388,9 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->index(['documento_id', 'orden']);
         });
 
-        static::assertTrue(true);
+        $this->assertForeignKey('test_tag_documento', 'documento_id', 'test_documentos', 'id', 'CASCADE');
+        $this->assertForeignKey('test_tag_documento', 'tag_id', 'test_tags', 'id', 'CASCADE');
+        $this->assertIndexOn('test_tag_documento', ['documento_id', 'orden']);
     }
 
     public function testComplexConstraintsExample(): void
@@ -378,7 +466,11 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->index(['precio_total', 'cantidad']); // Para reportes
         });
 
-        static::assertTrue(true);
+        $this->assertForeignKey('test_ordenes', 'usuario_id', 'test_usuarios', 'id', 'RESTRICT');
+        $this->assertForeignKey('test_orden_items', 'orden_id', 'test_ordenes', 'id', 'CASCADE');
+        $this->assertForeignKey('test_orden_items', 'producto_id', 'test_productos', 'id', 'RESTRICT');
+        $this->assertIndexOn('test_orden_items', ['orden_id']);
+        $this->assertIndexOn('test_orden_items', ['precio_total', 'cantidad']);
     }
 
     public function testSelfReferencingForeignKey(): void
@@ -404,7 +496,11 @@ class ForeignKeysAndConstraintsTest extends TestCase
             $table->index(['activa', 'nivel']);
         });
 
-        static::assertTrue(true);
+        // Auto-referencia: la tabla se referencia a sí misma, con SET NULL para que los
+        // hijos queden huérfanos en vez de borrarse en cascada.
+        $this->assertForeignKey('test_categorias', 'categoria_padre_id', 'test_categorias', 'id', 'SET NULL');
+        $this->assertIndexOn('test_categorias', ['categoria_padre_id']);
+        $this->assertIndexOn('test_categorias', ['categoria_padre_id', 'orden']);
     }
 
     public function testInsertDataWithForeignKeys(): void

@@ -43,16 +43,11 @@ final class QueryBuilderWhereEdgeCasesTest extends TestCase
         // price > 10 should add 10 somewhere in bindings; category IN should include 1,2,3
         static::assertContains(10, $bindings);
 
-        // category IN bindings may be nested as an array; ensure at least one binding array contains 1
-        $found = false;
-        foreach ($bindings as $b) {
-            if (!(is_array($b) && in_array(1, $b, true))) {
-                continue;
-            }
-
-            $found = true;
-            break;
-        }
-        static::assertTrue($found, 'Expected to find value 1 inside nested bindings (IN clause)');
+        // Los valores de whereIn se expanden a un placeholder por valor. Antes llegaban
+        // anidados como un único binding de tipo array, que es justamente el bug:
+        // 'IN (?)' con un array por valor nunca puede ejecutarse.
+        static::assertStringContainsString('IN (?, ?, ?)', $sql);
+        // El assertSame exacto ya prueba que ningún binding es un array.
+        static::assertSame([10, 5, 1, 2, 3, '2020-01-01', '2020-12-31'], $bindings);
     }
 }

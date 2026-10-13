@@ -6,7 +6,7 @@ namespace Controllers;
 
 use App\Models\Label;
 
-class LabelController
+final class LabelController
 {
     public static function handle(string $action, ?int $id): void
     {

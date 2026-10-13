@@ -90,8 +90,25 @@ class AdvancedSQLTest extends TestCase
             'salary_rank',
         );
 
-        static::assertIsArray($result);
-        static::assertNotEmpty($result);
+        // Fixture: Engineering = David 95k, Alice 90k, Bob 85k; Marketing = Eve 75k,
+        // Carol 70k. Antes este test sólo afirmaba assertIsArray(), así que una función
+        // que devolviera [] —o rangos equivocados— pasaba igual.
+        $ranks = [];
+
+        foreach ($result as $row) {
+            $ranks[$row['name']] = (int) $row['salary_rank'];
+        }
+
+        static::assertSame(
+            [
+                'David Brown' => 1,
+                'Alice Johnson' => 2,
+                'Bob Smith' => 3,
+                'Eve Davis' => 1,
+                'Carol Williams' => 2,
+            ],
+            $ranks,
+        );
     }
 
     public function test_window_function_lag(): void
@@ -107,7 +124,24 @@ class AdvancedSQLTest extends TestCase
             'prev_salary',
         );
 
-        static::assertIsArray($result);
+        // PARTITION BY department ORDER BY hire_date ASC. El primero de cada partición
+        // no tiene anterior, así que toma el default_value (0).
+        $previous = [];
+
+        foreach ($result as $row) {
+            $previous[$row['name']] = (int) $row['prev_salary'];
+        }
+
+        static::assertSame(
+            [
+                'David Brown' => 0,
+                'Bob Smith' => 95_000,
+                'Alice Johnson' => 85_000,
+                'Eve Davis' => 0,
+                'Carol Williams' => 75_000,
+            ],
+            $previous,
+        );
     }
 
     public function test_window_function_invalid_function(): void
@@ -130,9 +164,11 @@ class AdvancedSQLTest extends TestCase
             ],
         ];
 
-        $result = $qb->withCte($ctes, 'SELECT department, COUNT(*) as count FROM high_earners GROUP BY department', []);
+        $result = $qb->withCte($ctes, 'SELECT department, COUNT(*) as cnt FROM high_earners GROUP BY department', []);
 
-        static::assertIsArray($result);
+        // salary > 80000 deja a Alice (90k), Bob (85k) y David (95k): los tres de
+        // Engineering, ninguno de Marketing.
+        static::assertSame([['department' => 'Engineering', 'cnt' => 3]], $result);
     }
 
     public function test_with_cte_recursive(): void

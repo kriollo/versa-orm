@@ -28,9 +28,9 @@ declare(strict_types=1);
                     <i class="fas fa-tags text-blue-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo
-                        count($labels)
-                    ; ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(
+                        $labels,
+                    ); ?></p>
                     <p class="text-gray-600 dark:text-gray-400 text-sm transition-colors">Total Etiquetas</p>
                 </div>
             </div>
@@ -42,12 +42,10 @@ declare(strict_types=1);
                     <i class="fas fa-check-circle text-green-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo
-                        count(array_filter(
-                            $labels,
-                            static fn($l): bool => !empty($l->tasks_count) && $l->tasks_count > 0,
-                        ))
-                    ; ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(array_filter(
+                        $labels,
+                        static fn($l): bool => !empty($l->tasks_count) && $l->tasks_count > 0,
+                    )); ?></p>
                     <p class="text-gray-600 dark:text-gray-400 text-sm transition-colors">En Uso</p>
                 </div>
             </div>
@@ -59,9 +57,10 @@ declare(strict_types=1);
                     <i class="fas fa-tasks text-yellow-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo
-                        array_sum(array_column($labels, 'tasks_count'))
-                    ; ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo array_sum(array_column(
+                        $labels,
+                        'tasks_count',
+                    )); ?></p>
                     <p class="text-gray-600 dark:text-gray-400 text-sm transition-colors">Asignaciones</p>
                 </div>
             </div>
@@ -73,9 +72,10 @@ declare(strict_types=1);
                     <i class="fas fa-palette text-purple-600"></i>
                 </div>
                 <div>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo
-                        count(array_unique(array_column($labels, 'color')))
-                    ; ?></p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white transition-colors"><?php echo count(array_unique(array_column(
+                        $labels,
+                        'color',
+                    ))); ?></p>
                     <p class="text-gray-600 dark:text-gray-400 text-sm transition-colors">Colores Únicos</p>
                 </div>
             </div>
@@ -91,15 +91,12 @@ declare(strict_types=1);
                         <!-- Header de la etiqueta -->
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center flex-1">
-                                <div class="w-4 h-4 rounded-full mr-3" style="background-color: <?php echo
-                                    htmlspecialchars($label->color)
-                                ; ?>"></div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white truncate transition-colors"><?php echo
-                                    htmlspecialchars($label->name)
-                                ; ?></h3>
+                                <div class="w-4 h-4 rounded-full mr-3" style="background-color: <?php echo htmlspecialchars($label->color); ?>"></div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white truncate transition-colors"><?php echo htmlspecialchars($label->name); ?></h3>
                             </div>
                             <div class="flex items-center space-x-1">
-                                <a href="?action=label_edit&id=<?php echo $label->id; ?>" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors" title="Editar">
+                                <a href="?action=label_edit&id=<?php echo
+                                    $label->id; ?>" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors" title="Editar">
                                     <i class="fas fa-edit text-sm"></i>
                                 </a>
                                 <a href="?action=label_delete&id=<?php echo $label->id; ?>"
@@ -140,12 +137,8 @@ declare(strict_types=1);
                         <!-- Vista previa de la etiqueta -->
                         <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 transition-colors">
                             <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ring-1 ring-current/20 transition-colors"
-                                style="background-color: <?php echo htmlspecialchars($label->color); ?>20; color: <?php echo
-                                    htmlspecialchars($label->color)
-                                ; ?>">
-                                <div class="w-2 h-2 rounded-full mr-2" style="background-color: <?php echo
-                                    htmlspecialchars($label->color)
-                                ; ?>"></div>
+                                style="background-color: <?php echo htmlspecialchars($label->color); ?>20; color: <?php echo htmlspecialchars($label->color); ?>">
+                                <div class="w-2 h-2 rounded-full mr-2" style="background-color: <?php echo htmlspecialchars($label->color); ?>"></div>
                                 <?php echo htmlspecialchars($label->name); ?>
                             </div>
                         </div>
@@ -164,12 +157,17 @@ declare(strict_types=1);
 
                 foreach ($colors as $color) { ?>
                     <div class="flex items-center space-x-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg transition-colors">
-                        <div class="w-4 h-4 rounded-full" style="background-color: <?php echo htmlspecialchars($color); ?>"></div>
-                        <span class="text-sm font-mono text-gray-600 dark:text-gray-300 transition-colors"><?php echo
-                            htmlspecialchars($color)
-                        ; ?></span>
+                        <div class="w-4 h-4 rounded-full" style="background-color: <?php echo htmlspecialchars(
+                            $color,
+                        ); ?>"></div>
+                        <span class="text-sm font-mono text-gray-600 dark:text-gray-300 transition-colors"><?php echo htmlspecialchars(
+                            $color,
+                        ); ?></span>
                         <span class="text-xs text-gray-500 dark:text-gray-400 transition-colors">
-                            (<?php echo count(array_filter($labels, static fn($l): bool => $l->color === $color)); ?> etiquetas)
+                            (<?php echo count(array_filter(
+                                $labels,
+                                static fn($l): bool => $l->color === $color,
+                            )); ?> etiquetas)
                         </span>
                     </div>
                 <?php } ?>

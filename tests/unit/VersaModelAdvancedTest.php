@@ -312,10 +312,7 @@ class VersaModelAdvancedTest extends TestCase
         // Crear productos con categoría
         $this->orm->exec('INSERT INTO categories (name) VALUES (?)', ['Electronics']);
 
-        $products = $this->orm
-            ->table('products')
-            ->where('active', '=', 1)
-            ->get();
+        $products = $this->orm->table('products')->where('active', '=', 1)->get();
 
         static::assertGreaterThan(0, count($products));
     }

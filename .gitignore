@@ -61,3 +61,7 @@ src/logs/
 src/binary/
 .gh-artifacts/
 build/
+
+.claude/
+.agents/
+skills-lock.json

@@ -37,13 +37,13 @@ final class QueryBuilderBasicTest extends TestCase
         $sql = $result['sql'];
         $bindings = $result['bindings'];
 
-        // Comprobaciones sencillas sobre la SQL generada
-        static::assertStringContainsString('SELECT id, name', $sql);
-        static::assertStringContainsString('FROM users', $sql);
-        static::assertStringContainsString('WHERE active = ?', $sql);
-        // buildSelectSQL actualmente no añade LIMIT/OFFSET para la consulta principal;
-        // comprobar que la cláusula WHERE y bindings estén presentes.
-        static::assertStringNotContainsString('LIMIT', $sql);
+        // Identificadores citados, y LIMIT/OFFSET ya forman parte del SQL generado:
+        // antes buildSelectSQL los descartaba en silencio.
+        static::assertStringContainsString('SELECT `id`, `name`', $sql);
+        static::assertStringContainsString('FROM `users`', $sql);
+        static::assertStringContainsString('WHERE `active` = ?', $sql);
+        static::assertStringContainsString('LIMIT 10', $sql);
+        static::assertStringContainsString('OFFSET 5', $sql);
         static::assertSame([1], $bindings);
     }
 }

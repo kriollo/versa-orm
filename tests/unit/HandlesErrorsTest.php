@@ -7,6 +7,7 @@ namespace VersaORM\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use VersaORM\Traits\HandlesErrors;
 use VersaORM\VersaModel;
+use VersaORM\VersaORM;
 use VersaORM\VersaORMException;
 
 if (!class_exists('DummyHandlesModel')) {
@@ -45,11 +46,25 @@ final class HandlesErrorsTest extends TestCase
 
     public function testWithStaticErrorHandlingDoesNotCrash(): void
     {
-        // Ensure static handler does not rethrow by disabling throw_on_error for this model
-        DummyHandlesModel::configureErrorHandling(['throw_on_error' => false]);
+        // safeFind() necesita la instancia global del ORM. El test dependía de que otra
+        // suite la hubiera dejado puesta, así que fallaba en cuanto se ejecutaba bajo una
+        // configuración distinta a la de SQLite. Ahora se provee y se restaura aquí.
+        $previous = VersaModel::getGlobalORM();
+        VersaModel::setORM(new VersaORM([
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'debug' => false,
+        ]));
 
-        $res = DummyHandlesModel::safeFind(1);
+        try {
+            // Ensure static handler does not rethrow by disabling throw_on_error for this model
+            DummyHandlesModel::configureErrorHandling(['throw_on_error' => false]);
 
-        static::assertNull($res);
+            $res = DummyHandlesModel::safeFind(1);
+
+            static::assertNull($res);
+        } finally {
+            VersaModel::setORM($previous);
+        }
     }
 }

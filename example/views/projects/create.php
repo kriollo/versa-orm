@@ -40,9 +40,9 @@ $title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
                     id="description"
                     rows="4"
                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="Describe el propósito y objetivos del proyecto..."><?php echo
-                        htmlspecialchars($_POST['description'] ?? '')
-                    ; ?></textarea>
+                    placeholder="Describe el propósito y objetivos del proyecto..."><?php echo htmlspecialchars(
+                        $_POST['description'] ?? '',
+                    ); ?></textarea>
             </div>
 
             <!-- Color del proyecto -->
@@ -50,7 +50,8 @@ $title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                     Color del Proyecto
                 </label>
-                <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?php echo $_POST['color'] ?? '#3498db'; ?>' }">
+                <div class="flex flex-wrap gap-3" x-data="{ selectedColor: '<?php echo
+                    $_POST['color'] ?? '#3498db'; ?>' }">
                     <?php
 
                     $colors = [
@@ -76,7 +77,8 @@ $title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
                                 x-model="selectedColor">
                             <div class="w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
                                 style="background-color: <?php echo $color; ?>"
-                                :class="selectedColor === '<?php echo $color; ?>' ? 'ring-2 ring-offset-2 ring-gray-400' : ''"
+                                :class="selectedColor === '<?php echo
+                                    $color; ?>' ? 'ring-2 ring-offset-2 ring-gray-400' : ''"
                                 title="<?php echo $name; ?>">
                             </div>
                         </label>
@@ -96,8 +98,7 @@ $title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
                     <option value="">Selecciona un propietario</option>
                     <?php foreach ($users as $user) { ?>
                         <option value="<?php echo $user->id; ?>" <?php echo
-                            ($_POST['owner_id'] ?? '') === $user->id ? 'selected' : ''
-                        ; ?>>
+                            ($_POST['owner_id'] ?? '') === $user->id ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($user->name); ?> (<?php echo htmlspecialchars($user->email); ?>)
                         </option>
                     <?php } ?>
@@ -105,9 +106,9 @@ $title = 'Crear Proyecto - VersaORM Trello Demo'; ?>
             </div>
 
             <!-- Vista previa -->
-            <div x-data="{ previewName: '<?php echo htmlspecialchars($_POST['name'] ?? 'Nombre del Proyecto'); ?>', previewColor: '<?php echo
-                $_POST['color'] ?? '#3498db'
-            ; ?>' }">
+            <div x-data="{ previewName: '<?php echo htmlspecialchars(
+                $_POST['name'] ?? 'Nombre del Proyecto',
+            ); ?>', previewColor: '<?php echo $_POST['color'] ?? '#3498db'; ?>' }">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                     Vista Previa
                 </label>

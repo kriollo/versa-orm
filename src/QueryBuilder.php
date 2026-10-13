@@ -16,6 +16,9 @@ use VersaORM\Relations\HasMany;
 use VersaORM\Relations\HasOne;
 use VersaORM\Relations\Relation;
 use VersaORM\SQL\PdoEngine;
+use VersaORM\SQL\SelectExpression;
+use VersaORM\SQL\SqlDialectInterface;
+use VersaORM\SQL\SqlGenerator;
 
 use function array_key_exists;
 use function assert;
@@ -874,19 +877,34 @@ class QueryBuilder
             throw new VersaORMException('Cannot add ON condition: last JOIN is raw.');
         }
 
+        // Mismas garantías que join(): el operador se interpola crudo en el SQL, así que
+        // sin esta allowlist `on('a', '= 1 OR 1=1 OR a =', 'b')` producía un cross join.
+        if (!$this->isSafeIdentifier($local)) {
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $local));
+        }
+
+        if (is_string($foreign) && !$this->isSafeIdentifier($foreign)) {
+            throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $foreign));
+        }
+        $op = strtoupper(trim($operator));
+
+        if (!in_array($op, ['=', '!=', '<>', '>', '<', '>=', '<='], true)) {
+            throw new VersaORMException(sprintf('Invalid operator in ON condition: %s', $operator));
+        }
+
         if (!isset($this->joins[$idx]['conditions']) || !is_array($this->joins[$idx]['conditions'])) {
             $this->joins[$idx]['conditions'] = [];
         }
         $this->joins[$idx]['conditions'][] = [
             'local' => $local,
-            'operator' => $operator,
+            'operator' => $op,
             'foreign' => $foreign,
             'boolean' => strtoupper($boolean) === 'OR' ? 'OR' : 'AND',
         ];
 
         if (empty($this->joins[$idx]['first_col'])) {
             $this->joins[$idx]['first_col'] = $local;
-            $this->joins[$idx]['operator'] = $operator;
+            $this->joins[$idx]['operator'] = $op;
             $this->joins[$idx]['second_col'] = $foreign;
         }
 
@@ -1294,8 +1312,8 @@ class QueryBuilder
                         $rowNormal[(string) $rk] = $rv;
                     }
                     $m->loadInstance($rowNormal);
-                    // Aplicar casting tipo a nivel de export ahora para asegurar consistencia inmediata
-                    $m->export(); // export realiza casting; atributos internos siguen crudos pero acceso externo es consistente
+                    // El casting lo aplica __get() de forma lazy y cacheada por clave,
+                    // así que no hace falta forzar un export() aquí (era el 83% del coste por fila).
                     $models[] = $m;
                 }
 
@@ -1328,15 +1346,16 @@ class QueryBuilder
                 $rowNormal[(string) $rk] = $rv;
             }
             $model->loadInstance($rowNormal);
-
-            foreach ($this->with as $relation) {
-                $name = $relation['name'] ?? null;
-
-                if (is_string($name) && $name !== '') {
-                    $model->getRelationValue($name);
-                }
-            }
             $models[] = $model;
+        }
+
+        // Eager loading por lotes: una consulta por relación en vez de una por padre.
+        $pendingRelations = $this->eagerLoadRelations($models);
+
+        foreach ($pendingRelations as $name) {
+            foreach ($models as $model) {
+                $model->getRelationValue($name);
+            }
         }
 
         // Registrar métricas de hidratación si el motor PDO está activo
@@ -1383,8 +1402,22 @@ class QueryBuilder
         /** @var class-string<VersaModel> $modelClass */
         $exported = [];
 
+        // Fast-path de arrays: con el modelo base y sin relaciones no hace falta una
+        // instancia nueva por fila. loadInstance() reemplaza los atributos y limpia las
+        // cachés de casting, así que reutilizar una sola instancia da el mismo resultado
+        // sin pagar el constructor ni la resolución de esquema por fila.
+        $reusable =
+            $this->with === [] && $modelClass === VersaModel::class ? new VersaModel($this->table, $this->orm) : null;
+
         foreach ($rows as $row) {
             try {
+                if ($reusable !== null) {
+                    /** @var array<string, mixed> $row */
+                    $reusable->loadInstance($row);
+                    $exported[] = $reusable->export();
+
+                    continue;
+                }
                 $m = new $modelClass($this->table, $this->orm);
                 /** @var array<string, mixed> $rowNormal */
                 $rowNormal = [];
@@ -2311,6 +2344,22 @@ class QueryBuilder
             throw new VersaORMException('Invalid update column name detected');
         }
 
+        // Las claves de los registros también: aquí faltaba la validación que insertMany
+        // y replaceIntoMany sí hacen, y vienen del llamador (p.ej. upsertMany($_POST['rows'])).
+        foreach ($records as $index => $record) {
+            if (!is_array($record)) {
+                throw new VersaORMException(sprintf('Record at index %d must be an array', $index));
+            }
+
+            foreach (array_keys($record) as $column) {
+                if ($this->isSafeIdentifier((string) $column)) {
+                    continue;
+                }
+
+                throw new VersaORMException(sprintf('Invalid or malicious column name detected: %s', $column));
+            }
+        }
+
         // Validar que las claves únicas existen en todos los registros
         foreach ($records as $index => $record) {
             foreach ($uniqueKeys as $key) {
@@ -2329,7 +2378,7 @@ class QueryBuilder
             'batch_size' => $batchSize,
         ];
 
-        $this->execute('upsertMany', $params);
+        // ejecutar solo una vez
         /** @var mixed $rawResult */
         $rawResult = $this->execute('upsertMany', $params);
 
@@ -2569,6 +2618,8 @@ class QueryBuilder
         if (!$this->isSafeIdentifier($alias)) {
             throw new VersaORMException(sprintf('Invalid alias name: %s', $alias));
         }
+        $this->assertSafeColumnList($partitionBy, 'windowFunction partitionBy');
+        $this->assertSafeColumnList($orderBy, 'windowFunction orderBy');
 
         $params = [
             'operation_type' => 'window_function',
@@ -2622,7 +2673,7 @@ class QueryBuilder
                 throw new VersaORMException(sprintf('CTE %s must have a query', $name));
             }
 
-            if (!$this->isSafeRawExpression($queryStr)) {
+            if (!$this->isSafeRawQuery($queryStr)) {
                 throw new VersaORMException(sprintf('Potentially unsafe query in CTE %s', $name));
             }
             $cteDefinitions[] = [
@@ -2634,7 +2685,7 @@ class QueryBuilder
             ];
         }
 
-        if (!$this->isSafeRawExpression($mainQuery)) {
+        if (!$this->isSafeRawQuery($mainQuery)) {
             throw new VersaORMException('Potentially unsafe main query');
         }
 
@@ -2669,10 +2720,10 @@ class QueryBuilder
         // Si es un array de queries
         if (is_array($queries)) {
             // Agregar la query base primero
-            $baseSQL = $this->buildSelectSQL();
+            $baseSQL = $this->buildSetOperationBranch('vorm_u0');
             $queryDefinitions[] = [
-                'sql' => (string) $baseSQL['sql'],
-                'bindings' => is_array($baseSQL['bindings']) ? array_values($baseSQL['bindings']) : [],
+                'sql' => $baseSQL['sql'],
+                'bindings' => $baseSQL['bindings'],
             ];
 
             // Agregar las queries adicionales
@@ -2690,7 +2741,7 @@ class QueryBuilder
                     throw new VersaORMException('Each UNION query must have sql and bindings keys');
                 }
 
-                if (!$this->isSafeRawExpression($query['sql'])) {
+                if (!$this->isSafeRawQuery($query['sql'])) {
                     throw new VersaORMException('Potentially unsafe SQL in UNION query');
                 }
                 $queryDefinitions[] = [
@@ -2707,18 +2758,12 @@ class QueryBuilder
                 $queries = $secondQuery;
             }
 
-            $currentSQL = $this->buildSelectSQL();
-            $secondSQL = $queries->buildSelectSQL();
+            $currentSQL = $this->buildSetOperationBranch('vorm_u0');
+            $secondSQL = $queries->buildSetOperationBranch('vorm_u1');
 
             $queryDefinitions = [
-                [
-                    'sql' => (string) $currentSQL['sql'],
-                    'bindings' => is_array($currentSQL['bindings']) ? array_values($currentSQL['bindings']) : [],
-                ],
-                [
-                    'sql' => (string) $secondSQL['sql'],
-                    'bindings' => is_array($secondSQL['bindings']) ? array_values($secondSQL['bindings']) : [],
-                ],
+                ['sql' => $currentSQL['sql'], 'bindings' => $currentSQL['bindings']],
+                ['sql' => $secondSQL['sql'], 'bindings' => $secondSQL['bindings']],
             ];
         } else {
             throw new VersaORMException('Invalid queries parameter for UNION');
@@ -2741,7 +2786,7 @@ class QueryBuilder
     public function addUnionPart($query): self
     {
         if ($query instanceof self) {
-            $part = $query->buildSelectSQL();
+            $part = $query->buildSetOperationBranch('vorm_p' . count($this->unionParts));
             $this->unionParts[] = [
                 'sql' => (string) $part['sql'],
                 'bindings' => is_array($part['bindings']) ? array_values($part['bindings']) : [],
@@ -2752,7 +2797,7 @@ class QueryBuilder
         if (is_callable($query)) {
             $tmp = new self($this->orm, $this->table);
             $query($tmp);
-            $part = $tmp->buildSelectSQL();
+            $part = $tmp->buildSetOperationBranch('vorm_p' . count($this->unionParts));
             $this->unionParts[] = [
                 'sql' => (string) $part['sql'],
                 'bindings' => is_array($part['bindings']) ? array_values($part['bindings']) : [],
@@ -2830,8 +2875,8 @@ class QueryBuilder
         }
 
         // Preparar queries para INTERSECT
-        $firstQuerySQL = $this->buildSelectSQL();
-        $secondQuerySQL = $query->buildSelectSQL();
+        $firstQuerySQL = $this->buildSetOperationBranch('vorm_s0');
+        $secondQuerySQL = $query->buildSetOperationBranch('vorm_s1');
 
         $params = [
             'operation_type' => 'set_operation',
@@ -2870,8 +2915,8 @@ class QueryBuilder
         }
 
         // Preparar queries para EXCEPT
-        $firstQuerySQL = $this->buildSelectSQL();
-        $secondQuerySQL = $query->buildSelectSQL();
+        $firstQuerySQL = $this->buildSetOperationBranch('vorm_s0');
+        $secondQuerySQL = $query->buildSetOperationBranch('vorm_s1');
 
         $params = [
             'operation_type' => 'set_operation',
@@ -2917,6 +2962,12 @@ class QueryBuilder
         // Para ciertas operaciones, path es requerido
         if (in_array($operation, ['extract', 'contains', 'search'], true) && ($path === '' || $path === '0')) {
             throw new VersaORMException(sprintf('JSON operation %s requires a path', $operation));
+        }
+
+        // El path se interpola dentro de un literal en PostgreSQL (MySQL y SQLite sí lo
+        // bindean), así que una comilla lo rompería.
+        if ($path !== '' && !$this->isSafeJsonPath($path)) {
+            throw new VersaORMException(sprintf('Invalid JSON path: %s', $path));
         }
 
         $params = [
@@ -3049,6 +3100,25 @@ class QueryBuilder
             throw new VersaORMException(sprintf('Invalid column name: %s', $column));
         }
 
+        // mode/language/operator se interpolan crudos en el SQL del motor.
+        $this->assertEnumOption(
+            $options,
+            'mode',
+            [
+                'NATURAL LANGUAGE',
+                'BOOLEAN',
+                'QUERY EXPANSION',
+                'NATURAL LANGUAGE WITH QUERY EXPANSION',
+            ],
+        );
+        $this->assertEnumOption($options, 'operator', ['@@']);
+
+        $languageOption = $options['language'] ?? null;
+
+        if ($languageOption !== null && (!is_string($languageOption) || !$this->isSafeIdentifier($languageOption))) {
+            throw new VersaORMException('Invalid language for full-text search');
+        }
+
         $params = [
             'operation_type' => 'full_text_search',
             'columns' => $columns,
@@ -3103,6 +3173,17 @@ class QueryBuilder
         ) {
             throw new VersaORMException('Percentile must be between 0 and 1');
         }
+
+        $this->assertSafeColumnList($groupBy, 'advancedAggregation groupBy');
+
+        if (isset($options['order_by'])) {
+            $orderByOption = $options['order_by'];
+            $this->assertSafeColumnList(
+                is_array($orderByOption) ? $orderByOption : [$orderByOption],
+                'advancedAggregation order_by',
+            );
+        }
+        $this->assertEnumOption($options, 'direction', ['ASC', 'DESC']);
 
         $params = [
             'operation_type' => 'advanced_aggregation',
@@ -3194,16 +3275,11 @@ class QueryBuilder
         if ($expr === '') {
             return false;
         }
-        // Bloquear múltiples sentencias y comentarios peligrosos
-        if (str_contains($expr, ';')) {
-            return false;
-        }
-        $hasBlockCommentPattern = preg_match('/\/\?\*/', $expr) === 1; // comentarios /* */
-        if ($hasBlockCommentPattern) {
-            return false;
-        }
-        $hasLineCommentPattern = preg_match('/--|#/', $expr) === 1; // comentarios línea
-        if ($hasLineCommentPattern) {
+        // Bloquear encadenamiento de sentencias y comentarios. La comprobación anterior
+        // de comentarios de bloque era un typo: '/\/\?\*/' matchea el literal "/?*",
+        // no "/*", así que joinRaw() y onRaw() aceptaban comentarios de bloque pese a lo
+        // que afirmaba este comentario.
+        if (SelectExpression::hasStatementBreak($expr)) {
             return false;
         }
         // Bloquear DDL/DML comunes (permitir SELECT implícito en subqueries simples si fuese necesario en futuro)
@@ -3247,179 +3323,148 @@ class QueryBuilder
     }
 
     /**
+     * Valida el argumento `$path` de jsonOperation().
+     *
+     * El parámetro está sobrecargado: para `extract`/`search` es un path ($.a.b), pero
+     * para `contains` es un documento JSON completo ({"k": "v"}). En los tres motores el
+     * valor viaja bindeado, así que lo único que hay que impedir es que encadene otra
+     * sentencia o esconda un comentario.
+     */
+    private function isSafeJsonPath(string $path): bool
+    {
+        return strlen($path) <= 2000 && !SelectExpression::hasStatementBreak($path);
+    }
+
+    /**
+     * Valida una lista de columnas que terminará interpolada en el SQL.
+     *
+     * Estos parámetros (partition_by, order_by, group_by) llegaban al motor sin pasar por
+     * ninguna comprobación, y allí se interpolan crudos: el motor incluso echa verbatim
+     * cualquier columna que contenga '(' o '.'.
+     *
+     * @param array<int|string, mixed> $columns
+     */
+    private function assertSafeColumnList(array $columns, string $context): void
+    {
+        foreach ($columns as $column) {
+            // La API admite cuatro formas: 'title', 'title DESC',
+            // ['column' => 'title', ...] y la posicional ['title', 'ASC'].
+            $raw = is_array($column) ? $column['column'] ?? $column[0] ?? '' : $column;
+
+            if (!is_string($raw) || trim($raw) === '') {
+                throw new VersaORMException(sprintf('Invalid column in %s', $context));
+            }
+            $name = trim($raw);
+
+            // Separar una dirección pegada al nombre ("salary DESC").
+            if (preg_match('/^(.*?)\s+(ASC|DESC)$/i', $name, $m) === 1) {
+                $name = trim($m[1]);
+            }
+
+            if ($name === '*' || $this->isSafeIdentifier($name)) {
+                continue;
+            }
+
+            throw new VersaORMException(sprintf('Invalid or malicious column in %s: %s', $context, $name));
+        }
+    }
+
+    /**
+     * Valida una opción contra una lista cerrada de valores admitidos.
+     *
+     * @param array<string, mixed> $options
+     * @param list<string> $allowed
+     */
+    private function assertEnumOption(array $options, string $key, array $allowed): void
+    {
+        if (!isset($options[$key])) {
+            return;
+        }
+        $value = $options[$key];
+
+        if (is_string($value) && in_array(strtoupper($value), array_map('strtoupper', $allowed), true)) {
+            return;
+        }
+
+        throw new VersaORMException(sprintf(
+            'Invalid value for option "%s". Allowed: %s',
+            $key,
+            implode(', ', $allowed),
+        ));
+    }
+
+    /**
      * Valida si un nombre de tabla o columna es seguro.
      */
     private function isSafeIdentifier(string $identifier): bool
     {
-        // Permitir asterisco para SELECT *
-        if ($identifier === '*') {
-            return true;
-        }
-
-        // Manejar alias (ej: users.name as author_name)
-        $parts = preg_split('/\s+as\s+/i', $identifier);
-
-        if ($parts === false) {
-            return false;
-        }
-        $mainIdentifier = $parts[0];
-        $alias = $parts[1] ?? null;
-
-        if ($alias !== null && !$this->isValidDatabaseIdentifier($alias)) {
-            return false; // Alias inválido
-        }
-
-        // Permitir funciones SQL comunes (COUNT, SUM, AVG, MAX, MIN, etc.)
-        if ($this->isSQLFunction($mainIdentifier)) {
-            return true;
-        }
-
-        // Manejar notación table.column
-        if (str_contains($mainIdentifier, '.')) {
-            [$table, $column] = explode('.', $mainIdentifier, 2);
-
-            // Permitir patrones como "table.*" que son válidos en SQL
-            if ($column === '*') {
-                return $this->isValidDatabaseIdentifier($table);
-            }
-
-            return $this->isValidDatabaseIdentifier($table) && $this->isValidDatabaseIdentifier($column);
-        }
-
-        return $this->isValidDatabaseIdentifier($mainIdentifier);
-    }
-
-    /**
-     * Valida un identificador de base de datos individual.
-     */
-    private function isValidDatabaseIdentifier(string $identifier): bool
-    {
-        // Expresión regular para validar identificadores:
-        // - Debe empezar con una letra o guion bajo.
-        // - Seguido de letras, números o guiones bajos.
-        $identifierMatch = preg_match('/^[a-zA-Z_]\w*$/', $identifier);
-        if (in_array($identifierMatch, [0, false], true)) {
-            return false;
-        }
-
-        // Comprobar la existencia de patrones maliciosos
-        return !(str_contains($identifier, '--') || str_contains($identifier, '/*') || str_contains($identifier, ';'));
-    }
-
-    /**
-     * Verifica si un identificador es una función SQL válida.
-     */
-    private function isSQLFunction(string $identifier): bool
-    {
-        // Lista de funciones SQL comunes permitidas
-        $allowedFunctions = [
-            'COUNT',
-            'SUM',
-            'AVG',
-            'MAX',
-            'MIN',
-            'UPPER',
-            'LOWER',
-            'LENGTH',
-            'SUBSTRING',
-            'CONCAT',
-            'COALESCE',
-            'IFNULL',
-            'NULLIF',
-            'ABS',
-            'ROUND',
-            'CEIL',
-            'FLOOR',
-            'NOW',
-            'CURDATE',
-            'CURTIME',
-            'DATE',
-            'YEAR',
-            'MONTH',
-            'DAY',
-            'HOUR',
-            'MINUTE',
-            'SECOND',
-            'TRIM',
-            'LTRIM',
-            'RTRIM',
-            'REPLACE',
-            'DISTINCT',
-        ];
-
-        // Verificar si es una función SQL con paréntesis
-        $functionMatch = preg_match('/^([A-Z_]+)\s*\((.*)\)$/i', $identifier, $matches);
-        if ($functionMatch === 1) {
-            $functionName = strtoupper($matches[1]);
-            $functionArgs = $matches[2];
-
-            // Verificar si la función está en la lista permitida
-            if (!in_array($functionName, $allowedFunctions, true)) {
-                return false;
-            }
-
-            // Validar argumentos básicos (permitir *, columnas simples, números y strings)
-            if ($functionArgs === '*') {
-                return true; // COUNT(*), etc.
-            }
-
-            // Permitir argumentos simples como column names, números, strings y el carácter /
-            // Verificar que no contenga patrones maliciosos
-            $argsSimple = preg_match('/^[a-zA-Z0-9_.,\s\'"\/]+$/', $functionArgs) === 1;
-            if (
-                $argsSimple && (
-                    !str_contains($functionArgs, '--')
-                    && !str_contains($functionArgs, '/*')
-                    && !str_contains($functionArgs, ';')
-                )
-            ) {
-                return true;
-            }
-        }
-
-        return false;
+        // Un solo parser, compartido con SqlGenerator, para que validación y compilación
+        // no puedan discrepar sobre qué significa la expresión.
+        return SelectExpression::isValid($identifier);
     }
 
     /**
      * Valida si una expresión SQL raw es relativamente segura.
      * NOTA: Esta es una validación básica, no una garantía completa de seguridad.
      */
-    private function isSafeRawExpression(string $expression): bool
+    private function isSafeRawQuery(string $query): bool
     {
-        // Lista de patrones peligrosos comunes
-        $dangerousPatterns = [
-            '/--/', // Comentarios SQL
-            '/\/\*/', // Comentarios de bloque
-            '/;\s*(?:drop|delete|insert|update|create|alter|truncate)/i', // Comandos peligrosos después de ;
-            '/union\s+select/i', // UNION attacks
-            '/\bexec\s*\(/i', // Ejecución de funciones
-            '/\bsp_/i', // Stored procedures
-            '/xp_/i', // Extended stored procedures
-            '/into\s+outfile/i', // Escritura de archivos
-            '/load_file/i', // Lectura de archivos
-            '/benchmark/i', // Ataques de timing
-            '/sleep/i', // Ataques de timing
-            '/waitfor/i', // Ataques de timing
-        ];
-
-        foreach ($dangerousPatterns as $pattern) {
-            $patternDetected = preg_match($pattern, $expression) === 1;
-            if ($patternDetected) {
-                return false;
-            }
-        }
-
-        // Verificar que la expresión no sea demasiado compleja
-        // (como medida básica contra inyecciones complejas)
-        if (strlen($expression) > 500) {
+        // Contexto de consulta completa (cuerpo de un CTE, rama de UNION). Aquí SELECT y
+        // los operadores de conjunto son legítimos —una CTE recursiva *necesita*
+        // UNION ALL—, así que sólo se impide el encadenamiento de sentencias.
+        if (SelectExpression::hasStatementBreak($query)) {
             return false;
         }
 
-        // Contar paréntesis balanceados
-        $openParens = substr_count($expression, '(');
-        $closeParens = substr_count($expression, ')');
+        if (strlen($query) > 10_000) {
+            return false;
+        }
 
-        return $openParens === $closeParens;
+        return SelectExpression::hasBalancedParentheses($query);
+    }
+
+    /**
+     * Valida un fragmento de expresión raw (selectRaw, whereRaw, havingRaw, ...).
+     */
+    private function isSafeRawExpression(string $expression): bool
+    {
+        // Los métodos *Raw() son una vía explícita: el llamador pasa los valores por
+        // $bindings. Pero sigue habiendo construcciones que no son legítimas nunca en un
+        // fragmento de expresión, y conviene atajarlas.
+        //
+        // La versión anterior comparaba por substring y fallaba en las dos direcciones:
+        // rechazaba SQL válido (`AVG(sleep_hours)`, `exp_date`, `download_file`,
+        // `benchmark_score`, `sp_total`) y no detenía lo que prometía (`;` sólo se
+        // bloqueaba si le seguía una keyword DDL y `UNION ALL SELECT` pasaba el patrón
+        // `union\s+select`). Ahora se exigen límites de palabra y, en las funciones, el
+        // paréntesis de llamada: `sleep_hours` deja de matchear, `SLEEP(` no.
+        if (SelectExpression::hasStatementBreak($expression)) {
+            return false;
+        }
+
+        if (strlen($expression) > 2000) {
+            return false;
+        }
+
+        // Funciones que sólo sirven para abusar del motor (timing, lectura de ficheros,
+        // ejecución). Se exige el '(' de llamada.
+        $forbiddenCalls =
+            '/\b(?:SLEEP|PG_SLEEP|BENCHMARK|WAITFOR|LOAD_FILE|EXEC|EXECUTE'
+            . '|XP_[A-Z_]*|SP_[A-Z_]*|DBMS_[A-Z_]*)\s*\(/i';
+
+        if (preg_match($forbiddenCalls, $expression) === 1) {
+            return false;
+        }
+
+        // Operadores de conjunto y escritura a ficheros: nunca válidos dentro de un
+        // fragmento de expresión, y son el vector clásico de exfiltración.
+        $forbiddenConstructs = '/\b(?:UNION|INTERSECT|EXCEPT)\b|\bINTO\s+(?:OUTFILE|DUMPFILE)\b/i';
+
+        if (preg_match($forbiddenConstructs, $expression) === 1) {
+            return false;
+        }
+
+        return SelectExpression::hasBalancedParentheses($expression);
     }
 
     /**
@@ -3486,37 +3531,7 @@ class QueryBuilder
      */
     private function isSafeTableReference(string $table): bool
     {
-        $t = trim($table);
-        if ($t === '' || $t === '0') {
-            return false;
-        }
-
-        // Caso simple: "table" o "schema.table"
-        if ($this->isSafeIdentifier($t)) {
-            return true;
-        }
-
-        // Caso con alias: "table alias" o "table AS alias"
-        if (preg_match('/^([A-Za-z_][A-Za-z0-9_\.]*)(?:\s+as\s+|\s+)([A-Za-z_][A-Za-z0-9_]*)$/i', $t, $m) !== 1) {
-            return false;
-        }
-
-        $base = $m[1];
-        $alias = $m[2];
-
-        // Validar base con soporte schema.table
-        if (str_contains($base, '.')) {
-            [$schemaOrTable, $tableOnly] = explode('.', $base, 2);
-            if (!$this->isValidDatabaseIdentifier($schemaOrTable) || !$this->isValidDatabaseIdentifier($tableOnly)) {
-                return false;
-            }
-        } else {
-            if (!$this->isValidDatabaseIdentifier($base)) {
-                return false;
-            }
-        }
-
-        return $this->isValidDatabaseIdentifier($alias);
+        return SelectExpression::parseTableReference($table) !== null;
     }
 
     /**
@@ -4318,167 +4333,186 @@ class QueryBuilder
      */
     private function buildSelectSQL(): array
     {
-        $sql = 'SELECT ';
-        $bindings = [];
+        // Un solo generador de SQL. Antes esta función era un segundo compilador que
+        // ignoraba GROUP BY, HAVING, ORDER BY, LIMIT y OFFSET, no citaba identificadores
+        // y unía todos los WHERE con AND (perdiendo orWhere). Como la usan union(),
+        // intersect(), except() y fromUnion() para ejecutar de verdad, eso devolvía
+        // datos incorrectos; y toSql()/getBindings() mostraban un SQL que no era el que
+        // se ejecutaba.
+        [$sql, $bindings] = SqlGenerator::generate('query', $this->buildPayload('get'), $this->resolveDialect());
 
-        // SELECT: si hay fromSub y no se definió select explícito, seleccionar alias.*
-        if ($this->selects === []) {
-            if ($this->fromSub !== null && isset($this->fromSub['alias'])) {
-                $sql .= $this->fromSub['alias'] . '.*';
-            } else {
-                $sql .= '*';
-            }
-        } else {
-            /** @var list<string> $selectParts */
-            $selectParts = [];
+        return ['sql' => $sql, 'bindings' => array_values($bindings)];
+    }
 
-            foreach ($this->selects as $select) {
-                if (is_string($select)) {
-                    $selectParts[] = $select;
-
-                    continue;
-                }
-
-                if (is_array($select) && isset($select['type'])) {
-                    $type = $select['type'];
-
-                    if ($type === 'raw' && isset($select['expression']) && is_string($select['expression'])) {
-                        $selectParts[] = $select['expression'];
-
-                        if (isset($select['bindings']) && is_array($select['bindings'])) {
-                            /** @var list<mixed> $sb */
-                            $sb = array_values($select['bindings']);
-                            $bindings = array_merge($bindings, $sb);
-                        }
-
-                        continue;
-                    }
-
-                    if (
-                        ($type === 'sub' || $type === 'subquery')
-                        && isset($select['query'], $select['alias'])
-                        && is_string($select['query'])
-                        && is_string($select['alias'])
-                        && $select['alias'] !== ''
-                    ) {
-                        $selectParts[] = sprintf('(%s) AS %s', $select['query'], $select['alias']);
-
-                        continue;
-                    }
-
-                    if (isset($select['column']) && is_string($select['column'])) {
-                        $selectParts[] = $select['column'];
-                    }
-                }
-            }
-
-            if ($selectParts === []) {
-                $selectParts[] = $this->fromSub !== null && isset($this->fromSub['alias'])
-                    ? $this->fromSub['alias'] . '.*'
-                    : '*';
-            }
-            $sql .= implode(', ', $selectParts);
+    /**
+     * Carga por lotes las relaciones pedidas con with().
+     *
+     * with() sólo recolectaba metadata y luego cada modelo resolvía su relación por
+     * separado: una consulta por padre y por relación (201 consultas para 200 padres).
+     * Aquí se agrupan las claves de todos los padres y se emite una sola consulta con
+     * `WHERE clave IN (...)` por relación.
+     *
+     * HasOne, HasMany y BelongsTo se cubren aquí. BelongsToMany necesita la tabla pivote
+     * y se deja a la resolución individual, que sigue siendo correcta.
+     *
+     * @param list<VersaModel> $models
+     *
+     * @return list<string> nombres de las relaciones que quedaron por resolver
+     */
+    private function eagerLoadRelations(array $models): array
+    {
+        if ($models === [] || $this->with === []) {
+            return [];
         }
+        $pending = [];
 
-        // FROM (soporta tabla derivada de UNION)
-        if ($this->fromSub !== null) {
-            $sql .= ' FROM (' . $this->fromSub['sql'] . ') ' . $this->fromSub['alias'];
-            /** @var list<mixed> $fb */
-            $fb = array_values($this->fromSub['bindings']);
-            $bindings = array_merge($bindings, $fb);
-        } else {
-            $sql .= ' FROM ' . $this->table;
-        }
+        foreach ($this->with as $relation) {
+            $name = $relation['name'] ?? null;
+            $type = $relation['type'] ?? null;
+            $relatedTable = $relation['related_table'] ?? null;
 
-        // JOINs (materialización directa para modo PDO). Cada JOIN puede tener condiciones normales o raw.
-        foreach ($this->joins as $join) {
-            if (!is_array($join) || !isset($join['type'], $join['table'])) {
+            if (!is_string($name) || $name === '' || !is_string($type) || !is_string($relatedTable)) {
                 continue;
             }
-            $joinTypeRaw = $join['type'];
-            $joinType = strtoupper(
-                is_string($joinTypeRaw) ? $joinTypeRaw : (is_numeric($joinTypeRaw) ? (string) $joinTypeRaw : 'INNER'),
-            );
-            $joinTableRaw = $join['table'];
-            $table = is_string($joinTableRaw)
-                ? $joinTableRaw
-                : (is_numeric($joinTableRaw) ? (string) $joinTableRaw : 'unknown');
-            $sql .= ' ' . $joinType . ' JOIN ' . $table;
 
-            // Construir condiciones
-            $condParts = [];
-            if (isset($join['conditions']) && is_array($join['conditions'])) {
-                foreach ($join['conditions'] as $c) {
-                    if (!is_array($c)) {
-                        continue;
-                    }
-                    // Condición raw
-                    if (($c['type'] ?? '') === 'raw' && isset($c['sql']) && is_string($c['sql'])) {
-                        $boolean = strtoupper((string) ($c['boolean'] ?? 'AND'));
-                        $fragment = '(' . $c['sql'] . ')';
+            // Clave del padre y columna por la que se filtra en la tabla relacionada.
+            [$parentKey, $relatedKey] = match ($type) {
+                'HasOne', 'HasMany' => [$relation['local_key'] ?? 'id', $relation['foreign_key'] ?? null],
+                'BelongsTo' => [$relation['foreign_key'] ?? null, $relation['owner_key'] ?? 'id'],
+                default => [null, null],
+            };
 
-                        if (isset($c['bindings']) && is_array($c['bindings'])) {
-                            /** @var list<mixed> $jb */
-                            $jb = array_values($c['bindings']);
-                            $bindings = array_merge($bindings, $jb);
-                        }
+            if (!is_string($parentKey) || !is_string($relatedKey)) {
+                $pending[] = $name;
 
-                        $condParts[] = [$boolean, $fragment];
-
-                        continue;
-                    }
-                    // Condición normal
-                    $local = $c['local'] ?? $c['column'] ?? '';
-                    $op = $c['operator'] ?? '=';
-                    $foreign = $c['foreign'] ?? '';
-                    if ($local !== '' && $foreign !== '') {
-                        $boolean = strtoupper((string) ($c['boolean'] ?? 'AND'));
-                        $fragment = $local . ' ' . $op . ' ' . $foreign;
-                        $condParts[] = [$boolean, $fragment];
-                    }
-                }
+                continue;
             }
-            if ($condParts !== []) {
-                // Primera condición sin boolean al frente
-                $onSql = '';
-                foreach ($condParts as $i => [$bool, $frag]) {
-                    if ($i === 0) {
-                        $onSql .= $frag;
-                    } else {
-                        $onSql .= ' ' . $bool . ' ' . $frag;
-                    }
+
+            // Recoger las claves distintas de los padres.
+            $keys = [];
+
+            foreach ($models as $model) {
+                $value = $model->getAttribute($parentKey);
+
+                if ($value === null) {
+                    continue;
                 }
-                $sql .= ' ON ' . $onSql;
+                $keys[is_scalar($value) ? (string) $value : serialize($value)] = $value;
+            }
+
+            if ($keys === []) {
+                foreach ($models as $model) {
+                    $model->setRelation($name, $type === 'HasMany' ? [] : null);
+                }
+
+                continue;
+            }
+
+            try {
+                $related = $this->loadRelatedInChunks($relatedTable, $relatedKey, array_values($keys));
+            } catch (Throwable) {
+                // Si el lote falla, dejar que cada modelo lo resuelva por su cuenta.
+                $pending[] = $name;
+
+                continue;
+            }
+
+            // Agrupar por la clave de unión.
+            $buckets = [];
+
+            foreach ($related as $child) {
+                $childKey = $child->getAttribute($relatedKey);
+                $bucketKey = is_scalar($childKey) ? (string) $childKey : serialize($childKey);
+                $buckets[$bucketKey][] = $child;
+            }
+
+            foreach ($models as $model) {
+                $value = $model->getAttribute($parentKey);
+                $bucketKey = is_scalar($value) ? (string) $value : serialize($value);
+                $bucket = $value === null ? [] : $buckets[$bucketKey] ?? [];
+                $model->setRelation($name, $type === 'HasMany' ? $bucket : $bucket[0] ?? null);
             }
         }
 
-        // WHERE
-        if ($this->wheres !== []) {
-            $sql .= ' WHERE ';
-            $whereParts = [];
+        return $pending;
+    }
 
-            foreach ($this->wheres as $where) {
-                if (
-                    isset($where['sql'], $where['bindings'])
-                    && is_string($where['sql'])
-                    && is_array($where['bindings'])
-                ) {
-                    $whereParts[] = $where['sql'];
-                    /** @var list<mixed> $wb */
-                    $wb = array_values($where['bindings']);
-                    $bindings = array_merge($bindings, $wb);
+    /**
+     * Ejecuta `WHERE clave IN (...)` troceando por el presupuesto de placeholders.
+     *
+     * @param list<mixed> $keys
+     *
+     * @return list<VersaModel>
+     */
+    private function loadRelatedInChunks(string $table, string $column, array $keys): array
+    {
+        $chunkSize = max(1, self::placeholderBudget($this->resolveDialect()->getName(), 1));
+        $results = [];
 
-                    continue;
-                }
-                $operator = isset($where['operator']) && is_string($where['operator']) ? $where['operator'] : '=';
-                $col = isset($where['column']) && is_string($where['column']) ? $where['column'] : '';
-                $whereParts[] = sprintf('%s %s ?', $col, $operator);
-                $bindings[] = $where['value'] ?? null;
+        foreach (array_chunk($keys, $chunkSize) as $chunk) {
+            $rows = (new self($this->orm, $table))
+                ->whereIn($column, $chunk)
+                ->findAll();
+
+            foreach ($rows as $row) {
+                $results[] = $row;
             }
-            $sql .= implode(' AND ', $whereParts);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Cuántas filas caben en una sentencia dado el número de columnas por fila.
+     *
+     * Ningún sitio contaba placeholders: 10 000 registros × 10 columnas son 100 000
+     * marcadores, por encima de los 65 535 de MySQL/PostgreSQL y los 32 766 de SQLite
+     * (999 en builds anteriores a 3.32).
+     */
+    private static function placeholderBudget(string $driver, int $columnsPerRow): int
+    {
+        $max = match ($driver) {
+            'sqlite' => 30_000,
+            default => 60_000,
+        };
+
+        return max(1, intdiv($max, max(1, $columnsPerRow)));
+    }
+
+    /**
+     * Compila esta consulta como operando de una operación de conjuntos (UNION/INTERSECT/EXCEPT).
+     *
+     * Una rama con ORDER BY, LIMIT u OFFSET tiene que ir envuelta: el SQL estándar no
+     * admite esas cláusulas en un operando sin paréntesis, y SQLite además rechaza la
+     * forma `(SELECT ...) UNION (SELECT ...)`. Una tabla derivada vale en los tres motores.
+     *
+     * @return array{sql: string, bindings: array<int, mixed>}
+     */
+    private function buildSetOperationBranch(string $alias): array
+    {
+        $built = $this->buildSelectSQL();
+        $sql = (string) $built['sql'];
+        $bindings = is_array($built['bindings']) ? array_values($built['bindings']) : [];
+
+        if ($this->orderBy !== null || $this->limit !== null || $this->offset !== null) {
+            $sql = 'SELECT * FROM (' . $sql . ') AS ' . $alias;
         }
 
         return ['sql' => $sql, 'bindings' => $bindings];
+    }
+
+    /** Dialecto del driver activo, el mismo que usará el motor al ejecutar. */
+    private function resolveDialect(): SqlDialectInterface
+    {
+        $driver = '';
+
+        if ($this->orm instanceof VersaORM) {
+            $config = $this->orm->getConfig();
+            $rawDriver = $config['driver'] ?? $config['database_type'] ?? $config['DB']['engine'] ?? '';
+            $driver = is_scalar($rawDriver) ? (string) $rawDriver : '';
+        }
+
+        return PdoEngine::dialectFor($driver);
     }
 
     /**

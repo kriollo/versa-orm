@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Controllers;
 
-class TaskController
+final class TaskController
 {
     public static function handle(string $action, ?int $id): void
     {
@@ -122,7 +122,7 @@ class TaskController
                 ]);
                 break;
 
-            // ...otros casos: task_create, task_edit, task_delete, task_change_status
+                // ...otros casos: task_create, task_edit, task_delete, task_change_status
         }
     }
 }

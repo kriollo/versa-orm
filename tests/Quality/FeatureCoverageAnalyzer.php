@@ -670,7 +670,7 @@ class FeatureCoverageAnalyzer
     {
         $configFile = "{$this->projectRoot}/tests/config/coverage-config.php";
 
-        $config = file_exists($configFile) ? require $configFile : $this->getDefaultConfiguration();
+        $config = file_exists($configFile) ? (require $configFile) : $this->getDefaultConfiguration();
 
         return array_merge($config, $overrides);
     }

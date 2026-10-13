@@ -1,3 +1,298 @@
+## [2.0.0] - 2026-10-11
+
+### 💥 Cambios incompatibles
+
+Esta versión corrige defectos que **devolvían o destruían datos incorrectos**. Si tu
+código dependía (a sabiendas o no) de la conducta anterior, lee esta sección.
+
+**`union()` / `intersect()` / `except()` respetan todas las cláusulas de cada rama.**
+Antes compilaban cada operando con un segundo generador de SQL que descartaba
+`GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT` y `OFFSET`, y unía todos los `WHERE` con
+`AND` (perdiendo `orWhere`). Una rama con `->orderBy('n','desc')->limit(1)` devolvía
+filas que esa misma rama excluía. Ahora el resultado es el correcto, lo que significa
+que **estas consultas pueden devolver menos filas que antes**. Las ramas con
+`ORDER BY`/`LIMIT`/`OFFSET` se envuelven en una tabla derivada, como exige el estándar.
+
+**`toSql()` y `getBindings()` devuelven el SQL que realmente se ejecuta.** Antes
+omitían `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT` y `OFFSET`, no citaban identificadores
+y mostraban `AND` donde había `orWhere`. Si tienes tests que comparan la salida de
+`toSql()` como texto, tendrás que actualizarlos: ahora los identificadores van citados
+(`SELECT "id" FROM "t"`). Los valores de `whereIn()` se expanden a un placeholder por
+valor, así que `getBindings()` devuelve una lista plana en vez de anidar el array.
+
+**`UPDATE` y `DELETE` rechazan columnas calificadas de otra tabla.** El calificador se
+quitaba adivinando ("los alias suelen ser cortos"), de modo que
+`table('users')->where('accounts.id','=',1)->delete()` se convertía en
+`DELETE FROM users WHERE id = 1` y borraba una fila de la tabla equivocada. Ahora el
+calificador se resuelve contra la tabla y su alias reales, y si no corresponde se lanza
+`VersaORMException`. Para condiciones sobre otras tablas, usa una subconsulta.
+
+**`on()` valida el operador.** Se aceptaba cualquier cadena y se interpolaba cruda, así
+que `on('a.id', '= 1 OR 1=1 OR a.id =', 'b.id')` producía un producto cartesiano. Ahora
+sólo se admiten `=`, `!=`, `<>`, `>`, `<`, `>=`, `<=`, igual que `join()`.
+
+**Los mensajes de excepción ya no contienen el SQL ni los bindings.** Iban en el texto
+del mensaje, y `HandlesErrors::formatErrorForApi()` devuelve ese mensaje al cliente HTTP
+**incluso con `debug` desactivado**: un INSERT fallido en `users` entregaba el hash de
+password. Ahora viajan en los campos estructurados de `VersaORMException`
+(`getQuery()` / `getBindings()`), que sí se sanitizan al escribir el log. Si parseabas
+el mensaje para extraer el SQL, usa esos métodos.
+
+**`upsertMany()` valida los nombres de columna de los registros**, como ya hacían
+`insertMany()` y `replaceIntoMany()`. Claves inválidas ahora lanzan excepción en vez de
+llegar al generador de SQL.
+
+### 🔒 Seguridad
+
+- **Fuga de credenciales al cliente HTTP** (lo anterior): SQL y bindings fuera del
+  mensaje de excepción.
+- **Fuga de credenciales a disco**: `ErrorHandler` asignaba `full_trace` *después* de
+  sanitizar, así que la traza completa —con los `args` de cada frame, donde viajan la
+  config de conexión y los bindings— se escribía en claro. Ahora se sanitiza, igual que
+  el log resumen (cuyo `context` incluye `model_attributes`, la fila completa) y los
+  campos `query.bindings` y `query.formatted_sql`, que no estaban cubiertos.
+- **Escape de identificadores**: la rama `tabla.*` de `quoteIdentifier()` se saltaba el
+  escape del delimitador en los tres dialectos, así que un nombre de tabla podía cerrar
+  la cita e inyectar SQL. Explotable vía `upsertMany($_POST['rows'], …)`.
+- **Token de Codecov** en texto plano en `.github/workflows/ci.yml`, movido a
+  `${{ secrets.CODECOV_TOKEN }}`. **Hay que rotarlo**: sigue en el historial de git.
+- El regex "tipo JWT" del sanitizador de logs matcheaba cualquier `a.b.c`, así que
+  destruía versiones (`8.4.13`) y hostnames. Ahora exige longitud mínima por segmento.
+
+### ⚡ Rendimiento
+
+**La introspección de esquema se hacía una vez por fila.** El caché vivía en una
+propiedad de instancia y `get()` creaba un `VersaModel` por fila, así que una consulta
+de N filas disparaba N `SHOW FULL COLUMNS` / `PRAGMA table_info`. Ahora hay un caché
+compartido en `PdoEngine`, indexado por la instancia PDO con `WeakMap` e invalidado por
+DDL.
+
+Medido en MariaDB 11.8 local, tabla de 7 columnas, 2000 filas:
+
+| | antes | ahora |
+|---|---|---|
+| `getAll()` | 735 ms (367 µs/fila) | **62 ms (31 µs/fila)** |
+| round-trips de introspección | 1999 | **0** |
+| `findAll()` (5000 filas, SQLite) | 217 ms | **42 ms** |
+
+Otros cambios en el mismo camino:
+
+- `findAll()` llamaba a `export()` por fila y **descartaba el resultado**: era el 83 %
+  del coste de hidratación. El casting ya lo aplica `__get()` de forma lazy y cacheada.
+- `get()` reutiliza una instancia de modelo en vez de construir una por fila cuando se
+  usa el modelo base y no hay relaciones.
+- `loadInstance()` evaluaba `method_exists()` antes de la comprobación barata, así que
+  corría para cada celda de cada fila; el `$typeMap` de 26 entradas se reconstruía por
+  celda.
+- `COMMIT`/`ROLLBACK` ya no descartan las sentencias preparadas: un bucle de escrituras
+  con una transacción por unidad de trabajo volvía a prepararlo todo en cada iteración.
+
+### 🐛 Corregido
+
+- **`upsertMany()` ejecutaba la consulta dos veces**, duplicando el trabajo y disparando
+  dos veces cualquier `ON DUPLICATE KEY UPDATE` (contadores, `updated_at`, triggers).
+- El chequeo de comentarios de bloque en `isSafeJoinRaw()` era un typo
+  (`/\/\?\*/` matchea el literal `/?*`, no `/*`), así que `joinRaw()` y `onRaw()`
+  aceptaban comentarios de bloque pese a lo que afirmaba el comentario del código.
+- `VersaORM::version()` devolvía `'1.6.0'` hardcodeado. Ahora hay una constante única,
+  `VersaORM::VERSION`.
+
+### ✨ Usabilidad: alias y expresiones en `select()`
+
+La validación y la compilación parseaban la misma cadena con reglas distintas (cada una
+con su propio `preg_split('/\s+as\s+/i')`), de ahí que se rechazara SQL válido y que
+el validador pudiera aprobar algo distinto de lo que el compilador emitía. Ahora hay
+**un solo parser** (`VersaORM\SQL\SelectExpression`) que usan ambos lados.
+
+Los identificadores son seguros porque el compilador los cita, no porque un regex los
+apruebe, así que ya funcionan los acentos, las palabras reservadas, los alias con
+espacios y los alias que empiezan por dígito. El alias se separa por el ` AS ` de nivel
+superior de paréntesis, no con un `preg_split`.
+
+Ahora se aceptan (antes se rechazaban):
+
+```php
+$qb->select([
+    'año',                              // acentos
+    'name AS año',
+    'total AS "Total Ventas"',          // alias con espacios
+    'id AS 2024_total',                 // alias que empieza por dígito
+    'CAST(id AS CHAR) AS idstr',        // AS interno
+    'ROUND(AVG(score), 2) AS avg',      // funciones anidadas
+    'SUM(price * qty) AS total',        // aritmética en el argumento
+    'MAX(price) - MIN(price) AS spread',// aritmética entre funciones
+    'DATE_FORMAT(created_at, "%Y") AS y',
+    'JSON_EXTRACT(meta, "$.k") AS k',
+    'GROUP_CONCAT(name) AS g',
+    'EXTRACT(YEAR FROM created_at) AS y',
+    'db.schema.tabla.col',              // más de dos segmentos
+]);
+```
+
+La allowlist de funciones pasa de 30 a más de 100 nombres y admite anidamiento,
+aritmética y `CAST(x AS tipo)`. Las expresiones de función se siguen emitiendo crudas,
+así que el parser mantiene la frontera de seguridad: toda función invocada debe estar en
+la allowlist, no se admiten `SELECT`/`UNION`/`;`/comentarios, los literales deben estar
+cerrados y los paréntesis balanceados. `CASE WHEN … END` sigue requiriendo `selectRaw()`.
+
+Se eliminaron los validadores redundantes `isValidDatabaseIdentifier()`,
+`isSQLFunction()` y el cuerpo de `isSafeTableReference()`, más las 165 líneas del
+segundo generador de SQL.
+
+### 🔒 Seguridad (segunda ronda)
+
+- **`selectRaw`/`whereRaw`/`havingRaw`/`groupByRaw`/`orderByRaw`**: la blacklist comparaba
+  por substring y fallaba en las dos direcciones. Rechazaba SQL válido
+  (`AVG(sleep_hours)`, `exp_date`, `download_file`, `benchmark_score`, `sp_total`,
+  `benchmark_id`) y no detenía lo que prometía (`;` sólo se bloqueaba si le seguía una
+  keyword DDL; `UNION ALL SELECT` pasaba el patrón `union\s+select`). Ahora se exigen
+  límites de palabra y el paréntesis de llamada en las funciones, de modo que
+  `sleep_hours` pasa y `SLEEP(` no.
+- **Contexto de validación raw separado.** Un fragmento de expresión y una consulta
+  completa no admiten lo mismo: una CTE recursiva *necesita* `UNION ALL`. Los cuerpos de
+  CTE y las ramas de `union()` usan ahora `isSafeRawQuery()`, que sólo impide encadenar
+  sentencias; los fragmentos siguen con la validación estricta.
+- **`isSafeJoinRaw()`**: el chequeo de comentarios de bloque era un typo
+  (`/\/\?\*/` matchea el literal `/?*`, no `/*`), así que `joinRaw()` y `onRaw()`
+  aceptaban comentarios de bloque pese a lo que afirmaba el comentario del código.
+- **Parámetros que llegaban crudos al SQL**, ahora validados en la frontera de
+  `QueryBuilder`: `windowFunction($partitionBy, $orderBy)`,
+  `advancedAggregation($groupBy, $options['order_by'])`,
+  `fullTextSearch($options['mode'/'language'/'operator'])` y `jsonOperation($path)`.
+  Ninguno pasaba por comprobación alguna y el motor los interpola directamente —incluso
+  echaba verbatim cualquier columna que contuviera `(` o `.`.
+- **`jsonOperation()` en PostgreSQL** concatenaba cada segmento del path dentro de un
+  literal, mientras MySQL y SQLite ya lo bindeaban. Ahora se bindea en los tres.
+- **Freeze mode: de blacklist a allowlist del primer token.** Con freeze activo pasaban
+  `CREATE OR REPLACE VIEW`, `CREATE UNIQUE INDEX`, `CREATE TEMPORARY TABLE`,
+  `/* x */ CREATE TABLE` (sólo se aplicaba `trim()`), `ALTER SEQUENCE`/`TYPE`/
+  `MATERIALIZED VIEW`, `GRANT`, `REVOKE`, `REINDEX` y `VACUUM`. Ahora se parte de una
+  allowlist, así que la categoría queda cerrada entera.
+
+  Nota: `SET` **sí** se permite con freeze activo, aunque incluya
+  `SET FOREIGN_KEY_CHECKS=0`. Freeze protege el *esquema*, y `SET` configura la
+  sesión (`SET NAMES`, `SET sql_mode`, `SET SESSION TRANSACTION ISOLATION LEVEL`):
+  bloquearlo rompía cualquier código de inicialización de conexión. `PRAGMA` sí se
+  bloquea cuando asigna, porque `PRAGMA writable_schema = ON` sí toca el esquema.
+- **Contraseña fuera de la clave del pool de conexiones.** Viajaba en claro como *clave
+  de un array estático* de vida larga, así que aparecía en cualquier `var_dump`, dump de
+  Xdebug o volcado de memoria. Ahora va hasheada.
+- **TLS para MySQL/MariaDB.** No existía: sólo PostgreSQL tenía soporte de SSL, de modo
+  que no había forma de abrir una conexión MySQL cifrada desde la configuración de la
+  librería. Se admiten `sslrootcert`/`ssl_ca`, `sslcert`/`ssl_cert`, `sslkey`/`ssl_key`,
+  `ssl_cipher` y `sslmode` (`verify-ca`/`verify-full` activan la verificación del
+  certificado del servidor). Sin configuración SSL el comportamiento no cambia.
+- **Inyección de regex** en `invalidateCacheByPattern()` (el patrón del llamador se
+  insertaba escapando sólo `/`, permitiendo modificadores y ReDoS; ahora se trata como
+  glob) y en la regla de validación `regex` (el patrón se interpolaba entre `/` sin
+  escapar, así que `regex:a/i` cambiaba los modificadores).
+
+### ⚡ Rendimiento (segunda ronda)
+
+- **`with()` era N+1, no eager loading.** Sólo recolectaba metadata y luego cada modelo
+  resolvía su relación por separado: una consulta por padre y por relación. El payload
+  llevaba `'with'` pero ningún código del motor lo leía. Ahora se agrupan las claves de
+  todos los padres y se emite una sola consulta `WHERE clave IN (...)` por relación,
+  troceada por el presupuesto de placeholders. Medido: `with(['posts'])` sobre 200
+  padres pasa de **201 consultas a 2**. HasOne, HasMany y BelongsTo van por el lote;
+  BelongsToMany sigue resolviéndose individualmente.
+- **Presupuesto de placeholders en las operaciones batch.** Nadie los contaba: 10 000
+  registros × 10 columnas son 100 000 marcadores, por encima de los 65 535 de
+  MySQL/PostgreSQL y los 32 766 de SQLite. `upsertMany` además **ignoraba el
+  `batch_size` recibido** y armaba una sola sentencia con todos los registros. Verificado:
+  `insertMany` de 5 000 × 12 fallaba con *"too many SQL variables"* y ahora funciona.
+- **`findInBatches()` paginaba con `OFFSET`**, así que la base de datos re-escaneaba y
+  descartaba `$offset` filas en cada lote — O(n²/batchSize). Ahora usa paginación por
+  clave (keyset).
+- **`checkCircularReferences()`** recorría el payload completo en cada consulta. Para un
+  `insertMany` los registros se mezclan en la raíz, así que un lote de 10 000 × 20
+  disparaba ~200 000 llamadas recursivas antes de generar una línea de SQL, buscando
+  ciclos de objetos en datos escalares. Ahora sólo se recorre si hay algún objeto.
+- **`COMMIT`/`ROLLBACK` ya no descartan las sentencias preparadas** (ver más arriba).
+- **`invalidateCacheByPattern()`** tenía un bucle externo cuya variable no se usaba:
+  O(entradas × tablas) evaluaciones de regex para un trabajo O(tablas).
+
+### 🐛 Corregido (segunda ronda)
+
+- **`addConstraints()` era re-entrante.** `__call()`, `query()` y `getResults()` la
+  llamaban cada uno, así que `$rel->query()->get()` acumulaba la misma cláusula `WHERE`
+  dos veces. Ahora se aplica una sola vez por relación.
+- **Resolución de tabla en relaciones.** Se leía la propiedad `$table` por reflexión y,
+  si no existía, se usaba la literal `'dummy'`: una subclase tipada que declara
+  `$tableName` —el mecanismo introducido en 1.8.8 para dar tipos al IDE— acababa
+  consultando una tabla inexistente llamada `dummy`. `tableName()` ahora resuelve
+  `$tableName`, `$table` e inferencia por nombre de clase, en ese orden.
+- **`upsertMany()` no funcionaba en SQLite.** Caía en la rama de MySQL y generaba
+  `ON DUPLICATE KEY UPDATE`, que SQLite rechaza. SQLite usa la misma sintaxis estándar
+  que PostgreSQL (`ON CONFLICT ... DO UPDATE SET col = excluded.col`).
+- **`getDatabaseSchema()`** (sin llamadores) reutilizaba la propiedad
+  `$databaseSchemaCache` para una forma de datos distinta de la que espera
+  `getColumnTypeFromSchema()`. Eliminado.
+- **`clearDatabaseSchemaCache()`** sólo limpiaba la copia de la instancia, así que la
+  siguiente consulta la repoblaba desde la caché compartida del proceso. Ahora invalida
+  ambas.
+- **Orden de columnas en los índices de PostgreSQL.** `schema('indexes')` las ordenaba
+  por su posición en la *tabla* (`attnum = ANY(indkey)` + `ORDER BY attnum`), no por su
+  posición en el *índice*: un índice sobre `(precio_total, cantidad)` se reportaba como
+  `(cantidad, precio_total)`. En un índice compuesto el orden es semánticamente
+  significativo.
+- **El índice de caché por tabla crecía sin límite.** `$queryCache` está acotado, pero
+  las entradas expiradas se borraban de él sin tocar el índice. Además las claves se
+  guardaban como valores, así que el dedupe era un `in_array()` O(n) sobre una lista
+  creciente de hashes y la evicción LRU era cuadrática; ahora son claves de array.
+
+### 🔧 Herramientas y CI
+
+- **CI no ejecutaba ningún análisis estático.** Añadidos PHPStan nivel 9 y la
+  comprobación de estilo como pasos bloqueantes. PHPStan pasa **sin errores** (antes del
+  trabajo había 3 sin suprimir).
+- **pgvector en CI**: la imagen `postgres:14` no trae la extensión, así que los 13 tests
+  de soporte vectorial se saltaban en CI y en local, dejando esa funcionalidad sin
+  verificar en ninguna parte. Se usa `pgvector/pgvector:pg16` y se crea la extensión.
+- **`DB_TEST_TURBO` en CI** para MySQL y PostgreSQL: sin él, CI corría MySQL en modo
+  durable, unas 11 veces más lento que PostgreSQL.
+- **`tests/unit` corre ahora en los tres motores.** Sus 572 tests son agnósticos del
+  driver pero sólo se ejecutaban bajo la configuración de SQLite, así que ninguna
+  regresión específica de motor que tocaran se detectaba. Al habilitarlo salieron dos
+  defectos de aislamiento reales: un test que dependía de un ORM global puesto por otra
+  suite y otro que elegía su rama con la variable de entorno `DB_DRIVER` en vez de con
+  el driver real de su ORM.
+
+---
+
+### ✅ Validación
+
+- SQLite: `944` tests (`2471` assertions), sin fallos ni warnings.
+- PostgreSQL: `1209` tests (`3476` assertions) OK — incluye ahora `tests/unit`.
+- MySQL/MariaDB: suite completa OK — incluye ahora `tests/unit`.
+- PHPStan nivel 9: **sin errores** (antes del trabajo había 3 sin suprimir).
+- Se añadieron 16 tests de regresión (`tests/unit/Regression/`), de los cuales **11
+  fallan contra el código anterior**, y el primer `#[DataProvider]` del repositorio
+  (`tests/unit/SQL/SelectExpressionTest.php`, 26 formas válidas + 18 maliciosas).
+- `testPostgreSQL/Schema/ForeignKeysAndConstraintsTest.php`: los 7 tests de claves
+  foráneas compuestas, acciones `ON DELETE`, muchos-a-muchos y auto-referencia
+  terminaban en `assertTrue(true)`. Ahora verifican la clave foránea y los índices
+  reales con `schema('foreign_keys')` y `schema('indexes')`: 5 assertions pasaron a 83.
+- `StressTest` (MySQL y PostgreSQL) era un `assertTrue(true, 'not yet implemented')`.
+  Ahora son 5 tests por motor que afirman números concretos: el conteo de sentencias
+  escala por lote y no por fila, un lote grande no desborda el límite de placeholders,
+  hidratar 1 000 filas no introspecciona por fila, 50 INSERT idénticos se preparan una
+  vez, y la memoria queda acotada al leer en lotes.
+- `AdvancedSchemaBuilderTest`, triplicado en los tres motores, tenía 7
+  `assertTrue(true)` por copia: creaba tablas, índices, claves foráneas y hasta
+  ejecutaba un `drop()` sin comprobar nada. Ahora verifica columnas, índices, la
+  clave foránea con su `ON DELETE`, que el `ALTER` añadió las columnas nuevas y que
+  el `drop()` eliminó de verdad la tabla: 7 assertions pasaron a 75 por motor.
+- Los tests de window functions y CTE de `AdvancedSQLTest` sólo afirmaban
+  `assertIsArray()`, así que una función que devolviera `[]` pasaba igual. Ahora
+  comparan los valores exactos que produce la fixture.
+- Se eliminaron `EliteCoverageTest`, `FinalGapTest` y `FinalPushTest` (546 líneas,
+  14 bloques `try { … } catch { assertTrue(true); }` que pasaban aunque el código
+  fallara) y se corrigió la fuga de estado global de `ErrorHandlerUnitTest`, que
+  provocaba un warning en los 25 tests siguientes.
+
+---
+
 ## [1.9.0] - 2026-03-13
 
 ### 🔧 Timezone Correctness y Hardening de Conexión

@@ -72,15 +72,8 @@ class VersaModelFeaturesTest extends TestCase
         $model = new FeaturesTestModel($this->orm);
 
         // Mock freezeModel and isModelFrozen
-        $this->orm
-            ->expects(self::once())
-            ->method('freezeModel')
-            ->with(FeaturesTestModel::class, true);
-        $this->orm
-            ->expects(self::once())
-            ->method('isModelFrozen')
-            ->with(FeaturesTestModel::class)
-            ->willReturn(true);
+        $this->orm->expects(self::once())->method('freezeModel')->with(FeaturesTestModel::class, true);
+        $this->orm->expects(self::once())->method('isModelFrozen')->with(FeaturesTestModel::class)->willReturn(true);
 
         FeaturesTestModel::freeze(true);
         static::assertTrue(FeaturesTestModel::isFrozen());
@@ -139,10 +132,7 @@ class VersaModelFeaturesTest extends TestCase
     {
         VersaSchema::setORM($this->orm);
 
-        $this->orm
-            ->expects(self::once())
-            ->method('schemaRename')
-            ->with('old', 'new');
+        $this->orm->expects(self::once())->method('schemaRename')->with('old', 'new');
         VersaSchema::rename('old', 'new');
     }
 

@@ -33,7 +33,7 @@ class BelongsToMany extends Relation
      */
     public function __call($method, $arguments)
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         /** @phpstan-ignore-next-line */
         return $this->query->$method(...$arguments);
@@ -41,7 +41,7 @@ class BelongsToMany extends Relation
 
     public function query(): QueryBuilder
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         return $this->query;
     }
@@ -51,7 +51,7 @@ class BelongsToMany extends Relation
      */
     public function getResults(): array
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         return $this->query->findAll();
     }

@@ -259,7 +259,9 @@ class QueryBuilderSubqueriesTest extends TestCase
         $this->expectException(VersaORMException::class);
         $this->expectExceptionMessage('Potentially unsafe SQL expression detected in selectRaw');
 
-        $longExpression = str_repeat('a', 501); // Más de 500 caracteres
+        // El límite se subió de 500 a 2000: las expresiones raw legítimas (CASE anidados,
+        // listas largas de CONCAT) pasaban de 500 con facilidad.
+        $longExpression = str_repeat('a', 2001);
         $this->queryBuilder->selectRaw($longExpression);
     }
 

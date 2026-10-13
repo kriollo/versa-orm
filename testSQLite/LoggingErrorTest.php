@@ -53,10 +53,7 @@ class LoggingErrorTest extends TestCase
     {
         // 1er error: tabla inexistente
         try {
-            $this->orm
-                ->table('non_existing_table')
-                ->select(['id'])
-                ->getAll();
+            $this->orm->table('non_existing_table')->select(['id'])->getAll();
             static::fail('Se esperaba VersaORMException por tabla inexistente.');
         } catch (VersaORMException $e) {
             static::assertStringContainsString('non_existing_table', strtolower($e->getMessage()));

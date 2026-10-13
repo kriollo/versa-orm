@@ -30,7 +30,7 @@ class HasOne extends Relation
      */
     public function __call($method, $arguments)
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         /** @phpstan-ignore-next-line */
         return $this->query->$method(...$arguments);
@@ -41,14 +41,14 @@ class HasOne extends Relation
      */
     public function query(): QueryBuilder
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         return $this->query;
     }
 
     public function getResults(): mixed
     {
-        $this->addConstraints();
+        $this->applyConstraintsOnce();
 
         return $this->query->findOne();
     }

@@ -160,7 +160,10 @@ class QueryBuilderTest extends TestCase
 
     public function test_where_not_null(): void
     {
-        self::$orm->table('posts')->where('id', '=', 1)->update(['published_at' => date('Y-m-d H:i:s')]);
+        self::$orm
+            ->table('posts')
+            ->where('id', '=', 1)
+            ->update(['published_at' => date('Y-m-d H:i:s')]);
         $posts = self::$orm->table('posts')->whereNotNull('published_at')->findAll();
         static::assertCount(1, $posts);
     }

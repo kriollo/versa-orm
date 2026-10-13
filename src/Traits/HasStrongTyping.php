@@ -247,8 +247,9 @@ trait HasStrongTyping
      */
     private function getColumnTypeFromSchema(string $columnName): ?string
     {
-        // Mapping from database types to PHP types
-        $typeMap = [
+        // Mapping from database types to PHP types.
+        // static: antes se reconstruían estas 26 entradas en cada celda de cada fila.
+        static $typeMap = [
             'integer' => 'int',
             'int' => 'int',
             'bigint' => 'int',
@@ -489,6 +490,11 @@ trait HasStrongTyping
     public function clearDatabaseSchemaCache(): void
     {
         $this->databaseSchemaCache = null;
+
+        // El esquema se memoriza también a nivel de proceso en PdoEngine. Limpiar sólo la
+        // copia de la instancia no servía de nada: la siguiente consulta la repoblaba
+        // desde la caché compartida, que seguía con los datos antiguos.
+        \VersaORM\SQL\PdoEngine::invalidateSchemaCache();
     }
 
     /**
@@ -864,8 +870,8 @@ trait HasStrongTyping
                         : in_array(strtolower((string) $v), ['1', 'true', 'yes', 'on'], true)
                 )
         )
-            ? 1
-            : 0;
+                ? 1
+                : 0;
         $jsonLike = static function ($s, $p, $v, $_ = []): string {
             if (is_string($v)) {
                 $trim = ltrim($v);
@@ -1038,22 +1044,6 @@ trait HasStrongTyping
         ];
 
         return in_array($modelType, $compat[$dbType] ?? [], true);
-    }
-
-    /** @return array<string,mixed> */
-    private function getDatabaseSchema(): array
-    {
-        if ($this->databaseSchemaCache !== null) {
-            return $this->databaseSchemaCache;
-        }
-
-        try {
-            $s = $this->getTableValidationSchema();
-
-            return $this->databaseSchemaCache = $s;
-        } catch (Exception $e) {
-            throw new VersaORMException('Could not retrieve database schema: ' . $e->getMessage());
-        }
     }
 
     private function isValidUuid(string $uuid): bool

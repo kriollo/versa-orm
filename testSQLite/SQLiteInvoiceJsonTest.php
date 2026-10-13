@@ -168,7 +168,11 @@ class SQLiteInvoiceJsonTest extends TestCase
         $sql = $qb->toSql();
         $bindings = $qb->getBindings();
 
-        static::assertStringContainsString('SELECT id, numero FROM facturas WHERE anno = ? AND mes > ?', $sql);
+        // toSql() ahora cita identificadores, igual que el SQL que realmente se ejecuta.
+        static::assertStringContainsString(
+            'SELECT "id", "numero" FROM "facturas" WHERE "anno" = ? AND "mes" > ?',
+            $sql,
+        );
         static::assertCount(2, $bindings);
         static::assertSame(2024, $bindings[0]);
         static::assertSame(1, $bindings[1]);

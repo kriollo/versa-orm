@@ -70,10 +70,7 @@ class VersaUsersTableAliasTest extends TestCase
      */
     public function testVersaUsersTableWithSimpleAlias(): void
     {
-        $results = $this->orm
-            ->table('versa_users as u')
-            ->select(['u.id', 'u.name', 'u.email'])
-            ->get();
+        $results = $this->orm->table('versa_users as u')->select(['u.id', 'u.name', 'u.email'])->get();
 
         static::assertIsArray($results);
         static::assertCount(2, $results);
@@ -84,10 +81,7 @@ class VersaUsersTableAliasTest extends TestCase
      */
     public function testVersaUsersTableWithDescriptiveAlias(): void
     {
-        $results = $this->orm
-            ->table('versa_users as users')
-            ->where('users.active', '=', true)
-            ->get();
+        $results = $this->orm->table('versa_users as users')->where('users.active', '=', true)->get();
 
         static::assertIsArray($results);
         static::assertCount(2, $results);
@@ -98,10 +92,7 @@ class VersaUsersTableAliasTest extends TestCase
      */
     public function testVersaUsersTableWithWhereClause(): void
     {
-        $results = $this->orm
-            ->table('versa_users')
-            ->where('email', '=', 'john@example.com')
-            ->get();
+        $results = $this->orm->table('versa_users')->where('email', '=', 'john@example.com')->get();
 
         static::assertIsArray($results);
         static::assertCount(1, $results);
@@ -113,10 +104,7 @@ class VersaUsersTableAliasTest extends TestCase
      */
     public function testVersaUsersTableWithAliasInWhere(): void
     {
-        $results = $this->orm
-            ->table('versa_users as u')
-            ->where('u.name', '=', 'Jane Smith')
-            ->get();
+        $results = $this->orm->table('versa_users as u')->where('u.name', '=', 'Jane Smith')->get();
 
         static::assertIsArray($results);
         static::assertCount(1, $results);
@@ -138,10 +126,7 @@ class VersaUsersTableAliasTest extends TestCase
      */
     public function testVersaUsersTableWithOrderBy(): void
     {
-        $results = $this->orm
-            ->table('versa_users as u')
-            ->orderBy('u.name', 'ASC')
-            ->get();
+        $results = $this->orm->table('versa_users as u')->orderBy('u.name', 'ASC')->get();
 
         static::assertIsArray($results);
         static::assertCount(2, $results);
@@ -182,10 +167,7 @@ class VersaUsersTableAliasTest extends TestCase
         // update() now returns int (affected rows count)
         static::assertIsInt($updated);
 
-        $result = $this->orm
-            ->table('versa_users')
-            ->where('email', '=', 'john@example.com')
-            ->findOne();
+        $result = $this->orm->table('versa_users')->where('email', '=', 'john@example.com')->findOne();
 
         static::assertSame('John Updated', $result->name ?? null);
     }

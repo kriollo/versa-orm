@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace VersaORM\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use VersaORM\QueryBuilder;
 use VersaORM\VersaORM;
+use VersaORM\VersaORMException;
 
 class VersaORMStub3 extends VersaORM
 {
@@ -31,29 +33,55 @@ final class QueryBuilderSecurityTest extends TestCase
         $this->qb = new QueryBuilder($orm, 'users');
     }
 
-    public function testIsSafeIdentifierValidAndInvalid(): void
+    /**
+     * select() acepta lo que es representable de forma segura y lo emite compilado.
+     * Se prueba por la API pública y no por reflexión; el contrato detallado del parser
+     * está en tests/unit/SQL/SelectExpressionTest.php.
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function acceptedColumns(): array
     {
-        $ref = new \ReflectionClass($this->qb);
-        $m = $ref->getMethod('isSafeIdentifier');
-        $m->setAccessible(true);
-
-        static::assertTrue($m->invoke($this->qb, '*'));
-        static::assertTrue($m->invoke($this->qb, 'users'));
-        static::assertTrue($m->invoke($this->qb, 'users.name as author'));
-        static::assertFalse($m->invoke($this->qb, 'users; DROP TABLE users'));
-        static::assertFalse($m->invoke($this->qb, '1weird'));
+        return [
+            // columna => [entrada, fragmento que debe aparecer en el SQL compilado]
+            'asterisco' => ['*', 'SELECT *'],
+            'tabla' => ['users', '`users`'],
+            'alias en minuscula' => ['users.name as author', '`users`.`name` AS `author`'],
+            'count' => ['COUNT(*) AS total', 'COUNT(*) AS `total`'],
+            'max' => ['MAX(price) AS mx', 'MAX(price) AS `mx`'],
+            // Las cuatro siguientes las rechazaba el validador anterior aunque son SQL válido.
+            'cast con AS interno' => ['CAST(id AS CHAR) AS idstr', 'CAST(id AS CHAR) AS `idstr`'],
+            'funcion anidada' => ['ROUND(AVG(score), 2) AS avg_score', 'ROUND(AVG(score), 2) AS `avg_score`'],
+            'acentos' => ['año', '`año`'],
+            // Un identificador que empieza por dígito es legal si va citado, y se cita.
+            'empieza por digito' => ['1weird', '`1weird`'],
+        ];
     }
 
-    public function testIsSQLFunctionDetectsAllowedFunctions(): void
+    #[DataProvider('acceptedColumns')]
+    public function testSelectAcceptsLegitimateColumn(string $column, string $expectedFragment): void
     {
-        $ref = new \ReflectionClass($this->qb);
-        $m = $ref->getMethod('isSQLFunction');
-        $m->setAccessible(true);
+        $sql = $this->qb->select([$column])->toSql();
 
-        static::assertTrue($m->invoke($this->qb, 'COUNT(*)'));
-        static::assertTrue($m->invoke($this->qb, 'MAX(price)'));
-        static::assertFalse($m->invoke($this->qb, 'BADFUNC(1; DROP TABLE)'));
-        static::assertFalse($m->invoke($this->qb, 'SLEEP(10)'));
+        static::assertStringContainsString($expectedFragment, $sql, sprintf('columna: %s', $column));
+    }
+
+    public function testSelectRejectsMaliciousColumns(): void
+    {
+        foreach ([
+            'users; DROP TABLE users',
+            'id -- x',
+            '(SELECT password FROM admins) AS p',
+            'BADFUNC(1) AS x',
+            'SLEEP(10) AS s',
+        ] as $column) {
+            try {
+                $this->qb->select([$column]);
+                static::fail(sprintf('select() aceptó una columna peligrosa: %s', $column));
+            } catch (VersaORMException $e) {
+                static::assertStringContainsString('Invalid or malicious', $e->getMessage());
+            }
+        }
     }
 
     public function testIsSafeRawExpressionRejectsDangerousPatterns(): void

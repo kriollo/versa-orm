@@ -8,7 +8,7 @@ use App\Models\Project;
 use App\Models\User;
 use Exception;
 
-class ProjectController
+final class ProjectController
 {
     public static function handle(string $action, ?int $id): void
     {

@@ -65,10 +65,14 @@ final class RelationsBelongsToTest extends TestCase
         static::assertSame($qb, $q);
         static::assertSame(['where', 'id', '=', 7], $qb->called[0]);
 
-        // calling getResults triggers findOne()
+        // getResults() delega en findOne() SIN volver a aplicar las restricciones.
+        // Antes el assert apuntaba a called[1] porque addConstraints() se ejecutaba en
+        // cada entrada (query(), __call(), getResults()) y acumulaba un WHERE duplicado;
+        // ese índice [1] era precisamente el síntoma del bug.
         $qb->called = [];
         $res = $rel->getResults();
         static::assertNull($res);
-        static::assertSame('findOne', $qb->called[1][0]);
+        static::assertSame('findOne', $qb->called[0][0]);
+        static::assertCount(1, $qb->called, 'getResults() no debe reaplicar el WHERE');
     }
 }

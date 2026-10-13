@@ -50,6 +50,54 @@ class AdvancedSchemaBuilderTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Afirma que la tabla existe y declara las columnas indicadas.
+     *
+     * Estos tests creaban tablas y terminaban en assertTrue(true), así que no
+     * verificaban nada: una generación de DDL que perdiera una columna, un índice o un
+     * ALTER pasaba igual. Se comprueban nombres (no tipos) porque el mapeo de tipos
+     * difiere por motor y ya tiene sus propios tests.
+     *
+     * @param list<string> $columns
+     */
+    private function assertTableHasColumns(string $table, array $columns): void
+    {
+        $schema = $this->orm->schema('columns', $table);
+        static::assertIsArray($schema);
+        static::assertNotEmpty($schema, sprintf('la tabla %s no existe o no tiene columnas', $table));
+        $names = [];
+
+        foreach ($schema as $column) {
+            $name = $column['column_name'] ?? $column['name'] ?? null;
+
+            if (is_string($name)) {
+                $names[] = strtolower($name);
+            }
+        }
+
+        foreach ($columns as $expected) {
+            static::assertContains(
+                strtolower($expected),
+                $names,
+                sprintf('%s no declara la columna %s. Tiene: %s', $table, $expected, implode(', ', $names)),
+            );
+        }
+    }
+
+    private function assertTableExists(string $table, bool $exists = true): void
+    {
+        $tables = $this->orm->schema('tables');
+        static::assertIsArray($tables);
+        $normalized = array_map('strtolower', array_map('strval', $tables));
+
+        if ($exists) {
+            static::assertContains(strtolower($table), $normalized, sprintf('%s debería existir', $table));
+
+            return;
+        }
+        static::assertNotContains(strtolower($table), $normalized, sprintf('%s no debería existir', $table));
+    }
+
     public function testCanCreateTableWithIndexes(): void
     {
         $this->schema->create('test_products', static function ($table) {
@@ -67,7 +115,28 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->index(['name', 'active'], 'name_active_idx');
         });
 
-        static::assertTrue(true);
+        $this->assertTableHasColumns('test_products', [
+            'id',
+            'name',
+            'sku',
+            'description',
+            'price',
+            'stock',
+            'active',
+            'created_at',
+            'updated_at',
+        ]);
+
+        // Los índices declarados tienen que haber llegado al esquema.
+        $indexes = $this->orm->schema('indexes', 'test_products');
+        static::assertIsArray($indexes);
+        $indexedColumns = [];
+
+        foreach ($indexes as $index) {
+            $indexedColumns[] = implode(',', array_map('strtolower', (array) ($index['columns'] ?? [])));
+        }
+        static::assertContains('name', $indexedColumns, json_encode($indexedColumns));
+        static::assertContains('name,active', $indexedColumns, json_encode($indexedColumns));
     }
 
     public function testCanCreateTableWithForeignKeys(): void
@@ -91,7 +160,24 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->foreign('category_id')->references('id')->on('test_categories')->onDelete('cascade');
         });
 
-        static::assertTrue(true);
+        $this->assertTableHasColumns('test_categories', ['id', 'name', 'slug']);
+        $this->assertTableHasColumns('test_products', ['id', 'name', 'category_id', 'price']);
+
+        $keys = $this->orm->schema('foreign_keys', 'test_products');
+        static::assertIsArray($keys);
+        $match = null;
+
+        foreach ($keys as $key) {
+            if (strtolower((string) ($key['column'] ?? '')) !== 'category_id') {
+                continue;
+            }
+
+            $match = $key;
+            break;
+        }
+        static::assertNotNull($match, 'test_products no declara la clave foránea sobre category_id');
+        static::assertSame('test_categories', strtolower((string) ($match['foreign_table'] ?? '')));
+        static::assertSame('CASCADE', strtoupper((string) ($match['on_delete'] ?? '')));
     }
 
     public function testCanUseStaticFacade(): void
@@ -106,7 +192,16 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->timestamps();
         });
 
-        static::assertTrue(true);
+        $this->assertTableHasColumns('test_users', [
+            'id',
+            'name',
+            'email',
+            'email_verified_at',
+            'password',
+            'remember_token',
+            'created_at',
+            'updated_at',
+        ]);
     }
 
     public function testCanModifyExistingTable(): void
@@ -126,7 +221,18 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->json('metadata')->nullable();
         });
 
-        static::assertTrue(true);
+        // Lo esencial del test: el ALTER añadió las tres columnas nuevas y conservó las
+        // originales.
+        $this->assertTableHasColumns('test_orders', [
+            'id',
+            'order_number',
+            'total',
+            'created_at',
+            'updated_at',
+            'status',
+            'user_id',
+            'metadata',
+        ]);
     }
 
     public function testCanCreateTableWithSpecialTypes(): void
@@ -144,7 +250,19 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->timestamps();
         });
 
-        static::assertTrue(true);
+        $this->assertTableHasColumns('test_users', [
+            'id',
+            'name',
+            'email',
+            'preferences',
+            'birthdate',
+            'preferred_contact_time',
+            'is_active',
+            'role',
+            'balance',
+            'created_at',
+            'updated_at',
+        ]);
     }
 
     public function testCanDropTables(): void
@@ -155,11 +273,14 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->string('data');
         });
 
+        $this->assertTableExists('test_temp_table');
+
         // Eliminarla
         $this->schema->drop('test_temp_table');
 
-        // Verificar que la operación se completó sin errores
-        static::assertTrue(true);
+        // El test no comprobaba que la tabla desapareciera: un drop() que no hiciera
+        // nada pasaba igual.
+        $this->assertTableExists('test_temp_table', false);
     }
 
     public function testTypeTransparencyAcrossEngines(): void
@@ -177,7 +298,15 @@ class AdvancedSchemaBuilderTest extends TestCase
             $table->timestamp('time_field')->nullable(); // TIMESTAMP en todos
         });
 
-        static::assertTrue(true);
+        $this->assertTableHasColumns('test_cross_engine', [
+            'id',
+            'text_field',
+            'number_field',
+            'flag_field',
+            'json_field',
+            'money_field',
+            'time_field',
+        ]);
 
         // Limpiar
         $this->schema->dropIfExists('test_cross_engine');

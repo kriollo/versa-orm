@@ -211,12 +211,24 @@ class VersaModel implements TypedModelInterface
 
     /**
      * Devuelve el nombre de la tabla asociada al modelo.
-     * Si la subclase define una propiedad estática $table, la usa; si no, infiere por convención.
+     *
+     * Orden de resolución:
+     *  1. `static::$tableName` (el mecanismo de subclases tipadas),
+     *  2. la propiedad `$table`,
+     *  3. inferencia por nombre de clase.
+     *
+     * El paso 1 faltaba, así que una subclase que sólo declaraba `$tableName` quedaba
+     * resuelta por inferencia —o como 'dummy' al resolver relaciones— en vez de usar el
+     * nombre declarado.
      */
     public static function tableName(): string
     {
+        if (static::$tableName !== '') {
+            return static::$tableName;
+        }
         $cls = static::class;
         $vars = get_class_vars($cls);
+
         if (isset($vars['table']) && is_string($vars['table']) && $vars['table'] !== '') {
             return $vars['table'];
         }
@@ -506,8 +518,11 @@ class VersaModel implements TypedModelInterface
 
             foreach ($data as $key => $value) {
                 $keyStr = (string) $key;
-                // Si la clave corresponde a una relación (es un array u objeto)
-                if (method_exists($this, $keyStr) && (is_array($value) || is_object($value))) {
+
+                // El orden importa: method_exists() se evaluaba primero y corría para cada
+                // celda de cada fila, aunque esta comprobación barata descarta ~todas las
+                // columnas escalares (una relación siempre llega como array u objeto).
+                if ((is_array($value) || is_object($value)) && method_exists($this, $keyStr)) {
                     $relations[$keyStr] = $value;
                 } else {
                     $attributes[$keyStr] = $value;
@@ -712,7 +727,9 @@ class VersaModel implements TypedModelInterface
             }
 
             // Usar la timezone configurada en el ORM para evitar desfases al persistir timestamps naive.
-            $ormTimezone = method_exists($orm, 'getTimezone') ? $orm->getTimezone() : date_default_timezone_get();
+            // $orm ya está estrechado a VersaORM más arriba, y VersaORM declara
+            // getTimezone(), así que el method_exists() era siempre true.
+            $ormTimezone = $orm->getTimezone();
             if ($ormTimezone === '') {
                 $ormTimezone = date_default_timezone_get();
             }
@@ -1843,10 +1860,18 @@ class VersaModel implements TypedModelInterface
 
         $orm = self::$ormInstance;
 
-        $offset = 0;
+        // Paginación por clave (keyset) en vez de OFFSET. Con OFFSET la base de datos
+        // re-escanea y descarta $offset filas en cada lote, así que el coste total es
+        // O(n²/batchSize): sobre un millón de filas, la última página escaneaba el millón.
+        // Requiere que $orderBy sea una columna creciente y única (por defecto 'id').
+        $lastSeen = null;
 
         while (true) {
-            $query = $orm->table($table, static::class)->orderBy($orderBy)->limit($batchSize)->offset($offset);
+            $query = $orm->table($table, static::class)->orderBy($orderBy)->limit($batchSize);
+
+            if ($lastSeen !== null) {
+                $query->where($orderBy, '>', $lastSeen);
+            }
 
             if (is_string($conditions) && trim($conditions) !== '') {
                 $query->whereRaw($conditions, $bindings);
@@ -1863,8 +1888,14 @@ class VersaModel implements TypedModelInterface
             if ($batchSize > 0 && count($models) < $batchSize) {
                 break;
             }
+            $lastModel = $models[count($models) - 1];
+            $next = $lastModel->getAttribute($orderBy);
 
-            $offset += $batchSize;
+            if ($next === null) {
+                // Sin cursor no se puede avanzar sin arriesgar un bucle infinito.
+                break;
+            }
+            $lastSeen = $next;
         }
     }
 
@@ -2702,7 +2733,16 @@ class VersaModel implements TypedModelInterface
                             }
                             break;
                         case 'regex':
-                            if (!is_scalar($value) || preg_match("/{$parameter}/", (string) $value) === 0) {
+                            // El patrón se interpolaba entre '/' sin escapar, así que una
+                            // regla como 'regex:a/i' cambiaba los modificadores del regex.
+                            // Se usa un delimitador que no puede aparecer sin escapar y se
+                            // trata un patrón inválido como fallo de validación, no como
+                            // warning silencioso de PHP.
+                            $regexResult = is_scalar($value)
+                                ? @preg_match('#' . str_replace('#', '\\#', $parameter) . '#', (string) $value)
+                                : false;
+
+                            if ($regexResult !== 1) {
                                 return "El {$field} no tiene el formato correcto.";
                             }
                             break;

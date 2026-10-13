@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Controllers;
 
-class DashboardController
+final class DashboardController
 {
     public static function handle(): void
     {

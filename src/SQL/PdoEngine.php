@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace VersaORM\SQL;
 
-use Exception;
 use PDO;
 use PDOStatement;
 use Throwable;
@@ -12,6 +11,7 @@ use VersaORM\SQL\Dialects\MySQLDialect;
 use VersaORM\SQL\Dialects\PostgreSQLDialect;
 use VersaORM\SQL\Dialects\SQLiteDialect;
 use VersaORM\VersaORMException;
+use WeakMap;
 
 use function array_slice;
 use function count;
@@ -48,7 +48,7 @@ class PdoEngine
      */
     private static array $queryCache = [];
 
-    /** @var array<string, array<int, string>> Mapear tabla -> claves de caché */
+    /** @var array<string, array<string, true>> Mapear tabla -> claves de caché (como claves) */
     private static array $tableKeyIndex = [];
 
     /** @var int TTL en segundos para query cache (default 30 minutos) */
@@ -106,6 +106,24 @@ class PdoEngine
 
     /** @var int TTL en segundos para statements cacheados (default 1 hora) */
     private static int $stmtCacheTtl = 3600;
+
+    /**
+     * Caché de introspección de esquema, indexada por la instancia PDO.
+     *
+     * La introspección (SHOW FULL COLUMNS / PRAGMA / information_schema) sólo cambia
+     * con DDL, pero antes se re-ejecutaba una vez por cada VersaModel hidratado, es
+     * decir una vez por fila.
+     *
+     * Se indexa por el objeto PDO y no por la config, porque dos conexiones con la
+     * misma config pueden ser bases distintas: para ':memory:' PdoConnection desactiva
+     * el pool a propósito, así que cada instancia es una BD separada. Al usar WeakMap
+     * la entrada desaparece cuando la conexión se libera, sin fugas ni claves rancias.
+     *
+     * Claves internas: "<subject>|<tabla>".
+     *
+     * @var WeakMap<PDO, array<string, array<array-key, mixed>>>|null
+     */
+    private static ?WeakMap $schemaCache = null;
 
     /**
      * @param array<string, mixed> $config
@@ -241,40 +259,36 @@ class PdoEngine
             $subject = strtolower(is_scalar($rawSubject) ? (string) $rawSubject : '');
 
             if ($subject === 'tables') {
-                // Normalizar a arreglo simple de nombres de tabla (strings)
-                $rows = $this->fetchTables($pdo);
-                $names = [];
+                return $this->cachedSchema($pdo, 'tables', '', function () use ($pdo): array {
+                    // Normalizar a arreglo simple de nombres de tabla (strings)
+                    $rows = $this->fetchTables($pdo);
+                    $names = [];
 
-                foreach ($rows as $r) {
-                    if (is_array($r) && isset($r['table_name'])) {
-                        $names[] = $r['table_name'];
-                    } elseif (is_string($r)) {
-                        $names[] = $r;
+                    foreach ($rows as $r) {
+                        if (is_array($r) && isset($r['table_name'])) {
+                            $names[] = $r['table_name'];
+                        } elseif (is_string($r)) {
+                            $names[] = $r;
+                        }
                     }
+
+                    return $names;
+                });
+            }
+
+            if (in_array($subject, ['columns', 'indexes', 'foreign_keys'], true)) {
+                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
+                $table = is_scalar($rawTable) ? (string) $rawTable : '';
+
+                if ($table === '') {
+                    return [];
                 }
 
-                return $names;
-            }
-
-            if ($subject === 'columns') {
-                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
-                $table = is_scalar($rawTable) ? (string) $rawTable : '';
-
-                return $table !== '' ? $this->fetchColumns($pdo, $table) : [];
-            }
-
-            if ($subject === 'indexes') {
-                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
-                $table = is_scalar($rawTable) ? (string) $rawTable : '';
-
-                return $table !== '' ? $this->fetchIndexes($pdo, $table) : [];
-            }
-
-            if ($subject === 'foreign_keys') {
-                $rawTable = $params['table_name'] ?? $params['table'] ?? '';
-                $table = is_scalar($rawTable) ? (string) $rawTable : '';
-
-                return $table !== '' ? $this->fetchForeignKeys($pdo, $table) : [];
+                return $this->cachedSchema($pdo, $subject, $table, fn(): array => match ($subject) {
+                    'columns' => $this->fetchColumns($pdo, $table),
+                    'indexes' => $this->fetchIndexes($pdo, $table),
+                    default => $this->fetchForeignKeys($pdo, $table),
+                });
             }
 
             return [];
@@ -590,9 +604,7 @@ class PdoEngine
                             // Solo reemplazar ocurrencias de nombre de columna aislado (evitar tocar funciones)
                             $qualified = str_contains($column, '(') || str_contains($column, '.')
                                 ? $column
-                                : $baseQualifierQuoted
-                                . '.'
-                                . $this->dialect->quoteIdentifier($column);
+                                : $baseQualifierQuoted . '.' . $this->dialect->quoteIdentifier($column);
                             // Reemplazo conservador: si la función es LAG/LEAD/FIRST_VALUE/LAST_VALUE con el nombre simple
                             $tmp2 = preg_replace(
                                 '/\b' . preg_quote($column, '/') . '\b/',
@@ -625,15 +637,11 @@ class PdoEngine
                             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
                         } catch (Throwable $e) {
                             // Incluir el SQL generado para facilitar el diagnóstico de columnas/alias
-                            throw new Exception(
-                                'advanced_sql window_function failed. SQL: '
-                                . $sql
-                                . ' | Bindings: '
-                                . json_encode($baseBindings)
-                                . ' | Error: '
-                                    . $e->getMessage(),
-                                0,
-                                $e,
+                            throw new VersaORMException(
+                                'advanced_sql window_function failed: ' . $e->getMessage(),
+                                'PDO_EXEC_FAILED',
+                                $sql,
+                                array_values($baseBindings),
                             );
                         }
                     })(),
@@ -671,11 +679,7 @@ class PdoEngine
                                 $isRecursive = true;
                             }
                             $withParts[] =
-                                $this->dialect->quoteIdentifier($name)
-                                . $colsDef
-                                . ' AS ('
-                                . $querySql
-                                . ')';
+                                $this->dialect->quoteIdentifier($name) . $colsDef . ' AS (' . $querySql . ')';
 
                             if (isset($c['bindings']) && is_array($c['bindings'])) {
                                 $bindings = array_merge($bindings, array_values($c['bindings']));
@@ -814,13 +818,19 @@ class PdoEngine
                             $segments = array_filter(explode('.', trim($path, '$.')), static fn($s): bool => $s !== '');
                             $expr = $col;
 
+                            $bind = [];
+
                             foreach ($segments as $idx => $s) {
-                                // Último segmento usar ->> para texto simple
+                                // Último segmento usar ->> para texto simple.
+                                // El segmento va BINDEADO, no interpolado dentro de un
+                                // literal: MySQL y SQLite ya lo bindean y PostgreSQL era
+                                // el único que lo concatenaba, con lo que una comilla en
+                                // el path cerraba el literal.
                                 $opArrow = $idx === array_key_last($segments) ? '->>' : '->';
-                                $expr .= $opArrow . "'" . $s . "'";
+                                $expr .= $opArrow . '?';
+                                $bind[] = $s;
                             }
                             $jsonExpr = $expr . ' AS value';
-                            $bind = [];
                         } else { // sqlite
                             $jsonExpr = "json_extract({$col}, ?) AS value";
                             $bind = [$path];
@@ -959,17 +969,13 @@ class PdoEngine
                                 $whereSql = $col . ' @> ?';
                                 $bindings[] = is_array($value)
                                     ? '{' . implode(',', $value) . '}'
-                                    : '{'
-                                    . (is_scalar($value) ? (string) $value : '')
-                                    . '}';
+                                    : '{' . (is_scalar($value) ? (string) $value : '') . '}';
                                 break;
                             case 'overlap':
                                 $whereSql = $col . ' && ?';
                                 $bindings[] = is_array($value)
                                     ? '{' . implode(',', $value) . '}'
-                                    : '{'
-                                    . (is_scalar($value) ? (string) $value : '')
-                                    . '}';
+                                    : '{' . (is_scalar($value) ? (string) $value : '') . '}';
                                 break;
                             case 'any':
                                 $whereSql = '? = ANY(' . $col . ')';
@@ -1136,8 +1142,11 @@ class PdoEngine
 
                         return $entry['data'];
                     }
-                    // Eliminar entrada expirada
+                    // Eliminar entrada expirada. También del índice por tabla: antes se
+                    // borraba sólo de $queryCache, así que el índice —que no tiene tope—
+                    // crecía sin límite en un proceso de vida larga.
                     unset(self::$queryCache[$cacheKey]);
+                    self::forgetCacheKeyFromIndex($cacheKey);
                 }
                 $this->recordCacheMiss();
             }
@@ -1149,11 +1158,7 @@ class PdoEngine
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
-                    throw new VersaORMException(
-                        'SQL failed (count): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
-                            . $e->getMessage(),
-                        'PDO_EXEC_FAILED',
-                    );
+                    throw $this->sqlFailure('count', $sql, $bindings, $e);
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
@@ -1175,11 +1180,7 @@ class PdoEngine
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
-                    throw new VersaORMException(
-                        'SQL failed (exists): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
-                            . $e->getMessage(),
-                        'PDO_EXEC_FAILED',
-                    );
+                    throw $this->sqlFailure('exists', $sql, $bindings, $e);
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
@@ -1202,11 +1203,7 @@ class PdoEngine
                 try {
                     $this->bindAndExecute($stmt, $bindings);
                 } catch (Throwable $e) {
-                    throw new VersaORMException(
-                        'SQL failed (first): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
-                            . $e->getMessage(),
-                        'PDO_EXEC_FAILED',
-                    );
+                    throw $this->sqlFailure('first', $sql, $bindings, $e);
                 }
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
@@ -1232,10 +1229,7 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException(
-                    'SQL failed (get): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(),
-                    'PDO_EXEC_FAILED',
-                );
+                throw $this->sqlFailure('get', $sql, $bindings, $e);
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(false, $elapsed);
@@ -1273,9 +1267,13 @@ class PdoEngine
 
             if (str_starts_with($normalized, 'COMMIT')) {
                 $pdo->commit();
-                // Al confirmar cambios, invalidar caché por seguridad
+                // Al confirmar cambios, invalidar caché de resultados por seguridad.
+                // Las sentencias preparadas NO se descartan: siguen siendo válidas si el
+                // esquema no cambió, y cualquier DDL dentro de la transacción ya pasó por
+                // clearStmtCache(). Descartarlas aquí hacía que un bucle de escrituras con
+                // una transacción por unidad de trabajo volviera a preparar todo en cada
+                // iteración, anulando la caché.
                 $this->clearAllCache();
-                $this->clearStmtCache();
 
                 return null;
             }
@@ -1284,7 +1282,6 @@ class PdoEngine
                 $pdo->rollBack();
                 // Tras rollback, el caché puede quedar inconsistente si se cachearon lecturas intermedias
                 $this->clearAllCache();
-                $this->clearStmtCache();
 
                 return null;
             }
@@ -1293,7 +1290,7 @@ class PdoEngine
             $isWrite =
                 preg_match('/^\s*(INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql)
                 === 1;
-            $isDDL = preg_match('/^\s*(CREATE|DROP|ALTER|REINDEX|VACUUM)\b/i', $sql) === 1;
+            $isDDL = preg_match('/^\s*(CREATE|DROP|ALTER|RENAME|REINDEX|VACUUM)\b/i', $sql) === 1;
 
             if ($isDDL) {
                 // Antes de DDL, limpiar sentencias preparadas que referencian esquema previo
@@ -1306,10 +1303,7 @@ class PdoEngine
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
                 // Normalizar excepciones a VersaORMException para la API
-                throw new VersaORMException(
-                    'SQL failed (raw): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | ' . $e->getMessage(),
-                    'PDO_EXEC_FAILED',
-                );
+                throw $this->sqlFailure('raw', $sql, $bindings, $e);
             }
 
             $elapsed = (microtime(true) - $start) * 1000;
@@ -1357,11 +1351,7 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException(
-                    'SQL failed (insert): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
-                        . $e->getMessage(),
-                    'PDO_EXEC_FAILED',
-                );
+                throw $this->sqlFailure('insert', $sql, $bindings, $e);
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(true, $elapsed);
@@ -1379,11 +1369,7 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException(
-                    'SQL failed (insertGetId): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
-                        . $e->getMessage(),
-                    'PDO_EXEC_FAILED',
-                );
+                throw $this->sqlFailure('insertGetId', $sql, $bindings, $e);
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(true, $elapsed);
@@ -1408,11 +1394,7 @@ class PdoEngine
             try {
                 $this->bindAndExecute($stmt, $bindings);
             } catch (Throwable $e) {
-                throw new VersaORMException(
-                    'SQL failed (' . $action . '): ' . $sql . ' | Bindings: ' . json_encode($bindings) . ' | '
-                        . $e->getMessage(),
-                    'PDO_EXEC_FAILED',
-                );
+                throw $this->sqlFailure($action, $sql, $bindings, $e);
             }
             $elapsed = (microtime(true) - $start) * 1000;
             $this->recordQuery(true, $elapsed);
@@ -1486,6 +1468,91 @@ class PdoEngine
             unset(self::$stmtCache[$k]);
         }
         self::$stmtCache = [];
+        // El esquema sólo cambia con DDL, y todos los caminos de DDL pasan por aquí.
+        self::clearSchemaCache();
+    }
+
+    /**
+     * Construye la excepción de un fallo de SQL sin filtrar datos en el mensaje.
+     *
+     * El SQL y los bindings van a los campos estructurados de VersaORMException
+     * (que ErrorHandler sí sanitiza), nunca al mensaje: formatErrorForApi() devuelve
+     * el mensaje al cliente HTTP incluso con debug desactivado.
+     *
+     * @param array<int, mixed> $bindings
+     */
+    private function sqlFailure(string $stage, string $sql, array $bindings, Throwable $e): VersaORMException
+    {
+        return new VersaORMException(
+            sprintf('SQL failed (%s): %s', $stage, $e->getMessage()),
+            'PDO_EXEC_FAILED',
+            $sql,
+            array_values($bindings),
+        );
+    }
+
+    /**
+     * Cuántas filas caben en una sola sentencia multi-fila.
+     *
+     * Nadie contaba placeholders: 10 000 registros × 10 columnas son 100 000 marcadores,
+     * por encima del límite de 65 535 de MySQL/PostgreSQL y de los 32 766 de SQLite
+     * (999 en builds anteriores a 3.32). El resultado era un error del driver en cuanto
+     * el lote crecía, justo en producción y no en los tests.
+     */
+    private function placeholderSafeBatchSize(int $requested, int $columnsPerRow): int
+    {
+        $driver = $this->dialect->getName();
+        $max = match ($driver) {
+            'sqlite' => 30_000,
+            default => 60_000,
+        };
+        $byBudget = intdiv($max, max(1, $columnsPerRow));
+
+        return max(1, min($requested > 0 ? $requested : 1000, $byBudget));
+    }
+
+    /** Descarta la introspección de esquema memorizada (llamar tras cualquier DDL). */
+    private static function clearSchemaCache(): void
+    {
+        self::$schemaCache = null;
+    }
+
+    /**
+     * Invalida la caché de esquema del proceso.
+     *
+     * Pública para que el código que cambia el esquema por fuera del motor (migraciones
+     * propias, SchemaBuilder, o un clearDatabaseSchemaCache() en un modelo) pueda
+     * forzar una relectura.
+     */
+    public static function invalidateSchemaCache(): void
+    {
+        self::clearSchemaCache();
+    }
+
+    /**
+     * Devuelve introspección de esquema desde caché, o la consulta y la memoriza.
+     *
+     * @param callable(): array<array-key, mixed> $fetch
+     *
+     * @return array<array-key, mixed>
+     */
+    private function cachedSchema(PDO $pdo, string $subject, string $table, callable $fetch): array
+    {
+        self::$schemaCache ??= new WeakMap();
+        $key = $subject . '|' . $table;
+        $perConnection = self::$schemaCache[$pdo] ?? [];
+
+        if (isset($perConnection[$key])) {
+            self::$metrics['cache_hits']++;
+
+            return $perConnection[$key];
+        }
+        self::$metrics['cache_misses']++;
+        $value = $fetch();
+        $perConnection[$key] = $value;
+        self::$schemaCache[$pdo] = $perConnection;
+
+        return $value;
     }
 
     /** Registra ejecución de consulta */
@@ -1632,10 +1699,19 @@ class PdoEngine
     private function detectDialect(): SqlDialectInterface
     {
         $rawDriver = $this->config['driver'] ?? 'mysql';
-        $driver = strtolower(is_scalar($rawDriver) ? (string) $rawDriver : 'mysql');
 
-        return match ($driver) {
-            'mysql', 'mariadb' => new MySQLDialect(),
+        return self::dialectFor(is_scalar($rawDriver) ? (string) $rawDriver : 'mysql');
+    }
+
+    /**
+     * Resuelve el dialecto a partir del nombre del driver.
+     *
+     * Pública y estática para que QueryBuilder pueda compilar SQL con el mismo dialecto
+     * que usará el motor al ejecutarlo (toSql()/getBindings()/union()).
+     */
+    public static function dialectFor(string $driver): SqlDialectInterface
+    {
+        return match (strtolower($driver)) {
             'pgsql', 'postgres', 'postgresql' => new PostgreSQLDialect(),
             'sqlite' => new SQLiteDialect(),
             default => new MySQLDialect(),
@@ -1664,7 +1740,11 @@ class PdoEngine
             ];
         }
         $total = count($records);
-        $batches = $batchSize > 0 ? (int) ceil($total / $batchSize) : 1;
+        // Acotar por el número de columnas: el batchSize pedido puede desbordar el
+        // límite de placeholders del driver.
+        $firstRecord = reset($records);
+        $batchSize = $this->placeholderSafeBatchSize($batchSize, is_array($firstRecord) ? count($firstRecord) : 1);
+        $batches = (int) ceil($total / $batchSize);
         $totalInserted = 0;
         $insertedIds = [];
         $driverName = '';
@@ -1954,30 +2034,55 @@ class PdoEngine
      */
     private function handleUpsertMany(array $params, PDO $pdo): array
     {
-        [$sqlUp, $bindUp] = SqlGenerator::generate(
-            'query',
-            [
-                'method' => 'upsertMany',
-                'table' => $params['table'] ?? '',
-                'records' => $params['records'] ?? [],
+        $records = is_array($params['records'] ?? null) ? array_values($params['records']) : [];
+
+        if ($records === []) {
+            return [
+                'status' => 'success',
+                'total_processed' => 0,
                 'unique_keys' => $params['unique_keys'] ?? [],
                 'update_columns' => $params['update_columns'] ?? [],
-            ],
-            $this->dialect,
-        );
-        $stmt = $this->prepareCached($pdo, $sqlUp);
-        $this->bindAndExecute($stmt, $bindUp);
-        $affected = $stmt->rowCount();
+            ];
+        }
 
-        try {
-            $stmt->closeCursor();
-        } catch (Throwable) { // ignore
+        // Trocear: antes se ignoraba el batch_size recibido y se armaba una única
+        // sentencia con todos los registros, desbordando el límite de placeholders.
+        $rawBatchSize = $params['batch_size'] ?? 1000;
+        $first = $records[0];
+        $batchSize = $this->placeholderSafeBatchSize(
+            is_numeric($rawBatchSize) ? (int) $rawBatchSize : 1000,
+            is_array($first) ? count($first) : 1,
+        );
+        $affected = 0;
+        $chunks = array_chunk($records, max(1, $batchSize));
+
+        foreach ($chunks as $chunk) {
+            [$sqlUp, $bindUp] = SqlGenerator::generate(
+                'query',
+                [
+                    'method' => 'upsertMany',
+                    'table' => $params['table'] ?? '',
+                    'records' => $chunk,
+                    'unique_keys' => $params['unique_keys'] ?? [],
+                    'update_columns' => $params['update_columns'] ?? [],
+                ],
+                $this->dialect,
+            );
+            $stmt = $this->prepareCached($pdo, $sqlUp);
+            $this->bindAndExecute($stmt, $bindUp);
+            $affected += $stmt->rowCount();
+
+            try {
+                $stmt->closeCursor();
+            } catch (Throwable) { // ignore
+            }
         }
         $this->clearAllCache();
 
         return [
             'status' => 'success',
-            'total_processed' => is_array($params['records'] ?? null) ? count($params['records']) : $affected,
+            'total_processed' => count($records),
+            'affected_rows' => $affected,
             'unique_keys' => $params['unique_keys'] ?? [],
             'update_columns' => $params['update_columns'] ?? [],
         ];
@@ -2220,13 +2325,19 @@ class PdoEngine
         }
 
         if ($driver === 'postgres') {
+            // Las columnas se ordenan por su posición DENTRO del índice, no por su
+            // posición en la tabla. Con `attnum = ANY(ix.indkey)` + `ORDER BY a.attnum`
+            // un índice sobre (precio_total, cantidad) se reportaba como
+            // (cantidad, precio_total) si 'cantidad' aparecía antes en la tabla, y en un
+            // índice compuesto el orden es semánticamente significativo.
             $sql = "SELECT i.relname AS name, a.attname AS column, ix.indisunique AS unique
             FROM pg_class t
             JOIN pg_index ix ON t.oid = ix.indrelid
             JOIN pg_class i ON i.oid = ix.indexrelid
-            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+            JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS k(attnum, ord) ON true
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = k.attnum
             WHERE t.relkind = 'r' AND t.relname = ?
-            ORDER BY i.relname, a.attnum";
+            ORDER BY i.relname, k.ord";
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
             /** @var list<array{name?:string,column?:string,unique?:bool|int|string}> $rows */
@@ -2282,7 +2393,7 @@ class PdoEngine
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
-            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $result */
+            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $foreignKeys */
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 
@@ -2340,7 +2451,7 @@ class PdoEngine
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
-            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $result */
+            /** @var list<array{name?:string,column?:string,foreign_table?:string,foreign_column?:string,on_delete?:string,on_update?:string}> $foreignKeys */
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
         }
 
@@ -2485,7 +2596,7 @@ class PdoEngine
      * @param array<int, mixed> $bindings
      * @param array<string,mixed>|bool|int|list<array<string,mixed>>|null $result
      */
-    private function storeInCache(string $sql, array $bindings, string $method, null|array|bool|int $result): void
+    private function storeInCache(string $sql, array $bindings, string $method, array|bool|int|null $result): void
     {
         $key = $this->makeCacheKey($sql, $bindings, $method);
         $now = time();
@@ -2502,14 +2613,14 @@ class PdoEngine
             'ttl' => self::$queryCacheTtl,
         ];
 
-        // Indexar por tabla para invalidación selectiva (best-effort)
+        // Indexar por tabla para invalidación selectiva (best-effort).
+        //
+        // Las claves de caché se guardan como CLAVES del array, no como valores: así el
+        // dedupe es gratis (antes era un in_array() O(n) sobre una lista creciente de
+        // hashes) y eliminar una entrada es un unset() en vez de array_search() +
+        // array_values(), que hacía cuadrática la evicción LRU.
         foreach ($this->extractTablesFromSql($sql) as $table) {
-            self::$tableKeyIndex[$table] ??= [];
-
-            // Evitar inflar con duplicados
-            if (!in_array($key, self::$tableKeyIndex[$table], true)) {
-                self::$tableKeyIndex[$table][] = $key;
-            }
+            self::$tableKeyIndex[$table][$key] = true;
         }
     }
 
@@ -2538,13 +2649,25 @@ class PdoEngine
         foreach ($keysToRemove as $key) {
             unset(self::$queryCache[$key]);
 
-            // También limpiar del índice de tablas
-            foreach (self::$tableKeyIndex as $table => $keys) {
-                $index = array_search($key, $keys, true);
-                if ($index !== false) {
-                    unset(self::$tableKeyIndex[$table][$index]);
-                    self::$tableKeyIndex[$table] = array_values(self::$tableKeyIndex[$table]);
+            // También limpiar del índice de tablas.
+            foreach (array_keys(self::$tableKeyIndex) as $table) {
+                unset(self::$tableKeyIndex[$table][$key]);
+
+                if (self::$tableKeyIndex[$table] === []) {
+                    unset(self::$tableKeyIndex[$table]);
                 }
+            }
+        }
+    }
+
+    /** Quita una clave del índice por tabla (al expirar o invalidarse su entrada). */
+    private static function forgetCacheKeyFromIndex(string $key): void
+    {
+        foreach (array_keys(self::$tableKeyIndex) as $table) {
+            unset(self::$tableKeyIndex[$table][$key]);
+
+            if (self::$tableKeyIndex[$table] === []) {
+                unset(self::$tableKeyIndex[$table]);
             }
         }
     }
@@ -2557,7 +2680,7 @@ class PdoEngine
             return;
         }
 
-        foreach (self::$tableKeyIndex[$t] as $key) {
+        foreach (array_keys(self::$tableKeyIndex[$t]) as $key) {
             unset(self::$queryCache[$key]);
         }
         unset(self::$tableKeyIndex[$t]);
@@ -2565,19 +2688,20 @@ class PdoEngine
 
     private static function invalidateCacheByPattern(string $pattern): void
     {
-        $regex = '/' . str_replace('/', '\/', $pattern) . '/i';
+        // El patrón viene del llamador y antes se insertaba en un regex escapando sólo
+        // '/', así que podía inyectar modificadores o construir un regex catastrófico
+        // (ReDoS). Se trata como un glob —'*' y '?'— que es lo que el nombre promete, y
+        // todo lo demás se escapa.
+        $regex = '/^' . str_replace(['\*', '\?'], ['.*', '.'], preg_quote($pattern, '/')) . '$/i';
 
-        foreach (array_keys(self::$queryCache) as $key) {
-            // No tenemos el SQL original aquí, así que invalidación por patrón
-            // no puede mapear directamente; como aproximación, si el patrón
-            // coincide con alguna tabla indexada, invalidar por esa tabla.
-            foreach (array_keys(self::$tableKeyIndex) as $table) {
-                if (preg_match($regex, $table) !== 1) {
-                    continue;
-                }
-
-                self::invalidateCacheForTable($table);
+        // El foreach externo sobre $queryCache no usaba su variable: hacía
+        // O(entradas × tablas) evaluaciones de regex para un trabajo O(tablas).
+        foreach (array_keys(self::$tableKeyIndex) as $table) {
+            if (preg_match($regex, $table) !== 1) {
+                continue;
             }
+
+            self::invalidateCacheForTable($table);
         }
     }
 
