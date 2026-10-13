@@ -358,6 +358,65 @@ final class DataCorrectnessRegressionTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
+    // Bindings de expresiones raw: se descartaban en la normalización
+    // ---------------------------------------------------------------------
+
+    /**
+     * `selectRaw()` con bindings no funcionaba en absoluto.
+     *
+     * La normalización del select en SqlGenerator reconstruía cada entrada con sólo
+     * type/expression/subquery, descartando 'bindings'. La expresión llegaba al SQL con
+     * sus '?' pero sin valores: en PostgreSQL el driver rechazaba la consulta, y en
+     * SQLite/MySQL devolvía NULL en silencio, que es peor.
+     */
+    public function testSelectRawBindingsReachTheQuery(): void
+    {
+        $this->orm->exec('CREATE TABLE t (id INTEGER PRIMARY KEY, n INT)');
+        $this->orm->exec('INSERT INTO t VALUES (1, 10)');
+
+        $query = $this->orm->table('t')->selectRaw('n + ? AS suma', [5]);
+
+        static::assertSame([5], $query->getBindings());
+        // Antes devolvía ['suma' => null].
+        static::assertSame([['suma' => 15]], $query->getAll());
+    }
+
+    /** Lo mismo en `orderByRaw()`, que tampoco recogía sus bindings. */
+    public function testOrderByRawBindingsReachTheQuery(): void
+    {
+        $this->orm->exec('CREATE TABLE t (id INTEGER PRIMARY KEY, n INT)');
+
+        foreach ([[1, 5], [2, 50], [3, 500]] as $row) {
+            $this->orm->exec('INSERT INTO t VALUES (?, ?)', $row);
+        }
+
+        // Ordena por la distancia a 60: 50 (10), 5 (55), 500 (440).
+        $query = $this->orm->table('t')->select(['id'])->orderByRaw('ABS(n - ?) ASC', [60]);
+
+        static::assertSame([60], $query->getBindings());
+        static::assertSame([2, 1, 3], array_column($query->getAll(), 'id'));
+    }
+
+    /**
+     * Con expresiones raw en SELECT, WHERE y ORDER BY a la vez, los bindings tienen que
+     * salir en el orden en que aparecen sus placeholders en el SQL.
+     */
+    public function testRawBindingsKeepPlaceholderOrderAcrossClauses(): void
+    {
+        $query = $this->orm->table('t')
+            ->selectRaw('f(?) AS a', ['SELECT'])
+            ->where('x', '=', 'WHERE')
+            ->orderByRaw('g(?)', ['ORDER']);
+
+        static::assertSame(['SELECT', 'WHERE', 'ORDER'], $query->getBindings());
+        static::assertSame(
+            substr_count($query->toSql(), '?'),
+            count($query->getBindings()),
+            'un placeholder sin su binding hace que el driver rechace la consulta',
+        );
+    }
+
+    // ---------------------------------------------------------------------
 
     private function seedKinds(): void
     {

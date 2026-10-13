@@ -98,7 +98,7 @@ abstract class BaseModel extends VersaModel
     /** Proxy estático alternativo: buscar por ID como modelo tipado. */
     public static function findModel(int $id, string $pk = 'id'): ?static
     {
-        return static::make()->find($id, $pk);
+        return static::find($id, $pk);
     }
 
     /**
@@ -116,16 +116,6 @@ abstract class BaseModel extends VersaModel
     public function all(): array
     {
         return $this->querySelf()->findAll();
-    }
-
-    /** Buscar por ID (instancia). */
-    /**
-     * Buscar por ID (instancia) devolviendo el modelo tipado concreto.
-     */
-    public function find(int $id, string $pk = 'id'): ?static
-    {
-        /** @var static|null $result */
-        return $this->querySelf()->where($pk, '=', $id)->findOne();
     }
 
     /** Obtener todos como arrays (instancia). */

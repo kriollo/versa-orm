@@ -231,6 +231,19 @@ segundo generador de SQL.
 - **`clearDatabaseSchemaCache()`** sólo limpiaba la copia de la instancia, así que la
   siguiente consulta la repoblaba desde la caché compartida del proceso. Ahora invalida
   ambas.
+- **`selectRaw()` y `orderByRaw()` descartaban sus bindings.** La normalización del
+  select en `SqlGenerator` reconstruía cada entrada con sólo `type`,
+  `expression` y `subquery`, y la rama raw del `ORDER BY` nunca añadía los suyos.
+  La expresión llegaba al SQL con sus `?` pero sin valores: en PostgreSQL el
+  driver rechazaba la consulta (*"bind message supplies 0 parameters"*) y en
+  SQLite/MySQL devolvía **NULL en silencio**, que es peor. Es decir,
+  `selectRaw('n + ? AS suma', [5])` no funcionaba en ningún motor. Los bindings
+  se recogen ahora en el orden en que aparecen sus placeholders
+  (SELECT → WHERE → GROUP BY → HAVING → ORDER BY).
+- **El operador `<#>` de pgvector se bloqueaba como comentario.** La detección de
+  comentarios SQL trataba cualquier `#` como inicio de comentario de MySQL, de
+  modo que el producto interno de pgvector era inválido. Ahora se exige que el
+  `#` no venga precedido por `<`.
 - **`BelongsToMany::sync()` preserva el tipo de los ids.** Internamente se comparan
   como strings (`array_diff` castea), y normalizarlos sin más hacía que
   `sync([1, 2])` devolviera `['1', '2']`: un llamador que buscara sus ids con
@@ -285,6 +298,11 @@ PHPStan nivel 9 queda **sin errores** con la versión que instala CI.
   vez de repetir el mismo trabajo en las cuatro entradas de la matriz.
 - **`mago.toml` restaurado.** El del working tree era de otro proyecto (apuntaba a
   `versaWYS/kernel` y **excluía `src`**), así que `composer mago:lint` no analizaba nada.
+- **Los 13 tests de pgvector corrían por primera vez** y sacaron a la luz los dos
+  bugs de bindings de arriba, más tres errores en los propios tests: llamaban a
+  `$orm->getAll()` y `$orm->getRow()`, que no existen (la API es `exec()`), e
+  invocaban `select()` *después* de `selectVectorSimilarity()`, cuando `select()`
+  **reemplaza** la lista de columnas y borraba la expresión de similitud.
 - **pgvector en CI**: la imagen `postgres:14` no trae la extensión, así que los 13 tests
   de soporte vectorial se saltaban en CI y en local, dejando esa funcionalidad sin
   verificar en ninguna parte. Se usa `pgvector/pgvector:pg16` y se crea la extensión.
@@ -313,7 +331,7 @@ PHPStan nivel 9 queda **sin errores** con la versión que instala CI.
   sí en la imagen de CI.)
 - PHPStan nivel 9, con la versión que instala CI: **sin errores**.
 - php-cs-fixer: sin cambios pendientes.
-- Se añadieron 16 tests de regresión (`tests/unit/Regression/`), de los cuales **11
+- Se añadieron 19 tests de regresión (`tests/unit/Regression/`), de los cuales **14
   fallan contra el código anterior**, y el primer `#[DataProvider]` del repositorio
   (`tests/unit/SQL/SelectExpressionTest.php`, 26 formas válidas + 18 maliciosas).
 - `testPostgreSQL/Schema/ForeignKeysAndConstraintsTest.php`: los 7 tests de claves

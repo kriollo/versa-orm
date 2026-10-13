@@ -76,7 +76,7 @@ class SqlGenerator
      *                                     where?: list<array{type?:string,operator?:string,column?:string,first_col?:string,second_col?:string,value:mixed}>,
      *                                     groupBy?: list<string>|array{type:string,expression?:string,bindings?:array<int,mixed>},
      *                                     having?: list<array{column:string,operator?:string,value:mixed}>,
-     *                                     orderBy?: list<array{column?:string,direction?:string,type?:string,expression?:string}>,
+     *                                     orderBy?: list<array{column?:string,direction?:string,type?:string,expression?:string,bindings?:array<int,mixed>}>,
      *                                     limit?: int, offset?: int
      *
      * @return array{0:string,1:array<int, mixed>}
@@ -114,7 +114,7 @@ class SqlGenerator
         /**
          * Normalizamos SELECT asegurando lista tipada.
          *
-         * @var list<array{type:string,expression?:string,subquery?:string}|string> $select
+         * @var list<array{type:string,expression?:string,subquery?:string,bindings?:array<int,mixed>}|string> $select
          */
         $select = [];
 
@@ -136,6 +136,12 @@ class SqlGenerator
                             ? $s['expression']
                             : null,
                         'subquery' => isset($s['subquery']) && is_string($s['subquery']) ? $s['subquery'] : null,
+                        // Esta normalización reconstruía la entrada sin 'bindings', así
+                        // que los valores de selectRaw() se perdían aquí mismo: la
+                        // expresión llegaba al SQL con sus '?' pero sin valores.
+                        'bindings' => isset($s['bindings']) && is_array($s['bindings'])
+                            ? array_values($s['bindings'])
+                            : [],
                     ];
                 }
             }
@@ -146,9 +152,21 @@ class SqlGenerator
         }
         /** @var list<string> $selectSqlParts */
         $selectSqlParts = [];
+        /**
+         * Bindings de las expresiones de selectRaw().
+         *
+         * Se acumulan aparte porque $bindings se inicializa más abajo, y tienen que ir
+         * PRIMERO: sus placeholders son los que aparecen antes en el SQL. Antes no se
+         * recogían en absoluto, así que una expresión como
+         * `selectRaw('(1 - (e <=> ?::vector)) AS s', [$v])` llegaba al driver con su '?'
+         * pero sin valor ("bind message supplies N parameters, but ... requires N+1").
+         *
+         * @var array<int,mixed> $selectBindings
+         */
+        $selectBindings = [];
 
         foreach ($select as $sel) {
-            /** @var array{type:string,expression?:string,subquery?:string}|string $sel */
+            /** @var array{type:string,expression?:string,subquery?:string,bindings?:array<int,mixed>}|string $sel */
             if (is_string($sel)) {
                 $selectSqlParts[] = self::compileSelectPart($sel, $dialect);
 
@@ -159,6 +177,10 @@ class SqlGenerator
 
             if ($type === 'raw' && isset($sel['expression'])) {
                 $selectSqlParts[] = $sel['expression'];
+
+                if (isset($sel['bindings']) && is_array($sel['bindings'])) {
+                    $selectBindings = array_merge($selectBindings, array_values($sel['bindings']));
+                }
             } elseif ($type === 'subquery') {
                 throw new VersaORMException('Subquery SELECT not supported yet in PDO engine');
             }
@@ -183,7 +205,7 @@ class SqlGenerator
                 'SELECT ' . implode(', ', $selectSqlParts) . ' FROM ' . self::compileTableReference($table, $dialect);
         }
         /** @var array<int,mixed> $bindings */
-        $bindings = [];
+        $bindings = $selectBindings;
 
         if ($fromSub !== null) {
             $bindings = array_merge($bindings, $fromSub['bindings']);
@@ -572,7 +594,7 @@ class SqlGenerator
         }
 
         // ORDER BY (single or raw)
-        /** @var list<array{column?:string,direction?:string,type?:string,expression?:string}> $orderBy */
+        /** @var list<array{column?:string,direction?:string,type?:string,expression?:string,bindings?:array<int,mixed>}> $orderBy */
         $orderBy = [];
 
         if (isset($params['orderBy']) && is_array($params['orderBy'])) {
@@ -593,6 +615,15 @@ class SqlGenerator
             if (isset($ob['type']) && $ob['type'] === 'raw') {
                 $rawExpr = $ob['expression'] ?? '';
                 $sql .= ' ORDER BY ' . (is_scalar($rawExpr) ? (string) $rawExpr : '');
+
+                // Los bindings del ORDER BY raw no se recogían: la expresión llegaba al
+                // SQL con sus '?' pero sin valores, así que el driver rechazaba la
+                // consulta ("bind message supplies 0 parameters, but prepared statement
+                // requires 1"). Van después de WHERE/GROUP BY/HAVING, que es el orden en
+                // que aparecen sus placeholders en el SQL.
+                if (isset($ob['bindings']) && is_array($ob['bindings'])) {
+                    $bindings = array_merge($bindings, array_values($ob['bindings']));
+                }
             } elseif (isset($ob['column'])) {
                 $rawDir = $ob['direction'] ?? 'ASC';
                 $dir = strtoupper(is_scalar($rawDir) ? (string) $rawDir : 'ASC');

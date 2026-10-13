@@ -68,7 +68,10 @@ class VectorSupportTest extends TestCase
     /** @test */
     public function test_can_create_table_with_vector_column(): void
     {
-        $result = self::$orm->getAll("SELECT column_name, data_type, udt_name
+        // VersaORM no expone getAll()/getRow(): la API para SQL crudo es exec().
+        // Estos tests nunca se habían ejecutado (pgvector no estaba ni en local ni en
+        // CI), así que el error de API pasó desapercibido.
+        $result = self::$orm->exec("SELECT column_name, data_type, udt_name
              FROM information_schema.columns
              WHERE table_name = ?
                AND column_name = 'embedding'", [self::TABLE]);
@@ -83,7 +86,7 @@ class VectorSupportTest extends TestCase
     /** @test */
     public function test_can_create_table_with_tsvector_column(): void
     {
-        $result = self::$orm->getAll("SELECT column_name, data_type
+        $result = self::$orm->exec("SELECT column_name, data_type
              FROM information_schema.columns
              WHERE table_name = ?
                AND column_name = 'search_vector'", [self::TABLE]);
@@ -101,9 +104,9 @@ class VectorSupportTest extends TestCase
             ['Doc A', '[1,0,0]'],
         );
 
-        $row = self::$orm->getRow('SELECT title FROM ' . self::TABLE . " WHERE title = 'Doc A'");
-        static::assertNotNull($row);
-        static::assertSame('Doc A', $row['title']);
+        $rows = self::$orm->exec('SELECT title FROM ' . self::TABLE . ' WHERE title = ?', ['Doc A']);
+        static::assertNotEmpty($rows);
+        static::assertSame('Doc A', $rows[0]['title']);
     }
 
     /** @test */
@@ -168,8 +171,10 @@ class VectorSupportTest extends TestCase
         $query = [0.9, 0.1, 0.0];
         $result = self::$orm
             ->table(self::TABLE)
-            ->selectVectorSimilarity('embedding', $query, 'cosine', 'similarity')
+            // select() REEMPLAZA la lista de columnas, así que tiene que ir ANTES de
+            // selectVectorSimilarity(), que añade su expresión con selectRaw().
             ->select(['title'])
+            ->selectVectorSimilarity('embedding', $query, 'cosine', 'similarity')
             ->orderBySimilarity('embedding', $query, 'cosine', 'asc')
             ->limit(3)
             ->get();
@@ -188,8 +193,8 @@ class VectorSupportTest extends TestCase
         $query = [1.0, 0.0, 0.0];
         $result = self::$orm
             ->table(self::TABLE)
-            ->whereVectorSimilarity('embedding', $query, 0.99, 'cosine')
             ->select(['title'])
+            ->whereVectorSimilarity('embedding', $query, 0.99, 'cosine')
             ->get();
 
         // Solo Doc A ([1,0,0]) debe superar el umbral 0.99 de similitud coseno con [1,0,0]
@@ -230,8 +235,8 @@ class VectorSupportTest extends TestCase
         $query = [1.0, 0.0, 0.0];
         $result = self::$orm
             ->table(self::TABLE)
-            ->whereVectorSimilarity('embedding', $query, 0.8, 'l2')
             ->select(['title'])
+            ->whereVectorSimilarity('embedding', $query, 0.8, 'l2')
             ->get();
 
         // Solo Doc A tiene distancia L2 = 0 (similitud = 1.0 >= 0.8)

@@ -10,7 +10,7 @@ declare(strict_types=1);
 return [
     'database' => [
         'engine' => 'pdo',
-        'host' => 'localhost',
+        'host' => '127.0.0.1',
         'port' => 3306,
         'database' => 'versaorm_trello',
         'username' => 'local',

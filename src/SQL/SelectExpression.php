@@ -609,13 +609,19 @@ final class SelectExpression
             return true;
         }
 
-        return (
+        if (
             str_contains($stripped, ';')
             || str_contains($stripped, '--')
             || str_contains($stripped, '/*')
             || str_contains($stripped, '*/')
-            || str_contains($stripped, '#')
-        );
+        ) {
+            return true;
+        }
+
+        // '#' inicia comentario en MySQL, pero también forma parte del operador de
+        // producto interno de pgvector ('<#>'). Se exige que no venga precedido por '<'
+        // para no romper `embedding <#> '[...]'::vector`.
+        return preg_match('/(?<!<)#/', $stripped) === 1;
     }
 
     /**
