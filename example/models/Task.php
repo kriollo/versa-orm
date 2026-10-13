@@ -9,7 +9,6 @@ use Exception;
 use VersaORM\Relations\BelongsTo;
 use VersaORM\Relations\BelongsToMany;
 use VersaORM\Relations\HasMany;
-use VersaORM\VersaModel;
 
 use function in_array;
 

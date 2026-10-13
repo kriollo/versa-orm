@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\BaseModel;
-use VersaORM\Relations\HasMany;
 use Exception;
+use VersaORM\Relations\HasMany;
 
 use function count;
 use function in_array;
