@@ -296,6 +296,21 @@ class VersaORM
     }
 
     /**
+     * Escucha cada consulta que se ejecuta, en todas las conexiones: recibe el SQL, sus parámetros, la
+     * duración en milisegundos y el error si falló. Pensado para profilers y depuración; null lo quita.
+     *
+     *     VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error): void {
+     *         $consultas[] = compact('sql', 'ms');
+     *     });
+     *
+     * @param null|callable(string, array<int|string, mixed>, float, ?\Throwable): void $listener
+     */
+    public static function onQuery(?callable $listener): void
+    {
+        PdoEngine::setQueryListener($listener);
+    }
+
+    /**
      * Método público para que QueryBuilder ejecute consultas estructuradas.
      *
      * @param array<string, mixed> $params
