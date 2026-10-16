@@ -98,7 +98,7 @@ class VersaORM
      * Versión de la librería. Fuente única: antes version() devolvía '1.6.0'
      * hardcodeado mientras composer.json declaraba otra cosa.
      */
-    public const VERSION = '2.0.1';
+    public const VERSION = '2.1.0';
 
     /**
      * Configuración principal del ORM (forma parcial esperada).

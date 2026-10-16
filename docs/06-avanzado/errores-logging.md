@@ -185,6 +185,29 @@ $orm = new VersaORM(['driver'=>'mysql','debug'=>true,...]);
 SELECT id, columna_inexistente FROM users;
 ```
 
+## Escuchar cada consulta: `VersaORM::onQuery()` (2.1.0)
+
+Para un profiler, o para encontrar la consulta lenta o la que se repite (N+1):
+
+```php
+use VersaORM\VersaORM;
+
+$consultas = [];
+VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error) use (&$consultas): void {
+    $consultas[] = ['sql' => $sql, 'ms' => round($ms, 2), 'fallo' => $error?->getMessage()];
+});
+
+// ... la petición ...
+
+VersaORM::onQuery(null); // quitarlo
+```
+
+- **Alcance:** vale para todas las conexiones del proceso.
+- **Consultas que fallan:** también llegan, incluidas las que fallan al preparar (tabla o columna inexistente). El error sigue subiendo igual.
+- **Escuchador con fallas:** si el escuchador lanza una excepción, la consulta no se ve afectada.
+- **Costo:** sin escuchador no hay medición extra.
+- **Datos sensibles:** los `bindings` son los valores reales, así que no los guardes en un log de producción.
+
 ## Estructura de Logs Sugerida
 Formato simple por línea:
 ```
