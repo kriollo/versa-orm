@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VersaORM\SQL;
 
+use Closure;
 use PDO;
 use PDOStatement;
 use Throwable;
@@ -56,6 +57,9 @@ class PdoEngine
 
     /** @var int Límite máximo de entradas en query cache */
     private static int $queryCacheLimit = 1000;
+
+    /** @var null|Closure(string, array<int|string, mixed>, float, ?Throwable): void */
+    private static ?Closure $queryListener = null;
 
     // Métricas internas simples (estáticas para compartirse en tests)
     /**
@@ -219,6 +223,17 @@ class PdoEngine
         self::$metrics['hydration_fastpath_ms'] += $elapsedMs;
         // También acumular en métricas generales de hidratación
         self::recordHydration($count, $elapsedMs);
+    }
+
+    /**
+     * Recibe cada consulta ejecutada: (sql, bindings, milisegundos, error o null). null lo quita.
+     * Es estático para que valga en todas las conexiones del proceso (un profiler, por ejemplo).
+     *
+     * @param null|callable(string, array<int|string, mixed>, float, ?Throwable): void $listener
+     */
+    public static function setQueryListener(?callable $listener): void
+    {
+        self::$queryListener = $listener === null ? null : Closure::fromCallable($listener);
     }
 
     /** Permite inyectar un logger (por ejemplo, VersaORM::logDebug) */
@@ -1626,6 +1641,47 @@ class PdoEngine
      */
     private function bindAndExecute(PDOStatement $stmt, array $bindings): void
     {
+        if (self::$queryListener === null) {
+            $this->bindAndExecuteStatement($stmt, $bindings);
+
+            return;
+        }
+
+        $start = hrtime(true);
+        $error = null;
+
+        try {
+            $this->bindAndExecuteStatement($stmt, $bindings);
+        } catch (Throwable $e) {
+            $error = $e;
+
+            throw $e;
+        } finally {
+            self::notifyQueryListener($stmt->queryString, $bindings, (hrtime(true) - $start) / 1e6, $error);
+        }
+    }
+
+    /**
+     * @param array<int|string, mixed> $bindings
+     */
+    private static function notifyQueryListener(string $sql, array $bindings, float $ms, ?Throwable $error): void
+    {
+        if (self::$queryListener === null) {
+            return;
+        }
+
+        try {
+            (self::$queryListener)($sql, $bindings, $ms, $error);
+        } catch (Throwable) {
+            // Un escuchador que falla no puede romper la consulta
+        }
+    }
+
+    /**
+     * @param array<int|string, mixed> $bindings
+     */
+    private function bindAndExecuteStatement(PDOStatement $stmt, array $bindings): void
+    {
         if ($bindings !== []) {
             foreach (array_values($bindings) as $i => $val) {
                 $param = $i + 1; // 1-based
@@ -1679,7 +1735,15 @@ class PdoEngine
 
         self::$metrics['stmt_cache_misses']++;
         $start = microtime(true);
-        $stmt = $pdo->prepare($sql);
+
+        try {
+            $stmt = $pdo->prepare($sql);
+        } catch (Throwable $e) {
+            // Falla al preparar (tabla o columna inexistente): el escuchador también debe verla
+            self::notifyQueryListener($sql, [], (microtime(true) - $start) * 1000, $e);
+
+            throw $e;
+        }
         self::$metrics['total_prepare_ms'] += (microtime(true) - $start) * 1000;
 
         // Cachear con metadata

@@ -98,7 +98,7 @@ class VersaORM
      * Versión de la librería. Fuente única: antes version() devolvía '1.6.0'
      * hardcodeado mientras composer.json declaraba otra cosa.
      */
-    public const VERSION = '2.0.1';
+    public const VERSION = '2.1.0';
 
     /**
      * Configuración principal del ORM (forma parcial esperada).
@@ -293,6 +293,21 @@ class VersaORM
     public function getTimezone(): string
     {
         return (string) ($this->config['timezone'] ?? date_default_timezone_get());
+    }
+
+    /**
+     * Escucha cada consulta que se ejecuta, en todas las conexiones: recibe el SQL, sus parámetros, la
+     * duración en milisegundos y el error si falló. Pensado para profilers y depuración; null lo quita.
+     *
+     *     VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error): void {
+     *         $consultas[] = compact('sql', 'ms');
+     *     });
+     *
+     * @param null|callable(string, array<int|string, mixed>, float, ?\Throwable): void $listener
+     */
+    public static function onQuery(?callable $listener): void
+    {
+        PdoEngine::setQueryListener($listener);
     }
 
     /**

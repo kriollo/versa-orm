@@ -1,3 +1,23 @@
+## [2.1.0] - 2026-10-15
+
+### ✨ Escuchador de consultas: `VersaORM::onQuery()`
+
+Recibe cada consulta ejecutada en cualquier conexión del proceso, con su SQL, sus parámetros, la duración en milisegundos y el error si falló. Es la base del profiler del kernel de versaWYS; antes solo había totales (`PdoEngine::getMetrics()`), sin forma de saber qué consulta tardó ni cuál se repitió.
+
+```php
+VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error): void {
+    // registrar, contar, detectar N+1...
+});
+VersaORM::onQuery(null); // lo quita
+```
+
+- **También las que fallan:** las consultas que fallan llegan con su error, incluidas las que fallan al preparar (tabla o columna inexistente). El error sigue subiendo igual que antes.
+- **No rompe nada:** un escuchador que lanza una excepción no rompe la consulta.
+- **Sin costo:** sin escuchador no hay medición extra.
+- **Pruebas:** `testSQLite/QueryListenerTest.php`.
+
+---
+
 ## [2.0.1] - 2026-10-13
 
 ### 🐛 Bindings de expresiones raw
