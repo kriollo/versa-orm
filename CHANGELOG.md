@@ -1,3 +1,13 @@
+## [2.2.1] - 2026-10-19
+
+### 🐛 `count()` y `exists()` dejaban el cursor abierto
+
+Las dos leían su única fila y no cerraban el cursor, a diferencia de `first()` y `get()`. Como la sentencia queda en caché, en SQLite la conexión quedaba en una lectura vieja: en cuanto otra conexión escribía, la del ORM ya no podía escribir («database is locked») hasta que terminara el proceso. En una petición web no se notaba; sí en un worker de cola o en una suite de pruebas.
+
+- **Pruebas:** `testSQLite/CursorLockTest.php`.
+
+---
+
 ## [2.2.0] - 2026-10-19
 
 ### ✨ Caché de esquema entre peticiones: `VersaORM::schemaCache()`

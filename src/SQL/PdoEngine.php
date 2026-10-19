@@ -1213,6 +1213,9 @@ class PdoEngine
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC) ?? [];
+                // La sentencia queda en caché: sin cerrar el cursor, SQLite mantiene el bloqueo de lectura
+                // y otra conexión no puede escribir mientras dure el proceso (un worker, por ejemplo)
+                $stmt->closeCursor();
                 $rawCount = $row['count'] ?? 0;
                 $result = is_numeric($rawCount) ? (int) $rawCount : 0;
 
@@ -1235,6 +1238,7 @@ class PdoEngine
                 $elapsed = (microtime(true) - $start) * 1000;
                 $this->recordQuery(false, $elapsed);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmt->closeCursor();
                 $rowArray = is_array($row) ? $row : [];
                 $val = array_values($rowArray)[0] ?? 0;
                 $result = (bool) $val;
