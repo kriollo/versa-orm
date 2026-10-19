@@ -15,6 +15,7 @@ VersaORM::schemaCache(null); // lo quita
 
 - **Clave por base:** la clave incluye el motor, el servidor, el puerto y la base, así que dos conexiones distintas no se mezclan.
 - **Se invalida solo:** `clear` se llama ante cualquier DDL que pase por el ORM, incluidas las migraciones. Un cambio hecho por fuera del ORM se ve cuando vence la entrada.
+- **Rollback con DDL:** revertir una transacción que tuvo DDL también lo invalida, por ejemplo una migración que falla a la mitad en PostgreSQL o SQLite. Un rollback sin DDL no lo toca.
 - **Sin almacén, como antes:** sin almacén configurado, el comportamiento es el mismo de siempre.
 - **Pruebas:** `testSQLite/SchemaStoreTest.php`.
 

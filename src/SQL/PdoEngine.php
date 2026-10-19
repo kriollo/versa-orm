@@ -68,6 +68,9 @@ class PdoEngine
      */
     private static ?array $schemaStore = null;
 
+    /** Hubo DDL en la transacción abierta: si se revierte, lo guardado del esquema ya no vale */
+    private bool $ddlInTransaction = false;
+
     // Métricas internas simples (estáticas para compartirse en tests)
     /**
      * @var array{
@@ -1308,6 +1311,7 @@ class PdoEngine
 
             if (str_starts_with($normalized, 'BEGIN') || str_starts_with($normalized, 'START TRANSACTION')) {
                 $pdo->beginTransaction();
+                $this->ddlInTransaction = false;
 
                 return null;
             }
@@ -1329,6 +1333,11 @@ class PdoEngine
                 $pdo->rollBack();
                 // Tras rollback, el caché puede quedar inconsistente si se cachearon lecturas intermedias
                 $this->clearAllCache();
+                // PostgreSQL y SQLite revierten también el DDL (una migración que falla a la mitad)
+                if ($this->ddlInTransaction) {
+                    $this->ddlInTransaction = false;
+                    self::clearSchemaCache();
+                }
 
                 return null;
             }
@@ -1342,6 +1351,7 @@ class PdoEngine
             if ($isDDL) {
                 // Antes de DDL, limpiar sentencias preparadas que referencian esquema previo
                 $this->clearStmtCache();
+                $this->ddlInTransaction = $this->ddlInTransaction || $pdo->inTransaction();
             }
             $stmt = $this->prepareCached($pdo, $sql);
             $start = microtime(true);

@@ -61,6 +61,23 @@ class SchemaStoreTest extends TestCase
         self::assertContains('extra', $nombres);
     }
 
+    public function testRevertirUnaTransaccionConDdlVaciaElAlmacenYUnaSinDdlNo(): void
+    {
+        self::$orm->beginTransaction();
+        self::$orm->exec('ALTER TABLE schema_store_x ADD COLUMN temporal TEXT');
+        self::$orm->schema('columns', 'schema_store_x');
+        self::assertNotEmpty($this->store, 'se guardó el esquema con la columna que se va a revertir');
+        self::$orm->rollBack();
+
+        self::assertSame([], $this->store);
+        self::assertNotContains('temporal', array_column(self::$orm->schema('columns', 'schema_store_x'), 'name'));
+
+        self::$orm->beginTransaction();
+        self::$orm->exec("INSERT INTO schema_store_x (nombre) VALUES ('x')");
+        self::$orm->rollBack();
+        self::assertNotEmpty($this->store, 'un rollback sin DDL no toca el esquema guardado');
+    }
+
     public function testSinAlmacenNoGuardaNada(): void
     {
         VersaORM::schemaCache(null);
