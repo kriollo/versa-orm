@@ -98,7 +98,7 @@ class VersaORM
      * Versión de la librería. Fuente única: antes version() devolvía '1.6.0'
      * hardcodeado mientras composer.json declaraba otra cosa.
      */
-    public const VERSION = '2.1.0';
+    public const VERSION = '2.2.0';
 
     /**
      * Configuración principal del ORM (forma parcial esperada).
@@ -308,6 +308,29 @@ class VersaORM
     public static function onQuery(?callable $listener): void
     {
         PdoEngine::setQueryListener($listener);
+    }
+
+    /**
+     * Guarda la introspección de esquema (columnas, índices, claves foráneas) entre peticiones. Sin
+     * esto se consulta a la base en cada petición, una vez por tabla: en PostgreSQL, information_schema
+     * es lo más lento de una petición típica. Pensado para producción; null en `$get` lo quita.
+     *
+     *     VersaORM::schemaCache(
+     *         get: fn(string $clave): ?array => $cache->get($clave),
+     *         set: fn(string $clave, array $valor) => $cache->set($clave, $valor, 86400),
+     *         clear: fn() => $cache->forgetPrefix('versaorm:schema:'),
+     *     );
+     *
+     * `clear` se llama ante cualquier DDL que pase por el ORM (CREATE, ALTER, DROP… y las migraciones);
+     * un cambio hecho por fuera del ORM se ve recién cuando vence la entrada o se limpia el caché.
+     *
+     * @param null|callable(string): (array<array-key, mixed>|null) $get
+     * @param null|callable(string, array<array-key, mixed>): void $set
+     * @param null|callable(): void $clear
+     */
+    public static function schemaCache(?callable $get, ?callable $set = null, ?callable $clear = null): void
+    {
+        PdoEngine::setSchemaStore($get, $set, $clear);
     }
 
     /**
@@ -1768,10 +1791,7 @@ class VersaORM
                 ? $params['limit']
                 : null;
 
-            $selectParts = array_map(
-                static fn(mixed $col): string => is_scalar($col) ? (string) $col : '',
-                $select,
-            );
+            $selectParts = array_map(static fn(mixed $col): string => is_scalar($col) ? (string) $col : '', $select);
             $query = "QueryBuilder: table={$table}, method={$method}, select=" . implode(',', $selectParts);
 
             if ($where !== []) {

@@ -3658,10 +3658,9 @@ class QueryBuilder
 
         // GROUP BY
         if ($builder->groupBy !== []) {
-            $groupByCols = array_map(
-                static fn(mixed $col): string => is_scalar($col) ? (string) $col : '',
-                $builder->groupBy,
-            );
+            $groupByCols = array_map(static fn(mixed $col): string => is_scalar($col)
+                ? (string) $col
+                : '', $builder->groupBy);
             $sql .= ' GROUP BY ' . implode(', ', array_filter($groupByCols, static fn(string $c): bool => $c !== ''));
         }
 
