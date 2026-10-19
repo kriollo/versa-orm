@@ -2300,7 +2300,7 @@ class PdoEngine
 
         if ($driver === 'mysql') {
             $stmt = $this->prepareCached($pdo, 'SHOW FULL COLUMNS FROM ' . $this->dialect->quoteIdentifier($table));
-            $stmt->execute();
+            $this->bindAndExecute($stmt, []);
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
             $result = [];
 
@@ -2339,7 +2339,7 @@ class PdoEngine
 
         if ($driver === 'sqlite') {
             $stmt = $this->prepareCached($pdo, 'PRAGMA table_info(' . $this->dialect->quoteIdentifier($table) . ')');
-            $stmt->execute();
+            $this->bindAndExecute($stmt, []);
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
             $result = [];
 
@@ -2405,7 +2405,7 @@ class PdoEngine
 
         if ($driver === 'mysql') {
             $stmt = $this->prepareCached($pdo, 'SHOW INDEX FROM ' . $this->dialect->quoteIdentifier($table));
-            $stmt->execute();
+            $this->bindAndExecute($stmt, []);
             /** @var list<array{Key_name?:string,Column_name?:string,Non_unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
 
@@ -2431,7 +2431,7 @@ class PdoEngine
 
         if ($driver === 'sqlite') {
             $stmt = $this->prepareCached($pdo, 'PRAGMA index_list(' . $this->dialect->quoteIdentifier($table) . ')');
-            $stmt->execute();
+            $this->bindAndExecute($stmt, []);
             /** @var list<array{name?:string,unique?:int|string}> $rows */
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
             $indexes = [];
@@ -2445,7 +2445,7 @@ class PdoEngine
                     $pdo,
                     'PRAGMA index_info(' . $this->dialect->quoteIdentifier($idxName) . ')',
                 );
-                $stmtInfo->execute();
+                $this->bindAndExecute($stmtInfo, []);
                 /** @var list<array{name?:string}> $colRows */
                 $colRows = $stmtInfo->fetchAll(PDO::FETCH_ASSOC) ?? [];
 
@@ -2545,7 +2545,7 @@ class PdoEngine
                 $pdo,
                 'PRAGMA foreign_key_list(' . $this->dialect->quoteIdentifier($table) . ')',
             );
-            $stmt->execute();
+            $this->bindAndExecute($stmt, []);
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
             /** @var list<array{table?:string,from?:string,to?:string,on_delete?:string,on_update?:string}> $result */
             $out = [];

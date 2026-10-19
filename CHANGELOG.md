@@ -26,6 +26,10 @@ VersaORM::schemaCache(null); // lo quita
 - **Índices y claves foráneas:** también se limitan a la tabla visible.
 - **Pruebas:** `testPostgreSQL/SchemaSearchPathTest.php`.
 
+### 🐛 `onQuery()` no veía la introspección de SQLite ni de MySQL
+
+`PRAGMA table_info`, `SHOW FULL COLUMNS`, `SHOW INDEX` y similares se ejecutaban sin pasar por el escuchador. El profiler no las mostraba, aunque sí corrían en cada petición.
+
 ---
 
 ## [2.1.0] - 2026-10-15
