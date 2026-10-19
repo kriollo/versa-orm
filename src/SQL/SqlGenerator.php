@@ -261,7 +261,8 @@ class SqlGenerator
             $isSQLite = stripos($dialect->getName(), 'sqlite') !== false;
             if ($isSQLite) {
                 // RIGHT JOIN no soportado: invertir tablas y columnas para simular RIGHT JOIN
-                $invBaseFrom = ' FROM ' . self::compileTableReference(self::scalarOr($j['table'] ?? null, ''), $dialect);
+                $invBaseFrom =
+                    ' FROM ' . self::compileTableReference(self::scalarOr($j['table'] ?? null, ''), $dialect);
                 $rawSecondCol = $j['second_col'] ?? '';
                 $rawFirstCol = $j['first_col'] ?? '';
                 $invOnClause =

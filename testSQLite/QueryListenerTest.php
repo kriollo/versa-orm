@@ -21,7 +21,9 @@ class QueryListenerTest extends TestCase
     public function testRecibeElSqlLosParametrosYLaDuracionDeCadaConsulta(): void
     {
         $vistas = [];
-        VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error) use (&$vistas): void {
+        VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error) use (
+            &$vistas,
+        ): void {
             $vistas[] = compact('sql', 'bindings', 'ms', 'error');
         });
 
@@ -37,7 +39,9 @@ class QueryListenerTest extends TestCase
     public function testUnaConsultaQueFallaLlegaConSuErrorYElErrorSigueSubiendo(): void
     {
         $errores = [];
-        VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error) use (&$errores): void {
+        VersaORM::onQuery(static function (string $sql, array $bindings, float $ms, ?Throwable $error) use (
+            &$errores,
+        ): void {
             $errores[] = $error;
         });
 

@@ -1,3 +1,33 @@
+## [Sin publicar]
+
+### ✨ Caché de esquema entre peticiones: `VersaORM::schemaCache()`
+
+La introspección de esquema (columnas, índices, claves foráneas) se guardaba solo durante la petición. Cada petición nueva volvía a consultar `information_schema` una vez por tabla que tocaba un modelo. En PostgreSQL esa suele ser la consulta más lenta de una petición típica. Ahora se puede guardar fuera del proceso:
+
+```php
+VersaORM::schemaCache(
+    get: fn(string $clave): ?array => $cache->get($clave),
+    set: fn(string $clave, array $valor) => $cache->set($clave, $valor, 86400),
+    clear: fn() => $cache->forgetPrefix('versaorm:schema:'),
+);
+VersaORM::schemaCache(null); // lo quita
+```
+
+- **Clave por base:** la clave incluye el motor, el servidor, el puerto y la base, así que dos conexiones distintas no se mezclan.
+- **Se invalida solo:** `clear` se llama ante cualquier DDL que pase por el ORM, incluidas las migraciones. Un cambio hecho por fuera del ORM se ve cuando vence la entrada.
+- **Sin almacén, como antes:** sin almacén configurado, el comportamiento es el mismo de siempre.
+- **Pruebas:** `testSQLite/SchemaStoreTest.php`.
+
+### 🐛 PostgreSQL: columnas de otro esquema
+
+`schema('columns')` buscaba solo por nombre de tabla, sin esquema. Con dos esquemas que tenían una tabla del mismo nombre, mezclaba las columnas de ambas. Además, las devolvía sin orden fijo.
+
+- **Columnas:** ahora usa la tabla que resuelve el `search_path`, en el orden de la tabla.
+- **Índices y claves foráneas:** también se limitan a la tabla visible.
+- **Pruebas:** `testPostgreSQL/SchemaSearchPathTest.php`.
+
+---
+
 ## [2.1.0] - 2026-10-15
 
 ### ✨ Escuchador de consultas: `VersaORM::onQuery()`

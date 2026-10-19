@@ -61,6 +61,13 @@ class PdoEngine
     /** @var null|Closure(string, array<int|string, mixed>, float, ?Throwable): void */
     private static ?Closure $queryListener = null;
 
+    /**
+     * Almacén persistente de la introspección de esquema (entre peticiones), o null.
+     *
+     * @var array{get: Closure, set: Closure, clear: ?Closure}|null
+     */
+    private static ?array $schemaStore = null;
+
     // Métricas internas simples (estáticas para compartirse en tests)
     /**
      * @var array{
@@ -231,6 +238,27 @@ class PdoEngine
      *
      * @param null|callable(string, array<int|string, mixed>, float, ?Throwable): void $listener
      */
+    /**
+     * Guarda la introspección de esquema fuera del proceso (archivos, Redis…): sin esto se consulta
+     * en cada petición. `clear` se llama ante cualquier DDL hecho por el ORM (migraciones incluidas).
+     * Con `$get` null se quita.
+     *
+     * @param null|callable(string): (array<array-key, mixed>|null) $get
+     * @param null|callable(string, array<array-key, mixed>): void $set
+     * @param null|callable(): void $clear
+     */
+    public static function setSchemaStore(?callable $get, ?callable $set = null, ?callable $clear = null): void
+    {
+        self::$schemaStore =
+            $get === null || $set === null
+                ? null
+                : [
+                    'get' => Closure::fromCallable($get),
+                    'set' => Closure::fromCallable($set),
+                    'clear' => $clear === null ? null : Closure::fromCallable($clear),
+                ];
+    }
+
     public static function setQueryListener(?callable $listener): void
     {
         self::$queryListener = $listener === null ? null : Closure::fromCallable($listener);
@@ -1541,10 +1569,7 @@ class PdoEngine
         if (!is_array($value)) {
             return '{' . (is_scalar($value) ? (string) $value : '') . '}';
         }
-        $parts = array_map(
-            static fn(mixed $v): string => is_scalar($v) ? (string) $v : '',
-            $value,
-        );
+        $parts = array_map(static fn(mixed $v): string => is_scalar($v) ? (string) $v : '', $value);
 
         return '{' . implode(',', $parts) . '}';
     }
@@ -1553,6 +1578,9 @@ class PdoEngine
     private static function clearSchemaCache(): void
     {
         self::$schemaCache = null;
+        if (self::$schemaStore !== null && self::$schemaStore['clear'] !== null) {
+            self::$schemaStore['clear']();
+        }
     }
 
     /**
@@ -1585,10 +1613,34 @@ class PdoEngine
 
             return $perConnection[$key];
         }
+
+        // Entre peticiones: la misma base (motor, servidor, nombre) comparte la introspección
+        $storeKey =
+            'versaorm:schema:'
+            . md5((string) json_encode([
+                $this->config['driver'] ?? null,
+                $this->config['host'] ?? null,
+                $this->config['port'] ?? null,
+                $this->config['database'] ?? null,
+            ]))
+            . ':'
+            . $key;
+        $stored = self::$schemaStore === null ? null : self::$schemaStore['get']($storeKey);
+        if (is_array($stored)) {
+            self::$metrics['cache_hits']++;
+            $perConnection[$key] = $stored;
+            self::$schemaCache[$pdo] = $perConnection;
+
+            return $stored;
+        }
+
         self::$metrics['cache_misses']++;
         $value = $fetch();
         $perConnection[$key] = $value;
         self::$schemaCache[$pdo] = $perConnection;
+        if (self::$schemaStore !== null) {
+            self::$schemaStore['set']($storeKey, $value);
+        }
 
         return $value;
     }
@@ -2312,9 +2364,14 @@ class PdoEngine
         if ($driver === 'postgres') {
             $sql =
                 'SELECT column_name, data_type, is_nullable, column_default, character_maximum_length '
-                . 'FROM information_schema.columns WHERE table_name = ?';
+                . 'FROM information_schema.columns WHERE table_name = ? '
+                // La tabla que resuelve el search_path: sin esto, dos esquemas con una tabla del mismo
+                // nombre mezclaban sus columnas
+                . 'AND table_schema = (SELECT n.nspname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace '
+                . 'WHERE c.relname = ? AND pg_table_is_visible(c.oid) LIMIT 1) '
+                . 'ORDER BY ordinal_position';
             $stmt = $this->prepareCached($pdo, $sql);
-            $this->bindAndExecute($stmt, [$table]);
+            $this->bindAndExecute($stmt, [$table, $table]);
             $columns = $stmt->fetchAll(PDO::FETCH_ASSOC) ?? [];
             $result = [];
 
@@ -2423,7 +2480,7 @@ class PdoEngine
             JOIN pg_class i ON i.oid = ix.indexrelid
             JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS k(attnum, ord) ON true
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = k.attnum
-            WHERE t.relkind = 'r' AND t.relname = ?
+            WHERE t.relkind = 'r' AND t.relname = ? AND pg_table_is_visible(t.oid)
             ORDER BY i.relname, k.ord";
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
@@ -2533,7 +2590,8 @@ class PdoEngine
             JOIN pg_class fc ON con.confrelid = fc.oid
             JOIN pg_attribute fatt ON fatt.attrelid = fc.oid AND fatt.attnum = ANY(con.confkey)
             WHERE con.contype = 'f'
-              AND tc.relname = ?";
+              AND tc.relname = ?
+              AND pg_table_is_visible(tc.oid)";
 
             $stmt = $this->prepareCached($pdo, $sql);
             $this->bindAndExecute($stmt, [$table]);
