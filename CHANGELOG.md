@@ -1,4 +1,4 @@
-## [Sin publicar]
+## [2.2.0] - 2026-10-19
 
 ### ✨ Caché de esquema entre peticiones: `VersaORM::schemaCache()`
 
