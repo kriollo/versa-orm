@@ -1,3 +1,20 @@
+## [2.2.3] - 2026-10-20
+
+### 🐛 «There is no active transaction» al hacer `commit()`/`rollBack()` tras DDL en MySQL/MariaDB
+
+Dentro de `beginTransaction()`, todo DDL (`CREATE`/`ALTER`/`DROP`) de MySQL/MariaDB hace **autocommit implícito** y el driver pdo_mysql de PHP 8.4 detection el commit: `inTransaction()` pasa a `false`. El `PdoEngine` llamaba a `$pdo->commit()`/`$pdo->rollBack()` sin verificarlo, así que cualquier migración con DDL terminaba con:
+
+```
+PDOException: There is no active transaction
+```
+
+El DDL ya había quedado aplicado; era la llamada de control la que explotaba (visible en todas las migraciones de `versaCLI migrate:up` sobre MariaDB).
+
+- **Arreglo:** guard con el estado real de PDO y sincronización del flag `ddlInTransaction` (ver `docs/dev/issue-2026-10-20-commit-tras-ddl-mysql.md`).
+- **Pruebas:** `testMysql/TransactionsRollbackTest.php` (2 tests nuevos: commit y rollback tras DDL).
+
+---
+
 ## [2.2.2] - 2026-10-20
 
 ### 🐛 `renameColumn()` en SQLite

@@ -1321,23 +1321,36 @@ class PdoEngine
             }
 
             if (str_starts_with($normalized, 'COMMIT')) {
-                $pdo->commit();
-                // Al confirmar cambios, invalidar caché de resultados por seguridad.
-                // Las sentencias preparadas NO se descartan: siguen siendo válidas si el
-                // esquema no cambió, y cualquier DDL dentro de la transacción ya pasó por
-                // clearStmtCache(). Descartarlas aquí hacía que un bucle de escrituras con
-                // una transacción por unidad de trabajo volviera a preparar todo en cada
-                // iteración, anulando la caché.
-                $this->clearAllCache();
+                if ($pdo->inTransaction()) {
+                    $pdo->commit();
+                    // Al confirmar cambios, invalidar caché de resultados por seguridad.
+                    // Las sentencias preparadas NO se descartan: siguen siendo válidas si el
+                    // esquema no cambió, y cualquier DDL dentro de la transacción ya pasó por
+                    // clearStmtCache(). Descartarlas aquí hacía que un bucle de escrituras con
+                    // una transacción por unidad de trabajo volviera a preparar todo en cada
+                    // iteración, anulando la caché.
+                    $this->clearAllCache();
+                } elseif ($this->ddlInTransaction) {
+                    // MySQL/MariaDB: el DDL confirmó la transacción implícitamente y el
+                    // commit ya no tiene nada que hacer. En lugar de lanzar
+                    // "There is no active transaction", limpiamos el estado transaccional
+                    // (los cambios ya quedaron en disco por el autocommit del DDL).
+                    $this->ddlInTransaction = false;
+                    $this->clearAllCache();
+                }
 
                 return null;
             }
 
             if (str_starts_with($normalized, 'ROLLBACK')) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
                 // Tras rollback, el caché puede quedar inconsistente si se cachearon lecturas intermedias
                 $this->clearAllCache();
-                // PostgreSQL y SQLite revierten también el DDL (una migración que falla a la mitad)
+                // PostgreSQL y SQLite revierten también el DDL (una migración que falla a la mitad).
+                // En MySQL/MariaDB el autocommit del DDL ya lo confirmó y no hay nada que revertir,
+                // pero sí hay que limpiar el estado transaccional para no desincronizar el flag.
                 if ($this->ddlInTransaction) {
                     $this->ddlInTransaction = false;
                     self::clearSchemaCache();
