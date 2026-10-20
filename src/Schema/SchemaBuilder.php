@@ -785,18 +785,14 @@ class SchemaBuilder
      */
     protected function renameColumn(string $table, string $from, string $to): void
     {
-        $sql = match ($this->driver) {
-            'mysql' => "ALTER TABLE {$this->wrapTable($table)} RENAME COLUMN {$this->wrapColumn(
-                $from,
-            )} TO {$this->wrapColumn($to)}",
-            'postgresql' => "ALTER TABLE {$this->wrapTable($table)} RENAME COLUMN {$this->wrapColumn(
-                $from,
-            )} TO {$this->wrapColumn($to)}",
-            'sqlite' => throw new VersaORMException('SQLite does not support renaming columns'),
-            default => throw new VersaORMException("Unsupported driver: {$this->driver}"),
-        };
+        // Igual en los tres motores (SQLite lo admite desde la 3.25.0, de 2018)
+        if (!in_array($this->driver, ['mysql', 'postgresql', 'sqlite'], true)) {
+            throw new VersaORMException("Unsupported driver: {$this->driver}");
+        }
 
-        $this->orm->exec($sql);
+        $this->orm->exec(
+            "ALTER TABLE {$this->wrapTable($table)} RENAME COLUMN {$this->wrapColumn($from)} TO {$this->wrapColumn($to)}",
+        );
     }
 
     /**

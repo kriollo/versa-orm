@@ -1,3 +1,13 @@
+## [Sin publicar]
+
+### 🐛 `renameColumn()` en SQLite
+
+`$table->renameColumn()` lanzaba «SQLite does not support renaming columns», pero SQLite admite `ALTER TABLE ... RENAME COLUMN` desde la 3.25.0 (2018). Las migraciones de un proyecto con un renombrado no corrían en SQLite, que es lo que usan las pruebas del esqueleto. Ahora usa el mismo SQL en los tres motores.
+
+- **Pruebas:** `testSQLite/Schema/BasicSchemaBuilderTest.php`.
+
+---
+
 ## [2.2.1] - 2026-10-19
 
 ### 🐛 `count()` y `exists()` dejaban el cursor abierto

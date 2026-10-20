@@ -77,4 +77,20 @@ class BasicSchemaBuilderTest extends TestCase
 
         static::assertTrue(true);
     }
+
+    public function testCanRenameAColumnKeepingItsData(): void
+    {
+        $this->schema->create('test_users', static function ($table) {
+            $table->id();
+            $table->string('nombre');
+        });
+        $this->orm->exec("INSERT INTO test_users (nombre) VALUES ('Ana')");
+
+        // SQLite admite RENAME COLUMN desde la 3.25.0 (2018)
+        $this->schema->table('test_users', static function ($table) {
+            $table->renameColumn('nombre', 'name');
+        });
+
+        static::assertSame('Ana', $this->orm->table('test_users')->select(['name'])->firstArray()['name'] ?? null);
+    }
 }
