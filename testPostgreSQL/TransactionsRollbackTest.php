@@ -79,4 +79,34 @@ class TransactionsRollbackTest extends TestCase
         $post = self::$orm->table('tx_users')->where('email', '=', 'tx.rollback@example.com')->findOne();
         static::assertNull($post);
     }
+
+    public function test_commit_y_rollback_sin_transaccion_siguen_siendo_un_error(): void
+    {
+        foreach (['commit', 'rollBack'] as $metodo) {
+            try {
+                self::$orm->{$metodo}();
+                static::fail("{$metodo}() sin transacción debería lanzar");
+            } catch (\VersaORM\VersaORMException) {
+                static::assertTrue(true);
+            }
+        }
+    }
+
+    public function test_el_ddl_dentro_de_una_transaccion_se_revierte_con_rollback(): void
+    {
+        // A diferencia de MySQL, aquí el DDL es transaccional: rollBack() deshace el CREATE
+        self::$orm->exec('DROP TABLE IF EXISTS tx_ddl_revertido');
+        self::$orm->beginTransaction();
+        self::$orm->exec('CREATE TABLE tx_ddl_revertido (id INT)');
+        self::$orm->rollBack();
+
+        static::assertNotContains('tx_ddl_revertido', self::$orm->schema('tables'));
+
+        // Y el estado transaccional queda limpio: una transacción nueva confirma normalmente
+        self::$orm->beginTransaction();
+        self::$orm->exec('CREATE TABLE tx_ddl_revertido (id INT)');
+        self::$orm->commit();
+        static::assertContains('tx_ddl_revertido', self::$orm->schema('tables'));
+        self::$orm->exec('DROP TABLE IF EXISTS tx_ddl_revertido');
+    }
 }

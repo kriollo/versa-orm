@@ -1321,8 +1321,11 @@ class PdoEngine
             }
 
             if (str_starts_with($normalized, 'COMMIT')) {
-                if ($pdo->inTransaction()) {
+                // Solo un DDL de por medio justifica que no haya transacción: sin él, un commit sin
+                // transacción es un error del llamador y PDO lo informa ("There is no active transaction")
+                if ($pdo->inTransaction() || !$this->ddlInTransaction) {
                     $pdo->commit();
+                    $this->ddlInTransaction = false;
                     // Al confirmar cambios, invalidar caché de resultados por seguridad.
                     // Las sentencias preparadas NO se descartan: siguen siendo válidas si el
                     // esquema no cambió, y cualquier DDL dentro de la transacción ya pasó por
@@ -1343,7 +1346,8 @@ class PdoEngine
             }
 
             if (str_starts_with($normalized, 'ROLLBACK')) {
-                if ($pdo->inTransaction()) {
+                // Igual que COMMIT: sin transacción y sin DDL que la haya cerrado, PDO informa el error
+                if ($pdo->inTransaction() || !$this->ddlInTransaction) {
                     $pdo->rollBack();
                 }
                 // Tras rollback, el caché puede quedar inconsistente si se cachearon lecturas intermedias
