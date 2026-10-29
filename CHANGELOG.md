@@ -1,3 +1,20 @@
+## [2.2.4] - 2026-10-20
+
+### 🐛 `commit()`/`rollBack()` sin transacción volvían a ser un error silencioso
+
+El arreglo de 2.2.3 dejaba pasar `commit()` y `rollBack()` cada vez que `inTransaction()` era `false`, y no solo después de un DDL. Así, un `commit()` sin `beginTransaction()`, un `commit()` repetido o un `rollBack()` sin transacción dejaban de informar el error, cuando en 2.2.2 lanzaban «There is no active transaction». Ahora se toleran solo si un DDL cerró la transacción con su commit implícito (MySQL/MariaDB). Además, `ddlInTransaction` se limpia también al confirmar una transacción con DDL en PostgreSQL/SQLite.
+
+- **Pruebas:**
+  - `testMysql/TransactionsDdlEdgeTest.php`, con 6 casos:
+    - commit y rollback sin transacción;
+    - un segundo commit;
+    - una transacción nueva después del commit implícito;
+    - los datos escritos antes del DDL que quedan confirmados;
+    - la caché de esquema después de un `ALTER`.
+  - En SQLite y PostgreSQL: el DDL se revierte con `rollBack()`, y `commit()`/`rollBack()` sin transacción siguen siendo un error.
+
+---
+
 ## [2.2.3] - 2026-10-20
 
 ### 🐛 «There is no active transaction» al hacer `commit()`/`rollBack()` tras DDL en MySQL/MariaDB
